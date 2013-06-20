@@ -30,6 +30,12 @@ public:
     virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)  = 0; 
     
     virtual void readDeviceInfo(std::string* devInfo) = 0;
+
+    /** Return wether a device has been opened or not.
+     *  As the variable already exists in the base class we implement this function here to avoid
+     *  having to reimplement the same, trivial return function over and over again.
+     */
+     virtual bool isOpen(){ return opened; }
 };
 
 #endif /*__LIBDEV_H__*/
