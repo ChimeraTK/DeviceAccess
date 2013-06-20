@@ -1,0 +1,30 @@
+Issues:
+- Why use self-made iterator? why not use the stl one which is inside?
+- getters shoud not be void but return something (a reference?)
+- naming: mapFile is not a file. it's more a map
+- make predicates and functors nested
+- why is dmapFile and mapFile constructor private?
+- dmapFileParser vs dmapFilesParser -> confusing names
+- use C++11 shared_ptr instead of refCountPointer? The reference count in there is thread safe, refCountPointer may not (is not ?)
+- exceptions with IDs: where are the ints defined? should be in the exception
+- exceptions with IDs: rather use different Exceptions (easier to read? easier to catch!)
+
+Ideas:
+- Parser should be used inside the constructor. User should not have to bother about the parser
+- Decouple exceptions?
+- files should be able to have comment lines
+- Getting rid of the dmap file?
+  - Open all devices that are supported
+  - Determine the devide ID and the firmware version
+  - Load the correct mapping file for this ID and firmware
+  o +correlation mapping file <-> firmware and ID is hard coded, no errors
+    due to mismatch in the config file
+  o -No runtime information for firmware development, less flexible
+  o -No user configurable names for the indivdual devices
+  o Make dmap file optional? 
+    - Get input in case of unkonwn firmware versions/ devices
+    - Override option for the defaults? (only for debugging anyhow)
+    - Print error/ do not run in case of mismatch?
+
+Questions:
+- What is the iterator used for?
