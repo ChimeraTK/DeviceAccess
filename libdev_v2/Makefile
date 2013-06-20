@@ -7,6 +7,7 @@ LIB_PATH        = ../../lib
 INCLUDE_PATH    = ./include ../../lib/include
 LIB             = 
 CXXFLAGS        = -Wall $(INCLUDE_PATH:%=-I%) -g -fPIC -O3  -D__DEBUG_MODE__ 
+CXXFLAGS       += -Wextra -Wshadow -Weffc++ -ansi -pedantic -Wuninitialized
 #===================================================================================
 
 VPATH = $(SRC_PATH):$(OBJ_PATH):$(INCLUDE_PATH)
