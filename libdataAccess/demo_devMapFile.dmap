@@ -1,0 +1,10 @@
+ADC_0     /dev/zero         ./demo_sisDemo.map
+ADC_1     /dev/zero         ./demo_sisDemo.map
+ADC_2     /dev/zero         ./demo_sisDemo.map
+ADC_3     /dev/zero         ./demo_sisDemo.map
+ADC_4     /dev/zero         ./demo_sisDemo.map
+
+
+ADC_PROBE     /dev/zero         ./demo_sisDemo.map
+ADC_FORW     /dev/zero         ./demo_sisDemo.map
+ADC_REFL     /dev/zero         ./demo_sisDemo.map

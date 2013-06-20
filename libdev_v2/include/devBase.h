@@ -1,0 +1,35 @@
+#ifndef __LIBDEV_H__
+#define __LIBDEV_H__
+
+#include "devConfigBase.h"
+#include <string>
+#include <stdint.h>
+#include <fcntl.h>
+
+
+
+
+class devBase
+{   
+protected:
+    bool         opened;
+public:
+    devBase();
+    ~devBase();
+             
+    virtual void openDev(const std::string &devName, int perm = O_RDWR, devConfigBase* pConfig = NULL) = 0;
+    virtual void closeDev() = 0;
+    
+    virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) = 0;
+    virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) = 0;
+    
+    virtual void readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) = 0;
+    virtual void writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) = 0;
+    
+    virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) = 0;
+    virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)  = 0; 
+    
+    virtual void readDeviceInfo(std::string* devInfo) = 0;
+};
+
+#endif /*__LIBDEV_H__*/
