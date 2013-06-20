@@ -12,7 +12,7 @@
 #include "mapFile.h"
 #include "dmapFileParser.h"
 #include "mapFileParser.h"
-#include "iterator_T.h"
+//#include "iterator_T.h"
 #include <string>
 #include <stdint.h>
 
@@ -24,7 +24,8 @@
  */
 class dmapFilesParser {
 public:
-    typedef iterator_T<std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator, std::pair<dmapFile::dmapElem, ptrmapFile> > iterator;
+    typedef std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator iterator;
+    typedef std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::const_iterator const_iterator;
 
 private:
     dmapFileParser dmap_file_parser; /**< DMAP file parser*/
@@ -158,6 +159,7 @@ public:
      * @snippet test-libmap.cpp DMAPS iterate
      */
     iterator begin();
+    const_iterator begin() const;
   
     /**
      * @brief Returns iterator to element after last one in DMAP file
@@ -167,6 +169,7 @@ public:
      * @snippet test-libmap.cpp DMAPS iterate
      */
     iterator end();
+    const_iterator end() const;
     
 
     friend std::ostream& operator<<(std::ostream &os, const dmapFilesParser& dmfp);

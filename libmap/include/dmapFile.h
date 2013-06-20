@@ -8,7 +8,7 @@
 #define	DMAP_FILE_H
 
 #include "refCountPointer.h"
-#include "iterator_T.h"
+//#include "iterator_T.h"
 #include <string>
 #include <stdint.h>
 #include <vector>
@@ -45,7 +45,9 @@ public:
         dmapElem();
         friend std::ostream& operator<<(std::ostream &os, const dmapElem& de);
     };
-    typedef iterator_T<std::vector<dmapElem>::iterator, dmapElem> iterator;
+
+    typedef std::vector<dmapElem>::iterator iterator;
+    typedef std::vector<dmapElem>::const_iterator const_iterator;
     /**
      * @brief  Stores information about errors and warnings
      *       
@@ -156,6 +158,7 @@ public:
      * @snippet test-libmap.cpp DMAP iterating throught all devices
      */
     iterator begin();
+    const_iterator begin() const;
     /**
      * @brief Return iterator to element after last one in DMAP file
      * 
@@ -164,6 +167,7 @@ public:
      * @snippet test-libmap.cpp DMAP iterating throught all devices
      */
     iterator end();
+    const_iterator end() const;
 
 private:
     std::vector<dmapElem> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/

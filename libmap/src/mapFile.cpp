@@ -191,11 +191,19 @@ size_t mapFile::getMapFileSize() {
 }
 
 mapFile::iterator mapFile::begin() {
-    return iterator(map_file_elems.begin());
+    return map_file_elems.begin();
 }
 
-mapFile::iterator mapFile::end() {
-    return iterator(map_file_elems.end());
+mapFile::const_iterator mapFile::begin() const{
+    return map_file_elems.begin();
+}
+
+mapFile::const_iterator mapFile::end() const{
+    return map_file_elems.end();
+}
+
+mapFile::iterator mapFile::end(){
+    return map_file_elems.end();
 }
 
 

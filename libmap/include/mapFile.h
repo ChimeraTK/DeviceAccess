@@ -8,7 +8,7 @@
 #define	MAP_FILE_H
 
 #include "refCountPointer.h"
-#include "iterator_T.h"
+//#include "iterator_T.h"
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -54,7 +54,8 @@ public:
         uint32_t line_nr; /**< Number of line with description of register in MAP file */
         friend std::ostream& operator<<(std::ostream &os, const mapElem& me);
     };
-    typedef iterator_T<std::vector<mapElem>::iterator, mapElem> iterator;
+    typedef std::vector<mapElem>::iterator iterator;
+    typedef std::vector<mapElem>::const_iterator const_iterator;
     /**
      * @brief  Stores information about errors and warnings
      *       
@@ -189,6 +190,7 @@ public:
      * @snippet test-libmap.cpp MAP iterating throught all registers
      */
     iterator begin();
+    const_iterator begin() const;
     /**
      * @brief Return iterator to element after last one in MAP file
      * 
@@ -197,6 +199,7 @@ public:
      * @snippet test-libmap.cpp MAP iterating throught all registers
      */
     iterator end();
+    const_iterator end() const;
 
 private:
     /**

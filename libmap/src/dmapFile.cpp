@@ -127,9 +127,9 @@ std::ostream& operator<<(std::ostream &os, const dmapFile::errorList& me) {
 }
 
 dmapFile::iterator dmapFile::begin() {
-    return iterator(dmap_file_elems.begin());
+    return dmap_file_elems.begin();
 }
 
 dmapFile::iterator dmapFile::end() {
-    return iterator(dmap_file_elems.end());
+    return dmap_file_elems.end();
 }

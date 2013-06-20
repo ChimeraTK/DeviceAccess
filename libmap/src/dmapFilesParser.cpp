@@ -270,9 +270,17 @@ dmapFilesParser::dmapFilesParser(const std::string &dir) {
 
 
 dmapFilesParser::iterator dmapFilesParser::begin() {
-    return iterator(dmap_elems.begin());
+    return dmap_elems.begin();
+}
+
+dmapFilesParser::const_iterator dmapFilesParser::begin() const{
+    return dmap_elems.begin();
 }
 
 dmapFilesParser::iterator dmapFilesParser::end() {
-    return iterator(dmap_elems.end());
+    return dmap_elems.end();
+}
+
+dmapFilesParser::const_iterator dmapFilesParser::end() const{
+    return dmap_elems.end();
 }
