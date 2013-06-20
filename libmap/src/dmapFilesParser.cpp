@@ -14,13 +14,13 @@ void dmapFilesParser::parse_dirs(const std::vector<std::string> &dirs) {
     std::vector<std::string>::const_iterator iter;
     cleanAll();
     for (iter = dirs.begin(); iter != dirs.end(); iter++) {
-        parse_one(*iter);
+        parse_one_directory(*iter);
     }
 }
 
 void dmapFilesParser::parse_dir(const std::string &dir) {
     cleanAll();
-    parse_one(dir);
+    parse_one_directory(dir);
 }
 
 void dmapFilesParser::parse_file(const std::string &fileName) {
@@ -65,7 +65,7 @@ void dmapFilesParser::parse_file(const std::string &fileName) {
 #endif //__LIBMAP_WITH_ERROR_CHECKING__   
 }
 
-void dmapFilesParser::parse_one(const std::string &dir) {
+void dmapFilesParser::parse_one_directory(const std::string &dir) {
     DIR *dp;
     struct dirent *dirp;
     size_t found;

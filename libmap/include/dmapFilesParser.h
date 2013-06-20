@@ -42,7 +42,7 @@ private:
      * 
      * @param dir path to directory with DMAP files to parse
      */
-    void parse_one(const std::string &dir);
+    void parse_one_directory(const std::string &dir);
 public:
     /**
      * @brief Class constructor

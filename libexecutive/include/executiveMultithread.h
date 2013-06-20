@@ -29,7 +29,7 @@ public:
      * @param _maxThreadNr maximum number of threads used by executive environment
      * 
      */
-    executiveMultithread(unsigned int _maxThreadNr = 4);
+    executiveMultithread(unsigned int _maxThreadNr = 6);
     virtual ~executiveMultithread();
     /**
      * @brief Registers new worker class in executive environment
