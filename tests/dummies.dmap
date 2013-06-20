@@ -1,0 +1,3 @@
+DUMMY1   /dev/utcadummys0 ./utcadummy.map
+DUMMY3   /dev/utcadummys1 ./utcadummy_bad.map
+DUMMY5   /dev/doesNotExist ./utcadummy.map
