@@ -50,11 +50,15 @@ uWorkerID updateManager::registerWorker(const std::string& workerName, updateWor
 
 void updateManager::removeWorker(uWorkerID wID) {
     std::vector<workerElem>::iterator iter;
-    for (iter = workersList.begin(); iter != workersList.end(); ++iter) {
+    for (iter = workersList.begin(); iter != workersList.end(); /*intentionally empty due to erasse*/) {
         if ((*iter).workerID == wID) {
             delete (*iter).pworker;
-            workersList.erase(iter);
+            workersList.erase(iter++);
         }
+	else
+	{
+	  ++iter;
+        }	
     }
 }
 
