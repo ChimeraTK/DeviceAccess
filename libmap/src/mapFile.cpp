@@ -28,8 +28,8 @@ void mapFile::insert(metaData &elem) {
     metadata.push_back(elem);
 }
 
-void mapFile::getRegisterInfo(const std::string& reg_name, mapElem &value) {
-    std::vector<mapElem>::iterator iter;
+void mapFile::getRegisterInfo(const std::string& reg_name, mapElem &value) const{
+    std::vector<mapElem>::const_iterator iter;
     iter = std::find_if(map_file_elems.begin(), map_file_elems.end(), findRegisterByName_pred(reg_name));
     if (iter == map_file_elems.end()) {
         throw exMapFile("Cannot find register " + reg_name + " in map file: " + map_file_name, exLibMap::EX_NO_REGISTER_IN_MAP_FILE);
@@ -37,7 +37,7 @@ void mapFile::getRegisterInfo(const std::string& reg_name, mapElem &value) {
     value = *iter;
 }
 
-void mapFile::getRegisterInfo(int reg_nr, mapElem &value) {
+void mapFile::getRegisterInfo(int reg_nr, mapElem &value) const {
     try {
         value = map_file_elems.at(reg_nr);
     } catch (std::out_of_range) {
@@ -45,8 +45,8 @@ void mapFile::getRegisterInfo(int reg_nr, mapElem &value) {
     }
 }
 
-void mapFile::getMetaData(const std::string &metaDataName, std::string& metaDataValue) {
-    std::vector<mapFile::metaData>::iterator iter;
+void mapFile::getMetaData(const std::string &metaDataName, std::string& metaDataValue) const{
+    std::vector<mapFile::metaData>::const_iterator iter;
 
     iter = std::find_if(metadata.begin(), metadata.end(), findMetaDataByName_pred(metaDataName));
     if (iter == metadata.end()) {
@@ -186,7 +186,7 @@ const std::string& mapFile::getMapFileName() const {
     return map_file_name;
 }
 
-size_t mapFile::getMapFileSize() {
+size_t mapFile::getMapFileSize() const {
     return map_file_elems.size();
 }
 

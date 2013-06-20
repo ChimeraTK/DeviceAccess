@@ -131,7 +131,7 @@ public:
      * 
      * @snippet test-libmap.cpp MAP getting info and metadata
      */
-    void getRegisterInfo(const std::string& reg_name, mapElem &value);
+    void getRegisterInfo(const std::string& reg_name, mapElem &value) const;
     /**
      * @brief Returns detailed information about selected register
      * 
@@ -141,7 +141,7 @@ public:
      * @param value detailed information about register
      * 
      */
-    void getRegisterInfo(int reg_nr, mapElem &value);
+    void getRegisterInfo(int reg_nr, mapElem &value) const;
     /**
      * @brief Returns value of specified metadata 
      * 
@@ -153,7 +153,7 @@ public:
      * 
      * @snippet test-libmap.cpp MAP getting info and metadata
      */
-    void getMetaData(const std::string &metaDataName, std::string& metaDataValue);
+    void getMetaData(const std::string &metaDataName, std::string& metaDataValue) const;
     /**
      * @brief Checks logical correctness of MAP file. 
      * 
@@ -181,7 +181,7 @@ public:
      * 
      * @return number of registers in MAP file
      */
-    size_t getMapFileSize();
+    size_t getMapFileSize() const;
     /**
      * @brief Return iterator to first register described in MAP file
      * 
