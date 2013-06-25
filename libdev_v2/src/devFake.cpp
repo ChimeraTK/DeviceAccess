@@ -5,7 +5,8 @@
 #include <string.h>
 #include <stdio.h>
 
-devFake::devFake()     
+devFake::devFake()
+  : pcieMemory(0), pcieMemoryFileName()
 {
     
 }
@@ -15,7 +16,7 @@ devFake::~devFake()
     closeDev();
 }
 
-void devFake::openDev(const std::string &devName, int perm, devConfigBase* pConfig)
+void devFake::openDev(const std::string &devName, int /*perm*/, devConfigBase* /*pConfig*/)
 {     
     std::string name = "./" + devName;    
     std::replace(name.begin(), name.end(), '/', '_');                

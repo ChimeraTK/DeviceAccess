@@ -17,7 +17,7 @@ private:
     std::string           pcieMemoryFileName;
 public:
     devFake();
-    ~devFake();
+    virtual ~devFake();
 
   
     virtual void openDev(const std::string &devName, int perm = O_RDWR, devConfigBase* pConfig = NULL);
@@ -33,6 +33,17 @@ public:
     virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
   
     virtual void readDeviceInfo(std::string* devInfo);
+
+ private:
+    /// A private copy constructor, cannot be called from outside. 
+    /// As the default is not safe and I don't want to implement it right now, I just make it
+    /// private. Make sure not to use it within the class before writing a proper implementation.
+    devFake(devFake const &)  : pcieMemory(0), pcieMemoryFileName(){}
+
+    /// A private assignment operator, cannot be called from outside. 
+    /// As the default is not safe and I don't want to implement it right now, I just make it
+    /// private. Make sure not to use it within the class before writing a proper implementation.
+    devFake & operator=(devFake const &) {return *this;}
 };
 
 #endif	/* LIBDEV_STRUCT_H */

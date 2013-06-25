@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 devPCIE::devPCIE() 
-        : dev_id(0)
+  : dev_name(), dev_id(0)
 {
     
 }
@@ -19,7 +19,7 @@ devPCIE::~devPCIE()
     closeDev();
 }
 
-void devPCIE::openDev(const std::string &_devName, int perm, devConfigBase* pConfig)
+void devPCIE::openDev(const std::string &_devName, int perm, devConfigBase* /*pConfig*/)
 {
     if (opened == true) {
         throw exDevPCIE("Device already has been opened", exDevPCIE::EX_DEVICE_OPENED);
@@ -99,7 +99,7 @@ void devPCIE::writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t 
     } 
 }
     
-void devPCIE::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devPCIE::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t /*bar*/)
 {   
     ssize_t	          ret;
     device_rw 	          l_RW;
@@ -128,7 +128,7 @@ void devPCIE::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t ba
     }
 }
 
-void devPCIE::writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devPCIE::writeDMA(uint32_t /*regOffset*/, int32_t* /*data*/, size_t /*size*/, uint8_t /*bar*/)
 {
     throw exDevPCIE("Operation not supported yet", exDevPCIE::EX_DMA_WRITE_ERROR);
 }
@@ -136,7 +136,7 @@ void devPCIE::writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t b
 void devPCIE::readDeviceInfo(std::string* devInfo)
 {    
     std::ostringstream    os;
-    device_ioctrl_data	  ioctlData = {0};
+    device_ioctrl_data	  ioctlData = {0, 0, 0, 0};
     if (ioctl(dev_id, LLRFDRV_PHYSICAL_SLOT, &ioctlData) < 0){
         throw exDevPCIE(std::string("Cannot read device info: ") + dev_name + ": " + strerror_r(errno, errBuff, sizeof(errBuff)), exDevPCIE::EX_INFO_READ_ERROR);        
     }

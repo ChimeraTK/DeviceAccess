@@ -15,7 +15,7 @@ protected:
     bool         opened;
 public:
     devBase();
-    ~devBase();
+    virtual ~devBase();
              
     virtual void openDev(const std::string &devName, int perm = O_RDWR, devConfigBase* pConfig = NULL) = 0;
     virtual void closeDev() = 0;
@@ -31,7 +31,7 @@ public:
     
     virtual void readDeviceInfo(std::string* devInfo) = 0;
 
-    /** Return wether a device has been opened or not.
+    /** Return whether a device has been opened or not.
      *  As the variable already exists in the base class we implement this function here to avoid
      *  having to reimplement the same, trivial return function over and over again.
      */
