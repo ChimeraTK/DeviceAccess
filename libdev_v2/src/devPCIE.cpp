@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <sstream>
+#include <unistd.h>
 
 devPCIE::devPCIE() 
         : dev_id(0)
