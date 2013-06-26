@@ -206,4 +206,18 @@ mapFile::iterator mapFile::end(){
     return map_file_elems.end();
 }
 
+mapFile::metaData::metaData( std::string const & the_name,
+			    std::string const & the_value)
+  : name(the_name), value(the_value)
+{}
+
+mapFile::mapElem::mapElem( std::string const & the_reg_name,
+			   uint32_t the_reg_elem_nr,
+			   uint32_t the_reg_address,
+			   uint32_t the_reg_size,
+			   uint32_t the_reg_bar,
+			   uint32_t the_line_nr)
+  : reg_name( the_reg_name ),  reg_elem_nr(the_reg_elem_nr), reg_address(the_reg_address),
+    reg_size(the_reg_size), reg_bar(the_reg_bar), line_nr(the_line_nr)
+{}
 

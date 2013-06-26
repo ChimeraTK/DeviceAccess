@@ -51,15 +51,15 @@ ref_count_pointer<T>::ref_count_pointer()
 
 template<typename T> 
 ref_count_pointer<T>::ref_count_pointer(T* _pelem)        
+  : pointed_elem_wrapper(new obj_wrapper<T>(_pelem))
 {
-    pointed_elem_wrapper = new obj_wrapper<T>(_pelem);
     pointed_elem_wrapper->incRefCounter();
 }
 
 template<typename T> 
 ref_count_pointer<T>::ref_count_pointer(const ref_count_pointer<T> &_elem)
+  : pointed_elem_wrapper ( _elem.pointed_elem_wrapper)
 {
-    pointed_elem_wrapper = _elem.pointed_elem_wrapper;
     pointed_elem_wrapper->incRefCounter();
 }
 
@@ -121,7 +121,12 @@ class obj_wrapper
         int  decRefCounter();
         template <typename V> 
         friend std::ostream& operator<<(std::ostream &os, const obj_wrapper<V>& me);
-        
+
+	// We declare the copy constructor and assignment operator, but intentionally do not provide
+	// an implementation. Like this we ensure that they are never accidentally used (even internally 
+	// or in the friend class.)
+	obj_wrapper( obj_wrapper const &);
+	obj_wrapper<T> & operator=(obj_wrapper const &);
 };
 
 template <typename T>

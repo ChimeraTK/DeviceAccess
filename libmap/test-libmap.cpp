@@ -19,7 +19,7 @@ void printInfo(const std::string& msg) {
     std::cout << "============================================================================================" << std::endl;
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
     /*=============================================================================================================*/
     printInfo("MAP: File parsing");
     /** [MAP file parsing example] */

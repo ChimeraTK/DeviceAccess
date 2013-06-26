@@ -37,6 +37,11 @@ public:
         std::string name; /**< Name of metadata attribute */
         std::string value; /**< Value of metadata attribute */
         friend std::ostream& operator<<(std::ostream &os, const metaData& me);
+
+	/// Convenience constructor which sets all data members. They all have default values, so this 
+	/// also acts as default constructor.
+	metaData(std::string const & the_name = std::string(), // an empty string
+		 std::string const & the_value = std::string()); // another empty string
     };
 
     /**
@@ -53,8 +58,17 @@ public:
         uint32_t reg_bar; /**< Number of bar with register */
         uint32_t line_nr; /**< Number of line with description of register in MAP file */
         friend std::ostream& operator<<(std::ostream &os, const mapElem& me);
+  
+	/// Convenience constructor which sets all data members. They all have default values, so this 
+	/// also acts as default constructor.
+	mapElem(std::string const & the_reg_name = std::string(), // an empty string
+		uint32_t the_reg_elem_nr = 0,
+		uint32_t the_reg_address = 0,
+		uint32_t the_reg_size = 0,
+		uint32_t the_reg_bar = 0,
+		uint32_t the_line_nr = 0);
     };
-    typedef std::vector<mapElem>::iterator iterator;
+    typedef std::vector<mapElem>::iterator iterator; 
     typedef std::vector<mapElem>::const_iterator const_iterator;
     /**
      * @brief  Stores information about errors and warnings

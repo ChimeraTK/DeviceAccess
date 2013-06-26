@@ -124,7 +124,7 @@ class copmaredMapElemsByName2_functor
 {
 public:
     bool operator()(const dmapFile::dmapElem &first, const dmapFile::dmapElem &second){
-        return first.dev_name < first.dev_name;
+        return first.dev_name < second.dev_name;
     }
 };
 

@@ -45,7 +45,7 @@ public:
             mapFile::mapElem            me;
             typename devMap::ptrdev     pdev;
         private:
-            void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
+            static void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
         public:
             regObject(const std::string &_regName, const mapFile::mapElem &_me, typename devMap::ptrdev _pdev);
             void readReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);

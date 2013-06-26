@@ -139,7 +139,8 @@ void dmapFilesParser::parse_one_directory(const std::string &dir) {
 #endif //__LIBMAP_WITH_ERROR_CHECKING__   
 }
 
-bool dmapFilesParser::check(dmapFile::errorList::errorElem::TYPE dlevel, mapFile::errorList::errorElem::TYPE mlevel, dmapFile::errorList &dmap_err, mapFile::errorList &map_err) {
+//FIXME: Why is dlevel not used?
+bool dmapFilesParser::check(dmapFile::errorList::errorElem::TYPE /*dlevel*/, mapFile::errorList::errorElem::TYPE mlevel, dmapFile::errorList &dmap_err, mapFile::errorList &map_err) {
 
     std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> > dmaps = dmap_elems;
     std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator iter_p, iter_n;

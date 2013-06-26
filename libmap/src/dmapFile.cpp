@@ -47,7 +47,8 @@ std::ostream& operator<<(std::ostream &os, const dmapFile::dmapElem& de) {
     return os;
 }
 
-bool dmapFile::check(dmapFile::errorList &err, dmapFile::errorList::errorElem::TYPE level) {
+//fixme: why is level not used?
+bool dmapFile::check(dmapFile::errorList &err, dmapFile::errorList::errorElem::TYPE /*level*/) {
 
     std::vector<dmapFile::dmapElem> dmaps = dmap_file_elems;
     std::vector<dmapFile::dmapElem>::iterator iter_p, iter_n;

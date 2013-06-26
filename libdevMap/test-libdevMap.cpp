@@ -16,7 +16,7 @@ typedef devMap<devFake>::regObject      devMapFakeRegObj;
 typedef devMap<devPCIE>                 devMapPCIE;
 typedef devMap<devPCIE>::regObject      devMapPCIERegObj;
 
-int main(int argc, char** argv) 
+int main(int /*argc*/, char** /*argv*/) 
 { 
  
     int32_t     data[255];

@@ -14,7 +14,8 @@ exdevMap::exdevMap(const std::string &_exMessage, unsigned int _exID)
 exdevMap::~exdevMap() throw() {
 }
 
-std::ostream& operator<<(std::ostream &os, const exdevMap& e)
+//fixme: this does not to anything
+std::ostream& operator<<(std::ostream &os, const exdevMap& /*e*/)
 {
     return os;
 }

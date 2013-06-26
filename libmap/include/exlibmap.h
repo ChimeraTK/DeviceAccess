@@ -24,7 +24,7 @@ public:
         EX_NO_METADATA_IN_MAP_FILE, /**< Specified metadata is not available in MAP file*/
         EX_NO_DEVICE_IN_DMAP_FILE, /**< Specified device is not available in DMAP file*/
         EX_DMAP_FILE_PARSE_ERROR, /**< During DMAP file parsing error or warning was detected*/
-        EX_NO_DATA_IN_DMAP_FILES, /**< DMAP file is empty*/
+        EX_NO_DATA_IN_DMAP_FILES /**< DMAP file is empty*/
     };
     /**
      * @brief Class constructor
