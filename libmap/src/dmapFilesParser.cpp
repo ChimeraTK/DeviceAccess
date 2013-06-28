@@ -191,12 +191,16 @@ ptrmapFile dmapFilesParser::getMapFile(const std::string &dev_name) {
 }
 
 void dmapFilesParser::getdMapFileElem(const std::string &dev_name, dmapFile::dmapElem &dMapFileElem) {
+    dMapFileElem = getdMapFileElem( dev_name );
+}
+
+dmapFile::dmapElem const & dmapFilesParser::getdMapFileElem(const std::string &dev_name) {
     std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
     dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
     if (dmap_iter == dmap_elems.end()) {
         throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
     }
-    dMapFileElem = (*dmap_iter).first;
+    return (*dmap_iter).first;
 }
 
 void dmapFilesParser::getdMapFileElem(int elem_nr, dmapFile::dmapElem &dMapFileElem) {

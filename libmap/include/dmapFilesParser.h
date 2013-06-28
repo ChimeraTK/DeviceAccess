@@ -130,7 +130,20 @@ public:
      */
     uint16_t getdMapFileSize();
     
+    /** Get the dmapElem from the device name.
+     *  @deprecated Use the getter function which returns the result instead of passing it by reference.
+     */
     void getdMapFileElem(const std::string& devName, dmapFile::dmapElem &dMapFileElem);
+
+    /** Get the dmapElem from the device name.
+     *  @attention The reference is only valid as long as the dmapFilesParser object is in scope 
+     *  and no new parse action has been performed. In practice this should not be a limitation. Just use
+     *  <pre>dmapFile::dmapElem myDmapElem = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
+     *   <pre>dmapFile::dmapElem const & myDmapElem = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre> 
+     */
+     dmapFile::dmapElem const &  getdMapFileElem(const std::string& devName);
+    
+
     /**
      * @brief Returns detailed information about device specified by number
      * 
