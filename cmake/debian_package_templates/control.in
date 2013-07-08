@@ -1,0 +1,23 @@
+Source: mtcamappeddevice
+Priority: extra
+Maintainer: Martin Killenberg <martin.killenberg@desy.de>
+Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8)
+Standards-Version: 3.9.2
+Section: libs
+#Homepage: <insert the upstream URL, if relevant>
+
+Package: dev-mtcamappeddevice
+Section: libdevel
+Architecture: any
+Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@ (= ${binary:Version})
+Description: Header and cmake files for MTCA4U MtcaMappedDevice.
+ The files you need to compile against MTCA4U MtcaMappedDevice.
+
+Package: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: MTCA4U MtcaMappedDevice provides a C++ API to access MTCA.4 devices.
+ MTCA4U is a software package which provides divers, a C++ API and tools for
+ hardware monitoring on MicroTCA.4 crates. MtcaMappedDevice is the
+ C++ API which provides basic and generig access to the boards.

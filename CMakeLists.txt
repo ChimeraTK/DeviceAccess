@@ -81,5 +81,8 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
   DESTINATION . COMPONENT dev)
  
+# The instructions to create a debian package are loaded from a separate file
+include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
+
 message("CMAKE_ROOT ${CMAKE_ROOT}")
 
