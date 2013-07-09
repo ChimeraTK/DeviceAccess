@@ -6,7 +6,6 @@ set(MtcaMappedDevice_DEBVERSION ${MtcaMappedDevice_MAJOR_VERSION}-${MtcaMappedDe
 
 #Nothing to change, just copy
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/compat
-           ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/dev-mtcamappeddevice.install
            ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/rules
      DESTINATION debian_from_template)
 
@@ -26,6 +25,9 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/copyright.in
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/mtcamappeddeviceDEBVERSION.shlib.in
                debian_from_template/mtcamappeddevice${MtcaMappedDevice_DEBVERSION}.shlib @ONLY)
+
+configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/dev-mtcamappeddevice.install.in
+               debian_from_template/dev-mtcamappeddevice.install @ONLY)
 
 #Copy and configure the shell script which performs the actual 
 #building of the package
