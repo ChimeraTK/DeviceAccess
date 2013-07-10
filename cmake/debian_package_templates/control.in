@@ -9,7 +9,7 @@ Section: libs
 Package: dev-mtcamappeddevice
 Section: libdevel
 Architecture: any
-Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@ (= ${binary:Version})
+Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@
 Description: Header and cmake files for MTCA4U MtcaMappedDevice.
  The files you need to compile against MTCA4U MtcaMappedDevice.
 

@@ -27,7 +27,7 @@ include(${MtcaMappedDevice_DIR}/MtcaMappedDeviceConfig.cmake)
 
 message("finder MtcaMappedDevice_INCLUDE_DIRS ${MtcaMappedDevice_INCLUDE_DIRS}")
 message("finder MtcaMappedDevice_VERSION ${MtcaMappedDevice_VERSION}")
-message("finder MtcaMappedDevice ${MtcaMappedDevice_VERSION}")
+#message("finder MtcaMappedDevice ${MtcaMappedDevice_VERSION}")
 
 #use a macro provided by CMake to check if all the listed arguments are valid
 #and set MtcaMappedDevice_FOUND accordingly
