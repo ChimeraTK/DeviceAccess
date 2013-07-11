@@ -1,8 +1,8 @@
 Source: mtcamappeddevice
 Priority: extra
 Maintainer: Martin Killenberg <martin.killenberg@desy.de>
-Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8)
-Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 7), cmake (>= 2.8)
+Standards-Version: 3.8.3
 Section: libs
 #Homepage: <insert the upstream URL, if relevant>
 
