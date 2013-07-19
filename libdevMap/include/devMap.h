@@ -56,6 +56,8 @@ public:
     
     devMap();   
     virtual void openDev(const std::string &_devFileName, const std::string& _mapFileName, int _perm = O_RDWR, devConfigBase* _pConfig = NULL);
+    virtual void openDev(std::pair<std::string, std::string> const  & _deviceFileAndMapFileName,
+			 int _perm = O_RDWR, devConfigBase* _pConfig = NULL);
     virtual void closeDev();    
     virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
     virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);    
@@ -195,6 +197,19 @@ void devMap<T>::openDev(const std::string &_devFileName, const std::string& _map
     mapFile     = fileParser.parse(mapFileName);
     pdev        = new T;
     pdev->openDev(_devFileName, _perm, _pConfig);
+}
+
+/** Alternative open function where the two reqired file names are packed in one object (a pair), so it can be the return value of a single function call.
+ * For parameters see openDev(const std::string &_devFileName, const std::string& _mapFileName, int _perm, devConfigBase* _pConfig);
+ */
+template<typename T>
+void devMap<T>::openDev(std::pair<std::string, std::string> const & _deviceFileAndMapFileName,
+			int _perm, devConfigBase* _pConfig)
+{
+  openDev(_deviceFileAndMapFileName.first, //the device file name
+	  _deviceFileAndMapFileName.second, //the map file name
+	  _perm,
+	  _pConfig);
 }
 
 /**

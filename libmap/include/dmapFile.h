@@ -43,6 +43,17 @@ public:
          * Default class constructor
          */
         dmapElem();
+
+	/** Convenience function to extract the device file name and the map file name as one object (a pair).
+	 *  This is all the information needed to open a devMap opject. As std::pair and std::string 
+	 *  are standard objects no dependency between dmapFile and the devMap object is introduced, in contrast
+	 *  to passing a dmapElem to devMap.
+	 *  The function name is a bit lengthy to avoid confusion between device name (logical name) and
+	 *  device file name (name of the device in the /dev directory). The latter is the .first argument of 
+	 *  the pair.
+	 */
+	std::pair<std::string, std::string> getDeviceFileAndMapFileName();
+
         friend std::ostream& operator<<(std::ostream &os, const dmapElem& de);
     };
 

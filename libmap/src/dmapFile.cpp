@@ -42,6 +42,11 @@ dmapFile::dmapElem::dmapElem() : dmap_file_line_nr(0)
 {
 }        
 
+std::pair<std::string, std::string> dmapFile::dmapElem::getDeviceFileAndMapFileName()
+{
+  return std::pair<std::string, std::string>(dev_file, map_file_name);
+}        
+
 std::ostream& operator<<(std::ostream &os, const dmapFile::dmapElem& de) {
     os << "(" << de.dmap_file_name << ") NAME: " << de.dev_name << " DEV : " << de.dev_file << " MAP : " << de.map_file_name;
     return os;
