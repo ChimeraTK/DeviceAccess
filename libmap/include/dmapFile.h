@@ -52,7 +52,7 @@ public:
 	 *  device file name (name of the device in the /dev directory). The latter is the .first argument of 
 	 *  the pair.
 	 */
-	std::pair<std::string, std::string> getDeviceFileAndMapFileName();
+	std::pair<std::string, std::string> getDeviceFileAndMapFileName() const;
 
         friend std::ostream& operator<<(std::ostream &os, const dmapElem& de);
     };

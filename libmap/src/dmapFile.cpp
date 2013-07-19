@@ -42,7 +42,7 @@ dmapFile::dmapElem::dmapElem() : dmap_file_line_nr(0)
 {
 }        
 
-std::pair<std::string, std::string> dmapFile::dmapElem::getDeviceFileAndMapFileName()
+std::pair<std::string, std::string> dmapFile::dmapElem::getDeviceFileAndMapFileName() const
 {
   return std::pair<std::string, std::string>(dev_file, map_file_name);
 }        
