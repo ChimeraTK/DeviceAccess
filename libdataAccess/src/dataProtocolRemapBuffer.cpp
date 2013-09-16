@@ -152,7 +152,13 @@ dataProtocolElemRemapBuffer* dataProtocolRemapBuffer::createProtocolElem(const s
     citer = buffers.find(buffName);
     if (citer == buffers.end()) {
         return NULL;
-    }
+    }                       
+    
+    if (regTotalOffset + regTotalSize != (*citer).second->maxDataSize){    
+        std::ostringstream os;
+        os << "\n[OFFSET: " << regTotalOffset << " REG SIZE: " << regTotalSize << " BUFFER SIZE: " << (*citer).second->maxDataSize << "]"; 
+        throw exDataProtocol(address + " - incorrect buffer configuration " + os.str(), exDataProtocol::EX_WRONG_ADDRESS);
+    }    
     return new dataProtocolElemRemapBuffer(regTotalOffset, regTotalSize, (*citer).second, buffName + ":" + devName + ":" + regName);
 }
 

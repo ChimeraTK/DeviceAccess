@@ -39,6 +39,8 @@ dataProtocolElemPCIE* dataProtocolPCIE::createProtocolElem(const std::string& ad
     unsigned int regTotalOffset = 0;
     unsigned int regTotalSize = 0;
 
+    bool internalSizeDetected = false;
+    
     pos = data.find(":");
     if (pos == std::string::npos) {
         throw exDataProtocol(address + " - wrong address format for \"" + protName + "\" protocol", exDataProtocol::EX_WRONG_ADDRESS);
@@ -75,6 +77,7 @@ dataProtocolElemPCIE* dataProtocolPCIE::createProtocolElem(const std::string& ad
                 if (!is) {
                     throw exDataProtocol(address + " - wrong address format for \"" + protName + "\" protocol", exDataProtocol::EX_WRONG_ADDRESS);
                 }
+                internalSizeDetected = true;
             }
         }
     }
@@ -89,8 +92,8 @@ dataProtocolElemPCIE* dataProtocolPCIE::createProtocolElem(const std::string& ad
     }
 
     regTotalOffset = elem.reg_address + regInternalOffset;
-    regTotalSize = ((regInternalSize != 0) ? regInternalSize : elem.reg_size);
-
+    //regTotalSize = ((regInternalSize != 0) ? regInternalSize : elem.reg_size);
+    regTotalSize = ((internalSizeDetected == true) ? regInternalSize : elem.reg_size);
 
     __DEV__ *dp;
     citer = hwAccess.find(devFileName);
