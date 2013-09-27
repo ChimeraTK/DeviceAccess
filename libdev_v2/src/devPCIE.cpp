@@ -48,7 +48,11 @@ void devPCIE::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
     }        
     l_RW.barx_rw   = bar;
     l_RW.mode_rw   = RW_D32;
-    l_RW.offset_rw = regOffset;              
+    l_RW.offset_rw = regOffset;  
+    l_RW.size_rw   = 0; // does not overwrite the struct but writes one word back to data
+    l_RW.data_rw   = -1;
+    l_RW.rsrvd_rw = 0;
+            
     if (read (dev_id, &l_RW, sizeof(device_rw)) != sizeof(device_rw)){ 
         throw exDevPCIE(std::string("Cannot read data from device: ") + dev_name + ": " + strerror_r(errno, errBuff, sizeof(errBuff)), exDevPCIE::EX_READ_ERROR);
     }    
@@ -67,6 +71,7 @@ void devPCIE::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
     l_RW.data_rw   = data;
     l_RW.rsrvd_rw  = 0;
     l_RW.size_rw   = 0;
+
     if (write (dev_id, &l_RW, sizeof(device_rw)) != sizeof(device_rw)){     
         throw exDevPCIE(std::string("Cannot write data from device: ") + dev_name + ": " + strerror_r(errno, errBuff, sizeof(errBuff)), exDevPCIE::EX_WRITE_ERROR);
     }       
@@ -119,6 +124,8 @@ void devPCIE::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t /*
     pl_RW->size_rw   = size;
     pl_RW->mode_rw   = RW_DMA;
     pl_RW->offset_rw = regOffset;    
+    pl_RW->rsrvd_rw = 0;
+
     ret = read (dev_id, pl_RW, sizeof(device_rw));        
     if (ret != (ssize_t)size){           
         throw exDevPCIE(std::string("Cannot read data from device: ") + dev_name + ": " + strerror_r(errno, errBuff, sizeof(errBuff)), exDevPCIE::EX_WRITE_ERROR);
