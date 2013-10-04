@@ -39,3 +39,13 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/make_debian_package.sh.in
 add_custom_target(debian_package ${CMAKE_BINARY_DIR}/make_debian_package.sh
                   COMMENT Building debian package for tag ${MtcaMappedDevice_VERSION})
 
+#For convenience: Also create an install script for DESY
+#The shared library package has the version number in the package name
+set(PACKAGE_NAME "mtcamappeddevice${MtcaMappedDevice_DEBVERSION}")
+#The development package does not have the version in the name
+set(PACKAGE_DEV_NAME "dev-mtcamappeddevice")
+set(PACKAGE_FILES_WILDCARDS "${PACKAGE_NAME}_*.deb ${PACKAGE_DEV_NAME}_*.deb mtcamappeddevice_*.changes")
+
+configure_file(${CMAKE_SOURCE_DIR}/cmake/install_debian_package_at_DESY.sh.in
+               install_debian_package_at_DESY.sh @ONLY)
+
