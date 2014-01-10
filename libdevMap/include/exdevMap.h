@@ -13,8 +13,8 @@
 class exdevMap : public exBase {
 public:
     
-    enum {      EX_WRONG_PARAMETER                             
-    };
+  enum { EX_WRONG_PARAMETER, EX_NOT_OPENED
+  };
     
     
     exdevMap(const std::string &_exMessage, unsigned int _exID);

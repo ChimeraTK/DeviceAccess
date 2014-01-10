@@ -13,7 +13,11 @@ set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}
 #skip -Weffc++ for the moment. It gives too many false positives
 set(CMAKE_CXX_FLAGS "-Wall  -fPIC -Wextra -Wshadow -ansi -pedantic -Wuninitialized")
 
-#currently boost is only needed for the tests
+#boost as such is required for shared pointers e.g.
+FIND_PACKAGE(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+
+#the unit test component is optional
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
 IF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
   set(TESTING_IS_ENABLED "true")
@@ -37,6 +41,12 @@ MACRO( MAPPEDDEVICE_ADDSUBDIR directory executables)
   endforeach( target )
 
 ENDMACRO(MAPPEDDEVICE_ADDSUBDIR)
+MACRO( COPY_MAPPING_FILES )
+  foreach( MAPPING_FILE utcadummy.map  utcadummy_bad.map dummies.dmap)
+    configure_file( tests/${MAPPING_FILE} ${PROJECT_BINARY_DIR}/${MAPPING_FILE} copyonly)
+  endforeach( MAPPING_FILE )
+ENDMACRO( COPY_MAPPING_FILES )
+
 
 #Note: The executables are the old, not automated and not boost-based tests.
 #They will probably all fail, but still return 0.
@@ -49,7 +59,6 @@ MAPPEDDEVICE_ADDSUBDIR( libdevMap test-libdevMap)
 #Currently we assume that they are all tests contained in one file, so
 #each file gives a new executable. This section has to be adapted if this should change.
 if(TESTING_IS_ENABLED)
-  include_directories(${Boost_INCLUDE_DIRS})
   include_directories(${CMAKE_SOURCE_DIR}/tests/include})
   aux_source_directory(${CMAKE_SOURCE_DIR}/tests/src testSources)
   foreach( testSourceFile ${testSources})
@@ -60,6 +69,8 @@ if(TESTING_IS_ENABLED)
     target_link_libraries(${excutableName} ${PROJECT_NAME} ${Boost_LIBRARIES})    
     add_test(${excutableName} ${excutableName})
   endforeach( testSourceFile )
+
+  COPY_MAPPING_FILES()
 endif(TESTING_IS_ENABLED)
 
 add_library(${PROJECT_NAME} SHARED ${library_sources} )

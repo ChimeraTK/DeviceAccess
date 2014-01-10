@@ -2,7 +2,6 @@
 #define	LIBDEV_STRUCT_H
 
 #include "devBase.h"
-#include "llrfdrv_io.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -41,6 +40,8 @@ public:
     virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
 
     virtual void readDeviceInfo(std::string* devInfo);
+
+    static devBase * createInstance();
 };
 
 #endif	/* LIBDEV_STRUCT_H */

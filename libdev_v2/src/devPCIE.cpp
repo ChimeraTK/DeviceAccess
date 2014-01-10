@@ -8,6 +8,9 @@
 #include <sstream>
 #include <unistd.h>
 
+// the io constants and struct for the driver
+#include <llrfdrv_io.h>
+
 devPCIE::devPCIE() 
   : dev_name(), dev_id(0)
 {
@@ -153,4 +156,8 @@ void devPCIE::readDeviceInfo(std::string* devInfo)
     }
     os << " DRV VER: " << (float)(ioctlData.offset/10.0) + (float)ioctlData.data;
     *devInfo = os.str();
+}
+
+devBase * devPCIE::createInstance(){
+  return new devPCIE;
 }

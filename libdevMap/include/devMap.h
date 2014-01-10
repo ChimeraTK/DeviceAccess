@@ -10,9 +10,10 @@
  *                  
  */
 
+#include <boost/shared_ptr.hpp>
+
 #include "libmap.h"
 #include "libdev.h"
-#include "refCountPointer.h"
 #include "exdevMap.h"
  
 
@@ -24,13 +25,23 @@
  *      the register instead of offset from the beginning of address space.
  *      Type of the object used to control access to device must be passed
  *      as a template parameter and must be an type defined in libdev class.
+ *
+ *      The device can open and close a device for you. If you let the devMap open
+ *      the device you will not be able to get a handle to this device directly, you
+ *      can only close it with the devMap. Should you create reggObjects, which contain
+ *      shared pointers to this device, the device will stay opened and functional even
+ *      if the devMap object which created the regObject goes out of scope. In this case
+ *      you cannot close the device. It will finally be closed when the the last
+ *      regObject pointing to it goes out if scope.
+ *      The same holds if you open another device with the same devMap: You lose direct access
+ *      to the previous device, which stays open as long as there are regObjects pointing to it.
  *      
  */
 template<typename T>
 class devMap {
     
 public:
-    typedef ref_count_pointer<T>      ptrdev;    
+    typedef boost::shared_ptr<T>      ptrdev;    
 private:
     
     ptrdev              pdev;
@@ -48,9 +59,9 @@ public:
             static void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
         public:
             regObject(const std::string &_regName, const mapFile::mapElem &_me, typename devMap::ptrdev _pdev);
-            void readReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+            void readReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
             void writeReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-            void readDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+            void readDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
             void writeDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     };
     
@@ -58,19 +69,20 @@ public:
     virtual void openDev(const std::string &_devFileName, const std::string& _mapFileName, int _perm = O_RDWR, devConfigBase* _pConfig = NULL);
     virtual void openDev(std::pair<std::string, std::string> const  & _deviceFileAndMapFileName,
 			 int _perm = O_RDWR, devConfigBase* _pConfig = NULL);
+    virtual void openDev(ptrdev ioDevice, ptrmapFile registerMapping);
     virtual void closeDev();    
-    virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
+    virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) const;
     virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);    
-    virtual void readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+    virtual void readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const;
     virtual void writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);    
-    virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+    virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const;
     virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);     
-    virtual void readDeviceInfo(std::string* devInfo);
+    virtual void readDeviceInfo(std::string* devInfo) const;
     
     
-    virtual void readReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+    virtual void readReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
     virtual void writeReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-    virtual void readDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+    virtual void readDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
     virtual void writeDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     
     
@@ -79,7 +91,9 @@ public:
     virtual ~devMap();
 
 private:
-    void checkRegister(const std::string &regName, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar);
+    void checkRegister(const std::string &regName, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar) const;
+
+    void checkPointersAreNotNull() const;
 };
 
 template<typename T>
@@ -90,21 +104,25 @@ devMap<T>::devMap()
 
 template<typename T>
 devMap<T>::~devMap() {
-    if (pdev)
-        pdev->closeDev();
+  //FIXME: do we want to close here? It will probably leave not working regObjects
+  // if(pdev) pdev->closeDev();
 }
 
 template<typename T>
 typename devMap<T>::regObject  devMap<T>::getRegObject(const std::string &regName)
 {
+    checkPointersAreNotNull();
+
     mapFile::mapElem    me;
     mapFile->getRegisterInfo(regName, me);
     return devMap::regObject(regName, me, pdev);
 }
 
 template<typename T>
-void devMap<T>::checkRegister(const std::string &regName, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar)
+void devMap<T>::checkRegister(const std::string &regName, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar) const
 {
+    checkPointersAreNotNull();
+
     mapFile::mapElem    me;
     mapFile->getRegisterInfo(regName, me);
     if (addRegOffset % 4){
@@ -126,7 +144,7 @@ void devMap<T>::checkRegister(const std::string &regName, size_t dataSize, uint3
 }
 
 template<typename T>
-void devMap<T>::readReg(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::readReg(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -148,7 +166,7 @@ void devMap<T>::writeReg(const std::string &regName, int32_t* data, size_t dataS
 }
 
 template<typename T>
-void devMap<T>::readDMA(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::readDMA(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -195,7 +213,7 @@ void devMap<T>::openDev(const std::string &_devFileName, const std::string& _map
     mapFileParser fileParser;
     mapFileName = _mapFileName;    
     mapFile     = fileParser.parse(mapFileName);
-    pdev        = new T;
+    pdev.reset( dynamic_cast<T *>(T::createInstance()) );
     pdev->openDev(_devFileName, _perm, _pConfig);
 }
 
@@ -212,8 +230,19 @@ void devMap<T>::openDev(std::pair<std::string, std::string> const & _deviceFileA
 	  _pConfig);
 }
 
+/** "open" a MappedDevice from an already opened IODevice and a RegisterMapping object.
+ *  It does not actually open anything, which shows that the "openDev"s should be overloaded
+ *  constructors. To be changed in redesign.
+ *  This function allows to use devBase as template argument and feed in a dummy or a pcie device.
+ */
+template<typename T>
+void devMap<T>::openDev(ptrdev ioDevice, ptrmapFile registerMapping){
+  pdev = ioDevice;
+  mapFile = registerMapping;
+}
+
 /**
- *      @brief  Function allows to close device 
+ *      @brief  Function allows to close the device and release the shared pointers.
  * 
  *      Function throws the same exceptions like closeDev from class type
  *      passed as a template parameter.      
@@ -221,6 +250,7 @@ void devMap<T>::openDev(std::pair<std::string, std::string> const & _deviceFileA
 template<typename T>
 void devMap<T>::closeDev()
 {
+    checkPointersAreNotNull();
     pdev->closeDev();
 }
     
@@ -239,8 +269,9 @@ void devMap<T>::closeDev()
  *      @param  bar  - number of PCIe bar 
  */
 template<typename T>
-void devMap<T>::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
+void devMap<T>::readReg(uint32_t regOffset, int32_t* data, uint8_t bar) const
 {
+    checkPointersAreNotNull();
     pdev->readReg(regOffset, data, bar);
 }
 
@@ -260,6 +291,7 @@ void devMap<T>::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
 template<typename T>
 void devMap<T>::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
 {
+    checkPointersAreNotNull();
     pdev->writeReg(regOffset, data, bar);
 }
 
@@ -278,32 +310,37 @@ void devMap<T>::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
  *      @param  bar  - number of PCIe bar 
  */
 template<typename T>
-void devMap<T>::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devMap<T>::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const
 {
+    checkPointersAreNotNull();
     pdev->readArea(regOffset, data, size, bar);
 }
 
 template<typename T>
 void devMap<T>::writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
 {
+    checkPointersAreNotNull();
     pdev->writeArea(regOffset, data, size, bar);
 }
     
 template<typename T>
-void devMap<T>::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devMap<T>::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const
 {
+    checkPointersAreNotNull();
     pdev->readDMA(regOffset, data, size, bar);
 }
 
 template<typename T>
 void devMap<T>::writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
 {
+    checkPointersAreNotNull();
     pdev->writeDMA(regOffset, data, size, bar);
 }
     
 template<typename T>
-void devMap<T>::readDeviceInfo(std::string* devInfo)
+void devMap<T>::readDeviceInfo(std::string* devInfo) const
 {
+    checkPointersAreNotNull();
     pdev->readDeviceInfo(devInfo);
 }
 
@@ -338,7 +375,7 @@ void devMap<T>::regObject::checkRegister(const mapFile::mapElem &me, size_t data
 
 
 template<typename T>
-void devMap<T>::regObject::readReg(int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::regObject::readReg(int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -356,7 +393,7 @@ void devMap<T>::regObject::writeReg(int32_t* data, size_t dataSize, uint32_t add
 }
 
 template<typename T>
-void devMap<T>::regObject::readDMA(int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::regObject::readDMA(int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -379,7 +416,12 @@ void devMap<T>::regObject::writeDMA(int32_t* data, size_t dataSize, uint32_t add
     pdev->writeDMA(retRegOff, data, retDataSize, me.reg_bar);
 }
 
-
+template<typename T>
+void devMap<T>::checkPointersAreNotNull() const {
+  if ( (pdev==false) || (mapFile==false) ){
+    throw exdevMap("devMap has not been opened correctly", exdevMap::EX_NOT_OPENED);
+  }  
+}
 
 #endif	/* _DEVMAP_H */
 

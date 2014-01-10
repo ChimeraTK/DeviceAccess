@@ -36,6 +36,13 @@ public:
      *  having to reimplement the same, trivial return function over and over again.
      */
      virtual bool isOpen(){ return opened; }
+
+     /** FIXME: This function is a hack to be able to create an instance of devMap<devBase>.
+      *  It should (if at all) only exist in the implementations.
+      *  The template should be removed in favour of a factory approach, but this is major work.
+      *  Remove this function after the templetisation of devMap is removed!
+      */
+     static devBase * createInstance(){return NULL;}
 };
 
 #endif /*__LIBDEV_H__*/

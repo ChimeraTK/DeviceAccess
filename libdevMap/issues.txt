@@ -2,6 +2,5 @@
   The dmapelement should contain the pointer
 - Why not use std::pointer on the vector inside? What is the benefit of the
   extra iterator? (which does not have < operator, -> operator etc)
-- Usage of the refCountPtr is confusing.
 - No const iterators in mapFile
-
+- Why is devMap templated? Shoud use shared_ptr<devBase>.

@@ -7,13 +7,12 @@
 #ifndef DMAP_FILE_H
 #define	DMAP_FILE_H
 
-#include "refCountPointer.h"
-//#include "iterator_T.h"
 #include <string>
 #include <stdint.h>
 #include <vector>
 #include <iostream>
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 /**
  *      @brief  Provides container to store information about devices described in DMAP file. 
@@ -200,8 +199,8 @@ private:
     void insert(const dmapElem &elem);
 };
 /**
- * @typedef Introduce specialisation of ref_count_pointer template for pointers to mapFile object as a ptrdmapFile
+ * @typedef Introduce specialisation of shared_pointer template for pointers to mapFile object as a ptrdmapFile
  */
-typedef ref_count_pointer<dmapFile> ptrdmapFile;
+typedef boost::shared_ptr<dmapFile> ptrdmapFile;
 
 #endif	/* DMAP_FILE_H */

@@ -8,7 +8,6 @@
 #ifndef PLUGINMANAGER_H
 #define	PLUGINMANAGER_H
 
-#include "refCountPointer.h"
 #include "pluginElem.h"
 #include <string>
 

@@ -7,13 +7,12 @@
 #ifndef MAP_FILE_H
 #define	MAP_FILE_H
 
-#include "refCountPointer.h"
-//#include "iterator_T.h"
 #include <stdint.h>
 #include <string>
 #include <vector>
 #include <list>
 #include <iostream>
+#include <boost/shared_ptr.hpp>
 
 /**
  *      @brief  Provides container to store information about registers described in MAP file. 
@@ -243,9 +242,9 @@ private:
     std::string map_file_name; /**< name of MAP file*/
 };
 /**
- * @typedef Introduce specialisation of ref_count_pointer template for pointers to mapFile object as a ptrmapFile
+ * @typedef Introduce specialisation of shared_ptr template for pointers to mapFile object as a ptrmapFile
  */
-typedef ref_count_pointer<mapFile> ptrmapFile;
+typedef boost::shared_ptr<mapFile> ptrmapFile;
 
 
 /**
