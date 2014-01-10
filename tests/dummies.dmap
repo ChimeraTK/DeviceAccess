@@ -1,3 +1,6 @@
 DUMMY1   /dev/utcadummys0 ./utcadummy.map
-DUMMY3   /dev/utcadummys1 ./utcadummy_bad.map
-DUMMY5   /dev/doesNotExist ./utcadummy.map
+DUMMY2   /dev/utcadummys1 ./utcadummy_bad.map
+DUMMY3   /dev/utcadummys2 ./utcadummy_bad.map
+DUMMY4   /dev/utcadummys3 ./utcadummy_bad.map
+DUMMY5   /dev/llrfdummys4 ./utcadummy.map
+DUMMY6   /dev/doesNotExist ./utcadummy.map
