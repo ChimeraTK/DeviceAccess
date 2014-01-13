@@ -54,10 +54,10 @@ init_unit_test_suite( int argc, char* argv[] )
 
 void MtcaMappedDeviceTest::testOpenClose() {
   // test all tree open functions
-  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( MAPPING_FILE_NAME, DUMMY_DEVICE_FILE_NAME ) );
+  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME ) );
   BOOST_CHECK_NO_THROW( _mappedDevice.closeDev() );
 
-  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( std::make_pair(MAPPING_FILE_NAME, DUMMY_DEVICE_FILE_NAME) ) );
+  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( std::make_pair(DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME ) ) );
   BOOST_CHECK_NO_THROW( _mappedDevice.closeDev() );
 
   devMap<devBase> mappedDeviceAsBase;

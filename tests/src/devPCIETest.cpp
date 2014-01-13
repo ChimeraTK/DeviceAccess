@@ -1,7 +1,8 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#define TEST_SLOT 4
+#define PCIEDEV_TEST_SLOT 0
+#define LLRFDRV_TEST_SLOT 4
 
 #include "devPCIE.h"
 #include "exDevPCIE.h"
@@ -29,7 +30,7 @@ using namespace boost::unit_test_framework;
 class PcieDeviceTest
 {
  public:
-  PcieDeviceTest(std::string const & deviceFileName);
+  PcieDeviceTest(std::string const & deviceFileName, unsigned int slot);
 
   /** A simple test which calls the default constructor and checks that the
    * device is closed. We keep this separate because in principle constructors
@@ -61,6 +62,7 @@ class PcieDeviceTest
  private:
   devPCIE _pcieDevice;
   std::string _deviceFileName;
+  unsigned int _slot;
 
   // Internal function for better code readablility.
   // Returns an error message. If the message is empty the test succeeded.
@@ -69,10 +71,10 @@ class PcieDeviceTest
 
 class PcieDeviceTestSuite : public test_suite {
 public:
-  PcieDeviceTestSuite(std::string const & deviceFileName) 
+  PcieDeviceTestSuite(std::string const & deviceFileName, unsigned int slot) 
     : test_suite("devPCIE test suite") {
         // add member function test cases to a test suite
-        boost::shared_ptr<PcieDeviceTest> pcieDeviceTest( new PcieDeviceTest( deviceFileName ) );
+    boost::shared_ptr<PcieDeviceTest> pcieDeviceTest( new PcieDeviceTest( deviceFileName, slot ) );
 
         test_case* openTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testOpen, pcieDeviceTest );
 
@@ -126,10 +128,15 @@ init_unit_test_suite( int argc, char* argv[] )
 {
   framework::master_test_suite().p_name.value = "devPCIE test suite";
 
-  std::stringstream testDeviceFileName;
-  testDeviceFileName << "/dev/llrfdummys" << TEST_SLOT;
+  std::stringstream llrfdummyFileName;
+  llrfdummyFileName << "/dev/llrfdummys" << LLRFDRV_TEST_SLOT;
+  framework::master_test_suite().add( new PcieDeviceTestSuite(llrfdummyFileName.str(), LLRFDRV_TEST_SLOT) );
 
-  return new PcieDeviceTestSuite(testDeviceFileName.str());
+  std::stringstream utcadummyFileName;
+  utcadummyFileName << "/dev/utcadummys" << PCIEDEV_TEST_SLOT;
+  framework::master_test_suite().add( new PcieDeviceTestSuite(utcadummyFileName.str(), PCIEDEV_TEST_SLOT) );
+
+  return NULL;
 }
 
 // The implementations of the individual tests
@@ -139,13 +146,28 @@ void PcieDeviceTest::testConstructor() {
   BOOST_CHECK( pcieDevice.isOpen() == false );
 }
 
-PcieDeviceTest::PcieDeviceTest(std::string const & deviceFileName)
-  : _deviceFileName(deviceFileName)
+PcieDeviceTest::PcieDeviceTest(std::string const & deviceFileName, unsigned int slot)
+  : _deviceFileName(deviceFileName), _slot(slot)
 {}
 
 void PcieDeviceTest::testOpen() {
   BOOST_CHECK_THROW( _pcieDevice.openDev("/invalid/FileName") ,
 		     exDevPCIE );
+  try{
+    _pcieDevice.openDev("/invalid/FileName");
+  }catch(exDevPCIE & e){
+    BOOST_CHECK( e.getID() == exDevPCIE::EX_CANNOT_OPEN_DEVICE );
+  }
+
+  // test opening an unsupported file
+  BOOST_CHECK_THROW( _pcieDevice.openDev("/dev/noioctldummys5") ,
+		     exDevPCIE );
+  try{
+    _pcieDevice.openDev("/dev/noioctldummys5");
+  }catch(exDevPCIE & e){
+    BOOST_CHECK( e.getID() == exDevPCIE::EX_UNSUPPORTED_DRIVER );
+  }
+
   // after the failed open attempt the device should still be closed.
   BOOST_CHECK( _pcieDevice.isOpen() == false );
 
@@ -160,6 +182,11 @@ void PcieDeviceTest::testOpen() {
     throw;
   }
   BOOST_CHECK( _pcieDevice.isOpen() );
+
+  // The device cannot be reopened. Check that an exception is thrown.
+  BOOST_CHECK_THROW( _pcieDevice.openDev(_deviceFileName) ,
+		     exDevPCIE );
+
 }
 
 void PcieDeviceTest::testReadRegister()
@@ -270,7 +297,7 @@ void PcieDeviceTest::testReadDeviceInfo(){
   int32_t minor;
   _pcieDevice.readReg(WORD_COMPILATION_OFFSET, &minor, /*bar*/ 0);
   std::stringstream referenceInfo;
-  referenceInfo << "SLOT: "<< TEST_SLOT << " DRV VER: " 
+  referenceInfo << "SLOT: "<< _slot << " DRV VER: " 
 		<< major << "." << minor;
 
   std::string deviceInfo;

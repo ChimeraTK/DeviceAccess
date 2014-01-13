@@ -9,20 +9,20 @@
 class devPCIE : public devBase
 {
 private:
-    char errBuff[255];
+    std::string _deviceName;
+    int  _deviceID;
     
-    struct device_rw{
-           u_int		offset_rw; /*offset in address*/
-           u_int		data_rw;   /*data to set or returned read data */
-           u_int		mode_rw;   /*mode of rw (RW_D8, RW_D16, RW_D32)*/
-           u_int 		barx_rw;   /*BARx (0, 1, 2, 3)*/
-           u_int 		size_rw;   /*transfer size in bytes*/
-           u_int 		rsrvd_rw;  /*transfer size in bytes*/
-    };
-private:
-    std::string         dev_name;
-    int                 dev_id;
+    unsigned long _ioctlPhysicalSlot;
+    unsigned long _ioctlDriverVersion;
     
+    /// A function pointer which calls the correct dma read function (via ioctl or via struct)
+    void (devPCIE::* _readDMAFunction)(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+
+    void readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+    void readDMAViaStruct(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+
+    std::string createErrorStringWithErrnoText(std::string const & startText);
+    void  determineDriverAndConfigureIoctl();
 public:
     devPCIE();
     virtual ~devPCIE();
