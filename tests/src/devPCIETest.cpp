@@ -132,9 +132,9 @@ init_unit_test_suite( int argc, char* argv[] )
   llrfdummyFileName << "/dev/llrfdummys" << LLRFDRV_TEST_SLOT;
   framework::master_test_suite().add( new PcieDeviceTestSuite(llrfdummyFileName.str(), LLRFDRV_TEST_SLOT) );
 
-  std::stringstream utcadummyFileName;
-  utcadummyFileName << "/dev/utcadummys" << PCIEDEV_TEST_SLOT;
-  framework::master_test_suite().add( new PcieDeviceTestSuite(utcadummyFileName.str(), PCIEDEV_TEST_SLOT) );
+  std::stringstream mtcadummyFileName;
+  mtcadummyFileName << "/dev/mtcadummys" << PCIEDEV_TEST_SLOT;
+  framework::master_test_suite().add( new PcieDeviceTestSuite(mtcadummyFileName.str(), PCIEDEV_TEST_SLOT) );
 
   return NULL;
 }
@@ -176,7 +176,7 @@ void PcieDeviceTest::testOpen() {
   }
   catch(exDevPCIE & e )
   {
-    std::string errorMessage("Opening the dummy device failed. You need to load the utcadummy driver to run the devPCIE tests.\n");
+    std::string errorMessage("Opening the dummy device failed. You need to load the mtcadummy driver to run the devPCIE tests.\n");
     errorMessage+= std::string("exception exDevPCIE: ") + e.what();
     BOOST_FAIL(errorMessage);
     throw;

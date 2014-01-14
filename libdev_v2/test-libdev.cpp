@@ -22,14 +22,14 @@ int main(int /*argc*/, char** /*argv*/)
     
     try {
     
-        dev.openDev("/dev/utcadummys0");   
+        dev.openDev("/dev/mtcadummys0");   
 
         dev.writeArea(0, data, data_size, 0);
         dev.closeDev();
 
         memset(data, 0, sizeof(data));
 
-        dev.openDev("/dev/utcadummys0");
+        dev.openDev("/dev/mtcadummys0");
 
         dev.readArea(0, data, data_size, 0);
 

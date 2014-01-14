@@ -4,8 +4,8 @@ using namespace boost::unit_test_framework;
 #include "devMap.h"
 typedef devMap<devPCIE> MtcaMappedDevice;
 
-#define MAPPING_FILE_NAME "utcadummy.map"
-#define DUMMY_DEVICE_FILE_NAME "/dev/utcadummys0"
+#define MAPPING_FILE_NAME "mtcadummy.map"
+#define DUMMY_DEVICE_FILE_NAME "/dev/mtcadummys0"
 
 class MtcaMappedDeviceTest
 {
