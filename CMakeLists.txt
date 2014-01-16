@@ -9,9 +9,12 @@ set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
  
-#set(CMAKE_CXX_FLAGS "-Wall  -fPIC -Wextra -Wshadow -Weffc++ -ansi -pedantic -Wuninitialized")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -fPIC -Wextra -Wshadow -Weffc++ -ansi -pedantic -Wuninitialized")
 #skip -Weffc++ for the moment. It gives too many false positives
-set(CMAKE_CXX_FLAGS "-Wall  -fPIC -Wextra -Wshadow -ansi -pedantic -Wuninitialized")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -ansi -pedantic -Wuninitialized")
+
+#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
 #boost as such is required for shared pointers e.g.
 FIND_PACKAGE(Boost REQUIRED)
@@ -70,6 +73,18 @@ if(TESTING_IS_ENABLED)
   endforeach( testSourceFile )
 
   COPY_MAPPING_FILES()
+
+  #The make coverage command is only available in debug mode
+  IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    configure_file(cmake/Makefile.coverage
+      ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
+    add_custom_target(coverage
+      make -f Makefile.coverage
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating test coverage documentation" VERBATIM
+      )
+  ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 endif(TESTING_IS_ENABLED)
 
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
