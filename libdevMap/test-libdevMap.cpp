@@ -8,7 +8,7 @@
 #include "libdevMap.h"
 
 using namespace std;
-        
+using namespace mtca4u;        
 
 typedef devMap<devFake>                 devMapFake;
 typedef devMap<devFake>::regObject      devMapFakeRegObj;

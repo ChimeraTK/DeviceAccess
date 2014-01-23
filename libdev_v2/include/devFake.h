@@ -1,14 +1,15 @@
-#ifndef LIBDEV_FAKE_H
-#define	LIBDEV_FAKE_H
+#ifndef MTCA4U_LIBDEV_FAKE_H
+#define	MTCA4U_LIBDEV_FAKE_H
 
 #include "devBase.h"
 #include "devConfigBase.h"
 #include <stdint.h>
 #include <stdlib.h>
 
-#define LIBDEV_BAR_NR          8
-#define LIBDEV_BAR_MEM_SIZE    (1024*1024)
+#define MTCA4U_LIBDEV_BAR_NR          8
+#define MTCA4U_LIBDEV_BAR_MEM_SIZE    (1024*1024)
 
+namespace mtca4u{
 
 class devFake : public devBase
 {
@@ -46,5 +47,7 @@ public:
     devFake & operator=(devFake const &) {return *this;}
 };
 
-#endif	/* LIBDEV_STRUCT_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_LIBDEV_STRUCT_H */
 

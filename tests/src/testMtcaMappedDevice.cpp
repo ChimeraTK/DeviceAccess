@@ -2,6 +2,9 @@
 using namespace boost::unit_test_framework;
 
 #include "devMap.h"
+
+using namespace mtca4u;
+
 typedef devMap<devPCIE> MtcaMappedDevice;
 
 #define MAPPING_FILE_NAME "mtcadummy.map"

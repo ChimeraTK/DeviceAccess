@@ -1,10 +1,11 @@
-#ifndef LIBDEV_STRUCT_H
-#define	LIBDEV_STRUCT_H
+#ifndef MTCA4U_LIBDEV_STRUCT_H
+#define	MTCA4U_LIBDEV_STRUCT_H
 
 #include "devBase.h"
 #include <stdint.h>
 #include <stdlib.h>
 
+namespace mtca4u{
 
 class devPCIE : public devBase
 {
@@ -44,5 +45,7 @@ public:
     static devBase * createInstance();
 };
 
-#endif	/* LIBDEV_STRUCT_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_LIBDEV_STRUCT_H */
 

@@ -1,8 +1,10 @@
-#ifndef EXDEVFAKE_H
-#define	EXDEVFAKE_H
+#ifndef MTCA4U_EXDEVFAKE_H
+#define	MTCA4U_EXDEVFAKE_H
 
 #include "exBase.h"
 #include <string>
+
+namespace mtca4u{
 
 class exDevFake : public exBase {
 public:
@@ -21,5 +23,7 @@ private:
 
 };
 
-#endif	/* EXDEVFAKE_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_EXDEVFAKE_H */
 

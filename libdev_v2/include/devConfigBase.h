@@ -1,5 +1,7 @@
-#ifndef DEVCONFIGBASE_H
-#define	DEVCONFIGBASE_H
+#ifndef MTCA4U_DEVCONFIGBASE_H
+#define	MTCA4U_DEVCONFIGBASE_H
+
+namespace mtca4u{
 
 class devConfigBase {
 public:
@@ -9,5 +11,7 @@ private:
 
 };
 
-#endif	/* DEVCONFIGBASE_H */
+}//namespace mtca4u
+
+#endif	/*  MTCA4U_DEVCONFIGBASE_H */
 

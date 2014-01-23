@@ -7,6 +7,8 @@ using namespace boost::unit_test_framework;
 #include "devPCIE.h"
 #include "exDevPCIE.h"
 
+using namespace mtca4u;
+
 //constants for the registers and their contents. We keep the hard coded 
 //values at one place and only use the constants in the code below.
 #define WORD_FIRMWARE_OFFSET 0x0

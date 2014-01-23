@@ -1,10 +1,10 @@
-#ifndef LIBDEV_H
-#define	LIBDEV_H
+#ifndef MTCA4U_LIBDEV_H
+#define	MTCA4U_LIBDEV_H
 
 #include "devPCIE.h"
 #include "devFake.h"
 #include "exDevPCIE.h"
 #include "exDevFake.h"
 
-#endif	/* LIBDEV_H */
+#endif	/* MTCA4U_LIBDEV_H */
 

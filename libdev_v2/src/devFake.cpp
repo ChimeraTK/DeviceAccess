@@ -2,8 +2,10 @@
 #include "exDevFake.h"
 #include <iostream>
 #include <algorithm>
-#include <string.h>
-#include <stdio.h>
+#include <string>
+#include <cstdio>
+
+namespace mtca4u{
 
 devFake::devFake()
   : pcieMemory(0), pcieMemoryFileName()
@@ -26,12 +28,12 @@ void devFake::openDev(const std::string &devName, int /*perm*/, devConfigBase* /
     }
     pcieMemory = fopen(name.c_str(), "r+");
     if (pcieMemory == NULL){
-        char zero[LIBDEV_BAR_MEM_SIZE] = {0};
+        char zero[MTCA4U_LIBDEV_BAR_MEM_SIZE] = {0};
         pcieMemory = fopen(name.c_str(), "w");
         if (pcieMemory == NULL){
             throw exDevFake("Cannot create fake device file", exDevFake::EX_CANNOT_CREATE_DEV_FILE);
         }                 
-        for (int bar = 0; bar < LIBDEV_BAR_NR; bar++){
+        for (int bar = 0; bar < MTCA4U_LIBDEV_BAR_NR; bar++){
             if (fseek(pcieMemory, sizeof(zero) * bar, SEEK_SET) < 0){
                 fclose(pcieMemory);
                 throw exDevFake("Cannot init device memory file", exDevFake::EX_DEVICE_FILE_WRITE_DATA_ERROR);
@@ -60,14 +62,14 @@ void devFake::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
     if (opened == false) {
         throw exDevFake("Device closed", exDevFake::EX_DEVICE_CLOSED);
     }  
-    if (bar >= LIBDEV_BAR_NR) {
+    if (bar >= MTCA4U_LIBDEV_BAR_NR) {
         throw exDevFake("Wrong bar number", exDevFake::EX_DEVICE_FILE_READ_DATA_ERROR);
     }
-    if (regOffset >= LIBDEV_BAR_MEM_SIZE) {
+    if (regOffset >= MTCA4U_LIBDEV_BAR_MEM_SIZE) {
         throw exDevFake("Wrong offset", exDevFake::EX_DEVICE_FILE_READ_DATA_ERROR);
     }
     
-    if (fseek(pcieMemory, regOffset + LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
+    if (fseek(pcieMemory, regOffset + MTCA4U_LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
         throw exDevFake("Cannot access memory file", exDevFake::EX_DEVICE_FILE_READ_DATA_ERROR);
     }
     
@@ -81,14 +83,14 @@ void devFake::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
     if (opened == false) {
         throw exDevFake("Device closed", exDevFake::EX_DEVICE_CLOSED);
     }     
-    if (bar >= LIBDEV_BAR_NR) {
+    if (bar >= MTCA4U_LIBDEV_BAR_NR) {
         throw exDevFake("Wrong bar number", exDevFake::EX_DEVICE_FILE_WRITE_DATA_ERROR);
     }
-    if (regOffset >= LIBDEV_BAR_MEM_SIZE) {
+    if (regOffset >= MTCA4U_LIBDEV_BAR_MEM_SIZE) {
         throw exDevFake("Wrong offset", exDevFake::EX_DEVICE_FILE_WRITE_DATA_ERROR);
     }
     
-    if (fseek(pcieMemory, regOffset + LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
+    if (fseek(pcieMemory, regOffset + MTCA4U_LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
         throw exDevFake("Cannot access memory file", exDevFake::EX_DEVICE_FILE_WRITE_DATA_ERROR);
     }
     
@@ -138,3 +140,4 @@ void devFake::readDeviceInfo(std::string* devInfo)
     *devInfo = "fake device: " + pcieMemoryFileName;
 }
 
+}//namespace mtca4u

@@ -1,13 +1,12 @@
-#ifndef __LIBDEV_H__
-#define __LIBDEV_H__
+#ifndef _MTCA4U_LIBDEV_H__
+#define _MTCA4U_LIBDEV_H__
 
 #include "devConfigBase.h"
 #include <string>
 #include <stdint.h>
 #include <fcntl.h>
 
-
-
+namespace mtca4u{
 
 class devBase
 {   
@@ -45,4 +44,6 @@ public:
      static devBase * createInstance(){return NULL;}
 };
 
-#endif /*__LIBDEV_H__*/
+}//namespace mtca4u
+
+#endif /*_MTCA4U_LIBDEV_H__*/

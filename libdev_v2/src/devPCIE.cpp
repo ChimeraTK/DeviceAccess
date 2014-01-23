@@ -9,8 +9,11 @@
 #include <unistd.h>
 
 // the io constants and struct for the driver
+// FIXME: they should come from the installed driver
 #include <pciedev_io.h>
 #include <llrfdrv_io_compat.h>
+
+namespace mtca4u{
 
 devPCIE::devPCIE() 
   : _deviceName(), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0),
@@ -247,3 +250,5 @@ std::string devPCIE::createErrorStringWithErrnoText(std::string const & startTex
   char errorBuffer[255];
   return startText + _deviceName + ": " + strerror_r(errno, errorBuffer, sizeof(errorBuffer));
 }
+
+}//namespace mtca4u

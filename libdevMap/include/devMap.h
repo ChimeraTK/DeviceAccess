@@ -16,6 +16,7 @@
 #include "libdev.h"
 #include "exdevMap.h"
  
+namespace mtca4u{
 
 /**
  *      @class  devMap
@@ -422,6 +423,8 @@ void devMap<T>::checkPointersAreNotNull() const {
     throw exdevMap("devMap has not been opened correctly", exdevMap::EX_NOT_OPENED);
   }  
 }
+
+}//namespace mtca4u
 
 #endif	/* _DEVMAP_H */
 

@@ -1,7 +1,9 @@
-#ifndef EXDEVPCIE_H
-#define	EXDEVPCIE_H
+#ifndef MTCA4U_EXDEVPCIE_H
+#define	MTCA4U_EXDEVPCIE_H
 
 #include "exBase.h"
+
+namespace mtca4u{
 
 class exDevPCIE : public exBase {
 public:
@@ -13,5 +15,7 @@ private:
 
 };
 
-#endif	/* EXDEVPCIE_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_EXDEVPCIE_H */
 
