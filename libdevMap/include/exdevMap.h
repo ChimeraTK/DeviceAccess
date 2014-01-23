@@ -5,10 +5,12 @@
  * Created on 11 marzec 2012, 20:42
  */
 
-#ifndef EXDEVMAP_H
-#define	EXDEVMAP_H
+#ifndef MTCA4U_EXDEVMAP_H
+#define	MTCA4U_EXDEVMAP_H
 
 #include "exBase.h"
+
+namespace mtca4u{
 
 class exdevMap : public exBase {
 public:
@@ -24,5 +26,7 @@ private:
 
 };
 
-#endif	/* EXDEVMAP_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_EXDEVMAP_H */
 

@@ -5,12 +5,14 @@
  *      @brief          Provides method to parse DMAP file
  *                  
  */
-#ifndef DMAPFILEPARSER_H
-#define	DMAPFILEPARSER_H
+#ifndef MTCA4U_DMAP_FILE_PARSER_H
+#define	MTCA4U_DMAP_FILE_PARSER_H
 
 #include "dmapFile.h"
 #include <stdint.h>
 #include <string>
+
+namespace mtca4u{
 
 /**
  * @brief  Provides method to parse DMAP file.
@@ -36,5 +38,7 @@ public:
     ptrdmapFile parse(const std::string &file_name);
 };
 
-#endif	/* DMAPFILEPARSER_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_DMAP_FILE_PARSER_H */
 

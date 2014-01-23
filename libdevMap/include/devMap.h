@@ -1,5 +1,5 @@
-#ifndef _DEVMAP_H
-#define	_DEVMAP_H
+#ifndef MTCA4U_DEVMAP_H
+#define	MTCA4U_DEVMAP_H
 
 /**
  *      @file           devMap.h
@@ -426,5 +426,5 @@ void devMap<T>::checkPointersAreNotNull() const {
 
 }//namespace mtca4u
 
-#endif	/* _DEVMAP_H */
+#endif	/* MTCA4U_DEVMAP_H */
 

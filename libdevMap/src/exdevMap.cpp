@@ -7,6 +7,8 @@
 
 #include "exdevMap.h"
 
+namespace mtca4u{
+
 exdevMap::exdevMap(const std::string &_exMessage, unsigned int _exID)
 : exBase(_exMessage, _exID) {
 }
@@ -14,9 +16,4 @@ exdevMap::exdevMap(const std::string &_exMessage, unsigned int _exID)
 exdevMap::~exdevMap() throw() {
 }
 
-//fixme: this does not to anything
-std::ostream& operator<<(std::ostream &os, const exdevMap& /*e*/)
-{
-    return os;
-}
-
+}//namespace mtca4u

@@ -6,8 +6,8 @@
  *                  
  */
 
-#ifndef MAPFILEPARSER_H
-#define	MAPFILEPARSER_H
+#ifndef MTCA4U_MAPFILEPARSER_H
+#define	MTCA4U_MAPFILEPARSER_H
 
 
 #include "mapFile.h"
@@ -16,6 +16,8 @@
 #include <string>
 #include <fstream>
 
+
+namespace mtca4u{
 
 /**
  * @brief  Provides method to parse MAP file 
@@ -38,5 +40,8 @@ public:
      */
     ptrmapFile    parse(const std::string &file_name);
 };
-#endif	/* MAPFILEPARSER_H */
+
+}//namespace mtca4u
+
+#endif	/* MTCA4U_MAPFILEPARSER_H */
 

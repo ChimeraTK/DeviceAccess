@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <sstream>
 
+namespace mtca4u{
+
 ptrmapFile mapFileParser::parse(const std::string &file_name)
 {
     std::ifstream           file;
@@ -60,4 +62,5 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
     return pmap;
 }
 
+}//namespace mtca4u
 

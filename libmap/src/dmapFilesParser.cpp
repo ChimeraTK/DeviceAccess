@@ -10,6 +10,8 @@
 #include <fstream>
 #include <stdexcept>
 
+namespace mtca4u{
+
 void dmapFilesParser::parse_dirs(const std::vector<std::string> &dirs) {
     std::vector<std::string>::const_iterator iter;
     cleanAll();
@@ -289,3 +291,5 @@ dmapFilesParser::iterator dmapFilesParser::end() {
 dmapFilesParser::const_iterator dmapFilesParser::end() const{
     return dmap_elems.end();
 }
+
+}//namespace mtca4u

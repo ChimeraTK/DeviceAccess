@@ -1,6 +1,8 @@
 #include "exlibmap.h"
 #include <iostream>
 
+namespace mtca4u{
+
 exLibMap::~exLibMap() throw()
 {
     
@@ -41,3 +43,5 @@ exDmapFileParser::exDmapFileParser(const std::string &_exMessage, unsigned int _
 {
     
 }
+
+}//namespace mtca4u

@@ -6,8 +6,8 @@
  *                      devices listed in DMAP files. Additionally, provides storage for
  *                      infomration taken from DMAP and MAP files.                 
  */
-#ifndef DMAPFILESPARSER_H
-#define	DMAPFILESPARSER_H
+#ifndef MTCA4U_DMAPFILESPARSER_H
+#define	MTCA4U_DMAPFILESPARSER_H
 
 #include "mapFile.h"
 #include "dmapFileParser.h"
@@ -15,6 +15,8 @@
 //#include "iterator_T.h"
 #include <string>
 #include <stdint.h>
+
+namespace mtca4u{
 
 /**
  * @brief  Provides method to parse DMAP files and MAP files associeted with 
@@ -193,5 +195,7 @@ private:
     void cleanAll();
 };
 
-#endif	/* DMAPFILESPARSER_H */
+}//namespace mtca4u
+
+#endif	/*  MTCA4U_DMAPFILESPARSER_H */
 

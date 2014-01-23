@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <stdexcept>
 
+namespace mtca4u{
+
 std::ostream& operator<<(std::ostream &os, const mapFile& me) {
     size_t size;
     os << "=======================================" << std::endl;
@@ -221,3 +223,4 @@ mapFile::mapElem::mapElem( std::string const & the_reg_name,
     reg_size(the_reg_size), reg_bar(the_reg_bar), line_nr(the_line_nr)
 {}
 
+}//namespace mtca4u

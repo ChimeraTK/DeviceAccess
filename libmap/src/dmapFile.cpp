@@ -2,8 +2,9 @@
 #include "predicates.h"
 #include "exlibmap.h"
 
-
 #include <algorithm>
+
+namespace mtca4u{
 
 dmapFile::dmapFile(const std::string &file_name)
 : dmap_file_name(file_name) {
@@ -139,3 +140,5 @@ dmapFile::iterator dmapFile::begin() {
 dmapFile::iterator dmapFile::end() {
     return dmap_file_elems.end();
 }
+
+}//namespace mtca4u

@@ -10,6 +10,7 @@
 #include "./include/libmap.h"
 
 using namespace std;
+using namespace mtca4u;
 
 void printInfo(const std::string& msg) {
     std::ostringstream os;

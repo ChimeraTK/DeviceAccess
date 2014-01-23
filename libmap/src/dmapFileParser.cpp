@@ -5,6 +5,8 @@
 #include <sstream>
 #include <fstream>
 
+namespace mtca4u{
+
 ptrdmapFile dmapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
@@ -47,3 +49,4 @@ ptrdmapFile dmapFileParser::parse(const std::string &file_name) {
     return dmap;
 }
 
+}//namespace mtca4u

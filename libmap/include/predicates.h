@@ -4,11 +4,13 @@
  *      @version        1.0
  *      @brief          Provides set of predicates for stl algorithms                
  */
-#ifndef PREDICATES_H
-#define	PREDICATES_H
+#ifndef MTCA4U_PREDICATES_H
+#define	MTCA4U_PREDICATES_H
 
 #include "mapFile.h"
 #include "dmapFile.h"
+
+namespace mtca4u{
 
 /**
  *      @brief  Provides predicate to search registers by name
@@ -128,5 +130,7 @@ public:
     }
 };
 
-#endif	/* PREDICATES_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_PREDICATES_H */
 

@@ -2,6 +2,8 @@
 #include <string>
 #include <iostream>
 
+namespace mtca4u{
+
 exBase::exBase(const std::string &_exMessage, unsigned int _exID)
    : exMessage(_exMessage), exID(_exID)
 {
@@ -20,3 +22,5 @@ unsigned int exBase::getID() const
 {
     return exID;
 }
+
+}//namespace mtca4u

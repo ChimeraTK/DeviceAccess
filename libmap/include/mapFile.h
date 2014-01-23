@@ -4,8 +4,8 @@
  *      @version        1.0
  *      @brief          Provides storage object for registers description taken from MAP file                
  */
-#ifndef MAP_FILE_H
-#define	MAP_FILE_H
+#ifndef MTCA4U_MAP_FILE_H
+#define	MTCA4U_MAP_FILE_H
 
 #include <stdint.h>
 #include <string>
@@ -13,6 +13,8 @@
 #include <list>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+
+namespace mtca4u{
 
 /**
  *      @brief  Provides container to store information about registers described in MAP file. 
@@ -250,5 +252,8 @@ typedef boost::shared_ptr<mapFile> ptrmapFile;
 /**
  * @example test-libmap.cpp 
  */
-#endif	/* MAP_FILE_H */
+
+}//namespace mtca4u
+
+#endif	/* MTCA4U_MAP_FILE_H */
 

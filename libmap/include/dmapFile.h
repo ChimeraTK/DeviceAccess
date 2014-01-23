@@ -4,8 +4,8 @@
  *      @version        1.0
  *      @brief          Provides storage object for devices descriptions                
  */
-#ifndef DMAP_FILE_H
-#define	DMAP_FILE_H
+#ifndef MTCA4U_DMAP_FILE_H
+#define	MTCA4U_DMAP_FILE_H
 
 #include <string>
 #include <stdint.h>
@@ -13,6 +13,8 @@
 #include <iostream>
 #include <list>
 #include <boost/shared_ptr.hpp>
+
+namespace mtca4u{
 
 /**
  *      @brief  Provides container to store information about devices described in DMAP file. 
@@ -203,4 +205,6 @@ private:
  */
 typedef boost::shared_ptr<dmapFile> ptrdmapFile;
 
-#endif	/* DMAP_FILE_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_DMAP_FILE_H */

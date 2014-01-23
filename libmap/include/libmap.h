@@ -1,6 +1,5 @@
-
-#ifndef LIBMAP_H
-#define	LIBMAP_H
+#ifndef MTCA4U_LIBMAP_H
+#define	MTCA4U_LIBMAP_H
 
 #include "exlibmap.h"
 #include "dmapFile.h"
@@ -11,5 +10,5 @@
 
 
 
-#endif	/* LIBMAP_H */
+#endif	/* MTCA4U_LIBMAP_H */
 

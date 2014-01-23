@@ -4,11 +4,14 @@
  *      @version        1.0
  *      @brief          Provides base class for exception handling                
  */
-#ifndef EXBASE_H
-#define	EXBASE_H
+#ifndef MTCA4U_EXBASE_H
+#define	MTCA4U_EXBASE_H
 
 #include <exception>
 #include <string>
+
+namespace mtca4u{
+
 /**
  *      @brief  Provides base class for exception handling . 
  *      
@@ -47,5 +50,7 @@ private:
 
 };
 
-#endif	/* EXBASE_H */
+}//namespace mtca4u
+
+#endif	/* MTCA4U_EXBASE_H */
 

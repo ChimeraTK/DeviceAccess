@@ -4,10 +4,12 @@
  *      @version        1.0
  *      @brief          Provides exception classess for libmap                
  */
-#ifndef EXLIBMAP_H
-#define	EXLIBMAP_H
+#ifndef MTCA4U_EXLIBMAP_H
+#define	MTCA4U_EXLIBMAP_H
 #include "exBase.h"
 #include <string>
+
+namespace mtca4u{
 
 /**
  *      @brief  Provides base class for all exceptions from libmap                
@@ -96,6 +98,7 @@ public:
     exDmapFileParser(const std::string &_exMessage, unsigned int _exID);
 };
 
+}//namespace mtca4u
 
-#endif	/* EXLIBMAP_H */
+#endif	/* MTCA4U_EXLIBMAP_H */
 
