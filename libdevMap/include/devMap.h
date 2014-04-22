@@ -61,9 +61,9 @@ public:
         public:
             regObject(const std::string &_regName, const mapFile::mapElem &_me, typename devMap::ptrdev _pdev);
             void readReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-            void writeReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+            void writeReg(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
             void readDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-            void writeDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+            void writeDMA(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     };
     
     devMap();   
@@ -75,16 +75,16 @@ public:
     virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) const;
     virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);    
     virtual void readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const;
-    virtual void writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);    
+    virtual void writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);    
     virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const;
-    virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);     
+    virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);     
     virtual void readDeviceInfo(std::string* devInfo) const;
     
     
     virtual void readReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-    virtual void writeReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+    virtual void writeReg(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     virtual void readDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-    virtual void writeDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+    virtual void writeDMA(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     
     
     regObject  getRegObject(const std::string &regName);
@@ -156,7 +156,7 @@ void devMap<T>::readReg(const std::string &regName, int32_t* data, size_t dataSi
 }
 
 template<typename T>
-void devMap<T>::writeReg(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::writeReg(const std::string &regName, int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -181,7 +181,7 @@ void devMap<T>::readDMA(const std::string &regName, int32_t* data, size_t dataSi
 }
 
 template<typename T>
-void devMap<T>::writeDMA(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::writeDMA(const std::string &regName, int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -318,21 +318,21 @@ void devMap<T>::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t
 }
 
 template<typename T>
-void devMap<T>::writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devMap<T>::writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
 {
     checkPointersAreNotNull();
     pdev->writeArea(regOffset, data, size, bar);
 }
     
 template<typename T>
-void devMap<T>::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar) const
+void devMap<T>::readDMA(uint32_t regOffset, int32_t * data, size_t size, uint8_t bar) const
 {
     checkPointersAreNotNull();
     pdev->readDMA(regOffset, data, size, bar);
 }
 
 template<typename T>
-void devMap<T>::writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devMap<T>::writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
 {
     checkPointersAreNotNull();
     pdev->writeDMA(regOffset, data, size, bar);
@@ -385,7 +385,7 @@ void devMap<T>::regObject::readReg(int32_t* data, size_t dataSize, uint32_t addR
 }
 
 template<typename T>
-void devMap<T>::regObject::writeReg(int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::regObject::writeReg(int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -406,7 +406,7 @@ void devMap<T>::regObject::readDMA(int32_t* data, size_t dataSize, uint32_t addR
 }
 
 template<typename T>
-void devMap<T>::regObject::writeDMA(int32_t* data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::regObject::writeDMA(int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    

@@ -108,7 +108,7 @@ namespace mtca4u{
     }
   }
 
-  void DummyDevice::writeArea(uint32_t regOffset, int32_t* data, size_t size,
+  void DummyDevice::writeArea(uint32_t regOffset, int32_t const * data, size_t size,
 			      uint8_t bar){
     checkSizeIsMultipleOfWordSize( size );
     unsigned int wordBaseIndex = regOffset/sizeof(int32_t);
@@ -126,7 +126,7 @@ namespace mtca4u{
     return readArea(regOffset, data, size, bar);
   }
 
-  void DummyDevice::writeDMA(uint32_t /* regOffset */, int32_t* /* data */, size_t /* size */,
+  void DummyDevice::writeDMA(uint32_t /* regOffset */, int32_t const * /* data */, size_t /* size */,
 			     uint8_t /* bar */){
     throw NotImplementedException("DummyDevice::writeDMA is not implemented yet.");
   }

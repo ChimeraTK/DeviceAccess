@@ -112,7 +112,7 @@ void devFake::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t b
     }    
 }
 
-void devFake::writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devFake::writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
 {       
     if (opened == false) {
         throw exDevFake("Device closed", exDevFake::EX_DEVICE_CLOSED);
@@ -130,7 +130,7 @@ void devFake::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t ba
     readArea(regOffset, data, size, bar);
 }
 
-void devFake::writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devFake::writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
 {
     writeArea(regOffset, data, size, bar);    
 }

@@ -28,10 +28,10 @@ public:
     virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
     
     virtual void readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
-    virtual void writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+    virtual void writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);
     
     virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
-    virtual void writeDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
+    virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);
   
     virtual void readDeviceInfo(std::string* devInfo);
 

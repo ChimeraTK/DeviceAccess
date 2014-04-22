@@ -132,7 +132,7 @@ void devPCIE::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t b
     }     
 }
 
-void devPCIE::writeArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void devPCIE::writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
 {       
     if (opened == false) {
         throw exDevPCIE("Device closed", exDevPCIE::EX_DEVICE_CLOSED);
@@ -220,7 +220,7 @@ void devPCIE::readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size, ui
 
 
 
-void devPCIE::writeDMA(uint32_t /*regOffset*/, int32_t* /*data*/, size_t /*size*/, uint8_t /*bar*/)
+void devPCIE::writeDMA(uint32_t /*regOffset*/, int32_t const * /*data*/, size_t /*size*/, uint8_t /*bar*/)
 {
     throw exDevPCIE("Operation not supported yet", exDevPCIE::EX_DMA_WRITE_ERROR);
 }
