@@ -65,10 +65,8 @@ public:
   }
 };
 
-// Although the compiler complains that argc and argv are not used they 
-// cannot be commented out. This somehow changes the signature and linking fails.
 test_suite*
-init_unit_test_suite( int argc, char* argv[] )
+init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
   framework::master_test_suite().p_name.value = "ExampleClass test suite";
   return new ExampleClassTestSuite;

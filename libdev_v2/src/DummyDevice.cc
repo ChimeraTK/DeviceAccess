@@ -79,6 +79,8 @@ namespace mtca4u{
 
     _registerMapping.reset();// reset the shared pointer
     _barContents.clear();
+    _readOnlyAddresses.clear();
+    _writeCallbackFunctions.clear();
     opened=false;
   }
 
@@ -152,7 +154,7 @@ namespace mtca4u{
   void DummyDevice::setReadOnly(uint32_t offset, uint8_t bar, size_t sizeInWords){
     for (size_t i = 0; i < sizeInWords; ++i){
       uint64_t virtualAddress = calculateVirtualAddress( offset + i*sizeof(int32_t), bar );
-      _writeOnlyAddresses.insert(virtualAddress);
+      _readOnlyAddresses.insert(virtualAddress);
     }
   }
 
@@ -162,7 +164,7 @@ namespace mtca4u{
 
   bool  DummyDevice::isReadOnly( uint32_t offset, uint8_t bar ) const{
     uint64_t virtualAddress = calculateVirtualAddress( offset, bar );
-    return (  _writeOnlyAddresses.find(virtualAddress) != _writeOnlyAddresses.end() );
+    return (  _readOnlyAddresses.find(virtualAddress) != _readOnlyAddresses.end() );
   }
   
   void  DummyDevice::setWriteCallbackFunction( AddressRange addressRange,

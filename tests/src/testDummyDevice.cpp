@@ -48,6 +48,8 @@ public:
   void testWriteCallbackFunctions();
   void testIsWriteRangeOverlap();
   void testWriteRegisterWithoutCallback();
+  /// Test that all registers, read-only flags and callback functions are removed
+  void testFinalClosing();
 
 private:
   TestableDummyDevice _dummyDevice;
@@ -98,11 +100,12 @@ class  DummyDeviceTestSuite : public test_suite{
     add( writeCallbackFunctionsTestCase );
     add( writeRegisterWithoutCallbackTestCase );	 
     add( BOOST_CLASS_TEST_CASE( &DummyDeviceTest::testIsWriteRangeOverlap, dummyDeviceTest ) );
+    add( BOOST_CLASS_TEST_CASE( &DummyDeviceTest::testFinalClosing, dummyDeviceTest ) );
   }
 };
 
 test_suite*
-init_unit_test_suite( int argc, char* argv[] )
+init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
    framework::master_test_suite().p_name.value = "DummyDevice test suite";
    framework::master_test_suite().add(new DummyDeviceTestSuite);
@@ -455,4 +458,18 @@ void DummyDeviceTest::testIsWriteRangeOverlap(){
 		    DummyDevice::AddressRange( 0, 12, 0 ),
 		    DummyDevice::AddressRange( 0, 12, 1 ) );
   BOOST_CHECK( overlap == false );
+}
+
+void DummyDeviceTest::testFinalClosing(){
+  // all features have to be enabled before closing
+  BOOST_CHECK( _dummyDevice._barContents.size() != 0 );
+  BOOST_CHECK( _dummyDevice._readOnlyAddresses.size() != 0 );
+  BOOST_CHECK( _dummyDevice._writeCallbackFunctions.size() != 0 );
+  
+  _dummyDevice.closeDev();
+
+  // all features lists have to be empty now
+  BOOST_CHECK( _dummyDevice._barContents.size() == 0 );
+  BOOST_CHECK( _dummyDevice._readOnlyAddresses.size() == 0 );
+  BOOST_CHECK( _dummyDevice._writeCallbackFunctions.size() == 0 );
 }

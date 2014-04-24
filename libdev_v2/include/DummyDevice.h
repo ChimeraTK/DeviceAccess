@@ -49,10 +49,17 @@ namespace mtca4u{
     DummyDevice();
     virtual ~DummyDevice();
              
-    /// The file name has to be a mapping file, not a device file.
-    /// Permissons and config are ignored.
+    /** The file name has to be a mapping file, not a device file.
+     *  Permissons and config are ignored.
+     */
     virtual void openDev(const std::string &mappingFileName,
 			 int perm = O_RDWR, devConfigBase* pConfig = NULL);
+
+    /** This closes the device, clears all internal regsiters, read-only settings and
+     *  callback functions. As the device could be opened with another mapping file later,
+     *  these will most probably be invalid in this case. This is why the read-only  settings
+     *  and callback functions have to be set again when reopening the file.
+     */
     virtual void closeDev();
     
     virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
@@ -89,7 +96,7 @@ namespace mtca4u{
     };
 
     std::map< uint8_t, std::vector<int32_t> > _barContents;
-    std::set< uint64_t > _writeOnlyAddresses;
+    std::set< uint64_t > _readOnlyAddresses;
     std::multimap< AddressRange, boost::function<void(void)> > _writeCallbackFunctions;
     ptrmapFile _registerMapping;
 
