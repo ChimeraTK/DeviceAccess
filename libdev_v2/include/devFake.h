@@ -2,6 +2,7 @@
 #define	MTCA4U_LIBDEV_FAKE_H
 
 #include "devBase.h"
+#include "devBaseImpl.h"
 #include "devConfigBase.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -11,7 +12,7 @@
 
 namespace mtca4u{
 
-class devFake : public devBase
+  class devFake : public devBaseImpl
 {
 private:
     FILE*                 pcieMemory;

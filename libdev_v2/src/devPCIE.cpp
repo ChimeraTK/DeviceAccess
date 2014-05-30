@@ -113,7 +113,7 @@ void devPCIE::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
     l_RW.size_rw   = 0;
 
     if (write (_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)){     
-        throw exDevPCIE(createErrorStringWithErrnoText("Cannot write data from device: "),
+        throw exDevPCIE(createErrorStringWithErrnoText("Cannot write data to device: "),
 			exDevPCIE::EX_WRITE_ERROR);
     }       
 }

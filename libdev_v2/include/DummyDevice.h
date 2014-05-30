@@ -9,6 +9,7 @@
 #include <boost/function.hpp>
 
 #include "devBase.h"
+#include "devBaseImpl.h"
 #include "exBase.h"
 #include "mapFile.h"
 
@@ -42,7 +43,7 @@ namespace mtca4u{
    *  case a write operation will just be ignored and no callback
    *  function is executed.
    */
-  class DummyDevice : public devBase
+  class DummyDevice : public devBaseImpl
   {
   public:
 

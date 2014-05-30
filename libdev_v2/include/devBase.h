@@ -1,5 +1,5 @@
-#ifndef _MTCA4U_LIBDEV_H__
-#define _MTCA4U_LIBDEV_H__
+#ifndef _MTCA4U_DEVBASE_H__
+#define _MTCA4U_DEVBASE_H__
 
 #include "devConfigBase.h"
 #include <string>
@@ -8,14 +8,11 @@
 
 namespace mtca4u{
 
+/** The base class of an IO device. 
+ */
 class devBase
 {   
-protected:
-    bool         opened;
 public:
-    devBase();
-    virtual ~devBase();
-             
     virtual void openDev(const std::string &devName, int perm = O_RDWR, devConfigBase* pConfig = NULL) = 0;
     virtual void closeDev() = 0;
     
@@ -34,7 +31,7 @@ public:
      *  As the variable already exists in the base class we implement this function here to avoid
      *  having to reimplement the same, trivial return function over and over again.
      */
-     virtual bool isOpen(){ return opened; }
+    virtual bool isOpen()=0;
 
      /** FIXME: This function is a hack to be able to create an instance of devMap<devBase>.
       *  It should (if at all) only exist in the implementations.
@@ -46,4 +43,4 @@ public:
 
 }//namespace mtca4u
 
-#endif /*_MTCA4U_LIBDEV_H__*/
+#endif /*_MTCA4U_DEVBASE_H__*/

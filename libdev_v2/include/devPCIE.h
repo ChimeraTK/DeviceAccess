@@ -2,12 +2,13 @@
 #define	MTCA4U_LIBDEV_STRUCT_H
 
 #include "devBase.h"
+#include "devBaseImpl.h"
 #include <stdint.h>
 #include <stdlib.h>
 
 namespace mtca4u{
 
-class devPCIE : public devBase
+  class devPCIE : public devBaseImpl
 {
 private:
     std::string _deviceName;
