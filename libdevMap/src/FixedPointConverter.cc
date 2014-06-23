@@ -62,12 +62,12 @@ namespace mtca4u{
     if (_isSigned){
       // for signed we have to fill the leading bits with 1 in case
       // the value is negative, so the cast to double gives correct results
-      if (fixedPointValue & _signBitMask){
+      if (fixedPointValue & _signBitMask){ //negative branch
         unscaledValue = static_cast<double>( 
 	                  static_cast<int32_t>(fixedPointValue | _unusedBitsMask));
-      }else{
+      }else{ //positive branch
 	// do not fill in leading 1s for positive values,
-	// fist cast to unsigned32 so the leading bit is interpreted correctly when 
+	// fist cast to signed32 so the leading bit is interpreted correctly when 
 	// casting to double
 	unscaledValue = static_cast<double>( static_cast<int32_t>(fixedPointValue) );
       }

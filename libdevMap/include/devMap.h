@@ -60,10 +60,23 @@ public:
             static void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
         public:
             regObject(const std::string &_regName, const mapFile::mapElem &_me, typename devMap::ptrdev _pdev);
+	    /** Read one ore more words from the device. It calls devBase::readArea, not devBase::readReg.
+	     *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
+	     *  word as in devBase::readArea! Make sure your buffer is large enough!
+	     */
             void readReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+	    /** Write one ore more words to the device. It calls devBase::readArea, not devBase::readReg.
+	     *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
+	     *  word as in devBase::readArea! Make sure your buffer is large enough!
+	     */
             void writeReg(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
             void readDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
             void writeDMA(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+
+	    /** Returns the register information aka mapElem.
+	     *  This function was named getRegisterInfo because mapElem will be renamed.
+	     */
+	    mapFile::mapElem const & getRegisterInfo();
     };
     
     devMap();   
@@ -81,7 +94,15 @@ public:
     virtual void readDeviceInfo(std::string* devInfo) const;
     
     
+    /** Read one ore more words from the device. It calls devBase::readArea, not devBase::readReg.
+     *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
+     *  word as in devBase::readArea! Make sure your buffer is large enough!
+     */
     virtual void readReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+    /** Read one ore more words from the device. It calls devBase::readArea, not devBase::readReg.
+     *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
+     *  word as in devBase::readArea! Make sure your buffer is large enough!
+     */
     virtual void writeReg(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     virtual void readDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
     virtual void writeDMA(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
@@ -416,6 +437,11 @@ void devMap<T>::regObject::writeDMA(int32_t const * data, size_t dataSize, uint3
     }
     pdev->writeDMA(retRegOff, data, retDataSize, me.reg_bar);
 }
+
+template<typename T>
+  mapFile::mapElem const & devMap<T>::regObject::getRegisterInfo(){
+  return me; // me is the mapElement
+ }
 
 template<typename T>
 void devMap<T>::checkPointersAreNotNull() const {

@@ -18,6 +18,8 @@ class MtcaMappedDeviceTest
   void testOpenClose();
   static void testThrowIfNeverOpened();
 
+  void testGetRegObjectGetRegisterInfo();
+
  private:
   MtcaMappedDevice _mappedDevice;
 };
@@ -31,6 +33,7 @@ public:
 
 	// add member functions using BOOST_CLASS_TEST_CASE
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testOpenClose, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testGetRegObjectGetRegisterInfo, mtcaMappedDeviceTest ) );
 	
 	add( BOOST_TEST_CASE( &MtcaMappedDeviceTest::testThrowIfNeverOpened ) );
 	//        test_case* writeTestCase = BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testWrite, mtcaMappedDeviceTest );
@@ -100,3 +103,14 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   BOOST_CHECK_THROW( MtcaMappedDevice::regObject  myRegObject = virginMappedDevice.getRegObject("irrelevant"),  exdevMap );
 }
 
+void MtcaMappedDeviceTest::testGetRegObjectGetRegisterInfo(){
+  _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME );
+  // Sorry, this test is hard coded against the mtcadummy implementation.
+  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
+  mapFile::mapElem registerInfo = registerAccessor.getRegisterInfo();
+  BOOST_CHECK( registerInfo.reg_address == 0x0 );
+  BOOST_CHECK( registerInfo.reg_elem_nr == 0x400);
+  BOOST_CHECK( registerInfo.reg_size = 0x1000 );
+  BOOST_CHECK( registerInfo.reg_bar == 2 );
+  BOOST_CHECK( registerInfo.reg_name == "AREA_DMA");
+}
