@@ -2,6 +2,7 @@
 using namespace boost::unit_test_framework;
 
 #include "devMap.h"
+#include <cmath>
 
 using namespace mtca4u;
 
@@ -18,7 +19,8 @@ class MtcaMappedDeviceTest
   void testOpenClose();
   static void testThrowIfNeverOpened();
 
-  void testGetRegObjectGetRegisterInfo();
+  void testRegObject_getRegisterInfo();
+  void testRegObject_read();
 
  private:
   MtcaMappedDevice _mappedDevice;
@@ -33,7 +35,8 @@ public:
 
 	// add member functions using BOOST_CLASS_TEST_CASE
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testOpenClose, mtcaMappedDeviceTest ) );
-	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testGetRegObjectGetRegisterInfo, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_getRegisterInfo, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_read, mtcaMappedDeviceTest ) );
 	
 	add( BOOST_TEST_CASE( &MtcaMappedDeviceTest::testThrowIfNeverOpened ) );
 	//        test_case* writeTestCase = BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testWrite, mtcaMappedDeviceTest );
@@ -103,7 +106,7 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   BOOST_CHECK_THROW( MtcaMappedDevice::regObject  myRegObject = virginMappedDevice.getRegObject("irrelevant"),  exdevMap );
 }
 
-void MtcaMappedDeviceTest::testGetRegObjectGetRegisterInfo(){
+void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
   _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME );
   // Sorry, this test is hard coded against the mtcadummy implementation.
   MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
@@ -113,4 +116,81 @@ void MtcaMappedDeviceTest::testGetRegObjectGetRegisterInfo(){
   BOOST_CHECK( registerInfo.reg_size = 0x1000 );
   BOOST_CHECK( registerInfo.reg_bar == 2 );
   BOOST_CHECK( registerInfo.reg_name == "AREA_DMA");
+}
+
+void MtcaMappedDeviceTest::testRegObject_read(){
+  // trigger the "DAQ" sequence which writes i*i into the first 25 registers, so we know what we have
+  int32_t tempWord=0;
+  _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
+  tempWord=1;
+  _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
+
+  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
+
+  // there are 25 elements with value i*i. ignore the first 2
+  static const size_t N_ELEMENTS = 23;
+  static const size_t OFFSET_ELEMENTS = 2;
+  static const size_t OFFSET_BYTES = OFFSET_ELEMENTS * sizeof(int32_t);
+  
+  std::vector<int32_t> int32Buffer(N_ELEMENTS);
+  registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  // pre-check: make sure we know what we get
+  for (size_t i=0; i < N_ELEMENTS; ++i){
+    BOOST_CHECK(int32Buffer[i] == static_cast<int>((i+OFFSET_ELEMENTS) * (i+OFFSET_ELEMENTS)) );
+  }
+  
+  // change the fractional parameters and test the read
+  // We go for 1 fractional bit, 10 bits, signed
+  registerAccessor.setFixedPointConversion(10, 1, true);
+
+  registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<uint32_t> uint32Buffer(N_ELEMENTS);
+  registerAccessor.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<int16_t> int16Buffer(N_ELEMENTS);
+  registerAccessor.read(&int16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<uint16_t> uint16Buffer(N_ELEMENTS);
+  registerAccessor.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<int8_t> int8Buffer(N_ELEMENTS);
+  registerAccessor.read(&int8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<uint8_t> uint8Buffer(N_ELEMENTS);
+  registerAccessor.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<float> floatBuffer(N_ELEMENTS);
+  registerAccessor.read(&floatBuffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+  std::vector<double> doubleBuffer(N_ELEMENTS);
+  registerAccessor.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_BYTES );
+
+
+// now test different template types:
+for (size_t i=0; i < N_ELEMENTS; ++i){
+  int rawValue = (i+OFFSET_ELEMENTS) * (i+OFFSET_ELEMENTS);
+  double value;
+  if ( rawValue & 0x200 ){ // the sign bit for a 10 bit integer
+    value = static_cast<double>(static_cast<int>(rawValue|0xFFFFFE00))/2.; //negative, 1 fractional bit
+  }else{
+    value = static_cast<double>(0x1FF&rawValue)/2.; // positive, 1 fractional bit
+  }
+
+  std::stringstream errorMessage;
+  errorMessage << "Index " << i <<", expected " << static_cast<int>(round(value)) << "("
+               << value <<") and read " << int32Buffer[i]; 
+  BOOST_CHECK_MESSAGE(int32Buffer[i] == static_cast<int>(round(value)), errorMessage.str() );
+  BOOST_CHECK(uint32Buffer[i] == static_cast<uint32_t>(round(value)) );
+  BOOST_CHECK(int16Buffer[i] == static_cast<int16_t>(round(value)) );
+  BOOST_CHECK(uint16Buffer[i] == static_cast<uint16_t>(round(value)) );
+  BOOST_CHECK(int8Buffer[i] == static_cast<int8_t>(round(value)) );
+  BOOST_CHECK(uint8Buffer[i] == static_cast<uint8_t>(round(value)) );
+
+  BOOST_CHECK(floatBuffer[i] == value ); 
+  BOOST_CHECK(doubleBuffer[i] == value ); 
+
+ }
+
 }

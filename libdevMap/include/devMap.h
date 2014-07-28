@@ -4,7 +4,6 @@
 /**
  *      @file           devMap.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
  *      @brief          Template that connect functionality of libdev and libmap libraries. 
  *                      This file support only map file parsing. 
  *                  
@@ -15,7 +14,8 @@
 #include "libmap.h"
 #include "libdev.h"
 #include "exdevMap.h"
- 
+#include "FixedPointConverter.h"
+
 namespace mtca4u{
 
 /**
@@ -56,6 +56,8 @@ public:
             std::string                 regName;
             mapFile::mapElem            me;
             typename devMap::ptrdev     pdev;
+	    FixedPointConverter _fixedPointConverter;
+
         private:
             static void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
         public:
@@ -73,10 +75,21 @@ public:
             void readDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
             void writeDMA(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
+	    template <typename ConvertedDataType>
+	      void read(ConvertedDataType * convertedData, size_t nWords = 0, uint32_t addRegOffset = 0) const;
+
 	    /** Returns the register information aka mapElem.
 	     *  This function was named getRegisterInfo because mapElem will be renamed.
 	     */
 	    mapFile::mapElem const & getRegisterInfo();
+
+	    /** This function allows to change the parameters of the fixed point converter.
+	     *  It is an intermediate solution and will be removed from the interface
+	     *  once the creating mechanism which reads the relevant information from
+	     *  the xml mapping has been implemented.
+	     */
+	    void setFixedPointConversion(unsigned int nBits = 32, int fractionalBits = 0,
+					 bool isSigned=true);
     };
     
     devMap();   
@@ -449,6 +462,36 @@ void devMap<T>::checkPointersAreNotNull() const {
     throw exdevMap("devMap has not been opened correctly", exdevMap::EX_NOT_OPENED);
   }  
 }
+
+// Read and write are intentonally not implemented with a generalised function.
+// Only explicit implementations are available in the .cc file for certain types.
+// The reason is that rounding has to be done differently for integer and floating point types. 
+
+//template<typename T> template<>
+//void devMap<T>::regObject::read(int32_t * convertedData, size_t nWords,
+//				uint32_t addRegOffset) const {
+//  std::vector<int32_t> rawDataBuffer(nWords);
+//  readReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), addRegOffset);
+//  
+//  for(size_t i=0; i < nWords; ++i){
+//    // The fixed point converter delivers a double, which is able to hold 
+//    // all integers up to 32 bits without precision loss.
+//    // This is casted to the templated type.
+//    convertedData[i] = static_cast<int32_t>(round(_fixedPointConverter.toDouble(rawDataBuffer[i])));
+//  }
+//}
+//
+//template<typename T> template<typename ConvertedDataType>
+//void devMap<T>::regObject::read(ConvertedDataType * convertedData, size_t nWords,
+//				uint32_t addRegOffset) const {
+//}
+
+template<typename T> 
+void devMap<T>::regObject::setFixedPointConversion(unsigned int nBits, int fractionalBits,
+							bool isSigned){
+  _fixedPointConverter.setParameters(nBits, fractionalBits, isSigned);
+}
+
 
 }//namespace mtca4u
 
