@@ -29,13 +29,13 @@ namespace mtca4u{
  *
  *      The device can open and close a device for you. If you let the devMap open
  *      the device you will not be able to get a handle to this device directly, you
- *      can only close it with the devMap. Should you create reggObjects, which contain
+ *      can only close it with the devMap. Should you create RegisterAccessor objects, which contain
  *      shared pointers to this device, the device will stay opened and functional even
- *      if the devMap object which created the regObject goes out of scope. In this case
+ *      if the devMap object which created the RegisterAccessor goes out of scope. In this case
  *      you cannot close the device. It will finally be closed when the the last
- *      regObject pointing to it goes out if scope.
+ *      RegisterAccessor pointing to it goes out if scope.
  *      The same holds if you open another device with the same devMap: You lose direct access
- *      to the previous device, which stays open as long as there are regObjects pointing to it.
+ *      to the previous device, which stays open as long as there are RegisterAccessors pointing to it.
  *      
  */
 template<typename T>
@@ -51,7 +51,8 @@ private:
     
 public:            
     
-    class regObject
+    
+    class RegisterAccessor
     {
             std::string                 regName;
             mapFile::mapElem            me;
@@ -61,22 +62,49 @@ public:
         private:
             static void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
         public:
-            regObject(const std::string &_regName, const mapFile::mapElem &_me, typename devMap::ptrdev _pdev);
+            RegisterAccessor(const std::string &_regName,
+			     const mapFile::mapElem &_me, 
+			     typename devMap::ptrdev _pdev);
+
 	    /** Read one ore more words from the device. It calls devBase::readArea, not devBase::readReg.
 	     *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
 	     *  word as in devBase::readArea! Make sure your buffer is large enough!
 	     */
             void readReg(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+
 	    /** Write one ore more words to the device. It calls devBase::readArea, not devBase::readReg.
 	     *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
 	     *  word as in devBase::readArea! Make sure your buffer is large enough!
 	     */
             void writeReg(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+
             void readDMA(int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+
             void writeDMA(int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
+
+	    /** Read (a block of) values with automatic data conversion. The first parameter is a pointer to
+	     *  to the output buffer. It is templated to work with basic data types. Implementations exist for
+	     *  \li int32_t
+	     *  \li uint32_t
+	     *  \li int16_t
+	     *  \li uint16_t
+	     *  \li int8_t
+	     *  \li uint8_t
+	     *  \li float
+	     *  \li double
+	     * 
+	     *  Note that the input is always a 32 bit word, which is being interpreted to be one
+	     *  output word. It is not possible to do conversion e.g. from one 32 bit word to two 16 bit values.
+	     */
 	    template <typename ConvertedDataType>
-	      void read(ConvertedDataType * convertedData, size_t nWords = 0, uint32_t addRegOffset = 0) const;
+	      void read(ConvertedDataType * convertedData, size_t nWords = 1, uint32_t offsetInBytes = 0) const;
+
+	    /** Write (a block of) 
+	    template <typename ConvertedDataType>
+	      void write(ConvertedDataType const * convertedData, 
+			 size_t nWords = 1, uint32_t offsetInBytes = 0) const;
+	    */
 
 	    /** Returns the register information aka mapElem.
 	     *  This function was named getRegisterInfo because mapElem will be renamed.
@@ -92,6 +120,12 @@ public:
 					 bool isSigned=true);
     };
     
+    /** A typedef for backward compatibility.
+     *  @deprecated Don't use this in new code. It will be removed in a future release.
+     *  Use RegisterAccessor instead.
+     */
+    typedef RegisterAccessor regObject;
+
     devMap();   
     virtual void openDev(const std::string &_devFileName, const std::string& _mapFileName, int _perm = O_RDWR, devConfigBase* _pConfig = NULL);
     virtual void openDev(std::pair<std::string, std::string> const  & _deviceFileAndMapFileName,
@@ -121,7 +155,14 @@ public:
     virtual void writeDMA(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     
     
-    regObject  getRegObject(const std::string &regName);
+    /** Get a regObject from the register name. 
+     *  @deprecated Use getRegisterAccessor instead.
+     */
+    regObject getRegObject(const std::string &regName);
+    
+     /** Get a RegisterAccessor object from the register name. 
+     */
+    RegisterAccessor  getRegisterAccessor(const std::string &registerName);
     
     virtual ~devMap();
 
@@ -139,18 +180,24 @@ devMap<T>::devMap()
 
 template<typename T>
 devMap<T>::~devMap() {
-  //FIXME: do we want to close here? It will probably leave not working regObjects
+  //FIXME: do we want to close here? It will probably leave not working RegisterAccessors
   // if(pdev) pdev->closeDev();
 }
 
 template<typename T>
-typename devMap<T>::regObject  devMap<T>::getRegObject(const std::string &regName)
+typename devMap<T>::RegisterAccessor  devMap<T>::getRegObject(const std::string &regName)
+{
+  return getRegisterAccessor(regName);
+}
+
+template<typename T>
+typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName)
 {
     checkPointersAreNotNull();
 
     mapFile::mapElem    me;
     mapFile->getRegisterInfo(regName, me);
-    return devMap::regObject(regName, me, pdev);
+    return devMap::RegisterAccessor(regName, me, pdev);
 }
 
 template<typename T>
@@ -381,7 +428,7 @@ void devMap<T>::readDeviceInfo(std::string* devInfo) const
 
 
 template<typename T>
-devMap<T>::regObject::regObject(const std::string &_regName, const mapFile::mapElem &_me, ptrdev _pdev)
+devMap<T>::RegisterAccessor::RegisterAccessor(const std::string &_regName, const mapFile::mapElem &_me, ptrdev _pdev)
 : regName(_regName), me(_me), pdev(_pdev)
 {
         
@@ -389,7 +436,7 @@ devMap<T>::regObject::regObject(const std::string &_regName, const mapFile::mapE
 }
 
 template<typename T>
-void devMap<T>::regObject::checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff)
+void devMap<T>::RegisterAccessor::checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff)
 {    
     if (addRegOffset % 4){
         throw exdevMap("Register offset must be dividable by 4", exdevMap::EX_WRONG_PARAMETER);
@@ -410,7 +457,7 @@ void devMap<T>::regObject::checkRegister(const mapFile::mapElem &me, size_t data
 
 
 template<typename T>
-void devMap<T>::regObject::readReg(int32_t* data, size_t dataSize, uint32_t addRegOffset) const
+void devMap<T>::RegisterAccessor::readReg(int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -419,7 +466,7 @@ void devMap<T>::regObject::readReg(int32_t* data, size_t dataSize, uint32_t addR
 }
 
 template<typename T>
-void devMap<T>::regObject::writeReg(int32_t const * data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::RegisterAccessor::writeReg(int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -428,7 +475,7 @@ void devMap<T>::regObject::writeReg(int32_t const * data, size_t dataSize, uint3
 }
 
 template<typename T>
-void devMap<T>::regObject::readDMA(int32_t* data, size_t dataSize, uint32_t addRegOffset) const
+void devMap<T>::RegisterAccessor::readDMA(int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -440,7 +487,7 @@ void devMap<T>::regObject::readDMA(int32_t* data, size_t dataSize, uint32_t addR
 }
 
 template<typename T>
-void devMap<T>::regObject::writeDMA(int32_t const * data, size_t dataSize, uint32_t addRegOffset)
+void devMap<T>::RegisterAccessor::writeDMA(int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
     uint32_t retDataSize;
     uint32_t retRegOff;    
@@ -452,7 +499,7 @@ void devMap<T>::regObject::writeDMA(int32_t const * data, size_t dataSize, uint3
 }
 
 template<typename T>
-  mapFile::mapElem const & devMap<T>::regObject::getRegisterInfo(){
+  mapFile::mapElem const & devMap<T>::RegisterAccessor::getRegisterInfo(){
   return me; // me is the mapElement
  }
 
@@ -468,7 +515,7 @@ void devMap<T>::checkPointersAreNotNull() const {
 // The reason is that rounding has to be done differently for integer and floating point types. 
 
 //template<typename T> template<>
-//void devMap<T>::regObject::read(int32_t * convertedData, size_t nWords,
+//void devMap<T>::RegisterAccessor::read(int32_t * convertedData, size_t nWords,
 //				uint32_t addRegOffset) const {
 //  std::vector<int32_t> rawDataBuffer(nWords);
 //  readReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), addRegOffset);
@@ -482,12 +529,12 @@ void devMap<T>::checkPointersAreNotNull() const {
 //}
 //
 //template<typename T> template<typename ConvertedDataType>
-//void devMap<T>::regObject::read(ConvertedDataType * convertedData, size_t nWords,
+//void devMap<T>::RegisterAccessor::read(ConvertedDataType * convertedData, size_t nWords,
 //				uint32_t addRegOffset) const {
 //}
 
 template<typename T> 
-void devMap<T>::regObject::setFixedPointConversion(unsigned int nBits, int fractionalBits,
+void devMap<T>::RegisterAccessor::setFixedPointConversion(unsigned int nBits, int fractionalBits,
 							bool isSigned){
   _fixedPointConverter.setParameters(nBits, fractionalBits, isSigned);
 }

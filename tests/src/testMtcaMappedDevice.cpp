@@ -20,7 +20,15 @@ class MtcaMappedDeviceTest
   static void testThrowIfNeverOpened();
 
   void testRegObject_getRegisterInfo();
-  void testRegObject_read();
+  /** Read reading more than one word and working with offset. Check with all different data types.
+   */
+  void testRegObject_readBlock();
+
+  /** Check that the default arguments work, which means reading of one word, and check the corner case 
+   *  nWord==0;
+   *  This is only checked for int and float, not all types.
+   */
+  void testRegObject_readSimple();
 
  private:
   MtcaMappedDevice _mappedDevice;
@@ -36,7 +44,8 @@ public:
 	// add member functions using BOOST_CLASS_TEST_CASE
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testOpenClose, mtcaMappedDeviceTest ) );
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_getRegisterInfo, mtcaMappedDeviceTest ) );
-	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_read, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_readBlock, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_readSimple, mtcaMappedDeviceTest ) );
 	
 	add( BOOST_TEST_CASE( &MtcaMappedDeviceTest::testThrowIfNeverOpened ) );
 	//        test_case* writeTestCase = BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testWrite, mtcaMappedDeviceTest );
@@ -118,7 +127,7 @@ void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
   BOOST_CHECK( registerInfo.reg_name == "AREA_DMA");
 }
 
-void MtcaMappedDeviceTest::testRegObject_read(){
+void MtcaMappedDeviceTest::testRegObject_readBlock(){
   // trigger the "DAQ" sequence which writes i*i into the first 25 registers, so we know what we have
   int32_t tempWord=0;
   _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
@@ -168,29 +177,54 @@ void MtcaMappedDeviceTest::testRegObject_read(){
   registerAccessor.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_BYTES );
 
 
-// now test different template types:
-for (size_t i=0; i < N_ELEMENTS; ++i){
-  int rawValue = (i+OFFSET_ELEMENTS) * (i+OFFSET_ELEMENTS);
-  double value;
-  if ( rawValue & 0x200 ){ // the sign bit for a 10 bit integer
-    value = static_cast<double>(static_cast<int>(rawValue|0xFFFFFE00))/2.; //negative, 1 fractional bit
-  }else{
-    value = static_cast<double>(0x1FF&rawValue)/2.; // positive, 1 fractional bit
+  // now test different template types:
+  for (size_t i=0; i < N_ELEMENTS; ++i){
+    int rawValue = (i+OFFSET_ELEMENTS) * (i+OFFSET_ELEMENTS);
+    double value;
+    if ( rawValue & 0x200 ){ // the sign bit for a 10 bit integer
+      value = static_cast<double>(static_cast<int>(rawValue|0xFFFFFE00))/2.; //negative, 1 fractional bit
+    }else{
+      value = static_cast<double>(0x1FF&rawValue)/2.; // positive, 1 fractional bit
+    }
+    
+    std::stringstream errorMessage;
+    errorMessage << "Index " << i <<", expected " << static_cast<int>(round(value)) << "("
+    << value <<") and read " << int32Buffer[i]; 
+    BOOST_CHECK_MESSAGE(int32Buffer[i] == static_cast<int>(round(value)), errorMessage.str() );
+    BOOST_CHECK(uint32Buffer[i] == static_cast<uint32_t>(round(value)) );
+    BOOST_CHECK(int16Buffer[i] == static_cast<int16_t>(round(value)) );
+    BOOST_CHECK(uint16Buffer[i] == static_cast<uint16_t>(round(value)) );
+    BOOST_CHECK(int8Buffer[i] == static_cast<int8_t>(round(value)) );
+    BOOST_CHECK(uint8Buffer[i] == static_cast<uint8_t>(round(value)) );
+
+    BOOST_CHECK(floatBuffer[i] == value ); 
+    BOOST_CHECK(doubleBuffer[i] == value ); 
   }
+}
 
-  std::stringstream errorMessage;
-  errorMessage << "Index " << i <<", expected " << static_cast<int>(round(value)) << "("
-               << value <<") and read " << int32Buffer[i]; 
-  BOOST_CHECK_MESSAGE(int32Buffer[i] == static_cast<int>(round(value)), errorMessage.str() );
-  BOOST_CHECK(uint32Buffer[i] == static_cast<uint32_t>(round(value)) );
-  BOOST_CHECK(int16Buffer[i] == static_cast<int16_t>(round(value)) );
-  BOOST_CHECK(uint16Buffer[i] == static_cast<uint16_t>(round(value)) );
-  BOOST_CHECK(int8Buffer[i] == static_cast<int8_t>(round(value)) );
-  BOOST_CHECK(uint8Buffer[i] == static_cast<uint8_t>(round(value)) );
+void MtcaMappedDeviceTest::testRegObject_readSimple(){
 
-  BOOST_CHECK(floatBuffer[i] == value ); 
-  BOOST_CHECK(doubleBuffer[i] == value ); 
+  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
+  static const int inputValue = 0xFA5;
+  registerAccessor.writeReg(&inputValue);
 
- }
+  // change the fractional parameters and test the read
+  // We go for 3 fractional bits, 12 bits, signed, just to be different from the other setting
+  registerAccessor.setFixedPointConversion(12, 3, true);
+
+  int32_t myInt=0;
+  registerAccessor.read(&myInt);
+
+  BOOST_CHECK( myInt == static_cast<int>(0xFFFFFFF5) );
+  
+  myInt=17;
+  registerAccessor.read(&myInt,0);
+ 
+  // the int has to be untouched
+  BOOST_CHECK( myInt == 17);
+
+  double myDouble=0;
+  registerAccessor.read(&myDouble);
+  BOOST_CHECK( myDouble == -11.375 );
 
 }
