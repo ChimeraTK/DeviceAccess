@@ -100,16 +100,54 @@ public:
 	    template <typename ConvertedDataType>
 	      void read(ConvertedDataType * convertedData, size_t nWords = 1, uint32_t offsetInBytes = 0) const;
 
-	    /** Write (a block of) 
+	    /** Convenience function to read a single word. It allows shorter syntax 
+	     *  as the read value is the return value and one does not have to pass a pointer.
+	     *
+	     *  Example: You can use
+	     *  \code
+	     *  uint16_t i = registerAccessor.read<uint16_t>();
+	     *  \endcode
+	     *  instead of
+	     *  \code
+	     *  uint16_t i;
+	     *  registerAccessor.read(&i);
+	     *  \endcode
+	     *  Note that you have to specify the data type as template parameter because return type
+	     *  overloading is not supported in C++.
+	     */
+	    template <typename ConvertedDataType>
+	      ConvertedDataType read() const;
+
+	    /** Write (a block of) words with automatic data conversion. It works for every data
+	     *  type which has an implicit conversion to double (tested with all data types which are
+	     *  implemented for read()).
+	     *  Each input word will be converted to a fixed point integer and written to 
+	     *  a 32 bit register.
+	     *  The nWords option does not have a default value to keep the template signature different from
+	     *  the single word convenience write function.
+	     */
 	    template <typename ConvertedDataType>
 	      void write(ConvertedDataType const * convertedData, 
-			 size_t nWords = 1, uint32_t offsetInBytes = 0) const;
-	    */
-
+			 size_t nWords, uint32_t offsetInBytes = 0);
+	    
+	    /** Convenience function for single words. The value can be given directly, no need to
+	     *  have a an instance and a pointer for it. This allows code like
+	     *  \code
+	     *  registerAccessor.write(0x3F);
+	     *  \endcode
+	     *  instead of 
+	     *  \code
+	     *  static const uint32_t tempValue = 0x3F;
+	     *  registerAccessor.write(&tempValue); // defaulting nWords to 1 would be possible if this function did not exist
+	     *  \endcode
+	     */
+	    template <typename ConvertedDataType>
+	      void write(ConvertedDataType const & convertedData);
+	    	    
 	    /** Returns the register information aka mapElem.
 	     *  This function was named getRegisterInfo because mapElem will be renamed.
 	     */
-	    mapFile::mapElem const & getRegisterInfo();
+	    mapFile::mapElem const & getRegisterInfo() const;
 
 	    /** This function allows to change the parameters of the fixed point converter.
 	     *  It is an intermediate solution and will be removed from the interface
@@ -158,11 +196,11 @@ public:
     /** Get a regObject from the register name. 
      *  @deprecated Use getRegisterAccessor instead.
      */
-    regObject getRegObject(const std::string &regName);
+    regObject getRegObject(const std::string &regName) const;
     
      /** Get a RegisterAccessor object from the register name. 
      */
-    RegisterAccessor  getRegisterAccessor(const std::string &registerName);
+    RegisterAccessor  getRegisterAccessor(const std::string &registerName) const;
     
     virtual ~devMap();
 
@@ -185,13 +223,13 @@ devMap<T>::~devMap() {
 }
 
 template<typename T>
-typename devMap<T>::RegisterAccessor  devMap<T>::getRegObject(const std::string &regName)
+typename devMap<T>::RegisterAccessor  devMap<T>::getRegObject(const std::string &regName) const
 {
   return getRegisterAccessor(regName);
 }
 
 template<typename T>
-typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName)
+typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName) const
 {
     checkPointersAreNotNull();
 
@@ -499,7 +537,7 @@ void devMap<T>::RegisterAccessor::writeDMA(int32_t const * data, size_t dataSize
 }
 
 template<typename T>
-  mapFile::mapElem const & devMap<T>::RegisterAccessor::getRegisterInfo(){
+  mapFile::mapElem const & devMap<T>::RegisterAccessor::getRegisterInfo() const{
   return me; // me is the mapElement
  }
 
@@ -510,35 +548,39 @@ void devMap<T>::checkPointersAreNotNull() const {
   }  
 }
 
-// Read and write are intentonally not implemented with a generalised function.
-// Only explicit implementations are available in the .cc file for certain types.
-// The reason is that rounding has to be done differently for integer and floating point types. 
-
-//template<typename T> template<>
-//void devMap<T>::RegisterAccessor::read(int32_t * convertedData, size_t nWords,
-//				uint32_t addRegOffset) const {
-//  std::vector<int32_t> rawDataBuffer(nWords);
-//  readReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), addRegOffset);
-//  
-//  for(size_t i=0; i < nWords; ++i){
-//    // The fixed point converter delivers a double, which is able to hold 
-//    // all integers up to 32 bits without precision loss.
-//    // This is casted to the templated type.
-//    convertedData[i] = static_cast<int32_t>(round(_fixedPointConverter.toDouble(rawDataBuffer[i])));
-//  }
-//}
-//
-//template<typename T> template<typename ConvertedDataType>
-//void devMap<T>::RegisterAccessor::read(ConvertedDataType * convertedData, size_t nWords,
-//				uint32_t addRegOffset) const {
-//}
-
 template<typename T> 
 void devMap<T>::RegisterAccessor::setFixedPointConversion(unsigned int nBits, int fractionalBits,
 							bool isSigned){
   _fixedPointConverter.setParameters(nBits, fractionalBits, isSigned);
 }
 
+template<typename T> template <typename ConvertedDataType>
+ConvertedDataType devMap<T>::RegisterAccessor::read() const{
+  ConvertedDataType t;
+  read(&t);
+  return t;
+}
+
+template<typename T> template <typename ConvertedDataType>
+  void devMap<T>::RegisterAccessor:: write(ConvertedDataType const * convertedData, 
+	     size_t nWords, uint32_t offsetInBytes){
+  // Check that nWords is not 0. The readReg command would read the whole register, which
+  // will the raw buffer size of 0.
+  if (nWords==0){
+    return;
+  }
+  
+  std::vector<int32_t> rawDataBuffer(nWords); 
+  for(size_t i=0; i < nWords; ++i){
+    rawDataBuffer[i] = _fixedPointConverter.toFixedPoint( convertedData[i] );
+  }
+  writeReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), offsetInBytes);
+}
+
+template<typename T> template<typename ConvertedDataType>
+  void devMap<T>::RegisterAccessor::write(ConvertedDataType const & convertedData){
+    write(&convertedData, 1);
+  }
 
 }//namespace mtca4u
 

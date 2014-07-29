@@ -26,12 +26,28 @@ class MtcaMappedDeviceTest
 
   /** Check that the default arguments work, which means reading of one word, and check the corner case 
    *  nWord==0;
-   *  This is only checked for int and float, not all types.
+   *  This is only checked for int and double, not all types.
+   *  Also checks the read convenience function.
    */
   void testRegObject_readSimple();
 
+  /** Testing the write function with a multiple registers.
+   */
+  void testRegObject_writeBlock();
+
+    /** Check that the default arguments work, which means writing of one word, and check the corner case 
+   *  nWord==0;
+   *  This is only checked for int and doubel, not all types.
+   *  Also checks the write convenience function.
+   */
+  void testRegObject_writeSimple();
+
+
  private:
   MtcaMappedDevice _mappedDevice;
+  
+  template<typename DataType>
+  void testRegObject_typedWriteBlock(DataType offsetValue);
 };
 
 class MtcaMappedDeviceTestSuite : public test_suite {
@@ -46,6 +62,8 @@ public:
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_getRegisterInfo, mtcaMappedDeviceTest ) );
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_readBlock, mtcaMappedDeviceTest ) );
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_readSimple, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_writeBlock, mtcaMappedDeviceTest ) );
+	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_writeSimple, mtcaMappedDeviceTest ) );
 	
 	add( BOOST_TEST_CASE( &MtcaMappedDeviceTest::testThrowIfNeverOpened ) );
 	//        test_case* writeTestCase = BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testWrite, mtcaMappedDeviceTest );
@@ -141,7 +159,7 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
   static const size_t OFFSET_ELEMENTS = 2;
   static const size_t OFFSET_BYTES = OFFSET_ELEMENTS * sizeof(int32_t);
   
-  std::vector<int32_t> int32Buffer(N_ELEMENTS);
+  std::vector<int32_t> int32Buffer(N_ELEMENTS,0);
   registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   // pre-check: make sure we know what we get
@@ -155,25 +173,25 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
 
   registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<uint32_t> uint32Buffer(N_ELEMENTS);
+  std::vector<uint32_t> uint32Buffer(N_ELEMENTS,0);
   registerAccessor.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<int16_t> int16Buffer(N_ELEMENTS);
+  std::vector<int16_t> int16Buffer(N_ELEMENTS,0);
   registerAccessor.read(&int16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<uint16_t> uint16Buffer(N_ELEMENTS);
+  std::vector<uint16_t> uint16Buffer(N_ELEMENTS,0);
   registerAccessor.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<int8_t> int8Buffer(N_ELEMENTS);
+  std::vector<int8_t> int8Buffer(N_ELEMENTS,0);
   registerAccessor.read(&int8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<uint8_t> uint8Buffer(N_ELEMENTS);
+  std::vector<uint8_t> uint8Buffer(N_ELEMENTS,0);
   registerAccessor.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<float> floatBuffer(N_ELEMENTS);
+  std::vector<float> floatBuffer(N_ELEMENTS,0);
   registerAccessor.read(&floatBuffer[0], N_ELEMENTS, OFFSET_BYTES );
 
-  std::vector<double> doubleBuffer(N_ELEMENTS);
+  std::vector<double> doubleBuffer(N_ELEMENTS,0);
   registerAccessor.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_BYTES );
 
 
@@ -215,16 +233,106 @@ void MtcaMappedDeviceTest::testRegObject_readSimple(){
   int32_t myInt=0;
   registerAccessor.read(&myInt);
 
-  BOOST_CHECK( myInt == static_cast<int>(0xFFFFFFF5) );
+  BOOST_CHECK( myInt == -11 );
   
   myInt=17;
   registerAccessor.read(&myInt,0);
- 
+
   // the int has to be untouched
   BOOST_CHECK( myInt == 17);
 
+  myInt = registerAccessor.read<int>();
+  BOOST_CHECK( myInt == static_cast<int>(0xFFFFFFF5) );
+ 
   double myDouble=0;
   registerAccessor.read(&myDouble);
   BOOST_CHECK( myDouble == -11.375 );
 
+  myDouble=0;
+  myDouble = registerAccessor.read<double>();
+  BOOST_CHECK( myDouble == -11.375 );
+}
+
+template<typename DataType>
+void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue){
+  // there are 25 elements. ignore the first 2
+  static const size_t N_ELEMENTS = 23;
+  static const size_t N_BYTES = N_ELEMENTS * sizeof(int32_t);
+  static const size_t OFFSET_ELEMENTS = 2;
+  static const size_t OFFSET_BYTES = OFFSET_ELEMENTS * sizeof(int32_t);
+ 
+  std::vector<DataType> writeBuffer(N_ELEMENTS);
+  
+  //write i+offset to all arrays 
+  for (size_t i=0; i < N_ELEMENTS; ++i){
+    writeBuffer[i]=i+offsetValue;
+  }    
+
+  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
+  // just make sure we get enough dynamic range for the tests we are doing
+  registerAccessor.setFixedPointConversion(16, 3, true);
+
+  // use raw write to zero the registers
+  static const std::vector<int32_t> zeroedBuffer(N_ELEMENTS, 0);
+  registerAccessor.writeReg(&zeroedBuffer[0], N_BYTES, OFFSET_BYTES);
+
+  registerAccessor.write( &writeBuffer[0], N_ELEMENTS, OFFSET_BYTES);
+
+  // we already tested that read works, so just read back and compare that we get what we wrote
+  std::vector<DataType> readBuffer(N_ELEMENTS,0);
+  registerAccessor.read( &readBuffer[0], N_ELEMENTS, OFFSET_BYTES);
+   for (size_t i=0; i < N_ELEMENTS; ++i){
+     BOOST_CHECK( writeBuffer[i] == readBuffer[i] );
+  }      
+}
+
+void MtcaMappedDeviceTest::testRegObject_writeBlock(){
+  // the tested values run from startValue to startValue+23, so small negative numbers test positive and 
+  // negative values
+  testRegObject_typedWriteBlock(static_cast<uint32_t>(14));
+  testRegObject_typedWriteBlock(static_cast<int32_t>(-14)); // also test negative values with signed ints
+  testRegObject_typedWriteBlock(static_cast<uint16_t>(14));
+  testRegObject_typedWriteBlock(static_cast<int16_t>(-14)); // also test negative values with signed ints
+  testRegObject_typedWriteBlock(static_cast<uint8_t>(14));
+  testRegObject_typedWriteBlock(static_cast<int8_t>(-14)); // also test negative values with signed ints
+  testRegObject_typedWriteBlock(static_cast<double>(-13.75));
+  testRegObject_typedWriteBlock(static_cast<float>(-13.75));
+}
+
+void MtcaMappedDeviceTest::testRegObject_writeSimple(){
+  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
+  static const int startValue = 0;
+  // write something we are going to change
+  registerAccessor.writeReg(&startValue);
+
+  // change the fractional parameters and test the read
+  // We go for 3 fractional bits, 12 bits, signed, just to be different from the other setting
+  registerAccessor.setFixedPointConversion(12, 3, true);
+
+  int32_t myInt=-14;
+  // write and read back
+  registerAccessor.write(&myInt,1);
+
+  int32_t readbackValue=0;
+  registerAccessor.readReg(&readbackValue);
+  BOOST_CHECK( static_cast<uint32_t>(readbackValue) == 0xF90 );
+  
+  myInt=17;
+  registerAccessor.write(&myInt,0);
+  // nothing should be written, should still read the same
+  readbackValue=0;
+  registerAccessor.readReg(&readbackValue);
+  BOOST_CHECK( static_cast<uint32_t>(readbackValue) == 0xF90 );
+ 
+  registerAccessor.write(-17);
+  BOOST_CHECK( registerAccessor.read<int>() == -17 );
+
+  double myDouble=-13.75;
+  registerAccessor.write(&myDouble,1);
+  readbackValue=0;
+  registerAccessor.readReg(&readbackValue);
+  BOOST_CHECK( static_cast<uint32_t>(readbackValue) == 0xF92 );
+
+  registerAccessor.write(-17.25);
+  BOOST_CHECK( registerAccessor.read<double>() == -17.25 );
 }
