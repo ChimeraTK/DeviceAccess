@@ -96,6 +96,13 @@ public:
 	     * 
 	     *  Note that the input is always a 32 bit word, which is being interpreted to be one
 	     *  output word. It is not possible to do conversion e.g. from one 32 bit word to two 16 bit values.
+	     *
+	     *  @attention Be aware of rounding errors and range overflows, depending on the data type.
+	     *  \li Rounding to integers is done correctly, so a fixed point value of 3.75 would be converted to 4.
+	     *  \li Coversion to double is guaranteed to be exact (32 bit fixed point with fractional bits 
+	     *  -1024 to 1023 is guaranteed by the FixedPointConverter).
+	     *  \li Conversion to float is exact for fixed point values up to 24 bits and fractional bits from
+	     *  -128 to 127.
 	     */
 	    template <typename ConvertedDataType>
 	      void read(ConvertedDataType * convertedData, size_t nWords = 1, uint32_t offsetInBytes = 0) const;
@@ -123,6 +130,10 @@ public:
 	     *  implemented for read()).
 	     *  Each input word will be converted to a fixed point integer and written to 
 	     *  a 32 bit register.
+	     *
+	     *  @attention Be aware that the conversion to fixed point might come with a loss of
+	     *  precision or range overflows!
+	     *
 	     *  The nWords option does not have a default value to keep the template signature different from
 	     *  the single word convenience write function.
 	     */
