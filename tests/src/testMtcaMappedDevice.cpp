@@ -8,8 +8,12 @@ using namespace mtca4u;
 
 typedef devMap<devPCIE> MtcaMappedDevice;
 
-#define MAPPING_FILE_NAME "mtcadummy.map"
+#define VALID_MAPPING_FILE_NAME "mtcadummy.map"
 #define DUMMY_DEVICE_FILE_NAME "/dev/mtcadummys0"
+
+#define FXPNT_ERROR_1_MAPPING_FILE_NAME "mtcadummy_bad_fxpoint1.map"
+#define FXPNT_ERROR_2_MAPPING_FILE_NAME "mtcadummy_bad_fxpoint2.map"
+#define FXPNT_ERROR_3_MAPPING_FILE_NAME "mtcadummy_bad_fxpoint3.map"
 
 class MtcaMappedDeviceTest
 {
@@ -18,6 +22,8 @@ class MtcaMappedDeviceTest
   
   void testOpenClose();
   static void testThrowIfNeverOpened();
+  
+  static void testMapFileParser_parse();
 
   void testRegObject_getRegisterInfo();
   /** Read reading more than one word and working with offset. Check with all different data types.
@@ -65,6 +71,7 @@ public:
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_writeBlock, mtcaMappedDeviceTest ) );
 	add( BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testRegObject_writeSimple, mtcaMappedDeviceTest ) );
 	
+  add( BOOST_TEST_CASE( &MtcaMappedDeviceTest::testMapFileParser_parse) );
 	add( BOOST_TEST_CASE( &MtcaMappedDeviceTest::testThrowIfNeverOpened ) );
 	//        test_case* writeTestCase = BOOST_CLASS_TEST_CASE( &MtcaMappedDeviceTest::testWrite, mtcaMappedDeviceTest );
 
@@ -88,10 +95,10 @@ init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 
 void MtcaMappedDeviceTest::testOpenClose() {
   // test all tree open functions
-  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME ) );
+  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME ) );
   BOOST_CHECK_NO_THROW( _mappedDevice.closeDev() );
 
-  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( std::make_pair(DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME ) ) );
+  BOOST_CHECK_NO_THROW( _mappedDevice.openDev( std::make_pair(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME ) ) );
   BOOST_CHECK_NO_THROW( _mappedDevice.closeDev() );
 
   devMap<devBase> mappedDeviceAsBase;
@@ -100,7 +107,7 @@ void MtcaMappedDeviceTest::testOpenClose() {
   dummyDevice->openDev( DUMMY_DEVICE_FILE_NAME );
 
   mapFileParser fileParser;
-  boost::shared_ptr<mapFile> registerMapping = fileParser.parse(MAPPING_FILE_NAME);
+  boost::shared_ptr<mapFile> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 			
   BOOST_CHECK_NO_THROW( mappedDeviceAsBase.openDev( dummyDevice, registerMapping ) );
   BOOST_CHECK_NO_THROW( mappedDeviceAsBase.closeDev() );
@@ -133,9 +140,17 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   BOOST_CHECK_THROW( MtcaMappedDevice::regObject  myRegObject = virginMappedDevice.getRegObject("irrelevant"),  exdevMap );
 }
 
+void MtcaMappedDeviceTest::testMapFileParser_parse() {
+  MtcaMappedDevice virginMappedDevice;
+  BOOST_CHECK_THROW( virginMappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, FXPNT_ERROR_1_MAPPING_FILE_NAME ), exMapFileParser );
+  BOOST_CHECK_THROW( virginMappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, FXPNT_ERROR_2_MAPPING_FILE_NAME ), exMapFileParser );
+  BOOST_CHECK_THROW( virginMappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, FXPNT_ERROR_3_MAPPING_FILE_NAME ), exMapFileParser );
+}
+
 void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
-  _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, MAPPING_FILE_NAME );
+  _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME );
   // Sorry, this test is hard coded against the mtcadummy implementation.
+  // PP: Is there a different way of testing it?
   MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
   mapFile::mapElem registerInfo = registerAccessor.getRegisterInfo();
   BOOST_CHECK( registerInfo.reg_address == 0x0 );
@@ -143,6 +158,40 @@ void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
   BOOST_CHECK( registerInfo.reg_size = 0x1000 );
   BOOST_CHECK( registerInfo.reg_bar == 2 );
   BOOST_CHECK( registerInfo.reg_name == "AREA_DMA");
+  
+  registerAccessor = _mappedDevice.getRegObject("WORD_FIRMWARE");
+  registerInfo = registerAccessor.getRegisterInfo();
+  BOOST_CHECK( registerInfo.reg_name == "WORD_FIRMWARE");
+  BOOST_CHECK( registerInfo.reg_address == 0x0 );
+  BOOST_CHECK( registerInfo.reg_elem_nr == 0x1);
+  BOOST_CHECK( registerInfo.reg_size = 0x4 );
+  BOOST_CHECK( registerInfo.reg_bar == 0 );
+  BOOST_CHECK( registerInfo.reg_width == 32 );
+  BOOST_CHECK( registerInfo.reg_frac_bits == 0 );
+  BOOST_CHECK( registerInfo.reg_signed == false );
+  
+  registerAccessor = _mappedDevice.getRegObject("WORD_INCOMPLETE_1");
+  registerInfo = registerAccessor.getRegisterInfo();
+  BOOST_CHECK( registerInfo.reg_name == "WORD_INCOMPLETE_1");
+  BOOST_CHECK( registerInfo.reg_address == 0x4C );
+  BOOST_CHECK( registerInfo.reg_elem_nr == 0x1);
+  BOOST_CHECK( registerInfo.reg_size = 0x4 );
+  BOOST_CHECK( registerInfo.reg_bar == 0 );
+  BOOST_CHECK( registerInfo.reg_width == 13 );
+  BOOST_CHECK( registerInfo.reg_frac_bits == 0 );
+  BOOST_CHECK( registerInfo.reg_signed == true );
+  
+  registerAccessor = _mappedDevice.getRegObject("WORD_INCOMPLETE_2");
+  registerInfo = registerAccessor.getRegisterInfo();
+  BOOST_CHECK( registerInfo.reg_name == "WORD_INCOMPLETE_2");
+  BOOST_CHECK( registerInfo.reg_address == 0x50 );
+  BOOST_CHECK( registerInfo.reg_elem_nr == 0x1);
+  BOOST_CHECK( registerInfo.reg_size = 0x4 );
+  BOOST_CHECK( registerInfo.reg_bar == 0 );
+  BOOST_CHECK( registerInfo.reg_width == 13 );
+  BOOST_CHECK( registerInfo.reg_frac_bits == 8 );
+  BOOST_CHECK( registerInfo.reg_signed == true );
+
 }
 
 void MtcaMappedDeviceTest::testRegObject_readBlock(){
@@ -228,7 +277,8 @@ void MtcaMappedDeviceTest::testRegObject_readSimple(){
 
   // change the fractional parameters and test the read
   // We go for 3 fractional bits, 12 bits, signed, just to be different from the other setting
-  registerAccessor.setFixedPointConversion(12, 3, true);
+  // ppredki: this is now done automatically while parsing the map file
+  //registerAccessor.setFixedPointConversion(12, 3, true);
 
   int32_t myInt=0;
   registerAccessor.read(&myInt);
@@ -307,7 +357,8 @@ void MtcaMappedDeviceTest::testRegObject_writeSimple(){
 
   // change the fractional parameters and test the read
   // We go for 3 fractional bits, 12 bits, signed, just to be different from the other setting
-  registerAccessor.setFixedPointConversion(12, 3, true);
+  // ppredki: this is now done automatically while parsing the map file
+  //registerAccessor.setFixedPointConversion(12, 3, true);
 
   int32_t myInt=-14;
   // write and read back

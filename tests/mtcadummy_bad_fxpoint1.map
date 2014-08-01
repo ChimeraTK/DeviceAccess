@@ -2,7 +2,7 @@
 WORD_FIRMWARE                     0x00000001    0x00000000    0x00000004    0x00000000       32         0         0
 WORD_COMPILATION                  0x00000001    0x00000004    0x00000004    0x00000000       32         0         0
 WORD_STATUS                       0x00000001    0x00000008    0x00000004    0x00000000       32         0         0
-WORD_USER                         0x00000001    0x0000000C    0x00000004    0x00000000       12         3         1
+WORD_USER                         0x00000001    0x0000000C    0x00000004    0x00000000       32         0         0
 WORD_CLK_CNT                      0x00000002    0x00000010    0x00000008    0x00000000       32         0         0
 WORD_CLK_CNT_0                    0x00000001    0x00000010    0x00000004    0x00000000       32         0         0
 WORD_CLK_CNT_1                    0x00000001    0x00000014    0x00000004    0x00000000       32         0         0
@@ -14,21 +14,5 @@ WORD_CLK_MUX_3                    0x00000001    0x0000002C    0x00000004    0x00
 WORD_CLK_DUMMY                    0x00000001    0x0000003C    0x00000004    0x00000000       32         0         0
 WORD_CLK_RST                      0x00000001    0x00000040    0x00000004    0x00000000       32         0         0
 WORD_ADC_ENA                      0x00000001    0x00000044    0x00000004    0x00000000       32         0         0
-WORD_INCOMPLETE_1                 0x00000001    0x0000004C    0x00000004    0x00000000       13
-WORD_INCOMPLETE_2                 0x00000001    0x00000050    0x00000004    0x00000000       13         8
-#The broken register cannot be read or written, it always causes an I/O error for testing
-BROKEN_REGISTER			  0x00000001    0x00000048    0x00000004    0x00000000       32         0         0
-#Reading is possible, but writing causes an I/O error. Content is the offset.
-BROKEN_WRITE			  0x00000001    0x0000004C    0x00000004    0x00000000       32         0         0
-#Simulate spi via pcie with handshake:
-# - write 0xff to the SPI_SYNC register
-# - write something to SPI_WRITE
-# - the content of SPI_WRITE is cpoied to SPI_READ and SPI_SYNC is set to 0
-# - if SPI_SYNC is not 0xff when writing to SPI_WRITE SPI_SYNC is set to 0xaa = SPI_SYNC_ERROR
-WORD_SPI_WRITE                    0x00000001    0x00000050    0x00000004    0x00000000       32         0         0
-WORD_SPI_READ                     0x00000001    0x00000054    0x00000004    0x00000000       32         0         0
-WORD_SPI_SYNC                     0x00000001    0x00000058    0x00000004    0x00000000       32         0         0
-
-#Acessing a register outside the addressable range results in a bad address error
-NON_EXISTENT_REGISTER		  0x00000001    0x00000148    0x00000004    0x00000000       32         0         0
-AREA_DMA                     0x00000400   0x00000000    0x00001000    0x2
+WORD_VALUE                        0x00000001    0x00000048    0x00000004    0x00000000       11         3         1
+WORD_INVALID                      0x00000001    0x0000004C    0x00000004    0x00000000       33
