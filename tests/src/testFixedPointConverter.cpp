@@ -643,17 +643,4 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction43 ){
   checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
-BOOST_AUTO_TEST_CASE( testSetParameters ){
-  // start with the default constructor
-  FixedPointConverter converter;
-  checkToDouble( converter, 0xFFFFFFEF, -17.);
-
-  converter.setParameters(32, 0, false);
-  checkToDouble( converter, 0xFFFFFFEF, 4294967279.);
-
-  converter.setParameters(8, 3, true);
-  checkToDouble( converter, 0xEF, -2.125);
-}
-
-
 BOOST_AUTO_TEST_SUITE_END()

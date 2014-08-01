@@ -134,8 +134,9 @@ void DummyDeviceTest::testCheckSizeIsMultipleOfWordSize(){
 void DummyDeviceTest::testOpenClose(){
   _dummyDevice.openDev(TEST_MAPPING_FILE);
 
-  // there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes
-  BOOST_CHECK( _dummyDevice._barContents.size() == 2 );
+  // there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes,
+  // plus the dma bar 0xD
+  BOOST_CHECK( _dummyDevice._barContents.size() == 3 );
   std::map< uint8_t, std::vector<int32_t> >::const_iterator bar0Iter =
     _dummyDevice._barContents.find(0);
   BOOST_REQUIRE( bar0Iter != _dummyDevice._barContents.end() );

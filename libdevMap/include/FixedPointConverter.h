@@ -39,27 +39,19 @@ namespace mtca4u{
      */
     uint32_t toFixedPoint(double floatingPointValue) const;
 
-    /** This function allows to change the fixed point parameters after
-     *  the object has been created. It will be removed from the interface
-     *  once the creating mechanism reading the relevant information from
-     *  the xml mapping have been implemented.
-     */
-    void setParameters(unsigned int nBits = 32, int fractionalBits = 0,
-		       bool isSigned=true);
-
   private:
-    unsigned int _nBits; //FIXME: should be const when setParameters is removed
-    int _fractionalBits; //FIXME: should be const
-    bool _isSigned; //FIXME: should be const
+    unsigned int _nBits;
+    int _fractionalBits;
+    bool _isSigned;
 
     /// Coefficient containing the multiplication factor described by the 
     /// fractional bits 2^fractionalBits
-    double _fractionalBitsCoefficient; //FIXME: should be const
+    double _fractionalBitsCoefficient;
 
     /// Coefficient containing the inverse multiplication factor described by the 
     /// fractional bits 2^(-fractionalBits). Used to always multiply because this is
     /// faster than division in the floating point unit.
-    double _inverseFractionalBitsCoefficient; //FIXME: should be const
+    double _inverseFractionalBitsCoefficient;
 
     uint32_t _signBitMask; ///< The bit which represents the sign
     uint32_t _usedBitsMask; ///< The bits which are used

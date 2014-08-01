@@ -159,14 +159,6 @@ public:
 	     *  This function was named getRegisterInfo because mapElem will be renamed.
 	     */
 	    mapFile::mapElem const & getRegisterInfo() const;
-
-	    /** This function allows to change the parameters of the fixed point converter.
-	     *  It is an intermediate solution and will be removed from the interface
-	     *  once the creating mechanism which reads the relevant information from
-	     *  the xml mapping has been implemented.
-	     */
-	    void setFixedPointConversion(unsigned int nBits = 32, int fractionalBits = 0,
-					 bool isSigned=true);
     };
     
     /** A typedef for backward compatibility.
@@ -478,11 +470,8 @@ void devMap<T>::readDeviceInfo(std::string* devInfo) const
 
 template<typename T>
 devMap<T>::RegisterAccessor::RegisterAccessor(const std::string &_regName, const mapFile::mapElem &_me, ptrdev _pdev)
-: regName(_regName), me(_me), pdev(_pdev)
-{
-  // ppredki - set the fixedPointConverter parameters based on the mapElem members      
-  _fixedPointConverter.setParameters(_me.reg_width, _me.reg_frac_bits, _me.reg_signed);
-    
+: regName(_regName), me(_me), pdev(_pdev), 
+  _fixedPointConverter(_me.reg_width, _me.reg_frac_bits, _me.reg_signed){
 }
 
 template<typename T>
@@ -558,12 +547,6 @@ void devMap<T>::checkPointersAreNotNull() const {
   if ( (pdev==false) || (mapFile==false) ){
     throw exdevMap("devMap has not been opened correctly", exdevMap::EX_NOT_OPENED);
   }  
-}
-
-template<typename T> 
-void devMap<T>::RegisterAccessor::setFixedPointConversion(unsigned int nBits, int fractionalBits,
-							bool isSigned){
-  _fixedPointConverter.setParameters(nBits, fractionalBits, isSigned);
 }
 
 template<typename T> template <typename ConvertedDataType>

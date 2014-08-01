@@ -12,23 +12,6 @@ namespace mtca4u{
     : _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSigned),
       _fractionalBitsCoefficient(std::pow( 2., -fractionalBits)),
       _inverseFractionalBitsCoefficient(std::pow( 2., fractionalBits)){
-    // leave the above initialiser list. The setParameters, where the functionality
-    // is repeated, will be removed and the second part of the function will become
-    // the body of the constructor
-    setParameters(nBits, fractionalBits, isSigned);
-  }
-
-  void FixedPointConverter::setParameters(unsigned int nBits,
-					  int fractionalBits,
-					  bool isSigned){
-    // repetition of the constructor initialiser list
-    _nBits=nBits;
-    _fractionalBits=fractionalBits;
-    _isSigned=isSigned;
-    _fractionalBitsCoefficient=std::pow( 2., -fractionalBits);
-    _inverseFractionalBitsCoefficient=std::pow( 2., fractionalBits);
-
-    // the following will become the body of the constructor:
   
     // some sanity checks
     if (nBits > 32){

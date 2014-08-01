@@ -151,13 +151,19 @@ void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
   _mappedDevice.openDev( DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME );
   // Sorry, this test is hard coded against the mtcadummy implementation.
   // PP: Is there a different way of testing it?
-  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
+  MtcaMappedDevice::regObject registerAccessor = 
+    _mappedDevice.getRegObject("AREA_DMAABLE");
   mapFile::mapElem registerInfo = registerAccessor.getRegisterInfo();
   BOOST_CHECK( registerInfo.reg_address == 0x0 );
   BOOST_CHECK( registerInfo.reg_elem_nr == 0x400);
   BOOST_CHECK( registerInfo.reg_size = 0x1000 );
   BOOST_CHECK( registerInfo.reg_bar == 2 );
-  BOOST_CHECK( registerInfo.reg_name == "AREA_DMA");
+  // the dmaable area has no fixed point settings, which has to result in
+  // the default 32 0 true (like raw words)
+  BOOST_CHECK( registerInfo.reg_width == 32 );
+  BOOST_CHECK( registerInfo.reg_frac_bits == 0 );
+  BOOST_CHECK( registerInfo.reg_signed == true );
+  BOOST_CHECK( registerInfo.reg_name == "AREA_DMAABLE");
   
   registerAccessor = _mappedDevice.getRegObject("WORD_FIRMWARE");
   registerInfo = registerAccessor.getRegisterInfo();
@@ -173,7 +179,7 @@ void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
   registerAccessor = _mappedDevice.getRegObject("WORD_INCOMPLETE_1");
   registerInfo = registerAccessor.getRegisterInfo();
   BOOST_CHECK( registerInfo.reg_name == "WORD_INCOMPLETE_1");
-  BOOST_CHECK( registerInfo.reg_address == 0x4C );
+  BOOST_CHECK( registerInfo.reg_address == 0x60 );
   BOOST_CHECK( registerInfo.reg_elem_nr == 0x1);
   BOOST_CHECK( registerInfo.reg_size = 0x4 );
   BOOST_CHECK( registerInfo.reg_bar == 0 );
@@ -184,7 +190,7 @@ void MtcaMappedDeviceTest::testRegObject_getRegisterInfo(){
   registerAccessor = _mappedDevice.getRegObject("WORD_INCOMPLETE_2");
   registerInfo = registerAccessor.getRegisterInfo();
   BOOST_CHECK( registerInfo.reg_name == "WORD_INCOMPLETE_2");
-  BOOST_CHECK( registerInfo.reg_address == 0x50 );
+  BOOST_CHECK( registerInfo.reg_address == 0x64 );
   BOOST_CHECK( registerInfo.reg_elem_nr == 0x1);
   BOOST_CHECK( registerInfo.reg_size = 0x4 );
   BOOST_CHECK( registerInfo.reg_bar == 0 );
@@ -201,7 +207,8 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
   tempWord=1;
   _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
 
-  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
+  MtcaMappedDevice::regObject registerAccessor = 
+    _mappedDevice.getRegObject("AREA_DMAABLE");
 
   // there are 25 elements with value i*i. ignore the first 2
   static const size_t N_ELEMENTS = 23;
@@ -216,32 +223,34 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
     BOOST_CHECK(int32Buffer[i] == static_cast<int>((i+OFFSET_ELEMENTS) * (i+OFFSET_ELEMENTS)) );
   }
   
-  // change the fractional parameters and test the read
-  // We go for 1 fractional bit, 10 bits, signed
-  registerAccessor.setFixedPointConversion(10, 1, true);
+  // Change the fractional parameters and test the read again. 
+  // We use another accessor which accesses the same area with different fractioanal
+  // settings (1 fractional bit, 10 bits, signed)
+  MtcaMappedDevice::regObject registerAccessor10_1 =
+    _mappedDevice.getRegObject("AREA_DMAABLE_FIXEDPOINT10_1");
 
-  registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<uint32_t> uint32Buffer(N_ELEMENTS,0);
-  registerAccessor.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<int16_t> int16Buffer(N_ELEMENTS,0);
-  registerAccessor.read(&int16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&int16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<uint16_t> uint16Buffer(N_ELEMENTS,0);
-  registerAccessor.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<int8_t> int8Buffer(N_ELEMENTS,0);
-  registerAccessor.read(&int8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&int8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<uint8_t> uint8Buffer(N_ELEMENTS,0);
-  registerAccessor.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<float> floatBuffer(N_ELEMENTS,0);
-  registerAccessor.read(&floatBuffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&floatBuffer[0], N_ELEMENTS, OFFSET_BYTES );
 
   std::vector<double> doubleBuffer(N_ELEMENTS,0);
-  registerAccessor.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_BYTES );
 
 
   // now test different template types:
@@ -272,13 +281,10 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
 void MtcaMappedDeviceTest::testRegObject_readSimple(){
 
   MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
+  // 3 fractional bits, 12 bits, signed (from the map file)
+
   static const int inputValue = 0xFA5;
   registerAccessor.writeReg(&inputValue);
-
-  // change the fractional parameters and test the read
-  // We go for 3 fractional bits, 12 bits, signed, just to be different from the other setting
-  // ppredki: this is now done automatically while parsing the map file
-  //registerAccessor.setFixedPointConversion(12, 3, true);
 
   int32_t myInt=0;
   registerAccessor.read(&myInt);
@@ -318,9 +324,9 @@ void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue){
     writeBuffer[i]=i+offsetValue;
   }    
 
-  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegObject("AREA_DMA");
-  // just make sure we get enough dynamic range for the tests we are doing
-  registerAccessor.setFixedPointConversion(16, 3, true);
+  MtcaMappedDevice::regObject registerAccessor = 
+    _mappedDevice.getRegObject("AREA_DMAABLE_FIXEDPOINT16_3");
+  // 16 bits, 3 fractional signed
 
   // use raw write to zero the registers
   static const std::vector<int32_t> zeroedBuffer(N_ELEMENTS, 0);
@@ -351,14 +357,13 @@ void MtcaMappedDeviceTest::testRegObject_writeBlock(){
 
 void MtcaMappedDeviceTest::testRegObject_writeSimple(){
   MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
+  // the word has 3 fractional bits, 12 bits, signed, just to be different from the
+  // other setting. Values coming from the map file.
+
   static const int startValue = 0;
   // write something we are going to change
   registerAccessor.writeReg(&startValue);
 
-  // change the fractional parameters and test the read
-  // We go for 3 fractional bits, 12 bits, signed, just to be different from the other setting
-  // ppredki: this is now done automatically while parsing the map file
-  //registerAccessor.setFixedPointConversion(12, 3, true);
 
   int32_t myInt=-14;
   // write and read back
