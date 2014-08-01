@@ -257,11 +257,11 @@ void devMap<T>::checkRegister(const std::string &regName, size_t dataSize, uint3
     mapFile::mapElem    me;
     mapFile->getRegisterInfo(regName, me);
     if (addRegOffset % 4){
-        throw exdevMap("Register offset must be dividable by 4", exdevMap::EX_WRONG_PARAMETER);
+        throw exdevMap("Register offset must be divisible by 4", exdevMap::EX_WRONG_PARAMETER);
     }
     if (dataSize){
         if (dataSize % 4){
-            throw exdevMap("Data size must be dividable by 4", exdevMap::EX_WRONG_PARAMETER);
+            throw exdevMap("Data size must be divisible by 4", exdevMap::EX_WRONG_PARAMETER);
         }
         if (dataSize > me.reg_size - addRegOffset){
             throw exdevMap("Data size exceed register size", exdevMap::EX_WRONG_PARAMETER);
@@ -480,7 +480,8 @@ template<typename T>
 devMap<T>::RegisterAccessor::RegisterAccessor(const std::string &_regName, const mapFile::mapElem &_me, ptrdev _pdev)
 : regName(_regName), me(_me), pdev(_pdev)
 {
-        
+  // ppredki - set the fixedPointConverter parameters based on the mapElem members      
+  _fixedPointConverter.setParameters(_me.reg_width, _me.reg_frac_bits, _me.reg_signed);
     
 }
 
@@ -488,11 +489,11 @@ template<typename T>
 void devMap<T>::RegisterAccessor::checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff)
 {    
     if (addRegOffset % 4){
-        throw exdevMap("Register offset must be dividable by 4", exdevMap::EX_WRONG_PARAMETER);
+        throw exdevMap("Register offset must be divisible by 4", exdevMap::EX_WRONG_PARAMETER);
     }
     if (dataSize){
         if (dataSize % 4){
-            throw exdevMap("Data size must be dividable by 4", exdevMap::EX_WRONG_PARAMETER);
+            throw exdevMap("Data size must be divisible by 4", exdevMap::EX_WRONG_PARAMETER);
         }
         if (dataSize > me.reg_size - addRegOffset){
             throw exdevMap("Data size exceed register size", exdevMap::EX_WRONG_PARAMETER);

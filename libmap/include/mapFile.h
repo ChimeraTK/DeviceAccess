@@ -57,6 +57,9 @@ public:
         uint32_t reg_address; /**< Offset in bytes from begining of PCIe bar */
         uint32_t reg_size; /**< Size of register expressed in bytes */
         uint32_t reg_bar; /**< Number of bar with register */
+        uint32_t reg_width; /**< Number of significant bits in the register */
+        int32_t  reg_frac_bits; /**< Number of fractional bits */
+        bool     reg_signed; /**< Signed/Unsigned flag */
         uint32_t line_nr; /**< Number of line with description of register in MAP file */
         friend std::ostream& operator<<(std::ostream &os, const mapElem& me);
   
@@ -67,6 +70,9 @@ public:
 		uint32_t the_reg_address = 0,
 		uint32_t the_reg_size = 0,
 		uint32_t the_reg_bar = 0,
+    uint32_t the_reg_width = 32,
+    int32_t  the_reg_frac_bits = 0,
+    bool     the_reg_signed = true,
 		uint32_t the_line_nr = 0);
     };
     typedef std::vector<mapElem>::iterator iterator; 

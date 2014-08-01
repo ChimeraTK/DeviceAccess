@@ -45,7 +45,7 @@ MACRO( MAPPEDDEVICE_ADDSUBDIR directory executables)
 
 ENDMACRO(MAPPEDDEVICE_ADDSUBDIR)
 MACRO( COPY_MAPPING_FILES )
-  foreach( MAPPING_FILE mtcadummy.map  mtcadummy_bad.map dummies.dmap)
+  foreach( MAPPING_FILE mtcadummy.map  mtcadummy_bad.map mtcadummy_bad_fxpoint1.map mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map dummies.dmap)
     configure_file( tests/${MAPPING_FILE} ${PROJECT_BINARY_DIR}/${MAPPING_FILE} copyonly)
   endforeach( MAPPING_FILE )
 ENDMACRO( COPY_MAPPING_FILES )

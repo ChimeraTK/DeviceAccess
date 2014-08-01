@@ -218,9 +218,13 @@ mapFile::mapElem::mapElem( std::string const & the_reg_name,
 			   uint32_t the_reg_address,
 			   uint32_t the_reg_size,
 			   uint32_t the_reg_bar,
+         uint32_t the_reg_width,
+         int32_t  the_reg_frac_bits,
+         bool     the_reg_signed,
 			   uint32_t the_line_nr)
   : reg_name( the_reg_name ),  reg_elem_nr(the_reg_elem_nr), reg_address(the_reg_address),
-    reg_size(the_reg_size), reg_bar(the_reg_bar), line_nr(the_line_nr)
+    reg_size(the_reg_size), reg_bar(the_reg_bar), reg_width(the_reg_width), reg_frac_bits(the_reg_frac_bits), 
+    reg_signed(the_reg_signed), line_nr(the_line_nr)
 {}
 
 }//namespace mtca4u
