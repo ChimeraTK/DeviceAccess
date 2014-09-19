@@ -38,7 +38,7 @@ void devFake::openDev(const std::string &devName, int /*perm*/, devConfigBase* /
                 fclose(pcieMemory);
                 throw exDevFake("Cannot init device memory file", exDevFake::EX_DEVICE_FILE_WRITE_DATA_ERROR);
             }
-            if (fwrite(&zero, sizeof(zero), 1, pcieMemory) == 0){
+            if (fwrite(zero, sizeof(zero), 1, pcieMemory) == 0){
                 fclose(pcieMemory);
                 throw exDevFake("Cannot init device memory file", exDevFake::EX_DEVICE_FILE_WRITE_DATA_ERROR);
             }

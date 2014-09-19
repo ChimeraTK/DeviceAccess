@@ -25,7 +25,7 @@ namespace mtca4u{
  *
  */
 class mapFile {
-    friend class mapFileParser;
+
 public:    
     /**
      * @brief  Stores information about meta data stored in MAP file
@@ -222,7 +222,7 @@ public:
     iterator end();
     const_iterator end() const;
 
-private:
+public:
     /**
      * @brief Constructor
      * 

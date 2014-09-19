@@ -25,7 +25,6 @@ namespace mtca4u{
  *
  */
 class dmapFile {
-    friend class dmapFileParser;
     friend class dmapFilesParser;
 public:
 
@@ -185,7 +184,7 @@ private:
     std::vector<dmapElem> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/
     std::string dmap_file_name; /**< name of DMAP file*/
 
-private:
+public:
     /**
      * @brief Constructor
      * 

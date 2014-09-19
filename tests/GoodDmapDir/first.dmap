@@ -1,0 +1,4 @@
+# A good dmap file
+
+card1 /dev/dev1 ./mapFile1.map
+card4 /dev/dev4 mtcadummy.map

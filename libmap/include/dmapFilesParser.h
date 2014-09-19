@@ -193,6 +193,8 @@ private:
      * @brief Clean all data structures used to store information about MAP and DMAP files contents
      */
     void cleanAll();
+    std::string getCurrentWorkingDirectory();
+    void appendToPath(std::string& basePath, const std::string& pathToAppend);
 };
 
 }//namespace mtca4u

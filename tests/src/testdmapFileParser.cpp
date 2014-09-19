@@ -1,0 +1,115 @@
+#include <boost/test/included/unit_test.hpp>
+using namespace boost::unit_test_framework;
+#include "dmapFileParser.h"
+#include "exlibmap.h"
+#include "helperFunctions.h"
+
+class DMapFileParserTest {
+ public:
+  void testFileNotFound();
+  void testErrorInDmapFile();
+  void testNoDataInDmapFile();
+  void testParseFile();
+};
+
+class DMapFileParserTestSuite : public test_suite {
+ public:
+  DMapFileParserTestSuite() : test_suite("DMapFileParser class test suite") {
+    boost::shared_ptr<DMapFileParserTest> DMapFileParserTestPtr(
+        new DMapFileParserTest);
+
+    test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(
+        &DMapFileParserTest::testFileNotFound, DMapFileParserTestPtr);
+    test_case* testErrorInDmapFile = BOOST_CLASS_TEST_CASE(
+        &DMapFileParserTest::testErrorInDmapFile, DMapFileParserTestPtr);
+    test_case* testNoDataInDmapFile = BOOST_CLASS_TEST_CASE(
+        &DMapFileParserTest::testNoDataInDmapFile, DMapFileParserTestPtr);
+    test_case* testParseFile = BOOST_CLASS_TEST_CASE(
+        &DMapFileParserTest::testParseFile, DMapFileParserTestPtr);
+
+    add(testFileNotFound);
+    add(testErrorInDmapFile);
+    add(testParseFile);
+    add(testNoDataInDmapFile);
+  }
+};
+
+test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+  framework::master_test_suite().p_name.value =
+      "DMapFileParser class test suite";
+  framework::master_test_suite().add(new DMapFileParserTestSuite());
+
+  return NULL;
+}
+
+void DMapFileParserTest::testFileNotFound() {
+  std::string file_path = "../dummypath.dmap";
+  mtca4u::dmapFileParser fileParser;
+
+  BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::exLibMap);
+  try {
+    fileParser.parse(file_path);
+  }
+  catch (mtca4u::exLibMap& dMapFileParserException) {
+    BOOST_CHECK(dMapFileParserException.getID() ==
+                mtca4u::exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
+  }
+}
+
+void DMapFileParserTest::testErrorInDmapFile() {
+  std::string incorrect_dmap_file = "invalid.dmap";
+  mtca4u::dmapFileParser fileParser;
+
+  BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::exLibMap);
+  try {
+    fileParser.parse(incorrect_dmap_file);
+  }
+  catch (mtca4u::exLibMap& dMapFileParserException) {
+    std::cout << dMapFileParserException;
+    BOOST_CHECK(dMapFileParserException.getID() ==
+                mtca4u::exLibMap::EX_DMAP_FILE_PARSE_ERROR);
+  }
+}
+
+void DMapFileParserTest::testNoDataInDmapFile() {
+  std::string empty_dmap_file = "empty.dmap";
+  mtca4u::dmapFileParser fileParser;
+
+  BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::exLibMap);
+  try {
+    fileParser.parse(empty_dmap_file);
+  }
+  catch (mtca4u::exLibMap& dMapFileParserException) {
+    std::cout << dMapFileParserException;
+    BOOST_CHECK(dMapFileParserException.getID() ==
+                mtca4u::exLibMap::EX_NO_DMAP_DATA);
+  }
+}
+
+void DMapFileParserTest::testParseFile() {
+  std::string file_path = "valid.dmap";
+  mtca4u::dmapFileParser fileParser;
+  boost::shared_ptr<mtca4u::dmapFile> mapFilePtr = fileParser.parse(file_path);
+
+  mtca4u::dmapFile::dmapElem dMapElement1;
+  mtca4u::dmapFile::dmapElem dMapElement2;
+
+  populateDummydMapElement(dMapElement1, "valid.dmap", "card1", "/dev/dev1",
+                           "goodMapFile.map");
+  populateDummydMapElement(dMapElement2, "valid.dmap", "card2", "/dev/dev2",
+                           "goodMapFile.map");
+
+  dMapElement1.dmap_file_line_nr = 3;
+  dMapElement2.dmap_file_line_nr = 4;
+  mtca4u::dmapFile::dmapElem* ptrList[2];
+  ptrList[0] = &dMapElement1;
+  ptrList[1] = &dMapElement2;
+  int index;
+
+  mtca4u::dmapFile::iterator it;
+  for (it = mapFilePtr->begin(), index = 0; it != mapFilePtr->end();
+       ++it, ++index) {
+    BOOST_CHECK((compareDMapElements(*ptrList[index], *it)) == true);
+  }
+  BOOST_CHECK(mapFilePtr->getdmapFileSize() == 2);
+}

@@ -1,0 +1,3 @@
+# A good dmap file
+card1 /dev/dev1 ./NonUniqueRegName.map
+card1 /dev/dev2 NonUniqueRegName.map

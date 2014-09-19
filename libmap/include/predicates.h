@@ -58,7 +58,7 @@ public:
     }
 
     bool operator()(const std::pair<dmapFile::dmapElem, ptrmapFile> & elem) {
-        if (elem.first.dev_name == name) return true;
+      if (elem.first.dev_name == name) return true;
         return false;
     }
 };

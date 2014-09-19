@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.0)
 project(MtcaMappedDevice)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 10)
+set(${PROJECT_NAME}_MINOR_VERSION 11)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -17,17 +17,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -ansi -pedantic -
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
 #boost as such is required for shared pointers e.g.
-FIND_PACKAGE(Boost REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 #the unit test component is optional
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
-IF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
+FIND_PACKAGE(Boost COMPONENTS system filesystem unit_test_framework)
+IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND Boost_FILESYSTEM_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
-ELSE(Boost_UNIT_TEST_FRAMEWORK_FOUND)
-  message("Boost unit_test_framework not found, disabling testing")
-ENDIF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
+ELSE(Boost_UNIT_TEST_FRAMEWORK_FOUND AND Boost_FILESYSTEM_FOUND)
+  message("Boost unit_test_framework or boost filesystem not found, disabling testing")
+ENDIF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND Boost_FILESYSTEM_FOUND)
 
 #add the include directory and source directory to the sources
 #add the executables to the list of targets
@@ -44,12 +44,48 @@ MACRO( MAPPEDDEVICE_ADDSUBDIR directory executables)
   endforeach( target )
 
 ENDMACRO(MAPPEDDEVICE_ADDSUBDIR)
+
 MACRO( COPY_MAPPING_FILES )
-  foreach( MAPPING_FILE mtcadummy.map  mtcadummy_bad.map mtcadummy_bad_fxpoint1.map mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map dummies.dmap)
+  foreach( MAPPING_FILE mtcadummy.map  mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
+  mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map
+  MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
+  IncorrectFracBits2.map goodMapFile.map dummies.dmap invalid.dmap empty.dmap valid.dmap)
     configure_file( tests/${MAPPING_FILE} ${PROJECT_BINARY_DIR}/${MAPPING_FILE} copyonly)
   endforeach( MAPPING_FILE )
 ENDMACRO( COPY_MAPPING_FILES )
 
+MACRO( COPY_SELECTED_DIRECTORIES )
+  foreach( DIRECTORY  dMapDir )
+    file( COPY tests/${DIRECTORY} DESTINATION ${PROJECT_BINARY_DIR}/ )
+  endforeach( DIRECTORY )
+ENDMACRO( COPY_SELECTED_DIRECTORIES )
+
+MACRO( COPY_DMAP_TEST_DIR )
+  set(DMAP_TEST_DIR_1  "dMapDir")
+  set(DMAP_TEST_DIR_2  "BlankFiles")
+  set(DMAP_TEST_DIR_3  "GoodDmapDir")
+  set(DMAP_TEST_DIR_4  "emptyMapFile")
+  set(DMAP_TEST_DIR_5  "EmptyDir")
+  
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_1} )
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_2} )
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_3} )
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_4} )
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_5} )
+  
+  foreach( FILE  goodMapFile.map valid.dmap oneDevice.dmap 
+  NonUniqueRegName.map NonUniqueCardName.dmap mapFile.map)
+    configure_file( tests/${DMAP_TEST_DIR_1}/${FILE} ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_1}/${FILE} copyonly)
+  endforeach( FILE )
+  
+  foreach( FILE  first.dmap second.dmap mapFile1.map mapFile2.map blank)
+    configure_file( tests/${DMAP_TEST_DIR_3}/${FILE} ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_3}/${FILE} copyonly)
+  endforeach( FILE )
+  
+  configure_file( tests/${DMAP_TEST_DIR_2}/empty.dmap ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_2}/empty.dmap copyonly)
+  configure_file( tests/${DMAP_TEST_DIR_4}/NoMapfile.dmap ${PROJECT_BINARY_DIR}/${DMAP_TEST_DIR_4}/NoMapfile.dmap copyonly)
+  
+ENDMACRO( COPY_DMAP_TEST_DIR )
 
 #Note: The executables are the old, not automated and not boost-based tests.
 #They will probably all fail, but still return 0.
@@ -73,7 +109,13 @@ if(TESTING_IS_ENABLED)
   endforeach( testSourceFile )
 
   COPY_MAPPING_FILES()
-
+  COPY_DMAP_TEST_DIR()
+  ADD_CUSTOM_TARGET(COPY_FAKE_DEVICE_REF_FILE ALL
+       COMMAND ${CMAKE_COMMAND} -E 
+      copy  ${CMAKE_SOURCE_DIR}/tests/._Reference_Device ${PROJECT_BINARY_DIR}/._Reference_Device
+      VERBATIM
+  )
+      
   #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     configure_file(cmake/Makefile.coverage

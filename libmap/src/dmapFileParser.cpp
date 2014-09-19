@@ -15,11 +15,12 @@ ptrdmapFile dmapFileParser::parse(const std::string &file_name) {
     uint32_t line_nr = 0;
     std::string critical;
 
-    ptrdmapFile dmap(new dmapFile(file_name));    
     file.open(file_name.c_str());
     if (!file) {        
         throw exDmapFileParser("Cannot open dmap file: \"" + file_name + "\"", exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
     }
+
+    ptrdmapFile dmap(new dmapFile(file_name));
     while (std::getline(file, line)) {
         line_nr++;
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));
@@ -44,7 +45,7 @@ ptrdmapFile dmapFileParser::parse(const std::string &file_name) {
     }
     file.close();
     if (dmap->getdmapFileSize() == 0) {
-        throw exDmapFileParser("No data in in dmap file: \"" + file_name + "\"", exLibMap::EX_NO_DATA_IN_DMAP_FILES);
+        throw exDmapFileParser("No data in in dmap file: \"" + file_name + "\"", exLibMap::EX_NO_DMAP_DATA);
     }
     return dmap;
 }
