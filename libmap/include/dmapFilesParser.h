@@ -194,7 +194,10 @@ private:
      */
     void cleanAll();
     std::string getCurrentWorkingDirectory();
-    void appendToPath(std::string& basePath, const std::string& pathToAppend);
+    /** Appends pathToAppend to the base path if pathToAppend is a relative path.
+     *  Repaces the base bath with pathToAppend if it is an absolute path.
+     */
+    void combinePaths(std::string& absoluteBasePath, const std::string& pathToAppend);
 };
 
 }//namespace mtca4u

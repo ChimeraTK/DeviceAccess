@@ -1,0 +1,5 @@
+# A good dmap file
+
+card1 /dev/dev1 goodMapFile.map
+card2 /dev/dev2 ./goodMapFile.map
+card3 /dev/dev3 ${PROJECT_BINARY_DIR}/goodMapFile.map

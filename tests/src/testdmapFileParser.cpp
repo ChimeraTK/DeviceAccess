@@ -93,23 +93,25 @@ void DMapFileParserTest::testParseFile() {
 
   mtca4u::dmapFile::dmapElem dMapElement1;
   mtca4u::dmapFile::dmapElem dMapElement2;
+  mtca4u::dmapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, "valid.dmap", "card1", "/dev/dev1",
                            "goodMapFile.map");
   populateDummydMapElement(dMapElement2, "valid.dmap", "card2", "/dev/dev2",
-                           "goodMapFile.map");
+                           "./goodMapFile.map");
+  populateDummydMapElement(dMapElement3, "valid.dmap", "card3", "/dev/dev3",
+                           getCurrentWorkingDirectory()+"/goodMapFile.map");
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;
-  mtca4u::dmapFile::dmapElem* ptrList[2];
-  ptrList[0] = &dMapElement1;
-  ptrList[1] = &dMapElement2;
-  int index;
+  dMapElement3.dmap_file_line_nr = 5;
+  
+  // we use require here so it is safe to increase and dereference the iterator below
+  BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
 
-  mtca4u::dmapFile::iterator it;
-  for (it = mapFilePtr->begin(), index = 0; it != mapFilePtr->end();
-       ++it, ++index) {
-    BOOST_CHECK((compareDMapElements(*ptrList[index], *it)) == true);
-  }
-  BOOST_CHECK(mapFilePtr->getdmapFileSize() == 2);
+  mtca4u::dmapFile::const_iterator it = mapFilePtr->begin();
+
+  BOOST_CHECK( compareDMapElements(dMapElement1, *(it++)) == true);
+  BOOST_CHECK( compareDMapElements(dMapElement2, *(it++)) == true);
+  BOOST_CHECK( compareDMapElements(dMapElement3, *(it++)) == true);
 }

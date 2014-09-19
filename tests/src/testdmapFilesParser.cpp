@@ -6,9 +6,12 @@ using namespace boost::unit_test_framework;
 
 class DMapFilesParserTest {
  public:
-  void testGetdMapFileElem();
-  void testParseFile();
+  /** Test the parsing of a file and check the DMapElements.
+   *  If the path is not empty it must end with '/'.
+   */
+  void testParseFile(std::string pathToDmapFile);
   void testParseEmptyDmapFile();
+  void testParseNonExistentDmapFile(std::string dmapFile);
   void testGetMapFile();
   void testGetRegisterInfo();
   void testGetNumberOfDmapDevices();
@@ -31,12 +34,29 @@ class DMapFilesParserTestSuite : public test_suite {
     boost::shared_ptr<DMapFilesParserTest> DMapFilesParserTestPtr(
         new DMapFilesParserTest);
 
-    test_case* testgetdMapFileElem = BOOST_CLASS_TEST_CASE(
-        &DMapFilesParserTest::testGetdMapFileElem, DMapFilesParserTestPtr);
-    test_case* testParseEmptyDmapFile = BOOST_CLASS_TEST_CASE(
-        &DMapFilesParserTest::testParseEmptyDmapFile, DMapFilesParserTestPtr);
-    test_case* testParseFile = BOOST_CLASS_TEST_CASE(
-        &DMapFilesParserTest::testParseFile, DMapFilesParserTestPtr);
+    // test parsing of dmap file in the current directory
+    add( BOOST_TEST_CASE( boost::bind(&DMapFilesParserTest::testParseFile,
+				      DMapFilesParserTestPtr,
+				      "") ) );
+    add( BOOST_TEST_CASE( boost::bind(&DMapFilesParserTest::testParseFile,
+				      DMapFilesParserTestPtr,
+				      "dMapDir/") ) );
+    add( BOOST_TEST_CASE( boost::bind(&DMapFilesParserTest::testParseFile,
+				      DMapFilesParserTestPtr,
+				      getCurrentWorkingDirectory()+"/") ) );
+    // test with an empty, existing file
+    add( BOOST_CLASS_TEST_CASE( &DMapFilesParserTest::testParseEmptyDmapFile,
+				DMapFilesParserTestPtr ) );
+    // test with a non-existing file
+    add( BOOST_TEST_CASE( boost::bind(&DMapFilesParserTest::testParseNonExistentDmapFile,
+				      DMapFilesParserTestPtr,
+				      "notExisting.dmap") ) );
+    // special case: file in the root directory. Cannot be there in the test, an probably
+    // also not in real life.
+    add( BOOST_TEST_CASE( boost::bind(&DMapFilesParserTest::testParseNonExistentDmapFile,
+				      DMapFilesParserTestPtr,
+				      "/some.dmap") ) );
+    
     test_case* testGetMapFile = BOOST_CLASS_TEST_CASE(
         &DMapFilesParserTest::testGetMapFile, DMapFilesParserTestPtr);
     test_case* testRegisterInfo = BOOST_CLASS_TEST_CASE(
@@ -70,9 +90,6 @@ class DMapFilesParserTestSuite : public test_suite {
     test_case* testMapException = BOOST_CLASS_TEST_CASE(
         &DMapFilesParserTest::testMapException, DMapFilesParserTestPtr);
 
-    add(testgetdMapFileElem);
-    add(testParseEmptyDmapFile);
-    add(testParseFile);
     add(testGetMapFile);
     add(testRegisterInfo);
     add(testGetDMapFileSize);
@@ -97,85 +114,29 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
   return NULL;
 }
 
-void DMapFilesParserTest::testGetdMapFileElem() {
+void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
   mtca4u::dmapFilesParser filesParser;
-  std::string path_to_dmap_file = "valid.dmap";
-  std::string path_to_map_file = "goodMapFile.map";
+  std::string path_to_dmap_file = pathToDmapFile+"valid.dmap";
+  std::string path_to_map_file1 = "goodMapFile.map";
+  std::string path_to_map_file2 = "./goodMapFile.map";
+  std::string path_to_map_file3 = getCurrentWorkingDirectory()+"/goodMapFile.map";
+
   filesParser.parse_file(path_to_dmap_file);
   mtca4u::dmapFile::dmapElem reterievedDMapElement1;
   mtca4u::dmapFile::dmapElem reterievedDMapElement2;
   mtca4u::dmapFile::dmapElem reterievedDMapElement3;
-
-  mtca4u::dmapFile::dmapElem expectedDMapElement1;
-  mtca4u::dmapFile::dmapElem expectedDMapElement2;
-
-  populateDummydMapElement(expectedDMapElement1, path_to_dmap_file, "card1",
-                           "/dev/dev1", path_to_map_file);
-  populateDummydMapElement(expectedDMapElement2, path_to_dmap_file, "card2",
-                           "/dev/dev2", path_to_map_file);
-
-  expectedDMapElement1.dmap_file_line_nr = 3;
-  expectedDMapElement2.dmap_file_line_nr = 4;
-
-  filesParser.getdMapFileElem(0, reterievedDMapElement1);
-  BOOST_CHECK(compareDMapElements(expectedDMapElement1,
-                                  reterievedDMapElement1) == true);
-
-  filesParser.getdMapFileElem(1, reterievedDMapElement2);
-  BOOST_CHECK(compareDMapElements(expectedDMapElement2,
-                                  reterievedDMapElement2) == true);
-
-  BOOST_CHECK_THROW(filesParser.getdMapFileElem(2, reterievedDMapElement3),
-                    mtca4u::exLibMap);
-
-  try {
-    filesParser.getdMapFileElem(2, reterievedDMapElement3);
-  }
-  catch (mtca4u::exDmapFileParser& exception) {
-    BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
-  }
-
-  mtca4u::dmapFile::dmapElem reterievedDMapElement4 =
-      filesParser.getdMapFileElem("card2");
-
-  BOOST_CHECK(compareDMapElements(expectedDMapElement2,
-                                  reterievedDMapElement4) == true);
-
-  BOOST_CHECK_THROW(filesParser.getdMapFileElem("card_not_present"),
-                    mtca4u::exDmapFileParser);
-  try {
-    filesParser.getdMapFileElem("card_not_present");
-  }
-  catch (mtca4u::exDmapFileParser& exception) {
-    BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
-  }
-
-  filesParser.getdMapFileElem("card2", reterievedDMapElement4);
-  BOOST_CHECK(compareDMapElements(expectedDMapElement2,
-                                  reterievedDMapElement4) == true);
-}
-
-void DMapFilesParserTest::testParseFile() {
-
-  mtca4u::dmapFilesParser filesParser;
-  std::string path_to_dmap_file = "dMapDir/valid.dmap";
-  filesParser.parse_file(path_to_dmap_file);
-  mtca4u::dmapFile::dmapElem reterievedDMapElement1;
-  mtca4u::dmapFile::dmapElem reterievedDMapElement2;
-  mtca4u::dmapFile::dmapElem reterievedDMapElement3;
+  mtca4u::dmapFile::dmapElem reterievedDMapElement4;
 
   mtca4u::dmapFile::dmapElem expectedDMapElement1;
   mtca4u::dmapFile::dmapElem expectedDMapElement2;
   mtca4u::dmapFile::dmapElem expectedDMapElement3;
 
   populateDummydMapElement(expectedDMapElement1, path_to_dmap_file, "card1",
-                           "/dev/dev1", "./goodMapFile.map");
+                           "/dev/dev1", path_to_map_file1);
   populateDummydMapElement(expectedDMapElement2, path_to_dmap_file, "card2",
-                           "/dev/dev2", "./mapFile.map");
+                           "/dev/dev2", path_to_map_file2);
   populateDummydMapElement(expectedDMapElement3, path_to_dmap_file, "card3",
-                           "/dev/dev3", "./mapFile.map");
+                           "/dev/dev3", path_to_map_file3);
 
   expectedDMapElement1.dmap_file_line_nr = 3;
   expectedDMapElement2.dmap_file_line_nr = 4;
@@ -192,20 +153,66 @@ void DMapFilesParserTest::testParseFile() {
   filesParser.getdMapFileElem(2, reterievedDMapElement3);
   BOOST_CHECK(compareDMapElements(expectedDMapElement3,
                                   reterievedDMapElement3) == true);
+
+  BOOST_CHECK_THROW(filesParser.getdMapFileElem(3, reterievedDMapElement4),
+                    mtca4u::exLibMap);
+
+  try {
+    filesParser.getdMapFileElem(3, reterievedDMapElement4);
+  }
+  catch (mtca4u::exDmapFileParser& exception) {
+    BOOST_CHECK(exception.getID() ==
+                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+  }
+
+  mtca4u::dmapFile::dmapElem reterievedDMapElement5 =
+      filesParser.getdMapFileElem("card2");
+
+  BOOST_CHECK(compareDMapElements(expectedDMapElement2,
+                                  reterievedDMapElement5) == true);
+
+  BOOST_CHECK_THROW(filesParser.getdMapFileElem("card_not_present"),
+                    mtca4u::exDmapFileParser);
+  try {
+    filesParser.getdMapFileElem("card_not_present");
+  }
+  catch (mtca4u::exDmapFileParser& exception) {
+    BOOST_CHECK(exception.getID() ==
+                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+  }
+
+  mtca4u::dmapFile::dmapElem reterievedDMapElement6;
+  filesParser.getdMapFileElem("card2", reterievedDMapElement6);
+  BOOST_CHECK(compareDMapElements(expectedDMapElement2,
+                                  reterievedDMapElement6) == true);
 }
 
 void DMapFilesParserTest::testParseEmptyDmapFile() {
   mtca4u::dmapFilesParser filesParser;
-  std::string path_to_dmap_file = "empty.dmap";
+  std::string dmapFileName("empty.dmap");
 
-  BOOST_CHECK_THROW(filesParser.parse_file(path_to_dmap_file),
+  BOOST_CHECK_THROW(filesParser.parse_file(dmapFileName),
                     mtca4u::exDmapFileParser);
   try {
-    filesParser.parse_file(path_to_dmap_file);
+    filesParser.parse_file(dmapFileName);
   }
   catch (mtca4u::exDmapFileParser& exception) {
     BOOST_CHECK(exception.getID() ==
                 mtca4u::exLibMap::EX_NO_DMAP_DATA);
+  }
+}
+
+void DMapFilesParserTest::testParseNonExistentDmapFile(std::string dmapFile) {
+  mtca4u::dmapFilesParser filesParser;
+
+  BOOST_CHECK_THROW(filesParser.parse_file(dmapFile),
+                    mtca4u::exDmapFileParser);
+  try {
+    filesParser.parse_file(dmapFile);
+  }
+  catch (mtca4u::exDmapFileParser& exception) {
+    BOOST_CHECK(exception.getID() ==
+                mtca4u::exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
   }
 }
 
@@ -428,11 +435,11 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
   mtca4u::dmapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, path_to_dmap_file, "card1",
-                           "/dev/dev1", "./goodMapFile.map");
+                           "/dev/dev1", "goodMapFile.map");
   populateDummydMapElement(dMapElement2, path_to_dmap_file, "card2",
-                           "/dev/dev2", "./mapFile.map");
+                           "/dev/dev2", "./goodMapFile.map");
   populateDummydMapElement(dMapElement3, path_to_dmap_file, "card3",
-                           "/dev/dev3", "./mapFile.map");
+                           "/dev/dev3", getCurrentWorkingDirectory()+"/goodMapFile.map");
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;
@@ -455,20 +462,19 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   std::string path_to_dmap_file = "dMapDir/valid.dmap";
   filesParser.parse_file(path_to_dmap_file);
 
-  char* a = getcwd(NULL,0);
-  std::string currentWrkingDir(a);
-  free(a);
+  std::string currentWrkingDir = getCurrentWorkingDirectory();
 
   mtca4u::dmapFile::dmapElem dMapElement1;
   mtca4u::dmapFile::dmapElem dMapElement2;
   mtca4u::dmapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, path_to_dmap_file, "card1",
-                           "/dev/dev1", "./goodMapFile.map");
+                           "/dev/dev1", "goodMapFile.map");
   populateDummydMapElement(dMapElement2, path_to_dmap_file, "card2",
-                           "/dev/dev2", "./mapFile.map");
+                           "/dev/dev2", "./goodMapFile.map");
+  // the third path is absolute, does not change with the location of the dmap file
   populateDummydMapElement(dMapElement3, path_to_dmap_file, "card3",
-                           "/dev/dev3", "./mapFile.map");
+                           "/dev/dev3", getCurrentWorkingDirectory() + "/goodMapFile.map");
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;
@@ -480,9 +486,10 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   tmpArray1[2] = &dMapElement3;
 
 
-  std::string s1 = currentWrkingDir + "/" + "dMapDir/./goodMapFile.map";
-  std::string s2 = currentWrkingDir + "/" + "dMapDir/./mapFile.map";
-  std::string s3 = currentWrkingDir + "/" + "dMapDir/./mapFile.map";
+  std::string s1 = currentWrkingDir + "/" + "dMapDir/goodMapFile.map";
+  std::string s2 = currentWrkingDir + "/" + "dMapDir/./goodMapFile.map";
+  // the third path is absolute, does not change with the location of the dmap file
+  std::string s3 = currentWrkingDir + "/" + "goodMapFile.map";
   std::string* tmpArray2[3];
   tmpArray2[0] = &s1;
   tmpArray2[1] = &s2;

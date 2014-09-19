@@ -25,6 +25,8 @@ bool compareDMapElements(const mtca4u::dmapFile::dmapElem& dMapElement1,
 bool compareMapElements(const mtca4u::mapFile::mapElem& element1,
                         const mtca4u::mapFile::mapElem& element2);
 
+std::string getCurrentWorkingDirectory();
+
 void populateDummydMapElement(mtca4u::dmapFile::dmapElem& dMapElement,
                               std::string dmapFileName, std::string deviceName,
                               std::string dev_file, std::string map_file_name) {
@@ -53,7 +55,6 @@ bool compareDMapElements(const mtca4u::dmapFile::dmapElem& dMapElement1,
                          const mtca4u::dmapFile::dmapElem& dMapElement2) {
   bool result =
       (dMapElement1.dev_name == dMapElement2.dev_name) &&
-      (dMapElement1.dev_name == dMapElement2.dev_name) &&
       (dMapElement1.dev_file == dMapElement2.dev_file) &&
       (dMapElement1.map_file_name == dMapElement2.map_file_name) &&
       (dMapElement1.dmap_file_name == dMapElement2.dmap_file_name) &&
@@ -74,5 +75,16 @@ bool compareMapElements(const mtca4u::mapFile::mapElem& element1,
                 (element1.reg_width == element2.reg_width);
   return result;
 }
+
+std::string getCurrentWorkingDirectory() {
+  char *currentWorkingDir = get_current_dir_name();
+  if (!currentWorkingDir) {
+    throw;
+  }
+  std::string dir(currentWorkingDir);
+  free(currentWorkingDir);
+  return dir;
+}
+
 
 #endif /* HELPERFUNCTIONS_H_ */

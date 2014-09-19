@@ -34,14 +34,14 @@ namespace mtca4u{
     std::string absolutePathToDMapDir = getCurrentWorkingDirectory();
     size_t pos = fileName.find_last_of('/');
     if (pos != std::string::npos) {
-      appendToPath(absolutePathToDMapDir, fileName.substr(0, pos));
+      combinePaths(absolutePathToDMapDir, fileName.substr(0, pos));
     }
     cleanAll();
     dmap = dmap_file_parser.parse(fileName);
     for (dmap_elem_iter = dmap->dmap_file_elems.begin();
          dmap_elem_iter != dmap->dmap_file_elems.end(); ++dmap_elem_iter) {
       std::string absPathToCurrentMapFile = absolutePathToDMapDir;
-      appendToPath(absPathToCurrentMapFile, dmap_elem_iter->map_file_name);
+      combinePaths(absPathToCurrentMapFile, dmap_elem_iter->map_file_name);
       map_file_iter = std::find_if(map_files.begin(), map_files.end(),
                                    findMapFileByName_pred(absPathToCurrentMapFile));
       if (map_file_iter == map_files.end()) {
@@ -296,7 +296,7 @@ dmapFilesParser::const_iterator dmapFilesParser::end() const{
 }
 
 std::string dmapFilesParser::getCurrentWorkingDirectory() {
-  char *currentWorkingDir = getcwd(NULL, 0);
+  char *currentWorkingDir = get_current_dir_name();
   if (!currentWorkingDir) {
     throw;
   }
@@ -305,12 +305,19 @@ std::string dmapFilesParser::getCurrentWorkingDirectory() {
   return dir;
 }
 
-void dmapFilesParser::appendToPath(std::string &basePath,
+void dmapFilesParser::combinePaths(std::string &absoluteBasePath,
                                    const std::string &pathToAppend) {
-  if (pathToAppend[0] != '/') {
-    basePath = basePath + '/' + pathToAppend;
-  } else {
-    basePath = basePath + pathToAppend;
+  /* pathToAppend can only be empty if a dmap file in the root directory has been requested.
+   * In this case the search for '/' has returned pos=0, resulting in an empty pathToAppend.
+   */
+  if(pathToAppend.empty()){
+    absoluteBasePath = "/";
+  }
+
+  if (pathToAppend[0] == '/') {// absolute path, replace the base path
+    absoluteBasePath = pathToAppend;
+  } else {// relative path
+    absoluteBasePath = absoluteBasePath + '/' + pathToAppend;
   }
 }
 
