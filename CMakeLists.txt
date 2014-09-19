@@ -101,15 +101,19 @@ MAPPEDDEVICE_ADDSUBDIR( libdevMap test-libdevMap)
 #Currently we assume that they are all tests contained in one file, so
 #each file gives a new executable. This section has to be adapted if this should change.
 if(TESTING_IS_ENABLED)
-  include_directories(${CMAKE_SOURCE_DIR}/tests/include})
-  aux_source_directory(${CMAKE_SOURCE_DIR}/tests/src testSources)
-  foreach( testSourceFile ${testSources})
+  include_directories(${CMAKE_SOURCE_DIR}/tests/include)
+  #aux_source_directory(${CMAKE_SOURCE_DIR}/tests/src testSources)
+#  add_library(${PROJECT_NAME}_TEST_LIBRARY {testSources} )
+
+  aux_source_directory(${CMAKE_SOURCE_DIR}/tests/executables_src testExecutables)
+  foreach( testExecutableSrcFile ${testExecutables})
     #NAME_WE means the base name without path and (longest) extension
-    get_filename_component(excutableName ${testSourceFile} NAME_WE)
-    add_executable(${excutableName} ${testSourceFile})
+    get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
+    add_executable(${excutableName} ${testExecutableSrcFile})
+    #target_link_libraries(${excutableName} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES})    
     target_link_libraries(${excutableName} ${PROJECT_NAME} ${Boost_LIBRARIES})    
     add_test(${excutableName} ${excutableName})
-  endforeach( testSourceFile )
+  endforeach( testExecutableSrcFile )
 
   COPY_MAPPING_FILES()
   COPY_DMAP_TEST_DIR()
