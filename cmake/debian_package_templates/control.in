@@ -1,7 +1,7 @@
 Source: mtcamappeddevice
 Priority: extra
 Maintainer: Martin Killenberg <martin.killenberg@desy.de>
-Build-Depends: debhelper (>= 7), cmake (>= 2.8), libboost-dev (>= 1.40), libboost-test-dev (>= 1.40), mtcadummy-dkms (>=0.7)
+Build-Depends: debhelper (>= 7), cmake (>= 2.8), libboost-dev (>= 1.46), libboost-test-dev (>= 1.46), libboost-filesystem-dev (>=1.46), mtcadummy-dkms (>=0.7)
 Standards-Version: 3.8.3
 Section: libs
 #Homepage: <insert the upstream URL, if relevant>
@@ -9,7 +9,7 @@ Section: libs
 Package: dev-mtcamappeddevice
 Section: libdevel
 Architecture: any
-Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@, libboost-dev (>= 1.40)
+Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@, libboost-dev (>= 1.46)
 Description: Header and cmake files for MTCA4U MtcaMappedDevice.
  The files you need to compile against MTCA4U MtcaMappedDevice.
 
