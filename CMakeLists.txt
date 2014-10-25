@@ -125,7 +125,7 @@ if(TESTING_IS_ENABLED)
       
   #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    configure_file(cmake/Makefile.coverage
+    configure_file(cmake/Makefile.coverage.in
       ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
     add_custom_target(coverage
       make -f Makefile.coverage
