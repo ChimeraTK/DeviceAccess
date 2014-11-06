@@ -8,26 +8,26 @@
 #include <sstream>
 #include <unistd.h>
 
+#include <boost/bind.hpp>
+//#include <boost/lambda.hpp>
+
 // the io constants and struct for the driver
 // FIXME: they should come from the installed driver
 #include <pciedev_io.h>
+#include <pcieuni_io_compat.h>
 #include <llrfdrv_io_compat.h>
 
 namespace mtca4u{
 
 devPCIE::devPCIE() 
-  : _deviceName(), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0),
-    _readDMAFunction(NULL)
-{
+  : _deviceName(), _deviceID(0), _ioctlPhysicalSlot(0), _ioctlDriverVersion(0){
 }
 
-devPCIE::~devPCIE()
-{
+devPCIE::~devPCIE(){
     closeDev();
 }
 
-void devPCIE::openDev(const std::string &devName, int perm, devConfigBase* /*pConfig*/)
-{
+void devPCIE::openDev(const std::string &devName, int perm, devConfigBase* /*pConfig*/){
     if (opened == true) {
         throw exDevPCIE("Device already has been opened", exDevPCIE::EX_DEVICE_OPENED);
     }   
@@ -51,8 +51,17 @@ void devPCIE::determineDriverAndConfigureIoctl(){
       // it's the pciedev driver
       _ioctlPhysicalSlot =  PCIEDEV_PHYSICAL_SLOT;
       _ioctlDriverVersion =  PCIEDEV_DRIVER_VERSION;
-      _readDMAFunction = &devPCIE::readDMAViaIoctl;
-      
+      _ioctlDMA = PCIEDEV_READ_DMA;
+      _readDMAFunction = boost::bind(&devPCIE::readDMAViaIoctl, this, 
+				     _1, _2, _3, _4 );
+      _writeFunction = boost::bind( &devPCIE::writeWithStruct, this,
+				    _1, _2, _3 );
+      _writeAreaFunction = boost::bind( &devPCIE::writeAreaWithStruct, this,
+					_1, _2, _3, _4 );
+      _readFunction = boost::bind( &devPCIE::readWithStruct, this,
+				   _1, _2, _3 );
+      _readAreaFunction = boost::bind( &devPCIE::readAreaWithStruct, this,
+				       _1, _2, _3, _4 );
       return;
     }
    
@@ -60,8 +69,35 @@ void devPCIE::determineDriverAndConfigureIoctl(){
       // it's the llrf driver
       _ioctlPhysicalSlot =  LLRFDRV_PHYSICAL_SLOT;
       _ioctlDriverVersion =  LLRFDRV_DRIVER_VERSION;
-      _readDMAFunction = &devPCIE::readDMAViaStruct;
-      
+      _ioctlDMA=0;
+      _readDMAFunction = boost::bind(&devPCIE::readDMAViaStruct, this,
+					_1, _2, _3, _4 );
+       _writeFunction = boost::bind( &devPCIE::writeWithStruct, this,
+				     _1, _2, _3 );
+      _writeAreaFunction = boost::bind( &devPCIE::writeAreaWithStruct, this,
+					_1, _2, _3, _4 );
+      _readFunction = boost::bind( &devPCIE::readWithStruct, this,
+				   _1, _2, _3 );
+      _readAreaFunction = boost::bind( &devPCIE::readAreaWithStruct, this,
+				       _1, _2, _3, _4 );
+      return;
+    }
+
+    if (ioctl(_deviceID,  PCIEUNI_PHYSICAL_SLOT, &ioctlData) >= 0){
+      // it's the pcieuni
+      _ioctlPhysicalSlot =  PCIEUNI_PHYSICAL_SLOT;
+      _ioctlDriverVersion =  PCIEUNI_DRIVER_VERSION;
+      _ioctlDMA = PCIEUNI_READ_DMA;
+      _readDMAFunction = boost::bind(&devPCIE::readDMAViaIoctl, this,
+				      _1, _2, _3, _4 );
+      _writeFunction = boost::bind( &devPCIE::directWrite, this,
+				    _1, _2, _3, sizeof(int32_t) );
+      _writeAreaFunction = boost::bind( &devPCIE::directWrite, this,
+					_1, _2, _3, _4 );
+      _readFunction = boost::bind( &devPCIE::directRead, this,
+				   _1, _2, _3, sizeof(int32_t) );
+      _readAreaFunction = boost::bind( &devPCIE::directRead, this,
+				       _1, _2, _3, _4 );
       return;
     }
 
@@ -79,7 +115,7 @@ void devPCIE::closeDev()
     opened = false;
 }
     
-void devPCIE::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
+void devPCIE::readWithStruct(uint32_t regOffset, int32_t* data, uint8_t bar)
 {
     device_rw	          l_RW;        
     if (opened == false) {
@@ -99,7 +135,28 @@ void devPCIE::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
     *data = l_RW.data_rw;            
 }
 
-void devPCIE::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
+void devPCIE::directRead(uint32_t regOffset, int32_t* data, uint8_t bar, size_t sizeInBytes){
+  if (opened == false) {
+    throw exDevPCIE("Device closed", exDevPCIE::EX_DEVICE_CLOSED);
+  }    
+  if (bar > 5){
+    std::stringstream errorMessage;
+    errorMessage << "Invalid bar number: " << bar << std::endl;
+    throw exDevPCIE(errorMessage.str(), exDevPCIE::EX_READ_ERROR);
+  }
+  loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + regOffset;
+  
+  if (pread (_deviceID, data, sizeInBytes, virtualOffset) != static_cast<int>(sizeInBytes)){
+    throw exDevPCIE(createErrorStringWithErrnoText("Cannot read data from device: "),
+		    exDevPCIE::EX_READ_ERROR);
+  }       
+}
+  
+void devPCIE::readReg(uint32_t regOffset, int32_t* data, uint8_t bar){
+  _readFunction(regOffset, data, bar);
+}
+
+void devPCIE::writeWithStruct(uint32_t regOffset, int32_t const * data, uint8_t bar)
 {    
     device_rw	          l_RW;        
     if (opened == false) {
@@ -108,7 +165,7 @@ void devPCIE::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
     l_RW.barx_rw   = bar;
     l_RW.mode_rw   = RW_D32;
     l_RW.offset_rw = regOffset;
-    l_RW.data_rw   = data;
+    l_RW.data_rw   = *data;
     l_RW.rsrvd_rw  = 0;
     l_RW.size_rw   = 0;
 
@@ -117,12 +174,35 @@ void devPCIE::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
 			exDevPCIE::EX_WRITE_ERROR);
     }       
 }
-    
-void devPCIE::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
-{       
+
+// direct write allows to read areas directly, without a loop in user space
+void devPCIE::directWrite(uint32_t regOffset, int32_t const * data, uint8_t bar,
+			  size_t sizeInBytes )
+{    
     if (opened == false) {
-        throw exDevPCIE("Device closed", exDevPCIE::EX_DEVICE_CLOSED);
-    }     
+      throw exDevPCIE("Device closed", exDevPCIE::EX_DEVICE_CLOSED);
+    }    
+    if (bar > 5){
+      std::stringstream errorMessage;
+      errorMessage << "Invalid bar number: " << bar << std::endl;
+      throw exDevPCIE(errorMessage.str(), exDevPCIE::EX_WRITE_ERROR);
+    }
+    loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + regOffset;
+
+    if (pwrite (_deviceID, data, sizeInBytes, virtualOffset) != static_cast<int>(sizeInBytes)){
+      throw exDevPCIE(createErrorStringWithErrnoText("Cannot write data to device: "),
+		      exDevPCIE::EX_WRITE_ERROR);
+    }       
+}
+
+
+void devPCIE::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
+{    
+  _writeFunction(regOffset, &data, bar);
+}
+    
+void devPCIE::readAreaWithStruct(uint32_t regOffset, int32_t* data, uint8_t bar, size_t size)
+{       
     if (size % 4) {
         throw exDevPCIE("Wrong data size - must be dividable by 4", exDevPCIE::EX_READ_ERROR);
     } 
@@ -132,7 +212,14 @@ void devPCIE::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t b
     }     
 }
 
-void devPCIE::writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
+void devPCIE::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar){
+  // Yes I know, the order of bar and size is reversed. The writeArea interface 
+  // got it wrong and I wanted to break it to keep the internal functions nice.
+  _readAreaFunction(regOffset, data, bar, size);
+}
+
+void devPCIE::writeAreaWithStruct(uint32_t regOffset, int32_t const * data,
+				  uint8_t bar, size_t size )
 {       
     if (opened == false) {
         throw exDevPCIE("Device closed", exDevPCIE::EX_DEVICE_CLOSED);
@@ -145,13 +232,16 @@ void devPCIE::writeArea(uint32_t regOffset, int32_t const * data, size_t size, u
     } 
 }
 
+void devPCIE::writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
+{       
+  // Yes I know, the order of bar and size is reversed. The writeArea interface 
+  // got it wrong and I wanted to break it to keep the internal functions nice.
+  _writeAreaFunction(regOffset, data, bar, size);
+}
+
 void devPCIE::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
 {
-    if (opened == false) {
-        throw exDevPCIE("Device closed", exDevPCIE::EX_DEVICE_CLOSED);
-    }    
-
-    (this->*_readDMAFunction)(regOffset, data, size, bar);
+  _readDMAFunction(regOffset, data, size, bar);
 }
 
 
@@ -211,7 +301,7 @@ void devPCIE::readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size, ui
     // the ioctrl_dma struct is copied to the beginning of the data buffer,
     // so the information about size and offset are passed to the driver.
     memcpy((void*)data, &DMA_RW, sizeof (device_ioctrl_dma));
-    int ret = ioctl (_deviceID, PCIEDEV_READ_DMA, (void*)data);
+    int ret = ioctl (_deviceID, _ioctlDMA, (void*)data);
     if ( ret ){           
       throw exDevPCIE( createErrorStringWithErrnoText("Cannot read data from device "),
 		       exDevPCIE::EX_DMA_READ_ERROR);

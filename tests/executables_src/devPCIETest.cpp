@@ -3,6 +3,7 @@ using namespace boost::unit_test_framework;
 
 #define PCIEDEV_TEST_SLOT 0
 #define LLRFDRV_TEST_SLOT 4
+#define PCIEUNI_TEST_SLOT 6
 
 #include "devPCIE.h"
 #include "exDevPCIE.h"
@@ -68,7 +69,7 @@ class PcieDeviceTest
 
   // Internal function for better code readablility.
   // Returns an error message. If the message is empty the test succeeded.
-  std::string checkDmaValues( int32_t * dmaBuffer, size_t nWords );
+  std::string checkDmaValues( std::vector<int32_t> const & dmaBuffer );
 };
 
 class PcieDeviceTestSuite : public test_suite {
@@ -135,6 +136,11 @@ init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
   std::stringstream mtcadummyFileName;
   mtcadummyFileName << "/dev/mtcadummys" << PCIEDEV_TEST_SLOT;
   framework::master_test_suite().add( new PcieDeviceTestSuite(mtcadummyFileName.str(), PCIEDEV_TEST_SLOT) );
+
+  std::stringstream pcieunidummyFileName;
+  pcieunidummyFileName << "/dev/pcieunidummys" << PCIEUNI_TEST_SLOT;
+  framework::master_test_suite().add( new PcieDeviceTestSuite(pcieunidummyFileName.str(), PCIEUNI_TEST_SLOT) );
+
 
   return NULL;
 }
@@ -204,6 +210,11 @@ void PcieDeviceTest::testReadRegister()
   _pcieDevice.openDev(_deviceFileName);// no need to check if this works because we did the open test first 
   _pcieDevice.readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
   BOOST_CHECK_EQUAL( dataWord, DMMY_AS_ASCII );
+  
+  /** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
+  BOOST_CHECK_THROW( _pcieDevice.readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 6),
+		     exDevPCIE );
+
 }
 
 void PcieDeviceTest::testWriteRegister()
@@ -218,6 +229,10 @@ void PcieDeviceTest::testWriteRegister()
   _pcieDevice.readReg(WORD_USER_OFFSET, &newUserWord, /*bar*/ 0);
  
   BOOST_CHECK_EQUAL( originalUserWord +1, newUserWord );
+
+  /** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
+  BOOST_CHECK_THROW( _pcieDevice.writeReg(WORD_DUMMY_OFFSET, newUserWord, /*bar*/ 6),
+		     exDevPCIE );
 }
 
 void PcieDeviceTest::testReadArea(){
@@ -243,6 +258,16 @@ void PcieDeviceTest::testReadArea(){
   BOOST_CHECK_THROW( _pcieDevice.readArea( /*offset*/ 0, twoWords, /*nBytes*/ 6, /*bar*/ 0 ),
 		     exDevPCIE );
 
+  // also check another bar
+  // Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer) with the default values (index^2) in the first 25 words.
+  _pcieDevice.writeReg(WORD_ADC_ENA_OFFSET, 1 , /*bar*/ 0);
+
+  // use the same test as for DMA
+  std::vector<int32_t> bar2Buffer(N_WORDS_DMA, -1);
+  _pcieDevice.readDMA( /*offset*/ 0, &bar2Buffer[0], N_WORDS_DMA*sizeof(int32_t), /*the dma bar*/ 2 );
+
+  std::string errorMessage = checkDmaValues( bar2Buffer );
+  BOOST_CHECK_MESSAGE( errorMessage.empty(), errorMessage  );
 }
 
 
@@ -266,23 +291,38 @@ void PcieDeviceTest::testWriteArea(){
   // not a multiple of 4.
   BOOST_CHECK_THROW( _pcieDevice.writeArea(  WORD_CLK_CNT_OFFSET, originalClockCounts, /*nBytes*/ 6, /*bar*/ 0 ),
 		     exDevPCIE );
+
+  // also test another bar (area in bar 2), the usual drill: write and read back,
+  // we know that reading works from the previous test
+  std::vector<int32_t> writeBuffer(N_WORDS_DMA, 0xABCDEF01);
+  std::vector<int32_t> readbackBuffer(N_WORDS_DMA, -1);
+  _pcieDevice.writeArea( 0, &writeBuffer[0], N_WORDS_DMA*sizeof(int32_t), /*bar*/ 2 );
+  _pcieDevice.readArea( 0, &readbackBuffer[0], N_WORDS_DMA*sizeof(int32_t), /*bar*/ 2 );
+  BOOST_CHECK(readbackBuffer == writeBuffer);
 }
 
 void PcieDeviceTest::testReadDMA(){
   // Start the ADC on the dummy device. This will fill the "DMA" buffer with the default values (index^2) in the first 25 words.
   _pcieDevice.writeReg(WORD_ADC_ENA_OFFSET, 1 , /*bar*/ 0);
   
-  int32_t dmaUserBuffer[N_WORDS_DMA];
-  for (size_t i = 0; i < N_WORDS_DMA; ++i)
-  {
-    dmaUserBuffer[i] = -1;
-  }
+  std::vector<int32_t> dmaUserBuffer(N_WORDS_DMA,-1);
   
-  _pcieDevice.readDMA( /*offset*/ 0, dmaUserBuffer, N_WORDS_DMA*sizeof(int32_t), /*the dma bar*/ 2 );
+  _pcieDevice.readDMA( /*offset*/ 0, &dmaUserBuffer[0], N_WORDS_DMA*sizeof(int32_t), /*the dma bar*/ 2 );
 
-  std::string errorMessage = checkDmaValues( dmaUserBuffer, N_WORDS_DMA );
+  std::string errorMessage = checkDmaValues( dmaUserBuffer );
   BOOST_CHECK_MESSAGE( errorMessage.empty(), errorMessage  );
   
+  // test dma with offset
+  // read 20 words from address 5 
+  std::vector<int32_t> smallBuffer(20, -1);
+  static const unsigned int readOffset = 5;
+  _pcieDevice.readDMA( /*offset*/ readOffset*sizeof(int32_t),
+		       &smallBuffer[0],
+		       smallBuffer.size()*sizeof(int32_t), /*the dma bar*/ 2 );
+
+  for (size_t i=0 ; i < smallBuffer.size() ; ++i){
+    BOOST_CHECK( smallBuffer[i] == static_cast<int32_t>((i+readOffset)*(i+readOffset)) );
+  }
 }
 
 void PcieDeviceTest::testWriteDMA(){
@@ -339,10 +379,10 @@ void PcieDeviceTest::testFailIfClosed()
 
 }
 
-std::string PcieDeviceTest::checkDmaValues( int32_t * dmaBuffer, size_t nWords ) {
+std::string PcieDeviceTest::checkDmaValues( std::vector<int32_t> const & dmaBuffer ) {
   bool dmaValuesOK = true;
   size_t i; // we need this after the loop
-  for ( i=0; i < nWords; ++i)
+  for ( i=0; i < dmaBuffer.size(); ++i)
   {
     if ( dmaBuffer[i] != static_cast<int32_t>(i*i) ){
       dmaValuesOK = false;
