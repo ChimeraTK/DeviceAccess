@@ -189,11 +189,25 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
 #Only add the examples if testing is enabled. 
 #The binaries are not installed, but tests are run and a coverage report is generated.
 if(TESTING_IS_ENABLED)
-  add_subdirectory(examples)
-  foreach(EXAMPLE readWrite mapped accessor dmap)
-    add_test(NAME Example_${EXAMPLE} WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/examples COMMAND ${EXAMPLE})
-    message("ARGHHH ${PROJECT_BINARY_DIR}/examples/${EXAMPLE}")
-  endforeach(EXAMPLE)
+  #Do not use the example CMakeLists.txt, which is an example how to build against an installed version.
+  #Add all files to this build branch
+  aux_source_directory(${CMAKE_SOURCE_DIR}/examples exampleExecutables)
+
+  #The examples are made to include from include/MtcaMappedDevice, so we have to trick this
+  foreach( includeDir ${${PROJECT_NAME}_INCLUDE_DIRS} )
+    file(GLOB headerFiles  "${includeDir}/*.h")
+    file(COPY ${headerFiles} DESTINATION ${PROJECT_BINARY_DIR}/include/MtcaMappedDevice)
+  endforeach( includeDir )
+  INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
+
+  #Now add all the executables
+  foreach( exampleExecutableSrcFile ${exampleExecutables})
+    #NAME_WE means the base name without path and (longest) extension
+    get_filename_component(excutableName ${exampleExecutableSrcFile} NAME_WE)
+    add_executable(${excutableName} ${exampleExecutableSrcFile})
+    target_link_libraries(${excutableName} ${PROJECT_NAME})
+    add_test(NAME Example_${excutableName} WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/examples COMMAND ${excutableName})
+  endforeach(exampleExecutableSrcFile)
   
   #also install the example source code 
   install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION . COMPONENT dev
