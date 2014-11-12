@@ -7,6 +7,8 @@ set(MtcaMappedDevice_DEBVERSION ${MtcaMappedDevice_MAJOR_VERSION}-${MtcaMappedDe
 #Nothing to change, just copy
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/compat
            ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/rules
+	   ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/mtcamappeddevice-doc.install
+	   ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/mtcamappeddevice-doc.doc-base
      DESTINATION debian_from_template)
 
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/source/format
@@ -44,7 +46,8 @@ add_custom_target(debian_package ${CMAKE_BINARY_DIR}/make_debian_package.sh
 set(PACKAGE_NAME "mtcamappeddevice${MtcaMappedDevice_DEBVERSION}")
 #The development package does not have the version in the name
 set(PACKAGE_DEV_NAME "dev-mtcamappeddevice")
-set(PACKAGE_FILES_WILDCARDS "${PACKAGE_NAME}_*.deb ${PACKAGE_DEV_NAME}_*.deb mtcamappeddevice_*.changes")
+set(PACKAGE_DOC_NAME "mtcamappeddevice-doc")
+set(PACKAGE_FILES_WILDCARDS "${PACKAGE_NAME}_*.deb ${PACKAGE_DEV_NAME}_*.deb  ${PACKAGE_DOC_NAME}_*.deb mtcamappeddevice_*.changes")
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/install_debian_package_at_DESY.sh.in
                install_debian_package_at_DESY.sh @ONLY)

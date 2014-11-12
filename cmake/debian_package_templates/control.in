@@ -10,6 +10,7 @@ Package: dev-mtcamappeddevice
 Section: libdevel
 Architecture: any
 Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@, libboost-dev (>= 1.46)
+Recommends: mtcamappeddevice-doc
 Description: Header and cmake files for MTCA4U MtcaMappedDevice.
  The files you need to compile against MTCA4U MtcaMappedDevice.
 
@@ -21,3 +22,9 @@ Description: MTCA4U MtcaMappedDevice provides a C++ API to access MTCA.4 devices
  MTCA4U is a software package which provides divers, a C++ API and tools for
  hardware monitoring on MicroTCA.4 crates. MtcaMappedDevice is the
  C++ API which provides basic and generic access to the boards.
+
+Package: mtcamappeddevice-doc
+Section: libdevel
+Architecture: any
+Enhances: dev-mtcamappeddevice
+Description: The doxygen html documentation for MtcaMappedDevice and some examples.

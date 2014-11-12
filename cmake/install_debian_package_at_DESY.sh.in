@@ -20,7 +20,7 @@ cd debian_package
 (cd /home/debian/${DEBIAN_CODENAME}/stable; mv @PACKAGE_FILES_WILDCARDS@ ../old)
 # -- from the actual repository
 for REPO in intern pub; do
-    for PACKAGE in @PACKAGE_NAME@ @PACKAGE_DEV_NAME@; do
+    for PACKAGE in @PACKAGE_NAME@ @PACKAGE_DEV_NAME@ @PACKAGE_DOC_NAME@; do
 	ssh doocspkgs sudo -H reprepro --waitforlock 2 -Vb \
 	    /export/reprepro/${REPO}/doocs remove ${DEBIAN_CODENAME} ${PACKAGE}
     done
