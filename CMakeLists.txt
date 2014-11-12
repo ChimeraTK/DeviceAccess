@@ -4,7 +4,7 @@ project(MtcaMappedDevice)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
 set(${PROJECT_NAME}_MINOR_VERSION 12)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
@@ -51,11 +51,20 @@ MACRO( COPY_MAPPING_FILES )
   MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
   IncorrectFracBits2.map goodMapFile.map dummies.dmap invalid.dmap empty.dmap)
     configure_file( tests/${MAPPING_FILE} ${PROJECT_BINARY_DIR}/${MAPPING_FILE} copyonly)
-    configure_file( tests/valid.dmap.in ${PROJECT_BINARY_DIR}/dMapDir/valid.dmap)
   endforeach( MAPPING_FILE )
   # The valid dmap file has an absolute path which has to be configured by cmake
   # So this is not "copyonly"
   configure_file( tests/valid.dmap.in ${PROJECT_BINARY_DIR}/valid.dmap)
+  configure_file( tests/valid.dmap.in ${PROJECT_BINARY_DIR}/dMapDir/valid.dmap)
+
+  # mapping and test script for the examples
+  # They go into a the examples directory because the dmapFliesParser scans the whole 
+  # directory and in the main build directory there are also ivalid ones.
+  # We also copy the bad mapping file so we can reuse dummies.dmap.
+  foreach( FILE mtcadummy.map  mtcadummy_bad.map dummies.dmap )
+    configure_file( tests/${FILE} ${PROJECT_BINARY_DIR}/examples/${FILE} copyonly)
+  endforeach( FILE )
+
 ENDMACRO( COPY_MAPPING_FILES )
 
 MACRO( COPY_SELECTED_DIRECTORIES )
@@ -176,8 +185,32 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
   "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
   DESTINATION . COMPONENT dev)
+
+#Only add the examples if testing is enabled. 
+#The binaries are not installed, but tests are run and a coverage report is generated.
+if(TESTING_IS_ENABLED)
+  add_subdirectory(examples)
+  foreach(EXAMPLE readWrite mapped accessor dmap)
+    add_test(NAME Example_${EXAMPLE} WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/examples COMMAND ${EXAMPLE})
+    message("ARGHHH ${PROJECT_BINARY_DIR}/examples/${EXAMPLE}")
+  endforeach(EXAMPLE)
+  
+  #also install the example source code 
+  install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION . COMPONENT dev
+    FILES_MATCHING PATTERN "*.cpp"  PATTERN  Makefile PATTERN CMakeLists.txt)
+endif(TESTING_IS_ENABLED)
  
 # The instructions to create a debian package are loaded from a separate file
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
 
-
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+  add_custom_target(doc ALL
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc DESTINATION . COMPONENT dev)
+else(DOXYGEN_FOUND)
+  message("Doxygen not found, documentation cannot be build.")
+endif(DOXYGEN_FOUND)

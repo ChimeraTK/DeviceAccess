@@ -1,0 +1,45 @@
+/**
+\page dmap Device Mapping
+
+A device map file (dmap file) gives an alias for each device file and defines which
+map file to use with it. Like this it is sort of a crate population file, showing
+which board is in which slot.
+
+Each row corresponds to one device and each line 
+has three entries
+\li Alias name
+\li Device file
+\li Map file
+
+Example:
+\li A dummy device in the pseudo-slot 0
+\li A board from the machine protection system in slot 5
+\li A board with a motor driver in slot 6
+
+\verbatim
+DUMMY /dev/mtcadumms0 mtcadummy_v00.08.map
+MPS /dev/pciedevs5 mps_v00.07.map
+MOTOR_DRIVER /dev/pciedevs6 DFMC_MD22_v3.0.map
+\endverbatim
+
+The alias names can be chosen freely by the system integrator. Note that 
+the MPS board and the motor driver use the same driver. The device mapping
+allows to use convenient alias names in the high level software picking the
+right board by function and not which slot was used in this particular crate.
+
+\section Using the device mapping
+
+The dmapFilesParser allows to conveniently read all dmap files in a given directory.
+It allows to get the device information (called dmapElem) for a specific alias.
+
+\include dmap.cpp
+
+\note This multi-step approach will change, probably using a device factory.
+\note The correlation to the map file will be automated in future.
+\note The whole dmap mechanism might change in favour of the PICMG standard device model approach, or become part of it.
+*/
+
+/**
+\example dmap.cpp
+Example how to use device mapping
+*/

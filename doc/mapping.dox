@@ -1,0 +1,56 @@
+/**
+\page mapping Using the register name mapping
+
+To use the register name mapping you need a map file with
+the register names and properties (comes with the firmware).
+
+The class for the name mapped device is mtca4u::devMap.
+In addition to the read and write functions of devBase it provides read
+functions which take a register name instead of its address and bar.
+To open the device, you give the name of the map file in addition.
+
+\include mapped.cpp
+
+\section accessors Register accessors
+
+To repeatedly look up the address of a name during run time is not efficient.
+This is solved by mtca4u::devMap::RegisterAccessor objects, which cache the address.
+
+\code
+  // Inefficient due to repeated table look-up of the address
+  for (int i = 0; i < 1000; ++i){
+    myMappedDevice.writeReg(REGISTER_NAME, &i);
+  }
+
+  // Better use an accessor
+  mtca4u::devMap<devPCIE>::RegisterAccessor accessor =  myMappedDevice.getRegisterAccessor(REGISTER_NAME);
+  for (int i = 0; i < 1000; ++i){
+    accessor.writeReg(REGISTER_NAME, &i);
+  }
+\endcode
+
+\subsection fixed_point_conversion Fixed point conversion
+In the FPGA, words are often interpreted in fixed point representation.
+On the CPU usually floating point is used.
+In addition to the raw read, accessors also contain a fixed point
+converter. If the fixed point representation of the register is in the 
+mapping file, the read and write functions allow to directly use the 
+floating point representation in the user code.
+
+\code
+  accessor.write(17.5);
+  float value = accessor.read<float>();
+\endcode
+
+Complete example:
+\include accessor.cpp
+
+ \ref dmap
+*/
+
+/**
+\example mapped.cpp
+Example how to use register name mapping
+\example accessor.cpp
+Example how to use accessors 
+*/
