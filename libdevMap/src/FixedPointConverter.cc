@@ -69,6 +69,18 @@ namespace mtca4u{
     return static_cast<uint32_t>(round(scaledValue)) & _usedBitsMask;    
   }
 
+  unsigned int FixedPointConverter::getNBits(){
+    return _nBits;
+  }
+
+  int FixedPointConverter::getFractionalBits(){
+    return _fractionalBits;
+  }
+
+  bool FixedPointConverter::isSigned(){
+    return _isSigned;
+  }
+
 }// namespace mtca4u
 
 

@@ -643,4 +643,16 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction43 ){
   checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
+BOOST_AUTO_TEST_CASE( testGetters ){
+  FixedPointConverter defaultConverter;
+  BOOST_CHECK( defaultConverter.getNBits() == 32 );
+  BOOST_CHECK( defaultConverter.getFractionalBits() == 0 );
+  BOOST_CHECK( defaultConverter.isSigned() == true );
+
+  FixedPointConverter customConverter(13, 7, false);
+  BOOST_CHECK( customConverter.getNBits() == 13 );
+  BOOST_CHECK( customConverter.getFractionalBits() == 7 );
+  BOOST_CHECK( customConverter.isSigned() == false );
+}
+
 BOOST_AUTO_TEST_SUITE_END()

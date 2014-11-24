@@ -39,6 +39,15 @@ namespace mtca4u{
      */
     uint32_t toFixedPoint(double floatingPointValue) const;
 
+    /** Read back the number of bits the converter is using. */
+    unsigned int getNBits();
+
+    /** Read back the fractional bits the converter is using. */
+    int getFractionalBits();
+
+    /** Read back wether the conversion is using signed values. */
+    bool isSigned();
+
   private:
     unsigned int _nBits;
     int _fractionalBits;

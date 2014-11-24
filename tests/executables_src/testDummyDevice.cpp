@@ -125,10 +125,10 @@ void DummyDeviceTest::testCalculateVirtualAddress(){
 
 void DummyDeviceTest::testCheckSizeIsMultipleOfWordSize(){
   // just some arbitrary numbers to test %4 = 0, 1, 2, 3
-  BOOST_CHECK_NO_THROW(  DummyDevice::checkSizeIsMultipleOfWordSize(24) );
-  BOOST_CHECK_THROW(  DummyDevice::checkSizeIsMultipleOfWordSize(25), DummyDeviceException );
-  BOOST_CHECK_THROW(  DummyDevice::checkSizeIsMultipleOfWordSize(26), DummyDeviceException );
-  BOOST_CHECK_THROW(  DummyDevice::checkSizeIsMultipleOfWordSize(27), DummyDeviceException );  
+  BOOST_CHECK_NO_THROW(  TestableDummyDevice::checkSizeIsMultipleOfWordSize(24) );
+  BOOST_CHECK_THROW(  TestableDummyDevice::checkSizeIsMultipleOfWordSize(25), DummyDeviceException );
+  BOOST_CHECK_THROW(  TestableDummyDevice::checkSizeIsMultipleOfWordSize(26), DummyDeviceException );
+  BOOST_CHECK_THROW(  TestableDummyDevice::checkSizeIsMultipleOfWordSize(27), DummyDeviceException );  
 }
 
 void DummyDeviceTest::testOpenClose(){
@@ -329,7 +329,7 @@ void DummyDeviceTest::testReadOnly(){
 
   // also set the last two words to read only. Now only the second word has to change.
   // We use the addressRange interface for it to also cover this.
-  DummyDevice::AddressRange lastTwoMuxRegisters( offset + 2*sizeof(int32_t),  2*sizeof(int32_t), bar );
+  TestableDummyDevice::AddressRange lastTwoMuxRegisters( offset + 2*sizeof(int32_t),  2*sizeof(int32_t), bar );
   _dummyDevice.setReadOnly( lastTwoMuxRegisters );
    std::for_each( dataContent.begin(), dataContent.end(), boost::lambda::_1 = 29);
    // also test with single write operations
@@ -363,11 +363,11 @@ void DummyDeviceTest::testWriteCallbackFunctions(){
 
   BOOST_REQUIRE( _dummyDevice._barContents[0].size() >= 13 );
   a=0; b=0; c=0;
-  _dummyDevice.setWriteCallbackFunction( DummyDevice::AddressRange( 36, 4, 0 ),
+  _dummyDevice.setWriteCallbackFunction( TestableDummyDevice::AddressRange( 36, 4, 0 ),
 					 boost::bind( &DummyDeviceTest::increaseA, this ) );
-  _dummyDevice.setWriteCallbackFunction( DummyDevice::AddressRange( 28, 24, 0 ),
+  _dummyDevice.setWriteCallbackFunction( TestableDummyDevice::AddressRange( 28, 24, 0 ),
 					 boost::bind( &DummyDeviceTest::increaseB, this ) );
-  _dummyDevice.setWriteCallbackFunction( DummyDevice::AddressRange( 20, 12, 0 ),
+  _dummyDevice.setWriteCallbackFunction( TestableDummyDevice::AddressRange( 20, 12, 0 ),
 					 boost::bind( &DummyDeviceTest::increaseC, this ) );
  
   // test single writes
@@ -425,17 +425,17 @@ void DummyDeviceTest::testWriteRegisterWithoutCallback(){
 }
 
 void DummyDeviceTest::testAddressRange(){
-  DummyDevice::AddressRange range24_8_0( 24, 8, 0 );
+  TestableDummyDevice::AddressRange range24_8_0( 24, 8, 0 );
 
   BOOST_CHECK( range24_8_0.offset == 24 );
   BOOST_CHECK( range24_8_0.sizeInBytes == 8 );
   BOOST_CHECK( range24_8_0.bar == 0 );
 
-  DummyDevice::AddressRange range24_8_1( 24, 8, 1 ); // larger bar
-  DummyDevice::AddressRange range12_8_1( 12, 8, 1 ); // larger bar, smaller offset
-  DummyDevice::AddressRange range28_8_0( 28, 8, 0 ); // larger offset
-  DummyDevice::AddressRange range28_8_1( 28, 8, 1 ); // larger bar, larger offset
-  DummyDevice::AddressRange range24_12_0( 24, 12, 0 ); // different size, compares equal with range1
+  TestableDummyDevice::AddressRange range24_8_1( 24, 8, 1 ); // larger bar
+  TestableDummyDevice::AddressRange range12_8_1( 12, 8, 1 ); // larger bar, smaller offset
+  TestableDummyDevice::AddressRange range28_8_0( 28, 8, 0 ); // larger offset
+  TestableDummyDevice::AddressRange range28_8_1( 28, 8, 1 ); // larger bar, larger offset
+  TestableDummyDevice::AddressRange range24_12_0( 24, 12, 0 ); // different size, compares equal with range1
   
   // compare 24_8_0 with the other cases as left argument
   BOOST_CHECK(  (range24_8_0 < range24_8_1) );
@@ -456,8 +456,8 @@ void DummyDeviceTest::testIsWriteRangeOverlap(){
   // the only test not covered by the writeCallbackFunction test:
   // An overlapping range in different bars
   bool overlap = _dummyDevice.isWriteRangeOverlap( 
-		    DummyDevice::AddressRange( 0, 12, 0 ),
-		    DummyDevice::AddressRange( 0, 12, 1 ) );
+		    TestableDummyDevice::AddressRange( 0, 12, 0 ),
+		    TestableDummyDevice::AddressRange( 0, 12, 1 ) );
   BOOST_CHECK( overlap == false );
 }
 
