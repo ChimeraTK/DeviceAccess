@@ -15,13 +15,13 @@ namespace mtca4u{
      *    -1024+nBits to 1023-nBits. This is the maximum dynamica range in which
      *    the fixed point number can be
      *    represented by a double without rounding errors.
-     *  @param isSigned Flag whether the most significant bit is interpreted as
+     *  @param isSignedFlag Flag whether the most significant bit is interpreted as
      *    sign bit. Negative numbers are interpretes as two's complement
      *    number of the respective number of bits 
      *    (i.e. in signed 6 bit, 0 fractional bits 0x3F is -1)
      */
     FixedPointConverter(unsigned int nBits = 32, int fractionalBits = 0,
-			bool isSigned=true);
+			bool isSignedFlag =true);
 
     /** Converstion function from fixed value to double.
      *  There is no consistency check of the input.

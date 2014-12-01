@@ -8,8 +8,8 @@ namespace mtca4u{
   
   FixedPointConverter::FixedPointConverter(unsigned int nBits,
 					   int fractionalBits,
-					   bool isSigned)
-    : _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSigned),
+					   bool isSignedFlag)
+    : _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSignedFlag),
       _fractionalBitsCoefficient(std::pow( 2., -fractionalBits)),
       _inverseFractionalBitsCoefficient(std::pow( 2., fractionalBits)){
   
