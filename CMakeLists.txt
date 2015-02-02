@@ -29,7 +29,9 @@ FIND_PACKAGE(Boost COMPONENTS REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 #the unit test component is optional
+#Some tests need filesystem (which has system as a dependency. Has to be in here for the linker)
 FIND_PACKAGE(Boost COMPONENTS system filesystem unit_test_framework)
+#No need to check for system, it has to be there as a dependency of filesystem (keep the syntax short)
 IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND Boost_FILESYSTEM_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
