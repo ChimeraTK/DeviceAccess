@@ -23,14 +23,13 @@ namespace mtca4u{
     FixedPointConverter(unsigned int nBits = 32, int fractionalBits = 0,
 			bool isSignedFlag =true);
 
-    /** Converstion function from fixed value to double.
-     *  There is no consistency check of the input.
-     *  In case less than 32 bits are used it is in the responsibility of the
-     *  user that the leading bits are 0. Otherwise the results will be wrong.
+    /** Conversion function from fixed value to double.
+     *  In case the number of bits is less than 32, invalid leading bits are ignored. Only the valid bits
+     *  are interpreted.
      */
     double toDouble(uint32_t fixedPointValue) const;
 
-    /** Converstion function from double to fixed point.
+    /** Conversion function from double to fixed point.
      *  This conversion usually will introduce rounding errors due to this limited
      *  resolution of the fixed point number compared to the double.
      *  In case of a high number of fractional bits this can mean that the most

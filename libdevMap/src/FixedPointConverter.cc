@@ -38,6 +38,9 @@ namespace mtca4u{
   }
 
   double FixedPointConverter::toDouble(uint32_t fixedPointValue) const{
+    // leading, out of range bits are ignored. Just crop them.
+    fixedPointValue &= _usedBitsMask;
+
     // the value how the word looks like as integer in double representation,
     // i.e. before applying the fixed comma offset, but interpreting the
     // sign and the number of bits
