@@ -16,6 +16,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wunini
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
+#use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
+#build. The 'make doc' target will still exist
+if(SUPPRESS_AUTO_DOC_BUILD)
+    unset(DOC_DEPENDENCY)
+else(SUPPRESS_AUTO_DOC_BUILD)
+    set(DOC_DEPENDENCY ALL)
+endif(SUPPRESS_AUTO_DOC_BUILD)
+
 #boost as such is required for shared pointers e.g.
 FIND_PACKAGE(Boost COMPONENTS REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -223,7 +231,7 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
-  add_custom_target(doc
+  add_custom_target(doc ${DOC_DEPENDENCY}
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
