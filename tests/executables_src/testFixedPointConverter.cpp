@@ -100,11 +100,11 @@ BOOST_AUTO_TEST_CASE( testUInt32 ){
   checkToFixedPoint( converter, 0.25, 0 );
   checkToFixedPoint( converter, -0.25, 0 );
   checkToFixedPoint( converter, 0.75, 1 );
-  checkToFixedPoint( converter, -0.75, 0xFFFFFFFF );
+  checkToFixedPoint( converter, -0.75, 0 );
   checkToFixedPoint( converter, 3.25, 3 );
-  checkToFixedPoint( converter, -3.25, 0xFFFFFFFD );
+  checkToFixedPoint( converter, -3.25, 0 );
   checkToFixedPoint( converter, 5.75, 6 );
-  checkToFixedPoint( converter, -5.75, 0xFFFFFFFA );
+  checkToFixedPoint( converter, -5.75, 0 );
 }
 
 BOOST_AUTO_TEST_CASE( testInt16 ){
@@ -132,11 +132,11 @@ BOOST_AUTO_TEST_CASE( testUInt16 ){
   checkToFixedPoint( converter, 0.25, 0 );
   checkToFixedPoint( converter, -0.25, 0 );
   checkToFixedPoint( converter, 0.75, 1 );
-  checkToFixedPoint( converter, -0.75, 0xFFFF );
+  checkToFixedPoint( converter, -0.75, 0 );
   checkToFixedPoint( converter, 3.25, 3 );
-  checkToFixedPoint( converter, -3.25, 0xFFFD );
+  checkToFixedPoint( converter, -3.25, 0 );
   checkToFixedPoint( converter, 5.75, 6 );
-  checkToFixedPoint( converter, -5.75, 0xFFFA );
+  checkToFixedPoint( converter, -5.75, 0 );
 }
 
 BOOST_AUTO_TEST_CASE( testInt8 ){
@@ -164,11 +164,11 @@ BOOST_AUTO_TEST_CASE( testUInt8 ){
   checkToFixedPoint( converter, 0.25, 0 );
   checkToFixedPoint( converter, -0.25, 0 );
   checkToFixedPoint( converter, 0.75, 1 );
-  checkToFixedPoint( converter, -0.75, 0xFF );
+  checkToFixedPoint( converter, -0.75, 0 );
   checkToFixedPoint( converter, 3.25, 3 );
-  checkToFixedPoint( converter, -3.25, 0xFD );
+  checkToFixedPoint( converter, -3.25, 0 );
   checkToFixedPoint( converter, 5.75, 6 );
-  checkToFixedPoint( converter, -5.75, 0xFA );
+  checkToFixedPoint( converter, -5.75, 0 );
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fractionMinus12 ){
@@ -236,9 +236,9 @@ BOOST_AUTO_TEST_CASE( testUInt32_fractionMinus1 ){
   // bit pattern of 3 is 11, where the last digit is rounded up, and afterwards 
   // one bit is shifted. So the actual value is 4
   checkToFixedPoint( converter, 3.25, 0x2 );
-  checkToFixedPoint( converter, -3.25, 0xFFFFFFFE ); // (-2)
+  checkToFixedPoint( converter, -3.25, 0);
   checkToFixedPoint( converter, 5.75, 0x3 ); 
-  checkToFixedPoint( converter, -5.75, 0xFFFFFFFD ); // (-3)
+  checkToFixedPoint( converter, -5.75, 0 );
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fraction1 ){
@@ -265,14 +265,14 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction1 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x55555555) * 0.5 );
 
   checkToFixedPoint( converter, 0.25, 0x1 );
-  checkToFixedPoint( converter, -0.25, 0xFFFFFFFF );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter, 0.75, 0x2 );
-  checkToFixedPoint( converter, -0.75, 0xFFFFFFFE );
+  checkToFixedPoint( converter, -0.75, 0x0 );
 
   checkToFixedPoint( converter, 3.25, 0x7 );
-  checkToFixedPoint( converter, -3.25, 0xFFFFFFF9 ); // (-7)
+  checkToFixedPoint( converter, -3.25, 0x0 );
   checkToFixedPoint( converter, 5.75, 0xC ); 
-  checkToFixedPoint( converter, -5.75, 0xFFFFFFF4 ); // (-12)
+  checkToFixedPoint( converter, -5.75, 0x0 );
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fraction7 ){
@@ -299,14 +299,14 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction7 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x55555555)*pow(2,-7) );
 
   checkToFixedPoint( converter, 0.25, 0x20 );
-  checkToFixedPoint( converter, -0.25, 0xFFFFFFE0 );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter, 0.75, 0x60 );
-  checkToFixedPoint( converter, -0.75,  0xFFFFFFA0 );
+  checkToFixedPoint( converter, -0.75,  0x0 );
 
   checkToFixedPoint( converter, 3.25, 0x1A0 );
-  checkToFixedPoint( converter, -3.25, 0xFFFFFE60 );
+  checkToFixedPoint( converter, -3.25, 0x0 );
   checkToFixedPoint( converter, 5.75, 0x2E0 ); 
-  checkToFixedPoint( converter, -5.75, 0xFFFFFD20 ); 
+  checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fraction31 ){
@@ -320,11 +320,12 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction31 ){
   checkToFixedPoint( converter, 0.75, 0x60000000 );
   checkToFixedPoint( converter, -0.75, 0xA0000000 );
 
-  checkToFixedPoint( converter, 3.25, 0xA0000000 );
-  checkToFixedPoint( converter, -3.25, 0x60000000 );
-  checkToFixedPoint( converter, 5.75, 0xE0000000 ); 
-  checkToFixedPoint( converter, -5.75, 0x20000000 ); 
-  // correct interpretration is +-0.25, +-0.75
+  // these values are out of range
+  checkToFixedPoint( converter, 3.25, 0x7FFFFFFF );
+  checkToFixedPoint( converter, -3.25, 0x80000000 );
+  checkToFixedPoint( converter, 5.75, 0x7FFFFFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x80000000 ); 
+
   checkToDouble( converter, 0xA0000000, -0.75 );
   checkToDouble( converter, 0x60000000,  0.75 );
   checkToDouble( converter, 0xE0000000, -0.25 );
@@ -338,15 +339,16 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction31 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x55555555)*pow(2,-31) );
 
   checkToFixedPoint( converter, 0.25, 0x20000000 );
-  checkToFixedPoint( converter, -0.25, 0xE0000000 );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter, 0.75, 0x60000000 );
-  checkToFixedPoint( converter, -0.75, 0xA0000000 );
+  checkToFixedPoint( converter, -0.75, 0x0 );
 
-  checkToFixedPoint( converter, 3.25, 0xA0000000 );
-  checkToFixedPoint( converter, -3.25, 0x60000000 );
-  checkToFixedPoint( converter, 5.75, 0xE0000000 ); 
-  checkToFixedPoint( converter, -5.75, 0x20000000 ); 
-  // correct interpretration is 0.25, to 1.75
+  // these values are out of range
+  checkToFixedPoint( converter, 3.25, 0xFFFFFFFF );
+  checkToFixedPoint( converter, -3.25, 0x0 );
+  checkToFixedPoint( converter, 5.75, 0xFFFFFFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x0 ); 
+
   checkToDouble( converter, 0xA0000000,  1.25 );
   checkToDouble( converter, 0x60000000,  0.75 );
   checkToDouble( converter, 0xE0000000,  1.75 );
@@ -361,14 +363,17 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction32 ){
 
   checkToFixedPoint( converter,  0.25, 0x40000000 );
   checkToFixedPoint( converter, -0.25, 0xC0000000 );
-  checkToFixedPoint( converter,  0.75, 0xC0000000 );
-  checkToFixedPoint( converter, -0.75, 0x40000000 );
 
-  checkToFixedPoint( converter,  3.25, 0x40000000 );
-  checkToFixedPoint( converter, -3.25, 0xC0000000 );
-  checkToFixedPoint( converter,  5.75, 0xC0000000 ); 
-  checkToFixedPoint( converter, -5.75, 0x40000000 );
-  // correct interpretration is +-0.25
+  // these values are out of range
+  checkToFixedPoint( converter,  0.75, 0x7FFFFFFF );
+  checkToFixedPoint( converter, -0.75, 0x80000000 );
+
+  // these values are out of range
+  checkToFixedPoint( converter,  3.25, 0x7FFFFFFF );
+  checkToFixedPoint( converter, -3.25, 0x80000000 );
+  checkToFixedPoint( converter,  5.75, 0x7FFFFFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x80000000 );
+
   checkToDouble( converter, 0x40000000,  0.25 );
   checkToDouble( converter, 0xC0000000, -0.25  );
 }
@@ -380,15 +385,16 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction32 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x55555555)*pow(2,-32) );
 
   checkToFixedPoint( converter,  0.25, 0x40000000 );
-  checkToFixedPoint( converter, -0.25, 0xC0000000 );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter,  0.75, 0xC0000000 );
-  checkToFixedPoint( converter, -0.75, 0x40000000 );
+  checkToFixedPoint( converter, -0.75, 0x0 );
 
-  checkToFixedPoint( converter,  3.25, 0x40000000 );
-  checkToFixedPoint( converter, -3.25, 0xC0000000 );
-  checkToFixedPoint( converter,  5.75, 0xC0000000 ); 
-  checkToFixedPoint( converter, -5.75, 0x40000000 );
-  // correct interpretration is 0.25, 0.75
+  // these values are out of range
+  checkToFixedPoint( converter,  3.25, 0xFFFFFFFF );
+  checkToFixedPoint( converter, -3.25, 0x0 );
+  checkToFixedPoint( converter,  5.75, 0xFFFFFFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x0 );
+
   checkToDouble( converter, 0x40000000,  0.25 );
   checkToDouble( converter, 0xC0000000,  0.75  );
 }
@@ -399,17 +405,16 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction43 ){
   checkToDouble( converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE( 0xAAAAAAAA)*pow(2,-43) );
   checkToDouble( converter, 0x55555555, SIGNED_HEX_TO_DOUBLE( 0x55555555)*pow(2,-43) );
 
-  // way out of the sensisive region (the values are all exact multiples of 1/4, but 
-  // sensitivity is out of range at O(1e-3) )
-  checkToFixedPoint( converter, 0.25, 0 );
-  checkToFixedPoint( converter, -0.25, 0 );
-  checkToFixedPoint( converter, 0.75, 0 );
-  checkToFixedPoint( converter, -0.75,  0 );
+  // all out of range
+  checkToFixedPoint( converter, 0.25, 0x7FFFFFFF );
+  checkToFixedPoint( converter, -0.25, 0x80000000 );
+  checkToFixedPoint( converter, 0.75, 0x7FFFFFFF );
+  checkToFixedPoint( converter, -0.75,  0x80000000 );
 
-  checkToFixedPoint( converter, 3.25, 0 );
-  checkToFixedPoint( converter, -3.25, 0 );
-  checkToFixedPoint( converter, 5.75, 0 ); 
-  checkToFixedPoint( converter, -5.75, 0 ); 
+  checkToFixedPoint( converter, 3.25, 0x7FFFFFFF );
+  checkToFixedPoint( converter, -3.25, 0x80000000 );
+  checkToFixedPoint( converter, 5.75, 0x7FFFFFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x80000000 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32_fraction43 ){
@@ -418,14 +423,15 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction43 ){
   checkToDouble( converter, 0xAAAAAAAA, HEX_TO_DOUBLE( 0xAAAAAAAA)*pow(2,-43) );
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x55555555)*pow(2,-43) );
 
-  checkToFixedPoint( converter, 0.25, 0 );
-  checkToFixedPoint( converter, -0.25, 0 );
-  checkToFixedPoint( converter, 0.75, 0 );
-  checkToFixedPoint( converter, -0.75,  0 );
+  // all out of range
+  checkToFixedPoint( converter, 0.25, 0xFFFFFFFF );
+  checkToFixedPoint( converter, -0.25, 0x0 );
+  checkToFixedPoint( converter, 0.75, 0xFFFFFFFF );
+  checkToFixedPoint( converter, -0.75,  0x0 );
 
-  checkToFixedPoint( converter, 3.25, 0x0 );
+  checkToFixedPoint( converter, 3.25, 0xFFFFFFFF );
   checkToFixedPoint( converter, -3.25, 0x0 );
-  checkToFixedPoint( converter, 5.75, 0x0 ); 
+  checkToFixedPoint( converter, 5.75, 0xFFFFFFFF ); 
   checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
@@ -505,12 +511,12 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction0 ){
   checkToFixedPoint( converter, 0.25, 0 );
   checkToFixedPoint( converter, -0.25, 0 );
   checkToFixedPoint( converter, 0.75, 1 );
-  checkToFixedPoint( converter, -0.75, 0x3FFFF );
+  checkToFixedPoint( converter, -0.75, 0x0 );
 
   checkToFixedPoint( converter, 3.25, 3 );
-  checkToFixedPoint( converter, -3.25, 0x3FFFD );
+  checkToFixedPoint( converter, -3.25, 0x0 );
   checkToFixedPoint( converter, 5.75, 6 ); 
-  checkToFixedPoint( converter, -5.75, 0x3FFFA); 
+  checkToFixedPoint( converter, -5.75, 0x0); 
 }
 
 BOOST_AUTO_TEST_CASE( testInt18_fraction7 ){
@@ -543,14 +549,14 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction7 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x15555)*pow(2,-7) );
 
   checkToFixedPoint( converter, 0.25, 0x20 );
-  checkToFixedPoint( converter, -0.25, 0x3FFE0 );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter, 0.75, 0x60 );
-  checkToFixedPoint( converter, -0.75,  0x3FFA0 );
+  checkToFixedPoint( converter, -0.75, 0x0 );
 
   checkToFixedPoint( converter, 3.25, 0x1A0 );
-  checkToFixedPoint( converter, -3.25, 0x3FE60 );
+  checkToFixedPoint( converter, -3.25, 0x0 );
   checkToFixedPoint( converter, 5.75, 0x2E0 ); 
-  checkToFixedPoint( converter, -5.75, 0x3FD20 ); 
+  checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testInt18_fraction17 ){
@@ -567,14 +573,15 @@ BOOST_AUTO_TEST_CASE( testInt18_fraction17 ){
   checkToFixedPoint( converter, 0.75, 0x18000 );
   checkToFixedPoint( converter, -0.75,  0x28000 );
 
-  checkToFixedPoint( converter, 3.25, 0x28000 );
-  checkToFixedPoint( converter, -3.25, 0x18000 );
-  checkToFixedPoint( converter, 5.75, 0x38000 ); 
-  checkToFixedPoint( converter, -5.75, 0x08000 ); 
+  // these values are out of range
+  checkToFixedPoint( converter, 3.25, 0x1FFFF );
+  checkToFixedPoint( converter, -3.25, 0x20000 );
+  checkToFixedPoint( converter, 5.75, 0x1FFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x20000 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testUInt18_fraction17 ){
-  FixedPointConverter converter(18, 17, false); // 10 bits, -12 fractional bits, not signed
+  FixedPointConverter converter(18, 17, false); // 18 bits, 17 fractional bits, not signed
 
   checkToDouble( converter, 0x2AAAA, HEX_TO_DOUBLE( 0x2AAAA)*pow(2,-17) );
   checkToDouble( converter, 0x15555, HEX_TO_DOUBLE( 0x15555)*pow(2,-17) );
@@ -583,18 +590,19 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction17 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x15555)*pow(2,-17) );
 
   checkToFixedPoint( converter, 0.25, 0x8000 );
-  checkToFixedPoint( converter, -0.25, 0x38000 );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter, 0.75, 0x18000 );
-  checkToFixedPoint( converter, -0.75,  0x28000 );
+  checkToFixedPoint( converter, -0.75,  0x0 );
 
-  checkToFixedPoint( converter, 3.25, 0x28000 );
-  checkToFixedPoint( converter, -3.25, 0x18000 );
-  checkToFixedPoint( converter, 5.75, 0x38000 ); 
-  checkToFixedPoint( converter, -5.75, 0x08000 ); 
+  // these values are out of range
+  checkToFixedPoint( converter, 3.25, 0x3FFFF );
+  checkToFixedPoint( converter, -3.25, 0x0 );
+  checkToFixedPoint( converter, 5.75, 0x3FFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testInt18_fraction18 ){
-  FixedPointConverter converter(18,18); // 18 bits, 17 fractional bits, signed
+  FixedPointConverter converter(18,18); // 18 bits, 18 fractional bits, signed
 
   checkToDouble( converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE( 0xFFFEAAAA)*pow(2,-18) );
   checkToDouble( converter, 0x15555, SIGNED_HEX_TO_DOUBLE( 0x15555)*pow(2,-18) );
@@ -602,19 +610,20 @@ BOOST_AUTO_TEST_CASE( testInt18_fraction18 ){
   checkToDouble( converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE( 0xFFFEAAAA)*pow(2,-18) );
   checkToDouble( converter, 0x55555555, SIGNED_HEX_TO_DOUBLE( 0x15555)*pow(2,-18) );
 
-  checkToFixedPoint( converter, 0.25, 0x10000 );
+  checkToFixedPoint( converter, 0.25, 0x10000 ); 
   checkToFixedPoint( converter, -0.25, 0x30000 );
-  checkToFixedPoint( converter, 0.75, 0x30000 );
-  checkToFixedPoint( converter, -0.75,  0x10000 );
-  // -0.25 and 0.75 are the same hex value, as are 0.25 and -0.75. The +-0.75 values
-  // are truncated, correct interpretation is +-0.25
+  // +- 0.75 are out of range
+  checkToFixedPoint( converter, 0.75, 0x1FFFF ); // the largest possible value (0.5 - 1e-18)
+  checkToFixedPoint( converter, -0.75,  0x20000 ); // -0.5, the smallest possible value
+
   checkToDouble( converter, 0x10000, 0.25 );
   checkToDouble( converter, 0x30000, -0.25 );
 
-  checkToFixedPoint( converter, 3.25, 0x10000 );
-  checkToFixedPoint( converter, -3.25, 0x30000 );
-  checkToFixedPoint( converter, 5.75, 0x30000 ); 
-  checkToFixedPoint( converter, -5.75, 0x10000 ); 
+  // these values are out of range
+  checkToFixedPoint( converter, 3.25, 0x1FFFF );
+  checkToFixedPoint( converter, -3.25, 0x20000 );
+  checkToFixedPoint( converter, 5.75, 0x1FFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x20000 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testUInt18_fraction18 ){
@@ -627,18 +636,17 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction18 ){
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x15555)*pow(2,-18) );
 
   checkToFixedPoint( converter, 0.25, 0x10000 );
-  checkToFixedPoint( converter, -0.25, 0x30000 );
+  checkToFixedPoint( converter, -0.25, 0x0 );
   checkToFixedPoint( converter, 0.75, 0x30000 );
-  checkToFixedPoint( converter, -0.75,  0x10000 );
-  // -0.25 and 0.75 are the same hex value, as are 0.25 and -0.75. The +-0.75 values
-  // are truncated, correct interpretation is 0.25 and 0.75
+  checkToFixedPoint( converter, -0.75,  0x0 );
+
   checkToDouble( converter, 0x10000, 0.25 );
   checkToDouble( converter, 0x30000, 0.75 );
 
-  checkToFixedPoint( converter, 3.25, 0x10000 );
-  checkToFixedPoint( converter, -3.25, 0x30000 );
-  checkToFixedPoint( converter, 5.75, 0x30000 ); 
-  checkToFixedPoint( converter, -5.75, 0x10000 ); 
+  checkToFixedPoint( converter, 3.25, 0x3FFFF );
+  checkToFixedPoint( converter, -3.25, 0x0 );
+  checkToFixedPoint( converter, 5.75, 0x3FFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testInt18_fraction43 ){
@@ -650,17 +658,16 @@ BOOST_AUTO_TEST_CASE( testInt18_fraction43 ){
   checkToDouble( converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE( 0xFFFEAAAA)*pow(2,-43) );
   checkToDouble( converter, 0x55555555, SIGNED_HEX_TO_DOUBLE( 0x15555)*pow(2,-43) );
 
-  // way out of the sensisive region (the values are all exact multiples of 1/4, but 
-  // sensitivity is out of range at O(3e-6) )
-  checkToFixedPoint( converter, 0.25, 0 );
-  checkToFixedPoint( converter, -0.25, 0 );
-  checkToFixedPoint( converter, 0.75, 0 );
-  checkToFixedPoint( converter, -0.75,  0 );
+  // all out of range
+  checkToFixedPoint( converter, 0.25, 0x1FFFF );
+  checkToFixedPoint( converter, -0.25, 0x20000 );
+  checkToFixedPoint( converter, 0.75, 0x1FFFF );
+  checkToFixedPoint( converter, -0.75,  0x20000 );
 
-  checkToFixedPoint( converter, 3.25, 0 );
-  checkToFixedPoint( converter, -3.25, 0 );
-  checkToFixedPoint( converter, 5.75, 0 ); 
-  checkToFixedPoint( converter, -5.75, 0 ); 
+  checkToFixedPoint( converter, 3.25, 0x1FFFF );
+  checkToFixedPoint( converter, -3.25, 0x20000 );
+  checkToFixedPoint( converter, 5.75, 0x1FFFF ); 
+  checkToFixedPoint( converter, -5.75, 0x20000 ); 
 }
 
 BOOST_AUTO_TEST_CASE( testUInt18_fraction43 ){
@@ -672,14 +679,15 @@ BOOST_AUTO_TEST_CASE( testUInt18_fraction43 ){
   checkToDouble( converter, 0xAAAAAAAA, HEX_TO_DOUBLE( 0x2AAAA)*pow(2,-43) );
   checkToDouble( converter, 0x55555555, HEX_TO_DOUBLE( 0x15555)*pow(2,-43) );
 
-  checkToFixedPoint( converter, 0.25, 0 );
-  checkToFixedPoint( converter, -0.25, 0 );
-  checkToFixedPoint( converter, 0.75, 0 );
-  checkToFixedPoint( converter, -0.75,  0 );
+  // all out of range
+  checkToFixedPoint( converter, 0.25, 0x3FFFF );
+  checkToFixedPoint( converter, -0.25, 0x0 );
+  checkToFixedPoint( converter, 0.75, 0x3FFFF );
+  checkToFixedPoint( converter, -0.75,  0x0 );
 
-  checkToFixedPoint( converter, 3.25, 0x0 );
+  checkToFixedPoint( converter, 3.25, 0x3FFFF );
   checkToFixedPoint( converter, -3.25, 0x0 );
-  checkToFixedPoint( converter, 5.75, 0x0 ); 
+  checkToFixedPoint( converter, 5.75, 0x3FFFF ); 
   checkToFixedPoint( converter, -5.75, 0x0 ); 
 }
 

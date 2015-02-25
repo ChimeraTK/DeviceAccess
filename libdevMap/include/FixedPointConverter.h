@@ -64,6 +64,11 @@ namespace mtca4u{
     uint32_t _signBitMask; ///< The bit which represents the sign
     uint32_t _usedBitsMask; ///< The bits which are used
     uint32_t _unusedBitsMask; ///< The bits which are not used
+
+    uint32_t _maxFixedPointValue; ///< The maximum possible fixed point value
+    uint32_t _minFixedPointValue; ///< The minimum possible fixed point value
+    double _maxDoubleValue; ///< The maximum possible double value
+    double _minDoubleValue; ///< The minimum possible double value
   };
 
 }// namespace mtca4u

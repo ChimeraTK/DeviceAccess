@@ -32,9 +32,17 @@ namespace mtca4u{
       throw std::invalid_argument(errorMessage.str());
     }
 
-    _signBitMask = 1<<(nBits-1); // the highest valid bit is the sign
+    _signBitMask = ( _isSigned ? 1<<(nBits-1) : 0x0 ); // the highest valid bit is the sign
+    // keep the mask at 0 if unsigned to simplify further calculations
     _usedBitsMask = (1L << nBits) -1L; // by using 1L (64 bit) this also works for 32 bits
     _unusedBitsMask = ~_usedBitsMask;
+
+    _maxFixedPointValue = _usedBitsMask ^ _signBitMask; // bitwise xor: first bit is 0 if signed 
+    _minFixedPointValue = _signBitMask; // if only the sign bit is on, it is the smallest possible value 
+                                        // (0 if unsigned)
+
+    _minDoubleValue = toDouble( _minFixedPointValue );
+    _maxDoubleValue = toDouble( _maxFixedPointValue );
   }
 
   double FixedPointConverter::toDouble(uint32_t fixedPointValue) const{
@@ -66,6 +74,14 @@ namespace mtca4u{
   }
   
   uint32_t FixedPointConverter::toFixedPoint(double floatingPointValue) const{
+    // do a range check first
+    if (floatingPointValue <  _minDoubleValue){
+      return _minFixedPointValue;
+    }
+    if (floatingPointValue >  _maxDoubleValue){
+      return _maxFixedPointValue;
+    }
+
     // apply the coeffitient towards fractional bits
     double scaledValue = floatingPointValue * _inverseFractionalBitsCoefficient;
     
