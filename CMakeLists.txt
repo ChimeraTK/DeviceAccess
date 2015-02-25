@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8.0)
 project(MtcaMappedDevice)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 12)
-set(${PROJECT_NAME}_PATCH_VERSION 01)
+set(${PROJECT_NAME}_MINOR_VERSION 13)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
@@ -15,14 +15,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wunini
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
-
-#use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
-#build. The 'make doc' target will still exist
-if(SUPPRESS_AUTO_DOC_BUILD)
-    unset(DOC_DEPENDENCY)
-else(SUPPRESS_AUTO_DOC_BUILD)
-    set(DOC_DEPENDENCY ALL)
-endif(SUPPRESS_AUTO_DOC_BUILD)
 
 #boost as such is required for shared pointers e.g.
 FIND_PACKAGE(Boost COMPONENTS REQUIRED)
@@ -231,7 +223,7 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
-  add_custom_target(doc ${DOC_DEPENDENCY}
+  add_custom_target(doc
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
