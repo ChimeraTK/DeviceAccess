@@ -48,6 +48,8 @@ class MtcaMappedDeviceTest
    */
   void testRegObject_writeSimple();
 
+  void getRegistersInModule();
+  void getRegisterAccerrossInModule();
 
  private:
   MtcaMappedDevice _mappedDevice;
@@ -137,7 +139,14 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   BOOST_CHECK_THROW( virginMappedDevice.writeDMA("irrelevant", &dataWord),  exdevMap );
     
     
-  BOOST_CHECK_THROW( MtcaMappedDevice::regObject  myRegObject = virginMappedDevice.getRegObject("irrelevant"),  exdevMap );
+  BOOST_CHECK_THROW( MtcaMappedDevice::regObject  myRegObject = virginMappedDevice.getRegObject("irrelevant"), 
+		     exdevMap );
+  BOOST_CHECK_THROW( MtcaMappedDevice::RegisterAccessor  myRegisterAccessor
+		     = virginMappedDevice.getRegisterAccessor("irrelevant"), exdevMap );
+  BOOST_CHECK_THROW( MtcaMappedDevice::RegisterAccessor  myRegisterAccessor
+		     = virginMappedDevice.getRegisterAccessor("irrelevant"), exdevMap );
+  BOOST_CHECK_THROW( virginMappedDevice.getRegistersInModule("irrelevant"), exdevMap );
+  BOOST_CHECK_THROW( virginMappedDevice.getRegisterAccessorsInModule("irrelevant"), exdevMap );
 }
 
 void MtcaMappedDeviceTest::testMapFileParser_parse() {

@@ -5,6 +5,7 @@
 #include "devPCIE.h"
 #include "exdevMap.h"
 #include "exDevPCIE.h"
+#include "DummyDevice.h"
 //#define DUMMY_DEVICE_FILE_NAME
 using namespace boost::unit_test_framework;
 
@@ -30,6 +31,9 @@ class DevMapTest {
   void testWriteBadReg();
   void testDMAReadSizeTooSmall();
   void testDMAReadViaStruct();
+
+  void testGetRegistersInModule();
+  void testGetRegisterAccessorsInModule();
 };
 
 class DevMapTestSuite : public test_suite {
@@ -114,6 +118,9 @@ class DevMapTestSuite : public test_suite {
     add(testWriteBadReg);
     add(testDMAReadSizeTooSmall);
     add(testDMAReadViaStruct);
+
+    add(BOOST_CLASS_TEST_CASE(&DevMapTest::testGetRegistersInModule, DevMapTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&DevMapTest::testGetRegisterAccessorsInModule, DevMapTestPtr));
   }
 };
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
@@ -519,4 +526,51 @@ void DevMapTest::testDMAReadViaStruct() {
   pcieDevice.readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes);
   BOOST_CHECK(adcdata[0] == 0);
   BOOST_CHECK(adcdata[1] == 1);
+}
+
+void DevMapTest::testGetRegistersInModule(){
+  mtca4u::devMap<mtca4u::DummyDevice> mappedDevice;
+  // this test only makes sense for mapp files
+  std::string mapFileName = "goodMappFile.mapp";
+  // the dummy device is opened with twice the map file name (use map file instead of device node)
+  mappedDevice.openDev(mapFileName, mapFileName);
+
+  std::list< mtca4u::mapFile::mapElem > registerInfoList =  mappedDevice.getRegistersInModule("APP0");
+  BOOST_CHECK( registerInfoList.size() == 4 );
+  std::list< mtca4u::mapFile::mapElem >::iterator registerInfo = registerInfoList.begin();
+  BOOST_CHECK( registerInfo->reg_name == "MODULE0" );
+  BOOST_CHECK( registerInfo->reg_module == "APP0" );
+  ++registerInfo;
+  BOOST_CHECK( registerInfo->reg_name == "MODULE1" );
+  BOOST_CHECK( registerInfo->reg_module == "APP0" );
+  ++registerInfo;
+  BOOST_CHECK( registerInfo->reg_name == "WORD_SCRATCH" );
+  BOOST_CHECK( registerInfo->reg_module == "APP0" );
+  ++registerInfo;
+  BOOST_CHECK( registerInfo->reg_name == "WORD_STATUS" );
+  BOOST_CHECK( registerInfo->reg_module == "APP0" );
+}
+
+void DevMapTest::testGetRegisterAccessorsInModule(){
+  mtca4u::devMap<mtca4u::DummyDevice> mappedDevice;
+  // this test only makes sense for mapp files
+  std::string mapFileName = "goodMappFile.mapp";
+  // the dummy device is opened with twice the map file name (use map file instead of device node)
+  mappedDevice.openDev(mapFileName, mapFileName);
+
+  std::list< mtca4u::devMap<mtca4u::DummyDevice>::RegisterAccessor > accessorList = 
+    mappedDevice.getRegisterAccessorsInModule("APP0");
+  BOOST_CHECK( accessorList.size() == 4 );
+  std::list< mtca4u::devMap<mtca4u::DummyDevice>::RegisterAccessor >::iterator accessor = accessorList.begin();
+  BOOST_CHECK( accessor->getRegisterInfo().reg_name == "MODULE0" );
+  BOOST_CHECK( accessor->getRegisterInfo().reg_module == "APP0" );
+  ++accessor;
+  BOOST_CHECK( accessor->getRegisterInfo().reg_name == "MODULE1" );
+  BOOST_CHECK( accessor->getRegisterInfo().reg_module == "APP0" );
+  ++accessor;
+    BOOST_CHECK( accessor->getRegisterInfo().reg_name == "WORD_SCRATCH" );
+  BOOST_CHECK( accessor->getRegisterInfo().reg_module == "APP0" );
+  ++accessor;
+  BOOST_CHECK( accessor->getRegisterInfo().reg_name == "WORD_STATUS" );
+  BOOST_CHECK( accessor->getRegisterInfo().reg_module == "APP0" );
 }

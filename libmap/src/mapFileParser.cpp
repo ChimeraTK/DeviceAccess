@@ -49,14 +49,27 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
             continue;
         }
         is.str(line);
-        is >> me.reg_name >> std::setbase(0) >> me.reg_elem_nr >> std::setbase(0) >> me.reg_address >> std::setbase(0) >> me.reg_size;
+
+	std::string moduleAndRegisterName;
+	is >> moduleAndRegisterName;
+	
+	std::pair<std::string, std::string> moduleAndNamePair = splitStringAtLastDot(moduleAndRegisterName);
+        me.reg_module = moduleAndNamePair.first;
+        me.reg_name = moduleAndNamePair.second;
+        if ( me.reg_name.empty() ){
+            std::ostringstream errorMessage;
+            errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
+            throw exMapFileParser(errorMessage.str(), exLibMap::EX_MAP_FILE_PARSE_ERROR);
+        }       
+
+	is >> std::setbase(0) >> me.reg_elem_nr >> std::setbase(0) >> me.reg_address >> std::setbase(0) >> me.reg_size;
         if (!is){
             std::ostringstream os;
             os << line_nr;
             throw exMapFileParser("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", exLibMap::EX_MAP_FILE_PARSE_ERROR);
         }       
         // first, set default values for 'optional' fields
-        me.reg_bar = 0xFFFFFFFF;
+        me.reg_bar = 0x0;
         me.reg_width= 32;
         me.reg_frac_bits = 0;
         me.reg_signed = true;
@@ -100,6 +113,36 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
         pmap->insert(me);
     }
     return pmap;
+}
+
+std::pair<std::string, std::string> mapFileParser::splitStringAtLastDot( std::string moduleDotName){
+    size_t lastDotPosition = moduleDotName.rfind('.');
+
+    // some special case handlings to avoid string::split from throwing exceptions
+    if (lastDotPosition == std::string::npos){
+        // no dot found, the whole string is the second argument
+        return std::make_pair( std::string(), moduleDotName );
+    }
+
+    if (lastDotPosition == 0){
+        // the first character is a dot, everything from pos 1 is the second argument
+        if (moduleDotName.size()==1){
+	    //it's just a dot, return  two empty strings
+            return std::make_pair( std::string(), std::string() );
+	}
+
+	// split after the first character
+	return std::make_pair( std::string(), moduleDotName.substr(1) );
+    }
+
+    if (lastDotPosition == (moduleDotName.size()-1) ){
+        // the last character is a dot. The second argument is empty
+        return std::make_pair( moduleDotName.substr(0, lastDotPosition),
+			       std::string() );       
+    }
+
+    return std::make_pair( moduleDotName.substr(0, lastDotPosition),
+			   moduleDotName.substr(lastDotPosition+1) );       
 }
 
 }//namespace mtca4u

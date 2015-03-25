@@ -229,7 +229,7 @@ void DMapFilesParserTest::testGetMapFile() {
 
   // Card 1 elements
   mtca4u::mapFile::mapElem card1_mapElement1("WORD_FIRMWARE", 0x00000001,
-                                             0x00000000, 0x00000004, 0xFFFFFFFF,
+                                             0x00000000, 0x00000004, 0x0,
                                              32, 0, true, 5);
   mtca4u::mapFile::mapElem card1_mapElement2("WORD_COMPILATION", 0x00000001,
                                              0x00000004, 0x00000004, 0x00000000,
@@ -259,7 +259,7 @@ void DMapFilesParserTest::testGetMapFile() {
 
   // Card 3 elements
   mtca4u::mapFile::mapElem card3_mapElement1("WORD_FIRMWARE", 0x00000001,
-                                             0x00000000, 0x00000004, 0xFFFFFFFF,
+                                             0x00000000, 0x00000004, 0x0,
                                              32, 0, true, 5);
   mtca4u::mapFile::mapElem card3_mapElement2("WORD_COMPILATION", 0x00000001,
                                              0x00000004, 0x00000004, 0x00000000,

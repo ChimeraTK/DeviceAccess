@@ -1,0 +1,4 @@
+#Test error handling if there is a dot at the end of the module.register field. This causes an empty register name.
+
+# name            number_of_elements  address  size  bar  width  fracbits  signed
+JUST_MOUDLE.      1                   0x0      4

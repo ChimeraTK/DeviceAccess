@@ -228,5 +228,8 @@ namespace mtca4u{
     return false;
   }
  
-
+  devBase * DummyDevice::createInstance(){
+    return new DummyDevice;
+  }
+  
 }// namespace mtca4u

@@ -1,7 +1,6 @@
 /**
  *      @file           mapFile.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
  *      @brief          Provides storage object for registers description taken from MAP file                
  */
 #ifndef MTCA4U_MAP_FILE_H
@@ -61,6 +60,7 @@ public:
         int32_t  reg_frac_bits; /**< Number of fractional bits */
         bool     reg_signed; /**< Signed/Unsigned flag */
         uint32_t line_nr; /**< Number of line with description of register in MAP file */
+	std::string reg_module; /**< Name of the module this register is in*/
         friend std::ostream& operator<<(std::ostream &os, const mapElem& me);
   
 	/// Convenience constructor which sets all data members. They all have default values, so this 
@@ -70,10 +70,11 @@ public:
 		uint32_t the_reg_address = 0,
 		uint32_t the_reg_size = 0,
 		uint32_t the_reg_bar = 0,
-    uint32_t the_reg_width = 32,
-    int32_t  the_reg_frac_bits = 0,
-    bool     the_reg_signed = true,
-		uint32_t the_line_nr = 0);
+                uint32_t the_reg_width = 32,
+                int32_t  the_reg_frac_bits = 0,
+                bool     the_reg_signed = true,
+		uint32_t the_line_nr = 0,
+		std::string const & the_reg_module = std::string() );
     };
     typedef std::vector<mapElem>::iterator iterator; 
     typedef std::vector<mapElem>::const_iterator const_iterator;
@@ -147,12 +148,14 @@ public:
      * cannot be found in MAP file function throws exception exMapFile with type exLibMap::EX_NO_REGISTER_IN_MAP_FILE.
      * 
      * @throw exMapFile (exLibMap::EX_NO_REGISTER_IN_MAP_FILE] - no register with specified name
-     * @param reg_name register name
-     * @param value detailed information about register
+     * @param reg_name Register name
+     * @param value The return value: Detailed information about register
+     * @param reg_module \c optional Module in which the register is. Empty in case of simple map files.
      * 
      * @snippet test-libmap.cpp MAP getting info and metadata
      */
-    void getRegisterInfo(const std::string& reg_name, mapElem &value) const;
+    void getRegisterInfo(const std::string& reg_name, mapElem &value, 
+			 const std::string & reg_module=std::string()) const;
     /**
      * @brief Returns detailed information about selected register
      * 
@@ -221,6 +224,11 @@ public:
      */
     iterator end();
     const_iterator end() const;
+
+    /** Get a complete list of RegisterInfo objects (mapElem) for one module.
+     *  The registers are in alphabetical order.
+     */
+    std::list< mapElem > getRegistersInModule( std::string const & moduleName);
 
 public:
     /**

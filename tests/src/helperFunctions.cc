@@ -47,7 +47,11 @@ bool compareMapElements(const mtca4u::mapFile::mapElem& element1,
                 (element1.reg_name == element2.reg_name) &&
                 (element1.reg_signed == element2.reg_signed) &&
                 (element1.reg_size == element2.reg_size) &&
-                (element1.reg_width == element2.reg_width);
+                (element1.reg_width == element2.reg_width) &&
+                (element1.reg_module == element2.reg_module);
+  if (!result){
+    std::cout << "Error in comparison: " << element1 << " : "<< element2 << std::endl;
+  }
   return result;
 }
 

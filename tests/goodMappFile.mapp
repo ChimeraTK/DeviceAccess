@@ -1,0 +1,20 @@
+@HW_VERSION 1.6
+@ FW_VERSION 2.5
+
+# name                    number of elements       address          size           bar    width   fracbits  signed
+BOARD.WORD_FIRMWARE               0x00000001    0x00000000    0x00000004    
+BOARD.WORD_COMPILATION            0x00000001    0x00000004    0x00000004    0x00000000       
+APP0.WORD_STATUS                  0x00000001    0x00000008    0x00000004    0x00000001
+APP0.WORD_SCRATCH                 0x00000001    0x00000008    0x00000004    0x00000001       16
+APP0.MODULE0                      0x00000002    0x00000010    0x00000008    0x00000001
+APP0.MODULE1                      0x00000002    0x00000020    0x00000008    0x00000001
+# The bit information of overlaping registers does not have to be consistent. In this case for instance
+# the APP0.MODULEX entries only gives the whole memory range of the module, which has different types inside.
+# It is recommended to leave the "container" entry at 32, 0, true
+MODULE0.WORD_USER1                0x00000001    0x00000010    0x00000004    0x00000001       16         3
+MODULE0.WORD_USER2                0x00000001    0x00000014    0x00000004    0x00000001       18         5        0
+MODULE1.WORD_USER1                0x00000001    0x00000020    0x00000004    0x00000001       16         3
+MODULE1.WORD_USER2                0x00000001    0x00000024    0x00000004    0x00000001       18         5        0  
+
+# The module name could even contain dots. The register name must not. It the part after the last dot.
+MODULE.NAME.WITH.DOTS.REGISTER    0x00000001    0x00000000    0x00000004    0x00000002

@@ -1,7 +1,6 @@
 /**
  *      @file           mapFileParser.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
  *      @brief          Provides method to parse MAP file
  *                  
  */
@@ -27,7 +26,7 @@ class mapFileParser {
 public:
     /**
      * @brief Performs parsing of specified MAP file. Returns pointer to 
-     * mapElem object describing all registers and matadata available in file. 
+     * mapElem object describing all registers and metadata available in file. 
      *      
      * 
      * @throw exMapFileParser [exLibMap::EX_MAP_FILE_PARSE_ERROR] if parsing error 
@@ -39,6 +38,13 @@ public:
      *     
      */
     ptrmapFile    parse(const std::string &file_name);
+
+    /** Split the string at the last dot. The part up to the last dot is the first returned argument,
+     *	the part after the last dot is the second. Hence, the first part can contain dots itself, the second
+     *	part cannot. If there is no dot, the first part is empty and the full string is returned as second 
+     *  (the part up to the first dot is considered as prefix).
+     */
+    static std::pair<std::string, std::string> splitStringAtLastDot( std::string moduleDotName);
 };
 
 }//namespace mtca4u

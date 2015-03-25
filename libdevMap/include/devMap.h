@@ -54,7 +54,6 @@ public:
     
     class RegisterAccessor
     {
-            std::string                 regName;
             mapFile::mapElem            me;
             typename devMap::ptrdev     pdev;
 	    FixedPointConverter _fixedPointConverter;
@@ -62,7 +61,7 @@ public:
         private:
             static void checkRegister(const mapFile::mapElem &me, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
         public:
-            RegisterAccessor(const std::string &_regName,
+            RegisterAccessor(const std::string & /*_regName*/,// not needed, info is already in the mapElem
 			     const mapFile::mapElem &_me, 
 			     typename devMap::ptrdev _pdev);
 
@@ -182,18 +181,66 @@ public:
     virtual void readDeviceInfo(std::string* devInfo) const;
     
     
-    /** Read one ore more words from the device. It calls devBase::readArea, not devBase::readReg.
+    /** Read one or more words from the device. It calls devBase::readArea, not devBase::readReg.
      *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
      *  word as in devBase::readArea! Make sure your buffer is large enough!
+     *  The original readReg function without module name, kept for backward compatibility.
+     *  The signature was changed and not extendet to keep the functionality of the default parameters for
+     *  dataSize and addRegOffset, as the module name will always be needed in the future.
      */
     virtual void readReg(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-    /** Read one ore more words from the device. It calls devBase::readArea, not devBase::readReg.
+    /** Read one or more words from the device. It calls devBase::readArea, not devBase::readReg.
      *  @attention In case you leave data size at 0, the full size of the register is read, not just one 
      *  word as in devBase::readArea! Make sure your buffer is large enough!
      */
+    virtual void readReg(const std::string &regName, const std::string &regModule,
+			 int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+
+    /** Write one or more words from the device. It calls devBase::writeArea, not devBase::writeReg.
+     *  @attention In case you leave data size at 0, the full size of the register is written, not just one 
+     *  word as in devBase::readArea! Make sure your buffer is large enough!
+     *  The original writeReg function without module name, kept for backward compatibility.
+     *  The signature was changed and not extendet to keep the functionality of the default parameters for
+     *  dataSize and addRegOffset, as the module name will always be needed in the future.
+     */
     virtual void writeReg(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+    /** Write one or more words from the device. It calls devBase::writeArea, not devBase::writeReg.
+     *  @attention In case you leave data size at 0, the full size of the register is written, not just one 
+     *  word as in devBase::readArea! Make sure your buffer is large enough!
+     */
+    virtual void writeReg(const std::string &regName, const std::string &regModule,
+			  int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+
+    /** Read a block of data via DMA.
+     *  @attention In case you leave data size at 0, the full size of the register is read.
+     *  Make sure your buffer is large enough!
+     *  The original readDMA function without module name, kept for backward compatibility.
+     *  The signature was changed and not extendet to keep the functionality of the default parameters for
+     *  dataSize and addRegOffset, as the module name will always be needed in the future.
+     */
     virtual void readDMA(const std::string &regName, int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+    
+    /** Read a block of data via DMA.
+     *  @attention In case you leave data size at 0, the full size of the register is read.
+     *  Make sure your buffer is large enough!
+     */
+    virtual void readDMA(const std::string &regName, const std::string &regModule,
+			 int32_t* data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+
+    /** Write a block of data via DMA.
+     *  @attention In case you leave data size at 0, the full size of the register is written.
+     *  Make sure your buffer is large enough!
+     *  The original writeDMA function without module name, kept for backward compatibility.
+     *  The signature was changed and not extendet to keep the functionality of the default parameters for
+     *  dataSize and addRegOffset, as the module name will always be needed in the future.
+     */
     virtual void writeDMA(const std::string &regName, int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+    /** Write a block of data via DMA.
+     *  @attention In case you leave data size at 0, the full size of the register is written.
+     *  Make sure your buffer is large enough!
+     */
+    virtual void writeDMA(const std::string &regName, const std::string &regModule,
+			  int32_t const * data, size_t dataSize = 0, uint32_t addRegOffset = 0);
     
     
     /** Get a regObject from the register name. 
@@ -203,12 +250,25 @@ public:
     
      /** Get a RegisterAccessor object from the register name. 
      */
-    RegisterAccessor  getRegisterAccessor(const std::string &registerName) const;
+    RegisterAccessor getRegisterAccessor(const std::string &registerName,
+					 const std::string &registerModule = std::string() ) const;
     
+    /** Get a complete list of RegisterInfo objects (mapfile::mapElem) for one module.
+     *  The registers are in alphabetical order.
+     */
+    std::list<mapFile::mapElem> getRegistersInModule(const std::string &moduleName) const;
+
+    /** Get a complete list of RegisterAccessors for one module.
+     *  The registers are in alphabetical order.
+     */
+    std::list<RegisterAccessor> getRegisterAccessorsInModule(const std::string &moduleName) const;
+
     virtual ~devMap();
 
 private:
-    void checkRegister(const std::string &regName, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar) const;
+    void checkRegister(const std::string &regName, const std::string &registerModule,
+		       size_t dataSize, uint32_t addRegOffset,
+		       uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar) const;
 
     void checkPointersAreNotNull() const;
 };
@@ -232,22 +292,50 @@ typename devMap<T>::RegisterAccessor  devMap<T>::getRegObject(const std::string 
 }
 
 template<typename T>
-typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName) const
+typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName,
+								     const std::string &registerModule) const
 {
     checkPointersAreNotNull();
 
     mapFile::mapElem    me;
-    mapFile->getRegisterInfo(regName, me);
+    mapFile->getRegisterInfo(regName, me, registerModule);
     return devMap::RegisterAccessor(regName, me, pdev);
 }
 
 template<typename T>
-void devMap<T>::checkRegister(const std::string &regName, size_t dataSize, uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar) const
+typename std::list< mapFile::mapElem > devMap<T>::getRegistersInModule( const std::string &moduleName) const
+{
+    checkPointersAreNotNull();
+
+    return mapFile->getRegistersInModule(moduleName);
+}
+
+template<typename T>
+std::list< typename devMap<T>::RegisterAccessor > devMap<T>::getRegisterAccessorsInModule(
+  const std::string &moduleName) const
+{
+    checkPointersAreNotNull();
+
+    std::list< mapFile::mapElem > registerInfoList = mapFile->getRegistersInModule(moduleName);
+
+    std::list< RegisterAccessor > accessorList;
+    for ( std::list< mapFile::mapElem >::const_iterator regInfo = registerInfoList.begin();
+	  regInfo != registerInfoList.end(); ++regInfo ){
+        accessorList.push_back( devMap::RegisterAccessor(regInfo->reg_name, *regInfo, pdev) );
+    }
+
+    return accessorList;
+}
+
+template<typename T>
+void devMap<T>::checkRegister(const std::string &regName,const std::string &regModule,
+			      size_t dataSize, uint32_t addRegOffset, 
+			      uint32_t &retDataSize, uint32_t &retRegOff, uint8_t &retRegBar) const
 {
     checkPointersAreNotNull();
 
     mapFile::mapElem    me;
-    mapFile->getRegisterInfo(regName, me);
+    mapFile->getRegisterInfo(regName, me, regModule);
     if (addRegOffset % 4){
         throw exdevMap("Register offset must be divisible by 4", exdevMap::EX_WRONG_PARAMETER);
     }
@@ -269,33 +357,54 @@ void devMap<T>::checkRegister(const std::string &regName, size_t dataSize, uint3
 template<typename T>
 void devMap<T>::readReg(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
+  readReg(regName, std::string(), data, dataSize, addRegOffset);
+}
+
+template<typename T>
+void devMap<T>::readReg(const std::string &regName, const std::string &regModule,
+			int32_t* data, size_t dataSize, uint32_t addRegOffset) const
+{
     uint32_t retDataSize;
     uint32_t retRegOff;
     uint8_t  retRegBar;
     
-    checkRegister(regName, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
+    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
     readArea(retRegOff, data, retDataSize, retRegBar);
 }
 
 template<typename T>
 void devMap<T>::writeReg(const std::string &regName, int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
+    writeReg(regName, std::string(), data, dataSize, addRegOffset); 
+}
+
+template<typename T>
+void devMap<T>::writeReg(const std::string &regName, const std::string &regModule,
+			 int32_t const * data, size_t dataSize, uint32_t addRegOffset)
+{
     uint32_t retDataSize;
     uint32_t retRegOff;
     uint8_t  retRegBar;
     
-    checkRegister(regName, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
+    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
     writeArea(retRegOff, data, retDataSize, retRegBar);
 }
 
 template<typename T>
 void devMap<T>::readDMA(const std::string &regName, int32_t* data, size_t dataSize, uint32_t addRegOffset) const
 {
+    readDMA(regName, std::string(), data, dataSize, addRegOffset); 
+}
+
+template<typename T>
+void devMap<T>::readDMA(const std::string &regName, const std::string &regModule,
+			int32_t* data, size_t dataSize, uint32_t addRegOffset) const
+{
     uint32_t retDataSize;
     uint32_t retRegOff;
     uint8_t  retRegBar;
     
-    checkRegister(regName, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
+    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
     if (retRegBar != 0xD){
         throw exdevMap("Cannot read data from register \"" + regName + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
     }
@@ -305,12 +414,19 @@ void devMap<T>::readDMA(const std::string &regName, int32_t* data, size_t dataSi
 template<typename T>
 void devMap<T>::writeDMA(const std::string &regName, int32_t const * data, size_t dataSize, uint32_t addRegOffset)
 {
+    writeDMA(regName, std::string(), data, dataSize, addRegOffset); 
+}
+
+template<typename T>
+void devMap<T>::writeDMA(const std::string &regName, const std::string &regModule,
+			 int32_t const * data, size_t dataSize, uint32_t addRegOffset)
+{
     uint32_t retDataSize;
     uint32_t retRegOff;
     uint8_t  retRegBar;
-    checkRegister(regName, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
+    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
     if (retRegBar != 0xD){
-        throw exdevMap("Cannot write data from register \"" + regName + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
+        throw exdevMap("Cannot read data from register \"" + regName + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
     }    
     writeDMA(retRegOff, data, retDataSize, retRegBar);
 }
@@ -469,8 +585,9 @@ void devMap<T>::readDeviceInfo(std::string* devInfo) const
 
 
 template<typename T>
-devMap<T>::RegisterAccessor::RegisterAccessor(const std::string &_regName, const mapFile::mapElem &_me, ptrdev _pdev)
-: regName(_regName), me(_me), pdev(_pdev), 
+  devMap<T>::RegisterAccessor::RegisterAccessor(const std::string &/*_regName*/,
+						const mapFile::mapElem &_me, ptrdev _pdev)
+: me(_me), pdev(_pdev), 
   _fixedPointConverter(_me.reg_width, _me.reg_frac_bits, _me.reg_signed){
 }
 
@@ -520,7 +637,7 @@ void devMap<T>::RegisterAccessor::readDMA(int32_t* data, size_t dataSize, uint32
     uint32_t retRegOff;    
     checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
     if (me.reg_bar != 0xD){
-        throw exdevMap("Cannot read data from register \"" + regName + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
+        throw exdevMap("Cannot read data from register \"" + me.reg_name + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
     }
     pdev->readDMA(retRegOff, data, retDataSize, me.reg_bar);
 }
@@ -532,7 +649,7 @@ void devMap<T>::RegisterAccessor::writeDMA(int32_t const * data, size_t dataSize
     uint32_t retRegOff;    
     checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
     if (me.reg_bar != 0xD){
-        throw exdevMap("Cannot read data from register \"" + regName + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
+        throw exdevMap("Cannot read data from register \"" + me.reg_name + "\" through DMA", exdevMap::EX_WRONG_PARAMETER);
     }
     pdev->writeDMA(retRegOff, data, retDataSize, me.reg_bar);
 }

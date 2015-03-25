@@ -17,15 +17,18 @@ namespace mtca4u{
  */
 class findRegisterByName_pred {
 private:
-    std::string name;
+    std::string name, module;
 public:
 
-    findRegisterByName_pred(const std::string &_name) : name(_name) {
+    findRegisterByName_pred(const std::string &_name, const std::string &_module)
+      : name(_name), module(_module) {
     }
 
     bool operator()(const mapFile::mapElem& elem) {
-        if (elem.reg_name == name) return true;
-        return false;
+      if ( (elem.reg_name == name) && (elem.reg_module == module) ){
+	return true;
+      }
+      return false;
     }
 };
 
@@ -104,7 +107,11 @@ class compareMapElemsByName_functor
 {
 public:
     bool operator()(const mapFile::mapElem& first, const mapFile::mapElem& second){
-        return first.reg_name < second.reg_name;
+        if ( first.reg_module == second.reg_module ){
+	    return first.reg_name < second.reg_name;
+	}
+	else
+	    return first.reg_module < second.reg_module;	    
     }
 };
 
@@ -128,6 +135,18 @@ public:
     bool operator()(const dmapFile::dmapElem &first, const dmapFile::dmapElem &second){
         return first.dev_name < second.dev_name;
     }
+};
+
+/** Predicate to find mapElements in a std::vector by the module name. */
+class compareModuleName_pred{
+ public:
+ compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
+  bool operator()(const mapFile::mapElem & me) const{
+    return (me.reg_module == _moduleName);
+  }
+  typedef mapFile::mapElem argument_type;
+ private:
+  std::string _moduleName;
 };
 
 }//namespace mtca4u

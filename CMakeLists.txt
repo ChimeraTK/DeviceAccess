@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.0)
 project(MtcaMappedDevice)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 13)
+set(${PROJECT_NAME}_MINOR_VERSION 14)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -59,7 +59,8 @@ MACRO( COPY_MAPPING_FILES )
   foreach( MAPPING_FILE mtcadummy.map  mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
   mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map
   MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
-  IncorrectFracBits2.map goodMapFile.map dummies.dmap invalid.dmap empty.dmap)
+  IncorrectFracBits2.map goodMapFile.map goodMappFile.mapp mixedMapFile.mapp badMappFile.mapp
+  dummies.dmap invalid.dmap empty.dmap)
     configure_file( tests/${MAPPING_FILE} ${PROJECT_BINARY_DIR}/${MAPPING_FILE} copyonly)
   endforeach( MAPPING_FILE )
   # The valid dmap file has an absolute path which has to be configured by cmake
