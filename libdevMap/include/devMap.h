@@ -461,12 +461,7 @@ void devMap<T>::openDev(const std::string &_devFileName, const std::string& _map
  */
 template<>
 void devMap<devBase>::openDev(const std::string & /*_devFileName*/, const std::string& /*_mapFileName*/,
-			      int /*_perm*/, devConfigBase* /*_pConfig*/)
-{
-  throw exdevMap(std::string("You cannot directly open an instance of devBase!") +
-		 " Use openDev(ptrdev ioDevice, ptrmapFile registerMapping) " +
-		 " with an implementation like devPCIe as ioDevice.", exdevMap::EX_CANNOT_OPEN_DEVBASE);
-}
+			      int /*_perm*/, devConfigBase* /*_pConfig*/);
 
 /** Alternative open function where the two reqired file names are packed in one object (a pair), so it can be the return value of a single function call.
  * For parameters see openDev(const std::string &_devFileName, const std::string& _mapFileName, int _perm, devConfigBase* _pConfig);

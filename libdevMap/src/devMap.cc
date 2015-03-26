@@ -41,4 +41,16 @@ namespace mtca4u{
   MTCA4U_DEVMAP_ALL_TYPES_FOR_DEVTYPE( devBase )
   MTCA4U_DEVMAP_ALL_TYPES_FOR_DEVTYPE( devFake )
   MTCA4U_DEVMAP_ALL_TYPES_FOR_DEVTYPE( DummyDevice )
+
+  /** Specialisation of openDev to be able to instantiate devMap<devBase>.
+   *  To be removed when the templatisation of devMap is removed.
+   */
+  template<>
+  void devMap<devBase>::openDev(const std::string & /*_devFileName*/, const std::string& /*_mapFileName*/,
+				int /*_perm*/, devConfigBase* /*_pConfig*/)
+  {
+    throw exdevMap(std::string("You cannot directly open an instance of devBase!") +
+		   " Use openDev(ptrdev ioDevice, ptrmapFile registerMapping) " +
+		   " with an implementation like devPCIe as ioDevice.", exdevMap::EX_CANNOT_OPEN_DEVBASE);
+  }
 }// namespace mtca4u
