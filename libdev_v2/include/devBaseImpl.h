@@ -7,7 +7,7 @@ namespace mtca4u{
 
 /** devBaseImpl implements the "opened" functionality which before was in devBase.
  *  It is to be a base class for all the other implementations. Like this debBase
- *  becomes purely virtual, i.e. a read interface.
+ *  becomes purely virtual, i.e. a real interface.
  */
 class devBaseImpl: public devBase
 {   

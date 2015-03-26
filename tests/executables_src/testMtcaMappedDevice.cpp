@@ -104,7 +104,11 @@ void MtcaMappedDeviceTest::testOpenClose() {
   BOOST_CHECK_NO_THROW( _mappedDevice.closeDev() );
 
   devMap<devBase> mappedDeviceAsBase;
+  // you cannot directly open a devMap of devBase. devBase is purely virtual and cannot be instantiated.
+  BOOST_CHECK_THROW( mappedDeviceAsBase.openDev( DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME ),
+		     exdevMap );
 
+  // you have to create an instance of an implementation like devPCIe and pass it as a devBase pointer
   boost::shared_ptr<devBase> dummyDevice( new devPCIE );
   dummyDevice->openDev( DUMMY_DEVICE_FILE_NAME );
 

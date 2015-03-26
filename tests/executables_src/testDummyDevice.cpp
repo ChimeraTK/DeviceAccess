@@ -50,7 +50,6 @@ public:
   void testWriteRegisterWithoutCallback();
   /// Test that all registers, read-only flags and callback functions are removed
   void testFinalClosing();
-  static void testCreateInstance();
 
 private:
   TestableDummyDevice _dummyDevice;
@@ -102,7 +101,6 @@ class  DummyDeviceTestSuite : public test_suite{
     add( writeRegisterWithoutCallbackTestCase );	 
     add( BOOST_CLASS_TEST_CASE( &DummyDeviceTest::testIsWriteRangeOverlap, dummyDeviceTest ) );
     add( BOOST_CLASS_TEST_CASE( &DummyDeviceTest::testFinalClosing, dummyDeviceTest ) );
-    add( BOOST_TEST_CASE( DummyDeviceTest::testCreateInstance ) );   
   }
 };
 
@@ -475,11 +473,4 @@ void DummyDeviceTest::testFinalClosing(){
   BOOST_CHECK( _dummyDevice._barContents.size() == 0 );
   BOOST_CHECK( _dummyDevice._readOnlyAddresses.size() == 0 );
   BOOST_CHECK( _dummyDevice._writeCallbackFunctions.size() == 0 );
-}
-
-void DummyDeviceTest::testCreateInstance(){
-  // create an instance, which is a pointer to devBase, cast it to Dummy device and check that it really is one
-  DummyDevice * myDummyDevice = static_cast< DummyDevice * >(DummyDevice::createInstance());
-  BOOST_CHECK( myDummyDevice != NULL );
-  delete myDummyDevice;
 }

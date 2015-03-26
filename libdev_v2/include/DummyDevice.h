@@ -83,8 +83,6 @@ namespace mtca4u{
     static uint64_t calculateVirtualAddress(
 	uint32_t registerOffsetInBar,
 	uint8_t bar);
-
-    static devBase * createInstance();
 							 
   protected:
     struct AddressRange{

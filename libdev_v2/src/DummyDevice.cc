@@ -227,9 +227,5 @@ namespace mtca4u{
     // we looped all possile registers, none is writeable
     return false;
   }
- 
-  devBase * DummyDevice::createInstance(){
-    return new DummyDevice;
-  }
   
 }// namespace mtca4u

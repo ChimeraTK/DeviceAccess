@@ -15,7 +15,7 @@ namespace mtca4u{
 class exdevMap : public exBase {
 public:
     
-  enum { EX_WRONG_PARAMETER, EX_NOT_OPENED
+  enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE
   };
     
     

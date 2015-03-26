@@ -332,10 +332,6 @@ void devPCIE::readDeviceInfo(std::string* devInfo)
     *devInfo = os.str();
 }
 
-devBase * devPCIE::createInstance(){
-  return new devPCIE;
-}
-
 std::string devPCIE::createErrorStringWithErrnoText(std::string const & startText){
   char errorBuffer[255];
   return startText + _deviceName + ": " + strerror_r(errno, errorBuffer, sizeof(errorBuffer));
