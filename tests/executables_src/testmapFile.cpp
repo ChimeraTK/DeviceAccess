@@ -120,11 +120,13 @@ void MapFileTest::testInsertElement(){
   mtca4u::mapFile::iterator it;
   mtca4u::mapFile::const_iterator const_it;
   for( it = dummyMapFile.begin(), index = 0;
-      it != dummyMapFile.end(); ++it, ++index){
+       (it != dummyMapFile.end()) && (index < 3);
+       ++it, ++index){
     BOOST_CHECK((compareMapElements(*ptrList[index], *it)) == true);
   }
   for( const_it = constDummyMapFile.begin(), index = 0;
-      const_it != constDummyMapFile.end(); ++const_it, ++index){
+       (const_it != constDummyMapFile.end()) && (index < 3);
+       ++const_it, ++index){
     BOOST_CHECK((compareMapElements(*ptrList[index], *const_it)) == true);
   }
   BOOST_CHECK(dummyMapFile.getMapFileSize() == 5);

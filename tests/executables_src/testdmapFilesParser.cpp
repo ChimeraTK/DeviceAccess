@@ -500,13 +500,15 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   std::vector<std::pair<mtca4u::dmapFile::dmapElem,
                         mtca4u::ptrmapFile> >::const_iterator const_iter;
   uint8_t i;
-  for (iter = filesParser.begin(), i = 0; iter < filesParser.end();
+  for (iter = filesParser.begin(), i = 0; 
+       (iter != filesParser.end()) && (i < 3);
        i++, iter++) {
     BOOST_CHECK(compareDMapElements(*tmpArray1[i], (*iter).first) == true);
     BOOST_CHECK(*tmpArray2[i] == (*iter).second->getMapFileName());
   }
   for (const_iter = constfilesParser.begin(), i = 0;
-       const_iter < constfilesParser.end(); i++, const_iter++) {
+       (const_iter != constfilesParser.end()) && (i < 3);
+       i++, const_iter++) {
     BOOST_CHECK(compareDMapElements(*tmpArray1[i], (*const_iter).first) ==
                 true);
     BOOST_CHECK(*tmpArray2[i] == (*const_iter).second->getMapFileName());

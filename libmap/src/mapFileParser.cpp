@@ -104,9 +104,10 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
   
         if (!failed) {
           is >> std::setbase(0) >> me.reg_signed;         
-          if (is.fail()){
-            failed = true;
-          }
+	  // no need to check if 'is' failed. Insert a check to set the failed flags if more fields are added
+	  //if (is.fail()){
+          //  failed = true;
+          //}
         }
         is.clear();
         me.line_nr = line_nr;

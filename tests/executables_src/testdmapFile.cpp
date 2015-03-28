@@ -84,7 +84,9 @@ void DMapFileTest::testInsertElement() {
   int index;
 
   mtca4u::dmapFile::iterator it;
-  for (it = mapFile.begin(), index = 0; it != mapFile.end(); ++it, ++index) {
+  for (it = mapFile.begin(), index = 0; 
+       (it != mapFile.end())  && (index < 3);
+       ++it, ++index) {
     BOOST_CHECK((compareDMapElements(*ptrList[index], *it)) == true);
   }
   BOOST_CHECK(mapFile.getdmapFileSize() == 3);
