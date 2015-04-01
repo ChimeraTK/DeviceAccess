@@ -1,12 +1,17 @@
 /**
 \page mapping Using the register name mapping
 
-To use the register name mapping you need a map file with
+To use the register name mapping you need a mapping file with
 the register names and properties (comes with the firmware).
+Each register is identified by a register name and a module name. In the mapping file the first column
+is a combination of module and register name (MODULE_NAME.REGISTER_NAME). 
+
+\note For historical reasons there are two kinds of mapping files: *.map and *.mapp<br>
+To use .map files take an empty string as module name.
 
 The class for the name mapped device is mtca4u::devMap.
 In addition to the read and write functions of devBase it provides read
-functions which take a register name instead of its address and bar.
+functions which take register and module name instead of its address and bar.
 To open the device, you give the name of the map file in addition.
 
 \include mapped.cpp
@@ -19,11 +24,13 @@ This is solved by mtca4u::devMap::RegisterAccessor objects, which cache the addr
 \code
   // Inefficient due to repeated table look-up of the address
   for (int i = 0; i < 1000; ++i){
-    myMappedDevice.writeReg(REGISTER_NAME, &i);
+    myMappedDevice.writeReg(REGISTER_NAME, MODULE_NAME, &i);
   }
 
   // Better use an accessor
-  mtca4u::devMap<devPCIE>::RegisterAccessor accessor =  myMappedDevice.getRegisterAccessor(REGISTER_NAME);
+  mtca4u::devMap<devPCIE>::RegisterAccessor accessor 
+      =  myMappedDevice.getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
+
   for (int i = 0; i < 1000; ++i){
     accessor.writeReg(&i);
   }

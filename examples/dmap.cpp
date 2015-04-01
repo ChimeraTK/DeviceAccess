@@ -9,7 +9,8 @@
 // the device alias and the register names 
 // (plus a .dmap file and .map files)
 static const std::string REGISTER_NAME = "WORD_USER";
-static const std::string DEVICE_ALIAS = "DUMMY1";
+static const std::string MODULE_NAME = "BOARD";
+static const std::string DEVICE_ALIAS = "DUMMY2";
 
 int main(){
   // Unfortunatey devMap is templated against the implementation type
@@ -30,7 +31,7 @@ int main(){
 			 .getDeviceFileAndMapFileName());
 
   mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor accessor = 
-    myMappedDevice.getRegisterAccessor(REGISTER_NAME);
+    myMappedDevice.getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
   // look on accessor.cpp for more examples what to do with the accessor
   std::cout << "Data as float is " << accessor.read<float>() << std::endl;

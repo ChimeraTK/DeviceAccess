@@ -5,8 +5,9 @@
 #include <boost/shared_ptr.hpp>
 
 static const std::string REGISTER_NAME = "WORD_USER";
+static const std::string MODULE_NAME = "BOARD";
 static const std::string DEVICE_NAME = "/dev/mtcadummys0";
-static const std::string MAP_NAME = "mtcadummy.map";
+static const std::string MAP_NAME = "mtcadummy.mapp";
 
 int main(){
   // Unfortunatey devMap is templated against the implementation type
@@ -17,7 +18,7 @@ int main(){
   myMappedDevice.openDev(DEVICE_NAME, MAP_NAME);
 
   mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor accessor = 
-    myMappedDevice.getRegisterAccessor(REGISTER_NAME);
+    myMappedDevice.getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
   // read and print a data word works just like the devMap functions,
   // except that you don't give the register name
