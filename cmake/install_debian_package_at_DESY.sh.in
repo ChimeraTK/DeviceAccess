@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script is only intendet for internal use at DESY. It is created because
+# This script is only intended for internal use at DESY. It is created because
 # automated generation with CMake is more convenient and easier to maintain
 # than reverse-engeneering the package names using 'ls', 'grep' etc.
 # In addition it can serve as a template for other debian installations.
@@ -26,11 +26,10 @@ for REPO in intern pub; do
     done
 done
 
-# Step 2: Set the correct file privileges
-chown :flash @PACKAGE_FILES_WILDCARDS@
-chmod 664 @PACKAGE_FILES_WILDCARDS@
-# -- and copy the files to the nfs archive
-cp @PACKAGE_FILES_WILDCARDS@ /home/debian/${DEBIAN_CODENAME}/stable
+# Step 2: Set the priviledge mask for new files to rw-rw-r--
+umask 002
+# -- and copy the files to the nfs archive, using sg to copy with the flash group as target group
+sg flash -c "cp @PACKAGE_FILES_WILDCARDS@ /home/debian/${DEBIAN_CODENAME}/stable"
 
 # Step 3: Install to the repository
 for REPO in intern pub; do
