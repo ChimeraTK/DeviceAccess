@@ -26,10 +26,11 @@ for REPO in intern pub; do
     done
 done
 
-# Step 2: Set the priviledge mask for new files to rw-rw-r--
-umask 002
+# Step 2: Set the privileges to rw-rw-r--
+chmod 664 @PACKAGE_FILES_WILDCARDS@
 # -- and copy the files to the nfs archive, using sg to copy with the flash group as target group
-sg flash -c "cp @PACKAGE_FILES_WILDCARDS@ /home/debian/${DEBIAN_CODENAME}/stable"
+# and umask do keep the privileges
+sg flash -c "umask 002; cp @PACKAGE_FILES_WILDCARDS@ /home/debian/${DEBIAN_CODENAME}/stable"
 
 # Step 3: Install to the repository
 for REPO in intern pub; do
