@@ -47,7 +47,7 @@ private:
     
     ptrdev              pdev;
     std::string         mapFileName;
-    ptrmapFile          mapFile;
+    ptrmapFile          registerMap;
     
 public:            
     
@@ -263,10 +263,10 @@ public:
      */
     std::list<RegisterAccessor> getRegisterAccessorsInModule(const std::string &moduleName) const;
 	
-	  /** Returns the register information aka mapElem.
-  	 *  This function was named getRegisterInfo because mapElem will be renamed.
-  	 */
-    ptrmapFile const & getRegisterMap() const;
+    /** Returns the register information aka mapElem.
+     *  This function was named getRegisterMap because mapFile will be renamed.
+     */
+    boost::shared_ptr<const mapFile> getRegisterMap() const;
 
     virtual ~devMap();
 
@@ -291,8 +291,8 @@ devMap<T>::~devMap() {
 }
 
 template<typename T>
-ptrmapFile const& devMap<T>::getRegisterMap() const {
-  return mapFile;
+boost::shared_ptr<const mapFile> devMap<T>::getRegisterMap() const {
+  return registerMap;
 }
 
 template<typename T>
@@ -308,7 +308,7 @@ typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::
     checkPointersAreNotNull();
 
     mapFile::mapElem    me;
-    mapFile->getRegisterInfo(regName, me, registerModule);
+    registerMap->getRegisterInfo(regName, me, registerModule);
     return devMap::RegisterAccessor(regName, me, pdev);
 }
 
@@ -317,7 +317,7 @@ typename std::list< mapFile::mapElem > devMap<T>::getRegistersInModule( const st
 {
     checkPointersAreNotNull();
 
-    return mapFile->getRegistersInModule(moduleName);
+    return registerMap->getRegistersInModule(moduleName);
 }
 
 template<typename T>
@@ -326,7 +326,7 @@ std::list< typename devMap<T>::RegisterAccessor > devMap<T>::getRegisterAccessor
 {
     checkPointersAreNotNull();
 
-    std::list< mapFile::mapElem > registerInfoList = mapFile->getRegistersInModule(moduleName);
+    std::list< mapFile::mapElem > registerInfoList = registerMap->getRegistersInModule(moduleName);
 
     std::list< RegisterAccessor > accessorList;
     for ( std::list< mapFile::mapElem >::const_iterator regInfo = registerInfoList.begin();
@@ -345,7 +345,7 @@ void devMap<T>::checkRegister(const std::string &regName,const std::string &regM
     checkPointersAreNotNull();
 
     mapFile::mapElem    me;
-    mapFile->getRegisterInfo(regName, me, regModule);
+    registerMap->getRegisterInfo(regName, me, regModule);
     if (addRegOffset % 4){
         throw exdevMap("Register offset must be divisible by 4", exdevMap::EX_WRONG_PARAMETER);
     }
@@ -461,7 +461,7 @@ void devMap<T>::openDev(const std::string &_devFileName, const std::string& _map
 {
     mapFileParser fileParser;
     mapFileName = _mapFileName;    
-    mapFile     = fileParser.parse(mapFileName);
+    registerMap     = fileParser.parse(mapFileName);
     pdev.reset( new T );
     pdev->openDev(_devFileName, _perm, _pConfig);
 }
@@ -486,15 +486,15 @@ void devMap<T>::openDev(std::pair<std::string, std::string> const & _deviceFileA
 	  _pConfig);
 }
 
-/** "open" a MappedDevice from an already opened IODevice and a RegisterMapping object.
+/** "open" a MappedDevice from an already opened IODevice and a RegisterMap object.
  *  It does not actually open anything, which shows that the "openDev"s should be overloaded
  *  constructors. To be changed in redesign.
  *  This function allows to use devBase as template argument and feed in a dummy or a pcie device.
  */
 template<typename T>
-void devMap<T>::openDev(ptrdev ioDevice, ptrmapFile registerMapping){
+void devMap<T>::openDev(ptrdev ioDevice, ptrmapFile registerMap_){
   pdev = ioDevice;
-  mapFile = registerMapping;
+  registerMap = registerMap_;
 }
 
 /**
@@ -678,7 +678,7 @@ template<typename T>
 
 template<typename T>
 void devMap<T>::checkPointersAreNotNull() const {
-  if ( (pdev==false) || (mapFile==false) ){
+  if ( (pdev==false) || (registerMap==false) ){
     throw exdevMap("devMap has not been opened correctly", exdevMap::EX_NOT_OPENED);
   }  
 }

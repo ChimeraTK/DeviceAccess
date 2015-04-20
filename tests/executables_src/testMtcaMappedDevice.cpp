@@ -116,6 +116,10 @@ void MtcaMappedDeviceTest::testOpenClose() {
   boost::shared_ptr<mapFile> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 			
   BOOST_CHECK_NO_THROW( mappedDeviceAsBase.openDev( dummyDevice, registerMapping ) );
+
+  // get of a smart pointer gives a raw pointer of the object it points to
+  BOOST_CHECK( registerMapping.get() == mappedDeviceAsBase.getRegisterMap().get() );
+
   BOOST_CHECK_NO_THROW( mappedDeviceAsBase.closeDev() );
 }
 
