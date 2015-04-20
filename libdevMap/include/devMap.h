@@ -262,6 +262,11 @@ public:
      *  The registers are in alphabetical order.
      */
     std::list<RegisterAccessor> getRegisterAccessorsInModule(const std::string &moduleName) const;
+	
+	  /** Returns the register information aka mapElem.
+  	 *  This function was named getRegisterInfo because mapElem will be renamed.
+  	 */
+    ptrmapFile const & getRegisterMap() const;
 
     virtual ~devMap();
 
@@ -283,6 +288,11 @@ template<typename T>
 devMap<T>::~devMap() {
   //FIXME: do we want to close here? It will probably leave not working RegisterAccessors
   // if(pdev) pdev->closeDev();
+}
+
+template<typename T>
+ptrmapFile const& devMap<T>::getRegisterMap() const {
+  return mapFile;
 }
 
 template<typename T>
