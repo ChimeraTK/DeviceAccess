@@ -1,5 +1,5 @@
 DUMMY1   /dev/mtcadummys0 ./mtcadummy_withoutModules.map
-DUMMY2   /dev/mtcadummys1 ./mtcadummy.mapp
+DUMMY2   /dev/mtcadummys1 ./mtcadummy.map
 DUMMY3   /dev/mtcadummys2 ./mtcadummy_bad.map
 DUMMY4   /dev/mtcadummys3 ./mtcadummy_bad.map
 DUMMY5   /dev/llrfdummys4 ./mtcadummy_withoutModules.map

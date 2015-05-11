@@ -1,0 +1,9 @@
+@HW_VERSION 1.6
+@ FW_VERSION 2.5
+
+# name                    number of elements       address          size           bar    width   fracbits    signed   
+WORD_FIRMWARE                     0x00000001    0x00000000    0x00000004    
+WORD_COMPILATION                  0x00000001    0x00000004    0x00000004    0x00000000       
+WORD_STATUS                       0x00000001    0x00000008    0x00000004    0x00000000       32         
+WORD_USER1                        0x00000001    0x0000000C    0x00000004    0x00000000       32         0         
+WORD_USER2                        0x00000001    0x00000010    0x00000004    0x00000000       32         0         0

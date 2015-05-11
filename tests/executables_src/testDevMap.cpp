@@ -531,7 +531,7 @@ void DevMapTest::testDMAReadViaStruct() {
 void DevMapTest::testGetRegistersInModule(){
   mtca4u::devMap<mtca4u::DummyDevice> mappedDevice;
   // this test only makes sense for mapp files
-  std::string mapFileName = "goodMappFile.mapp";
+  std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file instead of device node)
   mappedDevice.openDev(mapFileName, mapFileName);
 
@@ -554,7 +554,7 @@ void DevMapTest::testGetRegistersInModule(){
 void DevMapTest::testGetRegisterAccessorsInModule(){
   mtca4u::devMap<mtca4u::DummyDevice> mappedDevice;
   // this test only makes sense for mapp files
-  std::string mapFileName = "goodMappFile.mapp";
+  std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file instead of device node)
   mappedDevice.openDev(mapFileName, mapFileName);
 

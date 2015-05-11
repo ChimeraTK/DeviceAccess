@@ -117,9 +117,9 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
   mtca4u::dmapFilesParser filesParser;
   std::string path_to_dmap_file = pathToDmapFile+"valid.dmap";
-  std::string path_to_map_file1 = "goodMapFile.map";
-  std::string path_to_map_file2 = "./goodMapFile.map";
-  std::string path_to_map_file3 = getCurrentWorkingDirectory()+"/goodMapFile.map";
+  std::string path_to_map_file1 = "goodMapFile_withoutModules.map";
+  std::string path_to_map_file2 = "./goodMapFile_withoutModules.map";
+  std::string path_to_map_file3 = getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map";
 
   filesParser.parse_file(path_to_dmap_file);
   mtca4u::dmapFile::dmapElem reterievedDMapElement1;
@@ -438,11 +438,11 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
   mtca4u::dmapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, path_to_dmap_file, "card1",
-                           "/dev/dev1", "goodMapFile.map");
+                           "/dev/dev1", "goodMapFile_withoutModules.map");
   populateDummydMapElement(dMapElement2, path_to_dmap_file, "card2",
-                           "/dev/dev2", "./goodMapFile.map");
+                           "/dev/dev2", "./goodMapFile_withoutModules.map");
   populateDummydMapElement(dMapElement3, path_to_dmap_file, "card3",
-                           "/dev/dev3", getCurrentWorkingDirectory()+"/goodMapFile.map");
+                           "/dev/dev3", getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;
@@ -472,12 +472,12 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   mtca4u::dmapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, path_to_dmap_file, "card1",
-                           "/dev/dev1", "goodMapFile.map");
+                           "/dev/dev1", "goodMapFile_withoutModules.map");
   populateDummydMapElement(dMapElement2, path_to_dmap_file, "card2",
-                           "/dev/dev2", "./goodMapFile.map");
+                           "/dev/dev2", "./goodMapFile_withoutModules.map");
   // the third path is absolute, does not change with the location of the dmap file
   populateDummydMapElement(dMapElement3, path_to_dmap_file, "card3",
-                           "/dev/dev3", getCurrentWorkingDirectory() + "/goodMapFile.map");
+                           "/dev/dev3", getCurrentWorkingDirectory() + "/goodMapFile_withoutModules.map");
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;
@@ -489,10 +489,10 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   tmpArray1[2] = &dMapElement3;
 
 
-  std::string s1 = currentWrkingDir + "/" + "dMapDir/goodMapFile.map";
-  std::string s2 = currentWrkingDir + "/" + "dMapDir/./goodMapFile.map";
+  std::string s1 = currentWrkingDir + "/" + "dMapDir/goodMapFile_withoutModules.map";
+  std::string s2 = currentWrkingDir + "/" + "dMapDir/./goodMapFile_withoutModules.map";
   // the third path is absolute, does not change with the location of the dmap file
-  std::string s3 = currentWrkingDir + "/" + "goodMapFile.map";
+  std::string s3 = currentWrkingDir + "/" + "goodMapFile_withoutModules.map";
   std::string* tmpArray2[3];
   tmpArray2[0] = &s1;
   tmpArray2[1] = &s2;

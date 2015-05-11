@@ -96,11 +96,11 @@ void DMapFileParserTest::testParseFile() {
   mtca4u::dmapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, "valid.dmap", "card1", "/dev/dev1",
-                           "goodMapFile.map");
+                           "goodMapFile_withoutModules.map");
   populateDummydMapElement(dMapElement2, "valid.dmap", "card2", "/dev/dev2",
-                           "./goodMapFile.map");
+                           "./goodMapFile_withoutModules.map");
   populateDummydMapElement(dMapElement3, "valid.dmap", "card3", "/dev/dev3",
-                           getCurrentWorkingDirectory()+"/goodMapFile.map");
+                           getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;

@@ -135,7 +135,7 @@ void MapFileParserTest::testFracBits () {
 void MapFileParserTest::testGoodMapFileParse () {
   mtca4u::mapFileParser map_file_parser;
   boost::shared_ptr<mtca4u::mapFile> ptrmapFile =
-      map_file_parser.parse("goodMapFile.map");
+      map_file_parser.parse("goodMapFile_withoutModules.map");
 
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -185,7 +185,7 @@ void MapFileParserTest::testGoodMapFileParse () {
 void MapFileParserTest::testGoodMappFileParse () {
   mtca4u::mapFileParser map_file_parser;
   boost::shared_ptr<mtca4u::mapFile> ptrmapFile =
-      map_file_parser.parse("goodMappFile.mapp");
+      map_file_parser.parse("goodMapFile.map");
 
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -240,7 +240,7 @@ void MapFileParserTest::testGoodMappFileParse () {
 void MapFileParserTest::testMixedMapFileParse () {
     mtca4u::mapFileParser map_file_parser;
     boost::shared_ptr<mtca4u::mapFile> ptrmapFile =
-        map_file_parser.parse("mixedMapFile.mapp");
+        map_file_parser.parse("mixedMapFile.map");
     
     std::vector< mtca4u::mapFile::mapElem > mapElements(4);
 
@@ -304,10 +304,10 @@ void MapFileParserTest::testSplitStringAtLastDot(){
 
 void MapFileParserTest::testBadMappFileParse(){
   mtca4u::mapFileParser fileparser;
-  BOOST_CHECK_THROW(fileparser.parse("badMappFile.mapp"),
+  BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"),
                     mtca4u::exMapFile);
   try{
-    fileparser.parse("badMappFile.mapp");
+    fileparser.parse("badMapFile.map");
   } catch (mtca4u::exMapFile& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
 	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
