@@ -1,0 +1,47 @@
+# name                    number of elements       address          size           bar    width   fracbits    signed   
+WORD_FIRMWARE                     0x00000001    0x00000000    0x00000004    0x00000000       32         0         0
+WORD_COMPILATION                  0x00000001    0x00000004    0x00000004    0x00000000       32         0         0
+WORD_STATUS                       0x00000001    0x00000008    0x00000004    0x00000000       32         0         0
+WORD_USER                         0x00000001    0x0000000C    0x00000004    0x00000000       12         3         1
+WORD_CLK_CNT                      0x00000002    0x00000010    0x00000008    0x00000000       32         0         0
+WORD_CLK_CNT_0                    0x00000001    0x00000010    0x00000004    0x00000000       32         0         0
+WORD_CLK_CNT_1                    0x00000001    0x00000014    0x00000004    0x00000000       32         0         0
+WORD_CLK_MUX                      0x00000004    0x00000020    0x00000010    0x00000000       32         0         0
+WORD_CLK_MUX_0                    0x00000001    0x00000020    0x00000004    0x00000000       32         0         0
+WORD_CLK_MUX_1                    0x00000001    0x00000024    0x00000004    0x00000000       32         0         0
+WORD_CLK_MUX_2                    0x00000001    0x00000028    0x00000004    0x00000000       32         0         0
+WORD_CLK_MUX_3                    0x00000001    0x0000002C    0x00000004    0x00000000       32         0         0
+WORD_CLK_DUMMY                    0x00000001    0x0000003C    0x00000004    0x00000000       32         0         0
+WORD_CLK_RST                      0x00000001    0x00000040    0x00000004    0x00000000       32         0         0
+WORD_ADC_ENA                      0x00000001    0x00000044    0x00000004    0x00000000       32         0         0
+#The broken register cannot be read or written, it always causes an I/O error for testing
+BROKEN_REGISTER			  0x00000001    0x00000048    0x00000004    0x00000000       32         0         0
+#Reading is possible, but writing causes an I/O error. Content is the offset.
+BROKEN_WRITE			  0x00000001    0x0000004C    0x00000004    0x00000000       32         0         0
+#Simulate spi via pcie with handshake:
+# - write 0xff to the SPI_SYNC register
+# - write something to SPI_WRITE
+# - the content of SPI_WRITE is cpoied to SPI_READ and SPI_SYNC is set to 0
+# - if SPI_SYNC is not 0xff when writing to SPI_WRITE SPI_SYNC is set to 0xaa = SPI_SYNC_ERROR
+WORD_SPI_WRITE                    0x00000001    0x00000050    0x00000004    0x00000000       32         0         0
+WORD_SPI_READ                     0x00000001    0x00000054    0x00000004    0x00000000       32         0         0
+WORD_SPI_SYNC                     0x00000001    0x00000058    0x00000004    0x00000000       32         0         0
+
+# These words have incomplete fractional settings and fall back to default values
+WORD_INCOMPLETE_1                 0x00000001    0x00000060    0x00000004    0x00000000       13
+WORD_INCOMPLETE_2                 0x00000001    0x00000064    0x00000004    0x00000000       13         8
+
+#Acessing a register outside the addressable range results in a bad address error
+NON_EXISTENT_REGISTER		  0x00000001    0x00000148    0x00000004    0x00000000       32         0         0
+
+#The area which is foreseen for DMA transfer can also be accessed via normal
+#read/write. As the driver does not DMA control registers in bar 2, we use it
+#for this purpose. The dma area does not have fractional bits.
+AREA_DMAABLE                     0x00000400   0x00000000    0x00001000    0x2
+#The actual DMA is happening with the 'magic' bar number 0xD (PCIe only has 0 to 5)
+AREA_DMA_VIA_DMA                     0x00000400   0x00000000    0x00001000    0xD
+#As the DMAable region is the largest buffer and can be set by "firmware", it
+#is convenient for testing with different fractional bits. Just use other
+#names and settings for the same address range
+AREA_DMAABLE_FIXEDPOINT10_1          0x00000400   0x00000000    0x00001000 0x2 10 1 1
+AREA_DMAABLE_FIXEDPOINT16_3          0x00000400   0x00000000    0x00001000 0x2 16 3 1

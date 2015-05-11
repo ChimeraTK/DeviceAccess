@@ -56,7 +56,7 @@ MACRO( MAPPEDDEVICE_ADDSUBDIR directory executables)
 ENDMACRO(MAPPEDDEVICE_ADDSUBDIR)
 
 MACRO( COPY_MAPPING_FILES )
-  foreach( MAPPING_FILE mtcadummy_withoutModules.map mtcadummy.mapp mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
+  foreach( MAPPING_FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
   mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map
   MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
   IncorrectFracBits2.map goodMapFile.map goodMappFile.mapp mixedMapFile.mapp badMappFile.mapp
@@ -72,7 +72,7 @@ MACRO( COPY_MAPPING_FILES )
   # They go into a the examples directory because the dmapFliesParser scans the whole 
   # directory and in the main build directory there are also ivalid ones.
   # We also copy the bad mapping file so we can reuse dummies.dmap.
-  foreach( FILE mtcadummy_withoutModules.map mtcadummy.mapp mtcadummy_bad.map dummies.dmap )
+  foreach( FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map dummies.dmap )
     configure_file( tests/${FILE} ${PROJECT_BINARY_DIR}/examples/${FILE} copyonly)
   endforeach( FILE )
 
