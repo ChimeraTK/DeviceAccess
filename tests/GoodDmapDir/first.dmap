@@ -1,4 +1,7 @@
 # A good dmap file
 
 card1 /dev/dev1 ./mapFile1.map
-card4 /dev/dev4 mtcadummy.map
+card4 /dev/dev4 mtcadummy_withoutModules.map 
+# bug above? picks up mtcadummy_withoutModules.map though not present.  Seems to
+# mtcadummy_withoutModules.map from the directory in which exe is
+# run

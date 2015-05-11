@@ -8,7 +8,7 @@ using namespace mtca4u;
 
 typedef devMap<devPCIE> MtcaMappedDevice;
 
-#define VALID_MAPPING_FILE_NAME "mtcadummy.map"
+#define VALID_MAPPING_FILE_NAME "mtcadummy_withoutModules.map"
 #define DUMMY_DEVICE_FILE_NAME "/dev/mtcadummys0"
 
 #define FXPNT_ERROR_1_MAPPING_FILE_NAME "mtcadummy_bad_fxpoint1.map"

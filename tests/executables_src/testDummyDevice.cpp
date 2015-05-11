@@ -8,7 +8,7 @@ using namespace boost::unit_test_framework;
 #include "NotImplementedException.h"
 using namespace mtca4u;
 
-#define TEST_MAPPING_FILE "mtcadummy.map"
+#define TEST_MAPPING_FILE "mtcadummy_withoutModules.map"
 #define FIRMWARE_REGISTER_STRING "WORD_FIRMWARE"
 #define STATUS_REGISTER_STRING "WORD_STATUS"
 #define USER_REGISTER_STRING "WORD_USER"

@@ -133,7 +133,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 void DevMapTest::testDevMapReadRegisterByName() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data;
@@ -156,7 +156,7 @@ void DevMapTest::testDevMapReadRegisterByName() {
 void DevMapTest::testDevMapReadArea() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data = 1;
@@ -176,7 +176,7 @@ void DevMapTest::testDevMapReadArea() {
 void DevMapTest::testDevMapReadDMA() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data = 1;
@@ -195,7 +195,7 @@ void DevMapTest::testDevMapReadDMA() {
 void DevMapTest::testDevMapReadDMAErrors() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   int32_t data;
   size_t dataSizeInBytes = 1 * 4;
@@ -212,7 +212,7 @@ void DevMapTest::testDevMapReadDMAErrors() {
 void DevMapTest::testDevMapWriteRegisterByName() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   int32_t input_data = 16;
   int32_t read_data;
@@ -236,7 +236,7 @@ void DevMapTest::testDevMapWriteRegisterByName() {
 void DevMapTest::testDevMapWriteDMA() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data;
@@ -260,7 +260,7 @@ void DevMapTest::testDevMapWriteDMA() {
 void DevMapTest::testDevMapCheckRegister() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   size_t dataSize = 4;
@@ -303,7 +303,7 @@ void DevMapTest::testDevMapCheckRegister() {
 void DevMapTest::testRegAccsorReadDMA() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data = 1;
@@ -328,7 +328,7 @@ void DevMapTest::testRegAccsorReadDMA() {
 void DevMapTest::testRegAccsorCheckRegister() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   size_t dataSize = 4;
@@ -370,7 +370,7 @@ void DevMapTest::testRegAccsorCheckRegister() {
 void DevMapTest::testRegAccsorWriteDMA() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data;
@@ -397,7 +397,7 @@ void DevMapTest::testRegAccsorReadReg() {
 
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor word_clk_dummy =
       pcieDevice.getRegisterAccessor("WORD_CLK_DUMMY");
@@ -409,7 +409,7 @@ void DevMapTest::testRegAccsorReadReg() {
 void DevMapTest::testRegAccsorWriteReg() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor word_clk_rst =
       pcieDevice.getRegisterAccessor("WORD_CLK_RST");
@@ -423,7 +423,7 @@ void DevMapTest::testRegAccsorWriteReg() {
 void DevMapTest::testDevMapReadRegister() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   uint32_t offset_word_clk_dummy = 0x0000003C;
   int32_t data;
@@ -435,7 +435,7 @@ void DevMapTest::testDevMapReadRegister() {
 void DevMapTest::testDevMapWriteRegister() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   uint32_t offset_word_clk_reset = 0x00000040;
   int32_t input_data = 16;
@@ -450,7 +450,7 @@ void DevMapTest::testDeviceInfo() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   int slot, majorVersion, minorVersion;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   std::string deviceInfo;
   pcieDevice.readDeviceInfo(&deviceInfo);
@@ -463,7 +463,7 @@ void DevMapTest::testDeviceInfo() {
 void DevMapTest::testReadBadReg() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data;
@@ -480,7 +480,7 @@ void DevMapTest::testReadBadReg() {
 void DevMapTest::testWriteBadReg() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   int32_t data;
   BOOST_CHECK_THROW(pcieDevice.writeReg("BROKEN_WRITE", &data),
@@ -496,7 +496,7 @@ void DevMapTest::testWriteBadReg() {
 void DevMapTest::testDMAReadSizeTooSmall() {
   mtca4u::devMap<mtca4u::devPCIE> mtcaDevice;
   std::string dummyDevice = "/dev/mtcadummys0";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   mtcaDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t adcdata[2];
@@ -516,7 +516,7 @@ void DevMapTest::testDMAReadSizeTooSmall() {
 void DevMapTest::testDMAReadViaStruct() {
   mtca4u::devMap<mtca4u::devPCIE> pcieDevice;
   std::string dummyDevice = "/dev/llrfdummys4";
-  std::string validMappingFile = "mtcadummy.map";
+  std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
   int32_t data = 1;

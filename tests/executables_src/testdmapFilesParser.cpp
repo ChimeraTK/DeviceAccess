@@ -151,6 +151,9 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
                                   reterievedDMapElement2) == true);
 
   filesParser.getdMapFileElem(2, reterievedDMapElement3);
+
+
+
   BOOST_CHECK(compareDMapElements(expectedDMapElement3,
                                   reterievedDMapElement3) == true);
 
@@ -582,7 +585,7 @@ void DMapFilesParserTest::testParseDirWithGoodDmaps() {
   populateDummydMapElement(expectedDMapElement3, "./GoodDmapDir/second.dmap",
                            "card3", "/dev/dev3", "./mapFile2.map");
   populateDummydMapElement(expectedDMapElement4, "./GoodDmapDir/first.dmap",
-                           "card4", "/dev/dev4", "mtcadummy.map");
+                           "card4", "/dev/dev4", "mtcadummy_withoutModules.map");
 
   expectedDMapElement1.dmap_file_line_nr = 3;
   expectedDMapElement2.dmap_file_line_nr = 1;
