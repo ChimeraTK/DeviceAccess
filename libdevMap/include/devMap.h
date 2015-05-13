@@ -158,6 +158,11 @@ public:
 	     *  This function was named getRegisterInfo because mapElem will be renamed.
 	     */
 	    mapFile::mapElem const & getRegisterInfo() const;
+
+	    /** Return's a reference to the correctly configured internal fixed point
+	     *  converter for the register
+	     */
+	    FixedPointConverter const & getFixedPointConverter() const;
     };
     
     /** A typedef for backward compatibility.
@@ -674,6 +679,11 @@ void devMap<T>::RegisterAccessor::writeDMA(int32_t const * data, size_t dataSize
 template<typename T>
   mapFile::mapElem const & devMap<T>::RegisterAccessor::getRegisterInfo() const{
   return me; // me is the mapElement
+ }
+
+template<typename T>
+FixedPointConverter const & devMap<T>::RegisterAccessor::getFixedPointConverter() const{
+  return _fixedPointConverter;
  }
 
 template<typename T>
