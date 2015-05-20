@@ -349,7 +349,7 @@ void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue){
   static const std::vector<int32_t> zeroedBuffer(N_ELEMENTS, 0);
   registerAccessor.writeReg(&zeroedBuffer[0], N_BYTES, OFFSET_BYTES);
 
-  registerAccessor.write( &writeBuffer[0], N_ELEMENTS, OFFSET_BYTES);
+  registerAccessor.write( &writeBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   // we already tested that read works, so just read back and compare that we get what we wrote
   std::vector<DataType> readBuffer(N_ELEMENTS,0);

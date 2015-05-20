@@ -138,7 +138,7 @@ public:
 	     */
 	    template <typename ConvertedDataType>
 	      void write(ConvertedDataType const * convertedData, 
-			 size_t nWords, uint32_t offsetInBytes = 0);
+			 size_t nWords, uint32_t wordOffsetInRegister = 0);
 	    
 	    /** Convenience function for single words. The value can be given directly, no need to
 	     *  have a an instance and a pointer for it. This allows code like
@@ -702,7 +702,7 @@ ConvertedDataType devMap<T>::RegisterAccessor::read() const{
 
 template<typename T> template <typename ConvertedDataType>
   void devMap<T>::RegisterAccessor:: write(ConvertedDataType const * convertedData, 
-	     size_t nWords, uint32_t offsetInBytes){
+	     size_t nWords, uint32_t wordOffsetInRegister){
   // Check that nWords is not 0. The readReg command would read the whole register, which
   // will the raw buffer size of 0.
   if (nWords==0){
@@ -713,7 +713,7 @@ template<typename T> template <typename ConvertedDataType>
   for(size_t i=0; i < nWords; ++i){
     rawDataBuffer[i] = _fixedPointConverter.toFixedPoint( convertedData[i] );
   }
-  writeReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), offsetInBytes);
+  writeReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), wordOffsetInRegister*sizeof(int32_t));
 }
 
 template<typename T> template<typename ConvertedDataType>
