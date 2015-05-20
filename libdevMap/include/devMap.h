@@ -104,7 +104,7 @@ public:
 	     *  -128 to 127.
 	     */
 	    template <typename ConvertedDataType>
-	      void read(ConvertedDataType * convertedData, size_t nWords = 1, uint32_t offsetInBytes = 0) const;
+	      void read(ConvertedDataType * convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const;
 
 	    /** Convenience function to read a single word. It allows shorter syntax 
 	     *  as the read value is the return value and one does not have to pass a pointer.

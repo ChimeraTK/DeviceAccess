@@ -230,10 +230,9 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
   // there are 25 elements with value i*i. ignore the first 2
   static const size_t N_ELEMENTS = 23;
   static const size_t OFFSET_ELEMENTS = 2;
-  static const size_t OFFSET_BYTES = OFFSET_ELEMENTS * sizeof(int32_t);
   
   std::vector<int32_t> int32Buffer(N_ELEMENTS,0);
-  registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   // pre-check: make sure we know what we get
   for (size_t i=0; i < N_ELEMENTS; ++i){
@@ -246,28 +245,28 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
   MtcaMappedDevice::regObject registerAccessor10_1 =
     _mappedDevice.getRegObject("AREA_DMAABLE_FIXEDPOINT10_1");
 
-  registerAccessor10_1.read(&int32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<uint32_t> uint32Buffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<int16_t> int16Buffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&int16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&int16Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<uint16_t> uint16Buffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<int8_t> int8Buffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&int8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&int8Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<uint8_t> uint8Buffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<float> floatBuffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&floatBuffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&floatBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
   std::vector<double> doubleBuffer(N_ELEMENTS,0);
-  registerAccessor10_1.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_BYTES );
+  registerAccessor10_1.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS );
 
 
   // now test different template types:
@@ -332,7 +331,6 @@ void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue){
   static const size_t N_ELEMENTS = 23;
   static const size_t N_BYTES = N_ELEMENTS * sizeof(int32_t);
   static const size_t OFFSET_ELEMENTS = 2;
-  static const size_t OFFSET_BYTES = OFFSET_ELEMENTS * sizeof(int32_t);
  
   std::vector<DataType> writeBuffer(N_ELEMENTS);
   
@@ -347,13 +345,13 @@ void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue){
 
   // use raw write to zero the registers
   static const std::vector<int32_t> zeroedBuffer(N_ELEMENTS, 0);
-  registerAccessor.writeReg(&zeroedBuffer[0], N_BYTES, OFFSET_BYTES);
+  registerAccessor.writeReg(&zeroedBuffer[0], N_BYTES, OFFSET_ELEMENTS * sizeof(int32_t));
 
   registerAccessor.write( &writeBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   // we already tested that read works, so just read back and compare that we get what we wrote
   std::vector<DataType> readBuffer(N_ELEMENTS,0);
-  registerAccessor.read( &readBuffer[0], N_ELEMENTS, OFFSET_BYTES);
+  registerAccessor.read( &readBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
    for (size_t i=0; i < N_ELEMENTS; ++i){
      BOOST_CHECK( writeBuffer[i] == readBuffer[i] );
   }      

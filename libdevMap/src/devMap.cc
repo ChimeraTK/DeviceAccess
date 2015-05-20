@@ -10,13 +10,13 @@
 #define MTCA4U_DEVMAP_READ( DEVICE_TYPE, CONVERTED_DATA_TYPE, ROUNDING_COMMAND ) \
 template<> template<>\
 void devMap<DEVICE_TYPE>::RegisterAccessor::read(CONVERTED_DATA_TYPE * convertedData, size_t nWords,\
-					   uint32_t offsetInBytes) const { \
+					   uint32_t wordOffsetInRegister) const { \
   if (nWords==0){\
     return;\
   }\
   \
   std::vector<int32_t> rawDataBuffer(nWords);\
-  readReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), offsetInBytes);\
+  readReg(&(rawDataBuffer[0]), nWords*sizeof(int32_t), wordOffsetInRegister*sizeof(int32_t));\
   \
   for(size_t i=0; i < nWords; ++i){\
       convertedData[i] = static_cast<CONVERTED_DATA_TYPE>(ROUNDING_COMMAND(_fixedPointConverter.toDouble(rawDataBuffer[i]))); \
