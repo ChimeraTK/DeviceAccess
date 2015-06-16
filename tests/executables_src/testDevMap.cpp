@@ -6,6 +6,7 @@
 #include "exdevMap.h"
 #include "exDevPCIE.h"
 #include "DummyDevice.h"
+#include "MultiplexedDataAccessor.h"
 //#define DUMMY_DEVICE_FILE_NAME
 using namespace boost::unit_test_framework;
 
@@ -34,6 +35,7 @@ class DevMapTest {
 
   void testGetRegistersInModule();
   void testGetRegisterAccessorsInModule();
+  void testAccessorForMuxedData();
 };
 
 class DevMapTestSuite : public test_suite {
@@ -121,6 +123,7 @@ class DevMapTestSuite : public test_suite {
 
     add(BOOST_CLASS_TEST_CASE(&DevMapTest::testGetRegistersInModule, DevMapTestPtr));
     add(BOOST_CLASS_TEST_CASE(&DevMapTest::testGetRegisterAccessorsInModule, DevMapTestPtr));
+    add(BOOST_CLASS_TEST_CASE(&DevMapTest::testAccessorForMuxedData, DevMapTestPtr));
   }
 };
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
@@ -574,3 +577,48 @@ void DevMapTest::testGetRegisterAccessorsInModule(){
   BOOST_CHECK( accessor->getRegisterInfo().reg_name == "WORD_STATUS" );
   BOOST_CHECK( accessor->getRegisterInfo().reg_module == "APP0" );
 }
+
+void DevMapTest::testAccessorForMuxedData(){
+  // create mapped dummy device
+  boost::shared_ptr<mtca4u::mapFile> registerMap = mtca4u::mapFileParser().parse("sequences.map");
+  boost::shared_ptr< mtca4u::devBase > ioDevice( new mtca4u::DummyDevice );
+  ioDevice->openDev( "sequences.map" );
+
+  mtca4u::mapFile::mapElem sequenceInfo;
+  registerMap->getRegisterInfo( "AREA_MULTIPLEXED_SEQUENCE_DMA",
+				sequenceInfo, "TEST");
+
+  // Fill in the sequences
+  std::vector<int16_t> ioBuffer( sequenceInfo.reg_size / sizeof(int16_t) );
+
+  for (size_t i = 0; i < ioBuffer.size(); ++i){
+    ioBuffer[i]=i;
+  }
+
+  ioDevice->writeArea( sequenceInfo.reg_address,
+		       reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
+		       sequenceInfo.reg_size,
+		       sequenceInfo.reg_bar );
+
+
+  // create the mapped device
+  mtca4u::devMap<mtca4u::devBase> mappedDevice;
+  mappedDevice.openDev(ioDevice, registerMap);
+
+  boost::shared_ptr< mtca4u::MultiplexedDataAccessor< double > >deMultiplexer =
+      mappedDevice.getCustomAccessor< mtca4u::MultiplexedDataAccessor<double> > ("DMA", "TEST");
+
+  deMultiplexer->read();
+
+  int j=0;
+  for(size_t i=0; i< 4; ++i){
+    for (size_t sequenceIndex=0; sequenceIndex<16; ++sequenceIndex){
+      BOOST_CHECK( (*deMultiplexer)[sequenceIndex][i]== 4 * j++ );
+    }
+  }
+
+  BOOST_CHECK_THROW( deMultiplexer->write(),
+		     mtca4u::NotImplementedException )
+
+}
+

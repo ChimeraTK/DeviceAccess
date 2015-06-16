@@ -1,0 +1,11 @@
+#This area has no sequence words
+INVALID.AREA_MULTIPLEXED_SEQUENCE_NO_WORDS 8 0 64 0
+
+#This area has sequences with wrong word sizes
+INVALID.AREA_MULTIPLEXED_SEQUENCE_WRONG_SIZE 8 0 64 0
+INVALID.SEQUENCE_WRONG_SIZE_0 1 0 3 0
+
+#This area has sequences with wrong number of elements
+INVALID.AREA_MULTIPLEXED_SEQUENCE_WRONG_NELEMENTS 8 0 64 0
+INVALID.SEQUENCE_WRONG_NELEMENTS_0 2 0 8 0
+

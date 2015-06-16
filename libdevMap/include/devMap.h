@@ -15,6 +15,7 @@
 #include "libdev.h"
 #include "exdevMap.h"
 #include "FixedPointConverter.h"
+#include "MultiplexedDataAccessor.h"
 
 namespace mtca4u{
 
@@ -256,8 +257,23 @@ public:
      /** Get a RegisterAccessor object from the register name. 
      */
     RegisterAccessor getRegisterAccessor(const std::string &registerName,
-					 const std::string &registerModule = std::string() ) const;
-    
+					 const std::string &module = std::string() ) const;
+
+    /**
+     * returns an accssesor which is used for interpreting  data contained in a
+     * memory region. Memory regions that require a custom interpretation would
+     * be indicated by specific keywords in the mapfile. For example, a memory
+     * region indicated by the keyword
+     * AREA_MULTIPLEXED_SEQUENCE_<dataRegionName> indicates that this memory
+     * region contains multiplexed data sequences. The intelligence for
+     * interpreting this multiplexed data is provided through the custom class -
+     * MultiplexedDataAccessor<userType>
+     */
+    template <typename customClass>
+    boost::shared_ptr<customClass> getCustomAccessor(
+        const std::string &dataRegionName,
+        const std::string &module = std::string()) const;
+
     /** Get a complete list of RegisterInfo objects (mapfile::mapElem) for one module.
      *  The registers are in alphabetical order.
      */
@@ -308,12 +324,12 @@ typename devMap<T>::RegisterAccessor  devMap<T>::getRegObject(const std::string 
 
 template<typename T>
 typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName,
-								     const std::string &registerModule) const
+								     const std::string &module) const
 {
     checkPointersAreNotNull();
 
     mapFile::mapElem    me;
-    registerMap->getRegisterInfo(regName, me, registerModule);
+    registerMap->getRegisterInfo(regName, me, module);
     return devMap::RegisterAccessor(regName, me, pdev);
 }
 
@@ -721,7 +737,16 @@ template<typename T> template<typename ConvertedDataType>
     write(&convertedData, 1);
   }
 
-}//namespace mtca4u
+  template <typename T>
+  template <typename customClass>
+  boost::shared_ptr<customClass> devMap<T>::getCustomAccessor(
+      const std::string &dataRegionName,
+      const std::string &module) const {
+    return (customClass::createInstance(dataRegionName, module, pdev,
+                                        registerMap));
+  }
+
+}  //namespace mtca4u
 
 #endif	/* MTCA4U_DEVMAP_H */
 
