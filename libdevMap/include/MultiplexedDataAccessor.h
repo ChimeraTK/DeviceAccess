@@ -256,8 +256,13 @@ boost::shared_ptr< MultiplexedDataAccessor<UserType> >
   registerMapping->getRegisterInfo( areaName, multiplexedSequenceInfo, moduleName);
   std::vector< FixedPointConverter > converters;
 
-  size_t i=0;
-  size_t sequenceWordSize;
+  size_t i = 0;
+  size_t sequenceWordSize = 0; // initializing as 0 to avoid clang warning
+                               // "'sequenceWordSize' may be used
+                               // uninitialized in this function". Looking at
+  // the logic below we are actually putting the  reg_size inside
+  // sequenceWordSize, before using it in the if conditional
+  // check
   bool useFixedType=true;
   while(true){
     SequenceInfo sequenceInfo;
