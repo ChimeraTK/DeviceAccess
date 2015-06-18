@@ -34,3 +34,8 @@ name of the character device (try loading the mtcadymmy driver and accessing
 \example readWrite.cpp
 Example how to read and write with devBase
 */
+
+/**
+\example MuxedAccessor.cpp
+Example on how to use the MultiplexedDataAccessor.
+*/

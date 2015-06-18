@@ -60,8 +60,7 @@ MACRO( COPY_MAPPING_FILES )
   mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map
   MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
   IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map badMapFile.map
-  dummies.dmap invalid.dmap 
-  empty.dmap sequences.map invalidSequences.map)
+  dummies.dmap invalid.dmap empty.dmap sequences.map invalidSequences.map)
     configure_file( tests/${MAPPING_FILE} ${PROJECT_BINARY_DIR}/${MAPPING_FILE} copyonly)
   endforeach( MAPPING_FILE )
   # The valid dmap file has an absolute path which has to be configured by cmake
@@ -73,7 +72,7 @@ MACRO( COPY_MAPPING_FILES )
   # They go into a the examples directory because the dmapFliesParser scans the whole 
   # directory and in the main build directory there are also ivalid ones.
   # We also copy the bad mapping file so we can reuse dummies.dmap.
-  foreach( FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map dummies.dmap )
+  foreach( FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map  muxedDataAcessor.map dummies.dmap )
     configure_file( tests/${FILE} ${PROJECT_BINARY_DIR}/examples/${FILE} copyonly)
   endforeach( FILE )
 
@@ -218,6 +217,10 @@ if(TESTING_IS_ENABLED)
     get_filename_component(excutableName ${exampleExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${exampleExecutableSrcFile})
     target_link_libraries(${excutableName} ${PROJECT_NAME})
+    # We are running the example executables from the
+    # ${PROJECT_BINARY_DIR}/examples directory. A consequence of this is that
+    # the executables only have access to the map files which have already been
+    # copied to the examples directory in the PROJECT_BINARY_DIR.
     add_test(NAME Example_${excutableName} WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/examples COMMAND ${excutableName})
   endforeach(exampleExecutableSrcFile)
   
