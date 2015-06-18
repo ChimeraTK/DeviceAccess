@@ -253,11 +253,12 @@ public:
      *  @deprecated Use getRegisterAccessor instead.
      */
     regObject getRegObject(const std::string &regName) const;
-    
-     /** Get a RegisterAccessor object from the register name. 
-     */
-    RegisterAccessor getRegisterAccessor(const std::string &registerName,
-					 const std::string &module = std::string() ) const;
+
+    /** Get a RegisterAccessor object from the register name.
+    */
+    boost::shared_ptr<RegisterAccessor> getRegisterAccessor(
+        const std::string &registerName,
+        const std::string &module = std::string()) const;
 
     /**
      * returns an accssesor which is used for interpreting  data contained in a
@@ -319,18 +320,23 @@ boost::shared_ptr<const mapFile> devMap<T>::getRegisterMap() const {
 template<typename T>
 typename devMap<T>::RegisterAccessor  devMap<T>::getRegObject(const std::string &regName) const
 {
-  return getRegisterAccessor(regName);
+  checkPointersAreNotNull();
+
+  mapFile::mapElem    me;
+  registerMap->getRegisterInfo(regName, me);
+  return devMap::RegisterAccessor(regName, me, pdev);
 }
 
-template<typename T>
-typename devMap<T>::RegisterAccessor  devMap<T>::getRegisterAccessor(const std::string &regName,
-								     const std::string &module) const
-{
-    checkPointersAreNotNull();
+template <typename T>
+boost::shared_ptr<typename devMap<T>::RegisterAccessor>
+devMap<T>::getRegisterAccessor(const std::string &regName,
+                               const std::string &module) const {
+  checkPointersAreNotNull();
 
-    mapFile::mapElem    me;
-    registerMap->getRegisterInfo(regName, me, module);
-    return devMap::RegisterAccessor(regName, me, pdev);
+  mapFile::mapElem me;
+  registerMap->getRegisterInfo(regName, me, module);
+  return boost::shared_ptr<typename devMap<T>::RegisterAccessor>(
+      new devMap::RegisterAccessor(regName, me, pdev));
 }
 
 template<typename T>

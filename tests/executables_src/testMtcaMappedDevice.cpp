@@ -149,10 +149,16 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
     
   BOOST_CHECK_THROW( MtcaMappedDevice::regObject  myRegObject = virginMappedDevice.getRegObject("irrelevant"), 
 		     exdevMap );
-  BOOST_CHECK_THROW( MtcaMappedDevice::RegisterAccessor  myRegisterAccessor
-		     = virginMappedDevice.getRegisterAccessor("irrelevant"), exdevMap );
-  BOOST_CHECK_THROW( MtcaMappedDevice::RegisterAccessor  myRegisterAccessor
-		     = virginMappedDevice.getRegisterAccessor("irrelevant"), exdevMap );
+  BOOST_CHECK_THROW(
+      boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor>
+          myRegisterAccessor =
+              virginMappedDevice.getRegisterAccessor("irrelevant"),
+      exdevMap);
+  BOOST_CHECK_THROW(
+      boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor>
+          myRegisterAccessor =
+              virginMappedDevice.getRegisterAccessor("irrelevant"),
+      exdevMap);
   BOOST_CHECK_THROW( virginMappedDevice.getRegistersInModule("irrelevant"), exdevMap );
   BOOST_CHECK_THROW( virginMappedDevice.getRegisterAccessorsInModule("irrelevant"), exdevMap );
 }
@@ -296,32 +302,33 @@ void MtcaMappedDeviceTest::testRegObject_readBlock(){
 
 void MtcaMappedDeviceTest::testRegObject_readSimple(){
 
-  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
+  boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor>
+  registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
   // 3 fractional bits, 12 bits, signed (from the map file)
 
   static const int inputValue = 0xFA5;
-  registerAccessor.writeReg(&inputValue);
+  registerAccessor->writeReg(&inputValue);
 
   int32_t myInt=0;
-  registerAccessor.read(&myInt);
+  registerAccessor->read(&myInt);
 
   BOOST_CHECK( myInt == -11 );
   
   myInt=17;
-  registerAccessor.read(&myInt,0);
+  registerAccessor->read(&myInt,0);
 
   // the int has to be untouched
   BOOST_CHECK( myInt == 17);
 
-  myInt = registerAccessor.read<int>();
+  myInt = registerAccessor->read<int>();
   BOOST_CHECK( myInt == static_cast<int>(0xFFFFFFF5) );
  
   double myDouble=0;
-  registerAccessor.read(&myDouble);
+  registerAccessor->read(&myDouble);
   BOOST_CHECK( myDouble == -11.375 );
 
   myDouble=0;
-  myDouble = registerAccessor.read<double>();
+  myDouble = registerAccessor->read<double>();
   BOOST_CHECK( myDouble == -11.375 );
 }
 
@@ -337,21 +344,22 @@ void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue){
   //write i+offset to all arrays 
   for (size_t i=0; i < N_ELEMENTS; ++i){
     writeBuffer[i]=i+offsetValue;
-  }    
+  }
 
-  MtcaMappedDevice::regObject registerAccessor = 
-    _mappedDevice.getRegObject("AREA_DMAABLE_FIXEDPOINT16_3");
+  boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor>
+  registerAccessor =
+      _mappedDevice.getRegisterAccessor("AREA_DMAABLE_FIXEDPOINT16_3");
   // 16 bits, 3 fractional signed
 
   // use raw write to zero the registers
   static const std::vector<int32_t> zeroedBuffer(N_ELEMENTS, 0);
-  registerAccessor.writeReg(&zeroedBuffer[0], N_BYTES, OFFSET_ELEMENTS * sizeof(int32_t));
+  registerAccessor->writeReg(&zeroedBuffer[0], N_BYTES, OFFSET_ELEMENTS * sizeof(int32_t));
 
-  registerAccessor.write( &writeBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor->write( &writeBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   // we already tested that read works, so just read back and compare that we get what we wrote
   std::vector<DataType> readBuffer(N_ELEMENTS,0);
-  registerAccessor.read( &readBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor->read( &readBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
    for (size_t i=0; i < N_ELEMENTS; ++i){
      BOOST_CHECK( writeBuffer[i] == readBuffer[i] );
   }      
@@ -371,39 +379,40 @@ void MtcaMappedDeviceTest::testRegObject_writeBlock(){
 }
 
 void MtcaMappedDeviceTest::testRegObject_writeSimple(){
-  MtcaMappedDevice::regObject registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
+  boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor>
+  registerAccessor = _mappedDevice.getRegisterAccessor("WORD_USER");
   // the word has 3 fractional bits, 12 bits, signed, just to be different from the
   // other setting. Values coming from the map file.
 
   static const int startValue = 0;
   // write something we are going to change
-  registerAccessor.writeReg(&startValue);
+  registerAccessor->writeReg(&startValue);
 
 
   int32_t myInt=-14;
   // write and read back
-  registerAccessor.write(&myInt,1);
+  registerAccessor->write(&myInt,1);
 
   int32_t readbackValue=0;
-  registerAccessor.readReg(&readbackValue);
+  registerAccessor->readReg(&readbackValue);
   BOOST_CHECK( static_cast<uint32_t>(readbackValue) == 0xF90 );
   
   myInt=17;
-  registerAccessor.write(&myInt,0);
+  registerAccessor->write(&myInt,0);
   // nothing should be written, should still read the same
   readbackValue=0;
-  registerAccessor.readReg(&readbackValue);
+  registerAccessor->readReg(&readbackValue);
   BOOST_CHECK( static_cast<uint32_t>(readbackValue) == 0xF90 );
  
-  registerAccessor.write(-17);
-  BOOST_CHECK( registerAccessor.read<int>() == -17 );
+  registerAccessor->write(-17);
+  BOOST_CHECK( registerAccessor->read<int>() == -17 );
 
   double myDouble=-13.75;
-  registerAccessor.write(&myDouble,1);
+  registerAccessor->write(&myDouble,1);
   readbackValue=0;
-  registerAccessor.readReg(&readbackValue);
+  registerAccessor->readReg(&readbackValue);
   BOOST_CHECK( static_cast<uint32_t>(readbackValue) == 0xF92 );
 
-  registerAccessor.write(-17.25);
-  BOOST_CHECK( registerAccessor.read<double>() == -17.25 );
+  registerAccessor->write(-17.25);
+  BOOST_CHECK( registerAccessor->read<double>() == -17.25 );
 }

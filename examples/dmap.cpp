@@ -30,11 +30,11 @@ int main(){
 			 .getdMapFileElem(DEVICE_ALIAS)
 			 .getDeviceFileAndMapFileName());
 
-  mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor accessor = 
+  boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor> accessor = 
     myMappedDevice.getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
   // look on accessor.cpp for more examples what to do with the accessor
-  std::cout << "Data as float is " << accessor.read<float>() << std::endl;
+  std::cout << "Data as float is " << accessor->read<float>() << std::endl;
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
