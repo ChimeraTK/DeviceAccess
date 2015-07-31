@@ -1,15 +1,15 @@
 #ifndef MTCA4U_NOT_IMPLEMENTED_EXCEPTION_H
 #define MTCA4U_NOT_IMPLEMENTED_EXCEPTION_H
 
-#include "exBase.h"
+#include "ExcBase.h"
 
 namespace mtca4u{
 
-  class NotImplementedException: public exBase {
+  class NotImplementedException: public ExcBase {
   public:
 
     NotImplementedException(const std::string & message):
-      exBase(message, 0) {}
+      ExcBase(message, 0) {}
     virtual ~NotImplementedException() throw(){}
   };
 

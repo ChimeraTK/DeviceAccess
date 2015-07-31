@@ -1,24 +1,25 @@
-#include "exBase.h"
+#include "ExcBase.h"
+
 #include <string>
 #include <iostream>
 
 namespace mtca4u{
 
-exBase::exBase(const std::string &_exMessage, unsigned int _exID)
+ExcBase::ExcBase(const std::string &_exMessage, unsigned int _exID)
    : exMessage(_exMessage), exID(_exID)
 {
 }
 
-exBase::~exBase() throw() 
+ExcBase::~ExcBase() throw() 
 {
 }
 
-const char* exBase::what() const throw()
+const char* ExcBase::what() const throw()
 {
     return exMessage.c_str();
 }
 
-unsigned int exBase::getID() const
+unsigned int ExcBase::getID() const
 {
     return exID;
 }
