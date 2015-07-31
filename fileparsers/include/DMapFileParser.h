@@ -8,9 +8,9 @@
 #ifndef MTCA4U_DMAP_FILE_PARSER_H
 #define	MTCA4U_DMAP_FILE_PARSER_H
 
-#include "dmapFile.h"
 #include <stdint.h>
 #include <string>
+#include "DMapFile.h"
 
 namespace mtca4u{
 
@@ -20,7 +20,7 @@ namespace mtca4u{
  * Class does not perform parsing of associated MAP files. 
  *      
  */
-class dmapFileParser {
+class DMapFileParser {
 public:
     /**
      * @brief Performs parsing of specified DMAP file. Returns pointer to 

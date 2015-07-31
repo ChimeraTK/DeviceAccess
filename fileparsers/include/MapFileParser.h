@@ -9,7 +9,7 @@
 #define	MTCA4U_MAPFILEPARSER_H
 
 
-#include "mapFile.h"
+#include "MapFile.h"
 #include <iomanip>
 #include <stdint.h>
 #include <string>

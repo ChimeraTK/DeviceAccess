@@ -1,5 +1,5 @@
-#include "mapFileParser.h"
-#include "exlibmap.h"
+#include "MapFileParser.h"
+#include "ExcMap.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>

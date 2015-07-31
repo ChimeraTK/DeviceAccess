@@ -1,7 +1,7 @@
-#include "dmapFilesParser.h"
+#include "DMapFilesParser.h"
 #include "predicates.h"
-#include "mapFile.h"
-#include "exlibmap.h"
+#include "MapFile.h"
+#include "ExcMap.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -13,7 +13,7 @@
 
 namespace mtca4u{
 
-  void dmapFilesParser::parse_dirs(const std::vector<std::string> &dirs) {
+  void DMapFilesParser::parse_dirs(const std::vector<std::string> &dirs) {
     std::vector<std::string>::const_iterator iter;
     cleanAll();
     for (iter = dirs.begin(); iter != dirs.end(); iter++) {
@@ -21,14 +21,14 @@ namespace mtca4u{
     }
   }
 
-  void dmapFilesParser::parse_dir(const std::string &dir) {
+  void DMapFilesParser::parse_dir(const std::string &dir) {
     cleanAll();
     parse_one_directory(dir);
   }
 
-  void dmapFilesParser::parse_file(const std::string &fileName) {
+  void DMapFilesParser::parse_file(const std::string &fileName) {
     ptrdmapFile dmap;
-    std::vector<dmapFile::dmapElem>::iterator dmap_elem_iter;
+    std::vector<DMapFile::dmapElem>::iterator dmap_elem_iter;
     std::vector<ptrmapFile>::iterator map_file_iter;
     ptrmapFile map;
     std::string absolutePathToDMapDir = getCurrentWorkingDirectory();
@@ -53,10 +53,10 @@ namespace mtca4u{
       dmap_elems.push_back(std::make_pair(*dmap_elem_iter, map));
     }
   #ifdef __LIBMAP_WITH_ERROR_CHECKING__
-    dmapFile::errorList dmapErr;
+    DMapFile::errorList dmapErr;
     mapFile::errorList mapErr;
     std::ostringstream os;
-    if (!check(dmapFile::errorList::errorElem::ERROR,
+    if (!check(DMapFile::errorList::errorElem::ERROR,
                mapFile::errorList::errorElem::ERROR, dmapErr, mapErr)) {
       os << dmapErr;
       os << mapErr;
@@ -65,13 +65,13 @@ namespace mtca4u{
   #endif  //__LIBMAP_WITH_ERROR_CHECKING__
   }
 
-void dmapFilesParser::parse_one_directory(const std::string &dir) {
+void DMapFilesParser::parse_one_directory(const std::string &dir) {
   DIR *dp;
   struct dirent *dirp;
   size_t found;
   std::string file_name;
   ptrdmapFile dmap;
-  std::vector<dmapFile::dmapElem>::iterator dmap_elem_iter;
+  std::vector<DMapFile::dmapElem>::iterator dmap_elem_iter;
   std::vector<ptrmapFile>::iterator map_file_iter;
   ptrmapFile map;
   std::string dir_new = dir;
@@ -130,10 +130,10 @@ void dmapFilesParser::parse_one_directory(const std::string &dir) {
   }
 
 #ifdef __LIBMAP_WITH_ERROR_CHECKING__       
-  dmapFile::errorList dmapErr;
+  DMapFile::errorList dmapErr;
   mapFile::errorList mapErr;
   std::ostringstream os;
-  if (!check(dmapFile::errorList::errorElem::ERROR, mapFile::errorList::errorElem::ERROR, dmapErr, mapErr)) {
+  if (!check(DMapFile::errorList::errorElem::ERROR, mapFile::errorList::errorElem::ERROR, dmapErr, mapErr)) {
     os << dmapErr;
     os << mapErr;
     throw dmapFileParserEx(libmap_ex::EX_FILES_CHECK_ERROR, os.str());
@@ -142,10 +142,10 @@ void dmapFilesParser::parse_one_directory(const std::string &dir) {
 }
 
 //FIXME: Why is dlevel not used?
-bool dmapFilesParser::check(dmapFile::errorList::errorElem::TYPE /*dlevel*/, mapFile::errorList::errorElem::TYPE mlevel, dmapFile::errorList &dmap_err, mapFile::errorList &map_err) {
+bool DMapFilesParser::check(DMapFile::errorList::errorElem::TYPE /*dlevel*/, mapFile::errorList::errorElem::TYPE mlevel, DMapFile::errorList &dmap_err, mapFile::errorList &map_err) {
 
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> > dmaps = dmap_elems;
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator iter_p, iter_n;
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> > dmaps = dmap_elems;
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator iter_p, iter_n;
   bool ret = true;
 
   dmap_err.clear();
@@ -161,7 +161,7 @@ bool dmapFilesParser::check(dmapFile::errorList::errorElem::TYPE /*dlevel*/, map
   while (1) {
     if ((*iter_p).first.dev_name == (*iter_n).first.dev_name) {
       if ((*iter_p).first.dev_file != (*iter_n).first.dev_file || (*iter_p).first.map_file_name != (*iter_n).first.map_file_name) {
-	dmap_err.insert(dmapFile::errorList::errorElem(dmapFile::errorList::errorElem::ERROR, dmapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME, (*iter_p).first, (*iter_n).first));
+	dmap_err.insert(DMapFile::errorList::errorElem(DMapFile::errorList::errorElem::ERROR, DMapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME, (*iter_p).first, (*iter_n).first));
 	ret = false;
       }
     }
@@ -186,8 +186,8 @@ bool dmapFilesParser::check(dmapFile::errorList::errorElem::TYPE /*dlevel*/, map
   return ret;
 }
 
-ptrmapFile dmapFilesParser::getMapFile(const std::string &dev_name) {
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
+ptrmapFile DMapFilesParser::getMapFile(const std::string &dev_name) {
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
     throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -195,12 +195,12 @@ ptrmapFile dmapFilesParser::getMapFile(const std::string &dev_name) {
   return (*dmap_iter).second;
 }
 
-void dmapFilesParser::getdMapFileElem(const std::string &dev_name, dmapFile::dmapElem &dMapFileElem) {
+void DMapFilesParser::getdMapFileElem(const std::string &dev_name, DMapFile::dmapElem &dMapFileElem) {
   dMapFileElem = getdMapFileElem( dev_name );
 }
 
-dmapFile::dmapElem const & dmapFilesParser::getdMapFileElem(const std::string &dev_name) {
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
+DMapFile::dmapElem const & DMapFilesParser::getdMapFileElem(const std::string &dev_name) {
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
     throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -208,7 +208,7 @@ dmapFile::dmapElem const & dmapFilesParser::getdMapFileElem(const std::string &d
   return (*dmap_iter).first;
 }
 
-void dmapFilesParser::getdMapFileElem(int elem_nr, dmapFile::dmapElem &dMapFileElem) {
+void DMapFilesParser::getdMapFileElem(int elem_nr, DMapFile::dmapElem &dMapFileElem) {
   try {
     dMapFileElem = dmap_elems.at(elem_nr).first;
   } catch (std::out_of_range) {
@@ -216,8 +216,8 @@ void dmapFilesParser::getdMapFileElem(int elem_nr, dmapFile::dmapElem &dMapFileE
   }
 }
 
-void dmapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, uint32_t& reg_elem_nr, uint32_t& reg_offset, uint32_t& reg_size, uint32_t& reg_bar) {
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
+void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, uint32_t& reg_elem_nr, uint32_t& reg_offset, uint32_t& reg_size, uint32_t& reg_bar) {
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
   mapFile::mapElem elem;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
@@ -235,8 +235,8 @@ void dmapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   dev_file = (*dmap_iter).first.dev_file;
 }
 
-void dmapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, mapFile::mapElem &elem) {
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
+void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, mapFile::mapElem &elem) {
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
     dev_name = dmap_elems[0].first.dev_name;
@@ -249,53 +249,53 @@ void dmapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   dev_file = (*dmap_iter).first.dev_file;
 }
 
-std::ostream& operator<<(std::ostream &os, const dmapFilesParser& dmfp) {
-  std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::const_iterator iter;
+std::ostream& operator<<(std::ostream &os, const DMapFilesParser& dmfp) {
+  std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::const_iterator iter;
   for (iter = dmfp.dmap_elems.begin(); iter != dmfp.dmap_elems.end(); ++iter) {
     os << (*iter).first << std::endl;
   }
   return os;
 }
 
-void dmapFilesParser::cleanAll() {
+void DMapFilesParser::cleanAll() {
   map_files.clear();
   dmap_elems.clear();
 }
 
-dmapFilesParser::~dmapFilesParser() {
+DMapFilesParser::~DMapFilesParser() {
   cleanAll();
 }
 
-uint16_t dmapFilesParser::getdMapFileSize() {
+uint16_t DMapFilesParser::getdMapFileSize() {
   return dmap_elems.size();
 }
 
-dmapFilesParser::dmapFilesParser()
+DMapFilesParser::DMapFilesParser()
 {
 }
 
-dmapFilesParser::dmapFilesParser(const std::string &dir) {
+DMapFilesParser::DMapFilesParser(const std::string &dir) {
   parse_dir(dir);
 }
 
 
-dmapFilesParser::iterator dmapFilesParser::begin() {
+DMapFilesParser::iterator DMapFilesParser::begin() {
   return dmap_elems.begin();
 }
 
-dmapFilesParser::const_iterator dmapFilesParser::begin() const{
+DMapFilesParser::const_iterator DMapFilesParser::begin() const{
   return dmap_elems.begin();
 }
 
-dmapFilesParser::iterator dmapFilesParser::end() {
+DMapFilesParser::iterator DMapFilesParser::end() {
   return dmap_elems.end();
 }
 
-dmapFilesParser::const_iterator dmapFilesParser::end() const{
+DMapFilesParser::const_iterator DMapFilesParser::end() const{
   return dmap_elems.end();
 }
 
-std::string dmapFilesParser::getCurrentWorkingDirectory() {
+std::string DMapFilesParser::getCurrentWorkingDirectory() {
   char *currentWorkingDir = get_current_dir_name();
   if (!currentWorkingDir) {
     throw;
@@ -305,7 +305,7 @@ std::string dmapFilesParser::getCurrentWorkingDirectory() {
   return dir;
 }
 
-void dmapFilesParser::combinePaths(std::string &absoluteBasePath,
+void DMapFilesParser::combinePaths(std::string &absoluteBasePath,
                                    const std::string &pathToAppend) {
   /* pathToAppend can only be empty if a dmap file in the root directory has been requested.
    * In this case the search for '/' has returned pos=0, resulting in an empty pathToAppend.

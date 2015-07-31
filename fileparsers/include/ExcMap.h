@@ -6,15 +6,16 @@
  */
 #ifndef MTCA4U_EXLIBMAP_H
 #define	MTCA4U_EXLIBMAP_H
-#include "exBase.h"
 #include <string>
+
+#include "ExcBase.h"
 
 namespace mtca4u{
 
 /**
  *      @brief  Provides base class for all exceptions from libmap                
  */
-class exLibMap : public exBase {
+class exLibMap : public ExcBase {
 public:
 
     enum {

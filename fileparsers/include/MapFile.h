@@ -85,7 +85,7 @@ public:
      */
     class errorList {
         friend class mapFile;
-        friend class dmapFilesParser;
+        friend class DMapFilesParser;
     public:
 
         /**

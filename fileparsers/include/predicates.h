@@ -7,8 +7,8 @@
 #ifndef MTCA4U_PREDICATES_H
 #define	MTCA4U_PREDICATES_H
 
-#include "mapFile.h"
-#include "dmapFile.h"
+#include "DMapFile.h"
+#include "MapFile.h"
 
 namespace mtca4u{
 
@@ -60,7 +60,7 @@ public:
     findDevInPairByName_pred(const std::string &_name) : name(_name) {
     }
 
-    bool operator()(const std::pair<dmapFile::dmapElem, ptrmapFile> & elem) {
+    bool operator()(const std::pair<DMapFile::dmapElem, ptrmapFile> & elem) {
       if (elem.first.dev_name == name) return true;
         return false;
     }
@@ -77,7 +77,7 @@ public:
     findDevByName_pred(const std::string &_name) : name(_name) {
     }
 
-    bool operator()(const dmapFile::dmapElem& elem) {
+    bool operator()(const DMapFile::dmapElem& elem) {
         if (elem.dev_name == name) return true;
         return false;
     }
@@ -121,7 +121,7 @@ public:
 class copmaredMapElemsByName_functor
 {
 public:
-    bool operator()(const std::pair<dmapFile::dmapElem, ptrmapFile> & first, const std::pair<dmapFile::dmapElem, ptrmapFile> & second){
+    bool operator()(const std::pair<DMapFile::dmapElem, ptrmapFile> & first, const std::pair<DMapFile::dmapElem, ptrmapFile> & second){
         return first.first.dev_name < second.first.dev_name;
     }
 };
@@ -132,7 +132,7 @@ public:
 class copmaredMapElemsByName2_functor
 {
 public:
-    bool operator()(const dmapFile::dmapElem &first, const dmapFile::dmapElem &second){
+    bool operator()(const DMapFile::dmapElem &first, const DMapFile::dmapElem &second){
         return first.dev_name < second.dev_name;
     }
 };

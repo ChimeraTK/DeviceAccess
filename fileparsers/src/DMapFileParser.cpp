@@ -1,17 +1,17 @@
-#include "dmapFileParser.h"
-#include "exlibmap.h"
+#include "ExcMap.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>
 #include <fstream>
+#include "../include/DMapFileParser.h"
 
 namespace mtca4u{
 
-ptrdmapFile dmapFileParser::parse(const std::string &file_name) {
+ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
     std::istringstream is;
-    dmapFile::dmapElem de;
+    DMapFile::dmapElem de;
     uint32_t line_nr = 0;
     std::string critical;
 
@@ -20,7 +20,7 @@ ptrdmapFile dmapFileParser::parse(const std::string &file_name) {
         throw exDmapFileParser("Cannot open dmap file: \"" + file_name + "\"", exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
     }
 
-    ptrdmapFile dmap(new dmapFile(file_name));
+    ptrdmapFile dmap(new DMapFile(file_name));
     while (std::getline(file, line)) {
         line_nr++;
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));

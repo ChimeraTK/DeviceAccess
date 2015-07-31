@@ -1,20 +1,20 @@
-#include "dmapFile.h"
 #include "predicates.h"
-#include "exlibmap.h"
+#include "ExcMap.h"
 
 #include <algorithm>
+#include "../include/DMapFile.h"
 
 namespace mtca4u{
 
-dmapFile::dmapFile(const std::string &file_name)
+DMapFile::DMapFile(const std::string &file_name)
 : dmap_file_name(file_name) {
 }
 
-size_t dmapFile::getdmapFileSize() {
+size_t DMapFile::getdmapFileSize() {
     return dmap_file_elems.size();
 }
 
-std::ostream& operator<<(std::ostream &os, const dmapFile& me) {
+std::ostream& operator<<(std::ostream &os, const DMapFile& me) {
     size_t size;
     os << "=======================================" << std::endl;
     os << "MAP FILE NAME: " << me.dmap_file_name << std::endl;
@@ -26,11 +26,11 @@ std::ostream& operator<<(std::ostream &os, const dmapFile& me) {
     return os;
 }
 
-void dmapFile::insert(const dmapElem &elem) {
+void DMapFile::insert(const dmapElem &elem) {
     dmap_file_elems.push_back(elem);
 }
 
-void dmapFile::getDeviceInfo(const std::string& dev_name, dmapElem &value) {
+void DMapFile::getDeviceInfo(const std::string& dev_name, dmapElem &value) {
     std::vector<dmapElem>::iterator iter;
     iter = find_if(dmap_file_elems.begin(), dmap_file_elems.end(), findDevByName_pred(dev_name));
     if (iter == dmap_file_elems.end()) {
@@ -39,25 +39,25 @@ void dmapFile::getDeviceInfo(const std::string& dev_name, dmapElem &value) {
     value = *iter;
 }
 
-dmapFile::dmapElem::dmapElem() : dmap_file_line_nr(0)
+DMapFile::dmapElem::dmapElem() : dmap_file_line_nr(0)
 {
 }        
 
-std::pair<std::string, std::string> dmapFile::dmapElem::getDeviceFileAndMapFileName() const
+std::pair<std::string, std::string> DMapFile::dmapElem::getDeviceFileAndMapFileName() const
 {
   return std::pair<std::string, std::string>(dev_file, map_file_name);
 }        
 
-std::ostream& operator<<(std::ostream &os, const dmapFile::dmapElem& de) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::dmapElem& de) {
     os << "(" << de.dmap_file_name << ") NAME: " << de.dev_name << " DEV : " << de.dev_file << " MAP : " << de.map_file_name;
     return os;
 }
 
 //fixme: why is level not used?
-bool dmapFile::check(dmapFile::errorList &err, dmapFile::errorList::errorElem::TYPE /*level*/) {
+bool DMapFile::check(DMapFile::errorList &err, DMapFile::errorList::errorElem::TYPE /*level*/) {
 
-    std::vector<dmapFile::dmapElem> dmaps = dmap_file_elems;
-    std::vector<dmapFile::dmapElem>::iterator iter_p, iter_n;
+    std::vector<DMapFile::dmapElem> dmaps = dmap_file_elems;
+    std::vector<DMapFile::dmapElem>::iterator iter_p, iter_n;
     bool ret = true;
 
     err.clear();
@@ -86,12 +86,12 @@ bool dmapFile::check(dmapFile::errorList &err, dmapFile::errorList::errorElem::T
 
 
 
-std::ostream& operator<<(std::ostream &os, const dmapFile::errorList::errorElem::TYPE& me) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::errorList::errorElem::TYPE& me) {
     switch (me) {
-        case dmapFile::errorList::errorElem::ERROR:
+        case DMapFile::errorList::errorElem::ERROR:
             os << "ERROR";
             break;
-        case dmapFile::errorList::errorElem::WARNING:
+        case DMapFile::errorList::errorElem::WARNING:
             os << "WARNING";
             break;
         default:
@@ -101,43 +101,43 @@ std::ostream& operator<<(std::ostream &os, const dmapFile::errorList::errorElem:
     return os;
 }
 
-dmapFile::errorList::errorElem::errorElem(dmapFile::errorList::errorElem::TYPE info_type, dmapFile::errorList::errorElem::DMAP_FILE_ERR e_type, const dmapFile::dmapElem &dev_1, const dmapFile::dmapElem &dev_2) {
+DMapFile::errorList::errorElem::errorElem(DMapFile::errorList::errorElem::TYPE info_type, DMapFile::errorList::errorElem::DMAP_FILE_ERR e_type, const DMapFile::dmapElem &dev_1, const DMapFile::dmapElem &dev_2) {
     err_type = e_type;
     err_dev_1 = dev_1;
     err_dev_2 = dev_2;
     type = info_type;
 }
 
-std::ostream& operator<<(std::ostream &os, const dmapFile::errorList::errorElem& me) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::errorList::errorElem& me) {
     switch (me.err_type) {
-        case dmapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME:
+        case DMapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME:
             os << me.type << ": Found two devices with the same name but different properties: \"" << me.err_dev_1.dev_name << "\" in file \"" << me.err_dev_1.dmap_file_name << "\" in line " << me.err_dev_1.dmap_file_line_nr << " and \"" << me.err_dev_2.dmap_file_name << "\" in line " << me.err_dev_2.dmap_file_line_nr;
             break;
     }
     return os;
 }
 
-void dmapFile::errorList::clear() {
+void DMapFile::errorList::clear() {
     errors.clear();
 }
 
-void dmapFile::errorList::insert(const errorElem& elem) {
+void DMapFile::errorList::insert(const errorElem& elem) {
     errors.push_back(elem);
 }
 
-std::ostream& operator<<(std::ostream &os, const dmapFile::errorList& me) {
-    std::list<dmapFile::errorList::errorElem>::const_iterator iter;
+std::ostream& operator<<(std::ostream &os, const DMapFile::errorList& me) {
+    std::list<DMapFile::errorList::errorElem>::const_iterator iter;
     for (iter = me.errors.begin(); iter != me.errors.end(); iter++) {
         os << (*iter) << std::endl;
     }
     return os;
 }
 
-dmapFile::iterator dmapFile::begin() {
+DMapFile::iterator DMapFile::begin() {
     return dmap_file_elems.begin();
 }
 
-dmapFile::iterator dmapFile::end() {
+DMapFile::iterator DMapFile::end() {
     return dmap_file_elems.end();
 }
 

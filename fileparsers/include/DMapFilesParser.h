@@ -9,12 +9,12 @@
 #ifndef MTCA4U_DMAPFILESPARSER_H
 #define	MTCA4U_DMAPFILESPARSER_H
 
-#include "mapFile.h"
-#include "dmapFileParser.h"
-#include "mapFileParser.h"
+#include "MapFile.h"
+#include "MapFileParser.h"
 //#include "iterator_T.h"
 #include <string>
 #include <stdint.h>
+#include "DMapFileParser.h"
 
 namespace mtca4u{
 
@@ -24,15 +24,15 @@ namespace mtca4u{
  * 
  * Class handles functionality of DMAP and MAP file parsersing. 
  */
-class dmapFilesParser {
+class DMapFilesParser {
 public:
-    typedef std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::iterator iterator;
-    typedef std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> >::const_iterator const_iterator;
+    typedef std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator iterator;
+    typedef std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::const_iterator const_iterator;
 
 private:
-    dmapFileParser dmap_file_parser; /**< DMAP file parser*/
+    DMapFileParser dmap_file_parser; /**< DMAP file parser*/
     mapFileParser map_file_parser; /**< MAP file parser*/
-    std::vector<std::pair<dmapFile::dmapElem, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
+    std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
     std::vector<ptrmapFile> map_files; /**< vector of parsed MAP files*/
     /**
      * @brief Performs parsing of all DMAP files located in directory passed as a parameter and all MAP files 
@@ -50,17 +50,17 @@ public:
     /**
      * @brief Class constructor
      */
-    dmapFilesParser();
+    DMapFilesParser();
     /**
      * @brief Class constructor that perform parsing of all DMAP files located in specified directory
      * 
      * @param dir path to directory with DMAP files to parse
      */
-    dmapFilesParser(const std::string &dir);
+    DMapFilesParser(const std::string &dir);
     /**
      * Class destructor
      */
-    ~dmapFilesParser();
+    ~DMapFilesParser();
 
     /**
      * @brief Performs parsing of one file
@@ -135,7 +135,7 @@ public:
     /** Get the dmapElem from the device name.
      *  @deprecated Use the getter function which returns the result instead of passing it by reference.
      */
-    void getdMapFileElem(const std::string& devName, dmapFile::dmapElem &dMapFileElem);
+    void getdMapFileElem(const std::string& devName, DMapFile::dmapElem &dMapFileElem);
 
     /** Get the dmapElem from the device name.
      *  @attention The reference is only valid as long as the dmapFilesParser object is in scope 
@@ -143,7 +143,7 @@ public:
      *  <pre>dmapFile::dmapElem myDmapElem = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
      *   <pre>dmapFile::dmapElem const & myDmapElem = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre> 
      */
-     dmapFile::dmapElem const &  getdMapFileElem(const std::string& devName);
+     DMapFile::dmapElem const &  getdMapFileElem(const std::string& devName);
     
 
     /**
@@ -153,7 +153,7 @@ public:
      * @param elem_nr device number
      * @param dMapFileElem detailed information about register specified by number
      */    
-    void getdMapFileElem(int elem_nr, dmapFile::dmapElem &dMapFileElem);
+    void getdMapFileElem(int elem_nr, DMapFile::dmapElem &dMapFileElem);
     /**
      * @brief  Checks correctness of DMAP files and associated MAP files
      * 
@@ -165,7 +165,7 @@ public:
      * 
      * @snippet test-libmap.cpp DMAPS checking
      */
-    bool check(dmapFile::errorList::errorElem::TYPE dlevel, mapFile::errorList::errorElem::TYPE mlevel, dmapFile::errorList &err, mapFile::errorList &map_err);
+    bool check(DMapFile::errorList::errorElem::TYPE dlevel, mapFile::errorList::errorElem::TYPE mlevel, DMapFile::errorList &err, mapFile::errorList &map_err);
     /**
      * @brief Returns iterator to first pair of device and its MAP file described in DMAP file
      * 
@@ -187,7 +187,7 @@ public:
     const_iterator end() const;
     
 
-    friend std::ostream& operator<<(std::ostream &os, const dmapFilesParser& dmfp);
+    friend std::ostream& operator<<(std::ostream &os, const DMapFilesParser& dmfp);
 private:
     /**
      * @brief Clean all data structures used to store information about MAP and DMAP files contents

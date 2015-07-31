@@ -1,5 +1,5 @@
 /**
- *      @file           dmapFile.h
+ *      @file           DMapFile.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @version        1.0
  *      @brief          Provides storage object for devices descriptions                
@@ -24,8 +24,8 @@ namespace mtca4u{
  *      device and checking for DMAP file correctness. Does not perform DMAP file parsing
  *
  */
-class dmapFile {
-    friend class dmapFilesParser;
+class DMapFile {
+    friend class DMapFilesParser;
 public:
 
     /**
@@ -65,8 +65,8 @@ public:
      * Stores information about all errors and warnings detected during DMAP file correctness check
      */
     class errorList {
-        friend class dmapFile;
-        friend class dmapFilesParser;
+        friend class DMapFile;
+        friend class DMapFilesParser;
     public:
 
         /**
@@ -94,8 +94,8 @@ public:
                 ERROR, /**< Critical error was detected */
                 WARNING /**< Non-critical error was detected */
             } TYPE;
-            dmapFile::dmapElem err_dev_1; /**< Detailed information about first device that generate error or warning */
-            dmapFile::dmapElem err_dev_2; /**< Detailed information about second device that generate error or warning */
+            DMapFile::dmapElem err_dev_1; /**< Detailed information about first device that generate error or warning */
+            DMapFile::dmapElem err_dev_2; /**< Detailed information about second device that generate error or warning */
             DMAP_FILE_ERR err_type; /**< Type of detected problem */
             TYPE type; /**< Class of detected problem - ERROR or WARNING*/
 
@@ -108,7 +108,7 @@ public:
              * @param dev_1 detailed information about first device that generate problem
              * @param dev_2 detailed information about second device that generate problem
              */
-            errorElem(TYPE info_type, DMAP_FILE_ERR e_type, const dmapFile::dmapElem &dev_1, const dmapFile::dmapElem &dev_2);
+            errorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DMapFile::dmapElem &dev_1, const DMapFile::dmapElem &dev_2);
             friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
             friend std::ostream& operator<<(std::ostream &os, const errorElem& me);
         };
@@ -144,7 +144,7 @@ public:
      */
     bool check(errorList &err, errorList::errorElem::TYPE level);
 
-    friend std::ostream& operator<<(std::ostream &os, const dmapFile& me);
+    friend std::ostream& operator<<(std::ostream &os, const DMapFile& me);
     /**
      * @brief Returns information about specified device
      * 
@@ -192,7 +192,7 @@ public:
      * 
      * @param file_name name of DMAP file
      */
-    dmapFile(const std::string &file_name);
+    DMapFile(const std::string &file_name);
     /**
      * @brief Insert new element read from DMAP file
      * @param elem element describing detailes of one device taken from DMAP file
@@ -202,7 +202,7 @@ public:
 /**
  * @typedef Introduce specialisation of shared_pointer template for pointers to mapFile object as a ptrdmapFile
  */
-typedef boost::shared_ptr<dmapFile> ptrdmapFile;
+typedef boost::shared_ptr<DMapFile> ptrdmapFile;
 
 }//namespace mtca4u
 

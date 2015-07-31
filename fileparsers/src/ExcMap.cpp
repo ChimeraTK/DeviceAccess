@@ -1,4 +1,4 @@
-#include "exlibmap.h"
+#include "ExcMap.h"
 #include <iostream>
 
 namespace mtca4u{
@@ -9,7 +9,7 @@ exLibMap::~exLibMap() throw()
 }
 
 exLibMap::exLibMap(const std::string &_exMessage, unsigned int _exID)
-        : exBase(_exMessage, _exID)
+        : ExcBase(_exMessage, _exID)
 {
     
 }
