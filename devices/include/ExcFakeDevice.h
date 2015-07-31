@@ -1,12 +1,13 @@
-#ifndef MTCA4U_EXDEVFAKE_H
-#define	MTCA4U_EXDEVFAKE_H
+#ifndef MTCA4U_EXCFAKEDEVICE_H
+#define	MTCA4U_EXCFAKEDEVICE_H
 
-#include "exBase.h"
 #include <string>
+
+#include "ExcBase.h"
 
 namespace mtca4u{
 
-class exDevFake : public exBase {
+class ExcFakeDevice : public ExcBase {
 public:
     enum {
                 EX_CANNOT_CREATE_DEV_FILE, 
@@ -18,12 +19,12 @@ public:
                 EX_DEVICE_CLOSED
     };
 public:
-    exDevFake(const std::string &_exMessage, unsigned int _exID);
+    ExcFakeDevice(const std::string &_exMessage, unsigned int _exID);
 private:
 
 };
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_EXDEVFAKE_H */
+#endif	/* MTCA4U_EXCFAKEDEVICE_H */
 

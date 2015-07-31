@@ -1,11 +1,11 @@
-#include "devConfigBase.h"
+#include "DeviceConfigBase.h"
 
 namespace mtca4u{
 
-devConfigBase::devConfigBase() {
+DeviceConfigBase::DeviceConfigBase() {
 }
 
-devConfigBase::~devConfigBase() {
+DeviceConfigBase::~DeviceConfigBase() {
 }
 
 }//namespace mtca4u

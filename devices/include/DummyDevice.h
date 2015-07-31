@@ -8,20 +8,20 @@
 
 #include <boost/function.hpp>
 
-#include "devBase.h"
-#include "devBaseImpl.h"
-#include "exBase.h"
-#include "mapFile.h"
+#include "ExcBase.h"
+#include "BaseDevice.h"
+#include "BaseDeviceImpl.h"
+#include "MapFile.h"
 
 namespace mtca4u{
   
   ///fixme: there should only be one type of exception for all devices. Otherwise you will never be able to
   /// interpret the enum in an exception from a pointer to exBase.
-  class DummyDeviceException : public exBase {
+  class DummyDeviceException : public ExcBase {
   public:
     enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS};
     DummyDeviceException(const std::string &message, unsigned int exceptionID)
-      : exBase( message, exceptionID ){}
+      : ExcBase( message, exceptionID ){}
   };
 
 
@@ -43,18 +43,24 @@ namespace mtca4u{
    *  case a write operation will just be ignored and no callback
    *  function is executed.
    */
-  class DummyDevice : public devBaseImpl
+  class DummyDevice : public BaseDeviceImpl
   {
+  private:
+  	/** _deviceName here is in context of mapping FileName */
+  	std::string _deviceName;
+  	bool _mapped;
+  	DummyDevice(std::string devName);
+  	/** The file name has to be a mapping file, not a device file.
+  	     *  Permissons and config are ignored.
+  	     */
   public:
 
     DummyDevice();
     virtual ~DummyDevice();
-             
-    /** The file name has to be a mapping file, not a device file.
-     *  Permissons and config are ignored.
-     */
+
     virtual void openDev(const std::string &mappingFileName,
-			 int perm = O_RDWR, devConfigBase* pConfig = NULL);
+    		int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
+    virtual void openDev();
 
     /** This closes the device, clears all internal regsiters, read-only settings and
      *  callback functions. As the device could be opened with another mapping file later,
@@ -83,7 +89,12 @@ namespace mtca4u{
     static uint64_t calculateVirtualAddress(
 	uint32_t registerOffsetInBar,
 	uint8_t bar);
-							 
+
+    //static BaseDevice* createInstance(std::string devName, std::vector<std::string> mappedInfo);
+    static BaseDevice* createInstance(std::string devName);
+
+    virtual std::vector<std::string> getDeviceInfo();
+
   protected:
     struct AddressRange{
       const uint32_t offset;
@@ -118,6 +129,7 @@ namespace mtca4u{
     /// the callback function so it can be used inside a callback function for 
     /// resynchronisation.
     void writeRegisterWithoutCallback(uint32_t regOffset, int32_t data, uint8_t bar);
+
   };
 
 }//namespace mtca4u

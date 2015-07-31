@@ -1,17 +1,17 @@
-#ifndef MTCA4U_DEVCONFIGBASE_H
-#define	MTCA4U_DEVCONFIGBASE_H
+#ifndef MTCA4U_DEVICECONFIGBASE_H
+#define	MTCA4U_DEVICECONFIGBASE_H
 
 namespace mtca4u{
 
-class devConfigBase {
+class DeviceConfigBase {
 public:
-    devConfigBase();
-    virtual ~devConfigBase();
+		DeviceConfigBase();
+    virtual ~DeviceConfigBase();
 private:
 
 };
 
 }//namespace mtca4u
 
-#endif	/*  MTCA4U_DEVCONFIGBASE_H */
+#endif	/*  MTCA4U_DEVICECONFIGBASE_H */
 

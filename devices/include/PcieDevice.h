@@ -1,18 +1,19 @@
 #ifndef MTCA4U_LIBDEV_STRUCT_H
 #define	MTCA4U_LIBDEV_STRUCT_H
 
-#include "devBase.h"
-#include "devBaseImpl.h"
+#include "BaseDeviceImpl.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <boost/function.hpp>
+#include "BaseDevice.h"
 
 namespace mtca4u{
 
-class devPCIE : public devBaseImpl
+class PcieDevice : public BaseDeviceImpl
 {
 private:
     std::string _deviceName;
+    bool _mapped;
     int  _deviceID;
     
     unsigned long _ioctlPhysicalSlot;
@@ -53,12 +54,17 @@ private:
     void readAreaWithStruct(uint32_t regOffset, int32_t* data, uint8_t bar, size_t size);
     /** This function is the same for one or multiple words */
     void directRead(uint32_t regOffset, int32_t* data, uint8_t bar, size_t sizeInBytes);
-   
+
+    /** constructor called through createInstance to create device object */
+    PcieDevice(std::string devName);
+
 public:
-    devPCIE();
-    virtual ~devPCIE();
-             
-    virtual void openDev(const std::string &devName, int perm = O_RDWR, devConfigBase* pConfig = NULL);
+    PcieDevice();
+
+    virtual ~PcieDevice();
+
+    virtual void openDev(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
+    virtual void openDev();
     virtual void closeDev();
     
     virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
@@ -71,6 +77,9 @@ public:
     virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);
 
     virtual void readDeviceInfo(std::string* devInfo);
+    //static BaseDevice *createInstance(std::string devName,std::vector<std::string> mappedInfo);
+    static BaseDevice *createInstance(std::string devName);
+    virtual std::vector<std::string> getDeviceInfo();
 };
 
 }//namespace mtca4u

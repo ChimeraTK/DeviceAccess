@@ -1,9 +1,9 @@
-#include "exDevFake.h"
+#include "ExcFakeDevice.h"
 
 namespace mtca4u{
 
-exDevFake::exDevFake(const std::string &_exMessage, unsigned int _exID) 
- : exBase(_exMessage, _exID)
+ExcFakeDevice::ExcFakeDevice(const std::string &_exMessage, unsigned int _exID)
+ : ExcBase(_exMessage, _exID)
 {
 }
 
