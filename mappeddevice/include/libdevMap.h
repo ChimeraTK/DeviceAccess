@@ -8,8 +8,8 @@
 #ifndef MTCA4U_LIBDEVMAP_H
 #define	MTCA4U_LIBDEVMAP_H
 
-#include "devMap.h"
-#include "exdevMap.h"
+#include "ExcMapppedDevice.h"
+#include "MapppedDevice.h"
 
 #endif	/* MTCA4U_LIBDEVMAP_H */
 

@@ -1,32 +1,32 @@
 /* 
- * File:   exdevMap.h
+ * File:   ExcMappedDevice.h
  * Author: apiotro
  *
  * Created on 11 marzec 2012, 20:42
  */
 
-#ifndef MTCA4U_EXDEVMAP_H
-#define	MTCA4U_EXDEVMAP_H
+#ifndef MTCA4U_EXCMAPPEDDEVICE_H
+#define	MTCA4U_EXCMAPPEDDEVICE_H
 
-#include "exBase.h"
+#include "ExcBase.h"
 
 namespace mtca4u{
 
-class exdevMap : public exBase {
+class ExcMappedDevice : public ExcBase {
 public:
     
   enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE
   };
     
     
-    exdevMap(const std::string &_exMessage, unsigned int _exID);
-    virtual ~exdevMap() throw();
-    friend std::ostream& operator<<(std::ostream &os, const exdevMap& e); 
+    ExcMappedDevice(const std::string &_exMessage, unsigned int _exID);
+    virtual ~ExcMappedDevice() throw();
+    friend std::ostream& operator<<(std::ostream &os, const ExcMappedDevice& e); 
 private:
 
 };
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_EXDEVMAP_H */
+#endif	/* MTCA4U_EXCMAPPEDDEVICE_H */
 

@@ -1,14 +1,14 @@
 #ifndef _MTCA4U_SEQUENCE_DE_MULTIPLEXER_H_
 #define _MTCA4U_SEQUENCE_DE_MULTIPLEXER_H_
 
-#include "mapFile.h"
+#include "MapFile.h"
 #include "FixedPointConverter.h"
-#include "devBase.h"
-#include "NotImplementedException.h"
+#include "BaseDevice.h"
 #include <boost/shared_ptr.hpp>
 #include "MultiplexedDataAccessorException.h"
-#include "exlibmap.h"
+#include "ExcMap.h"
 #include <sstream>
+#include "NotImplementedException.h"
 
 namespace mtca4u{
   
@@ -27,7 +27,7 @@ class MultiplexedDataAccessor{
 public:
   /** Constructor to intialise the members.
    */
-  MultiplexedDataAccessor( boost::shared_ptr< devBase > const & ioDevice,
+  MultiplexedDataAccessor( boost::shared_ptr< BaseDevice > const & ioDevice,
 			 std::vector< FixedPointConverter > const & converters );
 
   /** Operator to access individual sequences.
@@ -58,7 +58,7 @@ public:
   static boost::shared_ptr< MultiplexedDataAccessor<UserType> > createInstance( 
     std::string const & multiplexedSequenceName,
     std::string const & moduleName,
-    boost::shared_ptr< devBase > const & ioDevice,
+    boost::shared_ptr< BaseDevice > const & ioDevice,
     boost::shared_ptr< mapFile > const & registerMapping );
 
   /**
@@ -73,7 +73,7 @@ public:
   std::vector< FixedPointConverter > _converters;
 
   /** The device from (/to) which to perform the DMA transfer */
-  boost::shared_ptr<devBase> _ioDevice; // This should not be a reference.
+  boost::shared_ptr<BaseDevice> _ioDevice; // This should not be a reference.
                                         // Reason: there is a chance that this
                                         // can reference a shared pointer object
                                         // with use_count==1. This risks the
@@ -97,20 +97,20 @@ public:
    *  to create the converters etc. from the register mapping.
    */
   //SequenceDeMultiplexer( std::string const & sequenceName,
-  //			 boost::shared_ptr< devBase > & ioDevice,
+  //			 boost::shared_ptr< BaseDevice > & ioDevice,
   //			 boost::shared_ptr< mapFile > const & registerMapping );
 
   /** Contructor which needs pre-defined sequence infos and fixed point 
    *  converters. Mainly used for testing.
    *  FIXME: Could be private because the tests are friends?
    */
-  FixedTypeMuxedDataAccessor(boost::shared_ptr<devBase>const& ioDevice,
+  FixedTypeMuxedDataAccessor(boost::shared_ptr<BaseDevice>const& ioDevice,
                              SequenceInfo const& areaInfo,
                              std::list<SequenceInfo> const& sequenceInfos);
 
   /** The simplest possible constructor for testing.
    */
-  FixedTypeMuxedDataAccessor( boost::shared_ptr< devBase > const & ioDevice,
+  FixedTypeMuxedDataAccessor( boost::shared_ptr< BaseDevice > const & ioDevice,
 				  SequenceInfo const & areaInfo,
 				  std::vector< FixedPointConverter > const & converters );
 
@@ -153,7 +153,7 @@ private:
 // derrived class.
 template<class UserType>
 MultiplexedDataAccessor<UserType>::MultiplexedDataAccessor( 
-  boost::shared_ptr< devBase > const & ioDevice,
+  boost::shared_ptr< BaseDevice > const & ioDevice,
   std::vector< FixedPointConverter > const & converters ) :
     _sequences(converters.size()),
     _converters(converters),
@@ -164,7 +164,7 @@ MultiplexedDataAccessor<UserType>::MultiplexedDataAccessor(
 
 template<class UserType, class SequenceWordType>
 FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::FixedTypeMuxedDataAccessor( 
-  boost::shared_ptr< devBase >const & ioDevice,
+  boost::shared_ptr< BaseDevice >const & ioDevice,
   SequenceInfo const & areaInfo,
   std::vector< FixedPointConverter > const & converters ) :
   MultiplexedDataAccessor<UserType>(ioDevice, converters),
@@ -247,7 +247,7 @@ boost::shared_ptr< MultiplexedDataAccessor<UserType> >
   MultiplexedDataAccessor<UserType>::createInstance( 
     std::string const & multiplexedSequenceName,
     std::string const & moduleName,
-    boost::shared_ptr< devBase > const & ioDevice,
+    boost::shared_ptr< BaseDevice > const & ioDevice,
     boost::shared_ptr< mapFile > const & registerMapping ){
 
   std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+multiplexedSequenceName;
