@@ -1,0 +1,22 @@
+set(SOURCE
+   ${SOURCE}
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DMapFile.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DMapFileParser.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DMapFilesParser.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExcMap.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/MapFile.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/MapFileParser.cpp
+   PARENT_SCOPE
+)
+set(HEADERS
+   ${HEADERS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/DMapFile.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/DMapFileParser.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/DMapFilesParser.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExcMap.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/libmap.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/MapFile.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/MapFileParser.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/predicates.h
+   PARENT_SCOPE
+)

@@ -1,0 +1,27 @@
+set(SOURCE
+   ${SOURCE}
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceConfigBase.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/FakeDevice.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieDevice.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyDevice.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExcFakeDevice.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExcPcieDevice.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceFactory.cpp
+   PARENT_SCOPE
+)
+set(HEADERS
+   ${HEADERS}
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/BaseDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/BaseDeviceImpl.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceConfigBase.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/FakeDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceFactory.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExcFakeDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExcPcieDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/llrfdrv_io_compat.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/pciedev_io.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/pcieuni_io_compat.h
+   PARENT_SCOPE
+)

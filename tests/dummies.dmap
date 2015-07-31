@@ -1,0 +1,14 @@
+DUMMY1    /dev/mtcadummys0 ./mtcadummy_withoutModules.map
+DUMMY2    /dev/mtcadummys1 ./mtcadummy.map
+DUMMY3    /dev/mtcadummys2 ./mtcadummy_bad.map
+DUMMY4    /dev/mtcadummys3 ./mtcadummy_bad.map
+DUMMY5    /dev/llrfdummys4 ./mtcadummy_withoutModules.map
+LLRF10    sdm://./dev/llrfdummy,0:s4 ./mtcadummy_withoutModules.map
+PCIEUNI11 sdm://./dev/pcieunidummy,0:s6 ./mtcadummy_withoutModules.map
+PCIE6     sdm://./dev/mtcadummy,0:s0 ./mtcadummy_withoutModules.map
+FAKE7 	  sdm://./Reference_Device,0: ./mtcadummy_withoutModules.map
+DUMMYD8   sdm://./../tests/mtcadummy_withoutModules.map,0: goodMapFile.map 
+FAKE12    sdm://./DummyDevice,0: mtcadummy_withoutModules.map
+FAKE13    sdm://./fakeDevice,0: mtcadummy_withoutModules.map
+sequences sdm://./sequences,0:S0 sequences.map
+

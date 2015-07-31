@@ -1,0 +1,11 @@
+set(HEADERS
+   ${HEADERS}
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExcBase.h
+   PARENT_SCOPE
+)
+set(SOURCE
+   ${SOURCE}
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExcBase.cpp
+   PARENT_SCOPE
+)
+
