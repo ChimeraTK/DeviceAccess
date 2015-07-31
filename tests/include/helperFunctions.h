@@ -8,10 +8,10 @@
 #ifndef HELPERFUNCTIONS_H_
 #define HELPERFUNCTIONS_H_
 
-#include "mapFile.h"
-#include "dmapFile.h"
+#include "MapFile.h"
+#include "DMapFile.h"
 
-void populateDummydMapElement(mtca4u::dmapFile::dmapElem& dMapElement,
+void populateDummydMapElement(mtca4u::DMapFile::dmapElem& dMapElement,
                               std::string dmapFileName,
                               std::string deviceName = "card",
                               std::string dev_file =
@@ -19,8 +19,8 @@ void populateDummydMapElement(mtca4u::dmapFile::dmapElem& dMapElement,
                               std::string map_file_name =
                                   "/dev/dummy_map_file");
 std::string appendNumberToName(std::string name, int cardNumber);
-bool compareDMapElements(const mtca4u::dmapFile::dmapElem& dMapElement1,
-                         const mtca4u::dmapFile::dmapElem& dMapElement2);
+bool compareDMapElements(const mtca4u::DMapFile::dmapElem& dMapElement1,
+                         const mtca4u::DMapFile::dmapElem& dMapElement2);
 
 bool compareMapElements(const mtca4u::mapFile::mapElem& element1,
                         const mtca4u::mapFile::mapElem& element2);

@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-void populateDummydMapElement(mtca4u::dmapFile::dmapElem& dMapElement,
+void populateDummydMapElement(mtca4u::DMapFile::dmapElem& dMapElement,
                               std::string dmapFileName, std::string deviceName,
                               std::string dev_file, std::string map_file_name) {
   static int lineNumber = 1;
@@ -26,8 +26,8 @@ std::string appendNumberToName(std::string name, int suffixNumber) {
   return (deviceName.str());
 }
 
-bool compareDMapElements(const mtca4u::dmapFile::dmapElem& dMapElement1,
-                         const mtca4u::dmapFile::dmapElem& dMapElement2) {
+bool compareDMapElements(const mtca4u::DMapFile::dmapElem& dMapElement1,
+                         const mtca4u::DMapFile::dmapElem& dMapElement2) {
   bool result =
       (dMapElement1.dev_name == dMapElement2.dev_name) &&
       (dMapElement1.dev_file == dMapElement2.dev_file) &&
