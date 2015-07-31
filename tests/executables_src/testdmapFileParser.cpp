@@ -1,7 +1,7 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
-#include "dmapFileParser.h"
-#include "exlibmap.h"
+#include "DMapFileParser.h"
+#include "ExcMap.h"
 #include "helperFunctions.h"
 
 class DMapFileParserTest {
@@ -44,7 +44,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 void DMapFileParserTest::testFileNotFound() {
   std::string file_path = "../dummypath.dmap";
-  mtca4u::dmapFileParser fileParser;
+  mtca4u::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::exLibMap);
   try {
@@ -58,7 +58,7 @@ void DMapFileParserTest::testFileNotFound() {
 
 void DMapFileParserTest::testErrorInDmapFile() {
   std::string incorrect_dmap_file = "invalid.dmap";
-  mtca4u::dmapFileParser fileParser;
+  mtca4u::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::exLibMap);
   try {
@@ -73,7 +73,7 @@ void DMapFileParserTest::testErrorInDmapFile() {
 
 void DMapFileParserTest::testNoDataInDmapFile() {
   std::string empty_dmap_file = "empty.dmap";
-  mtca4u::dmapFileParser fileParser;
+  mtca4u::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::exLibMap);
   try {
@@ -88,12 +88,12 @@ void DMapFileParserTest::testNoDataInDmapFile() {
 
 void DMapFileParserTest::testParseFile() {
   std::string file_path = "valid.dmap";
-  mtca4u::dmapFileParser fileParser;
-  boost::shared_ptr<mtca4u::dmapFile> mapFilePtr = fileParser.parse(file_path);
+  mtca4u::DMapFileParser fileParser;
+  boost::shared_ptr<mtca4u::DMapFile> mapFilePtr = fileParser.parse(file_path);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
-  mtca4u::dmapFile::dmapElem dMapElement2;
-  mtca4u::dmapFile::dmapElem dMapElement3;
+  mtca4u::DMapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement2;
+  mtca4u::DMapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, "valid.dmap", "card1", "/dev/dev1",
                            "goodMapFile_withoutModules.map");
@@ -101,6 +101,7 @@ void DMapFileParserTest::testParseFile() {
                            "./goodMapFile_withoutModules.map");
   populateDummydMapElement(dMapElement3, "valid.dmap", "card3", "/dev/dev3",
                            getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
+  std::cout<<getCurrentWorkingDirectory()<<std::endl;
 
   dMapElement1.dmap_file_line_nr = 3;
   dMapElement2.dmap_file_line_nr = 4;
@@ -109,7 +110,7 @@ void DMapFileParserTest::testParseFile() {
   // we use require here so it is safe to increase and dereference the iterator below
   BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
 
-  mtca4u::dmapFile::const_iterator it = mapFilePtr->begin();
+  mtca4u::DMapFile::const_iterator it = mapFilePtr->begin();
 
   BOOST_CHECK( compareDMapElements(dMapElement1, *(it++)) == true);
   BOOST_CHECK( compareDMapElements(dMapElement2, *(it++)) == true);

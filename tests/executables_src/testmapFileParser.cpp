@@ -1,7 +1,7 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
-#include "mapFileParser.h"
-#include "exlibmap.h"
+#include "MapFileParser.h"
+#include "ExcMap.h"
 #include "helperFunctions.h"
 #include <sstream>
 

@@ -1,7 +1,7 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
-#include "dmapFile.h"
-#include "exlibmap.h"
+#include "DMapFile.h"
+#include "ExcMap.h"
 #include "helperFunctions.h"
 
 class DMapFileTest {
@@ -63,11 +63,11 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 void DMapFileTest::testInsertElement() {
   std::string dMapFileName = "dummy.map";
-  mtca4u::dmapFile mapFile(dMapFileName);
+  mtca4u::DMapFile mapFile(dMapFileName);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
-  mtca4u::dmapFile::dmapElem dMapElement2;
-  mtca4u::dmapFile::dmapElem dMapElement3;
+  mtca4u::DMapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement2;
+  mtca4u::DMapFile::dmapElem dMapElement3;
 
   populateDummydMapElement(dMapElement1, dMapFileName);
   populateDummydMapElement(dMapElement2, dMapFileName);
@@ -77,13 +77,13 @@ void DMapFileTest::testInsertElement() {
   mapFile.insert(dMapElement2);
   mapFile.insert(dMapElement3);
 
-  mtca4u::dmapFile::dmapElem* ptrList[3];
+  mtca4u::DMapFile::dmapElem* ptrList[3];
   ptrList[0] = &dMapElement1;
   ptrList[1] = &dMapElement2;
   ptrList[2] = &dMapElement3;
   int index;
 
-  mtca4u::dmapFile::iterator it;
+  mtca4u::DMapFile::iterator it;
   for (it = mapFile.begin(), index = 0; 
        (it != mapFile.end())  && (index < 3);
        ++it, ++index) {
@@ -94,10 +94,10 @@ void DMapFileTest::testInsertElement() {
 
 void DMapFileTest::testGetDeviceInfo() {
   std::string dMapFileName = "dummy.map";
-  mtca4u::dmapFile mapFile(dMapFileName);
+  mtca4u::DMapFile mapFile(dMapFileName);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
-  mtca4u::dmapFile::dmapElem dMapElement2;
+  mtca4u::DMapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement2;
 
   populateDummydMapElement(dMapElement1, dMapFileName);
   populateDummydMapElement(dMapElement2, dMapFileName);
@@ -105,9 +105,9 @@ void DMapFileTest::testGetDeviceInfo() {
   mapFile.insert(dMapElement1);
   mapFile.insert(dMapElement2);
 
-  mtca4u::dmapFile::dmapElem retrievedElement1;
-  mtca4u::dmapFile::dmapElem retrievedElement2;
-  mtca4u::dmapFile::dmapElem retrievedElement3;
+  mtca4u::DMapFile::dmapElem retrievedElement1;
+  mtca4u::DMapFile::dmapElem retrievedElement2;
+  mtca4u::DMapFile::dmapElem retrievedElement3;
 
   mapFile.getDeviceInfo(dMapElement1.dev_name, retrievedElement1);
   mapFile.getDeviceInfo(dMapElement2.dev_name, retrievedElement2);
@@ -129,12 +129,12 @@ void DMapFileTest::testGetDeviceInfo() {
 void DMapFileTest::testCheckForDuplicateElements() {
   std::string dMapFileName = "dummy.map";
   std::string commonCardName = "common_card";
-  mtca4u::dmapFile mapFile(dMapFileName);
+  mtca4u::DMapFile mapFile(dMapFileName);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
-  mtca4u::dmapFile::dmapElem dMapElement2;
-  mtca4u::dmapFile::dmapElem dMapElement3;
-  mtca4u::dmapFile::dmapElem dMapElement4;
+  mtca4u::DMapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement2;
+  mtca4u::DMapFile::dmapElem dMapElement3;
+  mtca4u::DMapFile::dmapElem dMapElement4;
 
   populateDummydMapElement(dMapElement1, dMapFileName);
   populateDummydMapElement(dMapElement2, dMapFileName);
@@ -145,10 +145,10 @@ void DMapFileTest::testCheckForDuplicateElements() {
   dMapElement2.dev_name = commonCardName;
   dMapElement3.dev_name = commonCardName;
 
-  mtca4u::dmapFile::errorList elementDuplications;
+  mtca4u::DMapFile::errorList elementDuplications;
   mapFile.insert(dMapElement1);
   BOOST_CHECK(mapFile.check(elementDuplications,
-                            mtca4u::dmapFile::errorList::errorElem::ERROR) ==
+                            mtca4u::DMapFile::errorList::errorElem::ERROR) ==
               true);
 
   mapFile.insert(dMapElement2);
@@ -156,12 +156,12 @@ void DMapFileTest::testCheckForDuplicateElements() {
   mapFile.insert(dMapElement4);
 
   mapFile.check(elementDuplications,
-                mtca4u::dmapFile::errorList::errorElem::ERROR);
+                mtca4u::DMapFile::errorList::errorElem::ERROR);
 
   int numberOfIncorrectLinesInFile = elementDuplications.errors.size();
   BOOST_CHECK(numberOfIncorrectLinesInFile == 2);
 
-  std::list<mtca4u::dmapFile::errorList::errorElem>::iterator errorIterator;
+  std::list<mtca4u::DMapFile::errorList::errorElem>::iterator errorIterator;
   for (errorIterator = elementDuplications.errors.begin();
        errorIterator != elementDuplications.errors.end(); ++errorIterator) {
     bool doesDetectedElementsHaveSameName =
@@ -173,7 +173,7 @@ void DMapFileTest::testCheckForDuplicateElements() {
 
 void DMapFileTest::testgetDeviceFileAndMapFileName() {
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement1;
   dMapElement1.dev_file = "/dev/test";
   dMapElement1.map_file_name = "test_mapfile";
 
@@ -186,20 +186,20 @@ void DMapFileTest::testgetDeviceFileAndMapFileName() {
 
 void DMapFileTest::testerrorElemErrTypeCoutStreamOperator() {
   std::stringstream file_stream1;
-  file_stream1 << mtca4u::dmapFile::errorList::errorElem::ERROR;
+  file_stream1 << mtca4u::DMapFile::errorList::errorElem::ERROR;
   BOOST_CHECK(file_stream1.str() == "ERROR");
 
   std::stringstream file_stream2;
-  file_stream2 << mtca4u::dmapFile::errorList::errorElem::WARNING;
+  file_stream2 << mtca4u::DMapFile::errorList::errorElem::WARNING;
   BOOST_CHECK(file_stream2.str() == "WARNING");
 
   std::stringstream file_stream3;
-  file_stream3 << (mtca4u::dmapFile::errorList::errorElem::TYPE)4;
+  file_stream3 << (mtca4u::DMapFile::errorList::errorElem::TYPE)4;
   BOOST_CHECK(file_stream3.str() == "UNKNOWN");
 }
 
 void DMapFileTest::testdmapElemCoutStreamOperator() {
-  mtca4u::dmapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement1;
   dMapElement1.dev_file = "/dev/dev1";
   dMapElement1.dev_name = "card1";
   dMapElement1.dmap_file_line_nr = 1;
@@ -224,9 +224,9 @@ void DMapFileTest::testdmapElemCoutStreamOperator() {
 
 void DMapFileTest::testdmapCoutStreamOperator() {
   std::string dMapFileName = "dummy.dmap";
-  mtca4u::dmapFile mapFile(dMapFileName);
+  mtca4u::DMapFile mapFile(dMapFileName);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement1;
   populateDummydMapElement(dMapElement1, dMapFileName, "card1", "/dev/dev1",
                            "map_file");
   mapFile.insert(dMapElement1);
@@ -258,10 +258,10 @@ void DMapFileTest::testdmapCoutStreamOperator() {
 void DMapFileTest::testerrorElemCoutStreamOperator() {
   std::string dMapFileName = "dummy.map";
   std::string commonCardName = "common_card";
-  mtca4u::dmapFile mapFile(dMapFileName);
+  mtca4u::DMapFile mapFile(dMapFileName);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
-  mtca4u::dmapFile::dmapElem dMapElement2;
+  mtca4u::DMapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement2;
 
   populateDummydMapElement(dMapElement1, "dummy.dmap", "card1", "/dev/dev1",
                            "map_file");
@@ -271,13 +271,13 @@ void DMapFileTest::testerrorElemCoutStreamOperator() {
   dMapElement1.dmap_file_line_nr = 1;
   dMapElement2.dmap_file_line_nr = 2;
 
-  mtca4u::dmapFile::errorList::errorElem error_element(
-      mtca4u::dmapFile::errorList::errorElem::ERROR,
-      mtca4u::dmapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME,
+  mtca4u::DMapFile::errorList::errorElem error_element(
+      mtca4u::DMapFile::errorList::errorElem::ERROR,
+      mtca4u::DMapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME,
       dMapElement1, dMapElement2);
   std::stringstream expected_file_stream;
   expected_file_stream
-      << mtca4u::dmapFile::errorList::errorElem::ERROR
+      << mtca4u::DMapFile::errorList::errorElem::ERROR
       << ": Found two devices with the same name but different properties: \""
       << "card1"
       << "\" in file \""
@@ -295,10 +295,10 @@ void DMapFileTest::testerrorElemCoutStreamOperator() {
 void DMapFileTest::testErrorListCoutStreamOperator() {
   std::string dMapFileName = "dummy.dmap";
   std::string commonCardName = "card1";
-  mtca4u::dmapFile mapFile(dMapFileName);
+  mtca4u::DMapFile mapFile(dMapFileName);
 
-  mtca4u::dmapFile::dmapElem dMapElement1;
-  mtca4u::dmapFile::dmapElem dMapElement2;
+  mtca4u::DMapFile::dmapElem dMapElement1;
+  mtca4u::DMapFile::dmapElem dMapElement2;
 
   populateDummydMapElement(dMapElement1, dMapFileName);
   populateDummydMapElement(dMapElement2, dMapFileName);
@@ -309,15 +309,15 @@ void DMapFileTest::testErrorListCoutStreamOperator() {
   dMapElement1.dmap_file_line_nr = 1;
   dMapElement2.dmap_file_line_nr = 2;
 
-  mtca4u::dmapFile::errorList elementDuplications;
+  mtca4u::DMapFile::errorList elementDuplications;
   mapFile.insert(dMapElement1);
   mapFile.insert(dMapElement2);
 
   mapFile.check(elementDuplications,
-                mtca4u::dmapFile::errorList::errorElem::ERROR);
+                mtca4u::DMapFile::errorList::errorElem::ERROR);
   std::stringstream expected_file_stream;
   expected_file_stream
-      << mtca4u::dmapFile::errorList::errorElem::ERROR
+      << mtca4u::DMapFile::errorList::errorElem::ERROR
       << ": Found two devices with the same name but different properties: \""
       << "card1"
       << "\" in file \""
