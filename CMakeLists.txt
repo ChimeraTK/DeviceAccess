@@ -13,24 +13,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
 
-include_directories("${PROJECT_SOURCE_DIR}/mappeddevice/include")
-include_directories("${PROJECT_SOURCE_DIR}/devices/include")
 include_directories(${PROJECT_SOURCE_DIR}/exceptionbase/include exception_inc)
-include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
+include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
+include_directories("${PROJECT_SOURCE_DIR}/devices/include")
+include_directories("${PROJECT_SOURCE_DIR}/mappeddevice/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exceptionbase")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
-add_subdirectory ("${PROJECT_SOURCE_DIR}/mappeddevice")
-add_subdirectory ("${PROJECT_SOURCE_DIR}/devices")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/devices")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/mappeddevice")
+
 #add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
 
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-target_link_libraries( ${PROJECT_NAME} ${libutil}) 
+target_link_libraries( ${PROJECT_NAME} ${libexceptionbase} ${libfileparser} ${libutil}) 
 
 enable_testing()
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")

@@ -18,7 +18,7 @@ foreach( testExecutableSrcFile ${testExecutables})
     add_executable(${excutableName} ${testExecutableSrcFile})
     target_link_libraries(${excutableName} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES}) 
 add_test(${excutableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${excutableName})
- endforeach(exampleExecutableSrcFile)
+ endforeach(testExecutableSrcFile)
 
 MACRO( COPY_MAPPING_FILES )
   foreach( MAPPING_FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
