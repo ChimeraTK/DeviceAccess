@@ -7,18 +7,19 @@
 
 #ifndef SOURCE_DIRECTORY__DEVICES_INCLUDE_UTILITES_H_
 #define SOURCE_DIRECTORY__DEVICES_INCLUDE_UTILITES_H_
-#include <string>
+
 #include <list>
 #include "ExcBase.h"
 namespace mtca4u {
 struct Sdm
 {
-	int _SdmVersion;
+	double _SdmVersion;
 	std::string _Host;
 	std::string _Interface;
 	std::string _Instance;
 	std::string _Protocol;
 	std::list<std::string> _Parameters;
+	Sdm():_SdmVersion(0.1){}
 };
 
 class UtilitiesException : public ExcBase {

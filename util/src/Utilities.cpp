@@ -5,11 +5,10 @@
  *      Author: nshehzad
  */
 
-#include <Utilities.h>
+#include "Utilities.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
-#include <sstream>
-#include <algorithm>
+
 namespace mtca4u {
 
 Utilities::Utilities() {
