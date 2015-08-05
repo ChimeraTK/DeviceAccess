@@ -545,18 +545,10 @@ void DevMapTest::testDMAReadViaStruct() {
 
 void DevMapTest::testGetRegistersInModule() {
 
-  // mtca4u::devMap<mtca4u::DummyDevice> mappedDevice;
-  // this test only makes sense for mapp files
-  // std::string mapFileName = "goodMapFile.map";
-  // the dummy device is opened with twice the map file name (use map file
-  // instead of device node)
-  // mappedDevice.openDev(mapFileName, mapFileName);
 
   mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
   mtca4u::MappedDevice<mtca4u::BaseDevice>* mappedDevice =
-      FactoryInstance.createMappedDevice("DUMMYD8"); //,true);
-
-   //mappedDevice.openDev(mappedDevice._dmapElem.map_file_name,mappedDevice._dmapElem.map_file_name);
+	FactoryInstance.createMappedDevice("DUMMYD0");
 
   std::list<mtca4u::mapFile::mapElem> registerInfoList =
       mappedDevice->getRegistersInModule("APP0");
@@ -587,15 +579,6 @@ void DevMapTest::testGetRegisterAccessorsInModule() {
   // instead of device node)
   mappedDevice.openDev(mapFileName, mapFileName);
 
-  // todo proper checking
-  // std::cout << devInfo[1] << std::endl;
-  // mtca4u::DeviceFactory FactoryInstance =
-  // mtca4u::DeviceFactory::getInstance();
-  // mtca4u::BaseDevice* BaseDeviceInstance =
-  // FactoryInstance.createDevice("DUMMYD8");//,true);
-  // std::vector<std::string> devInfo = BaseDeviceInstance->getDeviceInfo();
-  // mappedDevice.openDev(devInfo[1], devInfo[1]);
-
   std::list<mtca4u::MappedDevice<mtca4u::DummyDevice>::RegisterAccessor>
   accessorList = mappedDevice.getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
@@ -620,13 +603,6 @@ void DevMapTest::testAccessorForMuxedData() {
 	mtca4u::mapFileParser().parse("sequences.map");
   boost::shared_ptr<mtca4u::BaseDevice> ioDevice(new mtca4u::DummyDevice);
   ioDevice->openDev("sequences.map");
-  /*
-  //mtca4u::DeviceFactory FactoryInstance =
-  mtca4u::DeviceFactory::getInstance();
-  //boost::shared_ptr< mtca4u::devBase > ioDevice(
-  FactoryInstance.createDevice("sequences"));
-  //ioDevice->openDev();
-   */
 
   mtca4u::mapFile::mapElem sequenceInfo;
   registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DMA", sequenceInfo,

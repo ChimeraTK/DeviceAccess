@@ -13,11 +13,9 @@ namespace mtca4u {
 
 class FakeDevice : public BaseDeviceImpl {
 private:
-  std::string _deviceName;
-  bool _mapped;
-  FILE* pcieMemory;
-  std::string pcieMemoryFileName;
-  FakeDevice(std::string devName);
+  FILE* _pcieMemory;
+  std::string _pcieMemoryFileName;
+  FakeDevice(std::string host, std::string interface, std::list<std::string> parameters);
 public:
   FakeDevice();
   virtual ~FakeDevice();
@@ -43,8 +41,7 @@ public:
 
   virtual void readDeviceInfo(std::string* devInfo);
 
-  //static BaseDevice* createInstance(std::string devName, std::vector<std::string> mappedInfo);
-  static BaseDevice* createInstance(std::string devName);
+  static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 
   virtual std::vector<std::string> getDeviceInfo();
 
@@ -54,7 +51,7 @@ private:
   /// just make it
   /// private. Make sure not to use it within the class before writing a proper
   /// implemenFakeDevice
-  FakeDevice(FakeDevice const&) : pcieMemory(0), pcieMemoryFileName() {}
+  FakeDevice(FakeDevice const&) : BaseDeviceImpl(), _pcieMemory(0), _pcieMemoryFileName() {}
 
   /// A private assignment operator, cannot be called from outside.
   /// As the default is not safe and I don't want to implement it right now, I

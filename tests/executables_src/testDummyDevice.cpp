@@ -15,7 +15,7 @@ using namespace mtca4u;
 #define USER_REGISTER_STRING "WORD_USER"
 #define CLOCK_MUX_REGISTER_STRING "WORD_CLK_MUX"
 #define CLOCK_RESET_REGISTER_STRING "WORD_CLK_RST"
-#define EXISTING_DEVICE "DUMMYD8"
+#define EXISTING_DEVICE "DUMMYD0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
 static DeviceFactory FactoryInstance = DeviceFactory::getInstance();

@@ -12,10 +12,7 @@ namespace mtca4u{
 class PcieDevice : public BaseDeviceImpl
 {
 private:
-    std::string _deviceName;
-    bool _mapped;
     int  _deviceID;
-    
     unsigned long _ioctlPhysicalSlot;
     unsigned long _ioctlDriverVersion;
     unsigned long _ioctlDMA;
@@ -56,7 +53,7 @@ private:
     void directRead(uint32_t regOffset, int32_t* data, uint8_t bar, size_t sizeInBytes);
 
     /** constructor called through createInstance to create device object */
-    PcieDevice(std::string devName);
+    PcieDevice(std::string host, std::string interface, std::list<std::string> parameters);
 
 public:
     PcieDevice();
@@ -77,8 +74,10 @@ public:
     virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);
 
     virtual void readDeviceInfo(std::string* devInfo);
-    //static BaseDevice *createInstance(std::string devName,std::vector<std::string> mappedInfo);
-    static BaseDevice *createInstance(std::string devName);
+
+    /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
+    static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+
     virtual std::vector<std::string> getDeviceInfo();
 };
 

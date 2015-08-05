@@ -19,22 +19,22 @@
 namespace mtca4u {
 
 PcieDevice::PcieDevice()
-: _deviceName(),
-	_deviceID(0),
+	:_deviceID(0),
 	_ioctlPhysicalSlot(0),
 	_ioctlDriverVersion(0) {}
 
-PcieDevice::PcieDevice(std::string devName)
-: _deviceName(devName),
-	_deviceID(0),
-	_ioctlPhysicalSlot(0),
-	_ioctlDriverVersion(0) {
-	connected = true;
+PcieDevice::PcieDevice(std::string host, std::string interface, std::list<std::string> parameters)
+: BaseDeviceImpl(host,interface,parameters)
+, _deviceID(0),
+_ioctlPhysicalSlot(0),
+_ioctlDriverVersion(0)
+{
+	//temp
+	_interface = "/dev/"+_interface;
 #ifdef _DEBUG
 	std::cout<<"pci is connected"<<std::endl;
 #endif
 }
-
 
 PcieDevice::~PcieDevice() { closeDev(); }
 
@@ -42,16 +42,16 @@ void PcieDevice::openDev() {
 #ifdef _DEBUG
 	std::cout << "open pcie dev" << std::endl;
 #endif
-	openDev(_deviceName);
+	openDev(_interface);
 }
 
 void PcieDevice::openDev(const std::string& devName, int perm,
 		DeviceConfigBase* /*pConfig*/) {
-	if (opened == true) {
-		throw ExcPcieDevice("Device already has been opened",
+	if (_opened == true) {
+		throw ExcPcieDevice("Device already has been _Opened",
 				ExcPcieDevice::EX_DEVICE_OPENED);
 	}
-	_deviceName = devName;
+	_interface =  devName; //Todo cleanup
 	_deviceID = open(devName.c_str(), perm);
 	if (_deviceID < 0) {
 		throw ExcPcieDevice(createErrorStringWithErrnoText("Cannot open device: "),
@@ -60,7 +60,7 @@ void PcieDevice::openDev(const std::string& devName, int perm,
 
 	determineDriverAndConfigureIoctl();
 
-	opened = true;
+	_opened = true;
 }
 
 void PcieDevice::determineDriverAndConfigureIoctl() {
@@ -124,21 +124,21 @@ void PcieDevice::determineDriverAndConfigureIoctl() {
 			<< createErrorStringWithErrnoText("Error is ") << std::endl;
 	;
 	close(_deviceID);
-	throw ExcPcieDevice("Unsupported driver in device" + _deviceName,
+	throw ExcPcieDevice("Unsupported driver in device" + _interface,
 			ExcPcieDevice::EX_UNSUPPORTED_DRIVER);
 }
 
 void PcieDevice::closeDev() {
-	if (opened == true) {
+	if (_opened == true) {
 		close(_deviceID);
 	}
-	opened = false;
+	_opened = false;
 }
 
 void PcieDevice::readWithStruct(uint32_t regOffset, int32_t* data,
 		uint8_t bar) {
 	device_rw l_RW;
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 	l_RW.barx_rw = bar;
@@ -159,7 +159,7 @@ void PcieDevice::readWithStruct(uint32_t regOffset, int32_t* data,
 
 void PcieDevice::directRead(uint32_t regOffset, int32_t* data, uint8_t bar,
 		size_t sizeInBytes) {
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 	if (bar > 5) {
@@ -184,7 +184,7 @@ void PcieDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar) {
 void PcieDevice::writeWithStruct(uint32_t regOffset, int32_t const* data,
 		uint8_t bar) {
 	device_rw l_RW;
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 	l_RW.barx_rw = bar;
@@ -204,7 +204,7 @@ void PcieDevice::writeWithStruct(uint32_t regOffset, int32_t const* data,
 // direct write allows to read areas directly, without a loop in user space
 void PcieDevice::directWrite(uint32_t regOffset, int32_t const* data,
 		uint8_t bar, size_t sizeInBytes) {
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 	if (bar > 5) {
@@ -247,7 +247,7 @@ void PcieDevice::readArea(uint32_t regOffset, int32_t* data, size_t size,
 
 void PcieDevice::writeAreaWithStruct(uint32_t regOffset, int32_t const* data,
 		uint8_t bar, size_t size) {
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 	if (size % 4) {
@@ -277,7 +277,7 @@ void PcieDevice::readDMAViaStruct(uint32_t regOffset, int32_t* data,
 	device_rw l_RW;
 	device_rw* pl_RW;
 
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 	if (size < sizeof(device_rw)) {
@@ -306,7 +306,7 @@ void PcieDevice::readDMAViaStruct(uint32_t regOffset, int32_t* data,
 
 void PcieDevice::readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size,
 		uint8_t /*bar*/) {
-	if (opened == false) {
+	if (_opened == false) {
 		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
 	}
 
@@ -371,21 +371,13 @@ std::vector<std::string> PcieDevice::getDeviceInfo() {
 std::string PcieDevice::createErrorStringWithErrnoText(
 		std::string const& startText) {
 	char errorBuffer[255];
-	return startText + _deviceName + ": " +
+	return startText + _interface + ": " +
 			strerror_r(errno, errorBuffer, sizeof(errorBuffer));
 }
 
 
-
-BaseDevice* PcieDevice::createInstance(std::string devName) {
-
-	return new PcieDevice(devName);
+BaseDevice* PcieDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
+	return new PcieDevice(host,interface,parameters);
 }
-/*
-BaseDevice* PcieDevice::createInstance(std::string devName, std::vector<std::string> mappedInfo) {
-		if (mappedInfo.size() > 0)
-			return new mtca4u::DMapDecorator(new PcieDevice(devName), mappedInfo);
-	return new PcieDevice(devName);
-}*/
 
 } // namespace mtca4u

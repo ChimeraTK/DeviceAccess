@@ -6,9 +6,13 @@
 #include "DeviceFactory.h"
 #include "ExcFakeDevice.h"
 
-#define REFERENCE_DEVICE "FAKE7"
-#define DUMMY_DEVICE "FAKE12"
-#define FAKE_DEVICE "FAKE13"
+//#define REFERENCE_DEVICE "FAKE7"
+//#define DUMMY_DEVICE "FAKE12"
+//#define FAKE_DEVICE "FAKE13"
+#define REFERENCE_DEVICE "FAKE0"
+#define DUMMY_DEVICE "FAKE1"
+#define FAKE_DEVICE "FAKE3"
+
 #define NON_EXISTING_DEVICE "DUMMY9"
 using namespace boost::unit_test_framework;
 
@@ -111,7 +115,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 //Todo add fakeDevice file to cmake.
 void FakeDeviceTest::testReOpenExistingDevice() {
 	mtca4u::BaseDevice *dummyDevice;
-	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);//,true);
+	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
 	FILE* file = fopen("._fakeDevice", "w");
 	fclose(file);
 	dummyDevice->openDev();
@@ -137,7 +141,7 @@ void FakeDeviceTest::testCreateFakeDevice() {
 
 void FakeDeviceTest::testReadAreaWithInvalidParams() {
 	mtca4u::BaseDevice *dummyDevice;
-	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
+	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
 	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::ExcFakeDevice);
 	try {

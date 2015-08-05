@@ -11,4 +11,10 @@ DUMMYD8   sdm://./../tests/mtcadummy_withoutModules.map,0: goodMapFile.map
 FAKE12    sdm://./DummyDevice,0: mtcadummy_withoutModules.map
 FAKE13    sdm://./fakeDevice,0: mtcadummy_withoutModules.map
 sequences sdm://./sequences,0:S0 sequences.map
+PCIE1     sdm://./pci:pcieunidummys6;pcix ./mtcadummy_withoutModules.map
+PCIE0     sdm://./pci:pcieunidummys6;pcie=bus,1  ./mtcadummy_withoutModules.map
+FAKE0 	  sdm://./fake:Reference_Device ./mtcadummy_withoutModules.map
+FAKE1     sdm://./fake:DummyDevice mtcadummy_withoutModules.map
+FAKE3     sdm://./fake:fakeDevice mtcadummy_withoutModules.map
+DUMMYD0   sdm://./dummy:../tests/mtcadummy_withoutModules.map goodMapFile.map 
 

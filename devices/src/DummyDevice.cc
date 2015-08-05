@@ -31,11 +31,15 @@ const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 DummyDevice::DummyDevice(){
 }
 
-DummyDevice::DummyDevice(std::string devName)
+
+DummyDevice::DummyDevice(std::string host, std::string interface, std::list<std::string> parameters)
+: BaseDeviceImpl(host,interface,parameters)
 {
-	_deviceName = devName;
-	connected = true;
+#ifdef _DEBUG
+	std::cout<<"dummy is connected"<<std::endl;
+#endif
 }
+
 //Nothing to clean up, all objects clean up for themselves when
 //they go out of scope.
 DummyDevice::~DummyDevice(){
@@ -46,18 +50,19 @@ void DummyDevice::openDev()
 #ifdef _DEBUG
 	std::cout<<"open DummyDevice"<<std::endl;
 #endif
-	openDev(_deviceName);
+
+	openDev(_interface);
 }
 
 void DummyDevice::openDev(const std::string &mappingFileName,
 		int /* perm */, DeviceConfigBase* /* pConfig */){
-	if (opened){
+	if (_opened){
 		throw DummyDeviceException("Device is already open.", DummyDeviceException::ALREADY_OPEN);
 	}
 
 	_registerMapping = mapFileParser().parse(mappingFileName);
 	resizeBarContents();
-	opened=true;
+	_opened=true;
 }
 
 void DummyDevice::resizeBarContents(){
@@ -87,7 +92,7 @@ std::map< uint8_t, size_t > DummyDevice::getBarSizesInBytesFromRegisterMapping()
 }
 
 void DummyDevice::closeDev(){
-	if (!opened){
+	if (!_opened){
 		throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
 	}
 
@@ -95,7 +100,7 @@ void DummyDevice::closeDev(){
 	_barContents.clear();
 	_readOnlyAddresses.clear();
 	_writeCallbackFunctions.clear();
-	opened=false;
+	_opened=false;
 }
 
 void DummyDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar){
@@ -238,19 +243,13 @@ bool DummyDevice::isWriteRangeOverlap( AddressRange firstRange, AddressRange sec
 		}
 	}
 
-	// we looped all possile registers, none is writeable
+	// we looped all possible registers, none is writable
 	return false;
 }
 
 
-/*BaseDevice* DummyDevice::createInstance(std::string devName, std::vector<std::string> mappedInfo){
-	if (mappedInfo.size() > 0)
-		return new mtca4u::DMapDecorator(new DummyDevice(devName),mappedInfo);
-	return new DummyDevice(devName);
-}*/
-
-BaseDevice* DummyDevice::createInstance(std::string devName){
-		return new DummyDevice(devName);
+BaseDevice* DummyDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
+	return new DummyDevice(host,interface,parameters);
 }
 
 std::vector<std::string> DummyDevice::getDeviceInfo() {

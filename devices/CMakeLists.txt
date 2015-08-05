@@ -9,6 +9,8 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceFactory.cpp
    PARENT_SCOPE
 )
+
+include_directories()
 set(HEADERS
    ${HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BaseDevice.h

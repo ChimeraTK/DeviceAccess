@@ -1,0 +1,110 @@
+/*
+ * Utilities.cpp
+ *
+ *  Created on: Aug 3, 2015
+ *      Author: nshehzad
+ */
+
+#include <Utilities.h>
+#include <vector>
+#include <boost/algorithm/string.hpp>
+#include <sstream>
+#include <algorithm>
+namespace mtca4u {
+
+Utilities::Utilities() {
+
+}
+
+Utilities::~Utilities() {
+
+}
+
+size_t Utilities::countOccurence(std::string theString, char delimiter)
+{
+	size_t  count = std::count(theString.begin(), theString.end(), delimiter);
+	return count;
+}
+
+Sdm Utilities::parseSdm(std::string sdmString) {
+	Sdm sdmInfo;
+	size_t signatureLen = 6;
+	if (sdmString.empty())
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	if (sdmString.length() < signatureLen)
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	if (sdmString.substr(0,6) !="sdm://")
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	int pos = 6;
+
+	std::size_t found = sdmString.find_first_of("/", pos);
+	std::string subUri;
+	if (found != std::string::npos)
+	{
+		sdmInfo._Host =  sdmString.substr(pos, found - pos); // Get the Host
+	}
+	else
+	{
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	}
+	if (sdmString.length() < found+1)
+		return sdmInfo;
+	subUri = sdmString.substr(found+1);
+	//let's do a sanity check, only one delimiter occurrence is allowed.
+	if (countOccurence(subUri,':') > 1) /* check ':' */
+	{
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	}
+	if (countOccurence(subUri,';') > 1) /* check ';' */
+	{
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	}
+	if (countOccurence(subUri,'=') > 1) /* check '=' */
+	{
+		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+	}
+	std::vector<std::string> tokens;
+	boost::split(tokens, subUri, boost::is_any_of(":;="));
+	int numOfTokens = tokens.size();
+	if (numOfTokens < 1)
+		return sdmInfo;
+	int counter = 0;
+	sdmInfo._Interface = tokens[counter]; // Get the Interface
+	counter++;
+	if (counter < numOfTokens)
+	{
+		// Get the Instance
+		found = sdmString.find_first_of(":", pos);
+		if (found != std::string::npos) {
+			sdmInfo._Instance = tokens[counter];
+			counter++;
+		}
+	}
+	if (counter < numOfTokens)
+	{
+		// Get the Protocol
+		found = sdmString.find_first_of(";", pos);
+		if (found != std::string::npos) {
+			sdmInfo._Protocol = tokens[counter];
+			counter++;
+		}
+	}
+	if (counter < numOfTokens)
+	{
+		// Get the Parameters
+		found = sdmString.find_first_of("=", pos);
+		if (found != std::string::npos) {
+			std::string parameters = tokens[counter];
+			std::vector<std::string> paramterTokens;
+			boost::split(paramterTokens, parameters, boost::is_any_of(","));
+			for (uint i=0; i < paramterTokens.size();i++ )
+				sdmInfo._Parameters.push_back(paramterTokens[i]);
+		}
+	}
+
+	return sdmInfo;
+
+}
+
+
+} /* namespace mtca4u */
