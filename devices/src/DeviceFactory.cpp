@@ -6,17 +6,13 @@
  *      Author: nshehzad
  */
 
-#include <sstream>
-#include <boost/foreach.hpp>
-#include <boost/tokenizer.hpp>
+
 #include <boost/algorithm/string.hpp>
 #include "Utilities.h"
-#include <vector>
-
 #include "DeviceFactory.h"
-
 #include "MapFileParser.h"
 #include "ExcBase.h"
+
 namespace mtca4u {
 
 void DeviceFactory::registerDevice(std::string interface, std::string protocol,
@@ -97,6 +93,7 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 
 	Sdm sdm = Utilities::parseSdm(uri);
 #ifdef _DEBUG
+	std::cout<< "sdm._SdmVersion:"<<sdm._SdmVersion<< std::endl;
 	std::cout<< "sdm._Host:"<<sdm._Host<< std::endl;
 	std::cout<< "sdm.Interface:"<<sdm._Interface<< std::endl;
 	std::cout<< "sdm.Instance:"<<sdm._Instance<< std::endl;

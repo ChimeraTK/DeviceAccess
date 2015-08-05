@@ -1,17 +1,13 @@
 #ifndef _MTCA4U_DEVICE_FACTORY_H__
 #define _MTCA4U_DEVICE_FACTORY_H__
 
+
 #include "FakeDevice.h"
 #include "BaseDevice.h"
 #include "DummyDevice.h"
-#include <fstream>
-#include <string>
-#include <map>
-#include <list>
-#include <boost/tuple/tuple.hpp>
-
 #include "MappedDevice.h"
 #include "PcieDevice.h"
+#include <boost/tuple/tuple.hpp>
 
 //#define _DEBUG
 #ifdef _DEBUG
