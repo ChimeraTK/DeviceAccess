@@ -1,5 +1,5 @@
-#include <MtcaMappedDevice/devBase.h>
-#include <MtcaMappedDevice/devPCIE.h>
+#include <MtcaMappedDevice/BaseDevice.h>
+#include <MtcaMappedDevice/PcieDevice.h>
 
 #include <string>
 #include <iostream>
@@ -18,7 +18,7 @@ int main(){
   //  mtca4u coding style rules. Equivalent to 
   // 'devBase * myDevice = new devPCIE', except that 
   // we don't have to care about deleting the object.)
-  boost::shared_ptr<mtca4u::devBase> myDevice( new mtca4u::devPCIE );
+  boost::shared_ptr<mtca4u::BaseDevice> myDevice( new mtca4u::PcieDevice );
 
   // open the device
   myDevice->openDev(DEVICE_NAME);

@@ -1,7 +1,7 @@
-cmake_minimum_required (VERSION 2.8.0)
+cmake_minimum_required (VERSION 2.8.7)
 Project(MtcaMappedDevice) #need to change the name
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 17)
+set(${PROJECT_NAME}_MINOR_VERSION 18)
 set(${PROJECT_NAME} 0)
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -25,15 +25,12 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/devices")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/mappeddevice")
 
-#add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
-
-
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 target_link_libraries( ${PROJECT_NAME} ${libexceptionbase} ${libfileparser} ${libutil}) 
 
-enable_testing()
+enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
@@ -48,4 +45,24 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
       COMMENT "Generating test coverage documentation" VERBATIM
       )
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/MtcaMappedDevice
+)
+ 
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs} )
+file(GLOB headerFiles  "${dir}/*.h")
+foreach(headerFile ${headerFiles} )
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/MtcaMappedDevice
+)
+endforeach(headerFile)
+endforeach(dir)
+	
+include_directories("${PROJECT_BINARY_DIR}/include")
+
+add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
+include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake) 
 

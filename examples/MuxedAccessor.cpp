@@ -1,15 +1,15 @@
-#include <MtcaMappedDevice/devMap.h>
-#include <MtcaMappedDevice/devBase.h>
-#include <MtcaMappedDevice/devBase.h>
+#include <MtcaMappedDevice/MappedDevice.h>
+#include <MtcaMappedDevice/BaseDevice.h>
+#include <MtcaMappedDevice/BaseDevice.h>
 #include <MtcaMappedDevice/MultiplexedDataAccessor.h>
-
+#include "MtcaMappedDevice/DeviceFactory.h"
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
 static const std::string MODULE_NAME = "TEST";
 static const std::string DEVICE_NAME = "/dev/mtcadummys0";
-static const std::string MAP_NAME = "muxedDataAcessor.map";
+static const std::string MAP_NAME = "../tests/muxedDataAcessor.map";
 static const std::string DATA_REGION_NAME = "DMA";
 static const uint DATA_REGION_SIZE_IN_BYTES = 128;
 static const std::string REGISTER_TO_SETUP_DMA_REGION = "AREA_DMAABLE";
@@ -17,8 +17,11 @@ static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
   // open the mapped device:
-  boost::shared_ptr<mtca4u::devBase> ioDevice(new mtca4u::devPCIE());
-  ioDevice->openDev(DEVICE_NAME);
+  //boost::shared_ptr<mtca4u::BaseDevice> ioDevice(new mtca4u::PcieDevice());
+  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+  mtca4u::MappedDevice<mtca4u::BaseDevice>* mappedDevice =
+	FactoryInstance.createMappedDevice("PCIE0");
+  //ioDevice->openDev(DEVICE_NAME);
 
   boost::shared_ptr<mtca4u::mapFile> ptrmapFile =
       mtca4u::mapFileParser().parse(MAP_NAME);
@@ -71,15 +74,18 @@ int main() {
 
   // set up the 'DMA' region with the hack so that we can demonstrate the
   // DemultiplexedDataAccessor functionality
-  ioDevice->writeArea(info.reg_address,
+  mappedDevice->writeArea(info.reg_address,
                       reinterpret_cast<int32_t*>(&(ioBuffer[0])),
                       DATA_REGION_SIZE_IN_BYTES, info.reg_bar);
 
   /**********************************************************************/
   // Start of Real Example, now that DMA region is set up with multiplexed
   // sequences
-  mtca4u::devMap<mtca4u::devBase> myMappedDevice;
-  myMappedDevice.openDev(ioDevice, ptrmapFile);
+  //mtca4u::MappedDevice<mtca4u::BaseDevice> myMappedDevice;
+  //myMappedDevice.openDev(ioDevice, ptrmapFile);
+
+  mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
+  	FactoryInstance.createMappedDevice("PCIE0");
 
   // The 16 bit elements in the 'DMA' region are converted into double because
   // we specify the userType as double. Please note, it is valid to use another
@@ -89,7 +95,7 @@ int main() {
   boost::shared_ptr<mtca4u::MultiplexedDataAccessor<double> >
   dataDemuxedAsDouble =
       myMappedDevice
-          .getCustomAccessor<mtca4u::MultiplexedDataAccessor<double> >(
+          ->getCustomAccessor<mtca4u::MultiplexedDataAccessor<double> >(
                DATA_REGION_NAME,
                MODULE_NAME); // The DATA_REGION_NAME -> 'DMA' is described in
                              // the map file as AREA_MULTIPLEXED_SEQUENCE_DMA
@@ -134,7 +140,7 @@ int main() {
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  myMappedDevice.closeDev();
+  myMappedDevice->closeDev();
 
   return 0;
 }

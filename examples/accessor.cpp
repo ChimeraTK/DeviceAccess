@@ -1,5 +1,5 @@
-#include <MtcaMappedDevice/devMap.h>
-
+#include <MtcaMappedDevice/MappedDevice.h>
+#include "MtcaMappedDevice/DeviceFactory.h"
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -12,13 +12,16 @@ static const std::string MAP_NAME = "mtcadummy.map";
 int main() {
   // Unfortunatey devMap is templated against the implementation type
   // so the abstraction to devBase does not work. To be resolved soon.
-  mtca4u::devMap<mtca4u::devPCIE> myMappedDevice;
-
+  //mtca4u::devMap<mtca4u::devPCIE> myMappedDevice;
+  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+  mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
+  FactoryInstance.createMappedDevice("PCIE0");
   // open the device
-  myMappedDevice.openDev(DEVICE_NAME, MAP_NAME);
+  //myMappedDevice.openDev(DEVICE_NAME, MAP_NAME);
 
-  boost::shared_ptr<mtca4u::devMap<mtca4u::devPCIE>::RegisterAccessor>
-  accessor = myMappedDevice.getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
+  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
+  mtca4u::MappedDevice<mtca4u::BaseDevice>* accessor = FactoryInstance.createMappedDevice("PCIE0");
+  accessor->RegisterAccessor = myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
   // read and print a data word works just like the devMap functions,
   // except that you don't give the register name

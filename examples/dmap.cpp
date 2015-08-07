@@ -1,5 +1,5 @@
-#include <MtcaMappedDevice/devMap.h>
-#include <MtcaMappedDevice/dmapFilesParser.h>
+#include <MtcaMappedDevice/MappedDevice.h>
+#include <MtcaMappedDevice/DMapFilesParser.h>
 
 #include <string>
 #include <iostream>
