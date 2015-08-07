@@ -46,7 +46,6 @@ public:
 	void testDeviceInfo();
 	void testReOpenExistingDevice();
 	void testCreateFakeDevice();
-	void testgetDeviceInfo();
 
 
 	//void testReadFseekException();
@@ -61,8 +60,6 @@ public:
 		test_case* createDeviceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testCreateDevice, FakeDeviceTestPtr );
 
 		test_case* openDeviceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testOpenDevice, FakeDeviceTestPtr );
-
-		//test_case* getDeviceInfoTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testgetDeviceInfo, FakeDeviceTestPtr );
 
 		test_case* ReadElementTestCase = BOOST_CLASS_TEST_CASE(&FakeDeviceTest::testReadRegister, FakeDeviceTestPtr);
 
@@ -85,7 +82,6 @@ public:
 
 		add (createDeviceTestCase);
 		add (openDeviceTestCase);
-		//add (getDeviceInfoTestCase);
 		add (ReadElementTestCase);
 		add (readAreaTestCase);
 		add (readDMATestCase);
@@ -330,12 +326,6 @@ void FakeDeviceTest::testCloseDevice(){
 	BOOST_CHECK(_fakeDevice->isConnected() == true );
 }
 
-void FakeDeviceTest::testgetDeviceInfo(){
-	std::vector<std::string> deviceInfo = _fakeDevice->getDeviceInfo();
-	BOOST_CHECK(deviceInfo.size() > 1);
-	BOOST_CHECK(deviceInfo[0] == "fake_device");
-
-}
 
 void FakeDeviceTest::testOpenDevice(){
 	_fakeDevice->openDev();

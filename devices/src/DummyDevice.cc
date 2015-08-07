@@ -252,10 +252,4 @@ BaseDevice* DummyDevice::createInstance(std::string host, std::string interface,
 	return new DummyDevice(host,interface,parameters);
 }
 
-std::vector<std::string> DummyDevice::getDeviceInfo() {
-	std::vector<std::string> ret;
-	ret.push_back("DummyDevice");
-	return ret;
-}
-
 }// namespace mtca4u

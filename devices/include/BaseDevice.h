@@ -34,8 +34,6 @@ public:
                         uint8_t bar) = 0;
 
   virtual void readDeviceInfo(std::string* devInfo) = 0;
-  virtual std::vector<std::string> getDeviceInfo() = 0;
-
   /** Return whether a device has been opened or not.
    *  As the variable already exists in the base class we implement this
    * function here to avoid

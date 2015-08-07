@@ -41,11 +41,6 @@ public:
                           uint8_t /*bar*/) {};
 
     virtual void readDeviceInfo(std::string* /*devInfo*/) {};
-    virtual std::vector<std::string> getDeviceInfo()
-		{
-    	std::vector <std::string> a;
-    	return  a;
-		}
 };
 
 class ExampleDeviceRegisterer{

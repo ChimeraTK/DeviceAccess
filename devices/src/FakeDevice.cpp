@@ -161,9 +161,4 @@ BaseDevice* FakeDevice::createInstance(std::string host, std::string interface, 
 	return new FakeDevice(host,interface,parameters);
 }
 
-std::vector<std::string> FakeDevice::getDeviceInfo() {
-	std::vector<std::string> ret;
-	ret.push_back("fake_device");
-	return ret;
-}
 }//namespace mtca4u

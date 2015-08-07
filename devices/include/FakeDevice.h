@@ -43,8 +43,6 @@ public:
 
   static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 
-  virtual std::vector<std::string> getDeviceInfo();
-
 private:
   /// A private copy constructor, cannot be called from outside.
   /// As the default is not safe and I don't want to implement it right now, I

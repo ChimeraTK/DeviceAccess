@@ -92,7 +92,6 @@ public:
 
 
 	static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
-	virtual std::vector<std::string> getDeviceInfo();
 
 protected:
 	struct AddressRange{

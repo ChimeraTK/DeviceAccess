@@ -77,8 +77,6 @@ public:
 
     /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
     static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
-
-    virtual std::vector<std::string> getDeviceInfo();
 };
 
 }//namespace mtca4u

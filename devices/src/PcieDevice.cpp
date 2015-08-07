@@ -361,13 +361,6 @@ void PcieDevice::readDeviceInfo(std::string* devInfo) {
 	*devInfo = os.str();
 }
 
-std::vector<std::string> PcieDevice::getDeviceInfo() {
-	std::vector<std::string> ret;
-	ret.push_back("pcie_device");
-	return ret;
-}
-
-
 std::string PcieDevice::createErrorStringWithErrnoText(
 		std::string const& startText) {
 	char errorBuffer[255];
