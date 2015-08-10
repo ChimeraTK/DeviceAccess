@@ -1,6 +1,7 @@
 #include <MtcaMappedDevice/BaseDevice.h>
 #include <MtcaMappedDevice/PcieDevice.h>
-
+#include <MtcaMappedDevice/DeviceFactory.h>
+#include <MtcaMappedDevice/BaseDeviceImpl.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -8,21 +9,12 @@
 // For the simple example the offset of the user word is hard coded.
 static const unsigned int WORD_USER_OFFSET = 0xC;
 static const unsigned int WORD_USER_BAR = 0;
-static const std::string DEVICE_NAME = "/dev/mtcadummys0";
 
 int main(){
-  // Always use the devBase interface in the user code. This allows
-  // for instance to switch to an mtca4u::DummyDevice for testing 
-  // without having to touch the code.
-  // (Shared pointers are used to do the memory management for us, see
-  //  mtca4u coding style rules. Equivalent to 
-  // 'devBase * myDevice = new devPCIE', except that 
-  // we don't have to care about deleting the object.)
-  boost::shared_ptr<mtca4u::BaseDevice> myDevice( new mtca4u::PcieDevice );
 
-  // open the device
-  myDevice->openDev(DEVICE_NAME);
-
+  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+  mtca4u::MappedDevice<mtca4u::BaseDevice>* myDevice =
+  FactoryInstance.createMappedDevice("PCIE1");
   // read and print a data word from a register
   int32_t dataWord;
   myDevice->readReg(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);

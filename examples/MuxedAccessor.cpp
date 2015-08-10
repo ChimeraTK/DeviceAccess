@@ -8,7 +8,6 @@
 #include <boost/shared_ptr.hpp>
 
 static const std::string MODULE_NAME = "TEST";
-static const std::string DEVICE_NAME = "/dev/mtcadummys0";
 static const std::string MAP_NAME = "../tests/muxedDataAcessor.map";
 static const std::string DATA_REGION_NAME = "DMA";
 static const uint DATA_REGION_SIZE_IN_BYTES = 128;
@@ -17,14 +16,12 @@ static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
   // open the mapped device:
-  //boost::shared_ptr<mtca4u::BaseDevice> ioDevice(new mtca4u::PcieDevice());
   static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
   mtca4u::MappedDevice<mtca4u::BaseDevice>* mappedDevice =
-	FactoryInstance.createMappedDevice("PCIE0");
-  //ioDevice->openDev(DEVICE_NAME);
-
-  boost::shared_ptr<mtca4u::mapFile> ptrmapFile =
-      mtca4u::mapFileParser().parse(MAP_NAME);
+	FactoryInstance.createMappedDevice("PCIE3");
+  /** Entry in dmap file is
+	 *  PCIE3  sdm://./pci:mtcadummys0; mtcadummy.map
+	 */
 
   // populate a memory region with multiple sequences so that we can use this
   // for demonstrating the use of the MultiplexedDataAccessor. It is important
@@ -63,8 +60,7 @@ int main() {
   // use of a hack. We can have write access to this region through a register
   // AREA_DMAABLE on the dummyDriver PCIE device.
   mtca4u::mapFile::mapElem info;
-  ptrmapFile->getRegisterInfo(REGISTER_TO_SETUP_DMA_REGION, info);
-
+  mappedDevice->getRegisterMap()->getRegisterInfo(REGISTER_TO_SETUP_DMA_REGION, info);
   // frame a buffer with the muxed data [1, 64], which will be used to populate
   // the DMA region
   std::vector<uint16_t> ioBuffer(totalNumElementsInAllSequences);
@@ -81,11 +77,8 @@ int main() {
   /**********************************************************************/
   // Start of Real Example, now that DMA region is set up with multiplexed
   // sequences
-  //mtca4u::MappedDevice<mtca4u::BaseDevice> myMappedDevice;
-  //myMappedDevice.openDev(ioDevice, ptrmapFile);
-
   mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
-  	FactoryInstance.createMappedDevice("PCIE0");
+  	FactoryInstance.createMappedDevice("PCIE3");
 
   // The 16 bit elements in the 'DMA' region are converted into double because
   // we specify the userType as double. Please note, it is valid to use another

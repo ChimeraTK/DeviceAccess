@@ -8,19 +8,15 @@
 // register and module name
 static const std::string REGISTER_NAME = "WORD_USER";
 static const std::string MODULE_NAME = "BOARD";
-static const std::string DEVICE_NAME = "/dev/mtcadummys0";
-static const std::string MAP_NAME = "../tests/mtcadummy.map";
 
 int main(){
-  // Unfortunatey devMap is templated against the implementation type
-  // so the abstraction to devBase does not work. To be resolved soon.
-  //mtca4u::devMap<mtca4u::devPCIE> myMappedDevice;
 
-  // open the device
-  //myMappedDevice.openDev(DEVICE_NAME, MAP_NAME);
-  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+	static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+	/** Entry in dmap file is
+	 * PCIE2  sdm://./pci:mtcadummys0; mtcadummy.map
+	 */
 	mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
-	FactoryInstance.createMappedDevice("PCIE0");
+	FactoryInstance.createMappedDevice("PCIE2");
   // read and print a data word from a register
   int32_t dataWord;
   myMappedDevice->readReg(REGISTER_NAME, MODULE_NAME, &dataWord);
