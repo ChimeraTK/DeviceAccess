@@ -6,7 +6,6 @@
  *      Author: nshehzad
  */
 
-
 #include <boost/algorithm/string.hpp>
 #include "Utilities.h"
 #include "DeviceFactory.h"
@@ -47,9 +46,12 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 	std::string uri;
 	DMapFilesParser filesParser;
 	DMapFile::dmapElem dmapElement;
-
+	std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
 	try {
-		filesParser.parse_file(DMAP_FILE_PATH);
+		if ( boost::filesystem::exists(testFilePath ) )
+			filesParser.parse_file(testFilePath);
+		else
+			filesParser.parse_file(DMAP_FILE_PATH);
 	}
 	catch (ExcBase& e) {
 		std::cout << e.what() << std::endl;

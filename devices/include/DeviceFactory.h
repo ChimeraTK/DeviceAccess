@@ -8,14 +8,19 @@
 #include "MappedDevice.h"
 #include "PcieDevice.h"
 #include <boost/tuple/tuple.hpp>
+#include <boost/filesystem.hpp>
 
 //#define _DEBUG
 #ifdef _DEBUG
 #include <iostream>
 #endif
 
-#define DMAP_FILE_PATH "../tests/dummies.dmap" /*path has to be defined*/
-//#define DMAP_FILE_PATH // "/space/nshehzad/work/MtcaMappedDevice/build_ni/tests/dummies.dmap"
+/* For test purposes; if a dummies.dmap file is found in the folder from where the
+ * program is being executed it would be used as dmap file. The default dmap file
+ * would be DMAP_FILE_PATH.
+ */
+#define DMAP_FILE_PATH  "/usr/local/etc/mtca4u/devicefactory.dmap"
+#define TEST_DMAP_FILE_PATH  "/dummies.dmap"
 namespace mtca4u {
 
 class DeviceFactoryException : public ExcBase {
@@ -25,7 +30,7 @@ public:
 	: ExcBase( message, exceptionID ){}
 };
 
-/** devFactory is a the factory class to create devices.
+/** DeviceFactory is a the factory class to create devices.
  * It is implemented as a Meyers' singleton.
  */
 class DeviceFactory {

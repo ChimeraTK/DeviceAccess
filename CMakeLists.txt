@@ -13,6 +13,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
 
+FIND_PACKAGE(Boost COMPONENTS system filesystem)
+include_directories(${Boost_INCLUDE_DIRS})
+
 include_directories(${PROJECT_SOURCE_DIR}/exceptionbase/include exception_inc)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
@@ -28,7 +31,7 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/mappeddevice")
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-target_link_libraries( ${PROJECT_NAME} ${libexceptionbase} ${libfileparser} ${libutil}) 
+target_link_libraries( ${PROJECT_NAME} ${libexceptionbase} ${libfileparser} ${libutil} ${Boost_LIBRARIES}) 
 
 enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
@@ -64,5 +67,17 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
-include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake) 
+include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+
+  add_custom_target(doc ${DOC_DEPENDENCY}
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc DESTINATION . COMPONENT dev)
+else(DOXYGEN_FOUND)
+  message("Doxygen not found, documentation cannot be build.")
+endif(DOXYGEN_FOUND) 
 
