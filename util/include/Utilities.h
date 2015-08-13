@@ -9,7 +9,7 @@
 #define SOURCE_DIRECTORY__DEVICES_INCLUDE_UTILITES_H_
 
 #include <list>
-#include "ExcBase.h"
+#include "Exception.h"
 namespace mtca4u {
 struct Sdm
 {

@@ -1,4 +1,4 @@
-#include "ExcBase.h"
+#include "Exception.h"
 
 #include <string>
 #include <iostream>

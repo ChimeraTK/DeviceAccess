@@ -8,7 +8,7 @@
 
 #include <boost/function.hpp>
 
-#include "ExcBase.h"
+#include "Exception.h"
 #include "BaseDevice.h"
 #include "BaseDeviceImpl.h"
 #include "MapFile.h"

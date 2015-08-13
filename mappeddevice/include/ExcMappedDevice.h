@@ -8,7 +8,7 @@
 #ifndef MTCA4U_EXCMAPPEDDEVICE_H
 #define	MTCA4U_EXCMAPPEDDEVICE_H
 
-#include "ExcBase.h"
+#include "Exception.h"
 
 namespace mtca4u{
 

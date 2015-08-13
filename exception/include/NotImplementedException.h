@@ -1,7 +1,7 @@
 #ifndef MTCA4U_NOT_IMPLEMENTED_EXCEPTION_H
 #define MTCA4U_NOT_IMPLEMENTED_EXCEPTION_H
 
-#include "ExcBase.h"
+#include "Exception.h"
 
 namespace mtca4u{
 

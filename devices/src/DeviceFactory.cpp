@@ -10,7 +10,7 @@
 #include "Utilities.h"
 #include "DeviceFactory.h"
 #include "MapFileParser.h"
-#include "ExcBase.h"
+#include "Exception.h"
 
 namespace mtca4u {
 

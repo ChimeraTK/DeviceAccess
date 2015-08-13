@@ -8,7 +8,7 @@
 #define	MTCA4U_EXLIBMAP_H
 #include <string>
 
-#include "ExcBase.h"
+#include "Exception.h"
 
 namespace mtca4u{
 

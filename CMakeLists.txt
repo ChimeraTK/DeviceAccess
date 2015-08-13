@@ -16,13 +16,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wunini
 FIND_PACKAGE(Boost COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 
-include_directories(${PROJECT_SOURCE_DIR}/exceptionbase/include exception_inc)
+include_directories(${PROJECT_SOURCE_DIR}/exception/include exception_inc)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/devices/include")
 include_directories("${PROJECT_SOURCE_DIR}/mappeddevice/include")
 
-add_subdirectory ("${PROJECT_SOURCE_DIR}/exceptionbase")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/devices")
@@ -31,7 +31,7 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/mappeddevice")
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-target_link_libraries( ${PROJECT_NAME} ${libexceptionbase} ${libfileparser} ${libutil} ${Boost_LIBRARIES}) 
+target_link_libraries( ${PROJECT_NAME} ${libexception} ${libfileparser} ${libutil} ${Boost_LIBRARIES}) 
 
 enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
