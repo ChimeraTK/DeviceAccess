@@ -15,7 +15,7 @@
 #include <pcieuni_io_compat.h>
 #include <llrfdrv_io_compat.h>
 #include "PcieDevice.h"
-#include "ExcPcieDevice.h"
+#include "ExceptionPcieDevice.h"
 namespace mtca4u {
 
 PcieDevice::PcieDevice()

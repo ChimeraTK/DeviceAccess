@@ -1,4 +1,4 @@
-#include "ExcMap.h"
+#include "ExceptionMap.h"
 #include <iostream>
 
 namespace mtca4u{

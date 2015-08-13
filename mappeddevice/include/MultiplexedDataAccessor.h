@@ -6,7 +6,7 @@
 #include "BaseDevice.h"
 #include <boost/shared_ptr.hpp>
 #include "MultiplexedDataAccessorException.h"
-#include "ExcMap.h"
+#include "ExceptionMap.h"
 #include <sstream>
 #include "NotImplementedException.h"
 

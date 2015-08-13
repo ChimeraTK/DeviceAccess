@@ -14,7 +14,7 @@
 
 #include "libmap.h"
 // #include "libdev.h"
-#include "ExcMappedDevice.h"
+#include "ExceptionMappedDevice.h"
 #include "FixedPointConverter.h"
 #include "MultiplexedDataAccessor.h"
 namespace mtca4u {

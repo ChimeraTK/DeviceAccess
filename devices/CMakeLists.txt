@@ -4,8 +4,8 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/FakeDevice.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieDevice.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyDevice.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExcFakeDevice.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExcPcieDevice.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExceptionFakeDevice.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExceptionPcieDevice.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceFactory.cpp
    PARENT_SCOPE
 )
@@ -20,8 +20,8 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieDevice.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyDevice.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExcFakeDevice.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExcPcieDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExceptionFakeDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/ExceptionPcieDevice.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/llrfdrv_io_compat.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/pciedev_io.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/pcieuni_io_compat.h

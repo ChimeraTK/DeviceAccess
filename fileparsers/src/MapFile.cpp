@@ -1,6 +1,6 @@
 #include "MapFile.h"
 #include "predicates.h"
-#include "ExcMap.h"
+#include "ExceptionMap.h"
 #include <algorithm>
 #include <stdexcept>
 

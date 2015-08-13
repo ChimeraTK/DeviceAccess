@@ -4,8 +4,8 @@
 
 #include "MappedDevice.h"
 #include "PcieDevice.h"
-#include "ExcMappedDevice.h"
-#include "ExcPcieDevice.h"
+#include "ExceptionMappedDevice.h"
+#include "ExceptionPcieDevice.h"
 #include "DummyDevice.h"
 #include "MultiplexedDataAccessor.h"
 #include "DeviceFactory.h"

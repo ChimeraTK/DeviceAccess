@@ -1,8 +1,8 @@
 #include "predicates.h"
-#include "ExcMap.h"
+#include "ExceptionMap.h"
 
 #include <algorithm>
-#include "../include/DMapFile.h"
+#include "DMapFile.h"
 
 namespace mtca4u{
 

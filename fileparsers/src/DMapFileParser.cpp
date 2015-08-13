@@ -1,9 +1,9 @@
-#include "ExcMap.h"
+#include "ExceptionMap.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>
 #include <fstream>
-#include "../include/DMapFileParser.h"
+#include "DMapFileParser.h"
 
 namespace mtca4u{
 

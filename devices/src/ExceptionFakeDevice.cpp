@@ -1,4 +1,4 @@
-#include "ExcFakeDevice.h"
+#include "ExceptionFakeDevice.h"
 
 namespace mtca4u{
 

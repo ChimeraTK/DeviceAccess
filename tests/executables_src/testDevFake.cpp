@@ -4,7 +4,7 @@
 #include <cstdio>
 
 #include "DeviceFactory.h"
-#include "ExcFakeDevice.h"
+#include "ExceptionFakeDevice.h"
 
 //#define REFERENCE_DEVICE "FAKE7"
 //#define DUMMY_DEVICE "FAKE12"
