@@ -1,7 +1,7 @@
 #include "DMapFilesParser.h"
 #include "predicates.h"
 #include "MapFile.h"
-#include "ExceptionMap.h"
+#include "MapException.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>

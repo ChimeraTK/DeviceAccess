@@ -1,7 +1,7 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 #include "helperFunctions.h"
-#include "ExceptionMap.h"
+#include "MapException.h"
 
 class MapFileTest{
 public:

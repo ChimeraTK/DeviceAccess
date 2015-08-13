@@ -1,4 +1,4 @@
-#include "ExceptionMap.h"
+#include "MapException.h"
 #include <iostream>
 #include <algorithm>
 #include <sstream>

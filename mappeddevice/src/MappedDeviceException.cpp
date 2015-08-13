@@ -5,7 +5,7 @@
  * Created on 11 marzec 2012, 20:42
  */
 
-#include "ExceptionMappedDevice.h"
+#include "MappedDeviceException.h"
 
 namespace mtca4u{
 

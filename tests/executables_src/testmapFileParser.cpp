@@ -1,7 +1,7 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 #include "MapFileParser.h"
-#include "ExceptionMap.h"
+#include "MapException.h"
 #include "helperFunctions.h"
 #include <sstream>
 

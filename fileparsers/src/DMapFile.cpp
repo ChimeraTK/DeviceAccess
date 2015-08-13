@@ -1,5 +1,5 @@
 #include "predicates.h"
-#include "ExceptionMap.h"
+#include "MapException.h"
 
 #include <algorithm>
 #include "DMapFile.h"

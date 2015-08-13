@@ -1,7 +1,7 @@
 #ifndef MTCA4U_LIBMAP_H
 #define	MTCA4U_LIBMAP_H
 
-#include "ExceptionMap.h"
+#include "MapException.h"
 #include "DMapFilesParser.h"
 #include "DMapFile.h"
 #include "DMapFileParser.h"

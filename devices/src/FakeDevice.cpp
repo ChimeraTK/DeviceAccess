@@ -1,5 +1,5 @@
 #include "FakeDevice.h"
-#include "ExceptionFakeDevice.h"
+#include "FakeDeviceException.h"
 #include <iostream>
 #include <algorithm>
 #include <string>

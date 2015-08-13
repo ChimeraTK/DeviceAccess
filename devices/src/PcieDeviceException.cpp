@@ -1,4 +1,4 @@
-#include "ExceptionPcieDevice.h"
+#include "PcieDeviceException.h"
 
 namespace mtca4u{
 

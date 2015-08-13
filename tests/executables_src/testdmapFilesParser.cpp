@@ -2,7 +2,7 @@
 using namespace boost::unit_test_framework;
 #include "DMapFilesParser.h"
 #include "helperFunctions.h"
-#include "ExceptionMap.h"
+#include "MapException.h"
 
 class DMapFilesParserTest {
  public:

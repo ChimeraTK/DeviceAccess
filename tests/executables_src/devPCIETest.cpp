@@ -6,7 +6,7 @@ using namespace boost::unit_test_framework;
 #define PCIEUNI_TEST_SLOT 6
 
 #include "PcieDevice.h"
-#include "ExceptionPcieDevice.h"
+#include "PcieDeviceException.h"
 #include "DeviceFactory.h"
 
 using namespace mtca4u;
