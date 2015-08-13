@@ -1,17 +1,32 @@
 cmake_minimum_required (VERSION 2.8.7)
+
 Project(MtcaMappedDevice) #need to change the name
+
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
 set(${PROJECT_NAME}_MINOR_VERSION 18)
 set(${PROJECT_NAME} 0)
+
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
+
 Message ( Root )
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
+
+#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
+
+#use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
+#build. The 'make doc' target will still exist
+if(SUPPRESS_AUTO_DOC_BUILD)
+    unset(DOC_DEPENDENCY)
+else(SUPPRESS_AUTO_DOC_BUILD)
+    set(DOC_DEPENDENCY ALL)
+endif(SUPPRESS_AUTO_DOC_BUILD)
 
 FIND_PACKAGE(Boost COMPONENTS system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
@@ -36,8 +51,6 @@ target_link_libraries( ${PROJECT_NAME} ${libexception} ${libfileparser} ${libuti
 enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
 
-#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     configure_file(cmake/Makefile.coverage.in
