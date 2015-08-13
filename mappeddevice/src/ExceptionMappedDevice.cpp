@@ -9,11 +9,11 @@
 
 namespace mtca4u{
 
-ExcMappedDevice::ExcMappedDevice(const std::string &_exMessage, unsigned int _exID)
+MappedDeviceException::MappedDeviceException(const std::string &_exMessage, unsigned int _exID)
 : Exception(_exMessage, _exID) {
 }
 
-ExcMappedDevice::~ExcMappedDevice() throw() {
+MappedDeviceException::~MappedDeviceException() throw() {
 }
 
 }//namespace mtca4u

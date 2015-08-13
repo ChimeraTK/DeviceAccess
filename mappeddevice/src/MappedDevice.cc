@@ -50,8 +50,8 @@ namespace mtca4u{
   void MappedDevice<BaseDevice>::openDev(const std::string & /*_devFileName*/, const std::string& /*_mapFileName*/,
 				int /*_perm*/, DeviceConfigBase* /*_pConfig*/)
   {
-    throw ExcMappedDevice(std::string("You cannot directly open an instance of BaseDevice!") +
+    throw MappedDeviceException(std::string("You cannot directly open an instance of BaseDevice!") +
 		   " Use openDev(ptrdev ioDevice, ptrmapFile registerMapping) " +
-		   " with an implementation like devPCIe as ioDevice.", ExcMappedDevice::EX_CANNOT_OPEN_DEVBASE);
+		   " with an implementation like devPCIe as ioDevice.", MappedDeviceException::EX_CANNOT_OPEN_DEVBASE);
   }
 }// namespace mtca4u

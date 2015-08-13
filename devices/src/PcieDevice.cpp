@@ -48,14 +48,14 @@ void PcieDevice::openDev() {
 void PcieDevice::openDev(const std::string& devName, int perm,
 		DeviceConfigBase* /*pConfig*/) {
 	if (_opened == true) {
-		throw ExcPcieDevice("Device already has been _Opened",
-				ExcPcieDevice::EX_DEVICE_OPENED);
+		throw PcieDeviceException("Device already has been _Opened",
+				PcieDeviceException::EX_DEVICE_OPENED);
 	}
 	_interface =  devName; //Todo cleanup
 	_deviceID = open(devName.c_str(), perm);
 	if (_deviceID < 0) {
-		throw ExcPcieDevice(createErrorStringWithErrnoText("Cannot open device: "),
-				ExcPcieDevice::EX_CANNOT_OPEN_DEVICE);
+		throw PcieDeviceException(createErrorStringWithErrnoText("Cannot open device: "),
+				PcieDeviceException::EX_CANNOT_OPEN_DEVICE);
 	}
 
 	determineDriverAndConfigureIoctl();
@@ -124,8 +124,8 @@ void PcieDevice::determineDriverAndConfigureIoctl() {
 			<< createErrorStringWithErrnoText("Error is ") << std::endl;
 	;
 	close(_deviceID);
-	throw ExcPcieDevice("Unsupported driver in device" + _interface,
-			ExcPcieDevice::EX_UNSUPPORTED_DRIVER);
+	throw PcieDeviceException("Unsupported driver in device" + _interface,
+			PcieDeviceException::EX_UNSUPPORTED_DRIVER);
 }
 
 void PcieDevice::closeDev() {
@@ -139,7 +139,7 @@ void PcieDevice::readWithStruct(uint32_t regOffset, int32_t* data,
 		uint8_t bar) {
 	device_rw l_RW;
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 	l_RW.barx_rw = bar;
 	l_RW.mode_rw = RW_D32;
@@ -150,9 +150,9 @@ void PcieDevice::readWithStruct(uint32_t regOffset, int32_t* data,
 	l_RW.rsrvd_rw = 0;
 
 	if (read(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
-		throw ExcPcieDevice(
+		throw PcieDeviceException(
 				createErrorStringWithErrnoText("Cannot read data from device: "),
-				ExcPcieDevice::EX_READ_ERROR);
+				PcieDeviceException::EX_READ_ERROR);
 	}
 	*data = l_RW.data_rw;
 }
@@ -160,20 +160,20 @@ void PcieDevice::readWithStruct(uint32_t regOffset, int32_t* data,
 void PcieDevice::directRead(uint32_t regOffset, int32_t* data, uint8_t bar,
 		size_t sizeInBytes) {
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 	if (bar > 5) {
 		std::stringstream errorMessage;
 		errorMessage << "Invalid bar number: " << bar << std::endl;
-		throw ExcPcieDevice(errorMessage.str(), ExcPcieDevice::EX_READ_ERROR);
+		throw PcieDeviceException(errorMessage.str(), PcieDeviceException::EX_READ_ERROR);
 	}
 	loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + regOffset;
 
 	if (pread(_deviceID, data, sizeInBytes, virtualOffset) !=
 			static_cast<int>(sizeInBytes)) {
-		throw ExcPcieDevice(
+		throw PcieDeviceException(
 				createErrorStringWithErrnoText("Cannot read data from device: "),
-				ExcPcieDevice::EX_READ_ERROR);
+				PcieDeviceException::EX_READ_ERROR);
 	}
 }
 
@@ -185,7 +185,7 @@ void PcieDevice::writeWithStruct(uint32_t regOffset, int32_t const* data,
 		uint8_t bar) {
 	device_rw l_RW;
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 	l_RW.barx_rw = bar;
 	l_RW.mode_rw = RW_D32;
@@ -195,9 +195,9 @@ void PcieDevice::writeWithStruct(uint32_t regOffset, int32_t const* data,
 	l_RW.size_rw = 0;
 
 	if (write(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
-		throw ExcPcieDevice(
+		throw PcieDeviceException(
 				createErrorStringWithErrnoText("Cannot write data to device: "),
-				ExcPcieDevice::EX_WRITE_ERROR);
+				PcieDeviceException::EX_WRITE_ERROR);
 	}
 }
 
@@ -205,20 +205,20 @@ void PcieDevice::writeWithStruct(uint32_t regOffset, int32_t const* data,
 void PcieDevice::directWrite(uint32_t regOffset, int32_t const* data,
 		uint8_t bar, size_t sizeInBytes) {
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 	if (bar > 5) {
 		std::stringstream errorMessage;
 		errorMessage << "Invalid bar number: " << bar << std::endl;
-		throw ExcPcieDevice(errorMessage.str(), ExcPcieDevice::EX_WRITE_ERROR);
+		throw PcieDeviceException(errorMessage.str(), PcieDeviceException::EX_WRITE_ERROR);
 	}
 	loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + regOffset;
 
 	if (pwrite(_deviceID, data, sizeInBytes, virtualOffset) !=
 			static_cast<int>(sizeInBytes)) {
-		throw ExcPcieDevice(
+		throw PcieDeviceException(
 				createErrorStringWithErrnoText("Cannot write data to device: "),
-				ExcPcieDevice::EX_WRITE_ERROR);
+				PcieDeviceException::EX_WRITE_ERROR);
 	}
 }
 
@@ -229,8 +229,8 @@ void PcieDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
 void PcieDevice::readAreaWithStruct(uint32_t regOffset, int32_t* data,
 		uint8_t bar, size_t size) {
 	if (size % 4) {
-		throw ExcPcieDevice("Wrong data size - must be dividable by 4",
-				ExcPcieDevice::EX_READ_ERROR);
+		throw PcieDeviceException("Wrong data size - must be dividable by 4",
+				PcieDeviceException::EX_READ_ERROR);
 	}
 
 	for (uint32_t i = 0; i < size / 4; i++) {
@@ -248,11 +248,11 @@ void PcieDevice::readArea(uint32_t regOffset, int32_t* data, size_t size,
 void PcieDevice::writeAreaWithStruct(uint32_t regOffset, int32_t const* data,
 		uint8_t bar, size_t size) {
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 	if (size % 4) {
-		throw ExcPcieDevice("Wrong data size - must be dividable by 4",
-				ExcPcieDevice::EX_WRITE_ERROR);
+		throw PcieDeviceException("Wrong data size - must be dividable by 4",
+				PcieDeviceException::EX_WRITE_ERROR);
 	}
 	for (uint32_t i = 0; i < size / 4; i++) {
 		writeReg(regOffset + i * 4, *(data + i), bar);
@@ -278,7 +278,7 @@ void PcieDevice::readDMAViaStruct(uint32_t regOffset, int32_t* data,
 	device_rw* pl_RW;
 
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 	if (size < sizeof(device_rw)) {
 		pl_RW = &l_RW;
@@ -295,9 +295,9 @@ void PcieDevice::readDMAViaStruct(uint32_t regOffset, int32_t* data,
 
 	ret = read(_deviceID, pl_RW, sizeof(device_rw));
 	if (ret != (ssize_t)size) {
-		throw ExcPcieDevice(
+		throw PcieDeviceException(
 				createErrorStringWithErrnoText("Cannot read data from device: "),
-				ExcPcieDevice::EX_DMA_READ_ERROR);
+				PcieDeviceException::EX_DMA_READ_ERROR);
 	}
 	if (size < sizeof(device_rw)) {
 		memcpy(data, pl_RW, size);
@@ -307,7 +307,7 @@ void PcieDevice::readDMAViaStruct(uint32_t regOffset, int32_t* data,
 void PcieDevice::readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size,
 		uint8_t /*bar*/) {
 	if (_opened == false) {
-		throw ExcPcieDevice("Device closed", ExcPcieDevice::EX_DEVICE_CLOSED);
+		throw PcieDeviceException("Device closed", PcieDeviceException::EX_DEVICE_CLOSED);
 	}
 
 	// safety check: the requested dma size (size of the data buffer) has to be at
@@ -315,8 +315,8 @@ void PcieDevice::readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size,
 	// the size of the dma struct, because the latter has to be copied into the
 	// data buffer.
 	if (size < sizeof(device_ioctrl_dma)) {
-		throw ExcPcieDevice("Reqested dma size is too small",
-				ExcPcieDevice::EX_DMA_READ_ERROR);
+		throw PcieDeviceException("Reqested dma size is too small",
+				PcieDeviceException::EX_DMA_READ_ERROR);
 	}
 
 	// prepare the struct
@@ -333,28 +333,28 @@ void PcieDevice::readDMAViaIoctl(uint32_t regOffset, int32_t* data, size_t size,
 	memcpy((void*)data, &DMA_RW, sizeof(device_ioctrl_dma));
 	int ret = ioctl(_deviceID, _ioctlDMA, (void*)data);
 	if (ret) {
-		throw ExcPcieDevice(
+		throw PcieDeviceException(
 				createErrorStringWithErrnoText("Cannot read data from device "),
-				ExcPcieDevice::EX_DMA_READ_ERROR);
+				PcieDeviceException::EX_DMA_READ_ERROR);
 	}
 }
 
 void PcieDevice::writeDMA(uint32_t /*regOffset*/, int32_t const* /*data*/,
 		size_t /*size*/, uint8_t /*bar*/) {
-	throw ExcPcieDevice("Operation not supported yet", ExcPcieDevice::EX_DMA_WRITE_ERROR);
+	throw PcieDeviceException("Operation not supported yet", PcieDeviceException::EX_DMA_WRITE_ERROR);
 }
 
 void PcieDevice::readDeviceInfo(std::string* devInfo) {
 	std::ostringstream os;
 	device_ioctrl_data ioctlData = { 0, 0, 0, 0 };
 	if (ioctl(_deviceID, _ioctlPhysicalSlot, &ioctlData) < 0) {
-		throw ExcPcieDevice(createErrorStringWithErrnoText("Cannot read device info: "),
-				ExcPcieDevice::EX_INFO_READ_ERROR);
+		throw PcieDeviceException(createErrorStringWithErrnoText("Cannot read device info: "),
+				PcieDeviceException::EX_INFO_READ_ERROR);
 	}
 	os << "SLOT: " << ioctlData.data;
 	if (ioctl(_deviceID, _ioctlDriverVersion, &ioctlData) < 0) {
-		throw ExcPcieDevice(createErrorStringWithErrnoText("Cannot read device info: "),
-				ExcPcieDevice::EX_INFO_READ_ERROR);
+		throw PcieDeviceException(createErrorStringWithErrnoText("Cannot read device info: "),
+				PcieDeviceException::EX_INFO_READ_ERROR);
 	}
 	os << " DRV VER: " << (float)(ioctlData.offset / 10.0) +
 			(float)ioctlData.data;

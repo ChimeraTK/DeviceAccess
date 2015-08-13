@@ -34,7 +34,7 @@ void DMapFile::getDeviceInfo(const std::string& dev_name, dmapElem &value) {
     std::vector<dmapElem>::iterator iter;
     iter = find_if(dmap_file_elems.begin(), dmap_file_elems.end(), findDevByName_pred(dev_name));
     if (iter == dmap_file_elems.end()) {
-        throw exDmapFile("Cannot find device \"" + dev_name + "\"in DMAP file", exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+        throw DMapFileException("Cannot find device \"" + dev_name + "\"in DMAP file", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
     }
     value = *iter;
 }

@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE( testFactoryFunction ){
 								    INVALID_MODULE_NAME,
 								    ioDevice,
 								    registerMap ),
-		     exMapFile );
+		     MapFileException );
 }
 
 BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){

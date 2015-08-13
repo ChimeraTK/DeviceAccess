@@ -15,7 +15,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
     
     file.open(file_name.c_str());
     if (!file){
-        throw exMapFile("Cannot open file \"" + file_name + "\"", exLibMap::EX_CANNOT_OPEN_MAP_FILE);
+        throw MapFileException("Cannot open file \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_MAP_FILE);
     }
     ptrmapFile pmap(new mapFile(file_name));
     mapFile::mapElem me;
@@ -39,7 +39,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
             if (!is){
                 std::ostringstream os;
                 os << line_nr;
-                throw exMapFileParser("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + org_line + "\"", exLibMap::EX_MAP_FILE_PARSE_ERROR);
+                throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + org_line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
             }
             line.erase(line.begin(), line.begin() + md.name.length());
             line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
@@ -59,14 +59,14 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
         if ( me.reg_name.empty() ){
             std::ostringstream errorMessage;
             errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
-            throw exMapFileParser(errorMessage.str(), exLibMap::EX_MAP_FILE_PARSE_ERROR);
+            throw MapFileParserException(errorMessage.str(), LibMapException::EX_MAP_FILE_PARSE_ERROR);
         }       
 
 	is >> std::setbase(0) >> me.reg_elem_nr >> std::setbase(0) >> me.reg_address >> std::setbase(0) >> me.reg_size;
         if (!is){
             std::ostringstream os;
             os << line_nr;
-            throw exMapFileParser("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", exLibMap::EX_MAP_FILE_PARSE_ERROR);
+            throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
         }       
         // first, set default values for 'optional' fields
         me.reg_bar = 0x0;
@@ -85,7 +85,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
             if (me.reg_width > 32) {
               std::ostringstream os;
               os << line_nr;
-              throw exMapFileParser("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", exLibMap::EX_MAP_FILE_PARSE_ERROR);
+              throw MapFileParserException("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
             }
           }
         }
@@ -97,7 +97,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
             if (me.reg_frac_bits > 1023 || me.reg_frac_bits < -1024) {
               std::ostringstream os;
               os << line_nr;
-              throw exMapFileParser("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", exLibMap::EX_MAP_FILE_PARSE_ERROR);
+              throw MapFileParserException("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
             }
           }
         }

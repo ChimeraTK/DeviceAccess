@@ -15,7 +15,7 @@ namespace mtca4u{
 /**
  *      @brief  Provides base class for all exceptions from libmap                
  */
-class exLibMap : public Exception {
+class LibMapException : public Exception {
 public:
 
     enum {
@@ -35,18 +35,18 @@ public:
      * @param _exMessage exception reason expressed as a string 
      * @param _exID exception reason expressed as a identifier 
      */
-    exLibMap(const std::string &_exMessage, unsigned int _exID);
+    LibMapException(const std::string &_exMessage, unsigned int _exID);
 
-    virtual ~exLibMap() throw ();
+    virtual ~LibMapException() throw ();
 
-    friend std::ostream& operator<<(std::ostream &os, const exLibMap& e);
+    friend std::ostream& operator<<(std::ostream &os, const LibMapException& e);
 
 };
 
 /**
  *      @brief  Provides class for exceptions related to MAP file parsing                
  */
-class exMapFile : public exLibMap {
+class MapFileException : public LibMapException {
 public:
     /**
      * @brief Class constructor
@@ -54,13 +54,13 @@ public:
      * @param _exMessage exception reason expressed as a string 
      * @param _exID exception reason expressed as a identifier 
      */
-    exMapFile(const std::string &_exMessage, unsigned int _exID);
+	MapFileException(const std::string &_exMessage, unsigned int _exID);
 };
 
 /**
  *      @brief  Provides class for exceptions related to MAP file                
  */
-class exMapFileParser : public exMapFile {
+class MapFileParserException : public MapFileException {
 public:
     /**
      * @brief Class constructor
@@ -68,13 +68,13 @@ public:
      * @param _exMessage exception reason expressed as a string 
      * @param _exID exception reason expressed as a identifier 
      */
-    exMapFileParser(const std::string &_exMessage, unsigned int _exID);
+	MapFileParserException(const std::string &_exMessage, unsigned int _exID);
 };
 
 /**
  *      @brief  Provides class for exceptions related to DMAP file parsing                
  */
-class exDmapFile : public exLibMap {
+class DMapFileException : public LibMapException {
 public:
     /**
      * @brief Class constructor
@@ -82,13 +82,13 @@ public:
      * @param _exMessage exception reason expressed as a string 
      * @param _exID exception reason expressed as a identifier 
      */
-    exDmapFile(const std::string &_exMessage, unsigned int _exID);
+	DMapFileException(const std::string &_exMessage, unsigned int _exID);
 };
 
 /**
  *      @brief  Provides class for exceptions related to DMAP                
  */
-class exDmapFileParser : public exDmapFile {
+class DMapFileParserException : public DMapFileException {
 public:
     /**
      * @brief Class constructor
@@ -96,7 +96,7 @@ public:
      * @param _exMessage exception reason expressed as a string 
      * @param _exID exception reason expressed as a identifier 
      */
-    exDmapFileParser(const std::string &_exMessage, unsigned int _exID);
+	DMapFileParserException(const std::string &_exMessage, unsigned int _exID);
 };
 
 }//namespace mtca4u

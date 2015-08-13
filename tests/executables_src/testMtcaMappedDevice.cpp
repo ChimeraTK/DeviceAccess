@@ -119,7 +119,7 @@ void MtcaMappedDeviceTest::testOpenClose() {
   // cannot be instantiated.
   BOOST_CHECK_THROW(mappedDeviceAsBase.openDev(DUMMY_DEVICE_FILE_NAME,
                                                VALID_MAPPING_FILE_NAME),
-                    ExcMappedDevice);
+                    MappedDeviceException);
 
   // you have to create an instance of an implementation like PcieDevice and
   // pass it as a BaseDevice pointer
@@ -146,68 +146,68 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   MtcaMappedDevice virginMappedDevice;
 
   int32_t dataWord;
-  BOOST_CHECK_THROW(virginMappedDevice.closeDev(), ExcMappedDevice);
+  BOOST_CHECK_THROW(virginMappedDevice.closeDev(), MappedDeviceException);
   BOOST_CHECK_THROW(
       virginMappedDevice.readReg(0 /*regOffset*/, &dataWord, 0 /*bar*/),
-      ExcMappedDevice);
+      MappedDeviceException);
   BOOST_CHECK_THROW(
       virginMappedDevice.writeReg(0 /*regOffset*/, dataWord, 0 /*bar*/),
-      ExcMappedDevice);
+      MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readArea(0 /*regOffset*/, &dataWord,
                                                 4 /*size*/, 0 /*bar*/),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.writeArea(0 /*regOffset*/, &dataWord,
                                                  4 /*size*/, 0 /*bar*/),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readDMA(0 /*regOffset*/, &dataWord,
                                                4 /*size*/, 0 /*bar*/),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.writeDMA(0 /*regOffset*/, &dataWord,
                                                 4 /*size*/, 0 /*bar*/),
-                    ExcMappedDevice);
+                    MappedDeviceException);
 
   std::string deviceInfo;
-  BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(&deviceInfo), ExcMappedDevice);
+  BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(&deviceInfo), MappedDeviceException);
 
   BOOST_CHECK_THROW(virginMappedDevice.readReg("irrelevant", &dataWord),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.writeReg("irrelevant", &dataWord),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readDMA("irrelevant", &dataWord),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.writeDMA("irrelevant", &dataWord),
-                    ExcMappedDevice);
+                    MappedDeviceException);
 
   BOOST_CHECK_THROW(MtcaMappedDevice::regObject myRegObject =
                         virginMappedDevice.getRegObject("irrelevant"),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(
       boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
           myRegisterAccessor =
               virginMappedDevice.getRegisterAccessor("irrelevant"),
-      ExcMappedDevice);
+      MappedDeviceException);
   BOOST_CHECK_THROW(
       boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
           myRegisterAccessor =
               virginMappedDevice.getRegisterAccessor("irrelevant"),
-      ExcMappedDevice);
+      MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.getRegistersInModule("irrelevant"),
-                    ExcMappedDevice);
+                    MappedDeviceException);
   BOOST_CHECK_THROW(
-      virginMappedDevice.getRegisterAccessorsInModule("irrelevant"), ExcMappedDevice);
+      virginMappedDevice.getRegisterAccessorsInModule("irrelevant"), MappedDeviceException);
 }
 
 void MtcaMappedDeviceTest::testMapFileParser_parse() {
   MtcaMappedDevice virginMappedDevice;
   BOOST_CHECK_THROW(virginMappedDevice.openDev(DUMMY_DEVICE_FILE_NAME,
                                                FXPNT_ERROR_1_MAPPING_FILE_NAME),
-                    exMapFileParser);
+                    MapFileParserException);
   BOOST_CHECK_THROW(virginMappedDevice.openDev(DUMMY_DEVICE_FILE_NAME,
                                                FXPNT_ERROR_2_MAPPING_FILE_NAME),
-                    exMapFileParser);
+                    MapFileParserException);
   BOOST_CHECK_THROW(virginMappedDevice.openDev(DUMMY_DEVICE_FILE_NAME,
                                                FXPNT_ERROR_3_MAPPING_FILE_NAME),
-                    exMapFileParser);
+                    MapFileParserException);
 }
 
 void MtcaMappedDeviceTest::testRegObject_getRegisterInfo() {

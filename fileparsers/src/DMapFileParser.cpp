@@ -17,7 +17,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
 
     file.open(file_name.c_str());
     if (!file) {        
-        throw exDmapFileParser("Cannot open dmap file: \"" + file_name + "\"", exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
+        throw DMapFileParserException("Cannot open dmap file: \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
     }
 
     ptrdmapFile dmap(new DMapFile(file_name));
@@ -39,13 +39,13 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
         } else {
             std::ostringstream os;
             os << line_nr;
-            throw exDmapFileParser("Error in dmap file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", exLibMap::EX_DMAP_FILE_PARSE_ERROR);
+            throw DMapFileParserException("Error in dmap file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_DMAP_FILE_PARSE_ERROR);
         }       
         is.clear();
     }
     file.close();
     if (dmap->getdmapFileSize() == 0) {
-        throw exDmapFileParser("No data in in dmap file: \"" + file_name + "\"", exLibMap::EX_NO_DMAP_DATA);
+        throw DMapFileParserException("No data in in dmap file: \"" + file_name + "\"", LibMapException::EX_NO_DMAP_DATA);
     }
     return dmap;
 }

@@ -227,21 +227,21 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 
 	_pcieDeviceInstance->closeDev();
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readReg(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readArea(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readDMA(0, &dataWord, sizeof(dataWord), /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeReg(WORD_USER_OFFSET, 0, /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeArea(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeDMA(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 
 	std::string deviceInfo;
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readDeviceInfo(&deviceInfo),
-			ExcPcieDevice );
+			PcieDeviceException );
 
 }
 
@@ -311,7 +311,7 @@ void PcieDeviceTest::testReadArea(){
 	// now try to read only six of the eight bytes. This should throw an exception because it is
 	// not a multiple of 4.
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readArea( /*offset*/ 0, twoWords, /*nBytes*/ 6, /*bar*/ 0 ),
-			ExcPcieDevice );
+			PcieDeviceException );
 
 	// also check another bar
 	// Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer) with the default values (index^2) in the first 25 words.
@@ -344,7 +344,7 @@ void PcieDeviceTest::testWriteArea(){
 	// now try to write only six of the eight bytes. This should throw an exception because it is
 	// not a multiple of 4.
 	BOOST_CHECK_THROW( _pcieDeviceInstance->writeArea(  WORD_CLK_CNT_OFFSET, originalClockCounts, /*nBytes*/ 6, /*bar*/ 0 ),
-			ExcPcieDevice );
+			PcieDeviceException );
 
 	// also test another bar (area in bar 2), the usual drill: write and read back,
 	// we know that reading works from the previous test
@@ -365,7 +365,7 @@ void PcieDeviceTest::testReadRegister()
 	//check that the exception is thrown if the device is not opened
 	_pcieDeviceInstance->closeDev();
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0),
-			ExcPcieDevice );
+			PcieDeviceException );
 
 	_pcieDeviceInstance->openDev();// no need to check if this works because we did the open test first
 	_pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
@@ -373,7 +373,7 @@ void PcieDeviceTest::testReadRegister()
 
 	/** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 6),
-			ExcPcieDevice );
+			PcieDeviceException );
 
 }
 
@@ -392,7 +392,7 @@ void PcieDeviceTest::testWriteRegister()
 
 	/** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
 	BOOST_CHECK_THROW( _pcieDeviceInstance->writeReg(WORD_DUMMY_OFFSET, newUserWord, /*bar*/ 6),
-			ExcPcieDevice );
+			PcieDeviceException );
 }
 
 

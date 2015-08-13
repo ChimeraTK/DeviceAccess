@@ -59,51 +59,51 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 void MapFileParserTest::testFileDoesNotExist(){
   mtca4u::mapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("NonexistentFile.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
   try{
     fileparser.parse("NonexistentFile.map");
-  } catch (mtca4u::exMapFile& mapFileException){
+  } catch (mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_CANNOT_OPEN_MAP_FILE);
+	mtca4u::LibMapException::EX_CANNOT_OPEN_MAP_FILE);
   }
 }
 
 void MapFileParserTest::testInvalidMetadata(){
   mtca4u::mapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("invalid_metadata.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
 
   try{
     map_file_parser.parse("invalid_metadata.map");
-  } catch (mtca4u::exMapFile &mapFileException){
+  } catch (mtca4u::MapFileException &mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
+	mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
   }
 }
 
 void MapFileParserTest::testMandatoryRegisterFieldMissing () {
   mtca4u::mapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("MandatoryRegisterfIeldMissing.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
   try{
     map_file_parser.parse("MandatoryRegisterfIeldMissing.map");
   }
-  catch (mtca4u::exMapFile &mapFileException){
+  catch (mtca4u::MapFileException &mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
+	mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
   }
 }
 
 void MapFileParserTest::testIncorrectRegisterWidth () {
   mtca4u::mapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
   try{
     map_file_parser.parse("IncorrectRegisterWidth.map");
   }
-  catch (mtca4u::exMapFile &mapFileException){
+  catch (mtca4u::MapFileException &mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
+	mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
   }
 }
 
@@ -111,23 +111,23 @@ void MapFileParserTest::testFracBits () {
   mtca4u::mapFileParser map_file_parser1;
   mtca4u::mapFileParser map_file_parser2;
   BOOST_CHECK_THROW(map_file_parser1.parse("IncorrectFracBits1.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
   BOOST_CHECK_THROW(map_file_parser2.parse("IncorrectFracBits2.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
   try{
     map_file_parser1.parse("IncorrectFracBits1.map");
   }
-  catch (mtca4u::exMapFile &mapFileException){
+  catch (mtca4u::MapFileException &mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
+	mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
   }
 
   try{
     map_file_parser1.parse("IncorrectFracBits2.map");
   }
-  catch (mtca4u::exMapFile &mapFileException){
+  catch (mtca4u::MapFileException &mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
+	mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
   }
 
 }
@@ -305,12 +305,12 @@ void MapFileParserTest::testSplitStringAtLastDot(){
 void MapFileParserTest::testBadMappFileParse(){
   mtca4u::mapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
   try{
     fileparser.parse("badMapFile.map");
-  } catch (mtca4u::exMapFile& mapFileException){
+  } catch (mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_MAP_FILE_PARSE_ERROR);
+	mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
     BOOST_CHECK( std::string(mapFileException.what()) == "Error in mapp file: Empty register name in line 4!" );
   }
 }

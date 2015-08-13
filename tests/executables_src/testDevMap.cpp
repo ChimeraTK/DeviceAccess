@@ -208,12 +208,12 @@ void DevMapTest::testDevMapReadDMAErrors() {
   int32_t data;
   size_t dataSizeInBytes = 1 * 4;
   BOOST_CHECK_THROW(pcieDevice.readDMA("WORD_USER", &data, dataSizeInBytes),
-                    mtca4u::ExcMappedDevice);
+                    mtca4u::MappedDeviceException);
   try {
     pcieDevice.readDMA("WORD_USER", &data, dataSizeInBytes);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 }
 
@@ -250,19 +250,19 @@ void DevMapTest::testDevMapWriteDMA() {
   int32_t data;
   size_t dataSizeInBytes = 1 * 4;
   BOOST_CHECK_THROW(pcieDevice.writeDMA("WORD_USER", &data, dataSizeInBytes),
-                    mtca4u::ExcMappedDevice);
+                    mtca4u::MappedDeviceException);
   try {
     pcieDevice.writeDMA("WORD_USER", &data, dataSizeInBytes);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 
   int32_t adcdata[6] = { 0 };
   dataSizeInBytes = 6 * 4;
   BOOST_CHECK_THROW(
       pcieDevice.writeDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
-      mtca4u::ExcPcieDevice);
+      mtca4u::PcieDeviceException);
 }
 
 void DevMapTest::testDevMapCheckRegister() {
@@ -276,35 +276,35 @@ void DevMapTest::testDevMapCheckRegister() {
   int32_t data = 1;
   BOOST_CHECK_THROW(
       pcieDevice.writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::ExcMappedDevice);
+      mtca4u::MappedDeviceException);
   try {
     pcieDevice.writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 3;
   addRegOffset = 4;
   BOOST_CHECK_THROW(
       pcieDevice.writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::ExcMappedDevice);
+      mtca4u::MappedDeviceException);
   try {
     pcieDevice.writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 4;
   BOOST_CHECK_THROW(
       pcieDevice.writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::ExcMappedDevice);
+      mtca4u::MappedDeviceException);
   try {
     pcieDevice.writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 }
 
@@ -317,7 +317,7 @@ void DevMapTest::testRegAccsorReadDMA() {
   int32_t data = 1;
   boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
   non_dma_accesible_reg = pcieDevice.getRegisterAccessor("AREA_DMAABLE");
-  BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::ExcMappedDevice);
+  BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::MappedDeviceException);
 
   pcieDevice.writeReg("WORD_ADC_ENA", &data);
   int32_t retreived_data[6];
@@ -345,33 +345,33 @@ void DevMapTest::testRegAccsorCheckRegister() {
   boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
   word_adc_ena = pcieDevice.getRegisterAccessor("WORD_ADC_ENA");
   BOOST_CHECK_THROW(word_adc_ena->writeReg(&data, dataSize, addRegOffset),
-                    mtca4u::ExcMappedDevice);
+                    mtca4u::MappedDeviceException);
   try {
     word_adc_ena->writeReg(&data, dataSize, addRegOffset);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 3;
   addRegOffset = 4;
   BOOST_CHECK_THROW(word_adc_ena->writeReg(&data, dataSize, addRegOffset),
-                    mtca4u::ExcMappedDevice);
+                    mtca4u::MappedDeviceException);
   try {
     word_adc_ena->writeReg(&data, dataSize, addRegOffset);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 4;
   BOOST_CHECK_THROW(word_adc_ena->writeReg(&data, dataSize, addRegOffset),
-                    mtca4u::ExcMappedDevice);
+                    mtca4u::MappedDeviceException);
   try {
     word_adc_ena->writeReg(&data, dataSize, addRegOffset);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
 }
 
@@ -386,19 +386,19 @@ void DevMapTest::testRegAccsorWriteDMA() {
   non_dma_accesible_reg = pcieDevice.getRegisterAccessor("WORD_USER");
   size_t dataSizeInBytes = 1 * 4;
   BOOST_CHECK_THROW(non_dma_accesible_reg->writeDMA(&data, dataSizeInBytes),
-                    mtca4u::ExcMappedDevice);
+                    mtca4u::MappedDeviceException);
   try {
     pcieDevice.writeDMA("WORD_USER", &data, dataSizeInBytes);
   }
-  catch (mtca4u::ExcMappedDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcMappedDevice::EX_WRONG_PARAMETER);
+  catch (mtca4u::MappedDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
   }
   boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
   dma_accesible_reg = pcieDevice.getRegisterAccessor("AREA_DMA_VIA_DMA");
   int32_t adcdata[6] = { 0 };
   dataSizeInBytes = 6 * 4;
   BOOST_CHECK_THROW(dma_accesible_reg->writeDMA(adcdata, dataSizeInBytes),
-                    mtca4u::ExcPcieDevice);
+                    mtca4u::PcieDeviceException);
 }
 
 void DevMapTest::testRegAccsorReadReg() {
@@ -476,12 +476,12 @@ void DevMapTest::testReadBadReg() {
 
   int32_t data;
   BOOST_CHECK_THROW(pcieDevice.readReg("NON_EXISTENT_REGISTER", &data),
-                    mtca4u::ExcPcieDevice);
+                    mtca4u::PcieDeviceException);
   try {
     pcieDevice.readReg("NON_EXISTENT_REGISTER", &data);
   }
-  catch (mtca4u::ExcPcieDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcPcieDevice::EX_READ_ERROR);
+  catch (mtca4u::PcieDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::PcieDeviceException::EX_READ_ERROR);
   }
 }
 
@@ -492,12 +492,12 @@ void DevMapTest::testWriteBadReg() {
   pcieDevice.openDev(dummyDevice, validMappingFile);
   int32_t data;
   BOOST_CHECK_THROW(pcieDevice.writeReg("BROKEN_WRITE", &data),
-                    mtca4u::ExcPcieDevice);
+                    mtca4u::PcieDeviceException);
   try {
     pcieDevice.writeReg("BROKEN_WRITE", &data);
   }
-  catch (mtca4u::ExcPcieDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcPcieDevice::EX_WRITE_ERROR);
+  catch (mtca4u::PcieDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::PcieDeviceException::EX_WRITE_ERROR);
   }
 }
 
@@ -512,12 +512,12 @@ void DevMapTest::testDMAReadSizeTooSmall() {
 
   BOOST_CHECK_THROW(
       mtcaDevice.readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
-      mtca4u::ExcPcieDevice);
+      mtca4u::PcieDeviceException);
   try {
     mtcaDevice.readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes);
   }
-  catch (mtca4u::ExcPcieDevice& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::ExcPcieDevice::EX_DMA_READ_ERROR);
+  catch (mtca4u::PcieDeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::PcieDeviceException::EX_DMA_READ_ERROR);
   }
 }
 

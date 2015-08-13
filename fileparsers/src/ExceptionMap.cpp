@@ -3,43 +3,43 @@
 
 namespace mtca4u{
 
-exLibMap::~exLibMap() throw()
+LibMapException::~LibMapException() throw()
 {
     
 }
 
-exLibMap::exLibMap(const std::string &_exMessage, unsigned int _exID)
+LibMapException::LibMapException(const std::string &_exMessage, unsigned int _exID)
         : Exception(_exMessage, _exID)
 {
     
 }
 
-std::ostream& operator<<(std::ostream &os, const exLibMap& e)
+std::ostream& operator<<(std::ostream &os, const LibMapException& e)
 {    
     os << "(ID: " << e.exID << ")" << " " << e.exMessage;        
     return os;
 }
 
-exMapFile::exMapFile(const std::string &_exMessage, unsigned int _exID)
-        : exLibMap(_exMessage, _exID)
+MapFileException::MapFileException(const std::string &_exMessage, unsigned int _exID)
+        : LibMapException(_exMessage, _exID)
 {
     
 }
 
-exDmapFile::exDmapFile(const std::string &_exMessage, unsigned int _exID)
-        : exLibMap(_exMessage, _exID)
+DMapFileException::DMapFileException(const std::string &_exMessage, unsigned int _exID)
+        : LibMapException(_exMessage, _exID)
 {
     
 }
 
-exMapFileParser::exMapFileParser(const std::string &_exMessage, unsigned int _exID)
-        : exMapFile(_exMessage, _exID)
+MapFileParserException::MapFileParserException(const std::string &_exMessage, unsigned int _exID)
+        : MapFileException(_exMessage, _exID)
 {
     
 }
 
-exDmapFileParser::exDmapFileParser(const std::string &_exMessage, unsigned int _exID)
-        : exDmapFile(_exMessage, _exID)
+DMapFileParserException::DMapFileParserException(const std::string &_exMessage, unsigned int _exID)
+        : DMapFileException(_exMessage, _exID)
 {
     
 }

@@ -181,24 +181,24 @@ void MapFileTest::testGetRegisterInfo () {
 
   BOOST_CHECK_THROW(
       dummyMapFile.getRegisterInfo("some_name", reterivedMapElement),
-      mtca4u::exMapFile);
+      mtca4u::MapFileException);
   try{
     dummyMapFile.getRegisterInfo("some_name", reterivedMapElement);
-  } catch(mtca4u::exMapFile& mapFileException){
+  } catch(mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_NO_REGISTER_IN_MAP_FILE);
+	mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
   }
 
   dummyMapFile.getRegisterInfo(0, reterivedMapElement);
   BOOST_CHECK(compareMapElements(mapElement1, reterivedMapElement) == true);
   BOOST_CHECK_THROW(
       dummyMapFile.getRegisterInfo(3, reterivedMapElement),
-      mtca4u::exMapFile);
+      mtca4u::MapFileException);
   try{
     dummyMapFile.getRegisterInfo(3, reterivedMapElement);
-  } catch(mtca4u::exMapFile& mapFileException){
+  } catch(mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_NO_REGISTER_IN_MAP_FILE);
+	mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
   }
 
 }
@@ -218,12 +218,12 @@ void MapFileTest::testGetMetaData () {
   metaDataNameToRetrive = "some_name";
   BOOST_CHECK_THROW(
       dummyMapFile.getMetaData(metaDataNameToRetrive, retrivedValue),
-      mtca4u::exMapFile);
+      mtca4u::MapFileException);
   try{
     dummyMapFile.getMetaData(metaDataNameToRetrive, retrivedValue);
-  } catch (mtca4u::exMapFile& mapFileException){
+  } catch (mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
-	mtca4u::exLibMap::EX_NO_METADATA_IN_MAP_FILE);
+	mtca4u::LibMapException::EX_NO_METADATA_IN_MAP_FILE);
   }
 }
 

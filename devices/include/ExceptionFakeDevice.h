@@ -7,7 +7,7 @@
 
 namespace mtca4u{
 
-class ExcFakeDevice : public Exception {
+class FakeDeviceException : public Exception {
 public:
     enum {
                 EX_CANNOT_CREATE_DEV_FILE, 
@@ -19,7 +19,7 @@ public:
                 EX_DEVICE_CLOSED
     };
 public:
-    ExcFakeDevice(const std::string &_exMessage, unsigned int _exID);
+    FakeDeviceException(const std::string &_exMessage, unsigned int _exID);
 private:
 
 };

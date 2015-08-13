@@ -472,17 +472,17 @@ void MappedDevice<T>::checkRegister(const std::string &regName,
   mapFile::mapElem me;
   registerMap->getRegisterInfo(regName, me, regModule);
   if (addRegOffset % 4) {
-    throw ExcMappedDevice("Register offset must be divisible by 4",
-                   ExcMappedDevice::EX_WRONG_PARAMETER);
+    throw MappedDeviceException("Register offset must be divisible by 4",
+                   MappedDeviceException::EX_WRONG_PARAMETER);
   }
   if (dataSize) {
     if (dataSize % 4) {
-      throw ExcMappedDevice("Data size must be divisible by 4",
-                     ExcMappedDevice::EX_WRONG_PARAMETER);
+      throw MappedDeviceException("Data size must be divisible by 4",
+                     MappedDeviceException::EX_WRONG_PARAMETER);
     }
     if (dataSize > me.reg_size - addRegOffset) {
-      throw ExcMappedDevice("Data size exceed register size",
-                     ExcMappedDevice::EX_WRONG_PARAMETER);
+      throw MappedDeviceException("Data size exceed register size",
+                     MappedDeviceException::EX_WRONG_PARAMETER);
     }
     retDataSize = dataSize;
   } else {
@@ -547,9 +547,9 @@ void MappedDevice<T>::readDMA(const std::string &regName,
   checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
                 retRegOff, retRegBar);
   if (retRegBar != 0xD) {
-    throw ExcMappedDevice("Cannot read data from register \"" + regName +
+    throw MappedDeviceException("Cannot read data from register \"" + regName +
                        "\" through DMA",
-                   ExcMappedDevice::EX_WRONG_PARAMETER);
+                   MappedDeviceException::EX_WRONG_PARAMETER);
   }
   readDMA(retRegOff, data, retDataSize, retRegBar);
 }
@@ -570,9 +570,9 @@ void MappedDevice<T>::writeDMA(const std::string &regName,
   checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
                 retRegOff, retRegBar);
   if (retRegBar != 0xD) {
-    throw ExcMappedDevice("Cannot read data from register \"" + regName +
+    throw MappedDeviceException("Cannot read data from register \"" + regName +
                        "\" through DMA",
-                   ExcMappedDevice::EX_WRONG_PARAMETER);
+                   MappedDeviceException::EX_WRONG_PARAMETER);
   }
   writeDMA(retRegOff, data, retDataSize, retRegBar);
 }
@@ -765,17 +765,17 @@ void MappedDevice<T>::RegisterAccessor::checkRegister(const mapFile::mapElem &me
                                                 uint32_t &retDataSize,
                                                 uint32_t &retRegOff) {
   if (addRegOffset % 4) {
-    throw ExcMappedDevice("Register offset must be divisible by 4",
-                   ExcMappedDevice::EX_WRONG_PARAMETER);
+    throw MappedDeviceException("Register offset must be divisible by 4",
+                   MappedDeviceException::EX_WRONG_PARAMETER);
   }
   if (dataSize) {
     if (dataSize % 4) {
-      throw ExcMappedDevice("Data size must be divisible by 4",
-                     ExcMappedDevice::EX_WRONG_PARAMETER);
+      throw MappedDeviceException("Data size must be divisible by 4",
+      		MappedDeviceException::EX_WRONG_PARAMETER);
     }
     if (dataSize > me.reg_size - addRegOffset) {
-      throw ExcMappedDevice("Data size exceed register size",
-                     ExcMappedDevice::EX_WRONG_PARAMETER);
+      throw MappedDeviceException("Data size exceed register size",
+      		MappedDeviceException::EX_WRONG_PARAMETER);
     }
     retDataSize = dataSize;
   } else {
@@ -809,9 +809,9 @@ void MappedDevice<T>::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
   uint32_t retRegOff;
   checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
   if (me.reg_bar != 0xD) {
-    throw ExcMappedDevice("Cannot read data from register \"" + me.reg_name +
+    throw MappedDeviceException("Cannot read data from register \"" + me.reg_name +
                        "\" through DMA",
-                   ExcMappedDevice::EX_WRONG_PARAMETER);
+											 MappedDeviceException::EX_WRONG_PARAMETER);
   }
   pdev->readDMA(retRegOff, data, retDataSize, me.reg_bar);
 }
@@ -823,9 +823,9 @@ void MappedDevice<T>::RegisterAccessor::writeDMA(int32_t const *data, size_t dat
   uint32_t retRegOff;
   checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
   if (me.reg_bar != 0xD) {
-    throw ExcMappedDevice("Cannot read data from register \"" + me.reg_name +
+    throw MappedDeviceException("Cannot read data from register \"" + me.reg_name +
                        "\" through DMA",
-                   ExcMappedDevice::EX_WRONG_PARAMETER);
+											 MappedDeviceException::EX_WRONG_PARAMETER);
   }
   pdev->writeDMA(retRegOff, data, retDataSize, me.reg_bar);
 }
@@ -844,8 +844,8 @@ FixedPointConverter const &MappedDevice<T>::RegisterAccessor::getFixedPointConve
 
 template <typename T> void MappedDevice<T>::checkPointersAreNotNull() const {
   if ((pdev == false) || (registerMap == false)) {
-    throw ExcMappedDevice("MappedDevice has not been opened correctly",
-                   ExcMappedDevice::EX_NOT_OPENED);
+    throw MappedDeviceException("MappedDevice has not been opened correctly",
+                  MappedDeviceException::EX_NOT_OPENED);
   }
 }
 

@@ -12,16 +12,16 @@
 
 namespace mtca4u{
 
-class ExcMappedDevice : public Exception {
+class MappedDeviceException : public Exception {
 public:
     
   enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE
   };
     
     
-    ExcMappedDevice(const std::string &_exMessage, unsigned int _exID);
-    virtual ~ExcMappedDevice() throw();
-    friend std::ostream& operator<<(std::ostream &os, const ExcMappedDevice& e); 
+  MappedDeviceException(const std::string &_exMessage, unsigned int _exID);
+    virtual ~MappedDeviceException() throw();
+    friend std::ostream& operator<<(std::ostream &os, const MappedDeviceException& e);
 private:
 
 };

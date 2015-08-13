@@ -36,8 +36,8 @@ void mapFile::insert(metaData &elem) {
     iter = std::find_if(map_file_elems.begin(), map_file_elems.end(), 
 			findRegisterByName_pred(reg_name, reg_module));
     if (iter == map_file_elems.end()) {
-        throw exMapFile("Cannot find register " + reg_module + (reg_module.empty()?"":".") + reg_name +
-			" in map file: " + map_file_name, exLibMap::EX_NO_REGISTER_IN_MAP_FILE);
+        throw MapFileException("Cannot find register " + reg_module + (reg_module.empty()?"":".") + reg_name +
+			" in map file: " + map_file_name, LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
     }
     value = *iter;
 }
@@ -46,7 +46,7 @@ void mapFile::getRegisterInfo(int reg_nr, mapElem &value) const {
     try {
         value = map_file_elems.at(reg_nr);
     } catch (std::out_of_range) {
-        throw exMapFile("Cannot find register in map file", exLibMap::EX_NO_REGISTER_IN_MAP_FILE);
+        throw MapFileException("Cannot find register in map file", LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
     }
 }
 
@@ -55,7 +55,7 @@ void mapFile::getMetaData(const std::string &metaDataName, std::string& metaData
 
     iter = std::find_if(metadata.begin(), metadata.end(), findMetaDataByName_pred(metaDataName));
     if (iter == metadata.end()) {
-        throw exMapFile("Cannot find metadata " + metaDataName + " in map file: " + map_file_name, exLibMap::EX_NO_METADATA_IN_MAP_FILE);
+        throw MapFileException("Cannot find metadata " + metaDataName + " in map file: " + map_file_name, LibMapException::EX_NO_METADATA_IN_MAP_FILE);
     }
     metaDataValue = (*iter).value;
 }

@@ -271,7 +271,7 @@ boost::shared_ptr< MultiplexedDataAccessor<UserType> >
     try{
       registerMapping->getRegisterInfo( sequenceNameStream.str(), sequenceInfo,
 					moduleName );
-    }catch(exMapFile & ){
+    }catch(MapFileException & ){
       break;
     }
 

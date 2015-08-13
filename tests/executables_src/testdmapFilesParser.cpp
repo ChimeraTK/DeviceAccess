@@ -163,14 +163,14 @@ std::cout<<path_to_dmap_file<<std::endl;
                                   reterievedDMapElement3) == true);
 
   BOOST_CHECK_THROW(filesParser.getdMapFileElem(3, reterievedDMapElement4),
-                    mtca4u::exLibMap);
+                    mtca4u::LibMapException);
 
   try {
     filesParser.getdMapFileElem(3, reterievedDMapElement4);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+                mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 
   mtca4u::DMapFile::dmapElem reterievedDMapElement5 =
@@ -180,13 +180,13 @@ std::cout<<path_to_dmap_file<<std::endl;
                                   reterievedDMapElement5) == true);
 
   BOOST_CHECK_THROW(filesParser.getdMapFileElem("card_not_present"),
-                    mtca4u::exDmapFileParser);
+                    mtca4u::DMapFileParserException);
   try {
     filesParser.getdMapFileElem("card_not_present");
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+                mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 
   mtca4u::DMapFile::dmapElem reterievedDMapElement6;
@@ -200,13 +200,13 @@ void DMapFilesParserTest::testParseEmptyDmapFile() {
   std::string dmapFileName("empty.dmap");
 
   BOOST_CHECK_THROW(filesParser.parse_file(dmapFileName),
-                    mtca4u::exDmapFileParser);
+                    mtca4u::DMapFileParserException);
   try {
     filesParser.parse_file(dmapFileName);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DMAP_DATA);
+                mtca4u::LibMapException::EX_NO_DMAP_DATA);
   }
 }
 
@@ -214,13 +214,13 @@ void DMapFilesParserTest::testParseNonExistentDmapFile(std::string dmapFile) {
   mtca4u::DMapFilesParser filesParser;
 
   BOOST_CHECK_THROW(filesParser.parse_file(dmapFile),
-                    mtca4u::exDmapFileParser);
+                    mtca4u::DMapFileParserException);
   try {
     filesParser.parse_file(dmapFile);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
+                mtca4u::LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
   }
 }
 
@@ -293,13 +293,13 @@ void DMapFilesParserTest::testGetMapFile() {
   }
 
   BOOST_CHECK_THROW(filesParser.getMapFile("card_unknown"),
-                    mtca4u::exDmapFileParser);
+                    mtca4u::DMapFileParserException);
   try {
     filesParser.getMapFile("card_unknown");
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+                mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 }
 
@@ -326,14 +326,14 @@ void DMapFilesParserTest::testGetRegisterInfo() {
   BOOST_CHECK_THROW(
       filesParser.getRegisterInfo("card_unknown", "WORD_STATUS",
                                   retrivedDeviceFileName, retrivedMapElem),
-      mtca4u::exDmapFileParser);
+      mtca4u::DMapFileParserException);
   try {
     filesParser.getRegisterInfo("card_unknown", "WORD_STATUS",
                                 retrivedDeviceFileName, retrivedMapElem);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+                mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 
   mtca4u::DMapFilesParser filesParser2;
@@ -371,15 +371,15 @@ void DMapFilesParserTest::testGetRegisterInfo() {
       filesParser.getRegisterInfo(
           "unknown_card", "WORD_STATUS", retrivedDeviceFileName, retrivedElemNr,
           retrivedOffset, retrivedRegSize, retrivedRegBar),
-      mtca4u::exDmapFileParser);
+      mtca4u::DMapFileParserException);
   try {
     filesParser.getRegisterInfo(
         "unknown_card", "WORD_STATUS", retrivedDeviceFileName, retrivedElemNr,
         retrivedOffset, retrivedRegSize, retrivedRegBar);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+                mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 }
 
@@ -528,13 +528,13 @@ void DMapFilesParserTest::testParsedirInvalidDir() {
   std::string path_to_dir = "NonExistentDir";
 
   BOOST_CHECK_THROW(filesParser.parse_dir(path_to_dir),
-                    mtca4u::exDmapFileParser)
+                    mtca4u::DMapFileParserException)
   try {
     filesParser.parse_dir(path_to_dir);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
+                mtca4u::LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
   }
 }
 
@@ -543,13 +543,13 @@ void DMapFilesParserTest::testParseEmptyDirectory() {
   std::string path_to_dir = "EmptyDir";
 
   BOOST_CHECK_THROW(filesParser.parse_dir(path_to_dir),
-                    mtca4u::exDmapFileParser)
+                    mtca4u::DMapFileParserException)
   try {
     filesParser.parse_dir(path_to_dir);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DMAP_DATA);
+                mtca4u::LibMapException::EX_NO_DMAP_DATA);
   }
 }
 
@@ -558,13 +558,13 @@ void DMapFilesParserTest::testParseDirectoryWithBlankDMap() {
   std::string path_to_dir = "./BlankFiles";
 
   BOOST_CHECK_THROW(filesParser.parse_dir(path_to_dir),
-                    mtca4u::exDmapFileParser)
+                    mtca4u::DMapFileParserException)
   try {
     filesParser.parse_dir(path_to_dir);
   }
-  catch (mtca4u::exDmapFileParser& exception) {
+  catch (mtca4u::DMapFileParserException& exception) {
     BOOST_CHECK(exception.getID() ==
-                mtca4u::exLibMap::EX_NO_DMAP_DATA);
+                mtca4u::LibMapException::EX_NO_DMAP_DATA);
   }
 }
 
@@ -673,12 +673,12 @@ inline void DMapFilesParserTest::testConstructor() {
 
 void DMapFilesParserTest::testMapException () {
   BOOST_CHECK_THROW(mtca4u::DMapFilesParser filesParser("./emptyMapFile"),
-                    mtca4u::exMapFile);
+                    mtca4u::MapFileException);
 
   try{
     mtca4u::DMapFilesParser filesParser("./emptyMapFile");
-  } catch(mtca4u::exLibMap& ex) {
-    BOOST_CHECK(ex.getID() == mtca4u::exLibMap::EX_CANNOT_OPEN_MAP_FILE);
+  } catch(mtca4u::LibMapException& ex) {
+    BOOST_CHECK(ex.getID() == mtca4u::LibMapException::EX_CANNOT_OPEN_MAP_FILE);
   }
 
 }

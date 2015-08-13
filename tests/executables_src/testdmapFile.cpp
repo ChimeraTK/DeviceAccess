@@ -116,13 +116,13 @@ void DMapFileTest::testGetDeviceInfo() {
   BOOST_CHECK((compareDMapElements(retrievedElement2, dMapElement2)) == true);
   BOOST_CHECK_THROW(
       mapFile.getDeviceInfo("invalid_card_name", retrievedElement3),
-      mtca4u::exDmapFile);
+      mtca4u::DMapFileException);
   try {
     mapFile.getDeviceInfo("invalid_card_name", retrievedElement3);
   }
-  catch (mtca4u::exDmapFile& dMapException) {
+  catch (mtca4u::DMapFileException& dMapException) {
     BOOST_CHECK(dMapException.getID() ==
-                mtca4u::exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+                mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 }
 

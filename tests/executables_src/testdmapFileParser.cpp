@@ -46,13 +46,13 @@ void DMapFileParserTest::testFileNotFound() {
   std::string file_path = "../dummypath.dmap";
   mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::exLibMap);
+  BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::LibMapException);
   try {
     fileParser.parse(file_path);
   }
-  catch (mtca4u::exLibMap& dMapFileParserException) {
+  catch (mtca4u::LibMapException& dMapFileParserException) {
     BOOST_CHECK(dMapFileParserException.getID() ==
-                mtca4u::exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
+                mtca4u::LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
   }
 }
 
@@ -60,14 +60,14 @@ void DMapFileParserTest::testErrorInDmapFile() {
   std::string incorrect_dmap_file = "invalid.dmap";
   mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::exLibMap);
+  BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::LibMapException);
   try {
     fileParser.parse(incorrect_dmap_file);
   }
-  catch (mtca4u::exLibMap& dMapFileParserException) {
+  catch (mtca4u::LibMapException& dMapFileParserException) {
     std::cout << dMapFileParserException;
     BOOST_CHECK(dMapFileParserException.getID() ==
-                mtca4u::exLibMap::EX_DMAP_FILE_PARSE_ERROR);
+                mtca4u::LibMapException::EX_DMAP_FILE_PARSE_ERROR);
   }
 }
 
@@ -75,14 +75,14 @@ void DMapFileParserTest::testNoDataInDmapFile() {
   std::string empty_dmap_file = "empty.dmap";
   mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::exLibMap);
+  BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::LibMapException);
   try {
     fileParser.parse(empty_dmap_file);
   }
-  catch (mtca4u::exLibMap& dMapFileParserException) {
+  catch (mtca4u::LibMapException& dMapFileParserException) {
     std::cout << dMapFileParserException;
     BOOST_CHECK(dMapFileParserException.getID() ==
-                mtca4u::exLibMap::EX_NO_DMAP_DATA);
+                mtca4u::LibMapException::EX_NO_DMAP_DATA);
   }
 }
 

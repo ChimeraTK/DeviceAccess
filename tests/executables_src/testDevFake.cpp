@@ -115,12 +115,12 @@ void FakeDeviceTest::testReOpenExistingDevice() {
 	FILE* file = fopen("._fakeDevice", "w");
 	fclose(file);
 	dummyDevice->openDev();
-	BOOST_CHECK_THROW(dummyDevice->openDev(), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->openDev(), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->openDev();
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_OPENED);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_OPENED);
 	}
 	remove("_._fakeDevice");
 }
@@ -139,20 +139,20 @@ void FakeDeviceTest::testReadAreaWithInvalidParams() {
 	mtca4u::BaseDevice *dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
-	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->readDMA(10, data, 3, 2);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_CLOSED);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
 	}
 	dummyDevice->openDev();
-	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->readDMA(10, data, 3, 2);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_FILE_READ_DATA_ERROR);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
 	remove("._DummyDevice");
 }
@@ -174,31 +174,31 @@ void FakeDeviceTest::testWriteRegErrors () {
 	int32_t data = 0x01020304;
 	uint32_t offset = 12;
 	uint8_t bar = 2;
-	BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, bar), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, bar), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->writeReg(offset, data, bar);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_CLOSED);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
 	}
 
 	dummyDevice->openDev();
-	BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, 8), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, 8), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->writeReg(offset, data, 8);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_FILE_WRITE_DATA_ERROR);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 
 	BOOST_CHECK_THROW(
 			dummyDevice->writeReg((uint32_t)MTCA4U_LIBDEV_BAR_MEM_SIZE, data, 2),
-			mtca4u::ExcFakeDevice);
+			mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->writeReg((uint32_t)MTCA4U_LIBDEV_BAR_MEM_SIZE, data, 2);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_FILE_WRITE_DATA_ERROR);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 	remove("._DummyDevice");
 }
@@ -248,21 +248,21 @@ void FakeDeviceTest::testWriteAreaWithInvalidParams () {
 	mtca4u::BaseDevice *dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
-	BOOST_CHECK_THROW(dummyDevice->writeDMA(10, data, 3, 2), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->writeDMA(10, data, 3, 2), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->writeDMA(10, data, 3, 2);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_CLOSED);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
 	}
 	dummyDevice->openDev();
 	int wrongDataSize = 3;
-	BOOST_CHECK_THROW(dummyDevice->writeDMA(10, data, wrongDataSize, 2), mtca4u::ExcFakeDevice);
+	BOOST_CHECK_THROW(dummyDevice->writeDMA(10, data, wrongDataSize, 2), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->writeDMA(10, data, 3, 2);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
-		BOOST_CHECK(a.getID() == mtca4u::ExcFakeDevice::EX_DEVICE_FILE_WRITE_DATA_ERROR);
+	catch (mtca4u::FakeDeviceException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 	remove("._DummyDevice");
 }
@@ -312,7 +312,7 @@ void FakeDeviceTest::testReadRegister() {
 		std::cout<<"data:"<<std::hex<<data<<std::endl;
 		BOOST_CHECK((uint32_t)data == 0xFFF0FFFF);
 	}
-	catch (mtca4u::ExcFakeDevice& a) {
+	catch (mtca4u::FakeDeviceException& a) {
 		std::cout<<a.getID()<<std::endl;
 	}
 }

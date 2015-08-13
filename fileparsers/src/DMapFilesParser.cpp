@@ -79,7 +79,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
     dir_new += "/";
 
   if ((dp = opendir(dir.c_str())) == NULL) {
-    throw exDmapFileParser("Cannot open directory: \"" + dir + "\"", exLibMap::EX_CANNOT_OPEN_DMAP_FILE);
+    throw DMapFileParserException("Cannot open directory: \"" + dir + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
   }
 
   while ((dirp = readdir(dp)) != NULL) {
@@ -94,8 +94,8 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
     if (file_name.substr(found) == ".dmap") {
       try {
 	dmap = dmap_file_parser.parse(dir_new + file_name);
-      } catch (exLibMap &e) {
-	if (e.getID() == exLibMap::EX_NO_DMAP_DATA) {
+      } catch (LibMapException &e) {
+	if (e.getID() == LibMapException::EX_NO_DMAP_DATA) {
 	  continue;
 	}
 	closedir(dp);
@@ -111,7 +111,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
 		} else {
 		  map = map_file_parser.parse((*dmap_elem_iter).map_file_name);
 		}
-	      } catch (exLibMap &e) {
+	      } catch (LibMapException &e) {
 		closedir(dp);
 		throw;
 	      }
@@ -126,7 +126,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
   closedir(dp);
   if (dmap_elems.size() == 0) {
     //TODO: change message? No dmap files in dir
-    throw exDmapFileParser("DMAP file is empty or does not exist", exLibMap::EX_NO_DMAP_DATA);
+    throw DMapFileParserException("DMAP file is empty or does not exist", LibMapException::EX_NO_DMAP_DATA);
   }
 
 #ifdef __LIBMAP_WITH_ERROR_CHECKING__       
@@ -190,7 +190,7 @@ ptrmapFile DMapFilesParser::getMapFile(const std::string &dev_name) {
   std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
-    throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+    throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   return (*dmap_iter).second;
 }
@@ -203,7 +203,7 @@ DMapFile::dmapElem const & DMapFilesParser::getdMapFileElem(const std::string &d
   std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator dmap_iter;
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
-    throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+    throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   return (*dmap_iter).first;
 }
@@ -212,7 +212,7 @@ void DMapFilesParser::getdMapFileElem(int elem_nr, DMapFile::dmapElem &dMapFileE
   try {
     dMapFileElem = dmap_elems.at(elem_nr).first;
   } catch (std::out_of_range) {
-    throw exDmapFileParser("Cannot find device", exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+    throw DMapFileParserException("Cannot find device", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 }
 
@@ -225,7 +225,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   }
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
-    throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+    throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   (*dmap_iter).second->getRegisterInfo(reg_name, elem);
   reg_offset = elem.reg_address;
@@ -243,7 +243,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   }
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
-    throw exDmapFileParser("Cannot find device " + dev_name, exLibMap::EX_NO_DEVICE_IN_DMAP_FILE);
+    throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   (*dmap_iter).second->getRegisterInfo(reg_name, elem);
   dev_file = (*dmap_iter).first.dev_file;
