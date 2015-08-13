@@ -127,7 +127,7 @@ void DMapFile::errorList::insert(const errorElem& elem) {
 
 std::ostream& operator<<(std::ostream &os, const DMapFile::errorList& me) {
     std::list<DMapFile::errorList::errorElem>::const_iterator iter;
-    for (iter = me.errors.begin(); iter != me.errors.end(); iter++) {
+    for (iter = me.errors.begin(); iter != me.errors.end(); ++iter) {
         os << (*iter) << std::endl;
     }
     return os;

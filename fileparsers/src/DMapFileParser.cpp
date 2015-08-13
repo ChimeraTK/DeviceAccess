@@ -13,7 +13,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
     std::istringstream is;
     DMapFile::dmapElem de;
     uint32_t line_nr = 0;
-    std::string critical;
+    //std::string critical;
 
     file.open(file_name.c_str());
     if (!file) {        

@@ -190,7 +190,7 @@ void PcieDeviceTest::testConstructor() {
 }
 
 PcieDeviceTest::PcieDeviceTest(std::string const & deviceFileName, unsigned int slot)
-: _deviceFileName(deviceFileName), _slot(slot)
+: _deviceFileName(deviceFileName), _slot(slot), _pcieDeviceInstance(0)
 {}
 
 

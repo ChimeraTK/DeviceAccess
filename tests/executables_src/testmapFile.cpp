@@ -309,7 +309,7 @@ void MapFileTest::testCheckRegisterAddressOverlap(){
   BOOST_CHECK(errorIterator->type ==
       mtca4u::mapFile::errorList::errorElem::WARNING);
 
-  errorIterator++;
+  ++errorIterator;
   BOOST_CHECK(errorIterator->err_reg_1.reg_name == "TEST_REGISTER_NAME_4");
   BOOST_CHECK(errorIterator->err_reg_2.reg_name == "TEST_REGISTER_NAME_1");
   BOOST_CHECK(errorIterator->err_type ==

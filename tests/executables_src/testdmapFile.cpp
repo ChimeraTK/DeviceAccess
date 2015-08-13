@@ -257,7 +257,7 @@ void DMapFileTest::testdmapCoutStreamOperator() {
 
 void DMapFileTest::testerrorElemCoutStreamOperator() {
   std::string dMapFileName = "dummy.map";
-  std::string commonCardName = "common_card";
+  //std::string commonCardName = "common_card";
   mtca4u::DMapFile mapFile(dMapFileName);
 
   mtca4u::DMapFile::dmapElem dMapElement1;

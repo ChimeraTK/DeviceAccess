@@ -21,13 +21,15 @@ namespace mtca4u {
 PcieDevice::PcieDevice()
 	:_deviceID(0),
 	_ioctlPhysicalSlot(0),
-	_ioctlDriverVersion(0) {}
+	_ioctlDriverVersion(0),
+	_ioctlDMA(0)	{}
 
 PcieDevice::PcieDevice(std::string host, std::string interface, std::list<std::string> parameters)
 : BaseDeviceImpl(host,interface,parameters)
 , _deviceID(0),
 _ioctlPhysicalSlot(0),
-_ioctlDriverVersion(0)
+_ioctlDriverVersion(0),
+_ioctlDMA(0)
 {
 	//temp
 	_interface = "/dev/"+_interface;
@@ -47,7 +49,7 @@ void PcieDevice::openDev() {
 
 void PcieDevice::openDev(const std::string& devName, int perm,
 		DeviceConfigBase* /*pConfig*/) {
-	if (_opened == true) {
+	if (_opened) {
 		throw PcieDeviceException("Device already has been _Opened",
 				PcieDeviceException::EX_DEVICE_OPENED);
 	}
@@ -129,7 +131,7 @@ void PcieDevice::determineDriverAndConfigureIoctl() {
 }
 
 void PcieDevice::closeDev() {
-	if (_opened == true) {
+	if (_opened) {
 		close(_deviceID);
 	}
 	_opened = false;

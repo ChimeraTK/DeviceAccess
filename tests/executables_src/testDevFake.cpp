@@ -22,6 +22,7 @@ class FakeDeviceTest {
 private:
 	mtca4u::BaseDevice *_fakeDevice;
 public:
+	FakeDeviceTest():_fakeDevice(0){};
 	// Try Creating a device and check if it is connected.
 	void testCreateDevice();
 

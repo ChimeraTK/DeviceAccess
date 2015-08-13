@@ -33,7 +33,7 @@ class TestableDummyDevice : public DummyDevice {
 
 class DummyDeviceTest {
 public:
-  DummyDeviceTest() : a(0), b(0), c(0) {}
+  DummyDeviceTest() : a(0), b(0), c(0), BaseDeviceInstance(0) {}
 
   static void testCalculateVirtualAddress();
   static void testCheckSizeIsMultipleOfWordSize();
