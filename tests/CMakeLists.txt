@@ -32,15 +32,7 @@ MACRO( COPY_MAPPING_FILES )
   # So this is not "copyonly"
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/valid.dmap)
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/dMapDir/valid.dmap)
-
-  # mapping and test script for the examples
-  # They go into a the examples directory because the dmapFliesParser scans the whole 
-  # directory and in the main build directory there are also ivalid ones.
-  # We also copy the bad mapping file so we can reuse dummies.dmap.
-  foreach( FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map  muxedDataAcessor.map dummies.dmap )
-    configure_file( ${FILE} ${PROJECT_BINARY_DIR}/examples/${FILE} copyonly)
-  endforeach( FILE )
-
+  
 ENDMACRO( COPY_MAPPING_FILES )
 
 MACRO( COPY_SELECTED_DIRECTORIES )
