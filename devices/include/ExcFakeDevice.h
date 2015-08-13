@@ -7,7 +7,7 @@
 
 namespace mtca4u{
 
-class ExcFakeDevice : public ExcBase {
+class ExcFakeDevice : public Exception {
 public:
     enum {
                 EX_CANNOT_CREATE_DEV_FILE, 

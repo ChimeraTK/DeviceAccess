@@ -12,7 +12,7 @@
 
 namespace mtca4u{
 
-class ExcMappedDevice : public ExcBase {
+class ExcMappedDevice : public Exception {
 public:
     
   enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE

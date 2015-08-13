@@ -5,14 +5,14 @@
 
 namespace mtca4u{
 
-class MultiplexedDataAccessorException : public ExcBase {
+class MultiplexedDataAccessorException : public Exception {
 public:
     
   enum { EMPTY_AREA, INVALID_WORD_SIZE, INVALID_N_ELEMENTS };
     
     
   MultiplexedDataAccessorException(const std::string &message, unsigned int ID)
-    : ExcBase(message, ID){}
+    : Exception(message, ID){}
 };
 
 }//namespace mtca4u

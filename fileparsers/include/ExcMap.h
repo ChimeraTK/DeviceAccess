@@ -15,7 +15,7 @@ namespace mtca4u{
 /**
  *      @brief  Provides base class for all exceptions from libmap                
  */
-class exLibMap : public ExcBase {
+class exLibMap : public Exception {
 public:
 
     enum {

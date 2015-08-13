@@ -5,21 +5,21 @@
 
 namespace mtca4u{
 
-ExcBase::ExcBase(const std::string &_exMessage, unsigned int _exID)
+Exception::Exception(const std::string &_exMessage, unsigned int _exID)
    : exMessage(_exMessage), exID(_exID)
 {
 }
 
-ExcBase::~ExcBase() throw() 
+Exception::~Exception() throw() 
 {
 }
 
-const char* ExcBase::what() const throw()
+const char* Exception::what() const throw()
 {
     return exMessage.c_str();
 }
 
-unsigned int ExcBase::getID() const
+unsigned int Exception::getID() const
 {
     return exID;
 }

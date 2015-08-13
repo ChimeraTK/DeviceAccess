@@ -18,7 +18,7 @@ namespace mtca4u{
  *      Stores exception ID and exception description in the form of text string.
  *
  */
-class ExcBase : public std::exception {
+class Exception : public std::exception {
 protected:
     std::string         exMessage;      /**< exception description*/
     unsigned int        exID;           /**< exception ID*/
@@ -29,7 +29,7 @@ public:
      * @param _exMessage exception description string
      * @param _exID exception ID
      */
-    ExcBase(const std::string &_exMessage, unsigned int _exID);
+    Exception(const std::string &_exMessage, unsigned int _exID);
     /**
      * @brief Accessor. Returns exception description string
      * 
@@ -45,7 +45,7 @@ public:
     /**
      * Class destructor
      */
-    virtual ~ExcBase() throw();
+    virtual ~Exception() throw();
 private:
 
 };

@@ -53,7 +53,7 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 		else
 			filesParser.parse_file(DMAP_FILE_PATH);
 	}
-	catch (ExcBase& e) {
+	catch (Exception& e) {
 		std::cout << e.what() << std::endl;
 		return boost::make_tuple((BaseDevice*)NULL, dmapElement);
 	}

@@ -22,11 +22,11 @@ struct Sdm
 	Sdm():_SdmVersion(0.1){}
 };
 
-class UtilitiesException : public ExcBase {
+class UtilitiesException : public Exception {
 public:
 	enum {INVALID_SDM};
 	UtilitiesException(const std::string &message, unsigned int exceptionID)
-	: ExcBase( message, exceptionID ){}
+	: Exception( message, exceptionID ){}
 };
 
 class Utilities {

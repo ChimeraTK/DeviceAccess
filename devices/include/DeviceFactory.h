@@ -23,11 +23,11 @@
 #define TEST_DMAP_FILE_PATH  "/dummies.dmap"
 namespace mtca4u {
 
-class DeviceFactoryException : public ExcBase {
+class DeviceFactoryException : public Exception {
 public:
 	enum {UNKNOWN_ALIAS,UNREGISTERED_DEVICE};
 	DeviceFactoryException(const std::string &message, unsigned int exceptionID)
-	: ExcBase( message, exceptionID ){}
+	: Exception( message, exceptionID ){}
 };
 
 /** DeviceFactory is a the factory class to create devices.

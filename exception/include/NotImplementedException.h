@@ -5,11 +5,11 @@
 
 namespace mtca4u{
 
-  class NotImplementedException: public ExcBase {
+  class NotImplementedException: public Exception {
   public:
 
     NotImplementedException(const std::string & message):
-      ExcBase(message, 0) {}
+      Exception(message, 0) {}
     virtual ~NotImplementedException() throw(){}
   };
 

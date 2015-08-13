@@ -9,7 +9,7 @@ exLibMap::~exLibMap() throw()
 }
 
 exLibMap::exLibMap(const std::string &_exMessage, unsigned int _exID)
-        : ExcBase(_exMessage, _exID)
+        : Exception(_exMessage, _exID)
 {
     
 }
