@@ -91,7 +91,7 @@ public:
 
 
 
-	static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+	static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 
 protected:
 	struct AddressRange{

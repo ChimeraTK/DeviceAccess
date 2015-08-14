@@ -76,7 +76,7 @@ public:
     virtual void readDeviceInfo(std::string* devInfo);
 
     /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
-    static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+    static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 };
 
 }//namespace mtca4u

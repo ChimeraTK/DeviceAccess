@@ -33,7 +33,7 @@ class TestableDummyDevice : public DummyDevice {
 
 class DummyDeviceTest {
 public:
-  DummyDeviceTest() : a(0), b(0), c(0), BaseDeviceInstance(0) {}
+  DummyDeviceTest() : a(0), b(0), c(0), BaseDeviceInstance() {}
 
   static void testCalculateVirtualAddress();
   static void testCheckSizeIsMultipleOfWordSize();
@@ -80,7 +80,7 @@ private:
   void increaseA() { ++a; }
   void increaseB() { ++b; }
   void increaseC() { ++c; }
-  BaseDevice* BaseDeviceInstance;
+  boost::shared_ptr<mtca4u::BaseDevice> BaseDeviceInstance;
 };
 
 class DummyDeviceTestSuite : public test_suite {
@@ -319,7 +319,8 @@ TestableDummyDevice* DummyDeviceTest::getBaseDeviceInstance(bool reOpen) {
       BaseDeviceInstance->closeDev();
     BaseDeviceInstance->openDev();
   }
-  return (static_cast<TestableDummyDevice*>(BaseDeviceInstance));
+  BaseDevice * rawBasePointer = BaseDeviceInstance.get();
+  return (static_cast<TestableDummyDevice*>(rawBasePointer));
 }
 
 void DummyDeviceTest::testReadDeviceInfo() {

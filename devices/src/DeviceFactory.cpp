@@ -15,7 +15,7 @@
 namespace mtca4u {
 
 void DeviceFactory::registerDevice(std::string interface, std::string protocol,
-		BaseDevice* (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
+		boost::shared_ptr<mtca4u::BaseDevice> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
 {
 #ifdef _DEBUG
 	std::cout << "adding:" << interface << std::endl << std::flush;
@@ -24,23 +24,23 @@ void DeviceFactory::registerDevice(std::string interface, std::string protocol,
 }
 
 MappedDevice<BaseDevice>* DeviceFactory::createMappedDevice(std::string devname) {
-	BaseDevice* base;
+	boost::shared_ptr<BaseDevice> base;
 	DMapFile::dmapElem elem;
 	boost::tie(base, elem) = parseDMap(devname);
-	if (base != 0)
+	if (base)
 		base->openDev();
 	return (new mtca4u::MappedDevice<mtca4u::BaseDevice>(base, elem.map_file_name));
 }
 
-BaseDevice* DeviceFactory::createDevice(std::string devname) {
-	BaseDevice* base;
+boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string devname) {
+	boost::shared_ptr<BaseDevice> base;
 	DMapFile::dmapElem elem;
 	boost::tie(base, elem) = parseDMap(devname);
 	return base;
 }
 
 
-boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::string devName)
+boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::parseDMap(std::string devName)
 {
 	std::vector<std::string> device_info;
 	std::string uri;
@@ -55,7 +55,7 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 	}
 	catch (Exception& e) {
 		std::cout << e.what() << std::endl;
-		return boost::make_tuple((BaseDevice*)NULL, dmapElement);
+		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement);
 	}
 
 #ifdef _DEBUG
@@ -85,7 +85,7 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 	{
 		// do not throw here because theoretically client could work with multiple unrelated devices
 		//throw DeviceFactoryException("Unknown device alias.", DeviceFactoryException::UNKNOWN_ALIAS);
-		return boost::make_tuple((BaseDevice*)NULL, dmapElement);
+		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement);
 	}
 
 #ifdef _DEBUG
@@ -108,7 +108,7 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 #endif
 
 
-	for (std::map< std::pair<std::string, std::string>, BaseDevice* (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
+	for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::BaseDevice> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
 			creatorMap.begin();
 			iter != creatorMap.end(); ++iter) {
 
@@ -121,7 +121,7 @@ boost::tuple<BaseDevice*, DMapFile::dmapElem> DeviceFactory::parseDMap(std::stri
 
 	}
 	throw DeviceFactoryException("Unregistered device.", DeviceFactoryException::UNREGISTERED_DEVICE);
-	return boost::make_tuple((BaseDevice*)NULL, dmapElement); //won't execute
+	return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement); //won't execute
 }
 
 } // namespace mtca4u

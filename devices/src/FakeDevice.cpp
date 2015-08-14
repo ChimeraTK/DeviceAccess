@@ -157,8 +157,8 @@ void FakeDevice::readDeviceInfo(std::string* devInfo)
 	*devInfo = "fake device: " + _pcieMemoryFileName;
 }
 
-BaseDevice* FakeDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
-	return new FakeDevice(host,interface,parameters);
+boost::shared_ptr<BaseDevice> FakeDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
+	return boost::shared_ptr<BaseDevice> ( new FakeDevice(host,interface,parameters));
 }
 
 }//namespace mtca4u

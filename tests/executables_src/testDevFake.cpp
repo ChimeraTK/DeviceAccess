@@ -20,9 +20,9 @@ using namespace boost::unit_test_framework;
 static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
 class FakeDeviceTest {
 private:
-	mtca4u::BaseDevice *_fakeDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> _fakeDevice;
 public:
-	FakeDeviceTest():_fakeDevice(0){};
+	FakeDeviceTest():_fakeDevice() {};
 	// Try Creating a device and check if it is connected.
 	void testCreateDevice();
 
@@ -111,7 +111,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 //Todo add fakeDevice file to cmake.
 void FakeDeviceTest::testReOpenExistingDevice() {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
 	FILE* file = fopen("._fakeDevice", "w");
 	fclose(file);
@@ -128,7 +128,7 @@ void FakeDeviceTest::testReOpenExistingDevice() {
 
 void FakeDeviceTest::testCreateFakeDevice() {
 	remove("._fakeDevice");
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
 	dummyDevice->openDev();
 	boost::filesystem::path pathToCreatedFile("._fakeDevice");
@@ -137,7 +137,7 @@ void FakeDeviceTest::testCreateFakeDevice() {
 }
 
 void FakeDeviceTest::testReadAreaWithInvalidParams() {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
 	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::FakeDeviceException);
@@ -159,7 +159,7 @@ void FakeDeviceTest::testReadAreaWithInvalidParams() {
 }
 
 void FakeDeviceTest::testWriteReg () {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	dummyDevice->openDev();
 	dummyDevice->writeReg(8, 0x01020304, 5);
@@ -170,7 +170,7 @@ void FakeDeviceTest::testWriteReg () {
 }
 
 void FakeDeviceTest::testWriteRegErrors () {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	int32_t data = 0x01020304;
 	uint32_t offset = 12;
@@ -205,7 +205,7 @@ void FakeDeviceTest::testWriteRegErrors () {
 }
 
 void FakeDeviceTest::testWriteArea () {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	dummyDevice->openDev();
 	const int dataSize = 4;
@@ -226,7 +226,7 @@ void FakeDeviceTest::testWriteArea () {
 }
 
 void FakeDeviceTest::testWriteDMA () {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	dummyDevice->openDev();
 	const int dataSize = 4;
@@ -246,7 +246,7 @@ void FakeDeviceTest::testWriteDMA () {
 }
 
 void FakeDeviceTest::testWriteAreaWithInvalidParams () {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
 	BOOST_CHECK_THROW(dummyDevice->writeDMA(10, data, 3, 2), mtca4u::FakeDeviceException);
@@ -269,7 +269,7 @@ void FakeDeviceTest::testWriteAreaWithInvalidParams () {
 }
 
 void FakeDeviceTest::testDeviceInfo () {
-	mtca4u::BaseDevice *dummyDevice;
+	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	dummyDevice->openDev();
 	std::string deviceInformation;
@@ -338,9 +338,9 @@ void FakeDeviceTest::testCreateDevice(){
 	/** Try creating a non existing device */
 	_fakeDevice = FactoryInstance.createDevice(NON_EXISTING_DEVICE);
 	BOOST_CHECK(_fakeDevice == 0);
-
 	/**Try creating local Fake device*/
-	mtca4u::BaseDevice* mappedfakeDevice = FactoryInstance.createDevice(REFERENCE_DEVICE);
+	boost::shared_ptr<mtca4u::BaseDevice> mappedfakeDevice = FactoryInstance.createDevice(REFERENCE_DEVICE);
+	std::cout<<"allo2"<<std::endl;
 	BOOST_CHECK(mappedfakeDevice != 0);
 	/** Device should be in connect state now */
 	BOOST_CHECK(mappedfakeDevice->isConnected() == true );

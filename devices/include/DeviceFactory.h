@@ -43,7 +43,7 @@ private:
 		registerDevice("dummy","",&DummyDevice::createInstance);
 	};
 
-	boost::tuple<BaseDevice*, DMapFile::dmapElem> parseDMap(std::string devName);
+	boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> parseDMap(std::string devName);
 
 	//DeviceFactory(DeviceFactory const&);     /** To avoid making copies */
 
@@ -52,21 +52,21 @@ private:
 	/** Holds  device type and function pointer to the createInstance function of
 	 * plugin*/
 
-	std::map< std::pair<std::string, std::string>, BaseDevice* (*)(std::string host, std::string instance, std::list<std::string>parameters) > creatorMap;
+	std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::BaseDevice> (*)(std::string host, std::string instance, std::list<std::string>parameters) > creatorMap;
 
 
 public:
 	/** This functions add new device using uri as a key. If a key already exist
 	 * it replaces it*/
 	void registerDevice(std::string interface, std::string protocol,
-			BaseDevice* (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters));
+			boost::shared_ptr<BaseDevice> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters));
 
 	/** Create a new device by calling the constructor and returning a pointer to
 	 * the
 	 * device */
 
 	MappedDevice<BaseDevice>* createMappedDevice(std::string devname);
-	BaseDevice* createDevice(std::string devname);
+	boost::shared_ptr<BaseDevice> createDevice(std::string devname);
 
 	/**Static function to get an instance of factory */
 	static DeviceFactory& getInstance() {

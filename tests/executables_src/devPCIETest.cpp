@@ -79,13 +79,12 @@ public:
 	/// Test that all functions throw an exception if the device is not opened.
 	void testFailIfDeviceClosed();
 
-
 private:
 	PcieDevice _pcieDevice;
 	std::string _deviceFileName;
 	unsigned int _slot;
 
-	BaseDevice *_pcieDeviceInstance;
+	boost::shared_ptr<BaseDevice>_pcieDeviceInstance;
 
 	// Internal function for better code readablility.
 	// Returns an error message. If the message is empty the test succeeded.
@@ -190,7 +189,7 @@ void PcieDeviceTest::testConstructor() {
 }
 
 PcieDeviceTest::PcieDeviceTest(std::string const & deviceFileName, unsigned int slot)
-: _deviceFileName(deviceFileName), _slot(slot), _pcieDeviceInstance(0)
+: _deviceFileName(deviceFileName), _slot(slot), _pcieDeviceInstance()
 {}
 
 

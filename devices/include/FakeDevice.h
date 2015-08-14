@@ -5,6 +5,7 @@
 #include "BaseDeviceImpl.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <boost/shared_ptr.hpp>
 
 #define MTCA4U_LIBDEV_BAR_NR 8
 #define MTCA4U_LIBDEV_BAR_MEM_SIZE (1024 * 1024)
@@ -41,7 +42,7 @@ public:
 
   virtual void readDeviceInfo(std::string* devInfo);
 
-  static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+  static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 
 private:
   /// A private copy constructor, cannot be called from outside.

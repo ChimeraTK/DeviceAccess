@@ -5,7 +5,7 @@ using namespace mtca4u;
 int main() {
 	//ExampleDeviceRegisterer::init();
 	DeviceFactory FactoryInstance = DeviceFactory::getInstance();
-	BaseDevice *_pcieDeviceInstance;
+	boost::shared_ptr<BaseDevice> _pcieDeviceInstance;
 	_pcieDeviceInstance = FactoryInstance.createDevice("PCIE0");
 	if (_pcieDeviceInstance == 0)
 	{
@@ -18,7 +18,7 @@ int main() {
 	if (_pcieDeviceInstance->isOpen() == false )
 		std::cout<<"Device status: Closed"<<std::endl;
 
-	BaseDevice* exampleDeviceInstance = FactoryInstance.createDevice("example");
+	boost::shared_ptr<BaseDevice> exampleDeviceInstance = FactoryInstance.createDevice("example");
 	if (exampleDeviceInstance == 0)
 	{
 		std::cout<<"Device Failed"<<std::endl;

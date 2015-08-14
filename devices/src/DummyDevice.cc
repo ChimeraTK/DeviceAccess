@@ -248,8 +248,8 @@ bool DummyDevice::isWriteRangeOverlap( AddressRange firstRange, AddressRange sec
 }
 
 
-BaseDevice* DummyDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
-	return new DummyDevice(host,interface,parameters);
+boost::shared_ptr<BaseDevice> DummyDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
+	return boost::shared_ptr<BaseDevice> ( new DummyDevice(host,interface,parameters) );
 }
 
 }// namespace mtca4u

@@ -7,6 +7,8 @@
 #include <unistd.h>
 
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+
 //#include <boost/lambda.hpp>
 
 // the io constants and struct for the driver
@@ -38,7 +40,7 @@ _ioctlDMA(0)
 #endif
 }
 
-PcieDevice::~PcieDevice() { closeDev(); }
+PcieDevice::~PcieDevice() {closeDev(); }
 
 void PcieDevice::openDev() {
 #ifdef _DEBUG
@@ -371,8 +373,8 @@ std::string PcieDevice::createErrorStringWithErrnoText(
 }
 
 
-BaseDevice* PcieDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
-	return new PcieDevice(host,interface,parameters);
+boost::shared_ptr<BaseDevice> PcieDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
+	return boost::shared_ptr<BaseDevice> (new PcieDevice(host,interface,parameters));
 }
 
 } // namespace mtca4u

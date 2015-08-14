@@ -20,11 +20,11 @@ ExampleDevice::ExampleDevice(std::string host, std::string interface, std::list<
 ExampleDevice::~ExampleDevice() {
 	closeDev();
 }
-BaseDevice* ExampleDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
+boost::shared_ptr<mtca4u::BaseDevice> ExampleDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
 #ifdef _DEBUG
 	std::cout<<"example createInstance"<<std::endl;
 #endif
-	return new ExampleDevice(host,interface,parameters);
+	return boost::shared_ptr<BaseDevice> ( new ExampleDevice(host,interface,parameters) );
 }
 void ExampleDevice::openDev()
 {

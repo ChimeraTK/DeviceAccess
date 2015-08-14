@@ -12,6 +12,7 @@
 #include "MtcaMappedDevice/DeviceFactory.h"
 #include <list>
 #include <iostream>
+#include <boost/shared_ptr.hpp>
 using namespace mtca4u;
 
 class ExampleDevice : public BaseDeviceImpl {
@@ -22,7 +23,7 @@ public:
   virtual ~ExampleDevice();
   virtual void openDev();
   virtual void closeDev();
-  static BaseDevice* createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+  static boost::shared_ptr<mtca4u::BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 
   virtual void openDev(const std::string& /*devName*/, int /*perm*/,
                          DeviceConfigBase* /*pConfig*/) {};
