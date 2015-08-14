@@ -1,5 +1,5 @@
 /**
- *      @file           mapFileParser.h
+ *      @file           MapFileParser.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @brief          Provides method to parse MAP file
  *                  

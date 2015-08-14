@@ -893,16 +893,19 @@ boost::shared_ptr<customClass> MappedDevice<T>::getCustomAccessor(
       customClass::createInstance(dataRegionName, module, pdev, registerMap));
 }
 
-} // namespace mtca4u
 
 template <typename T>
 inline mtca4u::MappedDevice<T>::MappedDevice(T *baseDevice,
                                  const std::string &mapFile)
     : pdev(baseDevice),
       registerMap(mtca4u::mapFileParser().parse(mapFile)) {}
+
 template <typename T>
 inline mtca4u::MappedDevice<T>::MappedDevice(boost::shared_ptr<BaseDevice> baseDevice,
                                  const std::string &mapFile)
     : pdev(baseDevice),
       registerMap(mtca4u::mapFileParser().parse(mapFile)) {}
+
+} // namespace mtca4u
+
 #endif /* MTCA4U_MAPPEDDEVICE_H */

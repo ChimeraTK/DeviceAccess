@@ -1,5 +1,5 @@
 /**
- *      @file           exBase.h
+ *      @file           Exception.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @version        1.0
  *      @brief          Provides base class for exception handling                

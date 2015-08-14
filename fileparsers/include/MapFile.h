@@ -1,5 +1,5 @@
 /**
- *      @file           mapFile.h
+ *      @file           MapFile.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @brief          Provides storage object for registers description taken from MAP file                
  */

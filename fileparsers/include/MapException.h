@@ -1,5 +1,5 @@
 /**
- *      @file           exlibmap.h
+ *      @file           MapException.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @version        1.0
  *      @brief          Provides exception classess for libmap                

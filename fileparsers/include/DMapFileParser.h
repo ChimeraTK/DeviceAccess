@@ -1,5 +1,5 @@
 /**
- *      @file           mapFileParser.h
+ *      @file           DMapFileParser.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @version        1.0
  *      @brief          Provides method to parse DMAP file

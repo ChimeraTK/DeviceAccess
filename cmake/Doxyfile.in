@@ -657,10 +657,12 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/libdev_v2 \
-                         @CMAKE_CURRENT_SOURCE_DIR@/libdevMap \
-                         @CMAKE_CURRENT_SOURCE_DIR@/libexbase \
-                         @CMAKE_CURRENT_SOURCE_DIR@/libmap \
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/devices \
+                         @CMAKE_CURRENT_SOURCE_DIR@/exception \
+                         @CMAKE_CURRENT_SOURCE_DIR@/fileparsers \
+                         @CMAKE_CURRENT_SOURCE_DIR@/mappeddevice \
+                         @CMAKE_CURRENT_SOURCE_DIR@/plugin_example \
+                         @CMAKE_CURRENT_SOURCE_DIR@/util \
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/mainpage.dox \
 			 @CMAKE_CURRENT_SOURCE_DIR@/doc/mapping.dox \
 			 @CMAKE_CURRENT_SOURCE_DIR@/doc/deviceMapping.dox
@@ -755,7 +757,8 @@ EXCLUDE_SYMBOLS        =
 # the \include command).
 
 EXAMPLE_PATH           = @CMAKE_CURRENT_SOURCE_DIR@/examples \
-		         @CMAKE_CURRENT_SOURCE_DIR@/libmap
+		         @CMAKE_CURRENT_SOURCE_DIR@/libmap   \	
+			 @CMAKE_CURRENT_SOURCE_DIR@/fileparsers
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
