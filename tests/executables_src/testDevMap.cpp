@@ -474,7 +474,7 @@ void DevMapTest::testReadBadReg() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
 
-  int32_t data;
+  int32_t data = 0;
   BOOST_CHECK_THROW(pcieDevice.readReg("NON_EXISTENT_REGISTER", &data),
                     mtca4u::PcieDeviceException);
   try {
