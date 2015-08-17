@@ -9,7 +9,7 @@
 get_filename_component(@PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 # There only is one include path, search for it
-FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR @PROJECT_NAME@/dmapFilesParser.h 
+FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR @PROJECT_NAME@/DMapFilesParser.h 
           ${@PROJECT_NAME@_CMAKE_DIR}/include
           /usr/include/mtca4u)
 

@@ -80,6 +80,44 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
+
+
+#change the install prefix to the source directory in case the user has not specified a destination 
+#i. e. CMAKE_INSTALL_PREFIX is not set manually
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  SET(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR} CACHE PATH "Install directory
+                 prefix" FORCE)
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+#Install the library and the executables
+install(TARGETS ${PROJECT_NAME}
+            RUNTIME DESTINATION bin
+	    LIBRARY DESTINATION lib
+  )
+
+#all include files go into include/PROJECT_NAME
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
+
+#create the config files by filling the correct variables into the template (*.cmake.in)
+#All variables @VARIABLE@ are replaced with the current values
+
+#We have nested @-statements, so we have to parse twice
+configure_file(cmake/${PROJECT_NAME}Config.cmake.in.in
+  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in" @ONLY)
+configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+
+configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in.in
+  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in" @ONLY)
+configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+ 
+# Install the ..Config.cmake and ..ConfigVersion.cmake
+install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
+  "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
+  DESTINATION . COMPONENT dev)
+
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
