@@ -84,7 +84,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::p
 	if (!found)
 	{
 		// do not throw here because theoretically client could work with multiple unrelated devices
-		//throw DeviceFactoryException("Unknown device alias.", DeviceFactoryException::UNKNOWN_ALIAS);
+		throw DeviceFactoryException("Unknown device alias.", DeviceFactoryException::UNKNOWN_ALIAS);
 		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement);
 	}
 

@@ -37,7 +37,6 @@ void FakeDevice::openDev()
 void FakeDevice::openDev(const std::string &devName, int /*perm*/, DeviceConfigBase* /*pConfig*/)
 {     
 	std::string name = "./" + devName;
-	std::cout<<"name:"<<name<<std::endl;
 	std::replace(name.begin(), name.end(), '/', '_');
 	_pcieMemoryFileName = name;
 	if (_opened == true) {
