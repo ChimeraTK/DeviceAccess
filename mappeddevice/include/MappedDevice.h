@@ -216,7 +216,6 @@ public:
 
   MappedDevice(){};
   MappedDevice(boost::shared_ptr<mtca4u::BaseDevice> baseDevice, const std::string & mapFileName);
-  MappedDevice(T* baseDevice, const std::string & mapFileName);
 
   virtual void openDev(const std::string &_devFileName,
                        const std::string &_mapFileName, int _perm = O_RDWR,
@@ -893,12 +892,6 @@ boost::shared_ptr<customClass> MappedDevice<T>::getCustomAccessor(
       customClass::createInstance(dataRegionName, module, pdev, registerMap));
 }
 
-
-template <typename T>
-inline mtca4u::MappedDevice<T>::MappedDevice(T *baseDevice,
-                                 const std::string &mapFile)
-    : pdev(baseDevice),
-      registerMap(mtca4u::mapFileParser().parse(mapFile)) {}
 
 template <typename T>
 inline mtca4u::MappedDevice<T>::MappedDevice(boost::shared_ptr<BaseDevice> baseDevice,
