@@ -336,8 +336,7 @@ void FakeDeviceTest::testOpenDevice(){
 
 void FakeDeviceTest::testCreateDevice(){
 	/** Try creating a non existing device */
-	_fakeDevice = FactoryInstance.createDevice(NON_EXISTING_DEVICE);
-	BOOST_CHECK(_fakeDevice == 0);
+	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),mtca4u::DeviceFactoryException);
 	/**Try creating local Fake device*/
 	boost::shared_ptr<mtca4u::BaseDevice> mappedfakeDevice = FactoryInstance.createDevice(REFERENCE_DEVICE);
 	std::cout<<"allo2"<<std::endl;

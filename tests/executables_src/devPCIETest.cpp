@@ -413,8 +413,7 @@ void PcieDeviceTest::testOpenDevice(){
 
 void PcieDeviceTest::testCreateDevice(){
 	/** Try creating a non existing device */
-	_pcieDeviceInstance = FactoryInstance.createDevice(NON_EXISTING_DEVICE);
-	BOOST_CHECK(_pcieDeviceInstance == 0);
+	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),DeviceFactoryException);
 	/** Try creating an existing device */
 	std::cout<<"DeviceName"<<_deviceFileName<<std::endl;
 	_pcieDeviceInstance = FactoryInstance.createDevice(_deviceFileName);

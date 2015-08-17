@@ -620,8 +620,7 @@ void DummyDeviceTest::testOpenDevice() {
 
 void DummyDeviceTest::testCreateDevice() {
   /** Try creating a non existing device */
-  BaseDeviceInstance = FactoryInstance.createDevice(NON_EXISTING_DEVICE);
-  BOOST_CHECK(BaseDeviceInstance == 0);
+  BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),DeviceFactoryException);
   /** Try creating an existing device */
   BaseDeviceInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
   BOOST_CHECK(BaseDeviceInstance != 0);
