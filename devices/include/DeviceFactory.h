@@ -65,8 +65,8 @@ public:
 	 * the
 	 * device */
 
-	MappedDevice<BaseDevice>* createMappedDevice(std::string devname);
 	boost::shared_ptr<BaseDevice> createDevice(std::string devname);
+	boost::shared_ptr < MappedDevice<BaseDevice> > createMappedDevice(std::string devname);
 
 	/**Static function to get an instance of factory */
 	static DeviceFactory& getInstance() {

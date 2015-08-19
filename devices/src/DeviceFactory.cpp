@@ -23,13 +23,13 @@ void DeviceFactory::registerDevice(std::string interface, std::string protocol,
 	creatorMap[make_pair(interface,protocol)] = creatorFunction;
 }
 
-MappedDevice<BaseDevice>* DeviceFactory::createMappedDevice(std::string devname) {
+boost::shared_ptr < MappedDevice<BaseDevice> > DeviceFactory::createMappedDevice(std::string devname) {
 	boost::shared_ptr<BaseDevice> base;
 	DMapFile::dmapElem elem;
 	boost::tie(base, elem) = parseDMap(devname);
 	if (base)
 		base->openDev();
-	return (new mtca4u::MappedDevice<mtca4u::BaseDevice>(base, elem.map_file_name));
+	return boost::shared_ptr< MappedDevice< BaseDevice > > (new mtca4u::MappedDevice<mtca4u::BaseDevice>(base, elem.map_file_name));
 }
 
 boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string devname) {

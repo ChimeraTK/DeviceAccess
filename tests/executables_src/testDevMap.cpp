@@ -547,7 +547,8 @@ void DevMapTest::testGetRegistersInModule() {
 
 
   mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-  mtca4u::MappedDevice<mtca4u::BaseDevice>* mappedDevice =
+  //mtca4u::MappedDevice<mtca4u::BaseDevice>* mappedDevice =
+  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
 	FactoryInstance.createMappedDevice("DUMMYD0");
 
   std::list<mtca4u::mapFile::mapElem> registerInfoList =
@@ -567,7 +568,7 @@ void DevMapTest::testGetRegistersInModule() {
   BOOST_CHECK(registerInfo->reg_name == "WORD_STATUS");
   BOOST_CHECK(registerInfo->reg_module == "APP0");
 
-  delete mappedDevice;
+  //delete mappedDevice;
 }
 
 #include <BaseDevice.h>

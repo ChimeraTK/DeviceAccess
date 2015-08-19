@@ -13,7 +13,7 @@ static const unsigned int WORD_USER_BAR = 0;
 int main(){
 
   static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-  mtca4u::MappedDevice<mtca4u::BaseDevice>* myDevice =
+  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myDevice =
   FactoryInstance.createMappedDevice("PCIE1");
   // read and print a data word from a register
   int32_t dataWord;

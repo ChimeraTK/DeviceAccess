@@ -17,7 +17,7 @@ int main(){
    * in dmap file. Look at DeviceFactory for further explaination */
 
   static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-	mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
+	boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
 	FactoryInstance.createMappedDevice("PCIE1");
 	boost::shared_ptr<mtca4u::MappedDevice<mtca4u::BaseDevice>::RegisterAccessor> accessor =
 			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);

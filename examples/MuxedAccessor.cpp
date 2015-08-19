@@ -17,7 +17,7 @@ static const uint totalNumElementsInAllSequences = 64;
 int main() {
   // open the mapped device:
   static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-  mtca4u::MappedDevice<mtca4u::BaseDevice>* mappedDevice =
+  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
 	FactoryInstance.createMappedDevice("PCIE3");
   /** Entry in dmap file is
 	 *  PCIE3  sdm://./pci:mtcadummys0; mtcadummy.map
@@ -77,7 +77,7 @@ int main() {
   /**********************************************************************/
   // Start of Real Example, now that DMA region is set up with multiplexed
   // sequences
-  mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
+  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
   	FactoryInstance.createMappedDevice("PCIE3");
 
   // The 16 bit elements in the 'DMA' region are converted into double because

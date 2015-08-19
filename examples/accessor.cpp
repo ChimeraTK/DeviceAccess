@@ -15,7 +15,7 @@ int main() {
   /** Entry in dmap file is
   * PCIE1     sdm://./pci:pcieunidummys6; mtcadummy.map
   */
-  mtca4u::MappedDevice<mtca4u::BaseDevice>* myMappedDevice =
+  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
 	FactoryInstance.createMappedDevice("PCIE1");
   boost::shared_ptr<mtca4u::MappedDevice<mtca4u::BaseDevice>::RegisterAccessor> accessor =
   			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
