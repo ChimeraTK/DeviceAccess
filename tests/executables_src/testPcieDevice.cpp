@@ -225,13 +225,13 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 	int32_t dataWord = 0; // Just use one single word, even for dma. nothing should be executed anyway.
 
 	_pcieDeviceInstance->close();
-	BOOST_CHECK_THROW(  _pcieDeviceInstance->readReg(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
+	BOOST_CHECK_THROW(  _pcieDeviceInstance->readRaw(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
 			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readArea(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
 			PcieDeviceException );
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readDMA(0, &dataWord, sizeof(dataWord), /*bar*/ 0),
 			PcieDeviceException );
-	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeReg(WORD_USER_OFFSET, 0, /*bar*/ 0),
+	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeRaw(WORD_USER_OFFSET, 0, /*bar*/ 0),
 			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeArea(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
 			PcieDeviceException );
@@ -249,9 +249,9 @@ void PcieDeviceTest::testReadDeviceInfo(){
 	// The device info returns slot and driver version (major and minor).
 	// For the dummy major and minor are the same as firmware and compilation, respectively.
 	int32_t major;
-	_pcieDeviceInstance->readReg(WORD_FIRMWARE_OFFSET, &major, /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_FIRMWARE_OFFSET, &major, /*bar*/ 0);
 	int32_t minor;
-	_pcieDeviceInstance->readReg(WORD_COMPILATION_OFFSET, &minor, /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_COMPILATION_OFFSET, &minor, /*bar*/ 0);
 	std::stringstream referenceInfo;
 	referenceInfo << "SLOT: "<< _slot << " DRV VER: "
 			<< major << "." << minor;
@@ -263,7 +263,7 @@ void PcieDeviceTest::testReadDeviceInfo(){
 
 void PcieDeviceTest::testReadDMA(){
 	// Start the ADC on the dummy device. This will fill the "DMA" buffer with the default values (index^2) in the first 25 words.
-	_pcieDeviceInstance->writeReg(WORD_ADC_ENA_OFFSET, 1 , /*bar*/ 0);
+	_pcieDeviceInstance->writeRaw(WORD_ADC_ENA_OFFSET, 1 , /*bar*/ 0);
 
 	std::vector<int32_t> dmaUserBuffer(N_WORDS_DMA,-1);
 
@@ -295,9 +295,9 @@ void PcieDeviceTest::testReadArea(){
 	// Read the first two words, which are WORD_FIRMWARE and WORD_COMPILATION
 	// We checked that single reading worked, so we use it to create the reference.
 	int32_t firmwareContent;
-	_pcieDeviceInstance->readReg(WORD_FIRMWARE_OFFSET, &firmwareContent, /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_FIRMWARE_OFFSET, &firmwareContent, /*bar*/ 0);
 	int32_t compilationContent;
-	_pcieDeviceInstance->readReg(WORD_COMPILATION_OFFSET, &compilationContent, /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_COMPILATION_OFFSET, &compilationContent, /*bar*/ 0);
 
 	// Now try reading them as area
 	int32_t twoWords[2];
@@ -314,7 +314,7 @@ void PcieDeviceTest::testReadArea(){
 
 	// also check another bar
 	// Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer) with the default values (index^2) in the first 25 words.
-	_pcieDeviceInstance->writeReg(WORD_ADC_ENA_OFFSET, 1 , /*bar*/ 0);
+	_pcieDeviceInstance->writeRaw(WORD_ADC_ENA_OFFSET, 1 , /*bar*/ 0);
 
 	// use the same test as for DMA
 	std::vector<int32_t> bar2Buffer(N_WORDS_DMA, -1);
@@ -363,15 +363,15 @@ void PcieDeviceTest::testReadRegister()
 
 	//check that the exception is thrown if the device is not opened
 	_pcieDeviceInstance->close();
-	BOOST_CHECK_THROW( _pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0),
+	BOOST_CHECK_THROW( _pcieDeviceInstance->readRaw(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0),
 			PcieDeviceException );
 
 	_pcieDeviceInstance->open();// no need to check if this works because we did the open test first
-	_pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
 	BOOST_CHECK_EQUAL( dataWord, DMMY_AS_ASCII );
 
 	/** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
-	BOOST_CHECK_THROW( _pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 6),
+	BOOST_CHECK_THROW( _pcieDeviceInstance->readRaw(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 6),
 			PcieDeviceException );
 
 }
@@ -383,14 +383,14 @@ void PcieDeviceTest::testWriteRegister()
 	// We read the user register, increment it by one, write it and reread it.
 	// As we checked that reading work, this is a reliable test that writing is ok.
 	int32_t originalUserWord, newUserWord;
-	_pcieDeviceInstance->readReg(WORD_USER_OFFSET, &originalUserWord, /*bar*/ 0);
-	_pcieDeviceInstance->writeReg(WORD_USER_OFFSET, originalUserWord +1 , /*bar*/ 0);
-	_pcieDeviceInstance->readReg(WORD_USER_OFFSET, &newUserWord, /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_USER_OFFSET, &originalUserWord, /*bar*/ 0);
+	_pcieDeviceInstance->writeRaw(WORD_USER_OFFSET, originalUserWord +1 , /*bar*/ 0);
+	_pcieDeviceInstance->readRaw(WORD_USER_OFFSET, &newUserWord, /*bar*/ 0);
 
 	BOOST_CHECK_EQUAL( originalUserWord +1, newUserWord );
 
 	/** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
-	BOOST_CHECK_THROW( _pcieDeviceInstance->writeReg(WORD_DUMMY_OFFSET, newUserWord, /*bar*/ 6),
+	BOOST_CHECK_THROW( _pcieDeviceInstance->writeRaw(WORD_DUMMY_OFFSET, newUserWord, /*bar*/ 6),
 			PcieDeviceException );
 }
 

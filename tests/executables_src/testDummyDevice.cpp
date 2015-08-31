@@ -197,21 +197,21 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
   uint32_t offset = mappingElement.reg_address;
   uint8_t bar = mappingElement.reg_bar;
   int32_t dataContent = -1;
-  BOOST_CHECK_NO_THROW(dummyDevice->readReg(offset, &dataContent, bar));
+  BOOST_CHECK_NO_THROW(dummyDevice->readRaw(offset, &dataContent, bar));
   BOOST_CHECK(dataContent == 0);
   dataContent = 47;
-  BOOST_CHECK_NO_THROW(dummyDevice->writeReg(offset, dataContent, bar));
+  BOOST_CHECK_NO_THROW(dummyDevice->writeRaw(offset, dataContent, bar));
   dataContent = -1; // make sure the value is really being read
   // no need to test NO_THROW on the same register twice
-  dummyDevice->readReg(offset, &dataContent, bar);
+  dummyDevice->readRaw(offset, &dataContent, bar);
   BOOST_CHECK(dataContent == 47);
 
   // the size as index is invalid, allowed range is 0..size-1 included.
-  BOOST_CHECK_THROW(dummyDevice->readReg(dummyDevice->_barContents[bar].size() *
+  BOOST_CHECK_THROW(dummyDevice->readRaw(dummyDevice->_barContents[bar].size() *
                                              sizeof(int32_t),
                                          &dataContent, bar),
                     DummyDeviceException);
-  BOOST_CHECK_THROW(dummyDevice->writeReg(
+  BOOST_CHECK_THROW(dummyDevice->writeRaw(
                         dummyDevice->_barContents[bar].size() * sizeof(int32_t),
                         dataContent, bar),
                     DummyDeviceException);
@@ -377,7 +377,7 @@ void DummyDeviceTest::testReadOnly() {
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 29);
   // also test with single write operations
   for (size_t index = 0; index < sizeInWords; ++index) {
-    dummyDevice->writeReg(offset + index * sizeof(int32_t), dataContent[index],
+    dummyDevice->writeRaw(offset + index * sizeof(int32_t), dataContent[index],
                           bar);
   }
 
@@ -390,10 +390,10 @@ void DummyDeviceTest::testReadOnly() {
 
   // check that the next register is still writeable (boundary test)
   int32_t originalNextDataWord;
-  dummyDevice->readReg(offset + sizeInBytes, &originalNextDataWord, bar);
-  dummyDevice->writeReg(offset + sizeInBytes, originalNextDataWord + 1, bar);
+  dummyDevice->readRaw(offset + sizeInBytes, &originalNextDataWord, bar);
+  dummyDevice->writeRaw(offset + sizeInBytes, originalNextDataWord + 1, bar);
   int32_t readbackWord;
-  dummyDevice->readReg(offset + sizeInBytes, &readbackWord, bar);
+  dummyDevice->readRaw(offset + sizeInBytes, &readbackWord, bar);
   BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
 
@@ -423,40 +423,40 @@ void DummyDeviceTest::testWriteCallbackFunctions() {
 
   // test single writes
   int32_t dataWord(42);
-  dummyDevice->writeReg(12, dataWord, 0); // nothing
+  dummyDevice->writeRaw(12, dataWord, 0); // nothing
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 0);
 
-  dummyDevice->writeReg(20, dataWord, 0); // c
+  dummyDevice->writeRaw(20, dataWord, 0); // c
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 1);
-  dummyDevice->writeReg(24, dataWord, 0); // c
+  dummyDevice->writeRaw(24, dataWord, 0); // c
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 2);
-  dummyDevice->writeReg(28, dataWord, 0); // bc
+  dummyDevice->writeRaw(28, dataWord, 0); // bc
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 1);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(32, dataWord, 0); // read only
+  dummyDevice->writeRaw(32, dataWord, 0); // read only
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 1);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(36, dataWord, 0); // ab
+  dummyDevice->writeRaw(36, dataWord, 0); // ab
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(40, dataWord, 0); // read only
+  dummyDevice->writeRaw(40, dataWord, 0); // read only
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(44, dataWord, 0); // read only
+  dummyDevice->writeRaw(44, dataWord, 0); // read only
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(48, dataWord, 0); // b
+  dummyDevice->writeRaw(48, dataWord, 0); // b
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 3);
   BOOST_CHECK(c == 3);
@@ -508,10 +508,10 @@ void DummyDeviceTest::testWriteRegisterWithoutCallback() {
   BOOST_CHECK(c == 0); // c must not change
 
   // read only is also disabled for this internal function
-  dummyDevice->readReg(40, &dataWord, 0);
+  dummyDevice->readRaw(40, &dataWord, 0);
   dummyDevice->writeRegisterWithoutCallback(40, dataWord + 1, 0);
   int32_t readbackDataWord;
-  dummyDevice->readReg(40, &readbackDataWord, 0);
+  dummyDevice->readRaw(40, &readbackDataWord, 0);
   BOOST_CHECK(readbackDataWord == dataWord + 1);
 }
 

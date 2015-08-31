@@ -22,12 +22,12 @@ int main() {
   // read and print a data word works just like the devMap functions,
   // except that you don't give the register name
   int32_t dataWord;
-  accessor->readReg(&dataWord);
+  accessor->readRaw(&dataWord);
   std::cout << "Data word on the device is " << dataWord << std::endl;
 
   int32_t writeWord = dataWord + 42;
-  accessor->writeReg(&writeWord);
-  accessor->readReg(&dataWord);
+  accessor->writeRaw(&writeWord);
+  accessor->readRaw(&dataWord);
   std::cout << "Data word on the device now is " << dataWord << std::endl;
 
   // The data word in the example is interpreted as 12 bit signed
@@ -36,7 +36,7 @@ int main() {
   std::cout << "Data as float is " << accessor->read<float>() << std::endl;
 
   accessor->write(17.32);
-  accessor->readReg(&dataWord);
+  accessor->readRaw(&dataWord);
   std::cout << "Float value " << accessor->read<float>()
             << " has the fixed point representation " << std::showbase
             << std::hex << dataWord << std::dec << std::endl;

@@ -17,12 +17,12 @@ int main(){
   FactoryInstance.createMappedDevice("PCIE1");
   // read and print a data word from a register
   int32_t dataWord;
-  myDevice->readReg(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);
+  myDevice->readRaw(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);
   std::cout << "Data word on the device is " << dataWord << std::endl;
 
   // write something different to the register, read it back and print it
-  myDevice->writeReg(WORD_USER_OFFSET, dataWord + 42, 0 /*bar 0*/);
-  myDevice->readReg(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);
+  myDevice->writeRaw(WORD_USER_OFFSET, dataWord + 42, 0 /*bar 0*/);
+  myDevice->readRaw(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);
   std::cout << "Data word on the device now is " << dataWord << std::endl;
 
   // It is good style to close the device when you are done, although

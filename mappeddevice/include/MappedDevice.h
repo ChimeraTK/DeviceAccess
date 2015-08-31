@@ -78,22 +78,22 @@ public:
 
     /** Read one ore more words from the device. It calls BaseDevice::readArea,
      * not
-     * BaseDevice::readReg.
+     * BaseDevice::readRaw.
      *  @attention In case you leave data size at 0, the full size of the
      * register is read, not just one
      *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
      */
-    void readReg(int32_t *data, size_t dataSize = 0,
+    void readRaw(int32_t *data, size_t dataSize = 0,
                  uint32_t addRegOffset = 0) const;
 
     /** Write one ore more words to the device. It calls BaseDevice::readArea,
      * not
-     * BaseDevice::readReg.
+     * BaseDevice::readRaw.
      *  @attention In case you leave data size at 0, the full size of the
      * register is read, not just one
      *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
      */
-    void writeReg(int32_t const *data, size_t dataSize = 0,
+    void writeRaw(int32_t const *data, size_t dataSize = 0,
                   uint32_t addRegOffset = 0);
 
     void readDMA(int32_t *data, size_t dataSize = 0,
@@ -225,8 +225,8 @@ public:
       int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);
   virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
   virtual void close();
-  virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
-  virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
+  virtual void readRaw(uint32_t regOffset, int32_t *data, uint8_t bar) const;
+  virtual void writeRaw(uint32_t regOffset, int32_t data, uint8_t bar);
   virtual void readArea(uint32_t regOffset, int32_t *data, size_t size,
                         uint8_t bar) const;
   virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size,
@@ -238,12 +238,12 @@ public:
   virtual std::string readDeviceInfo() const;
 
   /** Read one or more words from the device. It calls BaseDevice::readArea, not
-   * BaseDevice::readReg.
+   * BaseDevice::readRaw.
    *  @attention In case you leave data size at 0, the full size of the
    * register
    * is read, not just one
    *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
-   *  The original readReg function without module name, kept for backward
+   *  The original readRaw function without module name, kept for backward
    * compatibility.
    *  The signature was changed and not extendet to keep the functionality of
    * the default parameters for
@@ -251,27 +251,27 @@ public:
    * the
    * future.
    */
-  virtual void readReg(const std::string &regName, int32_t *data,
+  virtual void readRaw(const std::string &regName, int32_t *data,
                        size_t dataSize = 0, uint32_t addRegOffset = 0) const;
   /** Read one or more words from the device. It calls BaseDevice::readArea, not
-   * BaseDevice::readReg.
+   * BaseDevice::readRaw.
    *  @attention In case you leave data size at 0, the full size of the
    * register
    * is read, not just one
    *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
    */
-  virtual void readReg(const std::string &regName, const std::string &regModule,
+  virtual void readRaw(const std::string &regName, const std::string &regModule,
                        int32_t *data, size_t dataSize = 0,
                        uint32_t addRegOffset = 0) const;
 
   /** Write one or more words from the device. It calls BaseDevice::writeArea,
    * not
-   * BaseDevice::writeReg.
+   * BaseDevice::writeRaw.
    *  @attention In case you leave data size at 0, the full size of the
    * register
    * is written, not just one
    *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
-   *  The original writeReg function without module name, kept for backward
+   *  The original writeRaw function without module name, kept for backward
    * compatibility.
    *  The signature was changed and not extendet to keep the functionality of
    * the default parameters for
@@ -279,17 +279,17 @@ public:
    * the
    * future.
    */
-  virtual void writeReg(const std::string &regName, int32_t const *data,
+  virtual void writeRaw(const std::string &regName, int32_t const *data,
                         size_t dataSize = 0, uint32_t addRegOffset = 0);
   /** Write one or more words from the device. It calls BaseDevice::writeArea,
    * not
-   * BaseDevice::writeReg.
+   * BaseDevice::writeRaw.
    *  @attention In case you leave data size at 0, the full size of the
    * register
    * is written, not just one
    *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
    */
-  virtual void writeReg(const std::string &regName,
+  virtual void writeRaw(const std::string &regName,
                         const std::string &regModule, int32_t const *data,
                         size_t dataSize = 0, uint32_t addRegOffset = 0);
 
@@ -493,13 +493,13 @@ void MappedDevice<T>::checkRegister(const std::string &regName,
 }
 
 template <typename T>
-void MappedDevice<T>::readReg(const std::string &regName, int32_t *data,
+void MappedDevice<T>::readRaw(const std::string &regName, int32_t *data,
                         size_t dataSize, uint32_t addRegOffset) const {
-  readReg(regName, std::string(), data, dataSize, addRegOffset);
+  readRaw(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 template <typename T>
-void MappedDevice<T>::readReg(const std::string &regName,
+void MappedDevice<T>::readRaw(const std::string &regName,
                         const std::string &regModule, int32_t *data,
                         size_t dataSize, uint32_t addRegOffset) const {
   uint32_t retDataSize;
@@ -512,13 +512,13 @@ void MappedDevice<T>::readReg(const std::string &regName,
 }
 
 template <typename T>
-void MappedDevice<T>::writeReg(const std::string &regName, int32_t const *data,
+void MappedDevice<T>::writeRaw(const std::string &regName, int32_t const *data,
                          size_t dataSize, uint32_t addRegOffset) {
-  writeReg(regName, std::string(), data, dataSize, addRegOffset);
+  writeRaw(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 template <typename T>
-void MappedDevice<T>::writeReg(const std::string &regName,
+void MappedDevice<T>::writeRaw(const std::string &regName,
                          const std::string &regModule, int32_t const *data,
                          size_t dataSize, uint32_t addRegOffset) {
   uint32_t retDataSize;
@@ -660,12 +660,12 @@ template <typename T> void MappedDevice<T>::close() {
  *      @brief  Function allows to read data from one register located in
  *              device address space
  *
- *      This is wrapper to standard readReg function defined in libdev
+ *      This is wrapper to standard readRaw function defined in libdev
  *library.
  *      Allows to read one register located in device address space. Size of
  *register
  *      depends on type of accessed device e.x. for PCIe device it is equal to
- *      32bit. Function throws the same exceptions like readReg from class
+ *      32bit. Function throws the same exceptions like readRaw from class
  *type.
  *
  *
@@ -674,21 +674,21 @@ template <typename T> void MappedDevice<T>::close() {
  *      @param  bar  - number of PCIe bar
  */
 template <typename T>
-void MappedDevice<T>::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
+void MappedDevice<T>::readRaw(uint32_t regOffset, int32_t *data, uint8_t bar) const {
   checkPointersAreNotNull();
-  pdev->readReg(regOffset, data, bar);
+  pdev->readRaw(regOffset, data, bar);
 }
 
 /**
  *      @brief  Function allows to write data to one register located in
  *              device address space
  *
- *      This is wrapper to standard writeReg function defined in libdev
+ *      This is wrapper to standard writeRaw function defined in libdev
  *library.
  *      Allows to write one register located in device address space. Size of
  *register
  *      depends on type of accessed device e.x. for PCIe device it is equal to
- *      32bit. Function throws the same exceptions like writeReg from class
+ *      32bit. Function throws the same exceptions like writeRaw from class
  *type.
  *
  *      @param  regOffset - offset of the register in device address space
@@ -696,9 +696,9 @@ void MappedDevice<T>::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) co
  *      @param  bar  - number of PCIe bar
  */
 template <typename T>
-void MappedDevice<T>::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
+void MappedDevice<T>::writeRaw(uint32_t regOffset, int32_t data, uint8_t bar) {
   checkPointersAreNotNull();
-  pdev->writeReg(regOffset, data, bar);
+  pdev->writeRaw(regOffset, data, bar);
 }
 
 /**
@@ -785,7 +785,7 @@ void MappedDevice<T>::RegisterAccessor::checkRegister(const mapFile::mapElem &me
 }
 
 template <typename T>
-void MappedDevice<T>::RegisterAccessor::readReg(int32_t *data, size_t dataSize,
+void MappedDevice<T>::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
                                           uint32_t addRegOffset) const {
   uint32_t retDataSize;
   uint32_t retRegOff;
@@ -794,7 +794,7 @@ void MappedDevice<T>::RegisterAccessor::readReg(int32_t *data, size_t dataSize,
 }
 
 template <typename T>
-void MappedDevice<T>::RegisterAccessor::writeReg(int32_t const *data, size_t dataSize,
+void MappedDevice<T>::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
                                            uint32_t addRegOffset) {
   uint32_t retDataSize;
   uint32_t retRegOff;
@@ -862,7 +862,7 @@ template <typename ConvertedDataType>
 void MappedDevice<T>::RegisterAccessor::write(ConvertedDataType const *convertedData,
                                         size_t nWords,
                                         uint32_t wordOffsetInRegister) {
-  // Check that nWords is not 0. The readReg command would read the whole
+  // Check that nWords is not 0. The readRaw command would read the whole
   // register, which
   // will the raw buffer size of 0.
   if (nWords == 0) {
@@ -873,7 +873,7 @@ void MappedDevice<T>::RegisterAccessor::write(ConvertedDataType const *converted
   for (size_t i = 0; i < nWords; ++i) {
     rawDataBuffer[i] = _fixedPointConverter.toFixedPoint(convertedData[i]);
   }
-  writeReg(&(rawDataBuffer[0]), nWords * sizeof(int32_t),
+  writeRaw(&(rawDataBuffer[0]), nWords * sizeof(int32_t),
            wordOffsetInRegister * sizeof(int32_t));
 }
 

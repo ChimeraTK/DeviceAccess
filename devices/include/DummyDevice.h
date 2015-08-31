@@ -35,9 +35,9 @@ public:
  *  executed if a certain register (or range of registers) is written.
  *  For instance: Writing to a START_DAQ register
  *  can fill a data buffer with dummy values which can be read back.
- *  For each call of writeReg or writeArea the callback function is called once.
+ *  For each call of writeRaw or writeArea the callback function is called once.
  *  If you require the callback function to be executed after each
- *  register change, use writeReg multiple times instead of writeArea.
+ *  register change, use writeRaw multiple times instead of writeArea.
  *
  *  Registers can be set to read-only mode. In this
  *  case a write operation will just be ignored and no callback
@@ -69,8 +69,8 @@ public:
 	 */
 	virtual void close();
 
-	virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
-	virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
+	virtual void readRaw(uint32_t regOffset, int32_t* data, uint8_t bar);
+	virtual void writeRaw(uint32_t regOffset, int32_t data, uint8_t bar);
 
 	virtual void readArea(uint32_t regOffset, int32_t* data, size_t size,
 			uint8_t bar);

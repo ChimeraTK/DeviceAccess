@@ -148,10 +148,10 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   int32_t dataWord;
   BOOST_CHECK_THROW(virginMappedDevice.close(), MappedDeviceException);
   BOOST_CHECK_THROW(
-      virginMappedDevice.readReg(0 /*regOffset*/, &dataWord, 0 /*bar*/),
+      virginMappedDevice.readRaw(0 /*regOffset*/, &dataWord, 0 /*bar*/),
       MappedDeviceException);
   BOOST_CHECK_THROW(
-      virginMappedDevice.writeReg(0 /*regOffset*/, dataWord, 0 /*bar*/),
+      virginMappedDevice.writeRaw(0 /*regOffset*/, dataWord, 0 /*bar*/),
       MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readArea(0 /*regOffset*/, &dataWord,
                                                 4 /*size*/, 0 /*bar*/),
@@ -170,9 +170,9 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   //BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(&deviceInfo), MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(), MappedDeviceException);
 
-  BOOST_CHECK_THROW(virginMappedDevice.readReg("irrelevant", &dataWord),
+  BOOST_CHECK_THROW(virginMappedDevice.readRaw("irrelevant", &dataWord),
                     MappedDeviceException);
-  BOOST_CHECK_THROW(virginMappedDevice.writeReg("irrelevant", &dataWord),
+  BOOST_CHECK_THROW(virginMappedDevice.writeRaw("irrelevant", &dataWord),
                     MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readDMA("irrelevant", &dataWord),
                     MappedDeviceException);
@@ -267,9 +267,9 @@ void MtcaMappedDeviceTest::testRegObject_readBlock() {
   // trigger the "DAQ" sequence which writes i*i into the first 25 registers, so
   // we know what we have
   int32_t tempWord = 0;
-  _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
+  _mappedDevice.writeRaw("WORD_ADC_ENA", &tempWord);
   tempWord = 1;
-  _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
+  _mappedDevice.writeRaw("WORD_ADC_ENA", &tempWord);
 
   MtcaMappedDevice::regObject registerAccessor =
       _mappedDevice.getRegObject("AREA_DMAABLE");
@@ -353,7 +353,7 @@ void MtcaMappedDeviceTest::testRegObject_readSimple() {
   // 3 fractional bits, 12 bits, signed (from the map file)
 
   static const int inputValue = 0xFA5;
-  registerAccessor->writeReg(&inputValue);
+  registerAccessor->writeRaw(&inputValue);
 
   int32_t myInt = 0;
   registerAccessor->read(&myInt);
@@ -399,7 +399,7 @@ void MtcaMappedDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue) {
 
   // use raw write to zero the registers
   static const std::vector<int32_t> zeroedBuffer(N_ELEMENTS, 0);
-  registerAccessor->writeReg(&zeroedBuffer[0], N_BYTES,
+  registerAccessor->writeRaw(&zeroedBuffer[0], N_BYTES,
                              OFFSET_ELEMENTS * sizeof(int32_t));
 
   registerAccessor->write(&writeBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
@@ -439,21 +439,21 @@ void MtcaMappedDeviceTest::testRegObject_writeSimple() {
 
   static const int startValue = 0;
   // write something we are going to change
-  registerAccessor->writeReg(&startValue);
+  registerAccessor->writeRaw(&startValue);
 
   int32_t myInt = -14;
   // write and read back
   registerAccessor->write(&myInt, 1);
 
   int32_t readbackValue = 0;
-  registerAccessor->readReg(&readbackValue);
+  registerAccessor->readRaw(&readbackValue);
   BOOST_CHECK(static_cast<uint32_t>(readbackValue) == 0xF90);
 
   myInt = 17;
   registerAccessor->write(&myInt, 0);
   // nothing should be written, should still read the same
   readbackValue = 0;
-  registerAccessor->readReg(&readbackValue);
+  registerAccessor->readRaw(&readbackValue);
   BOOST_CHECK(static_cast<uint32_t>(readbackValue) == 0xF90);
 
   registerAccessor->write(-17);
@@ -462,7 +462,7 @@ void MtcaMappedDeviceTest::testRegObject_writeSimple() {
   double myDouble = -13.75;
   registerAccessor->write(&myDouble, 1);
   readbackValue = 0;
-  registerAccessor->readReg(&readbackValue);
+  registerAccessor->readRaw(&readbackValue);
   BOOST_CHECK(static_cast<uint32_t>(readbackValue) == 0xF92);
 
   registerAccessor->write(-17.25);

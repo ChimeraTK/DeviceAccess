@@ -181,7 +181,7 @@ void PcieDevice::directRead(uint32_t regOffset, int32_t* data, uint8_t bar,
 	}
 }
 
-void PcieDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar) {
+void PcieDevice::readRaw(uint32_t regOffset, int32_t* data, uint8_t bar) {
 	_readFunction(regOffset, data, bar);
 }
 
@@ -226,7 +226,7 @@ void PcieDevice::directWrite(uint32_t regOffset, int32_t const* data,
 	}
 }
 
-void PcieDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
+void PcieDevice::writeRaw(uint32_t regOffset, int32_t data, uint8_t bar) {
 	_writeFunction(regOffset, &data, bar);
 }
 
@@ -238,7 +238,7 @@ void PcieDevice::readAreaWithStruct(uint32_t regOffset, int32_t* data,
 	}
 
 	for (uint32_t i = 0; i < size / 4; i++) {
-		readReg(regOffset + i * 4, data + i, bar);
+		readRaw(regOffset + i * 4, data + i, bar);
 	}
 }
 
@@ -259,7 +259,7 @@ void PcieDevice::writeAreaWithStruct(uint32_t regOffset, int32_t const* data,
 				PcieDeviceException::EX_WRITE_ERROR);
 	}
 	for (uint32_t i = 0; i < size / 4; i++) {
-		writeReg(regOffset + i * 4, *(data + i), bar);
+		writeRaw(regOffset + i * 4, *(data + i), bar);
 	}
 }
 

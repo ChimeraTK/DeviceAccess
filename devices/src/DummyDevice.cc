@@ -103,11 +103,11 @@ void DummyDevice::close(){
 	_opened=false;
 }
 
-void DummyDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar){
+void DummyDevice::readRaw(uint32_t regOffset, int32_t* data, uint8_t bar){
 	TRY_REGISTER_ACCESS( *data = _barContents[bar].at(regOffset/sizeof(int32_t)); );
 }
 
-void DummyDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar){
+void DummyDevice::writeRaw(uint32_t regOffset, int32_t data, uint8_t bar){
 	if (isReadOnly( regOffset, bar ) ){
 		return;
 	}
