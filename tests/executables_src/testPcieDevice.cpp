@@ -238,8 +238,8 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeDMA(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
 			PcieDeviceException );
 
-	std::string deviceInfo;
-	BOOST_CHECK_THROW(  _pcieDeviceInstance->readDeviceInfo(&deviceInfo),
+	//std::string deviceInfo;
+	BOOST_CHECK_THROW(  _pcieDeviceInstance->readDeviceInfo(),
 			PcieDeviceException );
 
 }
@@ -257,7 +257,7 @@ void PcieDeviceTest::testReadDeviceInfo(){
 			<< major << "." << minor;
 
 	std::string deviceInfo;
-	_pcieDeviceInstance->readDeviceInfo( &deviceInfo );
+	deviceInfo = _pcieDeviceInstance->readDeviceInfo();
 	BOOST_CHECK( referenceInfo.str() == deviceInfo );
 }
 

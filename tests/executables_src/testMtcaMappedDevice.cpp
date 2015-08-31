@@ -166,8 +166,9 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
                                                 4 /*size*/, 0 /*bar*/),
                     MappedDeviceException);
 
-  std::string deviceInfo;
-  BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(&deviceInfo), MappedDeviceException);
+  //std::string deviceInfo;
+  //BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(&deviceInfo), MappedDeviceException);
+  BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(), MappedDeviceException);
 
   BOOST_CHECK_THROW(virginMappedDevice.readReg("irrelevant", &dataWord),
                     MappedDeviceException);

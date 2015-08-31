@@ -33,7 +33,7 @@ public:
   virtual void writeDMA(uint32_t regOffset, int32_t const* data, size_t size,
                         uint8_t bar) = 0;
 
-  virtual void readDeviceInfo(std::string* devInfo) = 0;
+  virtual std::string readDeviceInfo() = 0;
   /** Return whether a device has been opened or not.
    *  As the variable already exists in the base class we implement this
    * function here to avoid

@@ -326,7 +326,7 @@ TestableDummyDevice* DummyDeviceTest::getBaseDeviceInstance(bool reOpen) {
 void DummyDeviceTest::testReadDeviceInfo() {
   std::string deviceInfo;
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
-  dummyDevice->readDeviceInfo(&deviceInfo);
+  deviceInfo = dummyDevice->readDeviceInfo();
   std::cout << deviceInfo << std::endl;
   BOOST_CHECK(deviceInfo ==
               (std::string("DummyDevice with mapping file ../tests/") +

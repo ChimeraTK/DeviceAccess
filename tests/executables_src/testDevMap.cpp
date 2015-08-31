@@ -461,7 +461,7 @@ void DevMapTest::testDeviceInfo() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   pcieDevice.openDev(dummyDevice, validMappingFile);
   std::string deviceInfo;
-  pcieDevice.readDeviceInfo(&deviceInfo);
+  deviceInfo = pcieDevice.readDeviceInfo();
   int nParametersConverted =
       sscanf(deviceInfo.c_str(), "SLOT: %d DRV VER: %d.%d", &slot,
              &majorVersion, &minorVersion);

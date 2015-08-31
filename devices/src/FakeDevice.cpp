@@ -151,9 +151,10 @@ void FakeDevice::writeDMA(uint32_t regOffset, int32_t const * data, size_t size,
 	writeArea(regOffset, data, size, bar);
 }
 
-void FakeDevice::readDeviceInfo(std::string* devInfo)
+
+std::string FakeDevice::readDeviceInfo()
 {
-	*devInfo = "fake device: " + _pcieMemoryFileName;
+	return std::string("fake device: ") + _pcieMemoryFileName;
 }
 
 boost::shared_ptr<BaseDevice> FakeDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {

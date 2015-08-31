@@ -235,7 +235,7 @@ public:
                        uint8_t bar) const;
   virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
                         uint8_t bar);
-  virtual void readDeviceInfo(std::string *devInfo) const;
+  virtual std::string readDeviceInfo() const;
 
   /** Read one or more words from the device. It calls BaseDevice::readArea, not
    * BaseDevice::readReg.
@@ -745,9 +745,9 @@ void MappedDevice<T>::writeDMA(uint32_t regOffset, int32_t const *data, size_t s
 }
 
 template <typename T>
-void MappedDevice<T>::readDeviceInfo(std::string *devInfo) const {
+std::string MappedDevice<T>::readDeviceInfo() const {
   checkPointersAreNotNull();
-  pdev->readDeviceInfo(devInfo);
+  return pdev->readDeviceInfo();
 }
 
 template <typename T>

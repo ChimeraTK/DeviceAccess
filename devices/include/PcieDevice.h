@@ -73,7 +73,7 @@ public:
     virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
     virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);
 
-    virtual void readDeviceInfo(std::string* devInfo);
+    virtual std::string readDeviceInfo();
 
     /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
     static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);

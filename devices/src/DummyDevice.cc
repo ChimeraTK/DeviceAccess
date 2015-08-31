@@ -152,10 +152,10 @@ void DummyDevice::writeDMA(uint32_t /* regOffset */, int32_t const * /* data */,
 	throw NotImplementedException("DummyDevice::writeDMA is not implemented yet.");
 }
 
-void DummyDevice::readDeviceInfo(std::string* devInfo){
+std::string DummyDevice::readDeviceInfo(){
 	std::stringstream info;
 	info << "DummyDevice with mapping file " << _registerMapping->getMapFileName();
-	*devInfo=info.str();
+	return info.str();
 }
 
 uint64_t DummyDevice::calculateVirtualAddress( uint32_t registerOffsetInBar,

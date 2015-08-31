@@ -41,7 +41,7 @@ public:
     virtual void writeDMA(uint32_t /*regOffset*/, int32_t const* /*data*/, size_t /*size*/,
                           uint8_t /*bar*/) {};
 
-    virtual void readDeviceInfo(std::string* /*devInfo*/) {};
+    virtual std::string readDeviceInfo() {return std::string("Example_Device");}
 };
 
 class ExampleDeviceRegisterer{

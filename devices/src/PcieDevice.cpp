@@ -348,7 +348,7 @@ void PcieDevice::writeDMA(uint32_t /*regOffset*/, int32_t const* /*data*/,
 	throw PcieDeviceException("Operation not supported yet", PcieDeviceException::EX_DMA_WRITE_ERROR);
 }
 
-void PcieDevice::readDeviceInfo(std::string* devInfo) {
+std::string PcieDevice::readDeviceInfo() {
 	std::ostringstream os;
 	device_ioctrl_data ioctlData = { 0, 0, 0, 0 };
 	if (ioctl(_deviceID, _ioctlPhysicalSlot, &ioctlData) < 0) {
@@ -362,7 +362,7 @@ void PcieDevice::readDeviceInfo(std::string* devInfo) {
 	}
 	os << " DRV VER: " << (float)(ioctlData.offset / 10.0) +
 			(float)ioctlData.data;
-	*devInfo = os.str();
+	return os.str();
 }
 
 std::string PcieDevice::createErrorStringWithErrnoText(

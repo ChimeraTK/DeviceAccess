@@ -82,7 +82,7 @@ public:
 	virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size,
 			uint8_t bar) ;
 
-	virtual void readDeviceInfo(std::string* devInfo);
+	virtual std::string readDeviceInfo();
 
 	/// A virtual address is an address is a virtual 64 bit address space
 	/// which contains all bars.

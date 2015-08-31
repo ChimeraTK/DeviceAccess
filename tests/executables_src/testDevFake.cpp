@@ -274,7 +274,7 @@ void FakeDeviceTest::testDeviceInfo () {
 	dummyDevice->openDev();
 	std::string deviceInformation;
 	std::string expectedInfoString = "fake device: ._DummyDevice";
-	dummyDevice->readDeviceInfo(&deviceInformation);
+	deviceInformation = dummyDevice->readDeviceInfo();
 	BOOST_CHECK(deviceInformation == expectedInfoString );
 	remove("._DummyDevice");
 }
@@ -310,7 +310,6 @@ void FakeDeviceTest::testReadRegister() {
 	uint8_t bar = 2;
 	try{
 		_fakeDevice->readReg(offset, &data, bar);
-		std::cout<<"data:"<<std::hex<<data<<std::endl;
 		BOOST_CHECK((uint32_t)data == 0xFFF0FFFF);
 	}
 	catch (mtca4u::FakeDeviceException& a) {
@@ -339,7 +338,6 @@ void FakeDeviceTest::testCreateDevice(){
 	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),mtca4u::DeviceFactoryException);
 	/**Try creating local Fake device*/
 	boost::shared_ptr<mtca4u::BaseDevice> mappedfakeDevice = FactoryInstance.createDevice(REFERENCE_DEVICE);
-	std::cout<<"allo2"<<std::endl;
 	BOOST_CHECK(mappedfakeDevice != 0);
 	/** Device should be in connect state now */
 	BOOST_CHECK(mappedfakeDevice->isConnected() == true );
