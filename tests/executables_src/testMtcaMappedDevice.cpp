@@ -107,37 +107,37 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 void MtcaMappedDeviceTest::testOpenClose() {
   // test all tree open functions
   BOOST_CHECK_NO_THROW(
-      _mappedDevice.openDev(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME));
-  BOOST_CHECK_NO_THROW(_mappedDevice.closeDev());
+      _mappedDevice.open(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME));
+  BOOST_CHECK_NO_THROW(_mappedDevice.close());
 
-  BOOST_CHECK_NO_THROW(_mappedDevice.openDev(
+  BOOST_CHECK_NO_THROW(_mappedDevice.open(
       std::make_pair(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME)));
-  BOOST_CHECK_NO_THROW(_mappedDevice.closeDev());
+  BOOST_CHECK_NO_THROW(_mappedDevice.close());
 
   MappedDevice<BaseDevice> mappedDeviceAsBase;
   // you cannot directly open a devMap of BaseDevice. BaseDevice is purely virtual and
   // cannot be instantiated.
-  BOOST_CHECK_THROW(mappedDeviceAsBase.openDev(DUMMY_DEVICE_FILE_NAME,
+  BOOST_CHECK_THROW(mappedDeviceAsBase.open(DUMMY_DEVICE_FILE_NAME,
                                                VALID_MAPPING_FILE_NAME),
                     MappedDeviceException);
 
   // you have to create an instance of an implementation like PcieDevice and
   // pass it as a BaseDevice pointer
   boost::shared_ptr<BaseDevice> dummyDevice(new PcieDevice);
-  dummyDevice->openDev(DUMMY_DEVICE_FILE_NAME);
+  dummyDevice->open(DUMMY_DEVICE_FILE_NAME);
 
   mapFileParser fileParser;
   boost::shared_ptr<mapFile> registerMapping =
       fileParser.parse(VALID_MAPPING_FILE_NAME);
 
   BOOST_CHECK_NO_THROW(
-      mappedDeviceAsBase.openDev(dummyDevice, registerMapping));
+      mappedDeviceAsBase.open(dummyDevice, registerMapping));
 
   // get of a smart pointer gives a raw pointer of the object it points to
   BOOST_CHECK(registerMapping.get() ==
               mappedDeviceAsBase.getRegisterMap().get());
 
-  BOOST_CHECK_NO_THROW(mappedDeviceAsBase.closeDev());
+  BOOST_CHECK_NO_THROW(mappedDeviceAsBase.close());
 }
 
 MtcaMappedDeviceTest::MtcaMappedDeviceTest() {}
@@ -146,7 +146,7 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   MtcaMappedDevice virginMappedDevice;
 
   int32_t dataWord;
-  BOOST_CHECK_THROW(virginMappedDevice.closeDev(), MappedDeviceException);
+  BOOST_CHECK_THROW(virginMappedDevice.close(), MappedDeviceException);
   BOOST_CHECK_THROW(
       virginMappedDevice.readReg(0 /*regOffset*/, &dataWord, 0 /*bar*/),
       MappedDeviceException);
@@ -200,19 +200,19 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
 
 void MtcaMappedDeviceTest::testMapFileParser_parse() {
   MtcaMappedDevice virginMappedDevice;
-  BOOST_CHECK_THROW(virginMappedDevice.openDev(DUMMY_DEVICE_FILE_NAME,
+  BOOST_CHECK_THROW(virginMappedDevice.open(DUMMY_DEVICE_FILE_NAME,
                                                FXPNT_ERROR_1_MAPPING_FILE_NAME),
                     MapFileParserException);
-  BOOST_CHECK_THROW(virginMappedDevice.openDev(DUMMY_DEVICE_FILE_NAME,
+  BOOST_CHECK_THROW(virginMappedDevice.open(DUMMY_DEVICE_FILE_NAME,
                                                FXPNT_ERROR_2_MAPPING_FILE_NAME),
                     MapFileParserException);
-  BOOST_CHECK_THROW(virginMappedDevice.openDev(DUMMY_DEVICE_FILE_NAME,
+  BOOST_CHECK_THROW(virginMappedDevice.open(DUMMY_DEVICE_FILE_NAME,
                                                FXPNT_ERROR_3_MAPPING_FILE_NAME),
                     MapFileParserException);
 }
 
 void MtcaMappedDeviceTest::testRegObject_getRegisterInfo() {
-  _mappedDevice.openDev(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME);
+  _mappedDevice.open(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME);
   // Sorry, this test is hard coded against the mtcadummy implementation.
   // PP: Is there a different way of testing it?
   MtcaMappedDevice::regObject registerAccessor =

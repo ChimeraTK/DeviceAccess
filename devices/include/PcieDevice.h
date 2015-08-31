@@ -60,9 +60,9 @@ public:
 
     virtual ~PcieDevice();
 
-    virtual void openDev(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
-    virtual void openDev();
-    virtual void closeDev();
+    virtual void open(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
+    virtual void open();
+    virtual void close();
     
     virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
     virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);

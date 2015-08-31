@@ -30,10 +30,10 @@ int main() {
 	if (exampleDeviceInstance->isOpen() == false )
 		std::cout<<"Device status: Closed"<<std::endl;
 
-	exampleDeviceInstance->openDev();
+	exampleDeviceInstance->open();
 	if (exampleDeviceInstance->isOpen() == true )
 		std::cout<<"Device status: Open"<<std::endl;
-	exampleDeviceInstance->closeDev();
+	exampleDeviceInstance->close();
 	if (exampleDeviceInstance->isOpen() == false )
 		std::cout<<"Device status: Closed"<<std::endl;
 

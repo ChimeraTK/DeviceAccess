@@ -47,7 +47,7 @@ namespace mtca4u{
    *  To be removed when the templatisation of devMap is removed.
    */
   template<>
-  void MappedDevice<BaseDevice>::openDev(const std::string & /*_devFileName*/, const std::string& /*_mapFileName*/,
+  void MappedDevice<BaseDevice>::open(const std::string & /*_devFileName*/, const std::string& /*_mapFileName*/,
 				int /*_perm*/, DeviceConfigBase* /*_pConfig*/)
   {
     throw MappedDeviceException(std::string("You cannot directly open an instance of BaseDevice!") +

@@ -217,14 +217,14 @@ public:
   MappedDevice(){};
   MappedDevice(boost::shared_ptr<mtca4u::BaseDevice> baseDevice, const std::string & mapFileName);
 
-  virtual void openDev(const std::string &_devFileName,
+  virtual void open(const std::string &_devFileName,
                        const std::string &_mapFileName, int _perm = O_RDWR,
                        DeviceConfigBase *_pConfig = NULL);
-  virtual void openDev(
+  virtual void open(
       std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
       int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);
-  virtual void openDev(ptrdev ioDevice, ptrmapFile registerMapping);
-  virtual void closeDev();
+  virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
+  virtual void close();
   virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
   virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
   virtual void readArea(uint32_t regOffset, int32_t *data, size_t size,
@@ -595,21 +595,21 @@ void MappedDevice<T>::writeDMA(const std::string &regName,
  *                              the device [default: NULL]
  */
 template <typename T>
-void MappedDevice<T>::openDev(const std::string &_devFileName,
+void MappedDevice<T>::open(const std::string &_devFileName,
                         const std::string &_mapFileName, int _perm,
                         DeviceConfigBase *_pConfig) {
   mapFileParser fileParser;
   mapFileName = _mapFileName;
   registerMap = fileParser.parse(mapFileName);
   pdev.reset(new T);
-  pdev->openDev(_devFileName, _perm, _pConfig);
+  pdev->open(_devFileName, _perm, _pConfig);
 }
 
 /** Specialisation of openDev to be able to instantiate MappedDevice<BaseDevice>.
  *  To be removed when the templatisation of MappedDevice is removed.
  */
 template <>
-void MappedDevice<BaseDevice>::openDev(const std::string & /*_devFileName*/,
+void MappedDevice<BaseDevice>::open(const std::string & /*_devFileName*/,
                                  const std::string & /*_mapFileName*/,
                                  int /*_perm*/,
                                  DeviceConfigBase * /*_pConfig*/);
@@ -621,10 +621,10 @@ void MappedDevice<BaseDevice>::openDev(const std::string & /*_devFileName*/,
  * std::string& _mapFileName, int _perm, DeviceConfigBase* _pConfig);
  */
 template <typename T>
-void MappedDevice<T>::openDev(
+void MappedDevice<T>::open(
     std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
     int _perm, DeviceConfigBase *_pConfig) {
-  openDev(_deviceFileAndMapFileName.first,  // the device file name
+  open(_deviceFileAndMapFileName.first,  // the device file name
           _deviceFileAndMapFileName.second, // the map file name
           _perm, _pConfig);
 }
@@ -639,7 +639,7 @@ void MappedDevice<T>::openDev(
  * or a pcie device.
  */
 template <typename T>
-void MappedDevice<T>::openDev(ptrdev ioDevice, ptrmapFile registerMap_) {
+void MappedDevice<T>::open(ptrdev ioDevice, ptrmapFile registerMap_) {
   pdev = ioDevice;
   registerMap = registerMap_;
 }
@@ -651,9 +651,9 @@ void MappedDevice<T>::openDev(ptrdev ioDevice, ptrmapFile registerMap_) {
  *      Function throws the same exceptions like closeDev from class type
  *      passed as a template parameter.
  */
-template <typename T> void MappedDevice<T>::closeDev() {
+template <typename T> void MappedDevice<T>::close() {
   checkPointersAreNotNull();
-  pdev->closeDev();
+  pdev->close();
 }
 
 /**

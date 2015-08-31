@@ -23,18 +23,18 @@ FakeDevice::FakeDevice(std::string host, std::string interface, std::list<std::s
 
 FakeDevice::~FakeDevice()         
 {
-	closeDev();
+	close();
 }
 
-void FakeDevice::openDev()
+void FakeDevice::open()
 {
 #ifdef _DEBUG
 	std::cout<<"open fake dev"<<std::endl;
 #endif
-	openDev(_interface);
+	open(_interface);
 }
 
-void FakeDevice::openDev(const std::string &devName, int /*perm*/, DeviceConfigBase* /*pConfig*/)
+void FakeDevice::open(const std::string &devName, int /*perm*/, DeviceConfigBase* /*pConfig*/)
 {     
 	std::string name = "./" + devName;
 	std::replace(name.begin(), name.end(), '/', '_');
@@ -65,7 +65,7 @@ void FakeDevice::openDev(const std::string &devName, int /*perm*/, DeviceConfigB
 	_opened = true;
 }
 
-void FakeDevice::closeDev()
+void FakeDevice::close()
 {
 	if (_opened == true){
 		fclose(_pcieMemory);

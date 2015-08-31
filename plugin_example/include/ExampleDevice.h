@@ -21,11 +21,11 @@ private:
 public:
   ExampleDevice(){};
   virtual ~ExampleDevice();
-  virtual void openDev();
-  virtual void closeDev();
+  virtual void open();
+  virtual void close();
   static boost::shared_ptr<mtca4u::BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
 
-  virtual void openDev(const std::string& /*devName*/, int /*perm*/,
+  virtual void open(const std::string& /*devName*/, int /*perm*/,
                          DeviceConfigBase* /*pConfig*/) {};
 
     virtual void readReg(uint32_t /*regOffset*/, int32_t* /*data*/, uint8_t /*bar*/) {};

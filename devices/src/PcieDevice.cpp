@@ -40,23 +40,23 @@ _ioctlDMA(0)
 #endif
 }
 
-PcieDevice::~PcieDevice() {closeDev(); }
+PcieDevice::~PcieDevice() {close(); }
 
-void PcieDevice::openDev() {
+void PcieDevice::open() {
 #ifdef _DEBUG
 	std::cout << "open pcie dev" << std::endl;
 #endif
-	openDev(_interface);
+	open(_interface);
 }
 
-void PcieDevice::openDev(const std::string& devName, int perm,
+void PcieDevice::open(const std::string& devName, int perm,
 		DeviceConfigBase* /*pConfig*/) {
 	if (_opened) {
 		throw PcieDeviceException("Device already has been _Opened",
 				PcieDeviceException::EX_DEVICE_OPENED);
 	}
 	_interface =  devName; //Todo cleanup
-	_deviceID = open(devName.c_str(), perm);
+	_deviceID = ::open(devName.c_str(), perm);
 	if (_deviceID < 0) {
 		throw PcieDeviceException(createErrorStringWithErrnoText("Cannot open device: "),
 				PcieDeviceException::EX_CANNOT_OPEN_DEVICE);
@@ -127,14 +127,14 @@ void PcieDevice::determineDriverAndConfigureIoctl() {
 	std::cerr << "Unsupported driver. "
 			<< createErrorStringWithErrnoText("Error is ") << std::endl;
 	;
-	close(_deviceID);
+	::close(_deviceID);
 	throw PcieDeviceException("Unsupported driver in device" + _interface,
 			PcieDeviceException::EX_UNSUPPORTED_DRIVER);
 }
 
-void PcieDevice::closeDev() {
+void PcieDevice::close() {
 	if (_opened) {
-		close(_deviceID);
+		::close(_deviceID);
 	}
 	_opened = false;
 }

@@ -15,10 +15,10 @@ class BaseDevice {
 
 public:
   // Todo move this function to private space.
-  virtual void openDev(const std::string& devName, int perm = O_RDWR,
+  virtual void open(const std::string& devName, int perm = O_RDWR,
                        DeviceConfigBase* pConfig = NULL) = 0;
-  virtual void openDev() = 0;
-  virtual void closeDev() = 0;
+  virtual void open() = 0;
+  virtual void close() = 0;
 
   virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) = 0;
   virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) = 0;

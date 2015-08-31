@@ -58,16 +58,16 @@ public:
 	DummyDevice();
 	virtual ~DummyDevice();
 
-	virtual void openDev(const std::string &mappingFileName,
+	virtual void open(const std::string &mappingFileName,
 			int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
-	virtual void openDev();
+	virtual void open();
 
 	/** This closes the device, clears all internal regsiters, read-only settings and
 	 *  callback functions. As the device could be opened with another mapping file later,
 	 *  these will most probably be invalid in this case. This is why the read-only  settings
 	 *  and callback functions have to be set again when reopening the file.
 	 */
-	virtual void closeDev();
+	virtual void close();
 
 	virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
 	virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);

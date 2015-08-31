@@ -28,7 +28,7 @@ boost::shared_ptr < MappedDevice<BaseDevice> > DeviceFactory::createMappedDevice
 	DMapFile::dmapElem elem;
 	boost::tie(base, elem) = parseDMap(devname);
 	if (base)
-		base->openDev();
+		base->open();
 	return boost::shared_ptr< MappedDevice< BaseDevice > > (new mtca4u::MappedDevice<mtca4u::BaseDevice>(base, elem.map_file_name));
 }
 

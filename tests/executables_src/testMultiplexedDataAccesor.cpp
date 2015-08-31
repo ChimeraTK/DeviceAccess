@@ -30,7 +30,7 @@ template <class SequenceWordType>
 void testDeMultiplexing(std::string areaName){
   // open a dummy device with the sequence map file
   boost::shared_ptr< BaseDevice >  ioDevice( new DummyDevice );
-  ioDevice->openDev(MAP_FILE_NAME);
+  ioDevice->open(MAP_FILE_NAME);
 
   //get the sequence info from the map file
   boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
@@ -127,7 +127,7 @@ template <class SequenceWordType>
 void testWithConversion(std::string multiplexedSequenceName){
   // open a dummy device with the sequence map file
   boost::shared_ptr< BaseDevice >  ioDevice( new DummyDevice );
-  ioDevice->openDev(MAP_FILE_NAME);
+  ioDevice->open(MAP_FILE_NAME);
 
   //get the sequence info from the map file
   boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE( testFactoryFunction ){
 BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
   boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< BaseDevice > ioDevice( new DummyDevice );
-  ioDevice->openDev( MAP_FILE_NAME );
+  ioDevice->open( MAP_FILE_NAME );
 
   SequenceInfo sequenceInfo;
   registerMap->getRegisterInfo( MULTIPLEXED_SEQUENCE_PREFIX + "DMA",
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
 BOOST_AUTO_TEST_CASE( testMixed ){
   boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< BaseDevice > ioDevice( new DummyDevice );
-  ioDevice->openDev( MAP_FILE_NAME );
+  ioDevice->open( MAP_FILE_NAME );
   
   BOOST_CHECK_THROW( MultiplexedDataAccessor<double>::createInstance( "MIXED",
 								    TEST_MODULE_NAME,
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE( testMixed ){
 BOOST_AUTO_TEST_CASE( testNumberOfSequencesDetected ){
   boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< BaseDevice > ioDevice( new DummyDevice );
-  ioDevice->openDev( MAP_FILE_NAME );
+  ioDevice->open( MAP_FILE_NAME );
 
   boost::shared_ptr< MultiplexedDataAccessor< double > > deMuxedData =
     MultiplexedDataAccessor<double>::createInstance( "FRAC_INT",

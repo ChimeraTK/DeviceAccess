@@ -45,16 +45,16 @@ DummyDevice::DummyDevice(std::string host, std::string interface, std::list<std:
 DummyDevice::~DummyDevice(){
 }
 
-void DummyDevice::openDev()
+void DummyDevice::open()
 {
 #ifdef _DEBUG
 	std::cout<<"open DummyDevice"<<std::endl;
 #endif
 
-	openDev(_interface);
+	open(_interface);
 }
 
-void DummyDevice::openDev(const std::string &mappingFileName,
+void DummyDevice::open(const std::string &mappingFileName,
 		int /* perm */, DeviceConfigBase* /* pConfig */){
 	if (_opened){
 		throw DummyDeviceException("Device is already open.", DummyDeviceException::ALREADY_OPEN);
@@ -91,7 +91,7 @@ std::map< uint8_t, size_t > DummyDevice::getBarSizesInBytesFromRegisterMapping()
 	return barSizesInBytes;
 }
 
-void DummyDevice::closeDev(){
+void DummyDevice::close(){
 	if (!_opened){
 		throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
 	}

@@ -27,10 +27,10 @@ public:
 	void testCreateDevice();
 
 	//Try opening the created device and check it's open status.
-	void testOpenDevice();
+	void testopenice();
 
 	//Try closing the created device and check it's open status.
-	void testCloseDevice();
+	void testcloseice();
 
 	void testReadRegister();
 
@@ -60,7 +60,7 @@ public:
 
 		test_case* createDeviceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testCreateDevice, FakeDeviceTestPtr );
 
-		test_case* openDeviceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testOpenDevice, FakeDeviceTestPtr );
+		test_case* openiceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testopenice, FakeDeviceTestPtr );
 
 		test_case* ReadElementTestCase = BOOST_CLASS_TEST_CASE(&FakeDeviceTest::testReadRegister, FakeDeviceTestPtr);
 
@@ -68,7 +68,7 @@ public:
 
 		test_case* readDMATestCase = BOOST_CLASS_TEST_CASE(&FakeDeviceTest::testReadDMA, FakeDeviceTestPtr);
 
-		test_case* closeDeviceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testCloseDevice, FakeDeviceTestPtr );
+		test_case* closeiceTestCase = BOOST_CLASS_TEST_CASE( &FakeDeviceTest::testcloseice, FakeDeviceTestPtr );
 
 		test_case* readAreaWithInvalidParamsTestCase = BOOST_CLASS_TEST_CASE(&FakeDeviceTest::testReadAreaWithInvalidParams, FakeDeviceTestPtr);
 		test_case* writeRegTestCase = BOOST_CLASS_TEST_CASE(&FakeDeviceTest::testWriteReg, FakeDeviceTestPtr);
@@ -82,11 +82,11 @@ public:
 		test_case* createFakeDeviceTestCase = BOOST_CLASS_TEST_CASE(&FakeDeviceTest::testCreateFakeDevice, FakeDeviceTestPtr);
 
 		add (createDeviceTestCase);
-		add (openDeviceTestCase);
+		add (openiceTestCase);
 		add (ReadElementTestCase);
 		add (readAreaTestCase);
 		add (readDMATestCase);
-		add (closeDeviceTestCase);
+		add (closeiceTestCase);
 
 		add(readAreaWithInvalidParamsTestCase);
 		add(writeRegTestCase);
@@ -115,10 +115,10 @@ void FakeDeviceTest::testReOpenExistingDevice() {
 	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
 	FILE* file = fopen("._fakeDevice", "w");
 	fclose(file);
-	dummyDevice->openDev();
-	BOOST_CHECK_THROW(dummyDevice->openDev(), mtca4u::FakeDeviceException);
+	dummyDevice->open();
+	BOOST_CHECK_THROW(dummyDevice->open(), mtca4u::FakeDeviceException);
 	try {
-		dummyDevice->openDev();
+		dummyDevice->open();
 	}
 	catch (mtca4u::FakeDeviceException& a) {
 		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_OPENED);
@@ -130,7 +130,7 @@ void FakeDeviceTest::testCreateFakeDevice() {
 	remove("._fakeDevice");
 	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
-	dummyDevice->openDev();
+	dummyDevice->open();
 	boost::filesystem::path pathToCreatedFile("._fakeDevice");
 	BOOST_CHECK(boost::filesystem::exists(pathToCreatedFile) == true);
 	remove("._fakeDevice");
@@ -147,7 +147,7 @@ void FakeDeviceTest::testReadAreaWithInvalidParams() {
 	catch (mtca4u::FakeDeviceException& a) {
 		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
 	}
-	dummyDevice->openDev();
+	dummyDevice->open();
 	BOOST_CHECK_THROW(dummyDevice->readDMA(10, data, 3, 2), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->readDMA(10, data, 3, 2);
@@ -161,7 +161,7 @@ void FakeDeviceTest::testReadAreaWithInvalidParams() {
 void FakeDeviceTest::testWriteReg () {
 	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
-	dummyDevice->openDev();
+	dummyDevice->open();
 	dummyDevice->writeReg(8, 0x01020304, 5);
 	int32_t data;
 	dummyDevice->readReg(8, &data, 5);
@@ -183,7 +183,7 @@ void FakeDeviceTest::testWriteRegErrors () {
 		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
 	}
 
-	dummyDevice->openDev();
+	dummyDevice->open();
 	BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, 8), mtca4u::FakeDeviceException);
 	try {
 		dummyDevice->writeReg(offset, data, 8);
@@ -207,7 +207,7 @@ void FakeDeviceTest::testWriteRegErrors () {
 void FakeDeviceTest::testWriteArea () {
 	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
-	dummyDevice->openDev();
+	dummyDevice->open();
 	const int dataSize = 4;
 	int dataSizeInBytes = 16;
 	int32_t input_data[dataSize] = {1, 4, 6, 7};
@@ -228,7 +228,7 @@ void FakeDeviceTest::testWriteArea () {
 void FakeDeviceTest::testWriteDMA () {
 	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
-	dummyDevice->openDev();
+	dummyDevice->open();
 	const int dataSize = 4;
 	int dataSizeInBytes = 16;
 	int32_t input_data[dataSize] = {1, 4, 6, 7};
@@ -256,7 +256,7 @@ void FakeDeviceTest::testWriteAreaWithInvalidParams () {
 	catch (mtca4u::FakeDeviceException& a) {
 		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
 	}
-	dummyDevice->openDev();
+	dummyDevice->open();
 	int wrongDataSize = 3;
 	BOOST_CHECK_THROW(dummyDevice->writeDMA(10, data, wrongDataSize, 2), mtca4u::FakeDeviceException);
 	try {
@@ -271,7 +271,7 @@ void FakeDeviceTest::testWriteAreaWithInvalidParams () {
 void FakeDeviceTest::testDeviceInfo () {
 	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
-	dummyDevice->openDev();
+	dummyDevice->open();
 	std::string deviceInformation;
 	std::string expectedInfoString = "fake device: ._DummyDevice";
 	deviceInformation = dummyDevice->readDeviceInfo();
@@ -317,9 +317,9 @@ void FakeDeviceTest::testReadRegister() {
 	}
 }
 
-void FakeDeviceTest::testCloseDevice(){
+void FakeDeviceTest::testcloseice(){
 	/** Try closing the device */
-	_fakeDevice->closeDev();
+	_fakeDevice->close();
 	/** device should not be open now */
 	BOOST_CHECK(_fakeDevice->isOpen() == false );
 	/** device should remain in connected state */
@@ -327,8 +327,8 @@ void FakeDeviceTest::testCloseDevice(){
 }
 
 
-void FakeDeviceTest::testOpenDevice(){
-	_fakeDevice->openDev();
+void FakeDeviceTest::testopenice(){
+	_fakeDevice->open();
 	BOOST_CHECK(_fakeDevice->isOpen() == true );
 	BOOST_CHECK(_fakeDevice->isConnected() == true );
 }

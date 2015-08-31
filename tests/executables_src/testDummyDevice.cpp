@@ -62,16 +62,16 @@ public:
   void testCreateDevice();
 
   // Try opening the created device and check it's open status.
-  void testOpenDevice();
+  void testopenice();
 
   // Try closing the created device and check it's open status.
-  void testCloseDevice();
+  void testcloseice();
 
-  void testOpenCloseDevice();
+  void testOpencloseice();
 
 private:
   TestableDummyDevice _dummyDevice;
-  void freshlyOpenDevice();
+  void freshlyopenice();
   TestableDummyDevice* getBaseDeviceInstance(bool reOpen = false);
   friend class DummyDeviceTestSuite;
 
@@ -99,12 +99,12 @@ public:
 
     test_case* createDeviceTestCase = BOOST_CLASS_TEST_CASE(
         &DummyDeviceTest::testCreateDevice, dummyDeviceTest);
-    test_case* openDeviceTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyDeviceTest::testOpenDevice, dummyDeviceTest);
-    test_case* openCloseDeviceTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyDeviceTest::testOpenCloseDevice, dummyDeviceTest);
-    //test_case* closeDeviceTestCase = BOOST_CLASS_TEST_CASE(
-     //   &DummyDeviceTest::testCloseDevice, dummyDeviceTest);
+    test_case* openiceTestCase = BOOST_CLASS_TEST_CASE(
+        &DummyDeviceTest::testopenice, dummyDeviceTest);
+    test_case* opencloseiceTestCase = BOOST_CLASS_TEST_CASE(
+        &DummyDeviceTest::testOpencloseice, dummyDeviceTest);
+    //test_case* closeiceTestCase = BOOST_CLASS_TEST_CASE(
+     //   &DummyDeviceTest::testcloseice, dummyDeviceTest);
 
     // we use the setup from the read-only test to check that the callback
     // function is not executed if the register is not writeable.
@@ -147,10 +147,10 @@ public:
     add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testFinalClosing,
                               dummyDeviceTest));
     add(createDeviceTestCase);
-    add(openDeviceTestCase);
-    add(openCloseDeviceTestCase);
+    add(openiceTestCase);
+    add(opencloseiceTestCase);
 
-    //add (closeDeviceTestCase);
+    //add (closeiceTestCase);
   }
 };
 
@@ -189,7 +189,7 @@ void DummyDeviceTest::testCheckSizeIsMultipleOfWordSize() {
 }
 
 void DummyDeviceTest::testReadWriteSingleWordRegister() {
-  // freshlyOpenDevice();
+  // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
   mapFile::mapElem mappingElement;
   dummyDevice->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING,
@@ -222,7 +222,7 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
 // int32_t*, size_t, uint8_t)> readFunction){
 void DummyDeviceTest::testReadWriteMultiWordRegister(
     void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
-  // freshlyOpenDevice();
+  // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
   mapFile::mapElem mappingElement;
   dummyDevice->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
@@ -292,15 +292,15 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
       DummyDeviceException);
 }
 
-void DummyDeviceTest::freshlyOpenDevice() {
+void DummyDeviceTest::freshlyopenice() {
   try {
-    _dummyDevice.openDev(TEST_MAPPING_FILE);
+    _dummyDevice.open(TEST_MAPPING_FILE);
   }
   catch (DummyDeviceException&) {
     // make sure the device was freshly opened, so
     // registers are set to 0.
-    _dummyDevice.closeDev();
-    _dummyDevice.openDev(TEST_MAPPING_FILE);
+    _dummyDevice.close();
+    _dummyDevice.open(TEST_MAPPING_FILE);
   }
 }
 
@@ -316,8 +316,8 @@ TestableDummyDevice* DummyDeviceTest::getBaseDeviceInstance(bool reOpen) {
     BaseDeviceInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
   if (reOpen || (!BaseDeviceInstance->isOpen())) {
     if (BaseDeviceInstance->isOpen())
-      BaseDeviceInstance->closeDev();
-    BaseDeviceInstance->openDev();
+      BaseDeviceInstance->close();
+    BaseDeviceInstance->open();
   }
   BaseDevice * rawBasePointer = BaseDeviceInstance.get();
   return (static_cast<TestableDummyDevice*>(rawBasePointer));
@@ -334,7 +334,7 @@ void DummyDeviceTest::testReadDeviceInfo() {
 }
 
 void DummyDeviceTest::testReadOnly() {
-  // freshlyOpenDevice();
+  // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
   mapFile::mapElem mappingElement;
   dummyDevice->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
@@ -563,7 +563,7 @@ void DummyDeviceTest::testFinalClosing() {
   BOOST_CHECK(dummyDevice->_readOnlyAddresses.size() != 0);
   BOOST_CHECK(dummyDevice->_writeCallbackFunctions.size() != 0);
 
-  dummyDevice->closeDev();
+  dummyDevice->close();
 
   // all features lists have to be empty now
   BOOST_CHECK(dummyDevice->_barContents.size() == 0);
@@ -571,7 +571,7 @@ void DummyDeviceTest::testFinalClosing() {
   BOOST_CHECK(dummyDevice->_writeCallbackFunctions.size() == 0);
 }
 
-void DummyDeviceTest::testOpenCloseDevice() {
+void DummyDeviceTest::testOpencloseice() {
 
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
   // there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes,
@@ -591,29 +591,29 @@ void DummyDeviceTest::testOpenCloseDevice() {
   // if it points to NULL
   BOOST_CHECK(dummyDevice->_registerMapping);
   BOOST_CHECK(dummyDevice->isOpen());
-  BOOST_CHECK_THROW(dummyDevice->openDev(TEST_MAPPING_FILE),
+  BOOST_CHECK_THROW(dummyDevice->open(TEST_MAPPING_FILE),
                     DummyDeviceException);
 
-  dummyDevice->closeDev();
+  dummyDevice->close();
   // The map has to be empty and the reference counting pointer to the
   // mapping has to point to NULL.
   BOOST_CHECK(dummyDevice->_barContents.empty());
   BOOST_CHECK(dummyDevice->_registerMapping == false);
   BOOST_CHECK(dummyDevice->isOpen() == false);
-  BOOST_CHECK_THROW(dummyDevice->closeDev(), DummyDeviceException);
+  BOOST_CHECK_THROW(dummyDevice->close(), DummyDeviceException);
 }
 
-void DummyDeviceTest::testCloseDevice() {
+void DummyDeviceTest::testcloseice() {
   /** Try closing the device */
-  BaseDeviceInstance->closeDev();
+  BaseDeviceInstance->close();
   /** device should not be open now */
   BOOST_CHECK(BaseDeviceInstance->isOpen() == false);
   /** device should remain in connected state */
   BOOST_CHECK(BaseDeviceInstance->isConnected() == true);
 }
 
-void DummyDeviceTest::testOpenDevice() {
-  BaseDeviceInstance->openDev();
+void DummyDeviceTest::testopenice() {
+  BaseDeviceInstance->open();
   BOOST_CHECK(BaseDeviceInstance->isOpen() == true);
   BOOST_CHECK(BaseDeviceInstance->isConnected() == true);
 }

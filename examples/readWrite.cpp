@@ -27,7 +27,7 @@ int main(){
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  myDevice->closeDev();
+  myDevice->close();
 
   return 0;
 }

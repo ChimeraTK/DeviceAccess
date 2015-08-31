@@ -61,10 +61,10 @@ public:
 	void testCreateDevice();
 
 	//Try opening the created device and check it's open status.
-	void testOpenDevice();
+	void testopenice();
 
 	//Try closing the created device and check it's open status.
-	void testCloseDevice();
+	void testcloseice();
 
 	void testReadArea();
 	void testWriteArea();
@@ -99,7 +99,7 @@ public:
 		boost::shared_ptr<PcieDeviceTest> pcieDeviceTest( new PcieDeviceTest( deviceFileName, slot ) );
 
 		test_case* createDeviceTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testCreateDevice, pcieDeviceTest );
-		test_case* openDeviceTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testOpenDevice, pcieDeviceTest );
+		test_case* openiceTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testopenice, pcieDeviceTest );
 
 		test_case* readAreaTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testReadArea, pcieDeviceTest );
 		test_case* writeAreaTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testWriteArea, pcieDeviceTest );
@@ -112,7 +112,7 @@ public:
 
 		test_case* readDeviceInfoTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testReadDeviceInfo, pcieDeviceTest );
 
-		test_case* closeDeviceTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testCloseDevice, pcieDeviceTest );
+		test_case* closeiceTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testcloseice, pcieDeviceTest );
 
 		test_case* failIfDeviceClosedTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testFailIfDeviceClosed, pcieDeviceTest );
 
@@ -128,17 +128,17 @@ public:
 	closeTestCase->depends_on( openTestCase ); */
 
 
-		readRegisterTestCase->depends_on( openDeviceTestCase );
+		readRegisterTestCase->depends_on( openiceTestCase );
 		writeRegisterTestCase->depends_on( readRegisterTestCase );
-		readAreaTestCase->depends_on( openDeviceTestCase );
+		readAreaTestCase->depends_on( openiceTestCase );
 		writeAreaTestCase->depends_on( readAreaTestCase );
-		readDMATestCase->depends_on( openDeviceTestCase );
+		readDMATestCase->depends_on( openiceTestCase );
 		writeDMATestCase->depends_on( readDMATestCase );
-		closeDeviceTestCase->depends_on( openDeviceTestCase );
+		closeiceTestCase->depends_on( openiceTestCase );
 		add( BOOST_TEST_CASE( &PcieDeviceTest::testConstructor ) );
 		// Todo .. Add dependencies
 		add (createDeviceTestCase);
-		add (openDeviceTestCase);
+		add (openiceTestCase);
 
 		add (readAreaTestCase);
 		add (writeAreaTestCase);
@@ -151,7 +151,7 @@ public:
 
 		add (readDeviceInfoTestCase);
 
-		add (closeDeviceTestCase);
+		add (closeiceTestCase);
 		add( failIfDeviceClosedTestCase );
 
 	}
@@ -224,7 +224,7 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 	// We use the  WORD_USER_OFFSET register in bar 0 for all operations. It is read/write.
 	int32_t dataWord = 0; // Just use one single word, even for dma. nothing should be executed anyway.
 
-	_pcieDeviceInstance->closeDev();
+	_pcieDeviceInstance->close();
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readReg(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
 			PcieDeviceException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readArea(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
@@ -362,11 +362,11 @@ void PcieDeviceTest::testReadRegister()
 	int32_t dataWord = 0; // initialise with 0 so we can check if reading the content works.
 
 	//check that the exception is thrown if the device is not opened
-	_pcieDeviceInstance->closeDev();
+	_pcieDeviceInstance->close();
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0),
 			PcieDeviceException );
 
-	_pcieDeviceInstance->openDev();// no need to check if this works because we did the open test first
+	_pcieDeviceInstance->open();// no need to check if this works because we did the open test first
 	_pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
 	BOOST_CHECK_EQUAL( dataWord, DMMY_AS_ASCII );
 
@@ -395,9 +395,9 @@ void PcieDeviceTest::testWriteRegister()
 }
 
 
-void PcieDeviceTest::testCloseDevice(){
+void PcieDeviceTest::testcloseice(){
 	/** Try closing the device */
-	_pcieDeviceInstance->closeDev();
+	_pcieDeviceInstance->close();
 	/** device should not be open now */
 	BOOST_CHECK(_pcieDeviceInstance->isOpen() == false );
 	/** device should remain in connected state */
@@ -405,8 +405,8 @@ void PcieDeviceTest::testCloseDevice(){
 }
 
 
-void PcieDeviceTest::testOpenDevice(){
-	_pcieDeviceInstance->openDev();
+void PcieDeviceTest::testopenice(){
+	_pcieDeviceInstance->open();
 	BOOST_CHECK(_pcieDeviceInstance->isOpen() == true );
 	BOOST_CHECK(_pcieDeviceInstance->isConnected() == true );
 }
