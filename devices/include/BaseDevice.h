@@ -20,8 +20,8 @@ public:
   virtual void open() = 0;
   virtual void close() = 0;
 
-  virtual void readRaw(uint32_t regOffset, int32_t* data, uint8_t bar) = 0;
-  virtual void writeRaw(uint32_t regOffset, int32_t data, uint8_t bar) = 0;
+  virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) = 0;
+  virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) = 0;
 
   virtual void readArea(uint32_t regOffset, int32_t* data, size_t size,
                         uint8_t bar) = 0;

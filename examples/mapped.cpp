@@ -19,17 +19,17 @@ int main(){
 	FactoryInstance.createMappedDevice("PCIE2");
   // read and print a data word from a register
   int32_t dataWord;
-  myMappedDevice->readRaw(REGISTER_NAME, MODULE_NAME, &dataWord);
+  myMappedDevice->readReg(REGISTER_NAME, MODULE_NAME, &dataWord);
   std::cout << "Data word on the device is " << dataWord << std::endl;
 
   // write something different to the register, read it back and print it
   // A bit clumsy: As write can take multiple words we have to pass a 
   // pointer.
-  // Read the documentation  mtca4u::devMap< T >::readRaw  if you
+  // Read the documentation  mtca4u::devMap< T >::readReg  if you
   // want to use arrays!
   int32_t writeWord = dataWord + 42;
-  myMappedDevice->writeRaw(REGISTER_NAME, MODULE_NAME, &writeWord);
-  myMappedDevice->readRaw(REGISTER_NAME, MODULE_NAME, &dataWord);
+  myMappedDevice->writeReg(REGISTER_NAME, MODULE_NAME, &writeWord);
+  myMappedDevice->readReg(REGISTER_NAME, MODULE_NAME, &dataWord);
   std::cout << "Data word on the device now is " << dataWord << std::endl;
 
   // It is good style to close the device when you are done, although

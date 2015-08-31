@@ -148,10 +148,10 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   int32_t dataWord;
   BOOST_CHECK_THROW(virginMappedDevice.close(), MappedDeviceException);
   BOOST_CHECK_THROW(
-      virginMappedDevice.readRaw(0 /*regOffset*/, &dataWord, 0 /*bar*/),
+      virginMappedDevice.readReg(0 /*regOffset*/, &dataWord, 0 /*bar*/),
       MappedDeviceException);
   BOOST_CHECK_THROW(
-      virginMappedDevice.writeRaw(0 /*regOffset*/, dataWord, 0 /*bar*/),
+      virginMappedDevice.writeReg(0 /*regOffset*/, dataWord, 0 /*bar*/),
       MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readArea(0 /*regOffset*/, &dataWord,
                                                 4 /*size*/, 0 /*bar*/),
@@ -170,9 +170,9 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
   //BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(&deviceInfo), MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readDeviceInfo(), MappedDeviceException);
 
-  BOOST_CHECK_THROW(virginMappedDevice.readRaw("irrelevant", &dataWord),
+  BOOST_CHECK_THROW(virginMappedDevice.readReg("irrelevant", &dataWord),
                     MappedDeviceException);
-  BOOST_CHECK_THROW(virginMappedDevice.writeRaw("irrelevant", &dataWord),
+  BOOST_CHECK_THROW(virginMappedDevice.writeReg("irrelevant", &dataWord),
                     MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice.readDMA("irrelevant", &dataWord),
                     MappedDeviceException);
@@ -267,9 +267,9 @@ void MtcaMappedDeviceTest::testRegObject_readBlock() {
   // trigger the "DAQ" sequence which writes i*i into the first 25 registers, so
   // we know what we have
   int32_t tempWord = 0;
-  _mappedDevice.writeRaw("WORD_ADC_ENA", &tempWord);
+  _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
   tempWord = 1;
-  _mappedDevice.writeRaw("WORD_ADC_ENA", &tempWord);
+  _mappedDevice.writeReg("WORD_ADC_ENA", &tempWord);
 
   MtcaMappedDevice::regObject registerAccessor =
       _mappedDevice.getRegObject("AREA_DMAABLE");

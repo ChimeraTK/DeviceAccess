@@ -64,8 +64,8 @@ public:
     virtual void open();
     virtual void close();
     
-    virtual void readRaw(uint32_t regOffset, int32_t* data, uint8_t bar);
-    virtual void writeRaw(uint32_t regOffset, int32_t data, uint8_t bar);
+    virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
+    virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
     
     virtual void readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar);
     virtual void writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar);

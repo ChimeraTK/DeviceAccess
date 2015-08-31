@@ -73,7 +73,7 @@ void FakeDevice::close()
 	_opened = false;
 }
 
-void FakeDevice::readRaw(uint32_t regOffset, int32_t* data, uint8_t bar)
+void FakeDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
 {   
 	if (_opened == false) {
 		throw FakeDeviceException("Device closed", FakeDeviceException::EX_DEVICE_CLOSED);
@@ -94,7 +94,7 @@ void FakeDevice::readRaw(uint32_t regOffset, int32_t* data, uint8_t bar)
 	}
 }
 
-void FakeDevice::writeRaw(uint32_t regOffset, int32_t data, uint8_t bar)
+void FakeDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
 {    
 	if (_opened == false) {
 		throw FakeDeviceException("Device closed", FakeDeviceException::EX_DEVICE_CLOSED);
@@ -124,7 +124,7 @@ void FakeDevice::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_
 		throw FakeDeviceException("Wrong data size - must be dividable by 4", FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
 	for (uint16_t i = 0; i < size/4; i++){
-		readRaw(regOffset + i*4, data + i, bar);
+		readReg(regOffset + i*4, data + i, bar);
 	}
 }
 
@@ -137,7 +137,7 @@ void FakeDevice::writeArea(uint32_t regOffset, int32_t const * data, size_t size
 		throw FakeDeviceException("Wrong data size - must be divisible by 4", FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 	for (uint16_t i = 0; i < size/4; i++){
-		writeRaw(regOffset + i*4, *(data + i), bar);
+		writeReg(regOffset + i*4, *(data + i), bar);
 	}
 }
 

@@ -78,7 +78,7 @@ public:
 
     /** Read one ore more words from the device. It calls BaseDevice::readArea,
      * not
-     * BaseDevice::readRaw.
+     * BaseDevice::readReg.
      *  @attention In case you leave data size at 0, the full size of the
      * register is read, not just one
      *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
@@ -88,7 +88,7 @@ public:
 
     /** Write one ore more words to the device. It calls BaseDevice::readArea,
      * not
-     * BaseDevice::readRaw.
+     * BaseDevice::writeReg.
      *  @attention In case you leave data size at 0, the full size of the
      * register is read, not just one
      *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
@@ -225,8 +225,8 @@ public:
       int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);
   virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
   virtual void close();
-  virtual void readRaw(uint32_t regOffset, int32_t *data, uint8_t bar) const;
-  virtual void writeRaw(uint32_t regOffset, int32_t data, uint8_t bar);
+  virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
+  virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
   virtual void readArea(uint32_t regOffset, int32_t *data, size_t size,
                         uint8_t bar) const;
   virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size,
@@ -251,7 +251,7 @@ public:
    * the
    * future.
    */
-  virtual void readRaw(const std::string &regName, int32_t *data,
+  virtual void readReg(const std::string &regName, int32_t *data,
                        size_t dataSize = 0, uint32_t addRegOffset = 0) const;
   /** Read one or more words from the device. It calls BaseDevice::readArea, not
    * BaseDevice::readRaw.
@@ -260,7 +260,7 @@ public:
    * is read, not just one
    *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
    */
-  virtual void readRaw(const std::string &regName, const std::string &regModule,
+  virtual void readReg(const std::string &regName, const std::string &regModule,
                        int32_t *data, size_t dataSize = 0,
                        uint32_t addRegOffset = 0) const;
 
@@ -279,7 +279,7 @@ public:
    * the
    * future.
    */
-  virtual void writeRaw(const std::string &regName, int32_t const *data,
+  virtual void writeReg(const std::string &regName, int32_t const *data,
                         size_t dataSize = 0, uint32_t addRegOffset = 0);
   /** Write one or more words from the device. It calls BaseDevice::writeArea,
    * not
@@ -289,7 +289,7 @@ public:
    * is written, not just one
    *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
    */
-  virtual void writeRaw(const std::string &regName,
+  virtual void writeReg(const std::string &regName,
                         const std::string &regModule, int32_t const *data,
                         size_t dataSize = 0, uint32_t addRegOffset = 0);
 
@@ -493,13 +493,13 @@ void MappedDevice<T>::checkRegister(const std::string &regName,
 }
 
 template <typename T>
-void MappedDevice<T>::readRaw(const std::string &regName, int32_t *data,
+void MappedDevice<T>::readReg(const std::string &regName, int32_t *data,
                         size_t dataSize, uint32_t addRegOffset) const {
-  readRaw(regName, std::string(), data, dataSize, addRegOffset);
+	readReg(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 template <typename T>
-void MappedDevice<T>::readRaw(const std::string &regName,
+void MappedDevice<T>::readReg(const std::string &regName,
                         const std::string &regModule, int32_t *data,
                         size_t dataSize, uint32_t addRegOffset) const {
   uint32_t retDataSize;
@@ -512,13 +512,13 @@ void MappedDevice<T>::readRaw(const std::string &regName,
 }
 
 template <typename T>
-void MappedDevice<T>::writeRaw(const std::string &regName, int32_t const *data,
+void MappedDevice<T>::writeReg(const std::string &regName, int32_t const *data,
                          size_t dataSize, uint32_t addRegOffset) {
-  writeRaw(regName, std::string(), data, dataSize, addRegOffset);
+  writeReg(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 template <typename T>
-void MappedDevice<T>::writeRaw(const std::string &regName,
+void MappedDevice<T>::writeReg(const std::string &regName,
                          const std::string &regModule, int32_t const *data,
                          size_t dataSize, uint32_t addRegOffset) {
   uint32_t retDataSize;
@@ -674,9 +674,9 @@ template <typename T> void MappedDevice<T>::close() {
  *      @param  bar  - number of PCIe bar
  */
 template <typename T>
-void MappedDevice<T>::readRaw(uint32_t regOffset, int32_t *data, uint8_t bar) const {
+void MappedDevice<T>::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
   checkPointersAreNotNull();
-  pdev->readRaw(regOffset, data, bar);
+  pdev->readReg(regOffset, data, bar);
 }
 
 /**
@@ -696,9 +696,9 @@ void MappedDevice<T>::readRaw(uint32_t regOffset, int32_t *data, uint8_t bar) co
  *      @param  bar  - number of PCIe bar
  */
 template <typename T>
-void MappedDevice<T>::writeRaw(uint32_t regOffset, int32_t data, uint8_t bar) {
+void MappedDevice<T>::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
   checkPointersAreNotNull();
-  pdev->writeRaw(regOffset, data, bar);
+  pdev->writeReg(regOffset, data, bar);
 }
 
 /**

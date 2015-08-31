@@ -31,9 +31,9 @@ int main(int /*argc*/, char** /*argv*/)
             data[i] = i;
         }
         
-        dev.writeRaw("WORD_CAV_LIMIT", data);
+        dev.writeReg("WORD_CAV_LIMIT", data);
         memset(data, 0, sizeof(int32_t)*8);
-        dev.readRaw("WORD_CAV_LIMIT", data);
+        dev.readReg("WORD_CAV_LIMIT", data);
         for (int i = 0; i < 8; i++){
                 std::cout << std::hex << "0x" << data[i] << " " << std::dec;
         }
@@ -48,9 +48,9 @@ int main(int /*argc*/, char** /*argv*/)
         
         data[0] = 0xF1;
         data[1] = 0x1F;
-        dev.writeRaw("WORD_CAV_LIMIT", data, 8, 16);
+        dev.writeReg("WORD_CAV_LIMIT", data, 8, 16);
         memset(data, 0, sizeof(int32_t)*8);
-        dev.readRaw("WORD_CAV_LIMIT", data);
+        dev.readReg("WORD_CAV_LIMIT", data);
         for (int i = 0; i < 8; i++){
                 std::cout << std::hex << "0x" << data[i] << " " << std::dec;
         }
@@ -59,7 +59,7 @@ int main(int /*argc*/, char** /*argv*/)
         
         devMapFakeRegObj ro = dev.getRegObject("WORD_CAV_LIMIT");
         memset(data, 0, sizeof(int32_t)*8);
-        ro.readRaw(data);
+        ro.readReg(data);
         for (int i = 0; i < 8; i++){
                 std::cout << std::hex << "0x" << data[i] << " " << std::dec;
         }

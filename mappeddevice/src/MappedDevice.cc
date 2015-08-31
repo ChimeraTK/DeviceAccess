@@ -6,7 +6,7 @@
 #include "PcieDevice.h"
 
 // Not so nice: macro code does not have code coverage report. Make sure you test everything!
-// Check that nWords is not 0. The readRaw command would read the whole register, which
+// Check that nWords is not 0. The readReg command would read the whole register, which
 // will the raw buffer size of 0.
 #define MTCA4U_DEVMAP_READ( DEVICE_TYPE, CONVERTED_DATA_TYPE, ROUNDING_COMMAND ) \
 template<> template<>\
