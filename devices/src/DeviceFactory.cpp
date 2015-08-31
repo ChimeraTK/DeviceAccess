@@ -14,7 +14,7 @@
 
 namespace mtca4u {
 
-void DeviceFactory::registerDevice(std::string interface, std::string protocol,
+void DeviceFactory::registerDeviceType(std::string interface, std::string protocol,
 		boost::shared_ptr<mtca4u::BaseDevice> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
 {
 #ifdef _DEBUG

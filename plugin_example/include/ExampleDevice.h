@@ -50,7 +50,7 @@ public:
 #ifdef _DEBUG
 		std::cout<<"ExampleDeviceRegisterer"<<std::endl;
 #endif
-		DeviceFactory::getInstance().registerDevice("exx","",&ExampleDevice::createInstance);
+		DeviceFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
   }
 /*	static ExampleDeviceRegisterer & init()
 	{

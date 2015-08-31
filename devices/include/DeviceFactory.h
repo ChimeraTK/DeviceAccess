@@ -37,10 +37,10 @@ class DeviceFactory {
 private:
 	/** Add known device */
 	DeviceFactory() {
-		registerDevice("pci","",&PcieDevice::createInstance);
-		registerDevice("pci","pcie",&PcieDevice::createInstance);
-		registerDevice("fake","",&FakeDevice::createInstance);
-		registerDevice("dummy","",&DummyDevice::createInstance);
+		registerDeviceType("pci","",&PcieDevice::createInstance);
+		registerDeviceType("pci","pcie",&PcieDevice::createInstance);
+		registerDeviceType("fake","",&FakeDevice::createInstance);
+		registerDeviceType("dummy","",&DummyDevice::createInstance);
 	};
 
 	boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> parseDMap(std::string devName);
@@ -58,7 +58,7 @@ private:
 public:
 	/** This functions add new device using uri as a key. If a key already exist
 	 * it replaces it*/
-	void registerDevice(std::string interface, std::string protocol,
+	void registerDeviceType(std::string interface, std::string protocol,
 			boost::shared_ptr<BaseDevice> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters));
 
 	/** Create a new device by calling the constructor and returning a pointer to
