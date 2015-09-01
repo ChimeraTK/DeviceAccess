@@ -26,7 +26,7 @@ class mapFileParser {
 public:
     /**
      * @brief Performs parsing of specified MAP file. Returns pointer to 
-     * mapElem object describing all registers and metadata available in file. 
+     * RegisterInfo object describing all registers and metadata available in file. 
      *      
      * 
      * @throw exMapFileParser [exLibMap::EX_MAP_FILE_PARSE_ERROR] if parsing error 

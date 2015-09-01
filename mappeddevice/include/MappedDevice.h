@@ -61,19 +61,19 @@ private:
 
 public:
   class RegisterAccessor {
-    mapFile::mapElem me;
+    mapFile::RegisterInfo me;
     typename MappedDevice::ptrdev pdev;
     FixedPointConverter _fixedPointConverter;
 
   private:
-    static void checkRegister(const mapFile::mapElem &me, size_t dataSize,
+    static void checkRegister(const mapFile::RegisterInfo &me, size_t dataSize,
                               uint32_t addRegOffset, uint32_t &retDataSize,
                               uint32_t &retRegOff);
 
   public:
     RegisterAccessor(const std::string & /*_regName*/, // not needed, info is
-                     // already in the mapElem
-                     const mapFile::mapElem &_me,
+                     // already in the RegisterInfo
+                     const mapFile::RegisterInfo &_me,
                      typename MappedDevice::ptrdev _pdev);
 
     /** Read one ore more words from the device. It calls BaseDevice::readArea,
@@ -195,11 +195,11 @@ public:
     template <typename ConvertedDataType>
     void write(ConvertedDataType const &convertedData);
 
-    /** Returns the register information aka mapElem.
-     *  This function was named getRegisterInfo because mapElem will be
+    /** Returns the register information aka RegisterInfo.
+     *  This function was named getRegisterInfo because RegisterInfo will be
      * renamed.
      */
-    mapFile::mapElem const &getRegisterInfo() const;
+    mapFile::RegisterInfo const &getRegisterInfo() const;
 
     /** Return's a reference to the correctly configured internal fixed point
      *  converter for the register
@@ -370,11 +370,11 @@ public:
       const std::string &dataRegionName,
       const std::string &module = std::string()) const;
 
-  /** Get a complete list of RegisterInfo objects (mapfile::mapElem) for one
+  /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
    * module.
    *  The registers are in alphabetical order.
    */
-  std::list<mapFile::mapElem> getRegistersInModule(
+  std::list<mapFile::RegisterInfo> getRegistersInModule(
       const std::string &moduleName) const;
 
   /** Get a complete list of RegisterAccessors for one module.
@@ -383,7 +383,7 @@ public:
   std::list<RegisterAccessor> getRegisterAccessorsInModule(
       const std::string &moduleName) const;
 
-  /** Returns the register information aka mapElem.
+  /** Returns the register information aka RegisterInfo.
    *  This function was named getRegisterMap because mapFile will be renamed.
    */
   boost::shared_ptr<const mapFile> getRegisterMap() const;
@@ -418,7 +418,7 @@ typename MappedDevice<T>::RegisterAccessor MappedDevice<T>::getRegObject(
     const std::string &regName) const {
   checkPointersAreNotNull();
 
-  mapFile::mapElem me;
+  mapFile::RegisterInfo me;
   registerMap->getRegisterInfo(regName, me);
   return MappedDevice::RegisterAccessor(regName, me, pdev);
 }
@@ -429,14 +429,14 @@ MappedDevice<T>::getRegisterAccessor(const std::string &regName,
                                const std::string &module) const {
   checkPointersAreNotNull();
 
-  mapFile::mapElem me;
+  mapFile::RegisterInfo me;
   registerMap->getRegisterInfo(regName, me, module);
   return boost::shared_ptr<typename MappedDevice<T>::RegisterAccessor>(
       new MappedDevice::RegisterAccessor(regName, me, pdev));
 }
 
 template <typename T>
-typename std::list<mapFile::mapElem> MappedDevice<T>::getRegistersInModule(
+typename std::list<mapFile::RegisterInfo> MappedDevice<T>::getRegistersInModule(
     const std::string &moduleName) const {
   checkPointersAreNotNull();
 
@@ -448,11 +448,11 @@ std::list<typename MappedDevice<T>::RegisterAccessor>
 MappedDevice<T>::getRegisterAccessorsInModule(const std::string &moduleName) const {
   checkPointersAreNotNull();
 
-  std::list<mapFile::mapElem> registerInfoList =
+  std::list<mapFile::RegisterInfo> registerInfoList =
       registerMap->getRegistersInModule(moduleName);
 
   std::list<RegisterAccessor> accessorList;
-  for (std::list<mapFile::mapElem>::const_iterator regInfo =
+  for (std::list<mapFile::RegisterInfo>::const_iterator regInfo =
            registerInfoList.begin();
        regInfo != registerInfoList.end(); ++regInfo) {
     accessorList.push_back(
@@ -469,7 +469,7 @@ void MappedDevice<T>::checkRegister(const std::string &regName,
                               uint32_t &retRegOff, uint8_t &retRegBar) const {
   checkPointersAreNotNull();
 
-  mapFile::mapElem me;
+  mapFile::RegisterInfo me;
   registerMap->getRegisterInfo(regName, me, regModule);
   if (addRegOffset % 4) {
     throw MappedDeviceException("Register offset must be divisible by 4",
@@ -752,14 +752,14 @@ std::string MappedDevice<T>::readDeviceInfo() const {
 
 template <typename T>
 MappedDevice<T>::RegisterAccessor::RegisterAccessor(const std::string & /*_regName*/,
-                                              const mapFile::mapElem &_me,
+                                              const mapFile::RegisterInfo &_me,
                                               ptrdev _pdev)
     : me(_me),
       pdev(_pdev),
       _fixedPointConverter(_me.reg_width, _me.reg_frac_bits, _me.reg_signed) {}
 
 template <typename T>
-void MappedDevice<T>::RegisterAccessor::checkRegister(const mapFile::mapElem &me,
+void MappedDevice<T>::RegisterAccessor::checkRegister(const mapFile::RegisterInfo &me,
                                                 size_t dataSize,
                                                 uint32_t addRegOffset,
                                                 uint32_t &retDataSize,
@@ -831,8 +831,8 @@ void MappedDevice<T>::RegisterAccessor::writeDMA(int32_t const *data, size_t dat
 }
 
 template <typename T>
-mapFile::mapElem const &MappedDevice<T>::RegisterAccessor::getRegisterInfo() const {
-  return me; // me is the mapElement
+mapFile::RegisterInfo const &MappedDevice<T>::RegisterAccessor::getRegisterInfo() const {
+  return me; // me is the RegisterInfoent
 }
 
 template <typename T>

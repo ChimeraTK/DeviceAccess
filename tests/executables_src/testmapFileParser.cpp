@@ -151,34 +151,34 @@ void MapFileParserTest::testGoodMapFileParse () {
   /* TODO: remove default assignments to unused fields in the parse
    * function and
    * move it all to the constructor */
-  mtca4u::mapFile::mapElem mapElement1("WORD_FIRMWARE", 0x00000001,
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
                                        0x00000000, 0x00000004,
                                        0x0, 32, 0, true, 5);
-  mtca4u::mapFile::mapElem mapElement2("WORD_COMPILATION", 0x00000001,
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("WORD_COMPILATION", 0x00000001,
                                        0x00000004, 0x00000004,
                                        0x00000000, 32, 0, true, 6);
-  mtca4u::mapFile::mapElem mapElement3("WORD_STATUS", 0x00000001,
+  mtca4u::mapFile::RegisterInfo RegisterInfoent3("WORD_STATUS", 0x00000001,
                                        0x00000008, 0x00000004,
                                        0x00000000, 32, 0, true, 7);
-  mtca4u::mapFile::mapElem mapElement4("WORD_USER1", 0x00000001,
+  mtca4u::mapFile::RegisterInfo RegisterInfoent4("WORD_USER1", 0x00000001,
                                        0x0000000C, 0x00000004,
                                        0x00000000, 32, 0, true, 8);
-  mtca4u::mapFile::mapElem mapElement5("WORD_USER2", 0x00000001,
+  mtca4u::mapFile::RegisterInfo RegisterInfoent5("WORD_USER2", 0x00000001,
                                        0x00000010, 0x00000004,
                                        0x00000000, 32, 0, 0, 9);
 
-  mtca4u::mapFile::mapElem* ptrList[5];
-  ptrList[0] = &mapElement1;
-  ptrList[1] = &mapElement2;
-  ptrList[2] = &mapElement3;
-  ptrList[3] = &mapElement4;
-  ptrList[4] = &mapElement5;
+  mtca4u::mapFile::RegisterInfo* ptrList[5];
+  ptrList[0] = &RegisterInfoent1;
+  ptrList[1] = &RegisterInfoent2;
+  ptrList[2] = &RegisterInfoent3;
+  ptrList[3] = &RegisterInfoent4;
+  ptrList[4] = &RegisterInfoent5;
 
   int index;
   mtca4u::mapFile::iterator it;
   for( it = ptrmapFile->begin(), index = 0;
       it != ptrmapFile->end(); ++it, ++index){
-    BOOST_CHECK((compareMapElements(*ptrList[index], *it)) == true);
+    BOOST_CHECK((compareRegisterInfoents(*ptrList[index], *it)) == true);
   }
 }
 
@@ -198,40 +198,40 @@ void MapFileParserTest::testGoodMappFileParse () {
   ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector< mtca4u::mapFile::mapElem > mapElements(11);
+  std::vector< mtca4u::mapFile::RegisterInfo > RegisterInfoents(11);
 
-  mapElements[0] = mtca4u::mapFile::mapElem("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0,
+  RegisterInfoents[0] = mtca4u::mapFile::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0,
 					    32, 0, true, 5, "BOARD");
-  mapElements[1] = mtca4u::mapFile::mapElem("WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0,
+  RegisterInfoents[1] = mtca4u::mapFile::RegisterInfo("WORD_COMPILATION", 0x01, 0x04, 0x04, 0x0,
 					    32, 0, true, 6, "BOARD");
-  mapElements[2] = mtca4u::mapFile::mapElem("WORD_STATUS", 0x01, 0x08, 0x04, 0x01,
+  RegisterInfoents[2] = mtca4u::mapFile::RegisterInfo("WORD_STATUS", 0x01, 0x08, 0x04, 0x01,
 					    32, 0, true, 7, "APP0");
-  mapElements[3] = mtca4u::mapFile::mapElem("WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01,
+  RegisterInfoents[3] = mtca4u::mapFile::RegisterInfo("WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01,
 					    16, 0, true, 8, "APP0");
-  mapElements[4] = mtca4u::mapFile::mapElem("MODULE0", 0x02, 0x10, 0x08, 0x01,
+  RegisterInfoents[4] = mtca4u::mapFile::RegisterInfo("MODULE0", 0x02, 0x10, 0x08, 0x01,
 					    32, 0, true, 9, "APP0");
-  mapElements[5] = mtca4u::mapFile::mapElem("MODULE1", 0x02, 0x20, 0x08, 0x01,
+  RegisterInfoents[5] = mtca4u::mapFile::RegisterInfo("MODULE1", 0x02, 0x20, 0x08, 0x01,
 					    32, 0, true, 10, "APP0");
-  mapElements[6] = mtca4u::mapFile::mapElem("WORD_USER1", 0x01, 0x10, 0x04, 0x01,
+  RegisterInfoents[6] = mtca4u::mapFile::RegisterInfo("WORD_USER1", 0x01, 0x10, 0x04, 0x01,
 					    16, 3, true, 14, "MODULE0"); 
-  mapElements[7] = mtca4u::mapFile::mapElem("WORD_USER2", 0x01, 0x14, 0x04, 0x01,
+  RegisterInfoents[7] = mtca4u::mapFile::RegisterInfo("WORD_USER2", 0x01, 0x14, 0x04, 0x01,
 					    18, 5, false, 15, "MODULE0");
-  mapElements[8] = mtca4u::mapFile::mapElem("WORD_USER1", 0x01, 0x20, 0x04, 0x01,
+  RegisterInfoents[8] = mtca4u::mapFile::RegisterInfo("WORD_USER1", 0x01, 0x20, 0x04, 0x01,
 					    16, 3, true, 16, "MODULE1");
-  mapElements[9] = mtca4u::mapFile::mapElem("WORD_USER2", 0x01, 0x24, 0x04, 0x01,
+  RegisterInfoents[9] = mtca4u::mapFile::RegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01,
 					    18, 5, false, 17, "MODULE1");
-  mapElements[10] = mtca4u::mapFile::mapElem("REGISTER", 0x01, 0x00, 0x04, 0x02,
+  RegisterInfoents[10] = mtca4u::mapFile::RegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02,
 					    32, 0, true, 20, "MODULE.NAME.WITH.DOTS");
 
   mtca4u::mapFile::const_iterator mapIter;
-    std::vector<mtca4u::mapFile::mapElem>::const_iterator elementsIter;
- for( mapIter = ptrmapFile->begin(), elementsIter = mapElements.begin();
-      mapIter != ptrmapFile->end() && elementsIter != mapElements.end();
+    std::vector<mtca4u::mapFile::RegisterInfo>::const_iterator elementsIter;
+ for( mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
+      mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end();
       ++mapIter, ++elementsIter){
      std::stringstream message;
      message << "Failed comparison on Register '" << (*elementsIter).reg_name
 	   << "', module '" << (elementsIter->reg_module) << "'";
-     BOOST_CHECK_MESSAGE( compareMapElements(*mapIter, *elementsIter) == true,
+     BOOST_CHECK_MESSAGE( compareRegisterInfoents(*mapIter, *elementsIter) == true,
 			  message.str());
   }
 
@@ -242,26 +242,26 @@ void MapFileParserTest::testMixedMapFileParse () {
     boost::shared_ptr<mtca4u::mapFile> ptrmapFile =
         map_file_parser.parse("mixedMapFile.map");
     
-    std::vector< mtca4u::mapFile::mapElem > mapElements(4);
+    std::vector< mtca4u::mapFile::RegisterInfo > RegisterInfoents(4);
 
-  mapElements[0] = mtca4u::mapFile::mapElem("WORD_FIRMWARE_ID", 0x01, 0x0, 0x04, 0x0,
+  RegisterInfoents[0] = mtca4u::mapFile::RegisterInfo("WORD_FIRMWARE_ID", 0x01, 0x0, 0x04, 0x0,
 					    32, 0, true, 4);
-  mapElements[1] = mtca4u::mapFile::mapElem("WORD_USER", 0x01, 0x4, 0x04, 0x0,
+  RegisterInfoents[1] = mtca4u::mapFile::RegisterInfo("WORD_USER", 0x01, 0x4, 0x04, 0x0,
 					    32, 0, true, 5);
-  mapElements[2] = mtca4u::mapFile::mapElem("MODULE_ID", 0x01, 0x0, 0x04, 0x1,
+  RegisterInfoents[2] = mtca4u::mapFile::RegisterInfo("MODULE_ID", 0x01, 0x0, 0x04, 0x1,
 					    32, 0, true, 6, "APP0");
-  mapElements[3] = mtca4u::mapFile::mapElem("WORD_USER", 0x03, 0x4, 0x0C, 0x1,
+  RegisterInfoents[3] = mtca4u::mapFile::RegisterInfo("WORD_USER", 0x03, 0x4, 0x0C, 0x1,
 					    18, 3, false, 7, "APP0");
 
   mtca4u::mapFile::const_iterator mapIter;
-  std::vector<mtca4u::mapFile::mapElem>::const_iterator elementsIter;
-  for( mapIter = ptrmapFile->begin(), elementsIter = mapElements.begin();
-       mapIter != ptrmapFile->end() && elementsIter != mapElements.end();
+  std::vector<mtca4u::mapFile::RegisterInfo>::const_iterator elementsIter;
+  for( mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
+       mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end();
        ++mapIter, ++elementsIter){
      std::stringstream message;
      message << "Failed comparison on Register '" << (*elementsIter).reg_name
 	   << "', module '" << (elementsIter->reg_module) << "'";
-     BOOST_CHECK_MESSAGE( compareMapElements(*mapIter, *elementsIter) == true,
+     BOOST_CHECK_MESSAGE( compareRegisterInfoents(*mapIter, *elementsIter) == true,
 			  message.str());
   }
 

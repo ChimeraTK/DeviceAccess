@@ -18,7 +18,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
         throw MapFileException("Cannot open file \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_MAP_FILE);
     }
     ptrmapFile pmap(new mapFile(file_name));
-    mapFile::mapElem me;
+    mapFile::RegisterInfo me;
 
     while (std::getline(file, line)) {
         bool failed = false;

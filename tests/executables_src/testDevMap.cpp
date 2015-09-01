@@ -531,7 +531,7 @@ void DevMapTest::testDMAReadViaStruct() {
     mtca4u::DeviceFactory::getInstance();
     mtca4u::devMap<mtca4u::PcieDevice> pcieDevice =
     FactoryInstance.createMappedDevice("DUMMY5");//,true);
-    pcieDevice.openDev(pcieDevice._dmapElem.dev_name,pcieDevice._dmapElem.map_file_name);*/
+    pcieDevice.openDev(pcieDevice._dRegisterInfo.dev_name,pcieDevice._dRegisterInfo.map_file_name);*/
 
   // mtca4u::PcieDevice ptr = static_cast<mtca4u::PcieDevice >(pcieDevice);
   int32_t data = 1;
@@ -551,10 +551,10 @@ void DevMapTest::testGetRegistersInModule() {
   boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
 	FactoryInstance.createMappedDevice("DUMMYD0");
 
-  std::list<mtca4u::mapFile::mapElem> registerInfoList =
+  std::list<mtca4u::mapFile::RegisterInfo> registerInfoList =
       mappedDevice->getRegistersInModule("APP0");
   BOOST_CHECK(registerInfoList.size() == 4);
-  std::list<mtca4u::mapFile::mapElem>::iterator registerInfo =
+  std::list<mtca4u::mapFile::RegisterInfo>::iterator registerInfo =
       registerInfoList.begin();
   BOOST_CHECK(registerInfo->reg_name == "MODULE0");
   BOOST_CHECK(registerInfo->reg_module == "APP0");
@@ -605,7 +605,7 @@ void DevMapTest::testAccessorForMuxedData() {
   boost::shared_ptr<mtca4u::BaseDevice> ioDevice(new mtca4u::DummyDevice);
   ioDevice->open("sequences.map");
 
-  mtca4u::mapFile::mapElem sequenceInfo;
+  mtca4u::mapFile::RegisterInfo sequenceInfo;
   registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DMA", sequenceInfo,
                                "TEST");
 

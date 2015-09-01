@@ -11,9 +11,9 @@ BOOST_AUTO_TEST_CASE( test_ompareModuleName_pred){
   mtca4u::compareModuleName_pred myModulePredicate("MyModule");
   mtca4u::compareModuleName_pred theirModulePredicate("TheirModule");
 
-  mtca4u::mapFile::mapElem myMapElement("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MyModule");
-  BOOST_CHECK( myModulePredicate( myMapElement ) == true );
-  BOOST_CHECK( theirModulePredicate( myMapElement ) == false );
+  mtca4u::mapFile::RegisterInfo myRegisterInfoent("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MyModule");
+  BOOST_CHECK( myModulePredicate( myRegisterInfoent ) == true );
+  BOOST_CHECK( theirModulePredicate( myRegisterInfoent ) == false );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

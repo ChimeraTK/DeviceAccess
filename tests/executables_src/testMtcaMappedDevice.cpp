@@ -217,7 +217,7 @@ void MtcaMappedDeviceTest::testRegObject_getRegisterInfo() {
   // PP: Is there a different way of testing it?
   MtcaMappedDevice::regObject registerAccessor =
       _mappedDevice.getRegObject("AREA_DMAABLE");
-  mapFile::mapElem registerInfo = registerAccessor.getRegisterInfo();
+  mapFile::RegisterInfo registerInfo = registerAccessor.getRegisterInfo();
   BOOST_CHECK(registerInfo.reg_address == 0x0);
   BOOST_CHECK(registerInfo.reg_elem_nr == 0x400);
   BOOST_CHECK(registerInfo.reg_size = 0x1000);

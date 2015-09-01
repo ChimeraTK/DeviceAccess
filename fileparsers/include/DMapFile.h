@@ -31,7 +31,7 @@ public:
     /**
      * @brief  Stores information about one device 
      */
-    class dmapElem {
+    class dRegisterInfo {
     public:
         std::string dev_name; /**< logical name of the device*/
         std::string dev_file; /**< name of dev file (in direcotry /dev)*/
@@ -42,23 +42,23 @@ public:
         /**
          * Default class constructor
          */
-        dmapElem();
+        dRegisterInfo();
 
 	/** Convenience function to extract the device file name and the map file name as one object (a pair).
 	 *  This is all the information needed to open a devMap opject. As std::pair and std::string 
 	 *  are standard objects no dependency between dmapFile and the devMap object is introduced, in contrast
-	 *  to passing a dmapElem to devMap.
+	 *  to passing a dRegisterInfo to devMap.
 	 *  The function name is a bit lengthy to avoid confusion between device name (logical name) and
 	 *  device file name (name of the device in the /dev directory). The latter is the .first argument of 
 	 *  the pair.
 	 */
 	std::pair<std::string, std::string> getDeviceFileAndMapFileName() const;
 
-        friend std::ostream& operator<<(std::ostream &os, const dmapElem& de);
+        friend std::ostream& operator<<(std::ostream &os, const dRegisterInfo& de);
     };
 
-    typedef std::vector<dmapElem>::iterator iterator;
-    typedef std::vector<dmapElem>::const_iterator const_iterator;
+    typedef std::vector<dRegisterInfo>::iterator iterator;
+    typedef std::vector<dRegisterInfo>::const_iterator const_iterator;
     /**
      * @brief  Stores information about errors and warnings
      *       
@@ -94,8 +94,8 @@ public:
                 ERROR, /**< Critical error was detected */
                 WARNING /**< Non-critical error was detected */
             } TYPE;
-            DMapFile::dmapElem err_dev_1; /**< Detailed information about first device that generate error or warning */
-            DMapFile::dmapElem err_dev_2; /**< Detailed information about second device that generate error or warning */
+            DMapFile::dRegisterInfo err_dev_1; /**< Detailed information about first device that generate error or warning */
+            DMapFile::dRegisterInfo err_dev_2; /**< Detailed information about second device that generate error or warning */
             DMAP_FILE_ERR err_type; /**< Type of detected problem */
             TYPE type; /**< Class of detected problem - ERROR or WARNING*/
 
@@ -108,7 +108,7 @@ public:
              * @param dev_1 detailed information about first device that generate problem
              * @param dev_2 detailed information about second device that generate problem
              */
-            errorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DMapFile::dmapElem &dev_1, const DMapFile::dmapElem &dev_2);
+            errorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DMapFile::dRegisterInfo &dev_1, const DMapFile::dRegisterInfo &dev_2);
             friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
             friend std::ostream& operator<<(std::ostream &os, const errorElem& me);
         };
@@ -154,7 +154,7 @@ public:
      * 
      * @snippet test-libmap.cpp DMAP getting info
      */
-    void getDeviceInfo(const std::string& dev_name, dmapElem &value);
+    void getDeviceInfo(const std::string& dev_name, dRegisterInfo &value);
     /**
      * @brief Returns number of records in DMAP file
      *
@@ -181,7 +181,7 @@ public:
     const_iterator end() const;
 
 private:
-    std::vector<dmapElem> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/
+    std::vector<dRegisterInfo> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/
     std::string dmap_file_name; /**< name of DMAP file*/
 
 public:
@@ -197,7 +197,7 @@ public:
      * @brief Insert new element read from DMAP file
      * @param elem element describing detailes of one device taken from DMAP file
      */
-    void insert(const dmapElem &elem);
+    void insert(const dRegisterInfo &elem);
 };
 /**
  * @typedef Introduce specialisation of shared_pointer template for pointers to mapFile object as a ptrdmapFile

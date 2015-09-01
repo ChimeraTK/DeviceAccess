@@ -11,7 +11,7 @@
 #include "MapFile.h"
 #include "DMapFile.h"
 
-void populateDummydMapElement(mtca4u::DMapFile::dmapElem& dMapElement,
+void populateDummydRegisterInfoent(mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent,
                               std::string dmapFileName,
                               std::string deviceName = "card",
                               std::string dev_file =
@@ -19,11 +19,11 @@ void populateDummydMapElement(mtca4u::DMapFile::dmapElem& dMapElement,
                               std::string map_file_name =
                                   "/dev/dummy_map_file");
 std::string appendNumberToName(std::string name, int cardNumber);
-bool compareDMapElements(const mtca4u::DMapFile::dmapElem& dMapElement1,
-                         const mtca4u::DMapFile::dmapElem& dMapElement2);
+bool compareDRegisterInfoents(const mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent1,
+                         const mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent2);
 
-bool compareMapElements(const mtca4u::mapFile::mapElem& element1,
-                        const mtca4u::mapFile::mapElem& element2);
+bool compareRegisterInfoents(const mtca4u::mapFile::RegisterInfo& element1,
+                        const mtca4u::mapFile::RegisterInfo& element2);
 
 std::string getCurrentWorkingDirectory();
 

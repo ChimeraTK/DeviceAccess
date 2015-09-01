@@ -91,28 +91,28 @@ void DMapFileParserTest::testParseFile() {
   mtca4u::DMapFileParser fileParser;
   boost::shared_ptr<mtca4u::DMapFile> mapFilePtr = fileParser.parse(file_path);
 
-  mtca4u::DMapFile::dmapElem dMapElement1;
-  mtca4u::DMapFile::dmapElem dMapElement2;
-  mtca4u::DMapFile::dmapElem dMapElement3;
+  mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
+  mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
+  mtca4u::DMapFile::dRegisterInfo dRegisterInfoent3;
 
-  populateDummydMapElement(dMapElement1, "valid.dmap", "card1", "/dev/dev1",
+  populateDummydRegisterInfoent(dRegisterInfoent1, "valid.dmap", "card1", "/dev/dev1",
                            "goodMapFile_withoutModules.map");
-  populateDummydMapElement(dMapElement2, "valid.dmap", "card2", "/dev/dev2",
+  populateDummydRegisterInfoent(dRegisterInfoent2, "valid.dmap", "card2", "/dev/dev2",
                            "./goodMapFile_withoutModules.map");
-  populateDummydMapElement(dMapElement3, "valid.dmap", "card3", "/dev/dev3",
+  populateDummydRegisterInfoent(dRegisterInfoent3, "valid.dmap", "card3", "/dev/dev3",
                            getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
   std::cout<<getCurrentWorkingDirectory()<<std::endl;
 
-  dMapElement1.dmap_file_line_nr = 3;
-  dMapElement2.dmap_file_line_nr = 4;
-  dMapElement3.dmap_file_line_nr = 5;
+  dRegisterInfoent1.dmap_file_line_nr = 3;
+  dRegisterInfoent2.dmap_file_line_nr = 4;
+  dRegisterInfoent3.dmap_file_line_nr = 5;
   
   // we use require here so it is safe to increase and dereference the iterator below
   BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
 
   mtca4u::DMapFile::const_iterator it = mapFilePtr->begin();
 
-  BOOST_CHECK( compareDMapElements(dMapElement1, *(it++)) == true);
-  BOOST_CHECK( compareDMapElements(dMapElement2, *(it++)) == true);
-  BOOST_CHECK( compareDMapElements(dMapElement3, *(it++)) == true);
+  BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent1, *(it++)) == true);
+  BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent2, *(it++)) == true);
+  BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent3, *(it++)) == true);
 }

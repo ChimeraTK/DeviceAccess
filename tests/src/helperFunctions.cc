@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-void populateDummydMapElement(mtca4u::DMapFile::dmapElem& dMapElement,
+void populateDummydRegisterInfoent(mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent,
                               std::string dmapFileName, std::string deviceName,
                               std::string dev_file, std::string map_file_name) {
   static int lineNumber = 1;
@@ -13,11 +13,11 @@ void populateDummydMapElement(mtca4u::DMapFile::dmapElem& dMapElement,
   if (map_file_name == "/dev/dummy_map_file")
     map_file_name = appendNumberToName(deviceName, lineNumber);
 
-  dMapElement.dev_name = deviceName;
-  dMapElement.dev_file = dev_file;
-  dMapElement.map_file_name = map_file_name;
-  dMapElement.dmap_file_name = dmapFileName;
-  dMapElement.dmap_file_line_nr = ++lineNumber;
+  dRegisterInfoent.dev_name = deviceName;
+  dRegisterInfoent.dev_file = dev_file;
+  dRegisterInfoent.map_file_name = map_file_name;
+  dRegisterInfoent.dmap_file_name = dmapFileName;
+  dRegisterInfoent.dmap_file_line_nr = ++lineNumber;
 }
 
 std::string appendNumberToName(std::string name, int suffixNumber) {
@@ -26,19 +26,19 @@ std::string appendNumberToName(std::string name, int suffixNumber) {
   return (deviceName.str());
 }
 
-bool compareDMapElements(const mtca4u::DMapFile::dmapElem& dMapElement1,
-                         const mtca4u::DMapFile::dmapElem& dMapElement2) {
+bool compareDRegisterInfoents(const mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent1,
+                         const mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent2) {
   bool result =
-      (dMapElement1.dev_name == dMapElement2.dev_name) &&
-      (dMapElement1.dev_file == dMapElement2.dev_file) &&
-      (dMapElement1.map_file_name == dMapElement2.map_file_name) &&
-      (dMapElement1.dmap_file_name == dMapElement2.dmap_file_name) &&
-      (dMapElement1.dmap_file_line_nr == dMapElement2.dmap_file_line_nr);
+      (dRegisterInfoent1.dev_name == dRegisterInfoent2.dev_name) &&
+      (dRegisterInfoent1.dev_file == dRegisterInfoent2.dev_file) &&
+      (dRegisterInfoent1.map_file_name == dRegisterInfoent2.map_file_name) &&
+      (dRegisterInfoent1.dmap_file_name == dRegisterInfoent2.dmap_file_name) &&
+      (dRegisterInfoent1.dmap_file_line_nr == dRegisterInfoent2.dmap_file_line_nr);
   return result;
 }
 
-bool compareMapElements(const mtca4u::mapFile::mapElem& element1,
-                        const mtca4u::mapFile::mapElem& element2) {
+bool compareRegisterInfoents(const mtca4u::mapFile::RegisterInfo& element1,
+                        const mtca4u::mapFile::RegisterInfo& element2) {
   bool result = (element1.line_nr == element2.line_nr) &&
                 (element1.reg_address == element2.reg_address) &&
                 (element1.reg_bar == element2.reg_bar) &&

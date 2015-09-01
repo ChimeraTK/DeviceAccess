@@ -11,7 +11,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
     std::istringstream is;
-    DMapFile::dmapElem de;
+    DMapFile::dRegisterInfo de;
     uint32_t line_nr = 0;
     //std::string critical;
 

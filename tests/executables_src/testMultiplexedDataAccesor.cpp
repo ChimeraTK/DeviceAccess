@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_SUITE( SequenceDeMultiplexerTestSuite )
 BOOST_AUTO_TEST_CASE( testFixedTypeConstructor ){
   boost::shared_ptr< BaseDevice >  ioDevice( new DummyDevice );
   FixedTypeMuxedDataAccessor<double, int32_t> 
-    deMultiplexer( ioDevice, mapFile::mapElem("test", 15, 0, 60, 0) 
+    deMultiplexer( ioDevice, mapFile::RegisterInfo("test", 15, 0, 60, 0) 
 		   , std::vector< FixedPointConverter >(3) );
   BOOST_CHECK( deMultiplexer[0].size() == 5 );
 }

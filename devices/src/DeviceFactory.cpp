@@ -25,7 +25,7 @@ void DeviceFactory::registerDeviceType(std::string interface, std::string protoc
 
 boost::shared_ptr < MappedDevice<BaseDevice> > DeviceFactory::createMappedDevice(std::string devname) {
 	boost::shared_ptr<BaseDevice> base;
-	DMapFile::dmapElem elem;
+	DMapFile::dRegisterInfo elem;
 	boost::tie(base, elem) = parseDMap(devname);
 	if (base)
 		base->open();
@@ -34,18 +34,18 @@ boost::shared_ptr < MappedDevice<BaseDevice> > DeviceFactory::createMappedDevice
 
 boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string devname) {
 	boost::shared_ptr<BaseDevice> base;
-	DMapFile::dmapElem elem;
+	DMapFile::dRegisterInfo elem;
 	boost::tie(base, elem) = parseDMap(devname);
 	return base;
 }
 
 
-boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::parseDMap(std::string devName)
+boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFactory::parseDMap(std::string devName)
 {
 	std::vector<std::string> device_info;
 	std::string uri;
 	DMapFilesParser filesParser;
-	DMapFile::dmapElem dmapElement;
+	DMapFile::dRegisterInfo dRegisterInfoent;
 	std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
 	try {
 		if ( boost::filesystem::exists(testFilePath ) )
@@ -55,7 +55,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::p
 	}
 	catch (Exception& e) {
 		std::cout << e.what() << std::endl;
-		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement);
+		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent);
 	}
 
 #ifdef _DEBUG
@@ -76,7 +76,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::p
 			std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
 #endif
 			uri = (*deviceIter).first.dev_file;
-			dmapElement = (*deviceIter).first;
+			dRegisterInfoent = (*deviceIter).first;
 			found = true;
 			break;
 		}
@@ -85,7 +85,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::p
 	{
 		// do not throw here because theoretically client could work with multiple unrelated devices
 		throw DeviceFactoryException("Unknown device alias.", DeviceFactoryException::UNKNOWN_ALIAS);
-		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement);
+		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent);
 	}
 
 #ifdef _DEBUG
@@ -117,11 +117,11 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> DeviceFactory::p
 #endif
 
 		if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
-			return boost::make_tuple( (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters), dmapElement);
+			return boost::make_tuple( (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters), dRegisterInfoent);
 
 	}
 	throw DeviceFactoryException("Unregistered device.", DeviceFactoryException::UNREGISTERED_DEVICE);
-	return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dmapElement); //won't execute
+	return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent); //won't execute
 }
 
 } // namespace mtca4u

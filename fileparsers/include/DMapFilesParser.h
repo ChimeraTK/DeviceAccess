@@ -26,13 +26,13 @@ namespace mtca4u{
  */
 class DMapFilesParser {
 public:
-    typedef std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::iterator iterator;
-    typedef std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> >::const_iterator const_iterator;
+    typedef std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::iterator iterator;
+    typedef std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::const_iterator const_iterator;
 
 private:
     DMapFileParser dmap_file_parser; /**< DMAP file parser*/
     mapFileParser map_file_parser; /**< MAP file parser*/
-    std::vector<std::pair<DMapFile::dmapElem, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
+    std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
     std::vector<ptrmapFile> map_files; /**< vector of parsed MAP files*/
     /**
      * @brief Performs parsing of all DMAP files located in directory passed as a parameter and all MAP files 
@@ -88,7 +88,7 @@ public:
     /**
      * * @brief Returns detailed information about selected register
      * 
-     * Returns mapElem structure that describe selected register. If specified by name register 
+     * Returns RegisterInfo structure that describe selected register. If specified by name register 
      * cannot be found in MAP file function throws exception exMapFile with type exLibMap::EX_NO_REGISTER_IN_MAP_FILE.
      * 
      * @throw exMapFile (exLibMap::EX_NO_REGISTER_IN_MAP_FILE] - no register with specified name
@@ -106,7 +106,7 @@ public:
     /**
      * @brief Returns detailed information about selected register
      * 
-     * Returns mapElem structure that describe selected register. If specified by name register 
+     * Returns RegisterInfo structure that describe selected register. If specified by name register 
      * cannot be found in MAP file function throws exception exMapFile with type exLibMap::EX_NO_REGISTER_IN_MAP_FILE.
      * 
      * @throw exMapFile (exLibMap::EX_NO_REGISTER_IN_MAP_FILE] - no register with specified name
@@ -117,7 +117,7 @@ public:
      * 
      * @snippet test-libmap.cpp DMAPS get reg info
      */
-    void getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, mapFile::mapElem &elem);
+    void getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, mapFile::RegisterInfo &elem);
     /**
      * @brief Returns pointer to parser MAP file asociated with selected device
      * 
@@ -132,18 +132,18 @@ public:
      */
     uint16_t getdMapFileSize();
     
-    /** Get the dmapElem from the device name.
+    /** Get the dRegisterInfo from the device name.
      *  @deprecated Use the getter function which returns the result instead of passing it by reference.
      */
-    void getdMapFileElem(const std::string& devName, DMapFile::dmapElem &dMapFileElem);
+    void getdMapFileElem(const std::string& devName, DMapFile::dRegisterInfo &dMapFileElem);
 
-    /** Get the dmapElem from the device name.
+    /** Get the dRegisterInfo from the device name.
      *  @attention The reference is only valid as long as the dmapFilesParser object is in scope 
      *  and no new parse action has been performed. In practice this should not be a limitation. Just use
-     *  <pre>dmapFile::dmapElem myDmapElem = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
-     *   <pre>dmapFile::dmapElem const & myDmapElem = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre> 
+     *  <pre>dmapFile::dRegisterInfo myDRegisterInfo = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
+     *   <pre>dmapFile::dRegisterInfo const & myDRegisterInfo = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre> 
      */
-     DMapFile::dmapElem const &  getdMapFileElem(const std::string& devName);
+     DMapFile::dRegisterInfo const &  getdMapFileElem(const std::string& devName);
     
 
     /**
@@ -153,7 +153,7 @@ public:
      * @param elem_nr device number
      * @param dMapFileElem detailed information about register specified by number
      */    
-    void getdMapFileElem(int elem_nr, DMapFile::dmapElem &dMapFileElem);
+    void getdMapFileElem(int elem_nr, DMapFile::dRegisterInfo &dMapFileElem);
     /**
      * @brief  Checks correctness of DMAP files and associated MAP files
      * 

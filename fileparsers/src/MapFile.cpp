@@ -22,7 +22,7 @@ std::ostream& operator<<(std::ostream &os, const mapFile& me) {
     return os;
 }
 
-void mapFile::insert(mapElem &elem) {
+void mapFile::insert(RegisterInfo &elem) {
     map_file_elems.push_back(elem);
 }
 
@@ -30,9 +30,9 @@ void mapFile::insert(metaData &elem) {
     metadata.push_back(elem);
 }
 
-  void mapFile::getRegisterInfo(const std::string& reg_name, mapElem &value,
+  void mapFile::getRegisterInfo(const std::string& reg_name, RegisterInfo &value,
 				const std::string& reg_module) const{
-    std::vector<mapElem>::const_iterator iter;
+    std::vector<RegisterInfo>::const_iterator iter;
     iter = std::find_if(map_file_elems.begin(), map_file_elems.end(), 
 			findRegisterByName_pred(reg_name, reg_module));
     if (iter == map_file_elems.end()) {
@@ -42,7 +42,7 @@ void mapFile::insert(metaData &elem) {
     value = *iter;
 }
 
-void mapFile::getRegisterInfo(int reg_nr, mapElem &value) const {
+void mapFile::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
     try {
         value = map_file_elems.at(reg_nr);
     } catch (std::out_of_range) {
@@ -65,7 +65,7 @@ namespace {
     typedef struct _addresses {
         uint32_t start;
         uint32_t end;
-        std::vector<mapFile::mapElem>::iterator iter;
+        std::vector<mapFile::RegisterInfo>::iterator iter;
     } addresses;
 
 }
@@ -75,14 +75,14 @@ bool mapFile::check(errorList &err, mapFile::errorList::errorElem::TYPE level) {
     std::vector<addresses>::iterator v_iter;
     addresses address;
 
-    std::vector<mapElem> map_file = map_file_elems;
-    std::vector<mapElem>::iterator iter_p, iter_n;
+    std::vector<RegisterInfo> map_file = map_file_elems;
+    std::vector<RegisterInfo>::iterator iter_p, iter_n;
     bool ret = true;
 
     err.clear();
     if (map_file_elems.size() < 2)
         return true;
-    std::sort(map_file.begin(), map_file.end(), compareMapElemsByName_functor());
+    std::sort(map_file.begin(), map_file.end(), compareRegisterInfosByName_functor());
     iter_p = map_file.begin();
     iter_n = iter_p + 1;
     while (1) {
@@ -138,7 +138,7 @@ std::ostream& operator<<(std::ostream &os, const mapFile::metaData& me) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const mapFile::mapElem& me) {
+std::ostream& operator<<(std::ostream &os, const mapFile::RegisterInfo& me) {
      os << me.reg_name << " 0x" << std::hex << me.reg_elem_nr << " 0x" << me.reg_address 
 	<< " 0x" << me.reg_size << " 0x" << me.reg_bar << std::dec
 	<< " " << me.reg_width << " " << me.reg_frac_bits << " " 
@@ -162,7 +162,7 @@ std::ostream& operator<<(std::ostream &os, const mapFile::errorList::errorElem::
     return os;
 }
 
-mapFile::errorList::errorElem::errorElem(mapFile::errorList::errorElem::TYPE info_type, mapFile::errorList::errorElem::MAP_FILE_ERR e_type, const mapFile::mapElem &reg_1, const mapFile::mapElem &reg_2, const std::string &file_name) {
+mapFile::errorList::errorElem::errorElem(mapFile::errorList::errorElem::TYPE info_type, mapFile::errorList::errorElem::MAP_FILE_ERR e_type, const mapFile::RegisterInfo &reg_1, const mapFile::RegisterInfo &reg_2, const std::string &file_name) {
     err_type = e_type;
     err_reg_1 = reg_1;
     err_reg_2 = reg_2;
@@ -226,29 +226,29 @@ mapFile::iterator mapFile::end(){
     return map_file_elems.end();
 }
 
-std::list< mapFile::mapElem > mapFile::getRegistersInModule( std::string const & moduleName){
+std::list< mapFile::RegisterInfo > mapFile::getRegistersInModule( std::string const & moduleName){
   // first sort all elements accordind the names (module first, then register in module)
   // make a copy to keep the original order from the map file
-  std::vector<mapElem> sortedMapElements = map_file_elems;
-  std::sort(sortedMapElements.begin(), sortedMapElements.end(), compareMapElemsByName_functor());
+  std::vector<RegisterInfo> sortedRegisterInfoents = map_file_elems;
+  std::sort(sortedRegisterInfoents.begin(), sortedRegisterInfoents.end(), compareRegisterInfosByName_functor());
   
   // The vector is sorted, first module, than register name.
   // Find the first iterator with the module name, starting at the beginning,
   // then search for the first iterator with another name, starting from the previousy found first match.
-  std::vector<mapElem>::iterator firstMatchingIterator = 
-      std::find_if( sortedMapElements.begin(), sortedMapElements.end(), compareModuleName_pred( moduleName ) );
-  std::vector<mapElem>::iterator firstNotMatchingIterator = 
-      std::find_if( firstMatchingIterator, sortedMapElements.end(),
+  std::vector<RegisterInfo>::iterator firstMatchingIterator = 
+      std::find_if( sortedRegisterInfoents.begin(), sortedRegisterInfoents.end(), compareModuleName_pred( moduleName ) );
+  std::vector<RegisterInfo>::iterator firstNotMatchingIterator = 
+      std::find_if( firstMatchingIterator, sortedRegisterInfoents.end(),
 		    std::not1( compareModuleName_pred(moduleName) ) );
 
   // fill the list
-  std::list<mapElem> mapElementList;
-  for (std::vector<mapElem>::iterator it = firstMatchingIterator;
+  std::list<RegisterInfo> RegisterInfoentList;
+  for (std::vector<RegisterInfo>::iterator it = firstMatchingIterator;
        it != firstNotMatchingIterator; ++it){
-    mapElementList.push_back( *it );
+    RegisterInfoentList.push_back( *it );
   }
 
-  return mapElementList;
+  return RegisterInfoentList;
 }
 
 mapFile::metaData::metaData( std::string const & the_name,
@@ -256,7 +256,7 @@ mapFile::metaData::metaData( std::string const & the_name,
   : name(the_name), value(the_value)
 {}
 
-mapFile::mapElem::mapElem( std::string const & the_reg_name,
+mapFile::RegisterInfo::RegisterInfo( std::string const & the_reg_name,
 			   uint32_t the_reg_elem_nr,
 			   uint32_t the_reg_address,
 			   uint32_t the_reg_size,

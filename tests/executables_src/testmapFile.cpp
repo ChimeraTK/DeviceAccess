@@ -12,13 +12,13 @@ public:
   void testCheckRegistersOfSameName();
   void testCheckRegisterAddressOverlap();
   void testMetadataCoutStreamOperator();
-  void testMapElemCoutStreamOperator();
+  void testRegisterInfoCoutStreamOperator();
   void testErrElemTypeCoutStreamOperator();
   void testErrorElemCoutStreamOperator();
   void testErrorListCoutStreamOperator();
   void testMapFileCoutStreamOperator();
   void testGetRegistersInModule();
-  static void testmapElem();
+  static void testRegisterInfo();
 };
 
 
@@ -51,8 +51,8 @@ public:
     test_case* testMetadataCoutStreamOperator =
 	BOOST_CLASS_TEST_CASE(&MapFileTest::testMetadataCoutStreamOperator,
 	                      MapFileTestPtr);
-    test_case* testMapElemCoutStreamOperator =
-	BOOST_CLASS_TEST_CASE(&MapFileTest::testMapElemCoutStreamOperator,
+    test_case* testRegisterInfoCoutStreamOperator =
+	BOOST_CLASS_TEST_CASE(&MapFileTest::testRegisterInfoCoutStreamOperator,
 	                      MapFileTestPtr);
     test_case* testErrElemTypeCoutStreamOperator =
 	BOOST_CLASS_TEST_CASE(&MapFileTest::testErrElemTypeCoutStreamOperator,
@@ -73,13 +73,13 @@ public:
     add(testCheckRegistersOfSameName);
     add(testCheckRegisterAddressOverlap);
     add(testMetadataCoutStreamOperator);
-    add(testMapElemCoutStreamOperator);
+    add(testRegisterInfoCoutStreamOperator);
     add(testErrElemTypeCoutStreamOperator);
     add(testErrorElemCoutStreamOperator);
     add(testErrorListCoutStreamOperator);
     add(testMapFileCoutStreamOperator);
 
-    add(BOOST_TEST_CASE(MapFileTest::testmapElem));
+    add(BOOST_TEST_CASE(MapFileTest::testRegisterInfo));
     add(BOOST_CLASS_TEST_CASE(&MapFileTest::testGetRegistersInModule, MapFileTestPtr));
   }
 };
@@ -95,26 +95,26 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 
 void MapFileTest::testInsertElement(){
   mtca4u::mapFile dummyMapFile("dummy.map");
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1", 2);
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_2", 1);
-  mtca4u::mapFile::mapElem mapElement3("TEST_REGISTER_NAME_3", 4);
-  mtca4u::mapFile::mapElem mapElementModule1("COMMON_REGISTER_NAME", 2, 8, 8, 1, 32, 0, true, 1, "Module1");
-  mtca4u::mapFile::mapElem mapElementModule2("COMMON_REGISTER_NAME", 2, 16, 8, 1, 32, 0, true, 2, "Module2");
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 4);
+  mtca4u::mapFile::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 1, 32, 0, true, 1, "Module1");
+  mtca4u::mapFile::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 1, 32, 0, true, 2, "Module2");
 
-  dummyMapFile.insert(mapElement1);
-  dummyMapFile.insert(mapElement2);
-  dummyMapFile.insert(mapElement3);
-  dummyMapFile.insert(mapElementModule1);
-  dummyMapFile.insert(mapElementModule2);
+  dummyMapFile.insert(RegisterInfoent1);
+  dummyMapFile.insert(RegisterInfoent2);
+  dummyMapFile.insert(RegisterInfoent3);
+  dummyMapFile.insert(RegisterInfoentModule1);
+  dummyMapFile.insert(RegisterInfoentModule2);
 
   mtca4u::mapFile const & constDummyMapFile = dummyMapFile;
 
-  mtca4u::mapFile::mapElem* ptrList[5];
-  ptrList[0] = &mapElement1;
-  ptrList[1] = &mapElement2;
-  ptrList[2] = &mapElement3;
-  ptrList[3] = &mapElementModule1;
-  ptrList[4] = &mapElementModule2;
+  mtca4u::mapFile::RegisterInfo* ptrList[5];
+  ptrList[0] = &RegisterInfoent1;
+  ptrList[1] = &RegisterInfoent2;
+  ptrList[2] = &RegisterInfoent3;
+  ptrList[3] = &RegisterInfoentModule1;
+  ptrList[4] = &RegisterInfoentModule2;
   
   int index;
   mtca4u::mapFile::iterator it;
@@ -122,12 +122,12 @@ void MapFileTest::testInsertElement(){
   for( it = dummyMapFile.begin(), index = 0;
        (it != dummyMapFile.end()) && (index < 3);
        ++it, ++index){
-    BOOST_CHECK((compareMapElements(*ptrList[index], *it)) == true);
+    BOOST_CHECK((compareRegisterInfoents(*ptrList[index], *it)) == true);
   }
   for( const_it = constDummyMapFile.begin(), index = 0;
        (const_it != constDummyMapFile.end()) && (index < 3);
        ++const_it, ++index){
-    BOOST_CHECK((compareMapElements(*ptrList[index], *const_it)) == true);
+    BOOST_CHECK((compareRegisterInfoents(*ptrList[index], *const_it)) == true);
   }
   BOOST_CHECK(dummyMapFile.getMapFileSize() == 5);
 }
@@ -161,41 +161,41 @@ void MapFileTest::testInsertMetadata(){
 
 void MapFileTest::testGetRegisterInfo () {
   mtca4u::mapFile dummyMapFile("dummy.map");
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1", 2, 0, 8);
-  mtca4u::mapFile::mapElem mapElementModule1("COMMON_REGISTER_NAME", 2, 8, 8, 0, 32, 0, true, 1, "Module1");
-  mtca4u::mapFile::mapElem mapElementModule2("COMMON_REGISTER_NAME", 2, 16, 8, 0, 32, 0, true, 2, "Module2");
-  mtca4u::mapFile::mapElem reterivedMapElement;
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2, 0, 8);
+  mtca4u::mapFile::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 0, 32, 0, true, 1, "Module1");
+  mtca4u::mapFile::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 0, 32, 0, true, 2, "Module2");
+  mtca4u::mapFile::RegisterInfo reterivedRegisterInfoent;
 
-  dummyMapFile.insert(mapElement1);
-  dummyMapFile.insert(mapElementModule1);
-  dummyMapFile.insert(mapElementModule2);
+  dummyMapFile.insert(RegisterInfoent1);
+  dummyMapFile.insert(RegisterInfoentModule1);
+  dummyMapFile.insert(RegisterInfoentModule2);
 
-  dummyMapFile.getRegisterInfo("TEST_REGISTER_NAME_1", reterivedMapElement);
-  BOOST_CHECK(compareMapElements(mapElement1, reterivedMapElement) == true);
+  dummyMapFile.getRegisterInfo("TEST_REGISTER_NAME_1", reterivedRegisterInfoent);
+  BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, reterivedRegisterInfoent) == true);
 
-  dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", reterivedMapElement, "Module1");
-  BOOST_CHECK(compareMapElements(mapElementModule1, reterivedMapElement) == true);
+  dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", reterivedRegisterInfoent, "Module1");
+  BOOST_CHECK(compareRegisterInfoents(RegisterInfoentModule1, reterivedRegisterInfoent) == true);
 
-  dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", reterivedMapElement, "Module2");
-  BOOST_CHECK(compareMapElements(mapElementModule2, reterivedMapElement) == true);
+  dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", reterivedRegisterInfoent, "Module2");
+  BOOST_CHECK(compareRegisterInfoents(RegisterInfoentModule2, reterivedRegisterInfoent) == true);
 
   BOOST_CHECK_THROW(
-      dummyMapFile.getRegisterInfo("some_name", reterivedMapElement),
+      dummyMapFile.getRegisterInfo("some_name", reterivedRegisterInfoent),
       mtca4u::MapFileException);
   try{
-    dummyMapFile.getRegisterInfo("some_name", reterivedMapElement);
+    dummyMapFile.getRegisterInfo("some_name", reterivedRegisterInfoent);
   } catch(mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
 	mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
   }
 
-  dummyMapFile.getRegisterInfo(0, reterivedMapElement);
-  BOOST_CHECK(compareMapElements(mapElement1, reterivedMapElement) == true);
+  dummyMapFile.getRegisterInfo(0, reterivedRegisterInfoent);
+  BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, reterivedRegisterInfoent) == true);
   BOOST_CHECK_THROW(
-      dummyMapFile.getRegisterInfo(3, reterivedMapElement),
+      dummyMapFile.getRegisterInfo(3, reterivedRegisterInfoent),
       mtca4u::MapFileException);
   try{
-    dummyMapFile.getRegisterInfo(3, reterivedMapElement);
+    dummyMapFile.getRegisterInfo(3, reterivedRegisterInfoent);
   } catch(mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
 	mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
@@ -230,27 +230,27 @@ void MapFileTest::testGetMetaData () {
 void MapFileTest::testCheckRegistersOfSameName(){
   mtca4u::mapFile dummyMapFile("dummy.map");
 
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
-  mtca4u::mapFile::mapElem mapElement3("TEST_REGISTER_NAME_1", 1, 8, 4, 0);
-  mtca4u::mapFile::mapElem mapElement4("TEST_REGISTER_NAME_2", 1, 8, 4, 2);
-  mtca4u::mapFile::mapElem mapElementModule1("COMMON_REGISTER_NAME", 2, 8, 8, 3, 32, 0, true, 1, "Module1");
-  mtca4u::mapFile::mapElem mapElementModule2("COMMON_REGISTER_NAME", 2, 16, 8, 3, 32, 0, true, 2, "Module2");
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 8, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_2", 1, 8, 4, 2);
+  mtca4u::mapFile::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 3, 32, 0, true, 1, "Module1");
+  mtca4u::mapFile::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 3, 32, 0, true, 2, "Module2");
 
   mtca4u::mapFile::errorList errorList;
-  dummyMapFile.insert(mapElement1);
+  dummyMapFile.insert(RegisterInfoent1);
   // check after the first element to cover the specific branch (special case)
   dummyMapFile.check(errorList, mtca4u::mapFile::errorList::errorElem::WARNING);
   BOOST_CHECK(errorList.errors.size() == 0);
 
-  dummyMapFile.insert(mapElementModule1);
-  dummyMapFile.insert(mapElementModule2);
+  dummyMapFile.insert(RegisterInfoentModule1);
+  dummyMapFile.insert(RegisterInfoentModule2);
   dummyMapFile.check(errorList, mtca4u::mapFile::errorList::errorElem::WARNING);
   BOOST_CHECK(errorList.errors.size() == 0);
 
-  dummyMapFile.insert(mapElement2);
-  dummyMapFile.insert(mapElement3);
-  dummyMapFile.insert(mapElement4);
+  dummyMapFile.insert(RegisterInfoent2);
+  dummyMapFile.insert(RegisterInfoent3);
+  dummyMapFile.insert(RegisterInfoent4);
   dummyMapFile.check(errorList, mtca4u::mapFile::errorList::errorElem::WARNING);
   BOOST_CHECK(errorList.errors.size() == 2);
 
@@ -266,7 +266,7 @@ void MapFileTest::testCheckRegistersOfSameName(){
   }
 
   // duplicate identical entries is an error
-  dummyMapFile.insert(mapElement4);
+  dummyMapFile.insert(RegisterInfoent4);
   // only get the errors. There also is an overlap warning now.
   dummyMapFile.check(errorList, mtca4u::mapFile::errorList::errorElem::ERROR);
   BOOST_CHECK(errorList.errors.size() == 3); 
@@ -275,22 +275,22 @@ void MapFileTest::testCheckRegistersOfSameName(){
 void MapFileTest::testCheckRegisterAddressOverlap(){
   mtca4u::mapFile dummyMapFile("dummy.map");
 
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_2", 1, 11, 4, 0);
-  mtca4u::mapFile::mapElem mapElement3("TEST_REGISTER_NAME_3", 1, 10, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 11, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 1, 10, 4, 0);
  // 4 overlaps with 1, but is not next to it in the list
-  mtca4u::mapFile::mapElem mapElement4("TEST_REGISTER_NAME_4", 1, 3, 4, 0);
-  mtca4u::mapFile::mapElem mapElement5("THE_WHOLE_MODULE", 2, 16, 8, 0);
-  mtca4u::mapFile::mapElem mapElement6("REGISTER_1", 1, 16, 4, 0, 32, 0, true, 0, "THE_MODULE" );
-  mtca4u::mapFile::mapElem mapElement7("REGISTER_2", 1, 20, 4, 0, 32, 0, true, 0, "THE_MODULE" );
+  mtca4u::mapFile::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_4", 1, 3, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent5("THE_WHOLE_MODULE", 2, 16, 8, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent6("REGISTER_1", 1, 16, 4, 0, 32, 0, true, 0, "THE_MODULE" );
+  mtca4u::mapFile::RegisterInfo RegisterInfoent7("REGISTER_2", 1, 20, 4, 0, 32, 0, true, 0, "THE_MODULE" );
 
-  dummyMapFile.insert(mapElement1);
-  dummyMapFile.insert(mapElement2);
-  dummyMapFile.insert(mapElement3);
-  dummyMapFile.insert(mapElement4);
-  dummyMapFile.insert(mapElement5);
-  dummyMapFile.insert(mapElement6);
-  dummyMapFile.insert(mapElement7);
+  dummyMapFile.insert(RegisterInfoent1);
+  dummyMapFile.insert(RegisterInfoent2);
+  dummyMapFile.insert(RegisterInfoent3);
+  dummyMapFile.insert(RegisterInfoent4);
+  dummyMapFile.insert(RegisterInfoent5);
+  dummyMapFile.insert(RegisterInfoent6);
+  dummyMapFile.insert(RegisterInfoent7);
 
   mtca4u::mapFile::errorList errorList;
   dummyMapFile.check(errorList,
@@ -330,9 +330,9 @@ void MapFileTest::testMetadataCoutStreamOperator(){
   BOOST_CHECK(expected_stream.str() == actual_stream.str());
 }
 
-void MapFileTest::testMapElemCoutStreamOperator(){
-  mtca4u::mapFile::mapElem mapElement1("Some_Register");
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_2", 2, 4, 8, 1, 
+void MapFileTest::testRegisterInfoCoutStreamOperator(){
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("Some_Register");
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1, 
 				       18, 3, false, 0, "SomeModule");
 
   std::stringstream expected_stream;
@@ -343,8 +343,8 @@ void MapFileTest::testMapElemCoutStreamOperator(){
 		  << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
 		  << " 18 3 false SomeModule";
   std::stringstream actual_stream;
-  actual_stream << mapElement1;
-  actual_stream << mapElement2;
+  actual_stream << RegisterInfoent1;
+  actual_stream << RegisterInfoent2;
 
   BOOST_CHECK(expected_stream.str() == actual_stream.str());
 }
@@ -366,11 +366,11 @@ void MapFileTest::testErrElemTypeCoutStreamOperator(){
 void MapFileTest::testErrorElemCoutStreamOperator(){
   mtca4u::mapFile dummyMapFile("dummy.map");
 
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_2", 1, 3, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 3, 4, 0);
 
-  dummyMapFile.insert(mapElement1);
-  dummyMapFile.insert(mapElement2);
+  dummyMapFile.insert(RegisterInfoent1);
+  dummyMapFile.insert(RegisterInfoent2);
 
   mtca4u::mapFile::errorList errorList;
   dummyMapFile.check(errorList,
@@ -389,10 +389,10 @@ void MapFileTest::testErrorElemCoutStreamOperator(){
   BOOST_CHECK(expected_stream.str() == actual_stream.str());
 
   mtca4u::mapFile dummyMapFile1("dummy.map");
-  mtca4u::mapFile::mapElem mapElement3("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::mapFile::mapElem mapElement4("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
-  dummyMapFile1.insert(mapElement3);
-  dummyMapFile1.insert(mapElement4);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
+  dummyMapFile1.insert(RegisterInfoent3);
+  dummyMapFile1.insert(RegisterInfoent4);
   mtca4u::mapFile::errorList errorList1;
 
   dummyMapFile1.check(errorList1,
@@ -416,15 +416,15 @@ inline void
 MapFileTest::testErrorListCoutStreamOperator () {
   mtca4u::mapFile dummyMapFile("dummy.map");
 
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_2", 1, 4, 4, 0);
-  mtca4u::mapFile::mapElem mapElement3("TEST_REGISTER_NAME_1", 1, 10, 4, 0);
-  mtca4u::mapFile::mapElem mapElement4("TEST_REGISTER_NAME_3", 1, 12, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 4, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 10, 4, 0);
+  mtca4u::mapFile::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_3", 1, 12, 4, 0);
 
-  dummyMapFile.insert(mapElement1);
-  dummyMapFile.insert(mapElement2);
-  dummyMapFile.insert(mapElement3);
-  dummyMapFile.insert(mapElement4);
+  dummyMapFile.insert(RegisterInfoent1);
+  dummyMapFile.insert(RegisterInfoent2);
+  dummyMapFile.insert(RegisterInfoent3);
+  dummyMapFile.insert(RegisterInfoent4);
 
   mtca4u::mapFile::errorList errorList;
   dummyMapFile.check(errorList,
@@ -450,14 +450,14 @@ MapFileTest::testErrorListCoutStreamOperator () {
 
 void MapFileTest::testMapFileCoutStreamOperator(){
   mtca4u::mapFile dummyMapFile("dummy.map");
-  mtca4u::mapFile::mapElem mapElement1("TEST_REGISTER_NAME_1");
-  mtca4u::mapFile::mapElem mapElement2("TEST_REGISTER_NAME_2", 2, 4, 8, 1, 
+  mtca4u::mapFile::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1");
+  mtca4u::mapFile::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1, 
 				       18, 3, false, 0, "TEST_MODULE");
   mtca4u::mapFile::metaData metaData1("HW_VERSION", "1.6");
 
   dummyMapFile.insert(metaData1);
-  dummyMapFile.insert(mapElement1);
-  dummyMapFile.insert(mapElement2);
+  dummyMapFile.insert(RegisterInfoent1);
+  dummyMapFile.insert(RegisterInfoent2);
 
   std::stringstream expected_stream;
   expected_stream << "=======================================" << std::endl;
@@ -480,22 +480,22 @@ void MapFileTest::testMapFileCoutStreamOperator(){
   BOOST_CHECK(actual_stream.str() == expected_stream.str());
 }
 
-void MapFileTest::testmapElem(){
+void MapFileTest::testRegisterInfo(){
   // just test the constructor. Default and all arguments
-  mtca4u::mapFile::mapElem defaultMapElem;
-  BOOST_CHECK( defaultMapElem.reg_name.empty() );
-  BOOST_CHECK( defaultMapElem.reg_elem_nr == 0 );
-  BOOST_CHECK( defaultMapElem.reg_address == 0 );
-  BOOST_CHECK( defaultMapElem.reg_size == 0 );
-  BOOST_CHECK( defaultMapElem.reg_bar == 0 );
-  BOOST_CHECK( defaultMapElem.reg_width == 32 );
-  BOOST_CHECK( defaultMapElem.reg_frac_bits == 0 );
-  BOOST_CHECK( defaultMapElem.reg_signed == true );
-  BOOST_CHECK( defaultMapElem.line_nr == 0 );
-  BOOST_CHECK( defaultMapElem.reg_module.empty() );
+  mtca4u::mapFile::RegisterInfo defaultRegisterInfo;
+  BOOST_CHECK( defaultRegisterInfo.reg_name.empty() );
+  BOOST_CHECK( defaultRegisterInfo.reg_elem_nr == 0 );
+  BOOST_CHECK( defaultRegisterInfo.reg_address == 0 );
+  BOOST_CHECK( defaultRegisterInfo.reg_size == 0 );
+  BOOST_CHECK( defaultRegisterInfo.reg_bar == 0 );
+  BOOST_CHECK( defaultRegisterInfo.reg_width == 32 );
+  BOOST_CHECK( defaultRegisterInfo.reg_frac_bits == 0 );
+  BOOST_CHECK( defaultRegisterInfo.reg_signed == true );
+  BOOST_CHECK( defaultRegisterInfo.line_nr == 0 );
+  BOOST_CHECK( defaultRegisterInfo.reg_module.empty() );
 
   // Set values which are all different from the default
-  mtca4u::mapFile::mapElem myMapElem( "MY_NAME",
+  mtca4u::mapFile::RegisterInfo myRegisterInfo( "MY_NAME",
 				      4, // nElements
 				      0x42, //address
 				      16, // size
@@ -505,28 +505,28 @@ void MapFileTest::testmapElem(){
 				      false, // signed
 				      123, //line_nr
 				      "MY_MODULE");
-  BOOST_CHECK( myMapElem.reg_name == "MY_NAME" );
-  BOOST_CHECK( myMapElem.reg_elem_nr == 4 );
-  BOOST_CHECK( myMapElem.reg_address == 0x42 );
-  BOOST_CHECK( myMapElem.reg_size == 16 );
-  BOOST_CHECK( myMapElem.reg_bar == 3 );
-  BOOST_CHECK( myMapElem.reg_width == 18 );
-  BOOST_CHECK( myMapElem.reg_frac_bits == 5 );
-  BOOST_CHECK( myMapElem.reg_signed == false );
-  BOOST_CHECK( myMapElem.line_nr == 123 );
-  BOOST_CHECK( myMapElem.reg_module == "MY_MODULE" );
+  BOOST_CHECK( myRegisterInfo.reg_name == "MY_NAME" );
+  BOOST_CHECK( myRegisterInfo.reg_elem_nr == 4 );
+  BOOST_CHECK( myRegisterInfo.reg_address == 0x42 );
+  BOOST_CHECK( myRegisterInfo.reg_size == 16 );
+  BOOST_CHECK( myRegisterInfo.reg_bar == 3 );
+  BOOST_CHECK( myRegisterInfo.reg_width == 18 );
+  BOOST_CHECK( myRegisterInfo.reg_frac_bits == 5 );
+  BOOST_CHECK( myRegisterInfo.reg_signed == false );
+  BOOST_CHECK( myRegisterInfo.line_nr == 123 );
+  BOOST_CHECK( myRegisterInfo.reg_module == "MY_MODULE" );
 }
 
 void MapFileTest::testGetRegistersInModule(){
   mtca4u::mapFile someMapFile("some.map");
-  mtca4u::mapFile::mapElem module0_register1("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::mapFile::mapElem module1_register1("REGISTER_1", 1, 0x0, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
-  mtca4u::mapFile::mapElem module0_aregister2("A_REGISTER_2", 1, 0x4, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::mapFile::mapElem module1_aregister2("A_REGISTER_2", 1, 0x4, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
-  mtca4u::mapFile::mapElem module0_register3("REGISTER_3", 1, 0x8, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::mapFile::mapElem module1_register3("REGISTER_3", 1, 0x8, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
-  mtca4u::mapFile::mapElem module0_register4("REGISTER_4", 1, 0xC, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::mapFile::mapElem module1_register4("REGISTER_4", 1, 0xC, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  mtca4u::mapFile::RegisterInfo module0_register1("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  mtca4u::mapFile::RegisterInfo module1_register1("REGISTER_1", 1, 0x0, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  mtca4u::mapFile::RegisterInfo module0_aregister2("A_REGISTER_2", 1, 0x4, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  mtca4u::mapFile::RegisterInfo module1_aregister2("A_REGISTER_2", 1, 0x4, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  mtca4u::mapFile::RegisterInfo module0_register3("REGISTER_3", 1, 0x8, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  mtca4u::mapFile::RegisterInfo module1_register3("REGISTER_3", 1, 0x8, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  mtca4u::mapFile::RegisterInfo module0_register4("REGISTER_4", 1, 0xC, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  mtca4u::mapFile::RegisterInfo module1_register4("REGISTER_4", 1, 0xC, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
   
   // add stuff from two different modules, interleaved. We need all registers back in 
   // alphabetical order.
@@ -539,27 +539,27 @@ void MapFileTest::testGetRegistersInModule(){
   someMapFile.insert( module0_register4 );
   someMapFile.insert( module1_register4 );
 
-  std::list< mtca4u::mapFile::mapElem > resultList = someMapFile.getRegistersInModule( "MODULE_BAR1" );
+  std::list< mtca4u::mapFile::RegisterInfo > resultList = someMapFile.getRegistersInModule( "MODULE_BAR1" );
   BOOST_CHECK( resultList.size() == 4 );
   
   // create a reference list to iterate
-  std::list< mtca4u::mapFile::mapElem > referenceList;
+  std::list< mtca4u::mapFile::RegisterInfo > referenceList;
   referenceList.push_back(  module1_aregister2 );
   referenceList.push_back(  module1_register1 );
   referenceList.push_back(  module1_register3 );
   referenceList.push_back(  module1_register4 );
 
-  std::list< mtca4u::mapFile::mapElem >::const_iterator resultIter;
-  std::list< mtca4u::mapFile::mapElem >::const_iterator referenceIter;
+  std::list< mtca4u::mapFile::RegisterInfo >::const_iterator resultIter;
+  std::list< mtca4u::mapFile::RegisterInfo >::const_iterator referenceIter;
   for (resultIter = resultList.begin(), referenceIter = referenceList.begin();
        (resultIter != resultList.end()) && (referenceIter != referenceList.end());
        ++resultIter, ++referenceIter){
     std::stringstream message;
     message << "Failed comparison on Register '" << referenceIter->reg_name
 	   << "', module '" << referenceIter->reg_module << "'";
-    BOOST_CHECK( compareMapElements( *resultIter, *referenceIter ) == true );
+    BOOST_CHECK( compareRegisterInfoents( *resultIter, *referenceIter ) == true );
   }
 
-  std::list< mtca4u::mapFile::mapElem > shouldBeEmptyList = someMapFile.getRegistersInModule( "MODULE_BAR5" );
+  std::list< mtca4u::mapFile::RegisterInfo > shouldBeEmptyList = someMapFile.getRegistersInModule( "MODULE_BAR5" );
   BOOST_CHECK( shouldBeEmptyList.empty() );
 }

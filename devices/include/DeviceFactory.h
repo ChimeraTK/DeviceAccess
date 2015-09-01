@@ -43,7 +43,7 @@ private:
 		registerDeviceType("dummy","",&DummyDevice::createInstance);
 	};
 
-	boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dmapElem> parseDMap(std::string devName);
+	boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> parseDMap(std::string devName);
 
 	//DeviceFactory(DeviceFactory const&);     /** To avoid making copies */
 

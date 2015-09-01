@@ -24,7 +24,7 @@ class DMapFileParser {
 public:
     /**
      * @brief Performs parsing of specified DMAP file. Returns pointer to 
-     * dmapElem object describing all devices in file. 
+     * dRegisterInfo object describing all devices in file. 
      *      
      * 
      * @throw exDmapFileParser [exLibMap::EX_DMAP_FILE_PARSE_ERROR] if parsing error 

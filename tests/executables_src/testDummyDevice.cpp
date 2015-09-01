@@ -191,7 +191,7 @@ void DummyDeviceTest::testCheckSizeIsMultipleOfWordSize() {
 void DummyDeviceTest::testReadWriteSingleWordRegister() {
   // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
-  mapFile::mapElem mappingElement;
+  mapFile::RegisterInfo mappingElement;
   dummyDevice->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING,
                                                  mappingElement);
   uint32_t offset = mappingElement.reg_address;
@@ -224,7 +224,7 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
     void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
   // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
-  mapFile::mapElem mappingElement;
+  mapFile::RegisterInfo mappingElement;
   dummyDevice->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
                                                  mappingElement);
 
@@ -336,7 +336,7 @@ void DummyDeviceTest::testReadDeviceInfo() {
 void DummyDeviceTest::testReadOnly() {
   // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
-  mapFile::mapElem mappingElement;
+  mapFile::RegisterInfo mappingElement;
   dummyDevice->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
                                                  mappingElement);
 

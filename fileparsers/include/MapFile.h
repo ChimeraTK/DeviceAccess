@@ -49,7 +49,7 @@ public:
      *       
      * Stores detailed information about PCIe register and location of its description in MAP file. 
      */
-    class mapElem {
+    class RegisterInfo {
     public:
         std::string reg_name; /**< Name of register */
         uint32_t reg_elem_nr; /**< Number of elements in register */
@@ -61,11 +61,11 @@ public:
         bool     reg_signed; /**< Signed/Unsigned flag */
         uint32_t line_nr; /**< Number of line with description of register in MAP file */
         std::string reg_module; /**< Name of the module this register is in*/
-        friend std::ostream& operator<<(std::ostream &os, const mapElem& me);
+        friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& me);
   
 	/// Convenience constructor which sets all data members. They all have default values, so this 
 	/// also acts as default constructor.
-	mapElem(std::string const & the_reg_name = std::string(), // an empty string
+		RegisterInfo(std::string const & the_reg_name = std::string(), // an empty string
 		uint32_t the_reg_elem_nr = 0,
 		uint32_t the_reg_address = 0,
 		uint32_t the_reg_size = 0,
@@ -76,8 +76,8 @@ public:
 		uint32_t the_line_nr = 0,
 		std::string const & the_reg_module = std::string() );
     };
-    typedef std::vector<mapElem>::iterator iterator; 
-    typedef std::vector<mapElem>::const_iterator const_iterator;
+    typedef std::vector<RegisterInfo>::iterator iterator;
+    typedef std::vector<RegisterInfo>::const_iterator const_iterator;
     /**
      * @brief  Stores information about errors and warnings
      *       
@@ -114,8 +114,8 @@ public:
                 ERROR, /**< Critical error was detected */
                 WARNING /**< Non-critical error was detected */
             } TYPE;
-            mapElem err_reg_1; /**< Detailed information about first register that generate error or warning */
-            mapElem err_reg_2; /**< Detailed information about second register that generate error or warning */
+            RegisterInfo err_reg_1; /**< Detailed information about first register that generate error or warning */
+            RegisterInfo err_reg_2; /**< Detailed information about second register that generate error or warning */
             std::string err_file_name; /**< Name of the MAP file with detected error or warning*/
             MAP_FILE_ERR err_type; /**< Type of detected problem */
             TYPE type; /**< Class of detected problem - ERROR or WARNING*/
@@ -128,7 +128,7 @@ public:
              * @param reg_2 detailed information about second register that generate problem
              * @param file_name MAP file name
              */
-            errorElem(TYPE info_type, MAP_FILE_ERR e_type, const mapElem &reg_1, const mapElem &reg_2, const std::string &file_name);
+            errorElem(TYPE info_type, MAP_FILE_ERR e_type, const RegisterInfo &reg_1, const RegisterInfo &reg_2, const std::string &file_name);
             friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
             friend std::ostream& operator<<(std::ostream &os, const errorElem& me);
         };
@@ -144,7 +144,7 @@ public:
     /**
      * @brief Returns detailed information about selected register
      * 
-     * Returns mapElem structure that describe selected register. If specified by name register 
+     * Returns RegisterInfo structure that describe selected register. If specified by name register
      * cannot be found in MAP file function throws exception exMapFile with type exLibMap::EX_NO_REGISTER_IN_MAP_FILE.
      * 
      * @throw exMapFile (exLibMap::EX_NO_REGISTER_IN_MAP_FILE] - no register with specified name
@@ -154,7 +154,7 @@ public:
      * 
      * @snippet test-libmap.cpp MAP getting info and metadata
      */
-    void getRegisterInfo(const std::string& reg_name, mapElem &value, 
+    void getRegisterInfo(const std::string& reg_name, RegisterInfo &value,
 			 const std::string & reg_module=std::string()) const;
     /**
      * @brief Returns detailed information about selected register
@@ -165,7 +165,7 @@ public:
      * @param value detailed information about register
      * 
      */
-    void getRegisterInfo(int reg_nr, mapElem &value) const;
+    void getRegisterInfo(int reg_nr, RegisterInfo &value) const;
     /**
      * @brief Returns value of specified metadata 
      * 
@@ -225,10 +225,10 @@ public:
     iterator end();
     const_iterator end() const;
 
-    /** Get a complete list of RegisterInfo objects (mapElem) for one module.
+    /** Get a complete list of RegisterInfo objects (RegisterInfo) for one module.
      *  The registers are in alphabetical order.
      */
-    std::list< mapElem > getRegistersInModule( std::string const & moduleName);
+    std::list< RegisterInfo > getRegistersInModule( std::string const & moduleName);
 
 public:
     /**
@@ -244,7 +244,7 @@ public:
      * 
      * @param elem reference to object describing register
      */
-    void insert(mapElem &elem);
+    void insert(RegisterInfo &elem);
     /**
      * @brief Inserts new element describing metadata into mapFile object
      * 
@@ -253,7 +253,7 @@ public:
     void insert(metaData &elem);
 
 private:
-    std::vector<mapElem> map_file_elems; /**< list of all registers described in MAP file*/
+    std::vector<RegisterInfo> map_file_elems; /**< list of all registers described in MAP file*/
     std::vector<metaData> metadata; /**< list of all metadata detected in MAP file*/
     std::string map_file_name; /**< name of MAP file*/
 };

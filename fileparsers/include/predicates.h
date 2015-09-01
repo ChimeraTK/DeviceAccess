@@ -24,7 +24,7 @@ public:
       : name(_name), module(_module) {
     }
 
-    bool operator()(const mapFile::mapElem& elem) {
+    bool operator()(const mapFile::RegisterInfo& elem) {
       if ( (elem.reg_name == name) && (elem.reg_module == module) ){
 	return true;
       }
@@ -60,7 +60,7 @@ public:
     findDevInPairByName_pred(const std::string &_name) : name(_name) {
     }
 
-    bool operator()(const std::pair<DMapFile::dmapElem, ptrmapFile> & elem) {
+    bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & elem) {
       if (elem.first.dev_name == name) return true;
         return false;
     }
@@ -77,7 +77,7 @@ public:
     findDevByName_pred(const std::string &_name) : name(_name) {
     }
 
-    bool operator()(const DMapFile::dmapElem& elem) {
+    bool operator()(const DMapFile::dRegisterInfo& elem) {
         if (elem.dev_name == name) return true;
         return false;
     }
@@ -103,10 +103,10 @@ public:
 /**
  *      @brief  Provides predicate to compare registers
  */
-class compareMapElemsByName_functor
+class compareRegisterInfosByName_functor
 {
 public:
-    bool operator()(const mapFile::mapElem& first, const mapFile::mapElem& second){
+    bool operator()(const mapFile::RegisterInfo& first, const mapFile::RegisterInfo& second){
         if ( first.reg_module == second.reg_module ){
 	    return first.reg_name < second.reg_name;
 	}
@@ -118,10 +118,10 @@ public:
 /**
  *      @brief  Provides predicate to compare devices by name
  */
-class copmaredMapElemsByName_functor
+class copmaredRegisterInfosByName_functor
 {
 public:
-    bool operator()(const std::pair<DMapFile::dmapElem, ptrmapFile> & first, const std::pair<DMapFile::dmapElem, ptrmapFile> & second){
+    bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & first, const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & second){
         return first.first.dev_name < second.first.dev_name;
     }
 };
@@ -129,22 +129,22 @@ public:
 /**
  *      @brief  Provides predicate to compare devices by device file by name
  */
-class copmaredMapElemsByName2_functor
+class copmaredRegisterInfosByName2_functor
 {
 public:
-    bool operator()(const DMapFile::dmapElem &first, const DMapFile::dmapElem &second){
+    bool operator()(const DMapFile::dRegisterInfo &first, const DMapFile::dRegisterInfo &second){
         return first.dev_name < second.dev_name;
     }
 };
 
-/** Predicate to find mapElements in a std::vector by the module name. */
+/** Predicate to find RegisterInfoents in a std::vector by the module name. */
 class compareModuleName_pred{
  public:
  compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
-  bool operator()(const mapFile::mapElem & me) const{
+  bool operator()(const mapFile::RegisterInfo & me) const{
     return (me.reg_module == _moduleName);
   }
-  typedef mapFile::mapElem argument_type;
+  typedef mapFile::RegisterInfo argument_type;
  private:
   std::string _moduleName;
 };

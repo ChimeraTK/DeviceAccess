@@ -26,12 +26,12 @@ std::ostream& operator<<(std::ostream &os, const DMapFile& me) {
     return os;
 }
 
-void DMapFile::insert(const dmapElem &elem) {
+void DMapFile::insert(const dRegisterInfo &elem) {
     dmap_file_elems.push_back(elem);
 }
 
-void DMapFile::getDeviceInfo(const std::string& dev_name, dmapElem &value) {
-    std::vector<dmapElem>::iterator iter;
+void DMapFile::getDeviceInfo(const std::string& dev_name, dRegisterInfo &value) {
+    std::vector<dRegisterInfo>::iterator iter;
     iter = find_if(dmap_file_elems.begin(), dmap_file_elems.end(), findDevByName_pred(dev_name));
     if (iter == dmap_file_elems.end()) {
         throw DMapFileException("Cannot find device \"" + dev_name + "\"in DMAP file", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -39,16 +39,16 @@ void DMapFile::getDeviceInfo(const std::string& dev_name, dmapElem &value) {
     value = *iter;
 }
 
-DMapFile::dmapElem::dmapElem() : dmap_file_line_nr(0)
+DMapFile::dRegisterInfo::dRegisterInfo() : dmap_file_line_nr(0)
 {
 }        
 
-std::pair<std::string, std::string> DMapFile::dmapElem::getDeviceFileAndMapFileName() const
+std::pair<std::string, std::string> DMapFile::dRegisterInfo::getDeviceFileAndMapFileName() const
 {
   return std::pair<std::string, std::string>(dev_file, map_file_name);
 }        
 
-std::ostream& operator<<(std::ostream &os, const DMapFile::dmapElem& de) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::dRegisterInfo& de) {
     os << "(" << de.dmap_file_name << ") NAME: " << de.dev_name << " DEV : " << de.dev_file << " MAP : " << de.map_file_name;
     return os;
 }
@@ -56,8 +56,8 @@ std::ostream& operator<<(std::ostream &os, const DMapFile::dmapElem& de) {
 //fixme: why is level not used?
 bool DMapFile::check(DMapFile::errorList &err, DMapFile::errorList::errorElem::TYPE /*level*/) {
 
-    std::vector<DMapFile::dmapElem> dmaps = dmap_file_elems;
-    std::vector<DMapFile::dmapElem>::iterator iter_p, iter_n;
+    std::vector<DMapFile::dRegisterInfo> dmaps = dmap_file_elems;
+    std::vector<DMapFile::dRegisterInfo>::iterator iter_p, iter_n;
     bool ret = true;
 
     err.clear();
@@ -65,7 +65,7 @@ bool DMapFile::check(DMapFile::errorList &err, DMapFile::errorList::errorElem::T
         return true;
     }
 
-    std::sort(dmaps.begin(), dmaps.end(), copmaredMapElemsByName2_functor());
+    std::sort(dmaps.begin(), dmaps.end(), copmaredRegisterInfosByName2_functor());
     iter_p = dmaps.begin();
     iter_n = iter_p + 1;
     while (1) {
@@ -101,7 +101,7 @@ std::ostream& operator<<(std::ostream &os, const DMapFile::errorList::errorElem:
     return os;
 }
 
-DMapFile::errorList::errorElem::errorElem(DMapFile::errorList::errorElem::TYPE info_type, DMapFile::errorList::errorElem::DMAP_FILE_ERR e_type, const DMapFile::dmapElem &dev_1, const DMapFile::dmapElem &dev_2) {
+DMapFile::errorList::errorElem::errorElem(DMapFile::errorList::errorElem::TYPE info_type, DMapFile::errorList::errorElem::DMAP_FILE_ERR e_type, const DMapFile::dRegisterInfo &dev_1, const DMapFile::dRegisterInfo &dev_2) {
     err_type = e_type;
     err_dev_1 = dev_1;
     err_dev_2 = dev_2;

@@ -15,7 +15,7 @@ namespace mtca4u{
 template<class UserType, class SequenceWordType>
   class SequenceDeMultiplexerTest;
 
-typedef mapFile::mapElem SequenceInfo;
+typedef mapFile::RegisterInfo SequenceInfo;
 
  static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
  static const std::string SEQUENCE_PREFIX="SEQUENCE_";

@@ -57,16 +57,16 @@ int main(int /*argc*/, char** /*argv*/) {
     /** [MAP getting info and metadata]*/
     /* ptrMap is a pointer to mapFile object filled by function mapFileParser::parse */
     std::string metaData;
-    mapFile::mapElem mapElem;
+    mapFile::RegisterInfo RegisterInfo;
     try {
         ptrMap->getMetaData("HW_VERSION", metaData);
-        ptrMap->getRegisterInfo("AREA_DAQ0", mapElem);
+        ptrMap->getRegisterInfo("AREA_DAQ0", RegisterInfo);
     } catch (exLibMap &e) {
         std::cout << e << " (" << e.what() << ")" << std::endl;
         return -1;
     }
     std::cout << "METADATA \"HW_VERSION\": " << metaData << std::endl;
-    std::cout << "MAP DATA \"AREA_DAQ0\" : " << mapElem << std::endl;
+    std::cout << "MAP DATA \"AREA_DAQ0\" : " << RegisterInfo << std::endl;
     /** [MAP getting info and metadata]*/
     /*=============================================================================================================*/
     printInfo("DMAP: File parsing");
@@ -103,14 +103,14 @@ int main(int /*argc*/, char** /*argv*/) {
     printInfo("DMAP: Getting device info");
     /** [DMAP getting info]*/
     /* ptrDmap is a pointer to dmapFile object filled by function dmapFileParser::parse */
-    dmapFile::dmapElem dmapElem;
+    dmapFile::dRegisterInfo dRegisterInfo;
     try {
-        ptrDmap->getDeviceInfo("ADC", dmapElem);
+        ptrDmap->getDeviceInfo("ADC", dRegisterInfo);
     } catch (exLibMap &e) {
         std::cout << e << " (" << e.what() << ")" << std::endl;
         return -1;
     }
-    std::cout << "DEV \"ADC\": " << dmapElem << std::endl;
+    std::cout << "DEV \"ADC\": " << dRegisterInfo << std::endl;
     /** [DMAP getting info]*/    
     /*=============================================================================================================*/
     printInfo("DMAPS: dir parsing");
@@ -164,7 +164,7 @@ int main(int /*argc*/, char** /*argv*/) {
     /** [DMAPS get reg info]*/
     try {        
         std::string devFile;
-        mapFile::mapElem regElem;
+        mapFile::RegisterInfo regElem;
         dmap_FilesParser.getRegisterInfo("ADC", "WORD_FIRMWARE", devFile, regElem);
         std::cout << "DEV: " << devFile << std::endl << "ADC:WORD_FIRMWARE ->" << regElem << std::endl;;  
     } catch (exLibMap &e) {
@@ -182,8 +182,8 @@ int main(int /*argc*/, char** /*argv*/) {
     }
     /** [DMAPS iterate]*/
     
-    dmap_FilesParser.getdMapFileElem("ADC", dmapElem);
-    std::cout << dmapElem << std::endl;
+    dmap_FilesParser.getdMapFileElem("ADC", dRegisterInfo);
+    std::cout << dRegisterInfo << std::endl;
     
     
     
@@ -240,17 +240,17 @@ int main(int /*argc*/, char** /*argv*/) {
     std::cout << "Parsing ./sis_demo.map" << std::endl;
     std::string metaData;
     mapFile::errorList err;
-    mapFile::mapElem mapElem;
+    mapFile::RegisterInfo RegisterInfo;
     try {
         ptr_map = map_FileParser.parse("./sis_demo.map");
         ptr_map->getMetaData("HW_VERSION", metaData);
-        ptr_map->getRegisterInfo("AREA_DAQ1", mapElem);
+        ptr_map->getRegisterInfo("AREA_DAQ1", RegisterInfo);
     } catch (exLibMap &e) {
         std::cout << e << std::endl;
     }
     std::cout << ptr_map << std::endl;
     std::cout << "METADATA: " << metaData << std::endl;
-    std::cout << "MAP DATA: " << mapElem << std::endl;
+    std::cout << "MAP DATA: " << RegisterInfo << std::endl;
     if (!ptr_map->check(err, mapFile::errorList::errorElem::ERROR)) {
         std::cout << err << std::endl;
     }
@@ -271,16 +271,16 @@ int main(int /*argc*/, char** /*argv*/) {
     }
     /*=============================================================================*/
     std::cout << "Parsing ./dev_map_file.dmap" << std::endl;
-    dmapFile::dmapElem dmapElem;
+    dmapFile::dRegisterInfo dRegisterInfo;
     dmapFile::errorList derr;
     try {
         ptr_dmap = dmap_FileParser.parse("./dev_map_file.dmap");
-        ptr_dmap->getDeviceInfo("ADC", dmapElem);
+        ptr_dmap->getDeviceInfo("ADC", dRegisterInfo);
     } catch (exLibMap &e) {
         std::cout << e << std::endl;
     }
     std::cout << ptr_dmap << std::endl;
-    std::cout << dmapElem << std::endl;
+    std::cout << dRegisterInfo << std::endl;
     if (!ptr_dmap->check(derr, dmapFile::errorList::errorElem::ERROR)) {
         std::cout << derr << std::endl;
     }
@@ -308,7 +308,7 @@ int main(int /*argc*/, char** /*argv*/) {
     }
     /*=============================================================================*/
     std::cout << "Parsing  all dmap in directory " << std::endl;
-    mapFile::mapElem elem;
+    mapFile::RegisterInfo elem;
     try {
         dmap_FilesParser.parse("./dmaps_ok");
         dmap_FilesParser.getRegisterInfo("ADC", "WORD_COMPILATION", dev_file, reg_elem_nr, reg_offset, reg_size, reg_bar);
