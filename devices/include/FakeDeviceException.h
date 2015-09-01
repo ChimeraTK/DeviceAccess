@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "Exception.h"
-
+//#include "Exception.h"
+#include "BaseDevice.h"
 namespace mtca4u{
 
-class FakeDeviceException : public Exception {
+class FakeDeviceException : public DeviceException {
 public:
     enum {
                 EX_CANNOT_CREATE_DEV_FILE, 

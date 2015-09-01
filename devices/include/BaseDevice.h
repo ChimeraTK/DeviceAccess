@@ -2,12 +2,19 @@
 #define _MTCA4U_BASE_DEVICE_H__
 
 #include "DeviceConfigBase.h"
+#include "Exception.h"
 #include <string>
 #include <stdint.h>
 #include <fcntl.h>
 #include <vector>
 
 namespace mtca4u {
+
+class DeviceException : public Exception {
+public:
+	DeviceException(const std::string &message, unsigned int exceptionID)
+	: Exception( message, exceptionID ){};
+};
 
 /** The base class of an IO device.
  */

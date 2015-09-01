@@ -8,11 +8,11 @@
 #ifndef MTCA4U_EXCMAPPEDDEVICE_H
 #define	MTCA4U_EXCMAPPEDDEVICE_H
 
-#include "Exception.h"
-
+//#include "Exception.h"
+#include "BaseDevice.h"
 namespace mtca4u{
 
-class MappedDeviceException : public Exception {
+class MappedDeviceException : public DeviceException {
 public:
     
   enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE

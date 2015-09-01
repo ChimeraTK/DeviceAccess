@@ -17,11 +17,11 @@ namespace mtca4u{
 
 ///fixme: there should only be one type of exception for all devices. Otherwise you will never be able to
 /// interpret the enum in an exception from a pointer to exBase.
-class DummyDeviceException : public Exception {
+class DummyDeviceException : public DeviceException {
 public:
 	enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS};
 	DummyDeviceException(const std::string &message, unsigned int exceptionID)
-	: Exception( message, exceptionID ){}
+	: DeviceException( message, exceptionID ){}
 };
 
 

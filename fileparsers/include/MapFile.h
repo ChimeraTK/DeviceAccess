@@ -60,7 +60,7 @@ public:
         int32_t  reg_frac_bits; /**< Number of fractional bits */
         bool     reg_signed; /**< Signed/Unsigned flag */
         uint32_t line_nr; /**< Number of line with description of register in MAP file */
-	std::string reg_module; /**< Name of the module this register is in*/
+        std::string reg_module; /**< Name of the module this register is in*/
         friend std::ostream& operator<<(std::ostream &os, const mapElem& me);
   
 	/// Convenience constructor which sets all data members. They all have default values, so this 
