@@ -551,10 +551,10 @@ void DevMapTest::testGetRegistersInModule() {
   boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
 	FactoryInstance.createMappedDevice("DUMMYD0");
 
-  std::list<mtca4u::mapFile::RegisterInfo> registerInfoList =
+  std::list<mtca4u::RegisterInfoMap::RegisterInfo> registerInfoList =
       mappedDevice->getRegistersInModule("APP0");
   BOOST_CHECK(registerInfoList.size() == 4);
-  std::list<mtca4u::mapFile::RegisterInfo>::iterator registerInfo =
+  std::list<mtca4u::RegisterInfoMap::RegisterInfo>::iterator registerInfo =
       registerInfoList.begin();
   BOOST_CHECK(registerInfo->reg_name == "MODULE0");
   BOOST_CHECK(registerInfo->reg_module == "APP0");
@@ -600,12 +600,12 @@ void DevMapTest::testGetRegisterAccessorsInModule() {
 
 void DevMapTest::testAccessorForMuxedData() {
   // create mapped dummy device
-  boost::shared_ptr<mtca4u::mapFile> registerMap =
+  boost::shared_ptr<mtca4u::RegisterInfoMap> registerMap =
 	mtca4u::mapFileParser().parse("sequences.map");
   boost::shared_ptr<mtca4u::BaseDevice> ioDevice(new mtca4u::DummyDevice);
   ioDevice->open("sequences.map");
 
-  mtca4u::mapFile::RegisterInfo sequenceInfo;
+  mtca4u::RegisterInfoMap::RegisterInfo sequenceInfo;
   registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DMA", sequenceInfo,
                                "TEST");
 

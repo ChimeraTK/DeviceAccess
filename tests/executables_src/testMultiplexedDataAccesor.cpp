@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_SUITE( SequenceDeMultiplexerTestSuite )
 BOOST_AUTO_TEST_CASE( testFixedTypeConstructor ){
   boost::shared_ptr< BaseDevice >  ioDevice( new DummyDevice );
   FixedTypeMuxedDataAccessor<double, int32_t> 
-    deMultiplexer( ioDevice, mapFile::RegisterInfo("test", 15, 0, 60, 0) 
+    deMultiplexer( ioDevice, RegisterInfoMap::RegisterInfo("test", 15, 0, 60, 0) 
 		   , std::vector< FixedPointConverter >(3) );
   BOOST_CHECK( deMultiplexer[0].size() == 5 );
 }
@@ -33,7 +33,7 @@ void testDeMultiplexing(std::string areaName){
   ioDevice->open(MAP_FILE_NAME);
 
   //get the sequence info from the map file
-  boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   SequenceInfo sequenceInfo;
   registerMap->getRegisterInfo(areaName, sequenceInfo, TEST_MODULE_NAME);
 
@@ -130,7 +130,7 @@ void testWithConversion(std::string multiplexedSequenceName){
   ioDevice->open(MAP_FILE_NAME);
 
   //get the sequence info from the map file
-  boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   SequenceInfo sequenceInfo;
   registerMap->getRegisterInfo( MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName,
 				sequenceInfo, TEST_MODULE_NAME);
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE( testWithConversion8 ){
 }
 
 BOOST_AUTO_TEST_CASE( testFactoryFunction ){
-  boost::shared_ptr<mapFile> registerMap = mapFileParser().parse("invalidSequences.map");
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse("invalidSequences.map");
   boost::shared_ptr< BaseDevice > ioDevice;
 
   try{ MultiplexedDataAccessor<double>::createInstance( "NO_WORDS",
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE( testFactoryFunction ){
 }
 
 BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
-  boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< BaseDevice > ioDevice( new DummyDevice );
   ioDevice->open( MAP_FILE_NAME );
 
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
 }
 
 BOOST_AUTO_TEST_CASE( testMixed ){
-  boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< BaseDevice > ioDevice( new DummyDevice );
   ioDevice->open( MAP_FILE_NAME );
   
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE( testMixed ){
 
 
 BOOST_AUTO_TEST_CASE( testNumberOfSequencesDetected ){
-  boost::shared_ptr<mapFile> registerMap = mapFileParser().parse(MAP_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< BaseDevice > ioDevice( new DummyDevice );
   ioDevice->open( MAP_FILE_NAME );
 

@@ -15,7 +15,7 @@ namespace mtca4u{
 template<class UserType, class SequenceWordType>
   class SequenceDeMultiplexerTest;
 
-typedef mapFile::RegisterInfo SequenceInfo;
+typedef RegisterInfoMap::RegisterInfo SequenceInfo;
 
  static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
  static const std::string SEQUENCE_PREFIX="SEQUENCE_";
@@ -59,7 +59,7 @@ public:
     std::string const & multiplexedSequenceName,
     std::string const & moduleName,
     boost::shared_ptr< BaseDevice > const & ioDevice,
-    boost::shared_ptr< mapFile > const & registerMapping );
+    boost::shared_ptr< RegisterInfoMap > const & registerMapping );
 
   /**
    * Default destructor
@@ -98,7 +98,7 @@ public:
    */
   //SequenceDeMultiplexer( std::string const & sequenceName,
   //			 boost::shared_ptr< BaseDevice > & ioDevice,
-  //			 boost::shared_ptr< mapFile > const & registerMapping );
+  //			 boost::shared_ptr< RegisterInfoMap > const & registerMapping );
 
   /** Contructor which needs pre-defined sequence infos and fixed point 
    *  converters. Mainly used for testing.
@@ -248,7 +248,7 @@ boost::shared_ptr< MultiplexedDataAccessor<UserType> >
     std::string const & multiplexedSequenceName,
     std::string const & moduleName,
     boost::shared_ptr< BaseDevice > const & ioDevice,
-    boost::shared_ptr< mapFile > const & registerMapping ){
+    boost::shared_ptr< RegisterInfoMap > const & registerMapping ){
 
   std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+multiplexedSequenceName;
 

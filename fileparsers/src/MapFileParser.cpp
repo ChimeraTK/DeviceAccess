@@ -17,8 +17,8 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
     if (!file){
         throw MapFileException("Cannot open file \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_MAP_FILE);
     }
-    ptrmapFile pmap(new mapFile(file_name));
-    mapFile::RegisterInfo me;
+    ptrmapFile pmap(new RegisterInfoMap(file_name));
+    RegisterInfoMap::RegisterInfo me;
 
     while (std::getline(file, line)) {
         bool failed = false;
@@ -29,7 +29,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
         if (line[0] == '#')     {continue;}
         if (line[0] == '@'){
             std::string org_line = line;
-            mapFile::metaData md;
+            RegisterInfoMap::metaData md;
             // Remove the '@' character...
             line.erase(line.begin(), line.begin() + 1);
             // ... and remove all the whitespace after it        

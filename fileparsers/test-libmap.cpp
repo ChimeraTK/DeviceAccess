@@ -37,8 +37,8 @@ int main(int /*argc*/, char** /*argv*/) {
     /*=============================================================================================================*/
     printInfo("MAP: Iterating throught all MAP file registers");
     /** [MAP iterating throught all registers] */
-    /* ptrMap is a pointer to mapFile object filled by function mapFileParser::parse */
-    mapFile::iterator mapIter;
+    /* ptrMap is a pointer to RegisterInfoMap object filled by function mapFileParser::parse */
+    RegisterInfoMap::iterator mapIter;
     for (mapIter = ptrMap->begin(); mapIter != ptrMap->end(); ++mapIter) {
         std::cout << *mapIter << std::endl;
     }
@@ -46,18 +46,18 @@ int main(int /*argc*/, char** /*argv*/) {
     /*=============================================================================================================*/
     printInfo("MAP: File correctness checking");
     /** [MAP file correctness checking] */
-    mapFile::errorList err;
-    /* ptrMap is a pointer to mapFile object filled by function mapFileParser::parse */
-    if (!ptrMap->check(err, mapFile::errorList::errorElem::WARNING)) {
+    RegisterInfoMap::errorList err;
+    /* ptrMap is a pointer to RegisterInfoMap object filled by function mapFileParser::parse */
+    if (!ptrMap->check(err, RegisterInfoMap::errorList::errorElem::WARNING)) {
         std::cout << err << std::endl;
     }
     /** [MAP file correctness checking] */
     /*=============================================================================================================*/
     printInfo("MAP: Getting register info and metadata");
     /** [MAP getting info and metadata]*/
-    /* ptrMap is a pointer to mapFile object filled by function mapFileParser::parse */
+    /* ptrMap is a pointer to RegisterInfoMap object filled by function mapFileParser::parse */
     std::string metaData;
-    mapFile::RegisterInfo RegisterInfo;
+    RegisterInfoMap::RegisterInfo RegisterInfo;
     try {
         ptrMap->getMetaData("HW_VERSION", metaData);
         ptrMap->getRegisterInfo("AREA_DAQ0", RegisterInfo);
@@ -153,8 +153,8 @@ int main(int /*argc*/, char** /*argv*/) {
     printInfo("DMAPS: checking");
     /** [DMAPS checking]*/
     dmapFile::errorList d_err;
-    mapFile::errorList m_err;
-    if (!dmap_FilesParser.check(dmapFile::errorList::errorElem::ERROR, mapFile::errorList::errorElem::ERROR, d_err, m_err)) {
+    RegisterInfoMap::errorList m_err;
+    if (!dmap_FilesParser.check(dmapFile::errorList::errorElem::ERROR, RegisterInfoMap::errorList::errorElem::ERROR, d_err, m_err)) {
         std::cout << d_err << std::endl;
         std::cout << m_err << std::endl;
     }
@@ -164,7 +164,7 @@ int main(int /*argc*/, char** /*argv*/) {
     /** [DMAPS get reg info]*/
     try {        
         std::string devFile;
-        mapFile::RegisterInfo regElem;
+        RegisterInfoMap::RegisterInfo regElem;
         dmap_FilesParser.getRegisterInfo("ADC", "WORD_FIRMWARE", devFile, regElem);
         std::cout << "DEV: " << devFile << std::endl << "ADC:WORD_FIRMWARE ->" << regElem << std::endl;;  
     } catch (exLibMap &e) {
@@ -193,7 +193,7 @@ int main(int /*argc*/, char** /*argv*/) {
     dmapFilesParser dmap_FilesParser;
     dmapFilesParser::iterator iter;
     ptrmapFile ptr_map;
-    mapFile::iterator map_iter;
+    RegisterInfoMap::iterator map_iter;
 
     try {
         dmap_FilesParser.parse_one_file("dev_map_file.dmap");
@@ -239,8 +239,8 @@ int main(int /*argc*/, char** /*argv*/) {
     /*=============================================================================*/
     std::cout << "Parsing ./sis_demo.map" << std::endl;
     std::string metaData;
-    mapFile::errorList err;
-    mapFile::RegisterInfo RegisterInfo;
+    RegisterInfoMap::errorList err;
+    RegisterInfoMap::RegisterInfo RegisterInfo;
     try {
         ptr_map = map_FileParser.parse("./sis_demo.map");
         ptr_map->getMetaData("HW_VERSION", metaData);
@@ -251,7 +251,7 @@ int main(int /*argc*/, char** /*argv*/) {
     std::cout << ptr_map << std::endl;
     std::cout << "METADATA: " << metaData << std::endl;
     std::cout << "MAP DATA: " << RegisterInfo << std::endl;
-    if (!ptr_map->check(err, mapFile::errorList::errorElem::ERROR)) {
+    if (!ptr_map->check(err, RegisterInfoMap::errorList::errorElem::ERROR)) {
         std::cout << err << std::endl;
     }
 
@@ -308,7 +308,7 @@ int main(int /*argc*/, char** /*argv*/) {
     }
     /*=============================================================================*/
     std::cout << "Parsing  all dmap in directory " << std::endl;
-    mapFile::RegisterInfo elem;
+    RegisterInfoMap::RegisterInfo elem;
     try {
         dmap_FilesParser.parse("./dmaps_ok");
         dmap_FilesParser.getRegisterInfo("ADC", "WORD_COMPILATION", dev_file, reg_elem_nr, reg_offset, reg_size, reg_bar);
@@ -317,7 +317,7 @@ int main(int /*argc*/, char** /*argv*/) {
         std::cout << e << std::endl;
     }
 
-    if (!dmap_FilesParser.check(dmapFile::errorList::errorElem::ERROR, mapFile::errorList::errorElem::ERROR, derr, err)) {
+    if (!dmap_FilesParser.check(dmapFile::errorList::errorElem::ERROR, RegisterInfoMap::errorList::errorElem::ERROR, derr, err)) {
         std::cout << derr << std::endl;
         std::cout << err << std::endl;
     }

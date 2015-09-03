@@ -117,7 +117,7 @@ public:
      * 
      * @snippet test-libmap.cpp DMAPS get reg info
      */
-    void getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, mapFile::RegisterInfo &elem);
+    void getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, RegisterInfoMap::RegisterInfo &elem);
     /**
      * @brief Returns pointer to parser MAP file asociated with selected device
      * 
@@ -165,7 +165,7 @@ public:
      * 
      * @snippet test-libmap.cpp DMAPS checking
      */
-    bool check(DMapFile::errorList::errorElem::TYPE dlevel, mapFile::errorList::errorElem::TYPE mlevel, DMapFile::errorList &err, mapFile::errorList &map_err);
+    bool check(DMapFile::errorList::errorElem::TYPE dlevel, RegisterInfoMap::errorList::errorElem::TYPE mlevel, DMapFile::errorList &err, RegisterInfoMap::errorList &map_err);
     /**
      * @brief Returns iterator to first pair of device and its MAP file described in DMAP file
      * 

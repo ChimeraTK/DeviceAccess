@@ -81,7 +81,7 @@ void DummyDevice::resizeBarContents(){
 
 std::map< uint8_t, size_t > DummyDevice::getBarSizesInBytesFromRegisterMapping() const{
 	std::map< uint8_t, size_t > barSizesInBytes;
-	for (mapFile::const_iterator mappingElementIter = _registerMapping->begin();
+	for (RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
 			mappingElementIter <  _registerMapping->end(); ++mappingElementIter ) {
 		barSizesInBytes[mappingElementIter->reg_bar] =
 				std::max( barSizesInBytes[mappingElementIter->reg_bar],

@@ -6,7 +6,7 @@
 
 namespace mtca4u{
 
-std::ostream& operator<<(std::ostream &os, const mapFile& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& me) {
     size_t size;
     os << "=======================================" << std::endl;
     os << "MAP FILE NAME: " << me.map_file_name << std::endl;
@@ -22,15 +22,15 @@ std::ostream& operator<<(std::ostream &os, const mapFile& me) {
     return os;
 }
 
-void mapFile::insert(RegisterInfo &elem) {
+void RegisterInfoMap::insert(RegisterInfo &elem) {
     map_file_elems.push_back(elem);
 }
 
-void mapFile::insert(metaData &elem) {
+void RegisterInfoMap::insert(metaData &elem) {
     metadata.push_back(elem);
 }
 
-  void mapFile::getRegisterInfo(const std::string& reg_name, RegisterInfo &value,
+  void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfo &value,
 				const std::string& reg_module) const{
     std::vector<RegisterInfo>::const_iterator iter;
     iter = std::find_if(map_file_elems.begin(), map_file_elems.end(), 
@@ -42,7 +42,7 @@ void mapFile::insert(metaData &elem) {
     value = *iter;
 }
 
-void mapFile::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
+void RegisterInfoMap::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
     try {
         value = map_file_elems.at(reg_nr);
     } catch (std::out_of_range) {
@@ -50,8 +50,8 @@ void mapFile::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
     }
 }
 
-void mapFile::getMetaData(const std::string &metaDataName, std::string& metaDataValue) const{
-    std::vector<mapFile::metaData>::const_iterator iter;
+void RegisterInfoMap::getMetaData(const std::string &metaDataName, std::string& metaDataValue) const{
+    std::vector<RegisterInfoMap::metaData>::const_iterator iter;
 
     iter = std::find_if(metadata.begin(), metadata.end(), findMetaDataByName_pred(metaDataName));
     if (iter == metadata.end()) {
@@ -65,12 +65,12 @@ namespace {
     typedef struct _addresses {
         uint32_t start;
         uint32_t end;
-        std::vector<mapFile::RegisterInfo>::iterator iter;
+        std::vector<RegisterInfoMap::RegisterInfo>::iterator iter;
     } addresses;
 
 }
 
-bool mapFile::check(errorList &err, mapFile::errorList::errorElem::TYPE level) {
+bool RegisterInfoMap::check(errorList &err, RegisterInfoMap::errorList::errorElem::TYPE level) {
     std::vector<addresses> v_addresses;
     std::vector<addresses>::iterator v_iter;
     addresses address;
@@ -133,12 +133,12 @@ bool mapFile::check(errorList &err, mapFile::errorList::errorElem::TYPE level) {
     return ret;
 }
 
-std::ostream& operator<<(std::ostream &os, const mapFile::metaData& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::metaData& me) {
     os << "METADATA-> NAME: \"" << me.name << "\" VALUE: " << me.value << std::endl;
     return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const mapFile::RegisterInfo& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo& me) {
      os << me.reg_name << " 0x" << std::hex << me.reg_elem_nr << " 0x" << me.reg_address 
 	<< " 0x" << me.reg_size << " 0x" << me.reg_bar << std::dec
 	<< " " << me.reg_width << " " << me.reg_frac_bits << " " 
@@ -147,12 +147,12 @@ std::ostream& operator<<(std::ostream &os, const mapFile::RegisterInfo& me) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const mapFile::errorList::errorElem::TYPE& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList::errorElem::TYPE& me) {
     switch (me) {
-        case mapFile::errorList::errorElem::ERROR:
+        case RegisterInfoMap::errorList::errorElem::ERROR:
             os << "ERROR";
             break;
-        case mapFile::errorList::errorElem::WARNING:
+        case RegisterInfoMap::errorList::errorElem::WARNING:
             os << "WARNING";
             break;
         default:
@@ -162,7 +162,7 @@ std::ostream& operator<<(std::ostream &os, const mapFile::errorList::errorElem::
     return os;
 }
 
-mapFile::errorList::errorElem::errorElem(mapFile::errorList::errorElem::TYPE info_type, mapFile::errorList::errorElem::MAP_FILE_ERR e_type, const mapFile::RegisterInfo &reg_1, const mapFile::RegisterInfo &reg_2, const std::string &file_name) {
+RegisterInfoMap::errorList::errorElem::errorElem(RegisterInfoMap::errorList::errorElem::TYPE info_type, RegisterInfoMap::errorList::errorElem::MAP_FILE_ERR e_type, const RegisterInfoMap::RegisterInfo &reg_1, const RegisterInfoMap::RegisterInfo &reg_2, const std::string &file_name) {
     err_type = e_type;
     err_reg_1 = reg_1;
     err_reg_2 = reg_2;
@@ -170,63 +170,63 @@ mapFile::errorList::errorElem::errorElem(mapFile::errorList::errorElem::TYPE inf
     type = info_type;
 }
 
-std::ostream& operator<<(std::ostream &os, const mapFile::errorList::errorElem& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList::errorElem& me) {
     switch (me.err_type) {
-        case mapFile::errorList::errorElem::NONUNIQUE_REGISTER_NAME:
+        case RegisterInfoMap::errorList::errorElem::NONUNIQUE_REGISTER_NAME:
             os << me.type << ": Found two registers with the same name: \"" << me.err_reg_1.reg_name << "\" in file " << me.err_file_name << " in lines " << me.err_reg_1.line_nr << " and " << me.err_reg_2.line_nr;
             break;
-        case mapFile::errorList::errorElem::WRONG_REGISTER_ADDRESSES:
+        case RegisterInfoMap::errorList::errorElem::WRONG_REGISTER_ADDRESSES:
             os << me.type << ": Found two registers with overlapping addresses: \"" << me.err_reg_1.reg_name << "\" and \"" << me.err_reg_2.reg_name << "\" in file " << me.err_file_name << " in lines " << me.err_reg_1.line_nr << " and " << me.err_reg_2.line_nr;
             break;
     }
     return os;
 }
 
-void mapFile::errorList::clear() {
+void RegisterInfoMap::errorList::clear() {
     errors.clear();
 }
 
-void mapFile::errorList::insert(const mapFile::errorList::errorElem& elem) {
+void RegisterInfoMap::errorList::insert(const RegisterInfoMap::errorList::errorElem& elem) {
     errors.push_back(elem);
 }
 
-std::ostream& operator<<(std::ostream &os, const mapFile::errorList& me) {
-    std::list<mapFile::errorList::errorElem>::const_iterator iter;
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList& me) {
+    std::list<RegisterInfoMap::errorList::errorElem>::const_iterator iter;
     for (iter = me.errors.begin(); iter != me.errors.end(); iter++) {
         os << *iter << std::endl;
     }
     return os;
 }
 
-mapFile::mapFile(const std::string &file_name)
+RegisterInfoMap::RegisterInfoMap(const std::string &file_name)
 : map_file_name(file_name) {
 }
 
-const std::string& mapFile::getMapFileName() const {
+const std::string& RegisterInfoMap::getMapFileName() const {
     return map_file_name;
 }
 
-size_t mapFile::getMapFileSize() const {
+size_t RegisterInfoMap::getMapFileSize() const {
     return map_file_elems.size();
 }
 
-mapFile::iterator mapFile::begin() {
+RegisterInfoMap::iterator RegisterInfoMap::begin() {
     return map_file_elems.begin();
 }
 
-mapFile::const_iterator mapFile::begin() const{
+RegisterInfoMap::const_iterator RegisterInfoMap::begin() const{
     return map_file_elems.begin();
 }
 
-mapFile::const_iterator mapFile::end() const{
+RegisterInfoMap::const_iterator RegisterInfoMap::end() const{
     return map_file_elems.end();
 }
 
-mapFile::iterator mapFile::end(){
+RegisterInfoMap::iterator RegisterInfoMap::end(){
     return map_file_elems.end();
 }
 
-std::list< mapFile::RegisterInfo > mapFile::getRegistersInModule( std::string const & moduleName){
+std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule( std::string const & moduleName){
   // first sort all elements accordind the names (module first, then register in module)
   // make a copy to keep the original order from the map file
   std::vector<RegisterInfo> sortedRegisterInfoents = map_file_elems;
@@ -251,12 +251,12 @@ std::list< mapFile::RegisterInfo > mapFile::getRegistersInModule( std::string co
   return RegisterInfoentList;
 }
 
-mapFile::metaData::metaData( std::string const & the_name,
+RegisterInfoMap::metaData::metaData( std::string const & the_name,
 			    std::string const & the_value)
   : name(the_name), value(the_value)
 {}
 
-mapFile::RegisterInfo::RegisterInfo( std::string const & the_reg_name,
+RegisterInfoMap::RegisterInfo::RegisterInfo( std::string const & the_reg_name,
 			   uint32_t the_reg_elem_nr,
 			   uint32_t the_reg_address,
 			   uint32_t the_reg_size,

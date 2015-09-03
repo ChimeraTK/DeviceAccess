@@ -24,7 +24,7 @@ public:
       : name(_name), module(_module) {
     }
 
-    bool operator()(const mapFile::RegisterInfo& elem) {
+    bool operator()(const RegisterInfoMap::RegisterInfo& elem) {
       if ( (elem.reg_name == name) && (elem.reg_module == module) ){
 	return true;
       }
@@ -43,7 +43,7 @@ public:
     findMetaDataByName_pred(const std::string &_name) : name(_name) {
     }
 
-    bool operator()(const mapFile::metaData& elem) {
+    bool operator()(const RegisterInfoMap::metaData& elem) {
         if (elem.name == name) return true;
         return false;
     }
@@ -106,7 +106,7 @@ public:
 class compareRegisterInfosByName_functor
 {
 public:
-    bool operator()(const mapFile::RegisterInfo& first, const mapFile::RegisterInfo& second){
+    bool operator()(const RegisterInfoMap::RegisterInfo& first, const RegisterInfoMap::RegisterInfo& second){
         if ( first.reg_module == second.reg_module ){
 	    return first.reg_name < second.reg_name;
 	}
@@ -141,10 +141,10 @@ public:
 class compareModuleName_pred{
  public:
  compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
-  bool operator()(const mapFile::RegisterInfo & me) const{
+  bool operator()(const RegisterInfoMap::RegisterInfo & me) const{
     return (me.reg_module == _moduleName);
   }
-  typedef mapFile::RegisterInfo argument_type;
+  typedef RegisterInfoMap::RegisterInfo argument_type;
  private:
   std::string _moduleName;
 };

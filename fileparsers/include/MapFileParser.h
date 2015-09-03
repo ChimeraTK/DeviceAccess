@@ -32,7 +32,7 @@ public:
      * @throw exMapFileParser [exLibMap::EX_MAP_FILE_PARSE_ERROR] if parsing error 
      * detected or exMapFileParser [exLibMap::EX_CANNOT_OPEN_MAP_FILE] if specified MAP file cannot be opened
      * @param file_name name of MAP file
-     * @return pointer to mapFile object    
+     * @return pointer to RegisterInfoMap object    
      * 
      * @snippet test-libmap.cpp MAP file parsing example 
      *     

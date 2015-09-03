@@ -229,56 +229,56 @@ void DMapFilesParserTest::testGetMapFile() {
   std::string path_to_dmap_file = "dMapDir/valid.dmap";
   filesParser.parse_file(path_to_dmap_file);
 
-  boost::shared_ptr<mtca4u::mapFile> map_file_for_card1;
-  boost::shared_ptr<mtca4u::mapFile> map_file_for_card3;
+  boost::shared_ptr<mtca4u::RegisterInfoMap> map_file_for_card1;
+  boost::shared_ptr<mtca4u::RegisterInfoMap> map_file_for_card3;
 
   map_file_for_card1 = filesParser.getMapFile("card1");
   map_file_for_card3 = filesParser.getMapFile("card3");
 
   // Card 1 elements
-  mtca4u::mapFile::RegisterInfo card1_RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card1_RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
                                              0x00000000, 0x00000004, 0x0,
                                              32, 0, true, 5);
-  mtca4u::mapFile::RegisterInfo card1_RegisterInfoent2("WORD_COMPILATION", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card1_RegisterInfoent2("WORD_COMPILATION", 0x00000001,
                                              0x00000004, 0x00000004, 0x00000000,
                                              32, 0, true, 6);
-  mtca4u::mapFile::RegisterInfo card1_RegisterInfoent3("WORD_STATUS", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card1_RegisterInfoent3("WORD_STATUS", 0x00000001,
                                              0x00000008, 0x00000004, 0x00000000,
                                              32, 0, true, 7);
-  mtca4u::mapFile::RegisterInfo card1_RegisterInfoent4("WORD_USER1", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card1_RegisterInfoent4("WORD_USER1", 0x00000001,
                                              0x0000000C, 0x00000004, 0x00000000,
                                              32, 0, true, 8);
-  mtca4u::mapFile::RegisterInfo card1_RegisterInfoent5("WORD_USER2", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card1_RegisterInfoent5("WORD_USER2", 0x00000001,
                                              0x00000010, 0x00000004, 0x00000000,
                                              32, 0, 0, 9);
 
-  mtca4u::mapFile::RegisterInfo* ptrList[5];
+  mtca4u::RegisterInfoMap::RegisterInfo* ptrList[5];
   ptrList[0] = &card1_RegisterInfoent1;
   ptrList[1] = &card1_RegisterInfoent2;
   ptrList[2] = &card1_RegisterInfoent3;
   ptrList[3] = &card1_RegisterInfoent4;
   ptrList[4] = &card1_RegisterInfoent5;
   int index;
-  mtca4u::mapFile::iterator it;
+  mtca4u::RegisterInfoMap::iterator it;
   for (it = map_file_for_card1->begin(), index = 0;
        it != map_file_for_card1->end(); ++it, ++index) {
     BOOST_CHECK((compareRegisterInfoents(*ptrList[index], *it)) == true);
   }
 
   // Card 3 elements
-  mtca4u::mapFile::RegisterInfo card3_RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card3_RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
                                              0x00000000, 0x00000004, 0x0,
                                              32, 0, true, 5);
-  mtca4u::mapFile::RegisterInfo card3_RegisterInfoent2("WORD_COMPILATION", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card3_RegisterInfoent2("WORD_COMPILATION", 0x00000001,
                                              0x00000004, 0x00000004, 0x00000000,
                                              32, 0, true, 6);
-  mtca4u::mapFile::RegisterInfo card3_RegisterInfoent3("WORD_STATUS", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card3_RegisterInfoent3("WORD_STATUS", 0x00000001,
                                              0x00000008, 0x00000004, 0x00000000,
                                              32, 0, true, 7);
-  mtca4u::mapFile::RegisterInfo card3_RegisterInfoent4("WORD_USER1", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card3_RegisterInfoent4("WORD_USER1", 0x00000001,
                                              0x0000000C, 0x00000004, 0x00000000,
                                              32, 0, true, 8);
-  mtca4u::mapFile::RegisterInfo card3_RegisterInfoent5("WORD_USER2", 0x00000001,
+  mtca4u::RegisterInfoMap::RegisterInfo card3_RegisterInfoent5("WORD_USER2", 0x00000001,
                                              0x00000010, 0x00000004, 0x00000000,
                                              32, 0, 0, 9);
 
@@ -309,8 +309,8 @@ void DMapFilesParserTest::testGetRegisterInfo() {
   filesParser.parse_file(path_to_dmap_file);
 
   std::string retrivedDeviceFileName;
-  mtca4u::mapFile::RegisterInfo retrivedRegisterInfo;
-  mtca4u::mapFile::RegisterInfo RegisterInfoent3("WORD_STATUS", 0x00000001, 0x00000008,
+  mtca4u::RegisterInfoMap::RegisterInfo retrivedRegisterInfo;
+  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent3("WORD_STATUS", 0x00000001, 0x00000008,
                                        0x00000004, 0x00000000, 32, 0, true, 7);
   filesParser.getRegisterInfo("card1", "WORD_STATUS", retrivedDeviceFileName,
                               retrivedRegisterInfo);
@@ -399,17 +399,17 @@ void DMapFilesParserTest::testCheckParsedInInfo() {
   filesParser1.parse_file("dMapDir/oneDevice.dmap");
 
   mtca4u::DMapFile::errorList dmap_err_list;
-  mtca4u::mapFile::errorList map_err_list;
+  mtca4u::RegisterInfoMap::errorList map_err_list;
 
   bool returnValue =
       filesParser1.check(mtca4u::DMapFile::errorList::errorElem::ERROR,
-                         mtca4u::mapFile::errorList::errorElem::WARNING,
+                         mtca4u::RegisterInfoMap::errorList::errorElem::WARNING,
                          dmap_err_list, map_err_list);
   BOOST_CHECK(returnValue == true);
 
   bool status =
       filesParser.check(mtca4u::DMapFile::errorList::errorElem::ERROR,
-                        mtca4u::mapFile::errorList::errorElem::WARNING,
+                        mtca4u::RegisterInfoMap::errorList::errorElem::WARNING,
                         dmap_err_list, map_err_list);
 
   BOOST_CHECK(status == false);
@@ -421,7 +421,7 @@ void DMapFilesParserTest::testCheckParsedInInfo() {
       (errorIterator->err_dev_1.dev_name == errorIterator->err_dev_2.dev_name));
 
   BOOST_CHECK(map_err_list.errors.size() == 2);
-  std::list<mtca4u::mapFile::errorList::errorElem>::iterator mapErrIt;
+  std::list<mtca4u::RegisterInfoMap::errorList::errorElem>::iterator mapErrIt;
   mapErrIt = map_err_list.errors.begin();
 
   bool areNonUniqueRegistersPresent =

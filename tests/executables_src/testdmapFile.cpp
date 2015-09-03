@@ -63,7 +63,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 void DMapFileTest::testInsertElement() {
   std::string dMapFileName = "dummy.map";
-  mtca4u::DMapFile mapFile(dMapFileName);
+  mtca4u::DMapFile RegisterInfoMap(dMapFileName);
 
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
@@ -73,9 +73,9 @@ void DMapFileTest::testInsertElement() {
   populateDummydRegisterInfoent(dRegisterInfoent2, dMapFileName);
   populateDummydRegisterInfoent(dRegisterInfoent3, dMapFileName);
 
-  mapFile.insert(dRegisterInfoent1);
-  mapFile.insert(dRegisterInfoent2);
-  mapFile.insert(dRegisterInfoent3);
+  RegisterInfoMap.insert(dRegisterInfoent1);
+  RegisterInfoMap.insert(dRegisterInfoent2);
+  RegisterInfoMap.insert(dRegisterInfoent3);
 
   mtca4u::DMapFile::dRegisterInfo* ptrList[3];
   ptrList[0] = &dRegisterInfoent1;
@@ -84,17 +84,17 @@ void DMapFileTest::testInsertElement() {
   int index;
 
   mtca4u::DMapFile::iterator it;
-  for (it = mapFile.begin(), index = 0; 
-       (it != mapFile.end())  && (index < 3);
+  for (it = RegisterInfoMap.begin(), index = 0; 
+       (it != RegisterInfoMap.end())  && (index < 3);
        ++it, ++index) {
     BOOST_CHECK((compareDRegisterInfoents(*ptrList[index], *it)) == true);
   }
-  BOOST_CHECK(mapFile.getdmapFileSize() == 3);
+  BOOST_CHECK(RegisterInfoMap.getdmapFileSize() == 3);
 }
 
 void DMapFileTest::testGetDeviceInfo() {
   std::string dMapFileName = "dummy.map";
-  mtca4u::DMapFile mapFile(dMapFileName);
+  mtca4u::DMapFile RegisterInfoMap(dMapFileName);
 
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
@@ -102,23 +102,23 @@ void DMapFileTest::testGetDeviceInfo() {
   populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName);
   populateDummydRegisterInfoent(dRegisterInfoent2, dMapFileName);
 
-  mapFile.insert(dRegisterInfoent1);
-  mapFile.insert(dRegisterInfoent2);
+  RegisterInfoMap.insert(dRegisterInfoent1);
+  RegisterInfoMap.insert(dRegisterInfoent2);
 
   mtca4u::DMapFile::dRegisterInfo retrievedElement1;
   mtca4u::DMapFile::dRegisterInfo retrievedElement2;
   mtca4u::DMapFile::dRegisterInfo retrievedElement3;
 
-  mapFile.getDeviceInfo(dRegisterInfoent1.dev_name, retrievedElement1);
-  mapFile.getDeviceInfo(dRegisterInfoent2.dev_name, retrievedElement2);
+  RegisterInfoMap.getDeviceInfo(dRegisterInfoent1.dev_name, retrievedElement1);
+  RegisterInfoMap.getDeviceInfo(dRegisterInfoent2.dev_name, retrievedElement2);
 
   BOOST_CHECK((compareDRegisterInfoents(retrievedElement1, dRegisterInfoent1)) == true);
   BOOST_CHECK((compareDRegisterInfoents(retrievedElement2, dRegisterInfoent2)) == true);
   BOOST_CHECK_THROW(
-      mapFile.getDeviceInfo("invalid_card_name", retrievedElement3),
+      RegisterInfoMap.getDeviceInfo("invalid_card_name", retrievedElement3),
       mtca4u::DMapFileException);
   try {
-    mapFile.getDeviceInfo("invalid_card_name", retrievedElement3);
+    RegisterInfoMap.getDeviceInfo("invalid_card_name", retrievedElement3);
   }
   catch (mtca4u::DMapFileException& dMapException) {
     BOOST_CHECK(dMapException.getID() ==
@@ -129,7 +129,7 @@ void DMapFileTest::testGetDeviceInfo() {
 void DMapFileTest::testCheckForDuplicateElements() {
   std::string dMapFileName = "dummy.map";
   std::string commonCardName = "common_card";
-  mtca4u::DMapFile mapFile(dMapFileName);
+  mtca4u::DMapFile RegisterInfoMap(dMapFileName);
 
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
@@ -146,16 +146,16 @@ void DMapFileTest::testCheckForDuplicateElements() {
   dRegisterInfoent3.dev_name = commonCardName;
 
   mtca4u::DMapFile::errorList elementDuplications;
-  mapFile.insert(dRegisterInfoent1);
-  BOOST_CHECK(mapFile.check(elementDuplications,
+  RegisterInfoMap.insert(dRegisterInfoent1);
+  BOOST_CHECK(RegisterInfoMap.check(elementDuplications,
                             mtca4u::DMapFile::errorList::errorElem::ERROR) ==
               true);
 
-  mapFile.insert(dRegisterInfoent2);
-  mapFile.insert(dRegisterInfoent3);
-  mapFile.insert(dRegisterInfoent4);
+  RegisterInfoMap.insert(dRegisterInfoent2);
+  RegisterInfoMap.insert(dRegisterInfoent3);
+  RegisterInfoMap.insert(dRegisterInfoent4);
 
-  mapFile.check(elementDuplications,
+  RegisterInfoMap.check(elementDuplications,
                 mtca4u::DMapFile::errorList::errorElem::ERROR);
 
   int numberOfIncorrectLinesInFile = elementDuplications.errors.size();
@@ -224,12 +224,12 @@ void DMapFileTest::testdRegisterInfoCoutStreamOperator() {
 
 void DMapFileTest::testdmapCoutStreamOperator() {
   std::string dMapFileName = "dummy.dmap";
-  mtca4u::DMapFile mapFile(dMapFileName);
+  mtca4u::DMapFile RegisterInfoMap(dMapFileName);
 
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
   populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName, "card1", "/dev/dev1",
                            "map_file");
-  mapFile.insert(dRegisterInfoent1);
+  RegisterInfoMap.insert(dRegisterInfoent1);
 
   std::stringstream expected_file_stream;
   expected_file_stream << "======================================="
@@ -251,14 +251,14 @@ void DMapFileTest::testdmapCoutStreamOperator() {
   expected_file_stream << "=======================================";
 
   std::stringstream actual_file_stream;
-  actual_file_stream << mapFile;
+  actual_file_stream << RegisterInfoMap;
   BOOST_CHECK(expected_file_stream.str() == actual_file_stream.str());
 }
 
 void DMapFileTest::testerrorElemCoutStreamOperator() {
   std::string dMapFileName = "dummy.map";
   //std::string commonCardName = "common_card";
-  mtca4u::DMapFile mapFile(dMapFileName);
+  mtca4u::DMapFile RegisterInfoMap(dMapFileName);
 
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
@@ -295,7 +295,7 @@ void DMapFileTest::testerrorElemCoutStreamOperator() {
 void DMapFileTest::testErrorListCoutStreamOperator() {
   std::string dMapFileName = "dummy.dmap";
   std::string commonCardName = "card1";
-  mtca4u::DMapFile mapFile(dMapFileName);
+  mtca4u::DMapFile RegisterInfoMap(dMapFileName);
 
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
   mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
@@ -310,10 +310,10 @@ void DMapFileTest::testErrorListCoutStreamOperator() {
   dRegisterInfoent2.dmap_file_line_nr = 2;
 
   mtca4u::DMapFile::errorList elementDuplications;
-  mapFile.insert(dRegisterInfoent1);
-  mapFile.insert(dRegisterInfoent2);
+  RegisterInfoMap.insert(dRegisterInfoent1);
+  RegisterInfoMap.insert(dRegisterInfoent2);
 
-  mapFile.check(elementDuplications,
+  RegisterInfoMap.check(elementDuplications,
                 mtca4u::DMapFile::errorList::errorElem::ERROR);
   std::stringstream expected_file_stream;
   expected_file_stream

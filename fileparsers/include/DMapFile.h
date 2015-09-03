@@ -200,7 +200,7 @@ public:
     void insert(const dRegisterInfo &elem);
 };
 /**
- * @typedef Introduce specialisation of shared_pointer template for pointers to mapFile object as a ptrdmapFile
+ * @typedef Introduce specialisation of shared_pointer template for pointers to RegisterInfoMap object as a ptrdmapFile
  */
 typedef boost::shared_ptr<DMapFile> ptrdmapFile;
 

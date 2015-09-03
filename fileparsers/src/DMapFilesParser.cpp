@@ -54,10 +54,10 @@ namespace mtca4u{
     }
   #ifdef __LIBMAP_WITH_ERROR_CHECKING__
     DMapFile::errorList dmapErr;
-    mapFile::errorList mapErr;
+    RegisterInfoMap::errorList mapErr;
     std::ostringstream os;
     if (!check(DMapFile::errorList::errorElem::ERROR,
-               mapFile::errorList::errorElem::ERROR, dmapErr, mapErr)) {
+               RegisterInfoMap::errorList::errorElem::ERROR, dmapErr, mapErr)) {
       os << dmapErr;
       os << mapErr;
       throw dmapFileParserEx(libmap_ex::EX_FILES_CHECK_ERROR, os.str());
@@ -131,9 +131,9 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
 
 #ifdef __LIBMAP_WITH_ERROR_CHECKING__       
   DMapFile::errorList dmapErr;
-  mapFile::errorList mapErr;
+  RegisterInfoMap::errorList mapErr;
   std::ostringstream os;
-  if (!check(DMapFile::errorList::errorElem::ERROR, mapFile::errorList::errorElem::ERROR, dmapErr, mapErr)) {
+  if (!check(DMapFile::errorList::errorElem::ERROR, RegisterInfoMap::errorList::errorElem::ERROR, dmapErr, mapErr)) {
     os << dmapErr;
     os << mapErr;
     throw dmapFileParserEx(libmap_ex::EX_FILES_CHECK_ERROR, os.str());
@@ -142,7 +142,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
 }
 
 //FIXME: Why is dlevel not used?
-bool DMapFilesParser::check(DMapFile::errorList::errorElem::TYPE /*dlevel*/, mapFile::errorList::errorElem::TYPE mlevel, DMapFile::errorList &dmap_err, mapFile::errorList &map_err) {
+bool DMapFilesParser::check(DMapFile::errorList::errorElem::TYPE /*dlevel*/, RegisterInfoMap::errorList::errorElem::TYPE mlevel, DMapFile::errorList &dmap_err, RegisterInfoMap::errorList &map_err) {
 
   std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> > dmaps = dmap_elems;
   std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::iterator iter_p, iter_n;
@@ -174,7 +174,7 @@ bool DMapFilesParser::check(DMapFile::errorList::errorElem::TYPE /*dlevel*/, map
   /* Why not pass map_err by reference? because we are clearing stuff inside
    * check.. why???
    * */
-  mapFile::errorList mapErr;
+  RegisterInfoMap::errorList mapErr;
   std::vector<ptrmapFile>::iterator map_iter;
   for (map_iter = map_files.begin(); map_iter != map_files.end(); map_iter++) {
     if (!(*map_iter)->check(mapErr, mlevel)) {
@@ -218,7 +218,7 @@ void DMapFilesParser::getdMapFileElem(int elem_nr, DMapFile::dRegisterInfo &dMap
 
 void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, uint32_t& reg_elem_nr, uint32_t& reg_offset, uint32_t& reg_size, uint32_t& reg_bar) {
   std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::iterator dmap_iter;
-  mapFile::RegisterInfo elem;
+  RegisterInfoMap::RegisterInfo elem;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
     dev_name = dmap_elems[0].first.dev_name;
@@ -235,7 +235,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   dev_file = (*dmap_iter).first.dev_file;
 }
 
-void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, mapFile::RegisterInfo &elem) {
+void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, RegisterInfoMap::RegisterInfo &elem) {
   std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::iterator dmap_iter;
 
   if (dev_name == "" && dmap_elems.size() == 1) {

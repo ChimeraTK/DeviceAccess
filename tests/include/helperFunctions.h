@@ -22,8 +22,8 @@ std::string appendNumberToName(std::string name, int cardNumber);
 bool compareDRegisterInfoents(const mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent1,
                          const mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent2);
 
-bool compareRegisterInfoents(const mtca4u::mapFile::RegisterInfo& element1,
-                        const mtca4u::mapFile::RegisterInfo& element2);
+bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
+                        const mtca4u::RegisterInfoMap::RegisterInfo& element2);
 
 std::string getCurrentWorkingDirectory();
 

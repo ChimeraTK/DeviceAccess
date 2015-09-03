@@ -37,8 +37,8 @@ bool compareDRegisterInfoents(const mtca4u::DMapFile::dRegisterInfo& dRegisterIn
   return result;
 }
 
-bool compareRegisterInfoents(const mtca4u::mapFile::RegisterInfo& element1,
-                        const mtca4u::mapFile::RegisterInfo& element2) {
+bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
+                        const mtca4u::RegisterInfoMap::RegisterInfo& element2) {
   bool result = (element1.line_nr == element2.line_nr) &&
                 (element1.reg_address == element2.reg_address) &&
                 (element1.reg_bar == element2.reg_bar) &&

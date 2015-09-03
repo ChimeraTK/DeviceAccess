@@ -59,7 +59,7 @@ int main() {
   // sequences as indicated by the prefix AREA_MULTIPLEXED_SEQUENCE_), Making
   // use of a hack. We can have write access to this region through a register
   // AREA_DMAABLE on the dummyDriver PCIE device.
-  mtca4u::mapFile::RegisterInfo info;
+  mtca4u::RegisterInfoMap::RegisterInfo info;
   mappedDevice->getRegisterMap()->getRegisterInfo(REGISTER_TO_SETUP_DMA_REGION, info);
   // frame a buffer with the muxed data [1, 64], which will be used to populate
   // the DMA region

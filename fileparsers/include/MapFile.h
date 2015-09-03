@@ -23,7 +23,7 @@ namespace mtca4u{
  *      registers and checking for MAP file correctness. Does not perform MAP file parsing
  *
  */
-class mapFile {
+class RegisterInfoMap {
 
 public:    
     /**
@@ -84,7 +84,7 @@ public:
      * Stores information about all errors and warnings detected during MAP file correctness check
      */
     class errorList {
-        friend class mapFile;
+        friend class RegisterInfoMap;
         friend class DMapFilesParser;
     public:
 
@@ -139,7 +139,7 @@ public:
         void insert(const errorElem& elem);
 
     };
-    friend std::ostream& operator<<(std::ostream &os, const mapFile& me);
+    friend std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& me);
 
     /**
      * @brief Returns detailed information about selected register
@@ -238,15 +238,15 @@ public:
      * 
      * @param file_name - MAP file name
      */
-    mapFile(const std::string &file_name);
+    RegisterInfoMap(const std::string &file_name);
     /**
-     * @brief Inserts new element describing register into mapFile object
+     * @brief Inserts new element describing register into RegisterInfoMap object
      * 
      * @param elem reference to object describing register
      */
     void insert(RegisterInfo &elem);
     /**
-     * @brief Inserts new element describing metadata into mapFile object
+     * @brief Inserts new element describing metadata into RegisterInfoMap object
      * 
      * @param elem reference to metadata information available in file.
      */
@@ -258,9 +258,9 @@ private:
     std::string map_file_name; /**< name of MAP file*/
 };
 /**
- * @typedef Introduce specialisation of shared_ptr template for pointers to mapFile object as a ptrmapFile
+ * @typedef Introduce specialisation of shared_ptr template for pointers to RegisterInfoMap object as a ptrmapFile
  */
-typedef boost::shared_ptr<mapFile> ptrmapFile;
+typedef boost::shared_ptr<RegisterInfoMap> ptrmapFile;
 
 
 /**
