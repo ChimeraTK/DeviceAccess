@@ -16,8 +16,8 @@ class FakeDevice : public BaseDeviceImpl {
 private:
   FILE* _pcieMemory;
   std::string _pcieMemoryFileName;
-  FakeDevice(std::string host, std::string interface, std::list<std::string> parameters);
 public:
+  FakeDevice(std::string host, std::string interface, std::list<std::string> parameters);
   FakeDevice();
   virtual ~FakeDevice();
 

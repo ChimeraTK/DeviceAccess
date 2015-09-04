@@ -53,11 +53,11 @@ private:
     void directRead(uint32_t regOffset, int32_t* data, uint8_t bar, size_t sizeInBytes);
 
     /** constructor called through createInstance to create device object */
-    PcieDevice(std::string host, std::string interface, std::list<std::string> parameters);
+
 
 public:
     PcieDevice();
-
+    PcieDevice(std::string host, std::string interface, std::list<std::string> parameters);
     virtual ~PcieDevice();
 
     virtual void open(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);

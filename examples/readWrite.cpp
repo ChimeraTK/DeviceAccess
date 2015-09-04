@@ -1,7 +1,8 @@
 #include <MtcaMappedDevice/BaseDevice.h>
 #include <MtcaMappedDevice/PcieDevice.h>
-#include <MtcaMappedDevice/DeviceFactory.h>
+//#include <MtcaMappedDevice/DeviceFactory.h>
 #include <MtcaMappedDevice/BaseDeviceImpl.h>
+#include <MtcaMappedDevice/MappedDevice.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -12,9 +13,13 @@ static const unsigned int WORD_USER_BAR = 0;
 
 int main(){
 
-  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+  /*static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
   boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myDevice =
-  FactoryInstance.createMappedDevice("PCIE1");
+  FactoryInstance.createMappedDevice("PCIE1");*/
+	/*boost::shared_ptr<mtca4u::MappedDevice> myDevice( new mtca4u::MappedDevice());
+	myDevice->open("PCIE1");*/
+	boost::shared_ptr<mtca4u::MappedDevice> myDevice( new mtca4u::MappedDevice());
+	myDevice->open("PCIE1");
   // read and print a data word from a register
   int32_t dataWord;
   myDevice->readReg(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);

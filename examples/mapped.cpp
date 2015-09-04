@@ -15,8 +15,10 @@ int main(){
 	/** Entry in dmap file is
 	 * PCIE2  sdm://./pci:mtcadummys0; mtcadummy.map
 	 */
-	boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
-	FactoryInstance.createMappedDevice("PCIE2");
+	/*boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
+	FactoryInstance.createMappedDevice("PCIE2");*/
+	boost::shared_ptr<mtca4u::MappedDevice> myMappedDevice( new mtca4u::MappedDevice());
+	myMappedDevice->open("PCIE2");
   // read and print a data word from a register
   int32_t dataWord;
   myMappedDevice->readReg(REGISTER_NAME, MODULE_NAME, &dataWord);

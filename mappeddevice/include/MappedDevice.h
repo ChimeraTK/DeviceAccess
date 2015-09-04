@@ -17,6 +17,8 @@
 #include "MappedDeviceException.h"
 #include "FixedPointConverter.h"
 #include "MultiplexedDataAccessor.h"
+#include "DeviceFactory.h"
+#include <boost/algorithm/string.hpp>
 namespace mtca4u {
 
 /**
@@ -49,10 +51,10 @@ namespace mtca4u {
  *RegisterAccessors pointing to it.
  *
  */
-template <typename T> class MappedDevice {
-
+// class MappedDevice {
+class MappedDevice {
 public:
-  typedef boost::shared_ptr<T> ptrdev;
+  typedef boost::shared_ptr<BaseDevice> ptrdev;
 
 private:
   ptrdev pdev;
@@ -215,15 +217,20 @@ public:
   typedef RegisterAccessor regObject;
 
   MappedDevice(){};
-  MappedDevice(boost::shared_ptr<mtca4u::BaseDevice> baseDevice, const std::string & mapFileName);
+  //MappedDevice(boost::shared_ptr<mtca4u::BaseDevice> baseDevice, const std::string & mapFileName);
 
-  virtual void open(const std::string &_devFileName,
+  virtual void open(std::string const & aliasName);
+  //virtual void open(boost::shared_ptr< mtca4u::BaseDevice > baseDevice, const std::string &mapFileName);Todo
+
+ /* virtual void open(const std::string &_devFileName,
                        const std::string &_mapFileName, int _perm = O_RDWR,
-                       DeviceConfigBase *_pConfig = NULL);
-  virtual void open(
+                       DeviceConfigBase *_pConfig = NULL);*/
+  /*virtual void open(
       std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
-      int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);
-  virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
+      int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);*/
+  //virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
+  void open(boost::shared_ptr<BaseDevice> baseDevice,
+  												const std::string &mapFileName);
   virtual void close();
   virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
   virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
@@ -401,504 +408,47 @@ private:
 
 
 
-template <typename T> MappedDevice<T>::~MappedDevice() {
-  // FIXME: do we want to close here? It will probably leave not working
-  // RegisterAccessors
-  // if(pdev) pdev->closeDev();
-}
-
-
-template <typename T>
-boost::shared_ptr<const RegisterInfoMap> MappedDevice<T>::getRegisterMap() const {
-  return registerMap;
-}
-
-template <typename T>
-typename MappedDevice<T>::RegisterAccessor MappedDevice<T>::getRegObject(
-    const std::string &regName) const {
-  checkPointersAreNotNull();
-
-  RegisterInfoMap::RegisterInfo me;
-  registerMap->getRegisterInfo(regName, me);
-  return MappedDevice::RegisterAccessor(regName, me, pdev);
-}
-
-template <typename T>
-boost::shared_ptr<typename MappedDevice<T>::RegisterAccessor>
-MappedDevice<T>::getRegisterAccessor(const std::string &regName,
-                               const std::string &module) const {
-  checkPointersAreNotNull();
-
-  RegisterInfoMap::RegisterInfo me;
-  registerMap->getRegisterInfo(regName, me, module);
-  return boost::shared_ptr<typename MappedDevice<T>::RegisterAccessor>(
-      new MappedDevice::RegisterAccessor(regName, me, pdev));
-}
-
-template <typename T>
-typename std::list<RegisterInfoMap::RegisterInfo> MappedDevice<T>::getRegistersInModule(
-    const std::string &moduleName) const {
-  checkPointersAreNotNull();
-
-  return registerMap->getRegistersInModule(moduleName);
-}
-
-template <typename T>
-std::list<typename MappedDevice<T>::RegisterAccessor>
-MappedDevice<T>::getRegisterAccessorsInModule(const std::string &moduleName) const {
-  checkPointersAreNotNull();
-
-  std::list<RegisterInfoMap::RegisterInfo> registerInfoList =
-      registerMap->getRegistersInModule(moduleName);
-
-  std::list<RegisterAccessor> accessorList;
-  for (std::list<RegisterInfoMap::RegisterInfo>::const_iterator regInfo =
-           registerInfoList.begin();
-       regInfo != registerInfoList.end(); ++regInfo) {
-    accessorList.push_back(
-        MappedDevice::RegisterAccessor(regInfo->reg_name, *regInfo, pdev));
-  }
-
-  return accessorList;
-}
-
-template <typename T>
-void MappedDevice<T>::checkRegister(const std::string &regName,
-                              const std::string &regModule, size_t dataSize,
-                              uint32_t addRegOffset, uint32_t &retDataSize,
-                              uint32_t &retRegOff, uint8_t &retRegBar) const {
-  checkPointersAreNotNull();
-
-  RegisterInfoMap::RegisterInfo me;
-  registerMap->getRegisterInfo(regName, me, regModule);
-  if (addRegOffset % 4) {
-    throw MappedDeviceException("Register offset must be divisible by 4",
-                   MappedDeviceException::EX_WRONG_PARAMETER);
-  }
-  if (dataSize) {
-    if (dataSize % 4) {
-      throw MappedDeviceException("Data size must be divisible by 4",
-                     MappedDeviceException::EX_WRONG_PARAMETER);
-    }
-    if (dataSize > me.reg_size - addRegOffset) {
-      throw MappedDeviceException("Data size exceed register size",
-                     MappedDeviceException::EX_WRONG_PARAMETER);
-    }
-    retDataSize = dataSize;
-  } else {
-    retDataSize = me.reg_size;
-  }
-  retRegBar = me.reg_bar;
-  retRegOff = me.reg_address + addRegOffset;
-}
-
-template <typename T>
-void MappedDevice<T>::readReg(const std::string &regName, int32_t *data,
-                        size_t dataSize, uint32_t addRegOffset) const {
-	readReg(regName, std::string(), data, dataSize, addRegOffset);
-}
-
-template <typename T>
-void MappedDevice<T>::readReg(const std::string &regName,
-                        const std::string &regModule, int32_t *data,
-                        size_t dataSize, uint32_t addRegOffset) const {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  uint8_t retRegBar;
-
-  checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
-                retRegOff, retRegBar);
-  readArea(retRegOff, data, retDataSize, retRegBar);
-}
-
-template <typename T>
-void MappedDevice<T>::writeReg(const std::string &regName, int32_t const *data,
-                         size_t dataSize, uint32_t addRegOffset) {
-  writeReg(regName, std::string(), data, dataSize, addRegOffset);
-}
-
-template <typename T>
-void MappedDevice<T>::writeReg(const std::string &regName,
-                         const std::string &regModule, int32_t const *data,
-                         size_t dataSize, uint32_t addRegOffset) {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  uint8_t retRegBar;
-
-  checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
-                retRegOff, retRegBar);
-  writeArea(retRegOff, data, retDataSize, retRegBar);
-}
-
-template <typename T>
-void MappedDevice<T>::readDMA(const std::string &regName, int32_t *data,
-                        size_t dataSize, uint32_t addRegOffset) const {
-  readDMA(regName, std::string(), data, dataSize, addRegOffset);
-}
-
-template <typename T>
-void MappedDevice<T>::readDMA(const std::string &regName,
-                        const std::string &regModule, int32_t *data,
-                        size_t dataSize, uint32_t addRegOffset) const {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  uint8_t retRegBar;
-
-  checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
-                retRegOff, retRegBar);
-  if (retRegBar != 0xD) {
-    throw MappedDeviceException("Cannot read data from register \"" + regName +
-                       "\" through DMA",
-                   MappedDeviceException::EX_WRONG_PARAMETER);
-  }
-  readDMA(retRegOff, data, retDataSize, retRegBar);
-}
-
-template <typename T>
-void MappedDevice<T>::writeDMA(const std::string &regName, int32_t const *data,
-                         size_t dataSize, uint32_t addRegOffset) {
-  writeDMA(regName, std::string(), data, dataSize, addRegOffset);
-}
-
-template <typename T>
-void MappedDevice<T>::writeDMA(const std::string &regName,
-                         const std::string &regModule, int32_t const *data,
-                         size_t dataSize, uint32_t addRegOffset) {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  uint8_t retRegBar;
-  checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
-                retRegOff, retRegBar);
-  if (retRegBar != 0xD) {
-    throw MappedDeviceException("Cannot read data from register \"" + regName +
-                       "\" through DMA",
-                   MappedDeviceException::EX_WRONG_PARAMETER);
-  }
-  writeDMA(retRegOff, data, retDataSize, retRegBar);
-}
-
-/**
- *      @brief  Function allows to open device specified by the name
- *
- *      Function throws the same exceptions like openDev from class type
- *      passed as a template parameter.
- *
- *      @param  _devFileName - name of the device
- *      @param  _mapFileName -  name of the map file string information about
- *                              registers available in device memory space.
- *      @param  _perm        -  permitions for the device file in form
- *accepted
- *                              by standard open function [default: O_RDWR]
- *      @param  _pConfig     -  additional configuration used to prepare
- *device.
- *                              Structure of this parameter depends on type of
- *                              the device [default: NULL]
- */
-template <typename T>
-void MappedDevice<T>::open(const std::string &_devFileName,
-                        const std::string &_mapFileName, int _perm,
-                        DeviceConfigBase *_pConfig) {
-  mapFileParser fileParser;
-  mapFileName = _mapFileName;
-  registerMap = fileParser.parse(mapFileName);
-  pdev.reset(new T);
-  pdev->open(_devFileName, _perm, _pConfig);
-}
-
-/** Specialisation of openDev to be able to instantiate MappedDevice<BaseDevice>.
- *  To be removed when the templatisation of MappedDevice is removed.
- */
-template <>
-void MappedDevice<BaseDevice>::open(const std::string & /*_devFileName*/,
-                                 const std::string & /*_mapFileName*/,
-                                 int /*_perm*/,
-                                 DeviceConfigBase * /*_pConfig*/);
-
-/** Alternative open function where the two reqired file names are packed in
- * one
- * object (a pair), so it can be the return value of a single function call.
- * For parameters see openDev(const std::string &_devFileName, const
- * std::string& _mapFileName, int _perm, DeviceConfigBase* _pConfig);
- */
-template <typename T>
-void MappedDevice<T>::open(
-    std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
-    int _perm, DeviceConfigBase *_pConfig) {
-  open(_deviceFileAndMapFileName.first,  // the device file name
-          _deviceFileAndMapFileName.second, // the map file name
-          _perm, _pConfig);
-}
-
-/** "open" a MappedDevice from an already opened IODevice and a RegisterMap
- * object.
- *  It does not actually open anything, which shows that the "openDev"s should
- * be overloaded
- *  constructors. To be changed in redesign.
- *  This function allows to use BaseDevice as template argument and feed in a
- * dummy
- * or a pcie device.
- */
-template <typename T>
-void MappedDevice<T>::open(ptrdev ioDevice, ptrmapFile registerMap_) {
-  pdev = ioDevice;
-  registerMap = registerMap_;
-}
-
-/**
- *      @brief  Function allows to close the device and release the shared
- *pointers.
- *
- *      Function throws the same exceptions like closeDev from class type
- *      passed as a template parameter.
- */
-template <typename T> void MappedDevice<T>::close() {
-  checkPointersAreNotNull();
-  pdev->close();
-}
-
-/**
- *      @brief  Function allows to read data from one register located in
- *              device address space
- *
- *      This is wrapper to standard readRaw function defined in libdev
- *library.
- *      Allows to read one register located in device address space. Size of
- *register
- *      depends on type of accessed device e.x. for PCIe device it is equal to
- *      32bit. Function throws the same exceptions like readRaw from class
- *type.
- *
- *
- *      @param  regOffset - offset of the register in device address space
- *      @param  data - pointer to area to store data
- *      @param  bar  - number of PCIe bar
- */
-template <typename T>
-void MappedDevice<T>::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
-  checkPointersAreNotNull();
-  pdev->readReg(regOffset, data, bar);
-}
-
-/**
- *      @brief  Function allows to write data to one register located in
- *              device address space
- *
- *      This is wrapper to standard writeRaw function defined in libdev
- *library.
- *      Allows to write one register located in device address space. Size of
- *register
- *      depends on type of accessed device e.x. for PCIe device it is equal to
- *      32bit. Function throws the same exceptions like writeRaw from class
- *type.
- *
- *      @param  regOffset - offset of the register in device address space
- *      @param  data - pointer to data to write
- *      @param  bar  - number of PCIe bar
- */
-template <typename T>
-void MappedDevice<T>::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
-  checkPointersAreNotNull();
-  pdev->writeReg(regOffset, data, bar);
-}
-
-/**
- *      @brief  Function allows to read data from several registers located in
- *              device address space
- *
- *      This is wrapper to standard readArea function defined in libdev
- *library.
- *      Allows to read several registers located in device address space.
- *      Function throws the same exceptions like readArea from class type.
- *
- *
- *      @param  regOffset - offset of the register in device address space
- *      @param  data - pointer to area to store data
- *      @param  size - number of bytes to read from device
- *      @param  bar  - number of PCIe bar
- */
-template <typename T>
-void MappedDevice<T>::readArea(uint32_t regOffset, int32_t *data, size_t size,
-                         uint8_t bar) const {
-  checkPointersAreNotNull();
-  pdev->readArea(regOffset, data, size, bar);
-}
-
-template <typename T>
-void MappedDevice<T>::writeArea(uint32_t regOffset, int32_t const *data, size_t size,
-                          uint8_t bar) {
-  checkPointersAreNotNull();
-  pdev->writeArea(regOffset, data, size, bar);
-}
-
-template <typename T>
-void MappedDevice<T>::readDMA(uint32_t regOffset, int32_t *data, size_t size,
-                        uint8_t bar) const {
-  checkPointersAreNotNull();
-  pdev->readDMA(regOffset, data, size, bar);
-}
-
-template <typename T>
-void MappedDevice<T>::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
-                         uint8_t bar) {
-  checkPointersAreNotNull();
-  pdev->writeDMA(regOffset, data, size, bar);
-}
-
-template <typename T>
-std::string MappedDevice<T>::readDeviceInfo() const {
-  checkPointersAreNotNull();
-  return pdev->readDeviceInfo();
-}
-
-template <typename T>
-MappedDevice<T>::RegisterAccessor::RegisterAccessor(const std::string & /*_regName*/,
-                                              const RegisterInfoMap::RegisterInfo &_me,
-                                              ptrdev _pdev)
-    : me(_me),
-      pdev(_pdev),
-      _fixedPointConverter(_me.reg_width, _me.reg_frac_bits, _me.reg_signed) {}
-
-template <typename T>
-void MappedDevice<T>::RegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &me,
-                                                size_t dataSize,
-                                                uint32_t addRegOffset,
-                                                uint32_t &retDataSize,
-                                                uint32_t &retRegOff) {
-  if (addRegOffset % 4) {
-    throw MappedDeviceException("Register offset must be divisible by 4",
-                   MappedDeviceException::EX_WRONG_PARAMETER);
-  }
-  if (dataSize) {
-    if (dataSize % 4) {
-      throw MappedDeviceException("Data size must be divisible by 4",
-      		MappedDeviceException::EX_WRONG_PARAMETER);
-    }
-    if (dataSize > me.reg_size - addRegOffset) {
-      throw MappedDeviceException("Data size exceed register size",
-      		MappedDeviceException::EX_WRONG_PARAMETER);
-    }
-    retDataSize = dataSize;
-  } else {
-    retDataSize = me.reg_size;
-  }
-  retRegOff = me.reg_address + addRegOffset;
-}
-
-template <typename T>
-void MappedDevice<T>::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
-                                          uint32_t addRegOffset) const {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
-  pdev->readArea(retRegOff, data, retDataSize, me.reg_bar);
-}
-
-template <typename T>
-void MappedDevice<T>::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
-                                           uint32_t addRegOffset) {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
-  pdev->writeArea(retRegOff, data, retDataSize, me.reg_bar);
-}
-
-template <typename T>
-void MappedDevice<T>::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
-                                          uint32_t addRegOffset) const {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
-  if (me.reg_bar != 0xD) {
-    throw MappedDeviceException("Cannot read data from register \"" + me.reg_name +
-                       "\" through DMA",
-											 MappedDeviceException::EX_WRONG_PARAMETER);
-  }
-  pdev->readDMA(retRegOff, data, retDataSize, me.reg_bar);
-}
-
-template <typename T>
-void MappedDevice<T>::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
-                                           uint32_t addRegOffset) {
-  uint32_t retDataSize;
-  uint32_t retRegOff;
-  checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
-  if (me.reg_bar != 0xD) {
-    throw MappedDeviceException("Cannot read data from register \"" + me.reg_name +
-                       "\" through DMA",
-											 MappedDeviceException::EX_WRONG_PARAMETER);
-  }
-  pdev->writeDMA(retRegOff, data, retDataSize, me.reg_bar);
-}
-
-template <typename T>
-RegisterInfoMap::RegisterInfo const &MappedDevice<T>::RegisterAccessor::getRegisterInfo() const {
-  return me; // me is the RegisterInfoent
-}
-
-template <typename T>
-FixedPointConverter const &MappedDevice<T>::RegisterAccessor::getFixedPointConverter()
-    const {
-  return _fixedPointConverter;
-}
-
-
-template <typename T> void MappedDevice<T>::checkPointersAreNotNull() const {
-  if ((pdev == false) || (registerMap == false)) {
-    throw MappedDeviceException("MappedDevice has not been opened correctly",
-                  MappedDeviceException::EX_NOT_OPENED);
-  }
-}
-
-template <typename T>
 template <typename ConvertedDataType>
-ConvertedDataType MappedDevice<T>::RegisterAccessor::read() const {
-  ConvertedDataType t;
-  read(&t);
-  return t;
-}
-
-template <typename T>
-template <typename ConvertedDataType>
-void MappedDevice<T>::RegisterAccessor::write(ConvertedDataType const *convertedData,
-                                        size_t nWords,
-                                        uint32_t wordOffsetInRegister) {
-  // Check that nWords is not 0. The readRaw command would read the whole
-  // register, which
-  // will the raw buffer size of 0.
-  if (nWords == 0) {
-    return;
-  }
-
-  std::vector<int32_t> rawDataBuffer(nWords);
-  for (size_t i = 0; i < nWords; ++i) {
-    rawDataBuffer[i] = _fixedPointConverter.toFixedPoint(convertedData[i]);
-  }
-  writeRaw(&(rawDataBuffer[0]), nWords * sizeof(int32_t),
-           wordOffsetInRegister * sizeof(int32_t));
-}
-
-template <typename T>
-template <typename ConvertedDataType>
-void MappedDevice<T>::RegisterAccessor::write(
-    ConvertedDataType const &convertedData) {
-  write(&convertedData, 1);
-}
-
-template <typename T>
-template <typename customClass>
-boost::shared_ptr<customClass> MappedDevice<T>::getCustomAccessor(
-    const std::string &dataRegionName, const std::string &module) const {
-  return (
-      customClass::createInstance(dataRegionName, module, pdev, registerMap));
-}
+		ConvertedDataType MappedDevice::RegisterAccessor::read() const {
+		  ConvertedDataType t;
+		  read(&t);
+		  return t;
+		}
 
 
-template <typename T>
-inline mtca4u::MappedDevice<T>::MappedDevice(boost::shared_ptr<BaseDevice> baseDevice,
-                                 const std::string &RegisterInfoMap)
-    : pdev(baseDevice),
-      registerMap(mtca4u::mapFileParser().parse(RegisterInfoMap)) {}
+		template <typename ConvertedDataType>
+		void MappedDevice::RegisterAccessor::write(ConvertedDataType const *convertedData,
+		                                        size_t nWords,
+		                                        uint32_t wordOffsetInRegister) {
+		  // Check that nWords is not 0. The readRaw command would read the whole
+		  // register, which
+		  // will the raw buffer size of 0.
+		  if (nWords == 0) {
+		    return;
+		  }
 
+		  std::vector<int32_t> rawDataBuffer(nWords);
+		  for (size_t i = 0; i < nWords; ++i) {
+		    rawDataBuffer[i] = _fixedPointConverter.toFixedPoint(convertedData[i]);
+		  }
+		  writeRaw(&(rawDataBuffer[0]), nWords * sizeof(int32_t),
+		           wordOffsetInRegister * sizeof(int32_t));
+		}
+
+
+		template <typename ConvertedDataType>
+		void MappedDevice::RegisterAccessor::write(
+		    ConvertedDataType const &convertedData) {
+		  write(&convertedData, 1);
+		}
+
+
+		template <typename customClass>
+		boost::shared_ptr<customClass> MappedDevice::getCustomAccessor(
+		    const std::string &dataRegionName, const std::string &module) const {
+		  return (
+		      customClass::createInstance(dataRegionName, module, pdev, registerMap));
+		}
 } // namespace mtca4u
 
 #endif /* MTCA4U_MAPPEDDEVICE_H */

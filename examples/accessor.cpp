@@ -15,10 +15,16 @@ int main() {
   /** Entry in dmap file is
   * PCIE1     sdm://./pci:pcieunidummys6; mtcadummy.map
   */
-  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
-	FactoryInstance.createMappedDevice("PCIE1");
-  boost::shared_ptr<mtca4u::MappedDevice<mtca4u::BaseDevice>::RegisterAccessor> accessor =
-  			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
+  /*boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
+	FactoryInstance.createMappedDevice("PCIE1");*/
+
+  boost::shared_ptr<mtca4u::MappedDevice> myMappedDevice( new mtca4u::MappedDevice());
+  myMappedDevice->open("PCIE1");
+
+  /*boost::shared_ptr<mtca4u::MappedDevice<mtca4u::BaseDevice>::RegisterAccessor> accessor =
+  			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);*/
+  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor> accessor =
+    			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
   // read and print a data word works just like the devMap functions,
   // except that you don't give the register name
   int32_t dataWord;

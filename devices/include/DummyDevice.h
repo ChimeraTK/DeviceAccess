@@ -49,12 +49,12 @@ private:
 	/** _deviceName here is in context of mapping FileName */
 	std::string _deviceName;
 protected:
-	DummyDevice(std::string host, std::string interface, std::list<std::string> parameters);
+
 	/** The file name has to be a mapping file, not a device file.
 	 *  Permissons and config are ignored.
 	 */
 public:
-
+	DummyDevice(std::string host, std::string interface, std::list<std::string> parameters);
 	DummyDevice();
 	virtual ~DummyDevice();
 

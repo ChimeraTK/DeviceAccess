@@ -10,8 +10,8 @@
 #include "Utilities.h"
 #include "DeviceFactory.h"
 #include "MapFileParser.h"
+#include "DMapFilesParser.h"
 #include "Exception.h"
-
 namespace mtca4u {
 
 void DeviceFactory::registerDeviceType(std::string interface, std::string protocol,
@@ -21,15 +21,6 @@ void DeviceFactory::registerDeviceType(std::string interface, std::string protoc
 	std::cout << "adding:" << interface << std::endl << std::flush;
 #endif
 	creatorMap[make_pair(interface,protocol)] = creatorFunction;
-}
-
-boost::shared_ptr < MappedDevice<BaseDevice> > DeviceFactory::createMappedDevice(std::string devname) {
-	boost::shared_ptr<BaseDevice> base;
-	DMapFile::dRegisterInfo elem;
-	boost::tie(base, elem) = parseDMap(devname);
-	if (base)
-		base->open();
-	return boost::shared_ptr< MappedDevice< BaseDevice > > (new mtca4u::MappedDevice<mtca4u::BaseDevice>(base, elem.map_file_name));
 }
 
 boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string devname) {
@@ -47,6 +38,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 	DMapFilesParser filesParser;
 	DMapFile::dRegisterInfo dRegisterInfoent;
 	std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+	//std::cout<<"testFilePath:"<<testFilePath<<std::endl;
 	try {
 		if ( boost::filesystem::exists(testFilePath ) )
 			filesParser.parse_file(testFilePath);

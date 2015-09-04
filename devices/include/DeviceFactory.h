@@ -5,11 +5,11 @@
 #include "FakeDevice.h"
 #include "BaseDevice.h"
 #include "DummyDevice.h"
-#include "MappedDevice.h"
+//#include "MappedDevice.h"
 #include "PcieDevice.h"
 #include <boost/tuple/tuple.hpp>
 #include <boost/filesystem.hpp>
-
+#include "DMapFile.h"
 //#define _DEBUG
 #ifdef _DEBUG
 #include <iostream>
@@ -66,7 +66,6 @@ public:
 	 * device */
 
 	boost::shared_ptr<BaseDevice> createDevice(std::string devname);
-	boost::shared_ptr < MappedDevice<BaseDevice> > createMappedDevice(std::string devname);
 
 	/**Static function to get an instance of factory */
 	static DeviceFactory& getInstance() {

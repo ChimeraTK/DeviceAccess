@@ -16,11 +16,13 @@ static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
   // open the mapped device:
-  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
-	FactoryInstance.createMappedDevice("PCIE3");
+  //static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+  //boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
+	//FactoryInstance.createMappedDevice("PCIE3");
+  boost::shared_ptr< mtca4u::MappedDevice > mappedDevice (new mtca4u::MappedDevice());
+  mappedDevice->open("PCIE3");
   /** Entry in dmap file is
-	 *  PCIE3  sdm://./pci:mtcadummys0; mtcadummy.map
+	 *  PCIE3  sdm://./pci:mtcadummys0; muxedDataAcessor.map
 	 */
 
   // populate a memory region with multiple sequences so that we can use this
@@ -77,9 +79,10 @@ int main() {
   /**********************************************************************/
   // Start of Real Example, now that DMA region is set up with multiplexed
   // sequences
-  boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
-  	FactoryInstance.createMappedDevice("PCIE3");
-
+  //boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
+  //	FactoryInstance.createMappedDevice("PCIE3");
+  boost::shared_ptr<mtca4u::MappedDevice> myMappedDevice( new mtca4u::MappedDevice());
+  myMappedDevice->open("PCIE3");
   // The 16 bit elements in the 'DMA' region are converted into double because
   // we specify the userType as double. Please note, it is valid to use another
   // data types as the userType as well. For example using
