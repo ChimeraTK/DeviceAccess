@@ -23,10 +23,10 @@ void DeviceFactory::registerDeviceType(std::string interface, std::string protoc
 	creatorMap[make_pair(interface,protocol)] = creatorFunction;
 }
 
-boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string devname) {
+boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string aliasName) {
 	boost::shared_ptr<BaseDevice> base;
 	DMapFile::dRegisterInfo elem;
-	boost::tie(base, elem) = parseDMap(devname);
+	boost::tie(base, elem) = parseDMap(aliasName);
 	return base;
 }
 
