@@ -73,7 +73,7 @@ void FakeDevice::close()
 	_opened = false;
 }
 
-void FakeDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
+void FakeDevice::readInternal(uint8_t bar, uint32_t address, int32_t* data)
 {   
 	if (_opened == false) {
 		throw FakeDeviceException("Device closed", FakeDeviceException::EX_DEVICE_CLOSED);
@@ -81,11 +81,11 @@ void FakeDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
 	if (bar >= MTCA4U_LIBDEV_BAR_NR) {
 		throw FakeDeviceException("Wrong bar number", FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
-	if (regOffset >= MTCA4U_LIBDEV_BAR_MEM_SIZE) {
+	if (address >= MTCA4U_LIBDEV_BAR_MEM_SIZE) {
 		throw FakeDeviceException("Wrong offset", FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
 
-	if (fseek(_pcieMemory, regOffset + MTCA4U_LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
+	if (fseek(_pcieMemory, address + MTCA4U_LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
 		throw FakeDeviceException("Cannot access memory file", FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
 
@@ -94,7 +94,7 @@ void FakeDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar)
 	}
 }
 
-void FakeDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
+void FakeDevice::writeInternal(uint8_t bar, uint32_t address, int32_t data)
 {    
 	if (_opened == false) {
 		throw FakeDeviceException("Device closed", FakeDeviceException::EX_DEVICE_CLOSED);
@@ -102,11 +102,11 @@ void FakeDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
 	if (bar >= MTCA4U_LIBDEV_BAR_NR) {
 		throw FakeDeviceException("Wrong bar number", FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
-	if (regOffset >= MTCA4U_LIBDEV_BAR_MEM_SIZE) {
+	if (address >= MTCA4U_LIBDEV_BAR_MEM_SIZE) {
 		throw FakeDeviceException("Wrong offset", FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 
-	if (fseek(_pcieMemory, regOffset + MTCA4U_LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
+	if (fseek(_pcieMemory, address + MTCA4U_LIBDEV_BAR_MEM_SIZE*bar, SEEK_SET) < 0){
 		throw FakeDeviceException("Cannot access memory file", FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 
@@ -115,40 +115,40 @@ void FakeDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar)
 	}
 }
 
-void FakeDevice::readArea(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
-{       
+void FakeDevice::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
 	if (_opened == false) {
 		throw FakeDeviceException("Device closed", FakeDeviceException::EX_DEVICE_CLOSED);
 	}
-	if (size % 4) {
+
+	if ( sizeInBytes % 4 ) {
 		throw FakeDeviceException("Wrong data size - must be dividable by 4", FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
-	for (uint16_t i = 0; i < size/4; i++){
-		readReg(regOffset + i*4, data + i, bar);
+	for (uint16_t i = 0; i < sizeInBytes/4; i++){
+		readInternal(bar, address + i*4, data + i);
 	}
 }
 
-void FakeDevice::writeArea(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
+void FakeDevice::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes)
 {       
 	if (_opened == false) {
 		throw FakeDeviceException("Device closed", FakeDeviceException::EX_DEVICE_CLOSED);
 	}
-	if (size % 4) {
+	if (sizeInBytes % 4) {
 		throw FakeDeviceException("Wrong data size - must be divisible by 4", FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
-	for (uint16_t i = 0; i < size/4; i++){
-		writeReg(regOffset + i*4, *(data + i), bar);
+	for (uint16_t i = 0; i < sizeInBytes/4; i++){
+		writeInternal(bar, address + i*4, *(data + i));
 	}
 }
 
-void FakeDevice::readDMA(uint32_t regOffset, int32_t* data, size_t size, uint8_t bar)
+void FakeDevice::readDMA(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes)
 {   
-	readArea(regOffset, data, size, bar);
+	read(bar, address, data, sizeInBytes);
 }
 
-void FakeDevice::writeDMA(uint32_t regOffset, int32_t const * data, size_t size, uint8_t bar)
+void FakeDevice::writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes)
 {
-	writeArea(regOffset, data, size, bar);
+	write(bar, address, data, sizeInBytes);
 }
 
 

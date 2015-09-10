@@ -41,7 +41,7 @@ namespace mtca4u{
 MTCA4U_DEVMAP_ALL_TYPES_FOR_DEVTYPE( BaseDevice )
 
 
-				 MappedDevice::~MappedDevice(){
+ MappedDevice::~MappedDevice(){
 	// FIXME: do we want to close here? It will probably leave not working
 	// RegisterAccessors
 	// if(pdev) pdev->closeDev();
@@ -244,7 +244,8 @@ void MappedDevice::close() {
 
 void MappedDevice::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
 	checkPointersAreNotNull();
-	pdev->readReg(regOffset, data, bar);
+	//pdev->readReg(regOffset, data, bar);
+	pdev->read(bar, regOffset, data , 4);
 }
 
 /**
@@ -266,7 +267,7 @@ void MappedDevice::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const
 
 void MappedDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
 	checkPointersAreNotNull();
-	pdev->writeReg(regOffset, data, bar);
+	pdev->write(bar, regOffset, &data, 4);
 }
 
 /**
@@ -288,28 +289,29 @@ void MappedDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
 void MappedDevice::readArea(uint32_t regOffset, int32_t *data, size_t size,
 		uint8_t bar) const {
 	checkPointersAreNotNull();
-	pdev->readArea(regOffset, data, size, bar);
+	//pdev->readArea(regOffset, data, size, bar);
+	pdev->read(bar, regOffset, data, size);
 }
 
 
 void MappedDevice::writeArea(uint32_t regOffset, int32_t const *data, size_t size,
 		uint8_t bar) {
 	checkPointersAreNotNull();
-	pdev->writeArea(regOffset, data, size, bar);
+	pdev->write(bar, regOffset, data, size);
 }
 
 
 void MappedDevice::readDMA(uint32_t regOffset, int32_t *data, size_t size,
 		uint8_t bar) const {
 	checkPointersAreNotNull();
-	pdev->readDMA(regOffset, data, size, bar);
+	pdev->readDMA(bar, regOffset, data, size);
 }
 
 
 void MappedDevice::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
 		uint8_t bar) {
 	checkPointersAreNotNull();
-	pdev->writeDMA(regOffset, data, size, bar);
+	pdev->writeDMA(bar, regOffset, data, size);
 }
 
 
@@ -358,7 +360,7 @@ void MappedDevice::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
 	uint32_t retDataSize;
 	uint32_t retRegOff;
 	checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
-	pdev->readArea(retRegOff, data, retDataSize, me.reg_bar);
+	pdev->read(me.reg_bar, retRegOff, data, retDataSize);
 }
 
 
@@ -367,7 +369,7 @@ void MappedDevice::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSi
 	uint32_t retDataSize;
 	uint32_t retRegOff;
 	checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
-	pdev->writeArea(retRegOff, data, retDataSize, me.reg_bar);
+	pdev->write(me.reg_bar, retRegOff, data, retDataSize);
 }
 
 
@@ -381,7 +383,7 @@ void MappedDevice::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
 				"\" through DMA",
 				MappedDeviceException::EX_WRONG_PARAMETER);
 	}
-	pdev->readDMA(retRegOff, data, retDataSize, me.reg_bar);
+	pdev->readDMA(me.reg_bar, retRegOff, data, retDataSize);
 }
 
 
@@ -395,7 +397,7 @@ void MappedDevice::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSi
 				"\" through DMA",
 				MappedDeviceException::EX_WRONG_PARAMETER);
 	}
-	pdev->writeDMA(retRegOff, data, retDataSize, me.reg_bar);
+	pdev->writeDMA(me.reg_bar, retRegOff, data, retDataSize);
 }
 
 

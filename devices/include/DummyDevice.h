@@ -69,18 +69,10 @@ public:
 	 */
 	virtual void close();
 
-	virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar);
-	virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
-
-	virtual void readArea(uint32_t regOffset, int32_t* data, size_t size,
-			uint8_t bar);
-	virtual void writeArea(uint32_t regOffset, int32_t const * data, size_t size,
-			uint8_t bar);
-
-	virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size,
-			uint8_t bar);
-	virtual void writeDMA(uint32_t regOffset, int32_t const * data, size_t size,
-			uint8_t bar) ;
+	virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
+	virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
+	virtual void readDMA(uint8_t bar, uint32_t address, int32_t *data,  size_t sizeInBytes);
+	virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
 
 	virtual std::string readDeviceInfo();
 
@@ -99,8 +91,8 @@ protected:
 		const uint32_t offset;
 		const uint32_t sizeInBytes;
 		const uint8_t bar;
-		AddressRange( uint32_t offset_,  size_t sizeInBytes_, uint8_t bar_ )
-		: offset( offset_ ), sizeInBytes( sizeInBytes_ ), bar( bar_ ){}
+		AddressRange( uint8_t bar_, uint32_t address,  size_t sizeInBytes_ )
+		: offset( address ), sizeInBytes( sizeInBytes_ ), bar( bar_ ){}
 		bool operator<(AddressRange const & right) const {
 			return ( bar == right.bar ? ( offset < right.offset ) : bar < right.bar );
 		}
@@ -115,9 +107,9 @@ protected:
 	std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
 	void runWriteCallbackFunctionsForAddressRange( AddressRange addressRange );
 	std::list< boost::function<void(void)> > findCallbackFunctionsForAddressRange(AddressRange addressRange);
-	void setReadOnly( uint32_t offset,  uint8_t bar, size_t sizeInWords);
+	void setReadOnly( uint8_t bar, uint32_t address, size_t sizeInWords);
 	void setReadOnly( AddressRange addressRange);
-	bool isReadOnly( uint32_t offset, uint8_t bar ) const;
+	bool isReadOnly( uint8_t bar, uint32_t address ) const;
 	void setWriteCallbackFunction( AddressRange addressRange,
 			boost::function<void(void)>  const & writeCallbackFunction );
 	/// returns true if the ranges overlap and at least one of the overlapping registers can be written
@@ -127,7 +119,7 @@ protected:
 	/// Not write-protected function for internal use only. It does not trigger
 	/// the callback function so it can be used inside a callback function for
 	/// resynchronisation.
-	void writeRegisterWithoutCallback(uint32_t regOffset, int32_t data, uint8_t bar);
+	void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
 
 };
 

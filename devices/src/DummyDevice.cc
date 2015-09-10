@@ -14,7 +14,7 @@
 			COMMAND\
 		}catch( std::out_of_range & outOfRangeException ){\
 			std::stringstream errorMessage;\
-			errorMessage << "Invalid address offset " << regOffset \
+			errorMessage << "Invalid address offset " << address \
 			<< " in bar " << static_cast<int>(bar) << "."	\
 			<< "Caught out_of_range exception: " << outOfRangeException.what();\
 			throw DummyDeviceException(errorMessage.str(), DummyDeviceException::INVALID_ADDRESS);\
@@ -103,59 +103,51 @@ void DummyDevice::close(){
 	_opened=false;
 }
 
-void DummyDevice::readReg(uint32_t regOffset, int32_t* data, uint8_t bar){
-	TRY_REGISTER_ACCESS( *data = _barContents[bar].at(regOffset/sizeof(int32_t)); );
-}
 
-void DummyDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar){
-	if (isReadOnly( regOffset, bar ) ){
+/*void DummyDevice::writeReg(uint8_t bar, uint32_t address, int32_t data){
+	if (isReadOnly(bar, address ) ){
 		return;
 	}
-	writeRegisterWithoutCallback( regOffset, data, bar);
-	runWriteCallbackFunctionsForAddressRange( AddressRange(regOffset, sizeof(int32_t), bar) );
+	writeRegisterWithoutCallback(bar, address, data);
+	runWriteCallbackFunctionsForAddressRange(AddressRange(bar, address, sizeof(int32_t) ) );
+}*/
+
+void DummyDevice::writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data){
+	TRY_REGISTER_ACCESS( _barContents[bar].at(address/sizeof(int32_t)) = data; );
 }
 
-void DummyDevice::writeRegisterWithoutCallback(uint32_t regOffset,
-		int32_t data, uint8_t bar){
-	TRY_REGISTER_ACCESS( _barContents[bar].at(regOffset/sizeof(int32_t)) = data; );
-}
-
-void DummyDevice::readArea(uint32_t regOffset, int32_t* data, size_t size,
-		uint8_t bar){
-	checkSizeIsMultipleOfWordSize( size );
-	unsigned int wordBaseIndex = regOffset/sizeof(int32_t);
-	for (unsigned int wordIndex = 0; wordIndex < size/sizeof(int32_t); ++wordIndex){
+void DummyDevice::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
+	checkSizeIsMultipleOfWordSize( sizeInBytes );
+	unsigned int wordBaseIndex = address/sizeof(int32_t);
+	for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
 		TRY_REGISTER_ACCESS( data[wordIndex] = _barContents[bar].at(wordBaseIndex+wordIndex); );
 	}
 }
 
-void DummyDevice::writeArea(uint32_t regOffset, int32_t const * data, size_t size,
-		uint8_t bar){
-	checkSizeIsMultipleOfWordSize( size );
-	unsigned int wordBaseIndex = regOffset/sizeof(int32_t);
-	for (unsigned int wordIndex = 0; wordIndex < size/sizeof(int32_t); ++wordIndex){
-		if (isReadOnly( regOffset + wordIndex*sizeof(int32_t), bar ) ){
+void DummyDevice::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
+	checkSizeIsMultipleOfWordSize( sizeInBytes );
+	unsigned int wordBaseIndex = address/sizeof(int32_t);
+	for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
+		if (isReadOnly( bar, address + wordIndex*sizeof(int32_t) ) ){
 			continue;
 		}
 		TRY_REGISTER_ACCESS( _barContents[bar].at(wordBaseIndex+wordIndex) = data[wordIndex]; );
 	}
-	runWriteCallbackFunctionsForAddressRange( AddressRange(regOffset, size, bar) );
+	runWriteCallbackFunctionsForAddressRange( AddressRange(bar, address, sizeInBytes ) );
 }
 
-void DummyDevice::readDMA(uint32_t regOffset, int32_t* data, size_t size,
-		uint8_t bar){
-	return readArea(regOffset, data, size, bar);
+void DummyDevice::readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
+	return read(bar, address, data, sizeInBytes);
 }
 
-void DummyDevice::writeDMA(uint32_t /* regOffset */, int32_t const * /* data */, size_t /* size */,
-		uint8_t /* bar */){
+void DummyDevice::writeDMA(uint8_t /* bar */, uint32_t /* address */, int32_t const * /* data */, size_t /* sizeInBytes */){
 	throw NotImplementedException("DummyDevice::writeDMA is not implemented yet.");
 }
 
 std::string DummyDevice::readDeviceInfo(){
 	std::stringstream info;
 	info << "DummyDevice with mapping file " << _registerMapping->getMapFileName();
-	return info.str();
+        return info.str();
 }
 
 uint64_t DummyDevice::calculateVirtualAddress( uint32_t registerOffsetInBar,
@@ -170,19 +162,19 @@ void DummyDevice::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
 	}
 }
 
-void DummyDevice::setReadOnly(uint32_t offset, uint8_t bar, size_t sizeInWords){
+void DummyDevice::setReadOnly(uint8_t bar, uint32_t address,  size_t sizeInWords){
 	for (size_t i = 0; i < sizeInWords; ++i){
-		uint64_t virtualAddress = calculateVirtualAddress( offset + i*sizeof(int32_t), bar );
+		uint64_t virtualAddress = calculateVirtualAddress( address + i*sizeof(int32_t), bar );
 		_readOnlyAddresses.insert(virtualAddress);
 	}
 }
 
 void DummyDevice::setReadOnly( AddressRange addressRange ){
-	setReadOnly( addressRange.offset, addressRange.bar, addressRange.sizeInBytes/sizeof(int32_t) );
+	setReadOnly( addressRange.bar, addressRange.offset, addressRange.sizeInBytes/sizeof(int32_t) );
 }
 
-bool  DummyDevice::isReadOnly( uint32_t offset, uint8_t bar ) const{
-	uint64_t virtualAddress = calculateVirtualAddress( offset, bar );
+bool  DummyDevice::isReadOnly( uint8_t bar, uint32_t address  ) const{
+	uint64_t virtualAddress = calculateVirtualAddress( address, bar );
 	return (  _readOnlyAddresses.find(virtualAddress) != _readOnlyAddresses.end() );
 }
 
@@ -207,8 +199,8 @@ std::list< boost::function<void(void)> > DummyDevice::findCallbackFunctionsForAd
 	// FIXME: If the same function is registered more than one, it may be executed multiple times
 
 	// we only want the start address of the range, so we set size to 0
-	AddressRange firstAddressInBar( 0, 0, addressRange.bar );
-	AddressRange endAddress( addressRange.offset + addressRange.sizeInBytes, 0, addressRange.bar );
+	AddressRange firstAddressInBar(addressRange.bar, 0, 0);
+	AddressRange endAddress( addressRange.bar, addressRange.offset + addressRange.sizeInBytes, 0 );
 
 	std::multimap< AddressRange, boost::function<void(void)> >::iterator startIterator =
 			_writeCallbackFunctions.lower_bound( firstAddressInBar );
@@ -238,7 +230,7 @@ bool DummyDevice::isWriteRangeOverlap( AddressRange firstRange, AddressRange sec
 
 	// if at least one register is writeable there is an overlap of writeable registers
 	for ( uint32_t address = startAddress; address < endAddress; address += sizeof(int32_t) ){
-		if ( isReadOnly(address, firstRange.bar)==false ){
+		if ( isReadOnly(firstRange.bar, address)==false ){
 			return true;
 		}
 	}

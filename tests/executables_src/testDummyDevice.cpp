@@ -47,7 +47,8 @@ public:
   /// which
   /// returns void and takes uint32_t, int32_t*, size_t, uint8_t as arguments.
   void testReadWriteMultiWordRegister(
-      void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
+      //void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
+  		void (DummyDevice::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
   void testWriteDMA();
   void testReadDeviceInfo();
   void testReadOnly();
@@ -119,11 +120,11 @@ public:
     // dummyDeviceTest instance.
     boost::function<void(void)> testReadWriteArea =
         boost::bind(&DummyDeviceTest::testReadWriteMultiWordRegister,
-                    dummyDeviceTest, &DummyDevice::readArea);
+                    dummyDeviceTest, &DummyDevice::read);
 
-    boost::function<void(void)> testReadWriteDMA =
+    /*boost::function<void(void)> testReadWriteDMA =
         boost::bind(&DummyDeviceTest::testReadWriteMultiWordRegister,
-                    dummyDeviceTest, &DummyDevice::readDMA);
+                    dummyDeviceTest, &DummyDevice::readDMA);*/
 
     add(BOOST_TEST_CASE(DummyDeviceTest::testCalculateVirtualAddress));
     add(BOOST_TEST_CASE(DummyDeviceTest::testCheckSizeIsMultipleOfWordSize));
@@ -135,7 +136,7 @@ public:
     add(BOOST_TEST_CASE(testReadWriteArea)); // not BOOST_CLASS_TEST_CASE as the
                                              // functions are already bound to
                                              // the instance
-    add(BOOST_TEST_CASE(testReadWriteDMA));
+    //add(BOOST_TEST_CASE(testReadWriteDMA));
     add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testWriteDMA, dummyDeviceTest));
     add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testReadDeviceInfo,
                               dummyDeviceTest));
@@ -197,23 +198,26 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
   uint32_t offset = mappingElement.reg_address;
   uint8_t bar = mappingElement.reg_bar;
   int32_t dataContent = -1;
-  BOOST_CHECK_NO_THROW(dummyDevice->readReg(offset, &dataContent, bar));
+  //BOOST_CHECK_NO_THROW(dummyDevice->readReg(bar, offset, &dataContent));
+  BOOST_CHECK_NO_THROW(dummyDevice->read(bar, offset, &dataContent,4));
   BOOST_CHECK(dataContent == 0);
   dataContent = 47;
-  BOOST_CHECK_NO_THROW(dummyDevice->writeReg(offset, dataContent, bar));
+  BOOST_CHECK_NO_THROW(dummyDevice->write(bar, offset, &dataContent,4));
   dataContent = -1; // make sure the value is really being read
   // no need to test NO_THROW on the same register twice
-  dummyDevice->readReg(offset, &dataContent, bar);
+  //dummyDevice->readReg(offset, &dataContent, bar);
+  dummyDevice->read(bar, offset, &dataContent, 4);
   BOOST_CHECK(dataContent == 47);
 
   // the size as index is invalid, allowed range is 0..size-1 included.
-  BOOST_CHECK_THROW(dummyDevice->readReg(dummyDevice->_barContents[bar].size() *
+  BOOST_CHECK_THROW(//dummyDevice->readReg(dummyDevice->_barContents[bar].size() *
+  									dummyDevice->read(bar, dummyDevice->_barContents[bar].size() *
                                              sizeof(int32_t),
-                                         &dataContent, bar),
+                                         &dataContent, 4),
                     DummyDeviceException);
-  BOOST_CHECK_THROW(dummyDevice->writeReg(
+  BOOST_CHECK_THROW(dummyDevice->write(bar,
                         dummyDevice->_barContents[bar].size() * sizeof(int32_t),
-                        dataContent, bar),
+                        &dataContent, 4),
                     DummyDeviceException);
 }
 
@@ -221,7 +225,8 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
 // DummyDeviceTest::testReadWriteMultiWordRegister(boost::function<void(uint32_t,
 // int32_t*, size_t, uint8_t)> readFunction){
 void DummyDeviceTest::testReadWriteMultiWordRegister(
-    void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
+    //void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
+		void (DummyDevice::*readFunction)(uint8_t, uint32_t, int32_t*, size_t)) {
   // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
@@ -234,8 +239,8 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
   size_t sizeInWords = mappingElement.reg_size / sizeof(int32_t);
   std::vector<int32_t> dataContent(sizeInWords, -1);
 
-  BOOST_CHECK_NO_THROW((dummyDevice->*readFunction)(offset, &(dataContent[0]),
-                                                    sizeInBytes, bar));
+  BOOST_CHECK_NO_THROW((dummyDevice->*readFunction)(bar, offset, &(dataContent[0]),
+                                                    sizeInBytes));
   for (std::vector<int32_t>::iterator dataIter = dataContent.begin();
        dataIter != dataContent.end(); ++dataIter) {
     std::stringstream errorMessage;
@@ -247,12 +252,12 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
     dataContent[index] = static_cast<int32_t>((index + 1) * (index + 1));
   }
   BOOST_CHECK_NO_THROW(
-      dummyDevice->writeArea(offset, &(dataContent[0]), sizeInBytes, bar));
+      dummyDevice->write(bar, offset, &(dataContent[0]), sizeInBytes));
   // make sure the value is really being read
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
 
   // no need to test NO_THROW on the same register twice
-  dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
+  dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes);
 
   // make sure the value is really being read
   for (unsigned int index = 0; index < dataContent.size(); ++index) {
@@ -262,33 +267,35 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
 
   // tests for exceptions
   // 1. base address too large
-  BOOST_CHECK_THROW(dummyDevice->readArea(
+  BOOST_CHECK_THROW(dummyDevice->read(bar,
                         dummyDevice->_barContents[bar].size() * sizeof(int32_t),
-                        &(dataContent[0]), sizeInBytes, bar),
+                        //&(dataContent[0]), sizeInBytes, bar),
+												&(dataContent[0]),  sizeInBytes),
                     DummyDeviceException);
-  BOOST_CHECK_THROW(dummyDevice->writeArea(
+  BOOST_CHECK_THROW(dummyDevice->write(bar,
                         dummyDevice->_barContents[bar].size() * sizeof(int32_t),
-                        &(dataContent[0]), sizeInBytes, bar),
+                        &(dataContent[0]), sizeInBytes),
                     DummyDeviceException);
   // 2. size too large (works because the target register is not at offfset 0)
   // resize the data vector for this test
   dataContent.resize(dummyDevice->_barContents[bar].size());
-  BOOST_CHECK_THROW(dummyDevice->readArea(
+  BOOST_CHECK_THROW(dummyDevice->read(bar,
                         offset, &(dataContent[0]),
-                        dummyDevice->_barContents[bar].size() * sizeof(int32_t),
-                        bar),
+                        //dummyDevice->_barContents[bar].size() * sizeof(int32_t),bar),
+												dummyDevice->_barContents[bar].size() * sizeof(int32_t)),
                     DummyDeviceException);
-  BOOST_CHECK_THROW(dummyDevice->writeArea(
+  BOOST_CHECK_THROW(dummyDevice->write(bar,
                         offset, &(dataContent[0]),
-                        dummyDevice->_barContents[bar].size() * sizeof(int32_t),
-                        bar),
+                        dummyDevice->_barContents[bar].size() * sizeof(int32_t)
+                        ),
                     DummyDeviceException);
   // 3. size not multiple of 4
   BOOST_CHECK_THROW(
-      dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes - 1, bar),
+      //dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes - 1, bar),
+  		dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes - 1),
       DummyDeviceException);
   BOOST_CHECK_THROW(
-      dummyDevice->writeArea(offset, &(dataContent[0]), sizeInBytes - 1, bar),
+      dummyDevice->write(bar, offset, &(dataContent[0]), sizeInBytes - 1),
       DummyDeviceException);
 }
 
@@ -307,7 +314,7 @@ void DummyDeviceTest::freshlyopenice() {
 void DummyDeviceTest::testWriteDMA() {
   // will probably never be implemented
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
-  BOOST_CHECK_THROW(dummyDevice->writeDMA(0, NULL, 0, 0),
+  BOOST_CHECK_THROW(dummyDevice->writeDMA(0, 0, NULL, 0),
                     NotImplementedException);
 }
 
@@ -354,35 +361,35 @@ void DummyDeviceTest::testReadOnly() {
   for (unsigned int index = 0; index < dataContent.size(); ++index) {
     dataContent[index] = static_cast<int32_t>((index + 1) * (index + 1));
   }
-  dummyDevice->writeArea(offset, &(dataContent[0]), sizeInBytes, bar);
-  dummyDevice->setReadOnly(offset, bar, 1);
+  dummyDevice->write(bar, offset, &(dataContent[0]), sizeInBytes);
+  dummyDevice->setReadOnly(bar, offset, 1);
 
   // the actual test: write 42 to all registers, register 0 must not change, all
   // others have to
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 42);
-  dummyDevice->writeArea(offset, &(dataContent[0]), sizeInBytes, bar);
+  dummyDevice->write(bar, offset, &(dataContent[0]), sizeInBytes);
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
-  dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
+  //dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
+  dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes);
   BOOST_CHECK(dataContent[0] == 1);
   BOOST_CHECK(dataContent[1] == 42);
   BOOST_CHECK(dataContent[2] == 42);
   BOOST_CHECK(dataContent[3] == 42);
-
   // also set the last two words to read only. Now only the second word has to
   // change.
   // We use the addressRange interface for it to also cover this.
-  TestableDummyDevice::AddressRange lastTwoMuxRegisters(
-      offset + 2 * sizeof(int32_t), 2 * sizeof(int32_t), bar);
+  TestableDummyDevice::AddressRange lastTwoMuxRegisters(bar,
+      offset + 2 * sizeof(int32_t), 2 * sizeof(int32_t));
   dummyDevice->setReadOnly(lastTwoMuxRegisters);
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 29);
   // also test with single write operations
   for (size_t index = 0; index < sizeInWords; ++index) {
-    dummyDevice->writeReg(offset + index * sizeof(int32_t), dataContent[index],
-                          bar);
+    dummyDevice->write(bar, offset + index * sizeof(int32_t), &dataContent[index],4);
   }
 
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
-  dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
+  //dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
+  dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes);
   BOOST_CHECK(dataContent[0] == 1);
   BOOST_CHECK(dataContent[1] == 29);
   BOOST_CHECK(dataContent[2] == 42);
@@ -390,10 +397,13 @@ void DummyDeviceTest::testReadOnly() {
 
   // check that the next register is still writeable (boundary test)
   int32_t originalNextDataWord;
-  dummyDevice->readReg(offset + sizeInBytes, &originalNextDataWord, bar);
-  dummyDevice->writeReg(offset + sizeInBytes, originalNextDataWord + 1, bar);
+  //dummyDevice->readReg(offset + sizeInBytes, &originalNextDataWord, bar);
+  dummyDevice->read(bar, offset + sizeInBytes, &originalNextDataWord, 4);
+  int32_t writeWord = originalNextDataWord + 1 ;
+  dummyDevice->write(bar, offset + sizeInBytes, &writeWord , 4);
   int32_t readbackWord;
-  dummyDevice->readReg(offset + sizeInBytes, &readbackWord, bar);
+  //dummyDevice->readReg(offset + sizeInBytes, &readbackWord, bar);
+  dummyDevice->read(bar, offset + sizeInBytes, &readbackWord, 4);
   BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
 
@@ -412,51 +422,51 @@ void DummyDeviceTest::testWriteCallbackFunctions() {
   b = 0;
   c = 0;
   dummyDevice->setWriteCallbackFunction(
-      TestableDummyDevice::AddressRange(36, 4, 0),
+      TestableDummyDevice::AddressRange(0,36, 4),
       boost::bind(&DummyDeviceTest::increaseA, this));
   dummyDevice->setWriteCallbackFunction(
-      TestableDummyDevice::AddressRange(28, 24, 0),
+      TestableDummyDevice::AddressRange(0, 28, 24),
       boost::bind(&DummyDeviceTest::increaseB, this));
   dummyDevice->setWriteCallbackFunction(
-      TestableDummyDevice::AddressRange(20, 12, 0),
+      TestableDummyDevice::AddressRange(0, 20, 12),
       boost::bind(&DummyDeviceTest::increaseC, this));
 
   // test single writes
   int32_t dataWord(42);
-  dummyDevice->writeReg(12, dataWord, 0); // nothing
+  dummyDevice->write(0, 12, &dataWord, 4); // nothing
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 0);
 
-  dummyDevice->writeReg(20, dataWord, 0); // c
+  dummyDevice->write(0, 20, &dataWord, 4); // c
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 1);
-  dummyDevice->writeReg(24, dataWord, 0); // c
+  dummyDevice->write(0, 24, &dataWord, 4); // c
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 2);
-  dummyDevice->writeReg(28, dataWord, 0); // bc
+  dummyDevice->write(0, 28, &dataWord, 4); // bc
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 1);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(32, dataWord, 0); // read only
+  dummyDevice->write(0, 32, &dataWord, 4); // read only
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 1);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(36, dataWord, 0); // ab
+  dummyDevice->write(0, 36, &dataWord, 4); // ab
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(40, dataWord, 0); // read only
+  dummyDevice->write(0, 40, &dataWord, 4); // read only
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(44, dataWord, 0); // read only
+  dummyDevice->write(0, 44, &dataWord, 4); // read only
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeReg(48, dataWord, 0); // b
+  dummyDevice->write(0, 48, &dataWord, 4); // b
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 3);
   BOOST_CHECK(c == 3);
@@ -465,31 +475,31 @@ void DummyDeviceTest::testWriteCallbackFunctions() {
   a = 0;
   b = 0;
   c = 0;
-  dummyDevice->writeArea(20, &(dataContents[0]), 32, 0); // abc
+  dummyDevice->write(0, 20, &(dataContents[0]), 32); // abc
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 1);
   BOOST_CHECK(c == 1);
-  dummyDevice->writeArea(20, &(dataContents[0]), 8, 0); // c
+  dummyDevice->write(0, 20, &(dataContents[0]), 8); // c
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 1);
   BOOST_CHECK(c == 2);
-  dummyDevice->writeArea(20, &(dataContents[0]), 12, 0); // bc
+  dummyDevice->write(0, 20, &(dataContents[0]), 12); // bc
   BOOST_CHECK(a == 1);
   BOOST_CHECK(b == 2);
   BOOST_CHECK(c == 3);
-  dummyDevice->writeArea(28, &(dataContents[0]), 24, 0); // abc
+  dummyDevice->write(0, 28, &(dataContents[0]), 24); // abc
   BOOST_CHECK(a == 2);
   BOOST_CHECK(b == 3);
   BOOST_CHECK(c == 4);
-  dummyDevice->writeArea(32, &(dataContents[0]), 16, 0); // ab
+  dummyDevice->write(0, 32, &(dataContents[0]), 16); // ab
   BOOST_CHECK(a == 3);
   BOOST_CHECK(b == 4);
   BOOST_CHECK(c == 4);
-  dummyDevice->writeArea(40, &(dataContents[0]), 8, 0); // readOnly
+  dummyDevice->write(0, 40, &(dataContents[0]), 8); // readOnly
   BOOST_CHECK(a == 3);
   BOOST_CHECK(b == 4);
   BOOST_CHECK(c == 4);
-  dummyDevice->writeArea(4, &(dataContents[0]), 8, 0); // nothing
+  dummyDevice->write(0, 4, &(dataContents[0]), 8); // nothing
   BOOST_CHECK(a == 3);
   BOOST_CHECK(b == 4);
   BOOST_CHECK(c == 4);
@@ -501,35 +511,34 @@ void DummyDeviceTest::testWriteRegisterWithoutCallback() {
   c = 0;
   int32_t dataWord = 42;
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
-  dummyDevice->writeRegisterWithoutCallback(
-      20, dataWord, 0); // c has callback installed on this register
+  dummyDevice->writeRegisterWithoutCallback(0,
+      20, dataWord); // c has callback installed on this register
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 0); // c must not change
 
   // read only is also disabled for this internal function
-  dummyDevice->readReg(40, &dataWord, 0);
-  dummyDevice->writeRegisterWithoutCallback(40, dataWord + 1, 0);
+  //dummyDevice->readReg(40, &dataWord, 0);
+  dummyDevice->read(0, 40, &dataWord, 4);
+  dummyDevice->writeRegisterWithoutCallback(0, 40, dataWord + 1);
   int32_t readbackDataWord;
-  dummyDevice->readReg(40, &readbackDataWord, 0);
+  //dummyDevice->readReg(40, &readbackDataWord, 0);
+  dummyDevice->read(0, 40, &readbackDataWord, 4);
   BOOST_CHECK(readbackDataWord == dataWord + 1);
 }
 
 void DummyDeviceTest::testAddressRange() {
-  TestableDummyDevice::AddressRange range24_8_0(24, 8, 0);
+  TestableDummyDevice::AddressRange range24_8_0(0, 24, 8);
 
   BOOST_CHECK(range24_8_0.offset == 24);
   BOOST_CHECK(range24_8_0.sizeInBytes == 8);
   BOOST_CHECK(range24_8_0.bar == 0);
 
-  TestableDummyDevice::AddressRange range24_8_1(24, 8, 1); // larger bar
-  TestableDummyDevice::AddressRange range12_8_1(
-      12, 8, 1); // larger bar, smaller offset
-  TestableDummyDevice::AddressRange range28_8_0(28, 8, 0); // larger offset
-  TestableDummyDevice::AddressRange range28_8_1(28, 8,
-                                                1); // larger bar, larger offset
-  TestableDummyDevice::AddressRange range24_12_0(
-      24, 12, 0); // different size, compares equal with range1
+  TestableDummyDevice::AddressRange range24_8_1(1, 24, 8); // larger bar
+  TestableDummyDevice::AddressRange range12_8_1(1, 12, 8); // larger bar, smaller offset
+  TestableDummyDevice::AddressRange range28_8_0(0, 28, 8); // larger offset
+  TestableDummyDevice::AddressRange range28_8_1(1, 28, 8); // larger bar, larger offset
+  TestableDummyDevice::AddressRange range24_12_0(0,24, 12); // different size, compares equal with range1
 
   // compare 24_8_0 with the other cases as left argument
   BOOST_CHECK((range24_8_0 < range24_8_1));
@@ -551,8 +560,8 @@ void DummyDeviceTest::testIsWriteRangeOverlap() {
   // An overlapping range in different bars
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
   bool overlap = dummyDevice->isWriteRangeOverlap(
-      TestableDummyDevice::AddressRange(0, 12, 0),
-      TestableDummyDevice::AddressRange(0, 12, 1));
+      TestableDummyDevice::AddressRange(0, 0, 12),
+      TestableDummyDevice::AddressRange(1, 0, 12));
   BOOST_CHECK(overlap == false);
 }
 

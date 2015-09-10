@@ -189,13 +189,14 @@ void FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::read() {
   // if this is not a dma area -> use the readArea from the interface
   // else the read DMA
   if (isDMAMemoryArea()) {
-    MultiplexedDataAccessor<UserType>::_ioDevice->readDMA(
+    MultiplexedDataAccessor<UserType>::_ioDevice->readDMA(_areaInfo.reg_bar,
         _areaInfo.reg_address, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
-        _areaInfo.reg_size, _areaInfo.reg_bar);
+        _areaInfo.reg_size);
   } else {
-    MultiplexedDataAccessor<UserType>::_ioDevice->readArea(
+    MultiplexedDataAccessor<UserType>::_ioDevice->read(_areaInfo.reg_bar,
         _areaInfo.reg_address, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
-        _areaInfo.reg_size, _areaInfo.reg_bar);
+        //_areaInfo.reg_size, _areaInfo.reg_bar);
+				 _areaInfo.reg_size);
   }
 
   fillSequences();
@@ -222,9 +223,9 @@ void FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::write() {
   if (isDMAMemoryArea()) {
     throw NotImplementedException("writeViaDMA is not implemented yet");
   } else {
-    MultiplexedDataAccessor<UserType>::_ioDevice->writeArea(
+    MultiplexedDataAccessor<UserType>::_ioDevice->write(_areaInfo.reg_bar,
         _areaInfo.reg_address, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
-        _areaInfo.reg_size, _areaInfo.reg_bar);
+        _areaInfo.reg_size);
   }
 }
 

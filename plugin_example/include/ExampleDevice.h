@@ -28,18 +28,11 @@ public:
   virtual void open(const std::string& /*devName*/, int /*perm*/,
                          DeviceConfigBase* /*pConfig*/) {};
 
-    virtual void readReg(uint32_t /*regOffset*/, int32_t* /*data*/, uint8_t /*bar*/) {};
-    virtual void writeReg(uint32_t /*regOffset*/, int32_t /*data*/, uint8_t /*bar*/) {};
+    virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/){};
+    virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
 
-    virtual void readArea(uint32_t /*regOffset*/, int32_t* /*data*/, size_t /*size*/,
-                          uint8_t /*bar*/) {};
-    virtual void writeArea(uint32_t /*regOffset*/, int32_t const* /*data*/, size_t /*size*/,
-                           uint8_t /*bar*/) {};
-
-    virtual void readDMA(uint32_t /*regOffset*/, int32_t* /*data*/, size_t /*size*/,
-                         uint8_t /*bar*/) {};
-    virtual void writeDMA(uint32_t /*regOffset*/, int32_t const* /*data*/, size_t /*size*/,
-                          uint8_t /*bar*/) {};
+    virtual void readDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/, size_t /*sizeInBytes*/) {};
+    virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
 
     virtual std::string readDeviceInfo() {return std::string("Example_Device");}
 };

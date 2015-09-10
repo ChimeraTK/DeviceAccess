@@ -55,10 +55,10 @@ void testDeMultiplexing(std::string areaName){
   ioBuffer[13] = 'e';
   ioBuffer[14] = '4';
 
-  ioDevice->writeArea( sequenceInfo.reg_address, 
+  ioDevice->write( sequenceInfo.reg_bar, sequenceInfo.reg_address,
 		       reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-		       sequenceInfo.reg_size,
-		       sequenceInfo.reg_bar );
+		       sequenceInfo.reg_size
+		       );
 					    
   FixedTypeMuxedDataAccessor< SequenceWordType, SequenceWordType >  
     deMultiplexer( ioDevice, sequenceInfo , std::vector< FixedPointConverter >(3) );
@@ -88,10 +88,9 @@ void testDeMultiplexing(std::string areaName){
   }
 
   deMultiplexer.write();
-  ioDevice->readArea( sequenceInfo.reg_address, 
+  ioDevice->read( sequenceInfo.reg_bar, sequenceInfo.reg_address,
 		      reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-		      sequenceInfo.reg_size,
-		      sequenceInfo.reg_bar );
+		      sequenceInfo.reg_size );
 
   BOOST_CHECK( ioBuffer[0] == 'F' );
   BOOST_CHECK( ioBuffer[1] == 'f' ); 
@@ -142,10 +141,10 @@ void testWithConversion(std::string multiplexedSequenceName){
     ioBuffer[i] = i;
   }
 
-  ioDevice->writeArea( sequenceInfo.reg_address, 
+  ioDevice->write( sequenceInfo.reg_bar , sequenceInfo.reg_address,
 		       reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-		       sequenceInfo.reg_size,
-		       sequenceInfo.reg_bar );
+		       sequenceInfo.reg_size
+		       );
 					    
   boost::shared_ptr< MultiplexedDataAccessor< float > >
     deMultiplexer = MultiplexedDataAccessor<float>::createInstance( multiplexedSequenceName,
@@ -177,10 +176,11 @@ void testWithConversion(std::string multiplexedSequenceName){
   }
 
   deMultiplexer->write();
-  ioDevice->readArea( sequenceInfo.reg_address, 
+  ioDevice->read( sequenceInfo.reg_bar, sequenceInfo.reg_address,
 		      reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-		      sequenceInfo.reg_size,
-		      sequenceInfo.reg_bar );
+		      //sequenceInfo.reg_size,
+		      //sequenceInfo.reg_bar );
+  		    sequenceInfo.reg_size );
 
   for (size_t i=0; i < 15; ++i){
     // with i%3+1 fractional bits the added floating point value of 1 
@@ -259,10 +259,10 @@ BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
     ioBuffer[i]=i;
   }
   
-  ioDevice->writeArea( sequenceInfo.reg_address, 
+  ioDevice->write( sequenceInfo.reg_bar, sequenceInfo.reg_address,
 		       reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-		       sequenceInfo.reg_size,
-		       sequenceInfo.reg_bar );
+		       sequenceInfo.reg_size
+		       );
 
   boost::shared_ptr< MultiplexedDataAccessor< double > >deMultiplexer =
     MultiplexedDataAccessor<double>::createInstance( "DMA",

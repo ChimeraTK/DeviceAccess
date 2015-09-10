@@ -27,18 +27,11 @@ public:
   virtual void open() = 0;
   virtual void close() = 0;
 
-  virtual void readReg(uint32_t regOffset, int32_t* data, uint8_t bar) = 0;
-  virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) = 0;
+  virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
+  virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
 
-  virtual void readArea(uint32_t regOffset, int32_t* data, size_t size,
-                        uint8_t bar) = 0;
-  virtual void writeArea(uint32_t regOffset, int32_t const* data, size_t size,
-                         uint8_t bar) = 0;
-
-  virtual void readDMA(uint32_t regOffset, int32_t* data, size_t size,
-                       uint8_t bar) = 0;
-  virtual void writeDMA(uint32_t regOffset, int32_t const* data, size_t size,
-                        uint8_t bar) = 0;
+  virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
+  virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
 
   virtual std::string readDeviceInfo() = 0;
   /** Return whether a device has been opened or not.

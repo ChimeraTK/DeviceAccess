@@ -156,7 +156,7 @@ void MtcaMappedDeviceTest::testThrowIfNeverOpened() {
       virginMappedDevice->writeReg(0 /*regOffset*/, dataWord, 0 /*bar*/),
       MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice->readArea(0 /*regOffset*/, &dataWord,
-                                                4 /*size*/, 0 /*bar*/),
+                                                 0 /*bar*/,  4 /*size*/),
                     MappedDeviceException);
   BOOST_CHECK_THROW(virginMappedDevice->writeArea(0 /*regOffset*/, &dataWord,
                                                  4 /*size*/, 0 /*bar*/),
@@ -288,17 +288,17 @@ void MtcaMappedDeviceTest::testRegObject_readBlock() {
   mappedDevice->writeReg("WORD_ADC_ENA", &tempWord);
   tempWord = 1;
   mappedDevice->writeReg("WORD_ADC_ENA", &tempWord);
-
   mtca4u::MappedDevice::regObject registerAccessor =
   		mappedDevice->getRegObject("AREA_DMAABLE");
-
+  std::cout<<"pass4"<<std::endl;
   // there are 25 elements with value i*i. ignore the first 2
   static const size_t N_ELEMENTS = 23;
   static const size_t OFFSET_ELEMENTS = 2;
 
   std::vector<int32_t> int32Buffer(N_ELEMENTS, 0);
+  std::cout<<"pass4.0"<<std::endl;
   registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
-
+  std::cout<<"pass4.1"<<std::endl;
   // pre-check: make sure we know what we get
   for (size_t i = 0; i < N_ELEMENTS; ++i) {
     BOOST_CHECK(int32Buffer[i] == static_cast<int>((i + OFFSET_ELEMENTS) *
@@ -311,9 +311,9 @@ void MtcaMappedDeviceTest::testRegObject_readBlock() {
   // settings (1 fractional bit, 10 bits, signed)
   mtca4u::MappedDevice::regObject registerAccessor10_1 =
   		mappedDevice->getRegObject("AREA_DMAABLE_FIXEDPOINT10_1");
-
+  std::cout<<"pass5"<<std::endl;
   registerAccessor10_1.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
-
+  std::cout<<"pass6"<<std::endl;
   std::vector<uint32_t> uint32Buffer(N_ELEMENTS, 0);
   registerAccessor10_1.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
