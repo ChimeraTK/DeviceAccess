@@ -229,8 +229,8 @@ public:
       std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
       int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);*/
   //virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
-  void open(boost::shared_ptr<BaseDevice> baseDevice,
-  												const std::string &mapFileName);
+  virtual void open(boost::shared_ptr<BaseDevice> baseDevice, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
+
   virtual void close();
   virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
   virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);

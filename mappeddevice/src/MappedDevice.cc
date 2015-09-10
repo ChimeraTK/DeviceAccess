@@ -425,12 +425,11 @@ void MappedDevice::checkPointersAreNotNull() const {
 
 
 void MappedDevice::open(boost::shared_ptr<BaseDevice> baseDevice,
-		const std::string &mapFile)
+		boost::shared_ptr<RegisterInfoMap> registerInfoMap)
 {
 	pdev = baseDevice;
 	pdev->open();
-	mapFileName = mapFile;
-	registerMap = mtca4u::mapFileParser().parse(mapFileName);
+	registerMap = registerInfoMap;
 }
 
 void MappedDevice::open(std::string const & aliasName) {
