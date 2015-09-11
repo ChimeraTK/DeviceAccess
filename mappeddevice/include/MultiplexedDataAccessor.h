@@ -211,7 +211,7 @@ void FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::fillSequences(){
 	sequenceIndex < MultiplexedDataAccessor<UserType>::_converters.size();
 	++sequenceIndex, ++globalIndex){
       MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] = 
-	MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toDouble(_ioBuffer[globalIndex]);
+	MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].template toCooked<UserType>(_ioBuffer[globalIndex]);
     }
   }
 }
@@ -237,7 +237,7 @@ void FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::fillIO_Buffer(){
     for(size_t sequenceIndex=0;
 	sequenceIndex < MultiplexedDataAccessor<UserType>::_converters.size();
 	++sequenceIndex, ++globalIndex){
-      _ioBuffer[globalIndex] = MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toFixedPoint(
+      _ioBuffer[globalIndex] = MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toRaw(
 	MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
     }
   }
