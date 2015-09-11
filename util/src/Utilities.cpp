@@ -8,6 +8,7 @@
 #include "Utilities.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace mtca4u {
 
@@ -23,6 +24,18 @@ size_t Utilities::countOccurence(std::string theString, char delimiter)
 {
 	size_t  count = std::count(theString.begin(), theString.end(), delimiter);
 	return count;
+}
+
+bool Utilities::isSdm(std::string sdmString) {
+	try
+	{
+		parseSdm(sdmString);
+	}
+	catch(UtilitiesException &ue)
+	{
+		return false;
+	}
+	return true;
 }
 
 Sdm Utilities::parseSdm(std::string sdmString) {
@@ -105,5 +118,27 @@ Sdm Utilities::parseSdm(std::string sdmString) {
 
 }
 
+Sdm Utilities::parseDeviceString(std::string deviceString) {
+
+	Sdm sdmInfo;
+	if (deviceString.substr(0,5)=="/dev/")
+	{
+		sdmInfo._Interface = "pci";
+		if (deviceString.length() > 5)
+		{
+			sdmInfo._Instance = deviceString.substr(5);
+		}
+	}
+	else if ( (boost::ends_with(deviceString, ".map")) || (boost::ends_with(deviceString, ".mapp")) )
+	{
+		sdmInfo._Interface = "dummy";
+		sdmInfo._Instance = deviceString;
+	}
+	else
+		return sdmInfo;
+	sdmInfo._Host = ".";
+	sdmInfo._Protocol = "";
+	return sdmInfo;
+}
 
 } /* namespace mtca4u */

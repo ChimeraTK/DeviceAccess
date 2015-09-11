@@ -15,12 +15,12 @@ protected:
     bool        _opened;
     bool        _connected;
     std::string _host;
-		std::string _interface;
+		std::string _instance;
 		std::list <std::string> _parameters;
 public:
     BaseDeviceImpl() : _opened(false), _connected(true) {}
-    BaseDeviceImpl(std::string host, std::string interface, std::list<std::string> parameters)
-    : _opened(false), _connected(true) , _host(host), _interface(interface), _parameters(parameters){}
+    BaseDeviceImpl(std::string host, std::string instance, std::list<std::string> parameters)
+    : _opened(false), _connected(true) , _host(host), _instance(instance), _parameters(parameters){}
     virtual ~BaseDeviceImpl(){}
     /** Return whether a device has been opened or not.
      *  This is the only function implemented here to avoid code duplication.

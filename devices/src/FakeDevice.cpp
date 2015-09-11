@@ -12,8 +12,8 @@ FakeDevice::FakeDevice()
 
 }
 
-FakeDevice::FakeDevice(std::string host, std::string interface, std::list<std::string> parameters)
-: BaseDeviceImpl(host,interface,parameters),
+FakeDevice::FakeDevice(std::string host, std::string instance, std::list<std::string> parameters)
+: BaseDeviceImpl(host,instance,parameters),
 	_pcieMemory(0), _pcieMemoryFileName()
 {
 #ifdef _DEBUG
@@ -31,7 +31,7 @@ void FakeDevice::open()
 #ifdef _DEBUG
 	std::cout<<"open fake dev"<<std::endl;
 #endif
-	open(_interface);
+	open(_instance);
 }
 
 void FakeDevice::open(const std::string &devName, int /*perm*/, DeviceConfigBase* /*pConfig*/)
@@ -157,8 +157,8 @@ std::string FakeDevice::readDeviceInfo()
 	return std::string("fake device: ") + _pcieMemoryFileName;
 }
 
-boost::shared_ptr<BaseDevice> FakeDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
-	return boost::shared_ptr<BaseDevice> ( new FakeDevice(host,interface,parameters));
+boost::shared_ptr<BaseDevice> FakeDevice::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
+	return boost::shared_ptr<BaseDevice> ( new FakeDevice(host,instance,parameters));
 }
 
 }//namespace mtca4u

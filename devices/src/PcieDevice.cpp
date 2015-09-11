@@ -26,15 +26,15 @@ PcieDevice::PcieDevice()
 	_ioctlDriverVersion(0),
 	_ioctlDMA(0)	{}
 
-PcieDevice::PcieDevice(std::string host, std::string interface, std::list<std::string> parameters)
-: BaseDeviceImpl(host,interface,parameters)
+PcieDevice::PcieDevice(std::string host, std::string instance, std::list<std::string> parameters)
+: BaseDeviceImpl(host,instance,parameters)
 , _deviceID(0),
 _ioctlPhysicalSlot(0),
 _ioctlDriverVersion(0),
 _ioctlDMA(0)
 {
 	//temp
-	_interface = "/dev/"+_interface;
+	_instance = "/dev/"+_instance;
 #ifdef _DEBUG
 	std::cout<<"pci is connected"<<std::endl;
 #endif
@@ -46,7 +46,7 @@ void PcieDevice::open() {
 #ifdef _DEBUG
 	std::cout << "open pcie dev" << std::endl;
 #endif
-	open(_interface);
+	open(_instance);
 }
 
 void PcieDevice::open(const std::string& devName, int perm,
@@ -55,7 +55,7 @@ void PcieDevice::open(const std::string& devName, int perm,
 		throw PcieDeviceException("Device already has been _Opened",
 				PcieDeviceException::EX_DEVICE_OPENED);
 	}
-	_interface =  devName; //Todo cleanup
+	_instance =  devName; //Todo cleanup
 	_deviceID = ::open(devName.c_str(), perm);
 	if (_deviceID < 0) {
 		throw PcieDeviceException(createErrorStringWithErrnoText("Cannot open device: "),
@@ -126,7 +126,7 @@ void PcieDevice::determineDriverAndConfigureIoctl() {
 			<< createErrorStringWithErrnoText("Error is ") << std::endl;
 	;
 	::close(_deviceID);
-	throw PcieDeviceException("Unsupported driver in device" + _interface,
+	throw PcieDeviceException("Unsupported driver in device" + _instance,
 			PcieDeviceException::EX_UNSUPPORTED_DRIVER);
 }
 
@@ -347,13 +347,13 @@ std::string PcieDevice::readDeviceInfo() {
 std::string PcieDevice::createErrorStringWithErrnoText(
 		std::string const& startText) {
 	char errorBuffer[255];
-	return startText + _interface + ": " +
+	return startText + _instance + ": " +
 			strerror_r(errno, errorBuffer, sizeof(errorBuffer));
 }
 
 
-boost::shared_ptr<BaseDevice> PcieDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
-	return boost::shared_ptr<BaseDevice> (new PcieDevice(host,interface,parameters));
+boost::shared_ptr<BaseDevice> PcieDevice::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
+	return boost::shared_ptr<BaseDevice> (new PcieDevice(host,instance,parameters));
 }
 
 } // namespace mtca4u

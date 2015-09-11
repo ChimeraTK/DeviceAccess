@@ -85,33 +85,44 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 	std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
 
-	Sdm sdm = Utilities::parseSdm(uri);
-#ifdef _DEBUG
-	std::cout<< "sdm._SdmVersion:"<<sdm._SdmVersion<< std::endl;
-	std::cout<< "sdm._Host:"<<sdm._Host<< std::endl;
-	std::cout<< "sdm.Interface:"<<sdm._Interface<< std::endl;
-	std::cout<< "sdm.Instance:"<<sdm._Instance<< std::endl;
-	std::cout<< "sdm._Protocol:"<<sdm._Protocol<< std::endl;
-	std::cout<< "sdm.parameter:"<<sdm._Parameters.size()<< std::endl;
-	for (std::list<std::string>::iterator it=sdm._Parameters.begin(); it != sdm._Parameters.end(); ++it)
-	{
-		std::cout<<*it<<std::endl;
+	Sdm sdm;
+	try {
+		sdm = Utilities::parseSdm(uri);
 	}
+	catch(UtilitiesException &e)
+	{
+		std::cout<<e.what()<<std::endl;
+		try {
+				sdm = Utilities::parseDeviceString(uri);
+			}
+			catch(UtilitiesException &ue)
+			{
+				std::cout<<ue.what()<<std::endl;
+			}
+			std::cout<<"This format is obsolete, please change to sdm."<<std::endl;
+	}
+#ifdef _DEBUG
+				std::cout<< "sdm._SdmVersion:"<<sdm._SdmVersion<< std::endl;
+				std::cout<< "sdm._Host:"<<sdm._Host<< std::endl;
+				std::cout<< "sdm.Interface:"<<sdm._Interface<< std::endl;
+				std::cout<< "sdm.Instance:"<<sdm._Instance<< std::endl;
+				std::cout<< "sdm._Protocol:"<<sdm._Protocol<< std::endl;
+				std::cout<< "sdm.parameter:"<<sdm._Parameters.size()<< std::endl;
+				for (std::list<std::string>::iterator it=sdm._Parameters.begin(); it != sdm._Parameters.end(); ++it)
+				{
+					std::cout<<*it<<std::endl;
+				}
 #endif
-
-
 	for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::BaseDevice> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
 			creatorMap.begin();
 			iter != creatorMap.end(); ++iter) {
-
 #ifdef _DEBUG
 		std::cout<<"Pair:"<<iter->first.first<<"+"<<iter->first.second<<std::endl;
 #endif
-
 		if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
 			return boost::make_tuple( (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters), dRegisterInfoent);
+		}
 
-	}
 	throw DeviceFactoryException("Unregistered device.", DeviceFactoryException::UNREGISTERED_DEVICE);
 	return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent); //won't execute
 }

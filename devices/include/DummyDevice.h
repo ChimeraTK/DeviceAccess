@@ -54,7 +54,7 @@ protected:
 	 *  Permissons and config are ignored.
 	 */
 public:
-	DummyDevice(std::string host, std::string interface, std::list<std::string> parameters);
+	DummyDevice(std::string host, std::string instance, std::list<std::string> parameters);
 	DummyDevice();
 	virtual ~DummyDevice();
 
@@ -84,7 +84,7 @@ public:
 
 
 
-	static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+	static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
 protected:
 	struct AddressRange{

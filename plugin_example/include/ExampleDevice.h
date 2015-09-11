@@ -17,13 +17,13 @@ using namespace mtca4u;
 
 class ExampleDevice : public BaseDeviceImpl {
 private:
-	ExampleDevice(std::string host, std::string interface, std::list<std::string> parameters);
+	ExampleDevice(std::string host, std::string instance, std::list<std::string> parameters);
 public:
   ExampleDevice(){};
   virtual ~ExampleDevice();
   virtual void open();
   virtual void close();
-  static boost::shared_ptr<mtca4u::BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+  static boost::shared_ptr<mtca4u::BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
   virtual void open(const std::string& /*devName*/, int /*perm*/,
                          DeviceConfigBase* /*pConfig*/) {};

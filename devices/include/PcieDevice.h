@@ -53,7 +53,7 @@ private:
 
 public:
     PcieDevice();
-    PcieDevice(std::string host, std::string interface, std::list<std::string> parameters);
+    PcieDevice(std::string host, std::string instance, std::list<std::string> parameters);
     virtual ~PcieDevice();
 
     virtual void open(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
@@ -69,7 +69,7 @@ public:
     virtual std::string readDeviceInfo();
 
     /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
-    static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+    static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 };
 
 }//namespace mtca4u

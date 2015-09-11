@@ -17,7 +17,7 @@ private:
   FILE* _pcieMemory;
   std::string _pcieMemoryFileName;
 public:
-  FakeDevice(std::string host, std::string interface, std::list<std::string> parameters);
+  FakeDevice(std::string host, std::string instance, std::list<std::string> parameters);
   FakeDevice();
   virtual ~FakeDevice();
 
@@ -38,7 +38,7 @@ public:
 
   virtual std::string readDeviceInfo();
 
-  static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string interface, std::list<std::string> parameters);
+  static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
 private:
   /// A private copy constructor, cannot be called from outside.

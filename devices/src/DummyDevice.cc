@@ -32,8 +32,8 @@ DummyDevice::DummyDevice(){
 }
 
 
-DummyDevice::DummyDevice(std::string host, std::string interface, std::list<std::string> parameters)
-: BaseDeviceImpl(host,interface,parameters)
+DummyDevice::DummyDevice(std::string host, std::string instance, std::list<std::string> parameters)
+: BaseDeviceImpl(host,instance,parameters)
 {
 #ifdef _DEBUG
 	std::cout<<"dummy is connected"<<std::endl;
@@ -51,7 +51,7 @@ void DummyDevice::open()
 	std::cout<<"open DummyDevice"<<std::endl;
 #endif
 
-	open(_interface);
+	open(_instance);
 }
 
 void DummyDevice::open(const std::string &mappingFileName,
@@ -240,8 +240,8 @@ bool DummyDevice::isWriteRangeOverlap( AddressRange firstRange, AddressRange sec
 }
 
 
-boost::shared_ptr<BaseDevice> DummyDevice::createInstance(std::string host, std::string interface, std::list<std::string> parameters) {
-	return boost::shared_ptr<BaseDevice> ( new DummyDevice(host,interface,parameters) );
+boost::shared_ptr<BaseDevice> DummyDevice::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
+	return boost::shared_ptr<BaseDevice> ( new DummyDevice(host,instance,parameters) );
 }
 
 }// namespace mtca4u

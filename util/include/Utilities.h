@@ -34,6 +34,8 @@ class Utilities {
 public:
 	Utilities();
   Sdm static parseSdm(std::string sdmString);
+  Sdm static parseDeviceString(std::string deviceEntry);
+  bool static isSdm(std::string theString);
 	static size_t countOccurence(std::string theString, char delimiter);
   virtual ~Utilities();
 };
