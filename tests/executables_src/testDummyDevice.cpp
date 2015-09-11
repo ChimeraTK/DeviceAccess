@@ -336,7 +336,7 @@ void DummyDeviceTest::testReadDeviceInfo() {
   deviceInfo = dummyDevice->readDeviceInfo();
   std::cout << deviceInfo << std::endl;
   BOOST_CHECK(deviceInfo ==
-              (std::string("DummyDevice with mapping file ../tests/") +
+              (std::string("DummyDevice with mapping file ") +
                TEST_MAPPING_FILE));
 }
 

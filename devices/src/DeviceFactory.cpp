@@ -35,6 +35,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 {
 	std::vector<std::string> device_info;
 	std::string uri;
+	std::string mapfile;
 	DMapFilesParser filesParser;
 	DMapFile::dRegisterInfo dRegisterInfoent;
 	std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
@@ -68,6 +69,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 			std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
 #endif
 			uri = (*deviceIter).first.dev_file;
+			mapfile = (*deviceIter).first.map_file_name;
 			dRegisterInfoent = (*deviceIter).first;
 			found = true;
 			break;
@@ -113,6 +115,9 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 					std::cout<<*it<<std::endl;
 				}
 #endif
+
+	if ( (sdm._Interface == "dummy") &&	(sdm._Instance != mapfile) )
+		throw DeviceFactoryException("sdm instance and map file column have different values.", DeviceFactoryException::AMBIGUOUS_MAP_FILE_ENTRY);
 	for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::BaseDevice> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
 			creatorMap.begin();
 			iter != creatorMap.end(); ++iter) {

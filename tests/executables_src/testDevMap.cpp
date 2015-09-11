@@ -668,7 +668,7 @@ void DevMapTest::testDMAReadViaStruct() {
 void DevMapTest::testGetRegistersInModule() {
 
   boost::shared_ptr<mtca4u::MappedDevice> mappedDevice( new mtca4u::MappedDevice());
-	mappedDevice->open("DUMMYD0");
+	mappedDevice->open("DUMMYD1");
   std::list<mtca4u::RegisterInfoMap::RegisterInfo> registerInfoList =
       mappedDevice->getRegistersInModule("APP0");
 
@@ -693,9 +693,9 @@ void DevMapTest::testGetRegistersInModule() {
 #include <BaseDevice.h>
 void DevMapTest::testGetRegisterAccessorsInModule() {
   boost::shared_ptr<mtca4u::MappedDevice> mappedDevice( new mtca4u::MappedDevice());
-	mappedDevice->open("DUMMYD0");
+	mappedDevice->open("DUMMYD1");
   // this test only makes sense for mapp files
-  std::string mapFileName = "goodMapFile.map";
+  //std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
   std::list<mtca4u::MappedDevice::RegisterAccessor>

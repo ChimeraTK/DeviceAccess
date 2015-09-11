@@ -25,7 +25,7 @@ namespace mtca4u {
 
 class DeviceFactoryException : public Exception {
 public:
-	enum {UNKNOWN_ALIAS,UNREGISTERED_DEVICE};
+	enum {UNKNOWN_ALIAS,UNREGISTERED_DEVICE,AMBIGUOUS_MAP_FILE_ENTRY};
 	DeviceFactoryException(const std::string &message, unsigned int exceptionID)
 	: Exception( message, exceptionID ){}
 };
