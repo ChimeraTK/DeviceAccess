@@ -34,14 +34,14 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/exception/include exception_inc)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
-include_directories("${PROJECT_SOURCE_DIR}/devices/include")
-include_directories("${PROJECT_SOURCE_DIR}/mappeddevice/include")
+include_directories("${PROJECT_SOURCE_DIR}/device_backend/include")
+include_directories("${PROJECT_SOURCE_DIR}/device/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
-add_subdirectory ("${PROJECT_SOURCE_DIR}/devices")
-add_subdirectory ("${PROJECT_SOURCE_DIR}/mappeddevice")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backend")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 
