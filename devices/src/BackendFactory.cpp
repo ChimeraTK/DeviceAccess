@@ -8,14 +8,14 @@
 
 #include <boost/algorithm/string.hpp>
 #include "Utilities.h"
-#include "DeviceFactory.h"
+#include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "DMapFilesParser.h"
 #include "Exception.h"
 namespace mtca4u {
 
-void DeviceFactory::registerDeviceType(std::string interface, std::string protocol,
-		boost::shared_ptr<mtca4u::BaseDevice> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
+void BackendFactory::registerDeviceType(std::string interface, std::string protocol,
+		boost::shared_ptr<mtca4u::DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
 {
 #ifdef _DEBUG
 	std::cout << "adding:" << interface << std::endl << std::flush;
@@ -23,15 +23,15 @@ void DeviceFactory::registerDeviceType(std::string interface, std::string protoc
 	creatorMap[make_pair(interface,protocol)] = creatorFunction;
 }
 
-boost::shared_ptr<BaseDevice> DeviceFactory::createDevice(std::string aliasName) {
-	boost::shared_ptr<BaseDevice> base;
+boost::shared_ptr<DeviceBackend> BackendFactory::createDevice(std::string aliasName) {
+	boost::shared_ptr<DeviceBackend> base;
 	DMapFile::dRegisterInfo elem;
 	boost::tie(base, elem) = parseDMap(aliasName);
 	return base;
 }
 
 
-boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFactory::parseDMap(std::string devName)
+boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> BackendFactory::parseDMap(std::string devName)
 {
 	std::vector<std::string> device_info;
 	std::string uri;
@@ -48,7 +48,7 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 	}
 	catch (Exception& e) {
 		std::cout << e.what() << std::endl;
-		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent);
+		return boost::make_tuple(boost::shared_ptr<DeviceBackend>(), dRegisterInfoent);
 	}
 
 #ifdef _DEBUG
@@ -78,8 +78,8 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 	if (!found)
 	{
 		// do not throw here because theoretically client could work with multiple unrelated devices
-		throw DeviceFactoryException("Unknown device alias.", DeviceFactoryException::UNKNOWN_ALIAS);
-		return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent);
+		throw BackendFactoryException("Unknown device alias.", BackendFactoryException::UNKNOWN_ALIAS);
+		return boost::make_tuple(boost::shared_ptr<DeviceBackend>(), dRegisterInfoent);
 	}
 
 #ifdef _DEBUG
@@ -117,8 +117,8 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 #endif
 
 	if ( (sdm._Interface == "dummy") &&	(sdm._Instance != mapfile) )
-		throw DeviceFactoryException("sdm instance and map file column have different values.", DeviceFactoryException::AMBIGUOUS_MAP_FILE_ENTRY);
-	for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::BaseDevice> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
+		throw BackendFactoryException("sdm instance and map file column have different values.", BackendFactoryException::AMBIGUOUS_MAP_FILE_ENTRY);
+	for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
 			creatorMap.begin();
 			iter != creatorMap.end(); ++iter) {
 #ifdef _DEBUG
@@ -128,8 +128,8 @@ boost::tuple<boost::shared_ptr<BaseDevice>, DMapFile::dRegisterInfo> DeviceFacto
 			return boost::make_tuple( (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters), dRegisterInfoent);
 		}
 
-	throw DeviceFactoryException("Unregistered device.", DeviceFactoryException::UNREGISTERED_DEVICE);
-	return boost::make_tuple(boost::shared_ptr<BaseDevice>(), dRegisterInfoent); //won't execute
+	throw BackendFactoryException("Unregistered device.", BackendFactoryException::UNREGISTERED_DEVICE);
+	return boost::make_tuple(boost::shared_ptr<DeviceBackend>(), dRegisterInfoent); //won't execute
 }
 
 } // namespace mtca4u

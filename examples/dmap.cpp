@@ -1,7 +1,7 @@
-#include <MtcaMappedDevice/MappedDevice.h>
+#include <MtcaMappedDevice/Device.h>
 #include <MtcaMappedDevice/DMapFilesParser.h>
-#include <MtcaMappedDevice/DeviceFactory.h>
-#include <MtcaMappedDevice/BaseDeviceImpl.h>
+#include <MtcaMappedDevice/BackendFactory.h>
+#include <MtcaMappedDevice/DeviceBackendImpl.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -14,26 +14,26 @@ static const std::string MODULE_NAME = "BOARD";
 
 int main(){
   /** Create a pcie device. Make sure pcie is registerd and a device alias is present
-   * in dmap file. Look at DeviceFactory for further explaination */
+   * in dmap file. Look at BackendFactory for further explaination */
 
-  /*static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-	boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
-	FactoryInstance.createMappedDevice("PCIE1");*/
-	boost::shared_ptr<mtca4u::MappedDevice> myMappedDevice( new mtca4u::MappedDevice());
-	myMappedDevice->open("PCIE1");
+  /*static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
+	boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > myDevice =
+	FactoryInstance.createDevice("PCIE1");*/
+	boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
+	myDevice->open("PCIE1");
 
-	/*boost::shared_ptr<mtca4u::MappedDevice<mtca4u::BaseDevice>::RegisterAccessor> accessor =
-			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);*/
+	/*boost::shared_ptr<mtca4u::Device<mtca4u::DeviceBackend>::RegisterAccessor> accessor =
+			myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);*/
 
-	boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor> accessor =
-				myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
+	boost::shared_ptr<mtca4u::Device::RegisterAccessor> accessor =
+				myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
   // look on accessor.cpp for more examples what to do with the accessor
   std::cout << "Data as float is " << accessor->read<float>() << std::endl;
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  myMappedDevice->close();
+  myDevice->close();
 
   return 0;
 }

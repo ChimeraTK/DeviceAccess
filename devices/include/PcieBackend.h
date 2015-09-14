@@ -1,15 +1,14 @@
 #ifndef MTCA4U_LIBDEV_STRUCT_H
 #define	MTCA4U_LIBDEV_STRUCT_H
 
-#include "BaseDeviceImpl.h"
+#include "DeviceBackendImpl.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <boost/function.hpp>
-#include "BaseDevice.h"
 
 namespace mtca4u{
 
-class PcieDevice : public BaseDeviceImpl
+class PcieBackend : public DeviceBackendImpl
 {
 private:
     int  _deviceID;
@@ -52,9 +51,9 @@ private:
     /** constructor called through createInstance to create device object */
 
 public:
-    PcieDevice();
-    PcieDevice(std::string host, std::string instance, std::list<std::string> parameters);
-    virtual ~PcieDevice();
+    PcieBackend();
+    PcieBackend(std::string host, std::string instance, std::list<std::string> parameters);
+    virtual ~PcieBackend();
 
     virtual void open(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
     virtual void open();
@@ -69,7 +68,7 @@ public:
     virtual std::string readDeviceInfo();
 
     /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
-    static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+    static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 };
 
 }//namespace mtca4u

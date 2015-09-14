@@ -7,15 +7,15 @@
 
 #ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
 #define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
-#include "MtcaMappedDevice/BaseDeviceImpl.h"
+#include "MtcaMappedDevice/DeviceBackendImpl.h"
 #include "MtcaMappedDevice/DeviceConfigBase.h"
-#include "MtcaMappedDevice/DeviceFactory.h"
+#include "MtcaMappedDevice/BackendFactory.h"
 #include <list>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 using namespace mtca4u;
 
-class ExampleDevice : public BaseDeviceImpl {
+class ExampleDevice : public DeviceBackendImpl {
 private:
 	ExampleDevice(std::string host, std::string instance, std::list<std::string> parameters);
 public:
@@ -23,7 +23,7 @@ public:
   virtual ~ExampleDevice();
   virtual void open();
   virtual void close();
-  static boost::shared_ptr<mtca4u::BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+  static boost::shared_ptr<mtca4u::DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
   virtual void open(const std::string& /*devName*/, int /*perm*/,
                          DeviceConfigBase* /*pConfig*/) {};
@@ -43,7 +43,7 @@ public:
 #ifdef _DEBUG
 		std::cout<<"ExampleDeviceRegisterer"<<std::endl;
 #endif
-		DeviceFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
+		BackendFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
   }
 /*	static ExampleDeviceRegisterer & init()
 	{

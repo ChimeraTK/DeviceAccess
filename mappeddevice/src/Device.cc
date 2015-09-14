@@ -1,15 +1,14 @@
-#include "FakeDevice.h"
-#include "DummyDevice.h"
+#include "FakeBackend.h"
+#include "DummyBackend.h"
+#include "Device.h"
+#include "PcieBackend.h"
 #include <cmath>
-
-#include "MappedDevice.h"
-#include "PcieDevice.h"
 
 
 namespace mtca4u{
 
 
- MappedDevice::~MappedDevice(){
+ Device::~Device(){
 	// FIXME: do we want to close here? It will probably leave not working
 	// RegisterAccessors
 	// if(pdev) pdev->closeDev();
@@ -17,35 +16,35 @@ namespace mtca4u{
 
 
 
-boost::shared_ptr<const RegisterInfoMap> MappedDevice::getRegisterMap() const {
+boost::shared_ptr<const RegisterInfoMap> Device::getRegisterMap() const {
 	return registerMap;
 }
 
 
-MappedDevice::RegisterAccessor MappedDevice::getRegObject(
+Device::RegisterAccessor Device::getRegObject(
 		const std::string &regName) const {
 	checkPointersAreNotNull();
 
 	RegisterInfoMap::RegisterInfo me;
 	registerMap->getRegisterInfo(regName, me);
-	return MappedDevice::RegisterAccessor(regName, me, pdev);
+	return Device::RegisterAccessor(regName, me, pdev);
 }
 
 
-boost::shared_ptr<MappedDevice::RegisterAccessor> MappedDevice::getRegisterAccessor(const std::string &regName,
+boost::shared_ptr<Device::RegisterAccessor> Device::getRegisterAccessor(const std::string &regName,
 		const std::string &module) const {
 	checkPointersAreNotNull();
 
 	RegisterInfoMap::RegisterInfo me;
 	registerMap->getRegisterInfo(regName, me, module);
-	//return boost::shared_ptr<typename MappedDevice::RegisterAccessor>(
-	return boost::shared_ptr<MappedDevice::RegisterAccessor>(
-			new MappedDevice::RegisterAccessor(regName, me, pdev));
+	//return boost::shared_ptr<typename Device::RegisterAccessor>(
+	return boost::shared_ptr<Device::RegisterAccessor>(
+			new Device::RegisterAccessor(regName, me, pdev));
 }
 
 
 
-std::list<RegisterInfoMap::RegisterInfo> MappedDevice::getRegistersInModule(
+std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(
 		const std::string &moduleName) const {
 	checkPointersAreNotNull();
 
@@ -53,8 +52,8 @@ std::list<RegisterInfoMap::RegisterInfo> MappedDevice::getRegistersInModule(
 }
 
 
-std::list<typename MappedDevice::RegisterAccessor>
-MappedDevice::getRegisterAccessorsInModule(const std::string &moduleName) const {
+std::list<typename Device::RegisterAccessor>
+Device::getRegisterAccessorsInModule(const std::string &moduleName) const {
 	checkPointersAreNotNull();
 
 	std::list<RegisterInfoMap::RegisterInfo> registerInfoList =
@@ -65,14 +64,14 @@ MappedDevice::getRegisterAccessorsInModule(const std::string &moduleName) const 
 			registerInfoList.begin();
 			regInfo != registerInfoList.end(); ++regInfo) {
 		accessorList.push_back(
-				MappedDevice::RegisterAccessor(regInfo->reg_name, *regInfo, pdev));
+				Device::RegisterAccessor(regInfo->reg_name, *regInfo, pdev));
 	}
 
 	return accessorList;
 }
 
 
-void MappedDevice::checkRegister(const std::string &regName,
+void Device::checkRegister(const std::string &regName,
 		const std::string &regModule, size_t dataSize,
 		uint32_t addRegOffset, uint32_t &retDataSize,
 		uint32_t &retRegOff, uint8_t &retRegBar) const {
@@ -81,17 +80,17 @@ void MappedDevice::checkRegister(const std::string &regName,
 	RegisterInfoMap::RegisterInfo me;
 	registerMap->getRegisterInfo(regName, me, regModule);
 	if (addRegOffset % 4) {
-		throw MappedDeviceException("Register offset must be divisible by 4",
-				MappedDeviceException::EX_WRONG_PARAMETER);
+		throw DeviceException("Register offset must be divisible by 4",
+				DeviceException::EX_WRONG_PARAMETER);
 	}
 	if (dataSize) {
 		if (dataSize % 4) {
-			throw MappedDeviceException("Data size must be divisible by 4",
-					MappedDeviceException::EX_WRONG_PARAMETER);
+			throw DeviceException("Data size must be divisible by 4",
+					DeviceException::EX_WRONG_PARAMETER);
 		}
 		if (dataSize > me.reg_size - addRegOffset) {
-			throw MappedDeviceException("Data size exceed register size",
-					MappedDeviceException::EX_WRONG_PARAMETER);
+			throw DeviceException("Data size exceed register size",
+					DeviceException::EX_WRONG_PARAMETER);
 		}
 		retDataSize = dataSize;
 	} else {
@@ -102,13 +101,13 @@ void MappedDevice::checkRegister(const std::string &regName,
 }
 
 
-void MappedDevice::readReg(const std::string &regName, int32_t *data,
+void Device::readReg(const std::string &regName, int32_t *data,
 		size_t dataSize, uint32_t addRegOffset) const {
 	readReg(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 
-void MappedDevice::readReg(const std::string &regName,
+void Device::readReg(const std::string &regName,
 		const std::string &regModule, int32_t *data,
 		size_t dataSize, uint32_t addRegOffset) const {
 	uint32_t retDataSize;
@@ -121,13 +120,13 @@ void MappedDevice::readReg(const std::string &regName,
 }
 
 
-void MappedDevice::writeReg(const std::string &regName, int32_t const *data,
+void Device::writeReg(const std::string &regName, int32_t const *data,
 		size_t dataSize, uint32_t addRegOffset) {
 	writeReg(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 
-void MappedDevice::writeReg(const std::string &regName,
+void Device::writeReg(const std::string &regName,
 		const std::string &regModule, int32_t const *data,
 		size_t dataSize, uint32_t addRegOffset) {
 	uint32_t retDataSize;
@@ -140,13 +139,13 @@ void MappedDevice::writeReg(const std::string &regName,
 }
 
 
-void MappedDevice::readDMA(const std::string &regName, int32_t *data,
+void Device::readDMA(const std::string &regName, int32_t *data,
 		size_t dataSize, uint32_t addRegOffset) const {
 	readDMA(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 
-void MappedDevice::readDMA(const std::string &regName,
+void Device::readDMA(const std::string &regName,
 		const std::string &regModule, int32_t *data,
 		size_t dataSize, uint32_t addRegOffset) const {
 	uint32_t retDataSize;
@@ -156,21 +155,21 @@ void MappedDevice::readDMA(const std::string &regName,
 	checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
 			retRegOff, retRegBar);
 	if (retRegBar != 0xD) {
-		throw MappedDeviceException("Cannot read data from register \"" + regName +
+		throw DeviceException("Cannot read data from register \"" + regName +
 				"\" through DMA",
-				MappedDeviceException::EX_WRONG_PARAMETER);
+				DeviceException::EX_WRONG_PARAMETER);
 	}
 	readDMA(retRegOff, data, retDataSize, retRegBar);
 }
 
 
-void MappedDevice::writeDMA(const std::string &regName, int32_t const *data,
+void Device::writeDMA(const std::string &regName, int32_t const *data,
 		size_t dataSize, uint32_t addRegOffset) {
 	writeDMA(regName, std::string(), data, dataSize, addRegOffset);
 }
 
 
-void MappedDevice::writeDMA(const std::string &regName,
+void Device::writeDMA(const std::string &regName,
 		const std::string &regModule, int32_t const *data,
 		size_t dataSize, uint32_t addRegOffset) {
 	uint32_t retDataSize;
@@ -179,15 +178,15 @@ void MappedDevice::writeDMA(const std::string &regName,
 	checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
 			retRegOff, retRegBar);
 	if (retRegBar != 0xD) {
-		throw MappedDeviceException("Cannot read data from register \"" + regName +
+		throw DeviceException("Cannot read data from register \"" + regName +
 				"\" through DMA",
-				MappedDeviceException::EX_WRONG_PARAMETER);
+				DeviceException::EX_WRONG_PARAMETER);
 	}
 	writeDMA(retRegOff, data, retDataSize, retRegBar);
 }
 
 
-void MappedDevice::close() {
+void Device::close() {
 	checkPointersAreNotNull();
 	pdev->close();
 }
@@ -210,7 +209,7 @@ void MappedDevice::close() {
  *      @param  bar  - number of PCIe bar
  */
 
-void MappedDevice::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
+void Device::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
 	checkPointersAreNotNull();
 	//pdev->readReg(regOffset, data, bar);
 	pdev->read(bar, regOffset, data , 4);
@@ -233,7 +232,7 @@ void MappedDevice::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const
  *      @param  bar  - number of PCIe bar
  */
 
-void MappedDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
+void Device::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
 	checkPointersAreNotNull();
 	pdev->write(bar, regOffset, &data, 4);
 }
@@ -254,7 +253,7 @@ void MappedDevice::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
  *      @param  bar  - number of PCIe bar
  */
 
-void MappedDevice::readArea(uint32_t regOffset, int32_t *data, size_t size,
+void Device::readArea(uint32_t regOffset, int32_t *data, size_t size,
 		uint8_t bar) const {
 	checkPointersAreNotNull();
 	//pdev->readArea(regOffset, data, size, bar);
@@ -262,34 +261,34 @@ void MappedDevice::readArea(uint32_t regOffset, int32_t *data, size_t size,
 }
 
 
-void MappedDevice::writeArea(uint32_t regOffset, int32_t const *data, size_t size,
+void Device::writeArea(uint32_t regOffset, int32_t const *data, size_t size,
 		uint8_t bar) {
 	checkPointersAreNotNull();
 	pdev->write(bar, regOffset, data, size);
 }
 
 
-void MappedDevice::readDMA(uint32_t regOffset, int32_t *data, size_t size,
+void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size,
 		uint8_t bar) const {
 	checkPointersAreNotNull();
 	pdev->readDMA(bar, regOffset, data, size);
 }
 
 
-void MappedDevice::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
+void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
 		uint8_t bar) {
 	checkPointersAreNotNull();
 	pdev->writeDMA(bar, regOffset, data, size);
 }
 
 
-std::string MappedDevice::readDeviceInfo() const {
+std::string Device::readDeviceInfo() const {
 	checkPointersAreNotNull();
 	return pdev->readDeviceInfo();
 }
 
 
-MappedDevice::RegisterAccessor::RegisterAccessor(const std::string & /*_regName*/,
+Device::RegisterAccessor::RegisterAccessor(const std::string & /*_regName*/,
 		const RegisterInfoMap::RegisterInfo &_me,
 		ptrdev _pdev)
 : me(_me),
@@ -297,23 +296,23 @@ MappedDevice::RegisterAccessor::RegisterAccessor(const std::string & /*_regName*
 	_fixedPointConverter(_me.reg_width, _me.reg_frac_bits, _me.reg_signed) {}
 
 
-void MappedDevice::RegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &me,
+void Device::RegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &me,
 		size_t dataSize,
 		uint32_t addRegOffset,
 		uint32_t &retDataSize,
 		uint32_t &retRegOff) {
 	if (addRegOffset % 4) {
-		throw MappedDeviceException("Register offset must be divisible by 4",
-				MappedDeviceException::EX_WRONG_PARAMETER);
+		throw DeviceException("Register offset must be divisible by 4",
+				DeviceException::EX_WRONG_PARAMETER);
 	}
 	if (dataSize) {
 		if (dataSize % 4) {
-			throw MappedDeviceException("Data size must be divisible by 4",
-					MappedDeviceException::EX_WRONG_PARAMETER);
+			throw DeviceException("Data size must be divisible by 4",
+					DeviceException::EX_WRONG_PARAMETER);
 		}
 		if (dataSize > me.reg_size - addRegOffset) {
-			throw MappedDeviceException("Data size exceed register size",
-					MappedDeviceException::EX_WRONG_PARAMETER);
+			throw DeviceException("Data size exceed register size",
+					DeviceException::EX_WRONG_PARAMETER);
 		}
 		retDataSize = dataSize;
 	} else {
@@ -323,7 +322,7 @@ void MappedDevice::RegisterAccessor::checkRegister(const RegisterInfoMap::Regist
 }
 
 
-void MappedDevice::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
+void Device::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
 		uint32_t addRegOffset) const {
 	uint32_t retDataSize;
 	uint32_t retRegOff;
@@ -332,7 +331,7 @@ void MappedDevice::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
 }
 
 
-void MappedDevice::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
+void Device::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
 		uint32_t addRegOffset) {
 	uint32_t retDataSize;
 	uint32_t retRegOff;
@@ -341,50 +340,50 @@ void MappedDevice::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSi
 }
 
 
-void MappedDevice::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
+void Device::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
 		uint32_t addRegOffset) const {
 	uint32_t retDataSize;
 	uint32_t retRegOff;
 	checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
 	if (me.reg_bar != 0xD) {
-		throw MappedDeviceException("Cannot read data from register \"" + me.reg_name +
+		throw DeviceException("Cannot read data from register \"" + me.reg_name +
 				"\" through DMA",
-				MappedDeviceException::EX_WRONG_PARAMETER);
+				DeviceException::EX_WRONG_PARAMETER);
 	}
 	pdev->readDMA(me.reg_bar, retRegOff, data, retDataSize);
 }
 
 
-void MappedDevice::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
+void Device::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
 		uint32_t addRegOffset) {
 	uint32_t retDataSize;
 	uint32_t retRegOff;
 	checkRegister(me, dataSize, addRegOffset, retDataSize, retRegOff);
 	if (me.reg_bar != 0xD) {
-		throw MappedDeviceException("Cannot read data from register \"" + me.reg_name +
+		throw DeviceException("Cannot read data from register \"" + me.reg_name +
 				"\" through DMA",
-				MappedDeviceException::EX_WRONG_PARAMETER);
+				DeviceException::EX_WRONG_PARAMETER);
 	}
 	pdev->writeDMA(me.reg_bar, retRegOff, data, retDataSize);
 }
 
 
-RegisterInfoMap::RegisterInfo const &MappedDevice::RegisterAccessor::getRegisterInfo() const {
+RegisterInfoMap::RegisterInfo const &Device::RegisterAccessor::getRegisterInfo() const {
 	return me; // me is the RegisterInfoent
 }
 
 
-FixedPointConverter const &MappedDevice::RegisterAccessor::getFixedPointConverter()
+FixedPointConverter const &Device::RegisterAccessor::getFixedPointConverter()
 const {
 	return _fixedPointConverter;
 }
 
 
 
-void MappedDevice::checkPointersAreNotNull() const {
+void Device::checkPointersAreNotNull() const {
 	if ((pdev == false) || (registerMap == false)) {
-		throw MappedDeviceException("MappedDevice has not been opened correctly",
-				MappedDeviceException::EX_NOT_OPENED);
+		throw DeviceException("Device has not been opened correctly",
+				DeviceException::EX_NOT_OPENED);
 	}
 }
 
@@ -392,16 +391,16 @@ void MappedDevice::checkPointersAreNotNull() const {
 
 
 
-void MappedDevice::open(boost::shared_ptr<BaseDevice> baseDevice,
+void Device::open(boost::shared_ptr<DeviceBackend> DeviceBackend,
 		boost::shared_ptr<RegisterInfoMap> registerInfoMap)
 {
-	pdev = baseDevice;
+	pdev = DeviceBackend;
 	pdev->open();
 	registerMap = registerInfoMap;
 }
 
-void MappedDevice::open(std::string const & aliasName) {
-	DeviceFactory FactoryInstance = DeviceFactory::getInstance();
+void Device::open(std::string const & aliasName) {
+	BackendFactory FactoryInstance = BackendFactory::getInstance();
 	pdev =  FactoryInstance.createDevice(aliasName);
 	if (pdev)
 		pdev->open();

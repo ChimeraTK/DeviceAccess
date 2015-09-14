@@ -2,13 +2,13 @@
 #include <boost/filesystem.hpp>
 #include <cstring>
 
-#include "MappedDevice.h"
-#include "PcieDevice.h"
-#include "MappedDeviceException.h"
-#include "PcieDeviceException.h"
-#include "DummyDevice.h"
+#include "Device.h"
+#include "PcieBackend.h"
+#include "DeviceException.h"
+#include "PcieBackendException.h"
+#include "DeviceBackend.h"
 #include "MultiplexedDataAccessor.h"
-#include "DeviceFactory.h"
+#include "BackendFactory.h"
 //#define DUMMY_DEVICE_FILE_NAME
 using namespace boost::unit_test_framework;
 
@@ -139,12 +139,12 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 }
 
 void DevMapTest::testDevMapReadRegisterByName() {
-	//mtca4u::MappedDevice pcieDevice ;
-	boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+	//mtca4u::Device pcieDevice ;
+	boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
   boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
   pcieDevice->open(dummyDevice, registerMapping);
@@ -168,13 +168,13 @@ void DevMapTest::testDevMapReadRegisterByName() {
 }
 
 void DevMapTest::testDevMapReadArea() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -194,14 +194,14 @@ void DevMapTest::testDevMapReadArea() {
 }
 
 void DevMapTest::testDevMapReadDMA() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -220,14 +220,14 @@ void DevMapTest::testDevMapReadDMA() {
 }
 
 void DevMapTest::testDevMapReadDMAErrors() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -235,24 +235,24 @@ void DevMapTest::testDevMapReadDMAErrors() {
   int32_t data = 0;
   size_t dataSizeInBytes = 1 * 4;
   BOOST_CHECK_THROW(pcieDevice->readDMA("WORD_USER", &data, dataSizeInBytes),
-                    mtca4u::MappedDeviceException);
+                    mtca4u::DeviceException);
   try {
     pcieDevice->readDMA("WORD_USER", &data, dataSizeInBytes);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 }
 
 void DevMapTest::testDevMapWriteRegisterByName() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
   boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
   pcieDevice->open(dummyDevice, registerMapping);
@@ -276,14 +276,14 @@ void DevMapTest::testDevMapWriteRegisterByName() {
 }
 
 void DevMapTest::testDevMapWriteDMA() {
-	//mtca4u::MappedDevice pcieDevice;
+	//mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
   boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
   pcieDevice->open(dummyDevice, registerMapping);
@@ -291,30 +291,30 @@ void DevMapTest::testDevMapWriteDMA() {
   int32_t data = 0;
   size_t dataSizeInBytes = 1 * 4;
   BOOST_CHECK_THROW(pcieDevice->writeDMA("WORD_USER", &data, dataSizeInBytes),
-                    mtca4u::MappedDeviceException);
+                    mtca4u::DeviceException);
   try {
     pcieDevice->writeDMA("WORD_USER", &data, dataSizeInBytes);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 
   int32_t adcdata[6] = { 0 };
   dataSizeInBytes = 6 * 4;
   BOOST_CHECK_THROW(
       pcieDevice->writeDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
-      mtca4u::PcieDeviceException);
+      mtca4u::PcieBackendException);
 }
 
 void DevMapTest::testDevMapCheckRegister() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -324,62 +324,62 @@ void DevMapTest::testDevMapCheckRegister() {
   int32_t data = 1;
   BOOST_CHECK_THROW(
       pcieDevice->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::MappedDeviceException);
+      mtca4u::DeviceException);
   try {
     pcieDevice->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 3;
   addRegOffset = 4;
   BOOST_CHECK_THROW(
       pcieDevice->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::MappedDeviceException);
+      mtca4u::DeviceException);
   try {
     pcieDevice->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 4;
   BOOST_CHECK_THROW(
       pcieDevice->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::MappedDeviceException);
+      mtca4u::DeviceException);
   try {
     pcieDevice->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 }
 
 void DevMapTest::testRegAccsorReadDMA() {
-	/*mtca4u::MappedDevice pcieDevice;
+	/*mtca4u::Device pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";*/
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
 
   int32_t data = 1;
-  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+  //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   non_dma_accesible_reg = pcieDevice->getRegisterAccessor("AREA_DMAABLE");
-  BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::MappedDeviceException);
+  BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::DeviceException);
 
   pcieDevice->writeReg("WORD_ADC_ENA", &data);
   int32_t retreived_data[6];
   uint32_t size = 6 * 4;
-  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+  //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   area_dma = pcieDevice->getRegisterAccessor("AREA_DMA_VIA_DMA");
   area_dma->readDMA(retreived_data, size);
   BOOST_CHECK(retreived_data[0] == 0);
@@ -391,14 +391,14 @@ void DevMapTest::testRegAccsorReadDMA() {
 }
 
 void DevMapTest::testRegAccsorCheckRegister() {
-	//mtca4u::MappedDevice pcieDevice;
+	//mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -406,90 +406,90 @@ void DevMapTest::testRegAccsorCheckRegister() {
   size_t dataSize = 4;
   uint32_t addRegOffset = 3;
   int32_t data = 1;
-  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+  //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   word_adc_ena = pcieDevice->getRegisterAccessor("WORD_ADC_ENA");
   BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
-                    mtca4u::MappedDeviceException);
+                    mtca4u::DeviceException);
   try {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 3;
   addRegOffset = 4;
   BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
-                    mtca4u::MappedDeviceException);
+                    mtca4u::DeviceException);
   try {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 
   dataSize = 4;
   BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
-                    mtca4u::MappedDeviceException);
+                    mtca4u::DeviceException);
   try {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
 }
 
 void DevMapTest::testRegAccsorWriteDMA() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
 
   int32_t data = 0;
-  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+  //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   non_dma_accesible_reg = pcieDevice->getRegisterAccessor("WORD_USER");
   size_t dataSizeInBytes = 1 * 4;
   BOOST_CHECK_THROW(non_dma_accesible_reg->writeDMA(&data, dataSizeInBytes),
-                    mtca4u::MappedDeviceException);
+                    mtca4u::DeviceException);
   try {
     pcieDevice->writeDMA("WORD_USER", &data, dataSizeInBytes);
   }
-  catch (mtca4u::MappedDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::MappedDeviceException::EX_WRONG_PARAMETER);
+  catch (mtca4u::DeviceException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
   }
-  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+  //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   dma_accesible_reg = pcieDevice->getRegisterAccessor("AREA_DMA_VIA_DMA");
   int32_t adcdata[6] = { 0 };
   dataSizeInBytes = 6 * 4;
   BOOST_CHECK_THROW(dma_accesible_reg->writeDMA(adcdata, dataSizeInBytes),
-                    mtca4u::PcieDeviceException);
+                    mtca4u::PcieBackendException);
 }
 
 void DevMapTest::testRegAccsorReadReg() {
-	/*mtca4u::MappedDevice pcieDevice;
+	/*mtca4u::Device pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";*/
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
 
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
 
-	//boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   word_clk_dummy = pcieDevice->getRegisterAccessor("WORD_CLK_DUMMY");
   int32_t data = 0;
   word_clk_dummy->readRaw(&data);
@@ -497,18 +497,18 @@ void DevMapTest::testRegAccsorReadReg() {
 }
 
 void DevMapTest::testRegAccsorWriteReg() {
-  /*mtca4u::MappedDevice pcieDevice;
+  /*mtca4u::Device pcieDevice;
   std::string dummyDevice = "/dev/mtcadummys0";*/
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
-  //boost::shared_ptr<mtca4u::MappedDevice<mtca4u::PcieDevice>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
   std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor>
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   word_clk_rst = pcieDevice->getRegisterAccessor("WORD_CLK_RST");
   int32_t input_data = 16;
   int32_t read_data;
@@ -518,13 +518,13 @@ void DevMapTest::testRegAccsorWriteReg() {
 }
 
 void DevMapTest::testDevMapReadRegister() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
   boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
   pcieDevice->open(dummyDevice, registerMapping);
@@ -536,13 +536,13 @@ void DevMapTest::testDevMapReadRegister() {
 }
 
 void DevMapTest::testDevMapWriteRegister() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -556,14 +556,14 @@ void DevMapTest::testDevMapWriteRegister() {
 }
 
 void DevMapTest::testDeviceInfo() {
-	//mtca4u::MappedDevice pcieDevice;
+	//mtca4u::Device pcieDevice;
   int slot, majorVersion, minorVersion;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -576,59 +576,59 @@ void DevMapTest::testDeviceInfo() {
 }
 
 void DevMapTest::testReadBadReg() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
 
   int32_t data = 0;
   BOOST_CHECK_THROW(pcieDevice->readReg("NON_EXISTENT_REGISTER", &data),
-                    mtca4u::PcieDeviceException);
+                    mtca4u::PcieBackendException);
   try {
     pcieDevice->readReg("NON_EXISTENT_REGISTER", &data);
   }
-  catch (mtca4u::PcieDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::PcieDeviceException::EX_READ_ERROR);
+  catch (mtca4u::PcieBackendException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::PcieBackendException::EX_READ_ERROR);
   }
 }
 
 void DevMapTest::testWriteBadReg() {
-  //mtca4u::MappedDevice pcieDevice;
+  //mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //pcieDevice.open(dummyDevice, validMappingFile);
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
   pcieDevice->open(dummyDevice, registerMapping);
   int32_t data = 0;
   BOOST_CHECK_THROW(pcieDevice->writeReg("BROKEN_WRITE", &data),
-                    mtca4u::PcieDeviceException);
+                    mtca4u::PcieBackendException);
   try {
     pcieDevice->writeReg("BROKEN_WRITE", &data);
   }
-  catch (mtca4u::PcieDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::PcieDeviceException::EX_WRITE_ERROR);
+  catch (mtca4u::PcieBackendException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::PcieBackendException::EX_WRITE_ERROR);
   }
 }
 
 void DevMapTest::testDMAReadSizeTooSmall() {
-  //mtca4u::MappedDevice<mtca4u::PcieDevice> mtcaDevice;
-	//mtca4u::MappedDevice mtcaDevice;
+  //mtca4u::Device<mtca4u::PcieBackend> mtcaDevice;
+	//mtca4u::Device mtcaDevice;
   //std::string dummyDevice = "/dev/mtcadummys0";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   //mtcaDevice.open(dummyDevice, validMappingFile);
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-  boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","mtcadummys0",parameters));
+  boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
   mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
   pcieDevice->open(dummyDevice, registerMapping);
@@ -637,22 +637,22 @@ void DevMapTest::testDMAReadSizeTooSmall() {
 
   BOOST_CHECK_THROW(
   		pcieDevice->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
-      mtca4u::PcieDeviceException);
+      mtca4u::PcieBackendException);
   try {
   	pcieDevice->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes);
   }
-  catch (mtca4u::PcieDeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::PcieDeviceException::EX_DMA_READ_ERROR);
+  catch (mtca4u::PcieBackendException& exception) {
+    BOOST_CHECK(exception.getID() == mtca4u::PcieBackendException::EX_DMA_READ_ERROR);
   }
 }
 
 void DevMapTest::testDMAReadViaStruct() {
-	//mtca4u::MappedDevice pcieDevice;
+	//mtca4u::Device pcieDevice;
   //std::string dummyDevice = "/dev/llrfdummys4";
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::MappedDevice> pcieDevice ( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice ( new mtca4u::PcieDevice(".","llrfdummys4",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","llrfdummys4",parameters));
 	mtca4u::mapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	pcieDevice->open(dummyDevice, registerMapping);
@@ -667,7 +667,7 @@ void DevMapTest::testDMAReadViaStruct() {
 
 void DevMapTest::testGetRegistersInModule() {
 
-  boost::shared_ptr<mtca4u::MappedDevice> mappedDevice( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> mappedDevice( new mtca4u::Device());
 	mappedDevice->open("DUMMYD1");
   std::list<mtca4u::RegisterInfoMap::RegisterInfo> registerInfoList =
       mappedDevice->getRegistersInModule("APP0");
@@ -690,19 +690,19 @@ void DevMapTest::testGetRegistersInModule() {
   //delete mappedDevice;
 }
 
-#include <BaseDevice.h>
+#include <DeviceBackend.h>
 void DevMapTest::testGetRegisterAccessorsInModule() {
-  boost::shared_ptr<mtca4u::MappedDevice> mappedDevice( new mtca4u::MappedDevice());
+  boost::shared_ptr<mtca4u::Device> mappedDevice( new mtca4u::Device());
 	mappedDevice->open("DUMMYD1");
   // this test only makes sense for mapp files
   //std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
-  std::list<mtca4u::MappedDevice::RegisterAccessor>
+  std::list<mtca4u::Device::RegisterAccessor>
   accessorList = mappedDevice->getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
 
-  std::list<mtca4u::MappedDevice::RegisterAccessor>::iterator
+  std::list<mtca4u::Device::RegisterAccessor>::iterator
   accessor = accessorList.begin();
   BOOST_CHECK(accessor->getRegisterInfo().reg_name == "MODULE0");
   BOOST_CHECK(accessor->getRegisterInfo().reg_module == "APP0");
@@ -721,7 +721,7 @@ void DevMapTest::testAccessorForMuxedData() {
   // create mapped dummy device
   boost::shared_ptr<mtca4u::RegisterInfoMap> registerMap =
 	mtca4u::mapFileParser().parse("sequences.map");
-  boost::shared_ptr<mtca4u::BaseDevice> ioDevice(new mtca4u::DummyDevice);
+  boost::shared_ptr<mtca4u::DeviceBackend> ioDevice(new mtca4u::DeviceBackend);
   ioDevice->open("sequences.map");
 
   mtca4u::RegisterInfoMap::RegisterInfo sequenceInfo;
@@ -740,8 +740,8 @@ void DevMapTest::testAccessorForMuxedData() {
                       sequenceInfo.reg_size, sequenceInfo.reg_bar);
 
   // create the mapped device
-  //mtca4u::MappedDevice<mtca4u::BaseDevice> mappedDevice;
-  mtca4u::MappedDevice mappedDevice;
+  //mtca4u::Device<mtca4u::DeviceBackend> mappedDevice;
+  mtca4u::Device mappedDevice;
   mappedDevice.open(ioDevice, registerMap);
 
   boost::shared_ptr<mtca4u::MultiplexedDataAccessor<double> > deMultiplexer =

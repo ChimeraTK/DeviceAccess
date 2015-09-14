@@ -1,8 +1,7 @@
 #ifndef MTCA4U_LIBDEV_FAKE_H
 #define MTCA4U_LIBDEV_FAKE_H
 
-#include "BaseDevice.h"
-#include "BaseDeviceImpl.h"
+#include "DeviceBackendImpl.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <boost/shared_ptr.hpp>
@@ -12,14 +11,14 @@
 
 namespace mtca4u {
 
-class FakeDevice : public BaseDeviceImpl {
+class FakeBackend : public DeviceBackendImpl {
 private:
   FILE* _pcieMemory;
   std::string _pcieMemoryFileName;
 public:
-  FakeDevice(std::string host, std::string instance, std::list<std::string> parameters);
-  FakeDevice();
-  virtual ~FakeDevice();
+  FakeBackend(std::string host, std::string instance, std::list<std::string> parameters);
+  FakeBackend();
+  virtual ~FakeBackend();
 
   virtual void open(const std::string& devName, int perm = O_RDWR,
                        DeviceConfigBase* pConfig = NULL);
@@ -38,7 +37,7 @@ public:
 
   virtual std::string readDeviceInfo();
 
-  static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
 private:
   /// A private copy constructor, cannot be called from outside.
@@ -46,14 +45,14 @@ private:
   /// just make it
   /// private. Make sure not to use it within the class before writing a proper
   /// implemenFakeDevice
-  FakeDevice(FakeDevice const&) : BaseDeviceImpl(), _pcieMemory(0), _pcieMemoryFileName() {}
+  FakeBackend(FakeBackend const&) : DeviceBackendImpl(), _pcieMemory(0), _pcieMemoryFileName() {}
 
   /// A private assignment operator, cannot be called from outside.
   /// As the default is not safe and I don't want to implement it right now, I
   /// just make it
   /// private. Make sure not to use it within the class before writing a proper
   /// imFakeDeviceation.
-  FakeDevice& operator=(FakeDevice const&) { return *this; }
+  FakeBackend& operator=(FakeBackend const&) { return *this; }
 };
 
 } // namespace mtca4u

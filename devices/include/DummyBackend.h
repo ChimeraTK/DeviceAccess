@@ -9,19 +9,18 @@
 #include <boost/function.hpp>
 
 #include "Exception.h"
-#include "BaseDevice.h"
-#include "BaseDeviceImpl.h"
+#include "DeviceBackendImpl.h"
 #include "MapFile.h"
 
 namespace mtca4u{
 
 ///fixme: there should only be one type of exception for all devices. Otherwise you will never be able to
-/// interpret the enum in an exception from a pointer to exBase.
-class DummyDeviceException : public DeviceException {
+/// interpret the enum in an exception from a pointer to BackendDevice.
+class DummyDeviceException : public DeviceBackendException {
 public:
 	enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS};
 	DummyDeviceException(const std::string &message, unsigned int exceptionID)
-	: DeviceException( message, exceptionID ){}
+	: DeviceBackendException( message, exceptionID ){}
 };
 
 
@@ -43,7 +42,7 @@ public:
  *  case a write operation will just be ignored and no callback
  *  function is executed.
  */
-class DummyDevice : public BaseDeviceImpl
+class DummyBackend : public DeviceBackendImpl
 {
 private:
 	/** _deviceName here is in context of mapping FileName */
@@ -54,9 +53,9 @@ protected:
 	 *  Permissons and config are ignored.
 	 */
 public:
-	DummyDevice(std::string host, std::string instance, std::list<std::string> parameters);
-	DummyDevice();
-	virtual ~DummyDevice();
+	DummyBackend(std::string host, std::string instance, std::list<std::string> parameters);
+	DummyBackend();
+	virtual ~DummyBackend();
 
 	virtual void open(const std::string &mappingFileName,
 			int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
@@ -84,7 +83,7 @@ public:
 
 
 
-	static boost::shared_ptr<BaseDevice> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+	static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
 protected:
 	struct AddressRange{

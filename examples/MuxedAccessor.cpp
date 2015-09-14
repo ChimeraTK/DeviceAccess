@@ -1,8 +1,7 @@
-#include <MtcaMappedDevice/MappedDevice.h>
-#include <MtcaMappedDevice/BaseDevice.h>
-#include <MtcaMappedDevice/BaseDevice.h>
+#include <MtcaMappedDevice/Device.h>
+#include <MtcaMappedDevice/DeviceBackend.h>
 #include <MtcaMappedDevice/MultiplexedDataAccessor.h>
-#include "MtcaMappedDevice/DeviceFactory.h"
+#include "MtcaMappedDevice/BackendFactory.h"
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -16,10 +15,10 @@ static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
   // open the mapped device:
-  //static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
-  //boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > mappedDevice =
-	//FactoryInstance.createMappedDevice("PCIE3");
-  boost::shared_ptr< mtca4u::MappedDevice > mappedDevice (new mtca4u::MappedDevice());
+  //static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
+  //boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > mappedDevice =
+	//FactoryInstance.createDevice("PCIE3");
+  boost::shared_ptr< mtca4u::Device > mappedDevice (new mtca4u::Device());
   mappedDevice->open("PCIE3");
   /** Entry in dmap file is
 	 *  PCIE3  sdm://./pci:mtcadummys0; muxedDataAcessor.map
@@ -79,10 +78,10 @@ int main() {
   /**********************************************************************/
   // Start of Real Example, now that DMA region is set up with multiplexed
   // sequences
-  //boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
-  //	FactoryInstance.createMappedDevice("PCIE3");
-  boost::shared_ptr<mtca4u::MappedDevice> myMappedDevice( new mtca4u::MappedDevice());
-  myMappedDevice->open("PCIE3");
+  //boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > myDevice =
+  //	FactoryInstance.createDevice("PCIE3");
+  boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
+  myDevice->open("PCIE3");
   // The 16 bit elements in the 'DMA' region are converted into double because
   // we specify the userType as double. Please note, it is valid to use another
   // data types as the userType as well. For example using
@@ -90,7 +89,7 @@ int main() {
   // 'DMA' region to uint_16  (With the fixed point conversion applied)
   boost::shared_ptr<mtca4u::MultiplexedDataAccessor<double> >
   dataDemuxedAsDouble =
-      myMappedDevice
+      myDevice
           ->getCustomAccessor<mtca4u::MultiplexedDataAccessor<double> >(
                DATA_REGION_NAME,
                MODULE_NAME); // The DATA_REGION_NAME -> 'DMA' is described in
@@ -136,7 +135,7 @@ int main() {
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  myMappedDevice->close();
+  myDevice->close();
 
   return 0;
 }

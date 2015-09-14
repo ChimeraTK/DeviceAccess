@@ -11,7 +11,7 @@
 using namespace mtca4u;
 #define _DEBUG
 ExampleDevice::ExampleDevice(std::string host, std::string instance, std::list<std::string> parameters)
-: BaseDeviceImpl(host,instance,parameters)
+: DeviceBackendImpl(host,instance,parameters)
 {
 #ifdef _DEBUG
 	std::cout<<"ExampleDevice is connected"<<std::endl;
@@ -20,11 +20,11 @@ ExampleDevice::ExampleDevice(std::string host, std::string instance, std::list<s
 ExampleDevice::~ExampleDevice() {
 	close();
 }
-boost::shared_ptr<mtca4u::BaseDevice> ExampleDevice::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
+boost::shared_ptr<mtca4u::DeviceBackend> ExampleDevice::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
 #ifdef _DEBUG
 	std::cout<<"example createInstance"<<std::endl;
 #endif
-	return boost::shared_ptr<BaseDevice> ( new ExampleDevice(host,instance,parameters) );
+	return boost::shared_ptr<mtca4u::DeviceBackend> ( new ExampleDevice(host,instance,parameters) );
 }
 void ExampleDevice::open()
 {

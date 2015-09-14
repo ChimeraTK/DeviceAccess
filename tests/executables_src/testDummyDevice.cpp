@@ -4,8 +4,8 @@ using namespace boost::unit_test_framework;
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-#include "DeviceFactory.h"
-#include "DummyDevice.h"
+#include "BackendFactory.h"
+#include "DummyBackend.h"
 #include "NotImplementedException.h"
 using namespace mtca4u;
 
@@ -18,16 +18,16 @@ using namespace mtca4u;
 #define EXISTING_DEVICE "DUMMYD0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
-static DeviceFactory FactoryInstance = DeviceFactory::getInstance();
+static BackendFactory FactoryInstance = BackendFactory::getInstance();
 // forward declaration so we can declare it friend
 // of TestableDummyDevice.
 class DummyDeviceTest;
 
 /** The TestableDummyDevice is derived from
- *  DummyDevice to get access to the protected members.
+ *  DummyBackend to get access to the protected members.
  *  This is done by declaring DummyDeviceTest as a friend.
  */
-class TestableDummyDevice : public DummyDevice {
+class TestableDummyDevice : public DummyBackend {
   friend class DummyDeviceTest;
 };
 
@@ -43,12 +43,12 @@ public:
   /// The read function can be readDMA or readArea, the writeFunction is always
   /// writeArea.
   /// WriteDMA probably does not make sense at all.
-  /// The argument is a pointer to a member function of the DummyDevice class,
+  /// The argument is a pointer to a member function of the DummyBackend class,
   /// which
   /// returns void and takes uint32_t, int32_t*, size_t, uint8_t as arguments.
   void testReadWriteMultiWordRegister(
-      //void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
-  		void (DummyDevice::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
+      //void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
+  		void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
   void testWriteDMA();
   void testReadDeviceInfo();
   void testReadOnly();
@@ -81,12 +81,12 @@ private:
   void increaseA() { ++a; }
   void increaseB() { ++b; }
   void increaseC() { ++c; }
-  boost::shared_ptr<mtca4u::BaseDevice> BaseDeviceInstance;
+  boost::shared_ptr<mtca4u::DeviceBackend> BaseDeviceInstance;
 };
 
 class DummyDeviceTestSuite : public test_suite {
 public:
-  DummyDeviceTestSuite() : test_suite("DummyDevice test suite") {
+  DummyDeviceTestSuite() : test_suite("DummyBackend test suite") {
     boost::shared_ptr<DummyDeviceTest> dummyDeviceTest(new DummyDeviceTest);
 
     // Pointers to test cases with dependencies. All other test cases are added
@@ -120,11 +120,11 @@ public:
     // dummyDeviceTest instance.
     boost::function<void(void)> testReadWriteArea =
         boost::bind(&DummyDeviceTest::testReadWriteMultiWordRegister,
-                    dummyDeviceTest, &DummyDevice::read);
+                    dummyDeviceTest, &DummyBackend::read);
 
     /*boost::function<void(void)> testReadWriteDMA =
         boost::bind(&DummyDeviceTest::testReadWriteMultiWordRegister,
-                    dummyDeviceTest, &DummyDevice::readDMA);*/
+                    dummyDeviceTest, &DummyBackend::readDMA);*/
 
     add(BOOST_TEST_CASE(DummyDeviceTest::testCalculateVirtualAddress));
     add(BOOST_TEST_CASE(DummyDeviceTest::testCheckSizeIsMultipleOfWordSize));
@@ -156,22 +156,22 @@ public:
 };
 
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
-  framework::master_test_suite().p_name.value = "DummyDevice test suite";
+  framework::master_test_suite().p_name.value = "DummyBackend test suite";
   framework::master_test_suite().add(new DummyDeviceTestSuite);
 
   return NULL;
 }
 
 void DummyDeviceTest::testCalculateVirtualAddress() {
-  BOOST_CHECK(DummyDevice::calculateVirtualAddress(0, 0) == 0UL);
-  BOOST_CHECK(DummyDevice::calculateVirtualAddress(0x35, 0) == 0x35UL);
-  BOOST_CHECK(DummyDevice::calculateVirtualAddress(0x67875, 0x3) ==
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0) == 0UL);
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x35, 0) == 0x35UL);
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x67875, 0x3) ==
               0x3000000000067875UL);
-  BOOST_CHECK(DummyDevice::calculateVirtualAddress(0, 0x4) ==
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0x4) ==
               0x4000000000000000UL);
 
   // the first bit of the bar has to be cropped
-  BOOST_CHECK(DummyDevice::calculateVirtualAddress(0x123, 0xD) ==
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x123, 0xD) ==
               0x5000000000000123UL);
 }
 
@@ -225,8 +225,8 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
 // DummyDeviceTest::testReadWriteMultiWordRegister(boost::function<void(uint32_t,
 // int32_t*, size_t, uint8_t)> readFunction){
 void DummyDeviceTest::testReadWriteMultiWordRegister(
-    //void (DummyDevice::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
-		void (DummyDevice::*readFunction)(uint8_t, uint32_t, int32_t*, size_t)) {
+    //void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
+		void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t)) {
   // freshlyopenice();
   TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
@@ -326,7 +326,7 @@ TestableDummyDevice* DummyDeviceTest::getBaseDeviceInstance(bool reOpen) {
       BaseDeviceInstance->close();
     BaseDeviceInstance->open();
   }
-  BaseDevice * rawBasePointer = BaseDeviceInstance.get();
+  DeviceBackend * rawBasePointer = BaseDeviceInstance.get();
   return (static_cast<TestableDummyDevice*>(rawBasePointer));
 }
 
@@ -336,7 +336,7 @@ void DummyDeviceTest::testReadDeviceInfo() {
   deviceInfo = dummyDevice->readDeviceInfo();
   std::cout << deviceInfo << std::endl;
   BOOST_CHECK(deviceInfo ==
-              (std::string("DummyDevice with mapping file ") +
+              (std::string("DummyBackend with mapping file ") +
                TEST_MAPPING_FILE));
 }
 
@@ -629,7 +629,7 @@ void DummyDeviceTest::testopenice() {
 
 void DummyDeviceTest::testCreateDevice() {
   /** Try creating a non existing device */
-  BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),DeviceFactoryException);
+  BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),BackendFactoryException);
   /** Try creating an existing device */
   BaseDeviceInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
   BOOST_CHECK(BaseDeviceInstance != 0);

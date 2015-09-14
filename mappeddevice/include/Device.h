@@ -2,7 +2,7 @@
 #define MTCA4U_MAPPEDDEVICE_H
 
 /**
- *      @file           MappedDevice.h
+ *      @file           Device.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @brief          Template that connect functionality of libdev and libmap
  *libraries.
@@ -14,15 +14,15 @@
 
 #include "libmap.h"
 // #include "libdev.h"
-#include "MappedDeviceException.h"
+#include "DeviceException.h"
 #include "FixedPointConverter.h"
 #include "MultiplexedDataAccessor.h"
-#include "DeviceFactory.h"
+#include "BackendFactory.h"
 #include <boost/algorithm/string.hpp>
 namespace mtca4u {
 
   /**
-   *      @class  MappedDevice
+   *      @class  Device
    *      @brief  Class allows to read/write registers from device
    *
    *      Allows to read/write registers from device by passing the name of
@@ -30,31 +30,31 @@ namespace mtca4u {
    *      Type of the object used to control access to device must be passed
    *      as a template parameter and must be an type defined in libdev class.
    *
-   *      The device can open and close a device for you. If you let the MappedDevice
+   *      The device can open and close a device for you. If you let the Device
    *open
    *      the device you will not be able to get a handle to this device
    *directly,
    *you
-   *      can only close it with the MappedDevice. Should you create RegisterAccessor
+   *      can only close it with the Device. Should you create RegisterAccessor
    *objects, which contain
    *      shared pointers to this device, the device will stay opened and
    *functional even
-   *      if the MappedDevice object which created the RegisterAccessor goes out of
+   *      if the Device object which created the RegisterAccessor goes out of
    *scope. In this case
    *      you cannot close the device. It will finally be closed when the the
    *last
    *      RegisterAccessor pointing to it goes out if scope.
-   *      The same holds if you open another device with the same MappedDevice: You
+   *      The same holds if you open another device with the same Device: You
    *lose
    *direct access
    *      to the previous device, which stays open as long as there are
    *RegisterAccessors pointing to it.
    *
    */
-  // class MappedDevice {
-  class MappedDevice {
+  // class Device {
+  class Device {
     public:
-      typedef boost::shared_ptr<BaseDevice> ptrdev;
+      typedef boost::shared_ptr<DeviceBackend> ptrdev;
 
     private:
       ptrdev pdev;
@@ -64,7 +64,7 @@ namespace mtca4u {
     public:
       class RegisterAccessor {
         RegisterInfoMap::RegisterInfo me;
-        typename MappedDevice::ptrdev pdev;
+        typename Device::ptrdev pdev;
         FixedPointConverter _fixedPointConverter;
 
         private:
@@ -76,24 +76,24 @@ namespace mtca4u {
         RegisterAccessor(const std::string & /*_regName*/, // not needed, info is
             // already in the RegisterInfo
             const RegisterInfoMap::RegisterInfo &_me,
-            typename MappedDevice::ptrdev _pdev);
+            typename Device::ptrdev _pdev);
 
-        /** Read one ore more words from the device. It calls BaseDevice::readArea,
+        /** Read one ore more words from the device. It calls DeviceBackend::readArea,
          * not
-         * BaseDevice::readReg.
+         * DeviceBackend::readReg.
          *  @attention In case you leave data size at 0, the full size of the
          * register is read, not just one
-         *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
+         *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
          */
         void readRaw(int32_t *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0) const;
 
-        /** Write one ore more words to the device. It calls BaseDevice::readArea,
+        /** Write one ore more words to the device. It calls DeviceBackend::readArea,
          * not
-         * BaseDevice::writeReg.
+         * DeviceBackend::writeReg.
          *  @attention In case you leave data size at 0, the full size of the
          * register is read, not just one
-         *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
+         *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
          */
         void writeRaw(int32_t const *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0);
@@ -216,11 +216,11 @@ namespace mtca4u {
        */
       typedef RegisterAccessor regObject;
 
-      MappedDevice(){};
-      //MappedDevice(boost::shared_ptr<mtca4u::BaseDevice> baseDevice, const std::string & mapFileName);
+      Device(){};
+      //Device(boost::shared_ptr<mtca4u::DeviceBackend> DeviceBackend, const std::string & mapFileName);
 
       virtual void open(std::string const & aliasName);
-      //virtual void open(boost::shared_ptr< mtca4u::BaseDevice > baseDevice, const std::string &mapFileName);Todo
+      //virtual void open(boost::shared_ptr< mtca4u::DeviceBackend > DeviceBackend, const std::string &mapFileName);Todo
 
       /* virtual void open(const std::string &_devFileName,
                        const std::string &_mapFileName, int _perm = O_RDWR,
@@ -229,7 +229,7 @@ namespace mtca4u {
       std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
       int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);*/
   //virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
-  virtual void open(boost::shared_ptr<BaseDevice> baseDevice, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
+  virtual void open(boost::shared_ptr<DeviceBackend> DeviceBackend, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
 
   virtual void close();
   virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
@@ -244,12 +244,12 @@ namespace mtca4u {
                         uint8_t bar);
   virtual std::string readDeviceInfo() const;
 
-      /** Read one or more words from the device. It calls BaseDevice::readArea, not
-       * BaseDevice::readRaw.
+      /** Read one or more words from the device. It calls DeviceBackend::readArea, not
+       * DeviceBackend::readRaw.
        *  @attention In case you leave data size at 0, the full size of the
        * register
        * is read, not just one
-       *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
+       *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
        *  The original readRaw function without module name, kept for backward
        * compatibility.
        *  The signature was changed and not extendet to keep the functionality of
@@ -260,24 +260,24 @@ namespace mtca4u {
        */
       virtual void readReg(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-      /** Read one or more words from the device. It calls BaseDevice::readArea, not
-       * BaseDevice::readRaw.
+      /** Read one or more words from the device. It calls DeviceBackend::readArea, not
+       * DeviceBackend::readRaw.
        *  @attention In case you leave data size at 0, the full size of the
        * register
        * is read, not just one
-       *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
+       *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
        */
       virtual void readReg(const std::string &regName, const std::string &regModule,
           int32_t *data, size_t dataSize = 0,
           uint32_t addRegOffset = 0) const;
 
-      /** Write one or more words from the device. It calls BaseDevice::writeArea,
+      /** Write one or more words from the device. It calls DeviceBackend::writeArea,
        * not
-       * BaseDevice::writeRaw.
+       * DeviceBackend::writeRaw.
        *  @attention In case you leave data size at 0, the full size of the
        * register
        * is written, not just one
-       *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
+       *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
        *  The original writeRaw function without module name, kept for backward
        * compatibility.
        *  The signature was changed and not extendet to keep the functionality of
@@ -288,13 +288,13 @@ namespace mtca4u {
        */
       virtual void writeReg(const std::string &regName, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
-      /** Write one or more words from the device. It calls BaseDevice::writeArea,
+      /** Write one or more words from the device. It calls DeviceBackend::writeArea,
        * not
-       * BaseDevice::writeRaw.
+       * DeviceBackend::writeRaw.
        *  @attention In case you leave data size at 0, the full size of the
        * register
        * is written, not just one
-       *  word as in BaseDevice::readArea! Make sure your buffer is large enough!
+       *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
        */
       virtual void writeReg(const std::string &regName,
           const std::string &regModule, int32_t const *data,
@@ -395,7 +395,7 @@ namespace mtca4u {
        */
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
-      virtual ~MappedDevice();
+      virtual ~Device();
 
     private:
       void checkRegister(const std::string &regName,
@@ -408,14 +408,14 @@ namespace mtca4u {
 
 
   template <typename ConvertedDataType>
-  ConvertedDataType MappedDevice::RegisterAccessor::read() const {
+  ConvertedDataType Device::RegisterAccessor::read() const {
     ConvertedDataType t;
     read(&t);
     return t;
   }
 
   template <typename ConvertedDataType>
-  void MappedDevice::RegisterAccessor::read(ConvertedDataType * convertedData, size_t nWords,
+  void Device::RegisterAccessor::read(ConvertedDataType * convertedData, size_t nWords,
       uint32_t wordOffsetInRegister) const {
     if (nWords==0){
       return;
@@ -431,7 +431,7 @@ namespace mtca4u {
 
 
   template <typename ConvertedDataType>
-  void MappedDevice::RegisterAccessor::write(ConvertedDataType const *convertedData,
+  void Device::RegisterAccessor::write(ConvertedDataType const *convertedData,
       size_t nWords,
       uint32_t wordOffsetInRegister) {
     // Check that nWords is not 0. The readRaw command would read the whole
@@ -451,14 +451,14 @@ namespace mtca4u {
 
 
   template <typename ConvertedDataType>
-  void MappedDevice::RegisterAccessor::write(
+  void Device::RegisterAccessor::write(
       ConvertedDataType const &convertedData) {
     write(&convertedData, 1);
   }
 
 
   template <typename customClass>
-  boost::shared_ptr<customClass> MappedDevice::getCustomAccessor(
+  boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
     return (
         customClass::createInstance(dataRegionName, module, pdev, registerMap));

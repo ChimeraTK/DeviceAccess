@@ -10,15 +10,15 @@
 
 namespace mtca4u {
 
-class DeviceException : public Exception {
+class DeviceBackendException : public Exception {
 public:
-	DeviceException(const std::string &message, unsigned int exceptionID)
+	DeviceBackendException(const std::string &message, unsigned int exceptionID)
 	: Exception( message, exceptionID ){};
 };
 
 /** The base class of an IO device.
  */
-class BaseDevice {
+class DeviceBackend {
 
 public:
   // Todo move this function to private space.

@@ -4,10 +4,10 @@
 #include <string>
 
 //#include "Exception.h"
-#include "BaseDevice.h"
+#include "DeviceBackend.h"
 namespace mtca4u{
 
-class FakeDeviceException : public DeviceException {
+class FakeBackendException : public DeviceBackendException {
 public:
     enum {
                 EX_CANNOT_CREATE_DEV_FILE, 
@@ -19,7 +19,7 @@ public:
                 EX_DEVICE_CLOSED
     };
 public:
-    FakeDeviceException(const std::string &_exMessage, unsigned int _exID);
+    FakeBackendException(const std::string &_exMessage, unsigned int _exID);
 private:
 
 };

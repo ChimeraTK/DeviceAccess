@@ -5,9 +5,9 @@ using namespace boost::unit_test_framework;
 #define LLRFDRV_TEST_SLOT 4
 #define PCIEUNI_TEST_SLOT 6
 
-#include "PcieDevice.h"
-#include "PcieDeviceException.h"
-#include "DeviceFactory.h"
+#include "PcieBackend.h"
+#include "PcieBackendException.h"
+#include "BackendFactory.h"
 
 using namespace mtca4u;
 
@@ -37,7 +37,7 @@ using namespace mtca4u;
  *  has to be executed first, and testClose() has to be executed last.
  *  Further dependencies are implemented in the teste suite.
  */
-static DeviceFactory FactoryInstance = DeviceFactory::getInstance();
+static BackendFactory FactoryInstance = BackendFactory::getInstance();
 class PcieDeviceTest
 {
 public:
@@ -80,11 +80,11 @@ public:
 	void testFailIfDeviceClosed();
 
 private:
-	PcieDevice _pcieDevice;
+	PcieBackend _pcieDevice;
 	std::string _deviceFileName;
 	unsigned int _slot;
 
-	boost::shared_ptr<BaseDevice>_pcieDeviceInstance;
+	boost::shared_ptr<DeviceBackend>_pcieDeviceInstance;
 
 	// Internal function for better code readablility.
 	// Returns an error message. If the message is empty the test succeeded.
@@ -184,7 +184,7 @@ init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 // The implementations of the individual tests
 
 void PcieDeviceTest::testConstructor() {
-	PcieDevice pcieDevice;
+	PcieBackend pcieDevice;
 	BOOST_CHECK( pcieDevice.isOpen() == false );
 }
 
@@ -227,23 +227,23 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 	_pcieDeviceInstance->close();
 	BOOST_CHECK_THROW( // _pcieDeviceInstance->readReg(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
 										_pcieDeviceInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4),
-			PcieDeviceException );
+			PcieBackendException );
 	//BOOST_CHECK_THROW(  _pcieDeviceInstance->read(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
-			PcieDeviceException );
+			PcieBackendException );
 	BOOST_CHECK_THROW( _pcieDeviceInstance->readDMA(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)),
-			PcieDeviceException );
+			PcieBackendException );
 	//BOOST_CHECK_THROW(  _pcieDeviceInstance->writeReg(/*bar*/ 0, WORD_USER_OFFSET, 0),
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->write(/*bar*/ 0, WORD_USER_OFFSET, 0, 4),
-			PcieDeviceException );
+			PcieBackendException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord) ),
-			PcieDeviceException );
+			PcieBackendException );
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->writeDMA( /*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
-			PcieDeviceException );
+			PcieBackendException );
 
 	//std::string deviceInfo;
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->readDeviceInfo(),
-			PcieDeviceException );
+			PcieBackendException );
 
 }
 
@@ -320,7 +320,7 @@ void PcieDeviceTest::testread(){
 	// not a multiple of 4.
 	//BOOST_CHECK_THROW( _pcieDeviceInstance->read( /*offset*/ 0, twoWords, /*nBytes*/ 6, /*bar*/ 0 ),
 	BOOST_CHECK_THROW( _pcieDeviceInstance->read( /*bar*/ 0, /*offset*/ 0, twoWords, /*nBytes*/ 6 ),
-			PcieDeviceException );
+			PcieBackendException );
 
 	// also check another bar
 	// Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer) with the default values (index^2) in the first 25 words.
@@ -356,7 +356,7 @@ void PcieDeviceTest::testWriteArea(){
 	// now try to write only six of the eight bytes. This should throw an exception because it is
 	// not a multiple of 4.
 	BOOST_CHECK_THROW( _pcieDeviceInstance->write(  /*bar*/ 0 , WORD_CLK_CNT_OFFSET, originalClockCounts, /*nBytes*/ 6 ),
-			PcieDeviceException );
+			PcieBackendException );
 
 	// also test another bar (area in bar 2), the usual drill: write and read back,
 	// we know that reading works from the previous test
@@ -378,7 +378,7 @@ void PcieDeviceTest::testReadRegister()
 	//check that the exception is thrown if the device is not opened
 	_pcieDeviceInstance->close();
 	BOOST_CHECK_THROW( _pcieDeviceInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4),
-			PcieDeviceException );
+			PcieBackendException );
 
 	_pcieDeviceInstance->open();// no need to check if this works because we did the open test first
 	//_pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
@@ -388,7 +388,7 @@ void PcieDeviceTest::testReadRegister()
 	/** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
 	//BOOST_CHECK_THROW( _pcieDeviceInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 6),
 	BOOST_CHECK_THROW( _pcieDeviceInstance->read( /*bar*/ 6, WORD_DUMMY_OFFSET, &dataWord, 4),
-			PcieDeviceException );
+			PcieBackendException );
 
 }
 
@@ -412,7 +412,7 @@ void PcieDeviceTest::testWriteRegister()
 	/** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
 	//BOOST_CHECK_THROW( _pcieDeviceInstance->writeReg( /*bar*/ 6, WORD_DUMMY_OFFSET, newUserWord),
 	BOOST_CHECK_THROW( _pcieDeviceInstance->write( /*bar*/ 6, WORD_DUMMY_OFFSET, &newUserWord, 4),
-			PcieDeviceException );
+			PcieBackendException );
 }
 
 
@@ -434,7 +434,7 @@ void PcieDeviceTest::testopenice(){
 
 void PcieDeviceTest::testCreateDevice(){
 	/** Try creating a non existing device */
-	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),DeviceFactoryException);
+	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),BackendFactoryException);
 	/** Try creating an existing device */
 	std::cout<<"DeviceName"<<_deviceFileName<<std::endl;
 	_pcieDeviceInstance = FactoryInstance.createDevice(_deviceFileName);

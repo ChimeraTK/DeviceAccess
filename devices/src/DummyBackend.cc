@@ -3,7 +3,7 @@
 
 #include <boost/lambda/lambda.hpp>
 
-#include "DummyDevice.h"
+#include "DummyBackend.h"
 
 #include "NotImplementedException.h"
 #include "MapFileParser.h"
@@ -28,12 +28,12 @@ const unsigned int BAR_MASK = 0x7;
 const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
 //Noting to do, intentionally empty.
-DummyDevice::DummyDevice(){
+DummyBackend::DummyBackend(){
 }
 
 
-DummyDevice::DummyDevice(std::string host, std::string instance, std::list<std::string> parameters)
-: BaseDeviceImpl(host,instance,parameters)
+DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std::string> parameters)
+: DeviceBackendImpl(host,instance,parameters)
 {
 #ifdef _DEBUG
 	std::cout<<"dummy is connected"<<std::endl;
@@ -42,19 +42,19 @@ DummyDevice::DummyDevice(std::string host, std::string instance, std::list<std::
 
 //Nothing to clean up, all objects clean up for themselves when
 //they go out of scope.
-DummyDevice::~DummyDevice(){
+DummyBackend::~DummyBackend(){
 }
 
-void DummyDevice::open()
+void DummyBackend::open()
 {
 #ifdef _DEBUG
-	std::cout<<"open DummyDevice"<<std::endl;
+	std::cout<<"open DummyBackend"<<std::endl;
 #endif
 
 	open(_instance);
 }
 
-void DummyDevice::open(const std::string &mappingFileName,
+void DummyBackend::open(const std::string &mappingFileName,
 		int /* perm */, DeviceConfigBase* /* pConfig */){
 	if (_opened){
 		throw DummyDeviceException("Device is already open.", DummyDeviceException::ALREADY_OPEN);
@@ -65,7 +65,7 @@ void DummyDevice::open(const std::string &mappingFileName,
 	_opened=true;
 }
 
-void DummyDevice::resizeBarContents(){
+void DummyBackend::resizeBarContents(){
 	std::map< uint8_t, size_t > barSizesInBytes
 	= getBarSizesInBytesFromRegisterMapping();
 
@@ -79,7 +79,7 @@ void DummyDevice::resizeBarContents(){
 	}
 }
 
-std::map< uint8_t, size_t > DummyDevice::getBarSizesInBytesFromRegisterMapping() const{
+std::map< uint8_t, size_t > DummyBackend::getBarSizesInBytesFromRegisterMapping() const{
 	std::map< uint8_t, size_t > barSizesInBytes;
 	for (RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
 			mappingElementIter <  _registerMapping->end(); ++mappingElementIter ) {
@@ -91,7 +91,7 @@ std::map< uint8_t, size_t > DummyDevice::getBarSizesInBytesFromRegisterMapping()
 	return barSizesInBytes;
 }
 
-void DummyDevice::close(){
+void DummyBackend::close(){
 	if (!_opened){
 		throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
 	}
@@ -104,7 +104,7 @@ void DummyDevice::close(){
 }
 
 
-/*void DummyDevice::writeReg(uint8_t bar, uint32_t address, int32_t data){
+/*void DummyBackend::writeReg(uint8_t bar, uint32_t address, int32_t data){
 	if (isReadOnly(bar, address ) ){
 		return;
 	}
@@ -112,11 +112,11 @@ void DummyDevice::close(){
 	runWriteCallbackFunctionsForAddressRange(AddressRange(bar, address, sizeof(int32_t) ) );
 }*/
 
-void DummyDevice::writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data){
+void DummyBackend::writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data){
 	TRY_REGISTER_ACCESS( _barContents[bar].at(address/sizeof(int32_t)) = data; );
 }
 
-void DummyDevice::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
+void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
 	checkSizeIsMultipleOfWordSize( sizeInBytes );
 	unsigned int wordBaseIndex = address/sizeof(int32_t);
 	for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
@@ -124,7 +124,7 @@ void DummyDevice::read(uint8_t bar, uint32_t address, int32_t* data,  size_t siz
 	}
 }
 
-void DummyDevice::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
+void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
 	checkSizeIsMultipleOfWordSize( sizeInBytes );
 	unsigned int wordBaseIndex = address/sizeof(int32_t);
 	for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
@@ -136,55 +136,55 @@ void DummyDevice::write(uint8_t bar, uint32_t address, int32_t const* data,  siz
 	runWriteCallbackFunctionsForAddressRange( AddressRange(bar, address, sizeInBytes ) );
 }
 
-void DummyDevice::readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
+void DummyBackend::readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
 	return read(bar, address, data, sizeInBytes);
 }
 
-void DummyDevice::writeDMA(uint8_t /* bar */, uint32_t /* address */, int32_t const * /* data */, size_t /* sizeInBytes */){
-	throw NotImplementedException("DummyDevice::writeDMA is not implemented yet.");
+void DummyBackend::writeDMA(uint8_t /* bar */, uint32_t /* address */, int32_t const * /* data */, size_t /* sizeInBytes */){
+	throw NotImplementedException("DummyBackend::writeDMA is not implemented yet.");
 }
 
-std::string DummyDevice::readDeviceInfo(){
+std::string DummyBackend::readDeviceInfo(){
 	std::stringstream info;
-	info << "DummyDevice with mapping file " << _registerMapping->getMapFileName();
+	info << "DummyBackend with mapping file " << _registerMapping->getMapFileName();
         return info.str();
 }
 
-uint64_t DummyDevice::calculateVirtualAddress( uint32_t registerOffsetInBar,
+uint64_t DummyBackend::calculateVirtualAddress( uint32_t registerOffsetInBar,
 		uint8_t bar){
 	return (static_cast<uint64_t>(bar & BAR_MASK) << BAR_POSITION_IN_VIRTUAL_REGISTER) |
 			(static_cast<uint64_t> (registerOffsetInBar));
 }
 
-void DummyDevice::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
+void DummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
 	if (sizeInBytes % sizeof(int32_t) ){
 		throw( DummyDeviceException("Read/write size has to be a multiple of 4", DummyDeviceException::WRONG_SIZE) );
 	}
 }
 
-void DummyDevice::setReadOnly(uint8_t bar, uint32_t address,  size_t sizeInWords){
+void DummyBackend::setReadOnly(uint8_t bar, uint32_t address,  size_t sizeInWords){
 	for (size_t i = 0; i < sizeInWords; ++i){
 		uint64_t virtualAddress = calculateVirtualAddress( address + i*sizeof(int32_t), bar );
 		_readOnlyAddresses.insert(virtualAddress);
 	}
 }
 
-void DummyDevice::setReadOnly( AddressRange addressRange ){
+void DummyBackend::setReadOnly( AddressRange addressRange ){
 	setReadOnly( addressRange.bar, addressRange.offset, addressRange.sizeInBytes/sizeof(int32_t) );
 }
 
-bool  DummyDevice::isReadOnly( uint8_t bar, uint32_t address  ) const{
+bool  DummyBackend::isReadOnly( uint8_t bar, uint32_t address  ) const{
 	uint64_t virtualAddress = calculateVirtualAddress( address, bar );
 	return (  _readOnlyAddresses.find(virtualAddress) != _readOnlyAddresses.end() );
 }
 
-void  DummyDevice::setWriteCallbackFunction( AddressRange addressRange,
+void  DummyBackend::setWriteCallbackFunction( AddressRange addressRange,
 		boost::function<void(void)>  const & writeCallbackFunction ){
 	_writeCallbackFunctions.insert(
 			std::pair< AddressRange, boost::function<void(void)> >(addressRange, writeCallbackFunction) );
 }
 
-void  DummyDevice::runWriteCallbackFunctionsForAddressRange( AddressRange addressRange ){
+void  DummyBackend::runWriteCallbackFunctionsForAddressRange( AddressRange addressRange ){
 	std::list< boost::function<void(void)> > callbackFunctionsForThisRange =
 			findCallbackFunctionsForAddressRange(addressRange);
 	for( std::list< boost::function<void(void)> >::iterator functionIter = callbackFunctionsForThisRange.begin();
@@ -193,7 +193,7 @@ void  DummyDevice::runWriteCallbackFunctionsForAddressRange( AddressRange addres
 	}
 }
 
-std::list< boost::function<void(void)> > DummyDevice::findCallbackFunctionsForAddressRange(
+std::list< boost::function<void(void)> > DummyBackend::findCallbackFunctionsForAddressRange(
 		AddressRange addressRange){
 	// as callback functions are not sortable, we want to loop the multimap only once.
 	// FIXME: If the same function is registered more than one, it may be executed multiple times
@@ -219,7 +219,7 @@ std::list< boost::function<void(void)> > DummyDevice::findCallbackFunctionsForAd
 	return returnList;
 }
 
-bool DummyDevice::isWriteRangeOverlap( AddressRange firstRange, AddressRange secondRange){
+bool DummyBackend::isWriteRangeOverlap( AddressRange firstRange, AddressRange secondRange){
 	if (firstRange.bar != secondRange.bar){
 		return false;
 	}
@@ -240,8 +240,8 @@ bool DummyDevice::isWriteRangeOverlap( AddressRange firstRange, AddressRange sec
 }
 
 
-boost::shared_ptr<BaseDevice> DummyDevice::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
-	return boost::shared_ptr<BaseDevice> ( new DummyDevice(host,instance,parameters) );
+boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
+	return boost::shared_ptr<DeviceBackend> ( new DummyBackend(host,instance,parameters) );
 }
 
 }// namespace mtca4u

@@ -1,5 +1,5 @@
 /* 
- * File:   ExcMappedDevice.h
+ * File:   ExcDevice.h
  * Author: apiotro
  *
  * Created on 11 marzec 2012, 20:42
@@ -9,19 +9,19 @@
 #define	MTCA4U_EXCMAPPEDDEVICE_H
 
 //#include "Exception.h"
-#include "BaseDevice.h"
+#include "DeviceBackend.h"
 namespace mtca4u{
 
-class MappedDeviceException : public DeviceException {
+class DeviceException : public DeviceBackendException {
 public:
     
   enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE
   };
     
     
-  MappedDeviceException(const std::string &_exMessage, unsigned int _exID);
-    virtual ~MappedDeviceException() throw();
-    friend std::ostream& operator<<(std::ostream &os, const MappedDeviceException& e);
+	DeviceException(const std::string &_exMessage, unsigned int _exID);
+	virtual ~DeviceException() throw();
+	friend std::ostream& operator<<(std::ostream &os, const DeviceException& e);
 private:
 
 };

@@ -51,15 +51,15 @@ namespace mtca4u{
 
     /** Compatibility function with old interface. DEPRECATED, DO NOT USE */
     double toDouble(uint32_t rawValue) const {
-      std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toDouble()." << std::endl;
-      std::cerr << "    Please use toCooked() instead." << std::endl;
+      //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toDouble()." << std::endl;
+      //std::cerr << "    Please use toCooked() instead." << std::endl;
       return toCooked<double>(rawValue);
     }
 
     /** Compatibility function with old interface. DEPRECATED, DO NOT USE */
     uint32_t toFixedPoint(double cookedValue) const {
-      std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toFixedPoint()." << std::endl;
-      std::cerr << "    Please use toRaw() instead." << std::endl;
+      //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toFixedPoint()." << std::endl;
+      //std::cerr << "    Please use toRaw() instead." << std::endl;
       return toRaw<double>(cookedValue);
     }
 

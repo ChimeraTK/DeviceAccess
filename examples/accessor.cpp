@@ -1,5 +1,5 @@
-#include <MtcaMappedDevice/MappedDevice.h>
-#include "MtcaMappedDevice/DeviceFactory.h"
+#include <MtcaMappedDevice/Device.h>
+#include "MtcaMappedDevice/BackendFactory.h"
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -11,20 +11,20 @@ static const std::string MAP_NAME = "mtcadummy.map";
 
 int main() {
 
-  static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+  static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
   /** Entry in dmap file is
   * PCIE1     sdm://./pci:pcieunidummys6; mtcadummy.map
   */
-  /*boost::shared_ptr< mtca4u::MappedDevice< mtca4u::BaseDevice > > myMappedDevice =
-	FactoryInstance.createMappedDevice("PCIE1");*/
+  /*boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > myDevice =
+	FactoryInstance.createDevice("PCIE1");*/
 
-  boost::shared_ptr<mtca4u::MappedDevice> myMappedDevice( new mtca4u::MappedDevice());
-  myMappedDevice->open("PCIE1");
+  boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
+  myDevice->open("PCIE1");
 
-  /*boost::shared_ptr<mtca4u::MappedDevice<mtca4u::BaseDevice>::RegisterAccessor> accessor =
-  			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);*/
-  boost::shared_ptr<mtca4u::MappedDevice::RegisterAccessor> accessor =
-    			myMappedDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
+  /*boost::shared_ptr<mtca4u::Device<mtca4u::DeviceBackend>::RegisterAccessor> accessor =
+  			myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);*/
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor> accessor =
+    			myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
   // read and print a data word works just like the devMap functions,
   // except that you don't give the register name
   int32_t dataWord;
@@ -51,7 +51,7 @@ int main() {
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  myMappedDevice->close();
+  myDevice->close();
 
   return 0;
 }

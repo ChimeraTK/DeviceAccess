@@ -1,10 +1,10 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/filesystem.hpp>
-#include "FakeDevice.h"
+#include "FakeBackend.h"
 #include <cstdio>
 
-#include "DeviceFactory.h"
-#include "FakeDeviceException.h"
+#include "BackendFactory.h"
+#include "FakeBackendException.h"
 
 //#define REFERENCE_DEVICE "FAKE7"
 //#define DUMMY_DEVICE "FAKE12"
@@ -17,10 +17,10 @@
 using namespace boost::unit_test_framework;
 
 
-static mtca4u::DeviceFactory FactoryInstance = mtca4u::DeviceFactory::getInstance();
+static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
 class FakeDeviceTest {
 private:
-	boost::shared_ptr<mtca4u::BaseDevice> _fakeDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> _fakeDevice;
 public:
 	FakeDeviceTest():_fakeDevice() {};
 	// Try Creating a device and check if it is connected.
@@ -111,24 +111,24 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 //Todo add fakeDevice file to cmake.
 void FakeDeviceTest::testReOpenExistingDevice() {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
 	FILE* file = fopen("._fakeDevice", "w");
 	fclose(file);
 	dummyDevice->open();
-	BOOST_CHECK_THROW(dummyDevice->open(), mtca4u::FakeDeviceException);
+	BOOST_CHECK_THROW(dummyDevice->open(), mtca4u::FakeBackendException);
 	try {
 		dummyDevice->open();
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_OPENED);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_OPENED);
 	}
 	remove("_._fakeDevice");
 }
 
 void FakeDeviceTest::testCreateFakeDevice() {
 	remove("._fakeDevice");
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(FAKE_DEVICE);
 	dummyDevice->open();
 	boost::filesystem::path pathToCreatedFile("._fakeDevice");
@@ -137,29 +137,29 @@ void FakeDeviceTest::testCreateFakeDevice() {
 }
 
 void FakeDeviceTest::testReadAreaWithInvalidParams() {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
-	BOOST_CHECK_THROW(dummyDevice->readDMA(2, 10, data, 3), mtca4u::FakeDeviceException);
+	BOOST_CHECK_THROW(dummyDevice->readDMA(2, 10, data, 3), mtca4u::FakeBackendException);
 	try {
 		dummyDevice->readDMA(2, 10, data, 3);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_CLOSED);
 	}
 	dummyDevice->open();
-	BOOST_CHECK_THROW(dummyDevice->readDMA(2, 10, data, 3), mtca4u::FakeDeviceException);
+	BOOST_CHECK_THROW(dummyDevice->readDMA(2, 10, data, 3), mtca4u::FakeBackendException);
 	try {
 		dummyDevice->readDMA(2, 10, data, 3);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_READ_DATA_ERROR);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_FILE_READ_DATA_ERROR);
 	}
 	remove("._DummyDevice");
 }
 
 void FakeDeviceTest::testWriteReg () {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	dummyDevice->open();
 	//dummyDevice->writeReg(5, 8, 0x01020304);
@@ -172,48 +172,48 @@ void FakeDeviceTest::testWriteReg () {
 }
 
 void FakeDeviceTest::testWriteRegErrors () {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	int32_t data = 0x01020304;
 	uint32_t offset = 12;
 	uint8_t bar = 2;
-	//BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, bar), mtca4u::FakeDeviceException);
-	BOOST_CHECK_THROW(dummyDevice->write(bar,offset, &data, 4), mtca4u::FakeDeviceException);
+	//BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, bar), mtca4u::FakeBackendException);
+	BOOST_CHECK_THROW(dummyDevice->write(bar,offset, &data, 4), mtca4u::FakeBackendException);
 	try {
 		//dummyDevice->writeReg(offset, data, bar);
 		dummyDevice->write(bar, offset, &data, 4);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_CLOSED);
 	}
 
 	dummyDevice->open();
-	//BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, 8), mtca4u::FakeDeviceException);
-	BOOST_CHECK_THROW(dummyDevice->write(8, offset, &data, 4), mtca4u::FakeDeviceException);
+	//BOOST_CHECK_THROW(dummyDevice->writeReg(offset, data, 8), mtca4u::FakeBackendException);
+	BOOST_CHECK_THROW(dummyDevice->write(8, offset, &data, 4), mtca4u::FakeBackendException);
 	try {
 		//dummyDevice->writeReg(8, offset, data, 4);
 		dummyDevice->write(8, offset, &data, 4);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 
 	BOOST_CHECK_THROW(
 			//dummyDevice->writeReg(2, (uint32_t)MTCA4U_LIBDEV_BAR_MEM_SIZE, data),
 			dummyDevice->write(2, (uint32_t)MTCA4U_LIBDEV_BAR_MEM_SIZE, &data, 4),
-			mtca4u::FakeDeviceException);
+			mtca4u::FakeBackendException);
 	try {
 		//dummyDevice->writeReg(2, (uint32_t)MTCA4U_LIBDEV_BAR_MEM_SIZE, data);
 		dummyDevice->write(2, (uint32_t)MTCA4U_LIBDEV_BAR_MEM_SIZE, &data, 4);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 	remove("._DummyDevice");
 }
 
 void FakeDeviceTest::testWriteArea () {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	dummyDevice->open();
 	const int dataSize = 4;
@@ -235,7 +235,7 @@ void FakeDeviceTest::testWriteArea () {
 }
 
 void FakeDeviceTest::testWriteDMA () {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);//,true);
 	dummyDevice->open();
 	const int dataSize = 4;
@@ -255,30 +255,30 @@ void FakeDeviceTest::testWriteDMA () {
 }
 
 void FakeDeviceTest::testWriteAreaWithInvalidParams () {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	int32_t data[4];
-	BOOST_CHECK_THROW(dummyDevice->writeDMA(2, 10, data, 3), mtca4u::FakeDeviceException);
+	BOOST_CHECK_THROW(dummyDevice->writeDMA(2, 10, data, 3), mtca4u::FakeBackendException);
 	try {
 		dummyDevice->writeDMA(2, 10, data, 3);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_CLOSED);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_CLOSED);
 	}
 	dummyDevice->open();
 	int wrongDataSize = 3;
-	BOOST_CHECK_THROW(dummyDevice->writeDMA(2, 10, data, wrongDataSize), mtca4u::FakeDeviceException);
+	BOOST_CHECK_THROW(dummyDevice->writeDMA(2, 10, data, wrongDataSize), mtca4u::FakeBackendException);
 	try {
 		dummyDevice->writeDMA(2, 10, data, 3);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
-		BOOST_CHECK(a.getID() == mtca4u::FakeDeviceException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
+	catch (mtca4u::FakeBackendException& a) {
+		BOOST_CHECK(a.getID() == mtca4u::FakeBackendException::EX_DEVICE_FILE_WRITE_DATA_ERROR);
 	}
 	remove("._DummyDevice");
 }
 
 void FakeDeviceTest::testDeviceInfo () {
-	boost::shared_ptr<mtca4u::BaseDevice> dummyDevice;
+	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice;
 	dummyDevice = FactoryInstance.createDevice(DUMMY_DEVICE);
 	dummyDevice->open();
 	std::string deviceInformation;
@@ -323,7 +323,7 @@ void FakeDeviceTest::testReadRegister() {
 		_fakeDevice->read(bar, offset, &data, 4);
 		BOOST_CHECK((uint32_t)data == 0xFFF0FFFF);
 	}
-	catch (mtca4u::FakeDeviceException& a) {
+	catch (mtca4u::FakeBackendException& a) {
 		std::cout<<a.getID()<<std::endl;
 	}
 }
@@ -346,9 +346,9 @@ void FakeDeviceTest::testopenice(){
 
 void FakeDeviceTest::testCreateDevice(){
 	/** Try creating a non existing device */
-	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),mtca4u::DeviceFactoryException);
+	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),mtca4u::BackendFactoryException);
 	/**Try creating local Fake device*/
-	boost::shared_ptr<mtca4u::BaseDevice> mappedfakeDevice = FactoryInstance.createDevice(REFERENCE_DEVICE);
+	boost::shared_ptr<mtca4u::DeviceBackend> mappedfakeDevice = FactoryInstance.createDevice(REFERENCE_DEVICE);
 	BOOST_CHECK(mappedfakeDevice != 0);
 	/** Device should be in connect state now */
 	BOOST_CHECK(mappedfakeDevice->isConnected() == true );
