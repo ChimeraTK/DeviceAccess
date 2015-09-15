@@ -10,7 +10,7 @@
 
 #include "Exception.h"
 #include "DeviceBackendImpl.h"
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 
 namespace mtca4u{
 

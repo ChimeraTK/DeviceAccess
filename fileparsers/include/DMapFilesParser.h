@@ -9,7 +9,7 @@
 #ifndef MTCA4U_DMAPFILESPARSER_H
 #define	MTCA4U_DMAPFILESPARSER_H
 
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 #include "MapFileParser.h"
 //#include "iterator_T.h"
 #include <string>

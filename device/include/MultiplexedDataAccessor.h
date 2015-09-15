@@ -1,7 +1,7 @@
 #ifndef _MTCA4U_SEQUENCE_DE_MULTIPLEXER_H_
 #define _MTCA4U_SEQUENCE_DE_MULTIPLEXER_H_
 
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "DeviceBackend.h"
 #include <boost/shared_ptr.hpp>

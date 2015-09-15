@@ -5,7 +5,7 @@
 #include "DMapFilesParser.h"
 #include "DMapFile.h"
 #include "DMapFileParser.h"
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 #include "MapFileParser.h"
 
 

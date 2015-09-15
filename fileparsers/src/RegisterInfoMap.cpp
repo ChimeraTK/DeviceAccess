@@ -1,4 +1,4 @@
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 #include "predicates.h"
 #include "MapException.h"
 #include <algorithm>

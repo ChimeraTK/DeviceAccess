@@ -8,7 +8,7 @@
 #define	MTCA4U_PREDICATES_H
 
 #include "DMapFile.h"
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 
 namespace mtca4u{
 

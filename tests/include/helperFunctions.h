@@ -8,7 +8,7 @@
 #ifndef HELPERFUNCTIONS_H_
 #define HELPERFUNCTIONS_H_
 
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 #include "DMapFile.h"
 
 void populateDummydRegisterInfoent(mtca4u::DMapFile::dRegisterInfo& dRegisterInfoent,

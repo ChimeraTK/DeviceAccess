@@ -1,6 +1,6 @@
 #include "DMapFilesParser.h"
 #include "predicates.h"
-#include "MapFile.h"
+#include "RegisterInfoMap.h"
 #include "MapException.h"
 #include <iostream>
 #include <algorithm>
