@@ -29,13 +29,18 @@ else(SUPPRESS_AUTO_DOC_BUILD)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
 FIND_PACKAGE(Boost COMPONENTS system filesystem)
-include_directories(${Boost_INCLUDE_DIRS})
+
 
 include_directories(${PROJECT_SOURCE_DIR}/exception/include exception_inc)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/device_backend/include")
 include_directories("${PROJECT_SOURCE_DIR}/device/include")
+
+ 
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
@@ -61,12 +66,9 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
       COMMENT "Generating test coverage documentation" VERBATIM
       )
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/MtcaMappedDevice
 )
- 
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs} )
 file(GLOB headerFiles  "${dir}/*.h")
 foreach(headerFile ${headerFiles} )
@@ -75,6 +77,7 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 )
 endforeach(headerFile)
 endforeach(dir)
+
 	
 include_directories("${PROJECT_BINARY_DIR}/include")
 
