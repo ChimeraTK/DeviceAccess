@@ -54,17 +54,17 @@ namespace mtca4u {
   // class Device {
   class Device {
     public:
-      typedef boost::shared_ptr<DeviceBackend> ptrdev;
+      typedef boost::shared_ptr<DeviceBackend> _ptrDeviceBackend;
 
     private:
-      ptrdev pdev;
-      std::string mapFileName;
-      ptrmapFile registerMap;
+      _ptrDeviceBackend _pDeviceBackend;
+      std::string _mapFileName;
+      ptrmapFile _registerMap;
 
     public:
       class RegisterAccessor {
-        RegisterInfoMap::RegisterInfo me;
-        typename Device::ptrdev pdev;
+        RegisterInfoMap::RegisterInfo _registerInfo;
+        typename Device::_ptrDeviceBackend _pDeviceBackend;
         FixedPointConverter _fixedPointConverter;
 
         private:
@@ -76,7 +76,7 @@ namespace mtca4u {
         RegisterAccessor(const std::string & /*_regName*/, // not needed, info is
             // already in the RegisterInfo
             const RegisterInfoMap::RegisterInfo &_me,
-            typename Device::ptrdev _pdev);
+            typename Device::_ptrDeviceBackend pDeviceBackend);
 
         /** Read one ore more words from the device. It calls DeviceBackend::readArea,
          * not
@@ -229,7 +229,7 @@ namespace mtca4u {
       std::pair<std::string, std::string> const &_deviceFileAndMapFileName,
       int _perm = O_RDWR, DeviceConfigBase *_pConfig = NULL);*/
   //virtual void open(ptrdev ioDevice, ptrmapFile registerMapping);
-  virtual void open(boost::shared_ptr<DeviceBackend> DeviceBackend, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
+  virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
 
   virtual void close();
   virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
@@ -461,7 +461,7 @@ namespace mtca4u {
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
     return (
-        customClass::createInstance(dataRegionName, module, pdev, registerMap));
+        customClass::createInstance(dataRegionName, module, _pDeviceBackend, _registerMap));
   }
 } // namespace mtca4u
 

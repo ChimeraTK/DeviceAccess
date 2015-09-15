@@ -232,6 +232,12 @@ public:
 
 public:
     /**
+		 * @brief Constructor
+		 *
+		 * Default constructor.
+		 */
+    RegisterInfoMap();
+    /**
      * @brief Constructor
      * 
      * Initialize MAP file name stored into object but does not perform MAP file parsing

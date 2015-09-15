@@ -657,15 +657,19 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/devices \
-                         @CMAKE_CURRENT_SOURCE_DIR@/exception \
-                         @CMAKE_CURRENT_SOURCE_DIR@/fileparsers \
-                         @CMAKE_CURRENT_SOURCE_DIR@/mappeddevice \
-                         @CMAKE_CURRENT_SOURCE_DIR@/plugin_example \
-                         @CMAKE_CURRENT_SOURCE_DIR@/util \
-                         @CMAKE_CURRENT_SOURCE_DIR@/doc/mainpage.dox \
-			 @CMAKE_CURRENT_SOURCE_DIR@/doc/mapping.dox \
-			 @CMAKE_CURRENT_SOURCE_DIR@/doc/deviceMapping.dox
+#INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/devices \
+#                         @CMAKE_CURRENT_SOURCE_DIR@/exception \
+#                         @CMAKE_CURRENT_SOURCE_DIR@/fileparsers \
+#                         @CMAKE_CURRENT_SOURCE_DIR@/mappeddevice \
+#                         @CMAKE_CURRENT_SOURCE_DIR@/plugin_example \
+#                         @CMAKE_CURRENT_SOURCE_DIR@/util \
+#                         @CMAKE_CURRENT_SOURCE_DIR@/doc/mainpage.dox \
+#			 @CMAKE_CURRENT_SOURCE_DIR@/doc/mapping.dox \
+#			 @CMAKE_CURRENT_SOURCE_DIR@/doc/deviceMapping.dox
+
+INPUT	= @CMAKE_CURRENT_SOURCE_DIR@
+EXCLUDE_PATTERNS       = @CMAKE_CURRENT_SOURCE_DIR@/build
+
 
 # This tag can be used to specify the character encoding of the source files 
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is 

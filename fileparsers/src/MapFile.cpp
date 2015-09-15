@@ -198,6 +198,11 @@ std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList& me)
     return os;
 }
 
+RegisterInfoMap::RegisterInfoMap()
+{
+
+}
+
 RegisterInfoMap::RegisterInfoMap(const std::string &file_name)
 : map_file_name(file_name) {
 }
