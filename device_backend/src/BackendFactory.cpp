@@ -34,8 +34,7 @@ boost::shared_ptr<DeviceBackend> BackendFactory::createDevice(std::string aliasN
 boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> BackendFactory::parseDMap(std::string devName)
 {
 	std::vector<std::string> device_info;
-	std::string uri;
-	std::string mapfile;
+	std::string uri;	
 	DMapFilesParser filesParser;
 	DMapFile::dRegisterInfo dRegisterInfoent;
 	std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
@@ -69,7 +68,6 @@ boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> BackendF
 			std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
 #endif
 			uri = (*deviceIter).first.dev_file;
-			mapfile = (*deviceIter).first.map_file_name;
 			dRegisterInfoent = (*deviceIter).first;
 			found = true;
 			break;
@@ -115,9 +113,6 @@ boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> BackendF
 					std::cout<<*it<<std::endl;
 				}
 #endif
-
-	if ( (sdm._Interface == "dummy") &&	(sdm._Instance != mapfile) )
-		throw BackendFactoryException("sdm instance and map file column have different values.", BackendFactoryException::AMBIGUOUS_MAP_FILE_ENTRY);
 	for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
 			creatorMap.begin();
 			iter != creatorMap.end(); ++iter) {
