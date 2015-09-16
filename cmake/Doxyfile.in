@@ -668,11 +668,12 @@ WARN_LOGFILE           =
 #			 @CMAKE_CURRENT_SOURCE_DIR@/doc/deviceMapping.dox
 
 INPUT	= @CMAKE_CURRENT_SOURCE_DIR@
-EXCLUDE_PATTERNS       = @CMAKE_CURRENT_SOURCE_DIR@/build
-EXCLUDE_PATTERNS      += */.svn/*
-EXCLUDE_PATTERNS      += */docs/*
-EXCLUDE_PATTERNS      += */published/*
-EXCLUDE_PATTERNS      += */cmake/*
+EXCLUDE_PATH       = @CMAKE_CURRENT_SOURCE_DIR@/build
+EXCLUDE_PATH       = @CMAKE_CURRENT_SOURCE_DIR@/include
+EXCLUDE_PATTERNS   = */.svn/* \
+		     */docs/* \
+	             */published/* \
+		     */cmake/*
 
 
 # This tag can be used to specify the character encoding of the source files 
