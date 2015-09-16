@@ -38,6 +38,9 @@ DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std
 #ifdef _DEBUG
 	std::cout<<"dummy is connected"<<std::endl;
 #endif
+	if (parameters.size() > 0)
+	  _mapFile = parameters.front();
+std::cout<<"parameters.size()"<<parameters.size()<<std::endl;	
 }
 
 //Nothing to clean up, all objects clean up for themselves when
@@ -51,7 +54,7 @@ void DummyBackend::open()
 	std::cout<<"open DummyBackend"<<std::endl;
 #endif
 
-	open(_instance);
+	open(_mapFile);
 }
 
 void DummyBackend::open(const std::string &mappingFileName,

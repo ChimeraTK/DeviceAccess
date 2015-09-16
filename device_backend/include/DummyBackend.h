@@ -45,8 +45,8 @@ public:
 class DummyBackend : public DeviceBackendImpl
 {
 private:
-	/** _deviceName here is in context of mapping FileName */
-	std::string _deviceName;
+	/** _mapFile is first and only item of arugment parameters  */
+	std::string _mapFile;
 protected:
 
 	/** The file name has to be a mapping file, not a device file.
