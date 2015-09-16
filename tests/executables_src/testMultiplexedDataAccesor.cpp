@@ -6,12 +6,14 @@ using namespace boost::unit_test_framework;
 #include <MultiplexedDataAccessor.h>
 #include "DummyBackend.h"
 #include "MapFileParser.h"
+#include <iostream>
 
 #include <sstream>
 
 using namespace mtca4u;
 
 static const std::string MAP_FILE_NAME("sequences.map");
+static const std::string BAM_MAP_FILE("bam_fmc25_r1225.mapp");
 static const std::string TEST_MODULE_NAME("TEST");
 static const std::string INVALID_MODULE_NAME("INVALID");
 
@@ -284,7 +286,7 @@ BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
 
 }
 
-BOOST_AUTO_TEST_CASE( testMixed ){
+/*BOOST_AUTO_TEST_CASE( testMixed ){
   boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
   boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend );
   ioDevice->open( MAP_FILE_NAME );
@@ -294,6 +296,80 @@ BOOST_AUTO_TEST_CASE( testMixed ){
 								    ioDevice,
 								    registerMap ),
 		     NotImplementedException );
+}*/
+
+BOOST_AUTO_TEST_CASE(testMixed){
+  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(BAM_MAP_FILE);
+  boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend );
+  ioDevice->open(BAM_MAP_FILE);
+  SequenceInfo multiplexedSequenceInfo;
+  std::vector< FixedPointConverter > converters;
+  std::vector<SequenceInfo> sequencesInfo;
+  std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+"DAQ0_BAM";
+
+  registerMap->getRegisterInfo( areaName, multiplexedSequenceInfo, "APP0");
+
+  size_t i = 0;
+  while(true){
+    SequenceInfo sequenceInfo;
+    std::stringstream sequenceNameStream;
+    sequenceNameStream << SEQUENCE_PREFIX << "DAQ0_BAM" << "_" << i++;
+    try{
+      registerMap->getRegisterInfo( sequenceNameStream.str(), sequenceInfo,
+                                    "APP0" );
+    }catch(MapFileException & ){
+      break;
+    }
+    sequencesInfo.push_back( sequenceInfo );
+    converters.push_back( FixedPointConverter( sequenceInfo.reg_width,
+                                               sequenceInfo.reg_frac_bits,
+                                               sequenceInfo.reg_signed ) );
+  }
+
+  MixedTypeMuxedDataAccessor<double> myMixedData( ioDevice,
+                                                  multiplexedSequenceInfo,
+                                                  sequencesInfo,
+                                                  converters);
+
+  MixedTypeTest<double> myTest(&myMixedData);
+  BOOST_CHECK(myTest.getSizeOneBlock() == 11);
+  BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
+  BOOST_CHECK(myTest.getConvertersSize() == 17);
+  BOOST_CHECK(myTest.getNBlock() == 372);
+
+  myMixedData[0][0] = -24673; //1001 1111 1001 1111
+  myMixedData[1][0] = -13724; //1100 1010 0110 0100
+  myMixedData[2][0] =  130495;
+  myMixedData[3][0] =  513;
+  myMixedData[4][0] =  1027;
+  myMixedData[5][0] = -56.4;
+  myMixedData[6][0] =  78;
+  myMixedData[7][0] =  45.2;
+  myMixedData[8][0] = -23.9;
+  myMixedData[9][0] =  61.3;
+  myMixedData[10][0] = -12;
+
+  myMixedData.write();
+
+  BOOST_CHECK(myTest.getIOBUffer(0) == -899375201);
+  BOOST_CHECK(myTest.getIOBUffer(1) ==  130495);
+  BOOST_CHECK(myTest.getIOBUffer(2) ==  67305985);
+  BOOST_CHECK(myTest.getIOBUffer(3) ==  5112008);
+  BOOST_CHECK(myTest.getIOBUffer(4) == -197269459);
+
+  myMixedData.read();
+
+  BOOST_CHECK(myMixedData[0][0] == -24673);
+  BOOST_CHECK(myMixedData[1][0] == -13724);
+  BOOST_CHECK(myMixedData[2][0] ==  130495);
+  BOOST_CHECK(myMixedData[3][0] ==  513);
+  BOOST_CHECK(myMixedData[4][0] ==  1027);
+  BOOST_CHECK(myMixedData[5][0] == -56);
+  BOOST_CHECK(myMixedData[6][0] ==  78);
+  BOOST_CHECK(myMixedData[7][0] ==  45);
+  BOOST_CHECK(myMixedData[8][0] == -24);
+  BOOST_CHECK(myMixedData[9][0] ==  61);
+  BOOST_CHECK(myMixedData[10][0] == -12);
 }
 
 

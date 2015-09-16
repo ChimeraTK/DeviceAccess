@@ -15,7 +15,11 @@ namespace mtca4u{
   template<class UserType, class SequenceWordType>
   class SequenceDeMultiplexerTest;
 
+  template<class UserType>
+  class MixedTypeTest;
+
   typedef RegisterInfoMap::RegisterInfo SequenceInfo;
+
 
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
@@ -146,6 +150,63 @@ namespace mtca4u{
       friend class SequenceDeMultiplexerTest<UserType, SequenceWordType>;
   };
 
+template <class UserType>
+  class MixedTypeMuxedDataAccessor : public MultiplexedDataAccessor<UserType>{
+  public:
+    /**Class Constructor with minimum information to create the converters
+     */
+    MixedTypeMuxedDataAccessor(boost::shared_ptr< DeviceBackend > const & ioDevice,
+                               SequenceInfo const & areaInfo,
+                               std::vector<SequenceInfo> const& sequenceInfos,
+                               std::vector< FixedPointConverter > const & converters );
+    void read();
+
+    void write();
+
+    size_t getNumberOfDataSequences();
+
+    uint32_t getSizeOneBlock(){return _sizeOneBlock;}
+
+  private:
+
+    void fillSequences();
+
+    void fillIO_Buffer();
+
+    std::vector<int32_t> _ioBuffer;
+
+    SequenceInfo _areaInfo;
+
+    std::vector<SequenceInfo> _sequenceInfos;
+
+    uint32_t _sizeOneBlock;
+
+    bool isDMAMemoryArea();
+
+    friend class MixedTypeTest<UserType>;
+};
+
+template<class UserType>
+class MixedTypeTest{
+public:
+  MixedTypeTest(MixedTypeMuxedDataAccessor < UserType > *mixedTypeInstance = NULL) : _mixedTypeInstance(mixedTypeInstance){};
+  uint32_t getSizeOneBlock(){
+    return _mixedTypeInstance->_sizeOneBlock;
+  }
+  size_t getNBlock(){
+    return _mixedTypeInstance->_nBlocks;
+  }
+  size_t getConvertersSize(){
+    return (_mixedTypeInstance->_converters).size();
+  }
+  int32_t getIOBUffer(uint index){
+    return _mixedTypeInstance->_ioBuffer[index];
+  }
+
+private:
+  MixedTypeMuxedDataAccessor<UserType> *_mixedTypeInstance;
+};
+
   // nBlocks can only be set by the derrived classes. There is no way to know the
   // number of bytes per block at this point, so it cannot be calculates, even if the
   // SequenceInfo of the area was known. The only way would be passing all Sequence infos
@@ -160,7 +221,6 @@ namespace mtca4u{
       _ioDevice(ioDevice),
       _nBlocks(0){
   }
-
 
   template<class UserType, class SequenceWordType>
   FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::FixedTypeMuxedDataAccessor(
@@ -243,8 +303,136 @@ namespace mtca4u{
       }
   }
 
+
+template <class UserType>
+  MixedTypeMuxedDataAccessor<UserType>::MixedTypeMuxedDataAccessor(boost::shared_ptr< DeviceBackend > const & ioDevice,
+                                                                   SequenceInfo const & areaInfo,
+                                                                   std::vector<SequenceInfo> const& sequenceInfos,
+                                                                   std::vector< FixedPointConverter > const & converters ) :
+                                                                   MultiplexedDataAccessor<UserType>(ioDevice, converters),
+                                                                   _ioBuffer(areaInfo.reg_size),
+                                                                   _areaInfo(areaInfo),
+                                                                   _sequenceInfos(sequenceInfos){
+    size_t indexTemp = 0;
+    size_t wordSize = 0;
+
+    _sizeOneBlock = 0;
+    //to change. retrieve actual size from the map file
+    while (indexTemp<converters.size()){
+      wordSize += _sequenceInfos[indexTemp].reg_size;
+      if (wordSize > 4){
+        _sizeOneBlock++;
+        wordSize = _sequenceInfos[indexTemp].reg_size;
+      }
+      indexTemp++;
+      if (indexTemp == converters.size()){
+        _sizeOneBlock++;
+      }
+    }
+
+    MultiplexedDataAccessor<UserType>::_nBlocks = areaInfo.reg_size / 4 / _sizeOneBlock ;
+
+    for (size_t i=0; i<MultiplexedDataAccessor<UserType>::_sequences.size(); ++i){
+      MultiplexedDataAccessor<UserType>::_sequences[i].resize(MultiplexedDataAccessor<UserType>::_nBlocks);
+    }
+}
+
+ template <class UserType>
+  void MixedTypeMuxedDataAccessor<UserType>::read() {
+
+    // if this is not a dma area -> use the readArea from the interface
+    // else the read DMA
+    if (isDMAMemoryArea()) {
+      MultiplexedDataAccessor<UserType>::_ioDevice->readDMA(
+          _areaInfo.reg_bar,
+          _areaInfo.reg_address, &(_ioBuffer[0]),
+          _areaInfo.reg_size);
+    } else {
+      MultiplexedDataAccessor<UserType>::_ioDevice->read(
+          _areaInfo.reg_bar,
+          _areaInfo.reg_address, &(_ioBuffer[0]),
+          _areaInfo.reg_size);
+    }
+
+    fillSequences();
+  }
+
+  template <class UserType>
+  void MixedTypeMuxedDataAccessor<UserType>::fillSequences(){
+    uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
+    for(size_t blockIndex=0;
+        blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks;
+        ++blockIndex){
+      for(size_t sequenceIndex=0;
+          sequenceIndex < MultiplexedDataAccessor<UserType>::_converters.size();
+          ++sequenceIndex){
+        switch(_sequenceInfos[sequenceIndex].reg_size){
+          case 1: //8 bit variables
+            MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
+                MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
+            standOfMyioBuffer++;
+            break;
+          case 2: //16 bit words
+            MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
+                MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
+            standOfMyioBuffer = standOfMyioBuffer + 2;
+            break;
+          case 4: //32 bit words
+            MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
+                MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
+            standOfMyioBuffer = standOfMyioBuffer + 4;
+            break;
+        }
+      }
+    }
+  }
+
+ template <class UserType>
+  void MixedTypeMuxedDataAccessor<UserType>::write() {
+    fillIO_Buffer();
+
+    if (isDMAMemoryArea()) {
+      throw NotImplementedException("writeViaDMA is not implemented yet");
+    } else {
+      MultiplexedDataAccessor<UserType>::_ioDevice->write(
+          _areaInfo.reg_bar,
+          _areaInfo.reg_address, &(_ioBuffer[0]),
+          _areaInfo.reg_size);
+    }
+  }
+
   template<class UserType>
-  boost::shared_ptr< MultiplexedDataAccessor<UserType> >
+  void MixedTypeMuxedDataAccessor<UserType>::fillIO_Buffer(){
+    uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
+    for(size_t blockIndex=0;
+        blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks;
+        ++blockIndex){
+      for(size_t sequenceIndex=0;
+          sequenceIndex < MultiplexedDataAccessor<UserType>::_converters.size();
+          ++sequenceIndex){
+        switch(_sequenceInfos[sequenceIndex].reg_size){
+          case 1: //8 bit variables
+            *(standOfMyioBuffer) = MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toRaw(
+                MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
+            standOfMyioBuffer++;
+            break;
+          case 2: //16 bit variables
+            *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)) = MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toRaw(
+                MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
+            standOfMyioBuffer = standOfMyioBuffer + 2;
+            break;
+          case 4: //32 bit variables
+            *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)) = MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toRaw(
+                MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
+            standOfMyioBuffer = standOfMyioBuffer + 4;
+            break;
+        }
+      }
+    }
+  }
+
+template<class UserType>
+boost::shared_ptr< MultiplexedDataAccessor<UserType> >
   MultiplexedDataAccessor<UserType>::createInstance( 
       std::string const & multiplexedSequenceName,
       std::string const & moduleName,
@@ -256,7 +444,7 @@ namespace mtca4u{
       SequenceInfo multiplexedSequenceInfo;
       registerMapping->getRegisterInfo( areaName, multiplexedSequenceInfo, moduleName);
       std::vector< FixedPointConverter > converters;
-
+  std::vector<SequenceInfo> sequencesInfo;
       size_t i = 0;
       size_t sequenceWordSize = 0; // initializing as 0 to avoid clang warning
       // "'sequenceWordSize' may be used
@@ -280,7 +468,7 @@ namespace mtca4u{
           throw MultiplexedDataAccessorException( "Sequence words must have exactly one element",
               MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
         }
-
+    sequencesInfo.push_back( sequenceInfo );
         converters.push_back( FixedPointConverter( sequenceInfo.reg_width,
             sequenceInfo.reg_frac_bits,
             sequenceInfo.reg_signed ) );
@@ -300,7 +488,12 @@ namespace mtca4u{
       }
 
       if( !useFixedType ){
-        throw NotImplementedException("mixed word sizes for the sequences are not supported yet.");
+        //throw NotImplementedException("mixed word sizes for the sequences are not supported yet.");
+	return boost::shared_ptr< mtca4u::MultiplexedDataAccessor<UserType> >(
+           new MixedTypeMuxedDataAccessor<UserType>( ioDevice,
+                                                     multiplexedSequenceInfo,
+                                                     sequencesInfo,
+                                                     converters) );	
       }
       switch( sequenceWordSize ){
         case 1:
@@ -323,9 +516,14 @@ namespace mtca4u{
       }
   }
 
-  template <class UserType, class SequenceWordType>
+   template <class UserType, class SequenceWordType>
   size_t FixedTypeMuxedDataAccessor<UserType, SequenceWordType>::getNumberOfDataSequences() {
       return (MultiplexedDataAccessor<UserType>::_sequences.size());
+}
+
+template <class UserType>
+  size_t MixedTypeMuxedDataAccessor<UserType>::getNumberOfDataSequences() {
+    return (MultiplexedDataAccessor<UserType>::_sequences.size());
   }
 
 }  //namespace mtca4u
@@ -337,6 +535,14 @@ SequenceWordType>::isDMAMemoryArea() {
     // implementation;
     // This is a detail which would probably change in the future
     return (_areaInfo.reg_bar == 0xD);
+}
+
+template <class UserType>
+bool mtca4u::MixedTypeMuxedDataAccessor<UserType>::isDMAMemoryArea() {
+  // 0xD as the  register bar is used to indicate DMA regions in the current
+  // implementation;
+  // This is a detail which would probably change in the future
+  return (_areaInfo.reg_bar == 0xD);
 }
 
 #endif // _MTCA4U_SEQUENCE_DE_MULTIPLEXER_H_
