@@ -2,8 +2,6 @@
 #define _MTCA4U_DEVICE_FACTORY_H__
 
 
-#include "FakeBackend.h"
-#include "DummyBackend.h"
 #include "DummyBackend.h"
 //#include "Device.h"
 #include "PcieBackend.h"
@@ -39,7 +37,6 @@ private:
 	BackendFactory() {
 		registerDeviceType("pci","",&PcieBackend::createInstance);
 		registerDeviceType("pci","pcie",&PcieBackend::createInstance);
-		registerDeviceType("fake","",&FakeBackend::createInstance);
 		registerDeviceType("dummy","",&DummyBackend::createInstance);
 	};
 
