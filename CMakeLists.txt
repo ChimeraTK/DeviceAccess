@@ -36,10 +36,10 @@ include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/device_backend/include")
 include_directories("${PROJECT_SOURCE_DIR}/device/include")
+# Only these include directories should be copied for examples. 
+get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
- 
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-
+#Now add other includes
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
@@ -66,10 +66,12 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
       COMMENT "Generating test coverage documentation" VERBATIM
       )
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/MtcaMappedDevice
 )
-foreach(dir ${dirs} )
+
+foreach(dir ${inc_dirs} )
 file(GLOB headerFiles  "${dir}/*.h")
 foreach(headerFile ${headerFiles} )
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

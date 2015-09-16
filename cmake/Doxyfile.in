@@ -669,6 +669,10 @@ WARN_LOGFILE           =
 
 INPUT	= @CMAKE_CURRENT_SOURCE_DIR@
 EXCLUDE_PATTERNS       = @CMAKE_CURRENT_SOURCE_DIR@/build
+EXCLUDE_PATTERNS      += */.svn/*
+EXCLUDE_PATTERNS      += */docs/*
+EXCLUDE_PATTERNS      += */published/*
+EXCLUDE_PATTERNS      += */cmake/*
 
 
 # This tag can be used to specify the character encoding of the source files 
