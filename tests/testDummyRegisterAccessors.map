@@ -1,7 +1,7 @@
 # name                                         nr of elements      address         size    bar  width fracbits  signed
 APP0.SOME_REGISTER                                         10            0           40      1     32      0    0
 
-APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA              1048576            0      4194304     13     32      0    0
+APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA                65536            0      1048576     13     32      0    0
 APP0.SEQUENCE_DAQ0_ADCA_0                                   1            0            4     13     32      0    1
 APP0.SEQUENCE_DAQ0_ADCA_1                                   1            4            2     13     16      0    1
 APP0.SEQUENCE_DAQ0_ADCA_2                                   1            6            2     13     16      0    1
