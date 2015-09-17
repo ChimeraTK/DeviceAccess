@@ -6,7 +6,7 @@ PCIE0     sdm://./pci:pcieunidummys6;pcie=bus,1  ./mtcadummy_withoutModules.map
 FAKE0 	  sdm://./fake:Reference_Device ./mtcadummy_withoutModules.map
 FAKE1     sdm://./fake:DummyDevice mtcadummy_withoutModules.map
 FAKE3     sdm://./fake:fakeDevice mtcadummy_withoutModules.map
-DUMMYD0   sdm://./dummy:mtcadummy_withoutModules.map=mtcadummy_withoutModules.map mtcadummy_withoutModules.map
-DUMMYD1   sdm://./dummy:goodMapFile.map=goodMapFile.map; goodMapFile.map
+DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.map
+DUMMYD1   sdm://./dummy=goodMapFile.map goodMapFile.map
 example   sdm://./exx:examp=bus,1  ./mtcadummy_withoutModules.map
 
