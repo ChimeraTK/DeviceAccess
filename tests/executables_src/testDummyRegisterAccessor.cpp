@@ -21,7 +21,10 @@ class DummyRegisterTest;
 class TestableDummyBackend : public DummyBackend {
   public:
     TestableDummyBackend(std::string host, std::string instance, std::list<std::string> parameters)
-    : DummyBackend(host,instance,parameters) {}
+    : DummyBackend(host,instance,parameters),
+      someRegister(this,"APP0","SOME_REGISTER"),
+      someMuxedRegister(this,"APP0","DAQ0_ADCA")
+    {}
 
     DummyRegisterAccessor<int> someRegister;
     DummyMultiplexedRegisterAccessor<int> someMuxedRegister;
@@ -76,16 +79,8 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 /**********************************************************************************************************************/
 void DummyRegisterTest::testRegisterAccessor() {
   std::cout << "testRegisterAccessor" << std::endl;
-
   // open the device
   device->open();
-
-  // register is not yet open, check exception
-  BOOST_CHECK_THROW(device->someRegister = 3, DummyRegisterException);
-  BOOST_CHECK_THROW(device->someRegister[0] = 3, DummyRegisterException);
-
-  // open the register
-  device->someRegister.open(&(*device),"APP0","SOME_REGISTER");
 
   // test operator=
   device->someRegister = 3;
@@ -134,12 +129,6 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
 
   // open the device
   device->open();
-
-  // register is not yet open, check exception
-  BOOST_CHECK_THROW(device->someMuxedRegister[0][0] = 3, DummyRegisterException);
-
-  // open the register
-  device->someMuxedRegister.open(&(*device),"APP0","DAQ0_ADCA");
 
   // since our register does not have a fixed type, we use this union/struct to fill the bar content directly
   // the packed attribute prevents the compiler from adding a padding between the struct fields

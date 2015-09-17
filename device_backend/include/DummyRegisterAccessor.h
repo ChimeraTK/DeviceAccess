@@ -16,7 +16,7 @@ namespace mtca4u {
   /// Exception class
   class DummyRegisterException : public Exception {
   public:
-          enum {NOT_OPENED,INDEX_OUT_OF_RANGE,EMPTY_AREA};
+          enum {INDEX_OUT_OF_RANGE,EMPTY_AREA};
           DummyRegisterException(const std::string &message, unsigned int exceptionID)
           : Exception( message, exceptionID ){}
   };
@@ -39,14 +39,12 @@ namespace mtca4u {
         /// Implicit type conversion to user type T.
         /// This covers already a lot of operations like arithmetics and comparison
         inline operator T() {
-          checkInit();
           return fpcptr->template toCooked<T>(*buffer);
         }
 
         /// assignment operator
         inline DummyRegisterElement<T> operator=(T rhs)
         {
-          checkInit();
           uint32_t raw = fpcptr->toRaw(rhs);
           memcpy(buffer, &raw, nbytes);
           return *this;
@@ -54,21 +52,18 @@ namespace mtca4u {
 
         /// pre-increment operator
         inline DummyRegisterElement<T> operator++() {
-          checkInit();
           T v = fpcptr->template toCooked<T>(*buffer);
           return operator=( v + 1 );
         }
 
         /// pre-decrement operator
         inline DummyRegisterElement<T> operator--() {
-          checkInit();
           T v = fpcptr->template toCooked<T>(*buffer);
           return operator=( v - 1 );
         }
 
         /// post-increment operator
         inline T operator++(int) {
-          checkInit();
           T v = fpcptr->template toCooked<T>(*buffer);
           operator=( v + 1 );
           return v;
@@ -76,18 +71,12 @@ namespace mtca4u {
 
         /// post-decrement operator
         inline T operator--(int) {
-          checkInit();
           T v = fpcptr->template toCooked<T>(*buffer);
           operator=( v - 1 );
           return v;
         }
 
       protected:
-
-        /// check if initialised
-        void checkInit() {
-          if(!fpcptr) throw DummyRegisterException("Register was not opened.",DummyRegisterException::NOT_OPENED);
-        }
 
         /// constructer when used as a base class in DummyRegister
         DummyRegisterElement() : fpcptr(NULL),nbytes(0),buffer(NULL) {}
@@ -159,12 +148,13 @@ namespace mtca4u {
   class DummyRegisterAccessor : public proxies::DummyRegisterElement<T> {
     public:
 
-      /// "Open" the register: obtain the register information from the mapping file.
-      /// Call this function e.g. in the overloaded open() function.
-      void open(DummyBackend *_dev, std::string module, std::string name)
+      /// Constructor should normally be called in the constructor of the DummyBackend implementation.
+      /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
+      /// DummyBackend itself. module and name denominate the register entry in the map file.
+      DummyRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
+      : _dev(dev)
       {
-        dev = _dev;
-        dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
+        _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
         fpc =  FixedPointConverter(registerInfo.reg_width, registerInfo.reg_frac_bits, registerInfo.reg_signed);
         // initialise the base DummyRegisterElement
         proxies::DummyRegisterElement<T>::fpcptr = &fpc;
@@ -187,21 +177,18 @@ namespace mtca4u {
       RegisterInfoMap::RegisterInfo registerInfo;
 
       /// pointer to VirtualDevice
-      DummyBackend *dev;
+      DummyBackend *_dev;
 
       /// fixed point converter
       FixedPointConverter fpc;
 
       /// return element
       inline uint32_t* getElement(unsigned int index) {
-        if(!dev) {
-          throw DummyRegisterException("Register was not opened.",DummyRegisterException::NOT_OPENED);
-        }
         if(index >= registerInfo.reg_elem_nr) {
           throw DummyRegisterException("Index out of range.",DummyRegisterException::INDEX_OUT_OF_RANGE);
         }
         return reinterpret_cast<uint32_t*>
-          (&(dev->_barContents[registerInfo.reg_bar][registerInfo.reg_address/sizeof(uint32_t) + index]));
+          (&(_dev->_barContents[registerInfo.reg_bar][registerInfo.reg_address/sizeof(uint32_t) + index]));
       }
 
       /// return a proxy object
@@ -223,23 +210,23 @@ namespace mtca4u {
   class DummyMultiplexedRegisterAccessor {
     public:
 
-      /// "Open" the register: obtain the register information from the mapping file.
-      /// Call this function in the overloaded openDev() function.
+      /// Constructor should normally be called in the constructor of the DummyBackend implementation.
+      /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
+      /// DummyBackend itself. module and name denominate the register entry in the map file.
       /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the name when searching for the register.
-      void open(DummyBackend *_dev, std::string module, std::string name)
+      DummyMultiplexedRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
+      : _dev(dev), pitch(0)
       {
-        dev = _dev;
-        dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX+name, registerInfo, module);
+        _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX+name, registerInfo, module);
 
         int i = 0;
-        pitch = 0;
         while(true) {
           // obtain register information for sequence
           RegisterInfoMap::RegisterInfo elem;
           std::stringstream sequenceNameStream;
           sequenceNameStream << SEQUENCE_PREFIX << name << "_" << i++;
           try{
-            dev->_registerMapping->getRegisterInfo( sequenceNameStream.str(), elem, module );
+            _dev->_registerMapping->getRegisterInfo( sequenceNameStream.str(), elem, module );
           }
           catch(MapFileException &) {
             break;
@@ -267,13 +254,10 @@ namespace mtca4u {
       /// Example: myMuxRegister[3][987] will give you the 988th sample of the 4th channel.
       inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence)
       {
-        if(!dev) {
-          throw DummyRegisterException("Register was not opened.",DummyRegisterException::NOT_OPENED);
-        }
         if(sequence >= fpc.size()) {
           throw DummyRegisterException("Sequence out of range.",DummyRegisterException::INDEX_OUT_OF_RANGE);
         }
-        int8_t *basePtr = reinterpret_cast<int8_t*>(dev->_barContents[registerInfo.reg_bar].data());
+        int8_t *basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.reg_bar].data());
         uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + (registerInfo.reg_address + offsets[sequence]));
         return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq, nElements);
       }
@@ -284,7 +268,7 @@ namespace mtca4u {
       RegisterInfoMap::RegisterInfo registerInfo;
 
       /// pointer to VirtualDevice
-      DummyBackend *dev;
+      DummyBackend *_dev;
 
       /// pointer to fixed point converter
       std::vector<FixedPointConverter> fpc;
