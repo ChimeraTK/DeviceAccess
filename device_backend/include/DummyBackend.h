@@ -24,6 +24,10 @@ public:
 };
 
 
+// foward declarations
+template<typename T> class DummyRegisterAccessor;
+template<typename T> class DummyMultiplexedRegisterAccessor;
+
 /** The dummy device opens a mapping file instead of a device, and
  *  implements all registers defined in the mapping file im memory.
  *  Like this it mimiks the real PCIe device.
@@ -119,6 +123,13 @@ protected:
 	/// the callback function so it can be used inside a callback function for
 	/// resynchronisation.
 	void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
+
+        /// register accessors must be friends to access the map and the registers
+        template<typename T>
+        friend class DummyRegisterAccessor;
+
+        template<typename T>
+        friend class DummyMultiplexedRegisterAccessor;
 
 };
 

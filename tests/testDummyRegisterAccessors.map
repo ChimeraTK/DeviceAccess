@@ -1,0 +1,22 @@
+# name                                         nr of elements      address         size    bar  width fracbits  signed
+APP0.SOME_REGISTER                                         10            0           40      1     32      0    0
+
+APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA              1048576            0      4194304     13     32      0    0
+APP0.SEQUENCE_DAQ0_ADCA_0                                   1            0            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_1                                   1            4            2     13     16      0    1
+APP0.SEQUENCE_DAQ0_ADCA_2                                   1            6            2     13     16      0    1
+APP0.SEQUENCE_DAQ0_ADCA_3                                   1            8            1     13      8      0    1
+APP0.SEQUENCE_DAQ0_ADCA_4                                   1            9            1     13      1      0    0
+APP0.SEQUENCE_DAQ0_ADCA_5                                   1           10            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_6                                   1           14            2     13     16      0    1
+APP0.SEQUENCE_DAQ0_ADCA_7                                   1           16            4     13     24      0    1
+APP0.SEQUENCE_DAQ0_ADCA_8                                   1           20            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_9                                   1           24            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_10                                  1           28            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_11                                  1           32            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_12                                  1           36            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_13                                  1           40            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_14                                  1           44            4     13     32      0    1
+APP0.SEQUENCE_DAQ0_ADCA_15                                  1           48            4     13     32      0    0
+
+PERFTEST.BIGPLAIN                                   100000000            0    400000000      2     32      0    1
