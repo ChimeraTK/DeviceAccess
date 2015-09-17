@@ -584,7 +584,6 @@ void DummyDeviceTest::testFinalClosing() {
   dummyDevice->close();
 
   // all features lists have to be empty now
-  BOOST_CHECK(dummyDevice->_barContents.size() == 0);
   BOOST_CHECK(dummyDevice->_readOnlyAddresses.size() == 0);
   BOOST_CHECK(dummyDevice->_writeCallbackFunctions.size() == 0);
 }
@@ -613,8 +612,6 @@ void DummyDeviceTest::testOpencloseice() {
       DummyDeviceException);
 
   dummyDevice->close();
-  // the register address space hast to be deleted
-  BOOST_CHECK(dummyDevice->_barContents.empty());
   BOOST_CHECK(dummyDevice->isOpen() == false);
   BOOST_CHECK_THROW(dummyDevice->close(), DummyDeviceException);
 }

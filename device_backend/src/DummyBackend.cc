@@ -41,6 +41,7 @@ namespace mtca4u{
           DummyDeviceException::INVALID_PARAMETER);
     }
     _registerMapping = mapFileParser().parse(_mapFile);
+    resizeBarContents();
   }
 
   //Nothing to clean up, all objects clean up for themselves when
@@ -57,7 +58,6 @@ namespace mtca4u{
     if (_opened){
       throw DummyDeviceException("Device is already open.", DummyDeviceException::ALREADY_OPEN);
     }
-    resizeBarContents();
     _opened=true;
   }
 
@@ -101,7 +101,6 @@ namespace mtca4u{
       throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
     }
 
-    _barContents.clear();
     _readOnlyAddresses.clear();
     _writeCallbackFunctions.clear();
     _opened=false;
