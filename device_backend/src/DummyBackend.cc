@@ -27,20 +27,20 @@ namespace mtca4u{
   // the bar number is stored in bits 60 to 62
   const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
-  //Noting to do, intentionally empty.
-  DummyBackend::DummyBackend(){
-  }
-
-
   DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std::string> parameters)
   : DeviceBackendImpl(host,instance,parameters)
   {
 #ifdef _DEBUG
     std::cout<<"dummy is connected"<<std::endl;
 #endif
-    if (parameters.size() > 0)
+    if (parameters.size() > 0) {
       _mapFile = parameters.front();
-    std::cout<<"parameters.size()"<<parameters.size()<<std::endl;
+    }
+    else {
+      throw DummyDeviceException("No map file name given in the parameter list.",
+          DummyDeviceException::INVALID_PARAMETER);
+    }
+    _registerMapping = mapFileParser().parse(_mapFile);
   }
 
   //Nothing to clean up, all objects clean up for themselves when
@@ -54,18 +54,20 @@ namespace mtca4u{
     std::cout<<"open DummyBackend"<<std::endl;
 #endif
 
-    open(_mapFile);
-  }
-
-  void DummyBackend::open(const std::string &mappingFileName,
-      int /* perm */, DeviceConfigBase* /* pConfig */){
     if (_opened){
       throw DummyDeviceException("Device is already open.", DummyDeviceException::ALREADY_OPEN);
     }
-
-    _registerMapping = mapFileParser().parse(mappingFileName);
     resizeBarContents();
     _opened=true;
+  }
+
+  void DummyBackend::open(const std::string &mappingFileName, int, DeviceConfigBase*)
+  {
+    if(mappingFileName != _mapFile) {
+      throw DummyDeviceException("Device cannot be re-opened with a different mapping file name.",
+          DummyDeviceException::INVALID_PARAMETER);
+    }
+    open();
   }
 
   void DummyBackend::resizeBarContents(){
@@ -99,7 +101,6 @@ namespace mtca4u{
       throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
     }
 
-    _registerMapping.reset();// reset the shared pointer
     _barContents.clear();
     _readOnlyAddresses.clear();
     _writeCallbackFunctions.clear();

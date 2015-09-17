@@ -18,7 +18,7 @@ namespace mtca4u{
   /// interpret the enum in an exception from a pointer to BackendDevice.
   class DummyDeviceException : public DeviceBackendException {
     public:
-      enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS};
+      enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS, INVALID_PARAMETER};
       DummyDeviceException(const std::string &message, unsigned int exceptionID)
       : DeviceBackendException( message, exceptionID ){}
   };
@@ -58,11 +58,9 @@ namespace mtca4u{
        */
     public:
       DummyBackend(std::string host, std::string instance, std::list<std::string> parameters);
-      DummyBackend();
       virtual ~DummyBackend();
 
-      virtual void open(const std::string &mappingFileName,
-          int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
+      virtual void open(const std::string &mappingFileName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
       virtual void open();
 
       /** This closes the device, clears all internal regsiters, read-only settings and
