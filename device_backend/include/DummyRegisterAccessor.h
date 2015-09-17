@@ -16,7 +16,7 @@ namespace mtca4u {
   /// Exception class
   class DummyRegisterException : public Exception {
   public:
-          enum {INDEX_OUT_OF_RANGE,EMPTY_AREA};
+          enum {EMPTY_AREA};
           DummyRegisterException(const std::string &message, unsigned int exceptionID)
           : Exception( message, exceptionID ){}
   };
@@ -99,15 +99,12 @@ namespace mtca4u {
 
       public:
 
-        DummyRegisterSequence(FixedPointConverter *_fpc, int _nbytes, int _pitch, uint32_t *_buffer, unsigned  int _nElements)
-        : fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer), nElements(_nElements) {}
+        DummyRegisterSequence(FixedPointConverter *_fpc, int _nbytes, int _pitch, uint32_t *_buffer)
+        : fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
 
         /// Get or set register content by [] operator.
         inline DummyRegisterElement<T> operator[](unsigned int sample)
         {
-          if(sample >= nElements) {
-            throw DummyRegisterException("Index out of range.",DummyRegisterException::INDEX_OUT_OF_RANGE);
-          }
           char *basePtr = reinterpret_cast<char*>(buffer);
           return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<uint32_t*>(basePtr + pitch*sample) );
         }
@@ -125,9 +122,6 @@ namespace mtca4u {
 
         /// reference to the raw buffer (first word of the sequence)
         uint32_t *buffer;
-
-        /// number of elements per sequence
-        unsigned  int nElements;
     };
   }     // namespace proxies
 
@@ -168,6 +162,12 @@ namespace mtca4u {
         return getProxy(index);
       }
 
+      /// return number of elements
+      unsigned int getNumberOfElements()
+      {
+        return registerInfo.reg_elem_nr;
+      }
+
       /// expose = operator from base class
       using proxies::DummyRegisterElement<T>::operator=;
 
@@ -184,9 +184,6 @@ namespace mtca4u {
 
       /// return element
       inline uint32_t* getElement(unsigned int index) {
-        if(index >= registerInfo.reg_elem_nr) {
-          throw DummyRegisterException("Index out of range.",DummyRegisterException::INDEX_OUT_OF_RANGE);
-        }
         return reinterpret_cast<uint32_t*>
           (&(_dev->_barContents[registerInfo.reg_bar][registerInfo.reg_address/sizeof(uint32_t) + index]));
       }
@@ -248,18 +245,27 @@ namespace mtca4u {
         nElements = registerInfo.reg_elem_nr/fpc.size();
       }
 
+      /// return number of elements per sequence
+      unsigned int getNumberOfElements()
+      {
+        return nElements;
+      }
+
+      /// return number of sequences
+      unsigned int getNumberOfSequences()
+      {
+        return fpc.size();
+      }
+
       /// Get or set register content by [] operators.
       /// The first [] denotes the sequence (aka. channel number), the second [] indicates the sample inside the sequence.
       /// This means that in a sense the first index is the faster counting index.
       /// Example: myMuxRegister[3][987] will give you the 988th sample of the 4th channel.
       inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence)
       {
-        if(sequence >= fpc.size()) {
-          throw DummyRegisterException("Sequence out of range.",DummyRegisterException::INDEX_OUT_OF_RANGE);
-        }
         int8_t *basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.reg_bar].data());
         uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + (registerInfo.reg_address + offsets[sequence]));
-        return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq, nElements);
+        return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
       }
 
     protected:

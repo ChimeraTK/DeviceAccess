@@ -79,8 +79,12 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 /**********************************************************************************************************************/
 void DummyRegisterTest::testRegisterAccessor() {
   std::cout << "testRegisterAccessor" << std::endl;
+
   // open the device
   device->open();
+
+  // check number of elements getter
+  BOOST_CHECK( device->someRegister.getNumberOfElements() == 10 );
 
   // test operator=
   device->someRegister = 3;
@@ -116,9 +120,6 @@ void DummyRegisterTest::testRegisterAccessor() {
   BOOST_CHECK( device->_barContents[1][3]== 334 );
   BOOST_CHECK( device->_barContents[1][4]== 443 );
 
-  // test range exception
-  BOOST_CHECK_THROW( device->someRegister[10] , DummyRegisterException);
-
   // close the device
   device->close();
 }
@@ -129,6 +130,10 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
 
   // open the device
   device->open();
+
+  // check number of elements getter
+  BOOST_CHECK( device->someMuxedRegister.getNumberOfElements() == 65536/16 );
+  BOOST_CHECK( device->someMuxedRegister.getNumberOfSequences() == 16 );
 
   // since our register does not have a fixed type, we use this union/struct to fill the bar content directly
   // the packed attribute prevents the compiler from adding a padding between the struct fields
@@ -347,10 +352,6 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     BOOST_CHECK( mixedReg.cooked.r14 == 10*14 + i );
     BOOST_CHECK( mixedReg.cooked.r15 == (unsigned int) (10*15 + i) );
   }
-
-  // test range exception
-  BOOST_CHECK_THROW( device->someMuxedRegister[16][3] , DummyRegisterException);
-  BOOST_CHECK_THROW( device->someMuxedRegister[0][65536/16 + 1] , DummyRegisterException);
 
   // close the device
   device->close();
