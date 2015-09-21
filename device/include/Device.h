@@ -13,7 +13,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "libmap.h"
-// #include "libdev.h"
 #include "DeviceException.h"
 #include "FixedPointConverter.h"
 #include "MultiplexedDataAccessor.h"
@@ -51,7 +50,6 @@ namespace mtca4u {
  *RegisterAccessors pointing to it.
  *
  */
-// class Device {
 class Device {
 public:
 	typedef boost::shared_ptr<DeviceBackend> _ptrDeviceBackend;

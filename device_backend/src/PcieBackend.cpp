@@ -72,11 +72,8 @@ void PcieBackend::determineDriverAndConfigureIoctl() {
 		_ioctlDMA = PCIEDEV_READ_DMA;
 		_readDMAFunction =
 				boost::bind(&PcieBackend::readDMAViaIoctl, this, _1, _2, _3, _4);
-		//_writeFunction =
-			//	boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3);
 		_writeFunction =
 				boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3, _4);
-		//_readFunction = boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3);
 		_readFunction =
 				boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3, _4);
 		return;
@@ -91,7 +88,6 @@ void PcieBackend::determineDriverAndConfigureIoctl() {
 				boost::bind(&PcieBackend::readDMAViaStruct, this, _1, _2, _3, _4);
 		_writeFunction =
 				boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3, _4);
-		//_readFunction = boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3);
 		_readFunction =
 				boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3, _4);
 		return;
@@ -104,8 +100,6 @@ void PcieBackend::determineDriverAndConfigureIoctl() {
 		_ioctlDMA = PCIEUNI_READ_DMA;
 		_readDMAFunction =
 				boost::bind(&PcieBackend::readDMAViaIoctl, this, _1, _2, _3, _4);
-		//_writeFunction = boost::bind(&PcieBackend::directWrite, this, _1, _2, _3,
-		//		sizeof(int32_t));
 		_writeFunction =
 				boost::bind(&PcieBackend::directWrite, this, _1, _2, _3, _4);
 		_readFunction =
@@ -170,7 +164,6 @@ void PcieBackend::directRead(uint8_t bar, uint32_t address, int32_t* data,  size
 				PcieBackendException::EX_READ_ERROR);
 	}
 }
-
 
 void PcieBackend::writeInternal(uint8_t bar, uint32_t address, int32_t const* data) {
 	device_rw l_RW;
@@ -344,7 +337,6 @@ std::string PcieBackend::createErrorStringWithErrnoText(
 	return startText + _instance + ": " +
 			strerror_r(errno, errorBuffer, sizeof(errorBuffer));
 }
-
 
 boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
 	return boost::shared_ptr<DeviceBackend> (new PcieBackend(host,instance,parameters));

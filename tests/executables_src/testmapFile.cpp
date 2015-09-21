@@ -241,12 +241,12 @@ void MapFileTest::testCheckRegistersOfSameName(){
   dummyMapFile.insert(RegisterInfoent1);
   // check after the first element to cover the specific branch (special case)
   dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
-  BOOST_CHECK(errorList.errors.size() == 0);
+  BOOST_CHECK(errorList.errors.empty());
 
   dummyMapFile.insert(RegisterInfoentModule1);
   dummyMapFile.insert(RegisterInfoentModule2);
   dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
-  BOOST_CHECK(errorList.errors.size() == 0);
+  BOOST_CHECK(errorList.errors.empty());
 
   dummyMapFile.insert(RegisterInfoent2);
   dummyMapFile.insert(RegisterInfoent3);
@@ -295,7 +295,7 @@ void MapFileTest::testCheckRegisterAddressOverlap(){
   mtca4u::RegisterInfoMap::errorList errorList;
   dummyMapFile.check(errorList,
                      mtca4u::RegisterInfoMap::errorList::errorElem::ERROR);
-  BOOST_CHECK(errorList.errors.size() == 0);
+  BOOST_CHECK(errorList.errors.empty());
   dummyMapFile.check(errorList,
                      mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
   BOOST_CHECK(errorList.errors.size() == 2);
