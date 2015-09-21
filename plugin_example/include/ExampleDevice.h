@@ -8,7 +8,6 @@
 #ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
 #define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
 #include "MtcaMappedDevice/DeviceBackendImpl.h"
-#include "MtcaMappedDevice/DeviceConfigBase.h"
 #include "MtcaMappedDevice/BackendFactory.h"
 #include <list>
 #include <iostream>
@@ -25,16 +24,12 @@ public:
   virtual void close();
   static boost::shared_ptr<mtca4u::DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 
-  virtual void open(const std::string& /*devName*/, int /*perm*/,
-                         DeviceConfigBase* /*pConfig*/) {};
+  virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/){};
+  virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
 
-    virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/){};
-    virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
-
-    virtual void readDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/, size_t /*sizeInBytes*/) {};
-    virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
-
-    virtual std::string readDeviceInfo() {return std::string("Example_Device");}
+  virtual void readDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/, size_t /*sizeInBytes*/) {};
+  virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
+  virtual std::string readDeviceInfo() {return std::string("Example_Device");}
 };
 
 class ExampleDeviceRegisterer{

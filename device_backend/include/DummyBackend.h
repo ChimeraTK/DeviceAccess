@@ -60,7 +60,6 @@ namespace mtca4u{
       DummyBackend(std::string host, std::string instance, std::list<std::string> parameters);
       virtual ~DummyBackend();
 
-      virtual void open(const std::string &mappingFileName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
       virtual void open();
 
       /** This closes the device, clears all internal regsiters, read-only settings and

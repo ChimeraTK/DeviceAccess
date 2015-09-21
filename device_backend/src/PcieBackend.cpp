@@ -46,25 +46,19 @@ void PcieBackend::open() {
 #ifdef _DEBUG
 	std::cout << "open pcie dev" << std::endl;
 #endif
-	open(_instance);
-}
-
-void PcieBackend::open(const std::string& devName, int perm,
-		DeviceConfigBase* /*pConfig*/) {
 	if (_opened) {
-		throw PcieBackendException("Device already has been _Opened",
-				PcieBackendException::EX_DEVICE_OPENED);
-	}
-	_instance =  devName; //Todo cleanup
-	_deviceID = ::open(devName.c_str(), perm);
-	if (_deviceID < 0) {
-		throw PcieBackendException(createErrorStringWithErrnoText("Cannot open device: "),
-				PcieBackendException::EX_CANNOT_OPEN_DEVICE);
-	}
+			throw PcieBackendException("Device already has been _Opened",
+					PcieBackendException::EX_DEVICE_OPENED);
+		}
+		_deviceID = ::open(_instance.c_str(), O_RDWR);
+		if (_deviceID < 0) {
+			throw PcieBackendException(createErrorStringWithErrnoText("Cannot open device: "),
+					PcieBackendException::EX_CANNOT_OPEN_DEVICE);
+		}
 
-	determineDriverAndConfigureIoctl();
+		determineDriverAndConfigureIoctl();
 
-	_opened = true;
+		_opened = true;
 }
 
 void PcieBackend::determineDriverAndConfigureIoctl() {

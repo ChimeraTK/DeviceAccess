@@ -310,13 +310,13 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
 
 void DummyDeviceTest::freshlyopenice() {
   try {
-    _dummyDevice->open(TEST_MAPPING_FILE);
+    _dummyDevice->open();
   }
   catch (DummyDeviceException&) {
     // make sure the device was freshly opened, so
     // registers are set to 0.
     _dummyDevice->close();
-    _dummyDevice->open(TEST_MAPPING_FILE);
+    _dummyDevice->open();
   }
 }
 
@@ -608,7 +608,7 @@ void DummyDeviceTest::testOpencloseice() {
   // if it points to NULL
   BOOST_CHECK(dummyDevice->_registerMapping);
   BOOST_CHECK(dummyDevice->isOpen());
-  BOOST_CHECK_THROW(dummyDevice->open(TEST_MAPPING_FILE),
+  BOOST_CHECK_THROW(dummyDevice->open(),
       DummyDeviceException);
 
   dummyDevice->close();

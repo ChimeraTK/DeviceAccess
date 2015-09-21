@@ -61,15 +61,6 @@ namespace mtca4u{
     _opened=true;
   }
 
-  void DummyBackend::open(const std::string &mappingFileName, int, DeviceConfigBase*)
-  {
-    if(mappingFileName != _mapFile) {
-      throw DummyDeviceException("Device cannot be re-opened with a different mapping file name.",
-          DummyDeviceException::INVALID_PARAMETER);
-    }
-    open();
-  }
-
   void DummyBackend::resizeBarContents(){
     std::map< uint8_t, size_t > barSizesInBytes
     = getBarSizesInBytesFromRegisterMapping();

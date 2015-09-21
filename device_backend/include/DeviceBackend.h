@@ -1,7 +1,6 @@
 #ifndef _MTCA4U_BASE_DEVICE_H__
 #define _MTCA4U_BASE_DEVICE_H__
 
-#include "DeviceConfigBase.h"
 #include "Exception.h"
 #include <string>
 #include <stdint.h>
@@ -21,9 +20,6 @@ public:
 class DeviceBackend {
 
 public:
-  // Todo move this function to private space.
-  virtual void open(const std::string& devName, int perm = O_RDWR,
-                       DeviceConfigBase* pConfig = NULL) = 0;
   virtual void open() = 0;
   virtual void close() = 0;
 

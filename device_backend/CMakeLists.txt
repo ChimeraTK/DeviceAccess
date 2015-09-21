@@ -1,6 +1,5 @@
 set(SOURCE
    ${SOURCE}
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceConfigBase.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cpp
@@ -13,7 +12,6 @@ set(HEADERS
    ${HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceConfigBase.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyBackend.h

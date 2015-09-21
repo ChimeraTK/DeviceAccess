@@ -55,7 +55,6 @@ public:
     PcieBackend(std::string host, std::string instance, std::list<std::string> parameters);
     virtual ~PcieBackend();
 
-    virtual void open(const std::string &devName, int perm = O_RDWR, DeviceConfigBase* pConfig = NULL);
     virtual void open();
     virtual void close();
     
