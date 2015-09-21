@@ -26,7 +26,7 @@ Device::RegisterAccessor Device::getRegObject(
 
 	RegisterInfoMap::RegisterInfo me;
 	_registerMap->getRegisterInfo(regName, me);
-	return Device::RegisterAccessor(regName, me, _pDeviceBackend);
+	return Device::RegisterAccessor(me, _pDeviceBackend);
 }
 
 
@@ -37,7 +37,7 @@ boost::shared_ptr<Device::RegisterAccessor> Device::getRegisterAccessor(const st
 	RegisterInfoMap::RegisterInfo me;
 	_registerMap->getRegisterInfo(regName, me, module);
 	return boost::shared_ptr<Device::RegisterAccessor>(
-			new Device::RegisterAccessor(regName, me, _pDeviceBackend));
+			new Device::RegisterAccessor(me, _pDeviceBackend));
 }
 
 
@@ -62,7 +62,7 @@ Device::getRegisterAccessorsInModule(const std::string &moduleName) const {
 			registerInfoList.begin();
 			regInfo != registerInfoList.end(); ++regInfo) {
 		accessorList.push_back(
-				Device::RegisterAccessor(regInfo->reg_name, *regInfo, _pDeviceBackend));
+				Device::RegisterAccessor(*regInfo, _pDeviceBackend));
 	}
 
 	return accessorList;
@@ -286,8 +286,7 @@ std::string Device::readDeviceInfo() const {
 }
 
 
-Device::RegisterAccessor::RegisterAccessor(const std::string & /*_regName*/,
-		const RegisterInfoMap::RegisterInfo &registerInfo,
+Device::RegisterAccessor::RegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
 		_ptrDeviceBackend pDeviceBackend)
 : _registerInfo(registerInfo),
 	_pDeviceBackend(pDeviceBackend),
