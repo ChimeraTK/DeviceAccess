@@ -1,17 +1,18 @@
 /*
- * devFactory.cpp
+ * BackendFactory.cpp
 
  *
  *  Created on: Jul 9, 2015
  *      Author: nshehzad
  */
 
-#include <boost/algorithm/string.hpp>
 #include "Utilities.h"
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "DMapFilesParser.h"
 #include "Exception.h"
+#include <boost/algorithm/string.hpp>
+
 namespace mtca4u {
 
 void BackendFactory::registerDeviceType(std::string interface, std::string protocol,
@@ -29,7 +30,6 @@ boost::shared_ptr<DeviceBackend> BackendFactory::createDevice(std::string aliasN
 	boost::tie(base, elem) = parseDMap(aliasName);
 	return base;
 }
-
 
 boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> BackendFactory::parseDMap(std::string devName)
 {

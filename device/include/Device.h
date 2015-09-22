@@ -10,14 +10,12 @@
  *
  */
 
-#include <boost/shared_ptr.hpp>
-
-#include "libmap.h"
 #include "DeviceException.h"
 #include "FixedPointConverter.h"
 #include "MultiplexedDataAccessor.h"
 #include "BackendFactory.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/shared_ptr.hpp>
 namespace mtca4u {
 
 /**

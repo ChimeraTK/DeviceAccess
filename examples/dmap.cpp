@@ -13,27 +13,21 @@ static const std::string REGISTER_NAME = "WORD_USER";
 static const std::string MODULE_NAME = "BOARD";
 
 int main(){
-  /** Create a pcie device. Make sure pcie is registerd and a device alias is present
-   * in dmap file. Look at BackendFactory for further explaination */
+	/** Create a pcie device. Make sure pcie is registerd and a device alias is present
+	 * in dmap file. Look at BackendFactory for further explaination */
 
-  /*static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
-	boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > myDevice =
-	FactoryInstance.createDevice("PCIE1");*/
 	boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
 	myDevice->open("PCIE1");
 
-	/*boost::shared_ptr<mtca4u::Device<mtca4u::DeviceBackend>::RegisterAccessor> accessor =
-			myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);*/
-
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor> accessor =
-				myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
+			myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
-  // look on accessor.cpp for more examples what to do with the accessor
-  std::cout << "Data as float is " << accessor->read<float>() << std::endl;
+	// look on accessor.cpp for more examples what to do with the accessor
+	std::cout << "Data as float is " << accessor->read<float>() << std::endl;
 
-  // It is good style to close the device when you are done, although
-  // this would happen automatically once the device goes out of scope.
-  myDevice->close();
+	// It is good style to close the device when you are done, although
+	// this would happen automatically once the device goes out of scope.
+	myDevice->close();
 
-  return 0;
+	return 0;
 }

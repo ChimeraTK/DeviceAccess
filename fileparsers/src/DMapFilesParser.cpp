@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <fstream>
 #include <stdexcept>
-//#include <boost/filesystem.hpp>
 
 namespace mtca4u{
 

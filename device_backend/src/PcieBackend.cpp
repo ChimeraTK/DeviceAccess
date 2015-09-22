@@ -9,8 +9,6 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 
-//#include <boost/lambda.hpp>
-
 // the io constants and struct for the driver
 // FIXME: they should come from the installed driver
 #include <pciedev_io.h>
@@ -21,10 +19,10 @@
 namespace mtca4u {
 
 PcieBackend::PcieBackend()
-	:_deviceID(0),
-	_ioctlPhysicalSlot(0),
-	_ioctlDriverVersion(0),
-	_ioctlDMA(0)	{}
+:_deviceID(0),
+ _ioctlPhysicalSlot(0),
+ _ioctlDriverVersion(0),
+ _ioctlDMA(0)	{}
 
 PcieBackend::PcieBackend(std::string host, std::string instance, std::list<std::string> parameters)
 : DeviceBackendImpl(host,instance,parameters)
@@ -47,18 +45,18 @@ void PcieBackend::open() {
 	std::cout << "open pcie dev" << std::endl;
 #endif
 	if (_opened) {
-			throw PcieBackendException("Device already has been _Opened",
-					PcieBackendException::EX_DEVICE_OPENED);
-		}
-		_deviceID = ::open(_instance.c_str(), O_RDWR);
-		if (_deviceID < 0) {
-			throw PcieBackendException(createErrorStringWithErrnoText("Cannot open device: "),
-					PcieBackendException::EX_CANNOT_OPEN_DEVICE);
-		}
+		throw PcieBackendException("Device already has been _Opened",
+				PcieBackendException::EX_DEVICE_OPENED);
+	}
+	_deviceID = ::open(_instance.c_str(), O_RDWR);
+	if (_deviceID < 0) {
+		throw PcieBackendException(createErrorStringWithErrnoText("Cannot open device: "),
+				PcieBackendException::EX_CANNOT_OPEN_DEVICE);
+	}
 
-		determineDriverAndConfigureIoctl();
+	determineDriverAndConfigureIoctl();
 
-		_opened = true;
+	_opened = true;
 }
 
 void PcieBackend::determineDriverAndConfigureIoctl() {

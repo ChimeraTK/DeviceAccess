@@ -17,19 +17,19 @@ namespace mtca4u{
  */
 class findRegisterByName_pred {
 private:
-    std::string name, module;
+	std::string name, module;
 public:
 
-    findRegisterByName_pred(const std::string &_name, const std::string &_module)
-      : name(_name), module(_module) {
-    }
+	findRegisterByName_pred(const std::string &_name, const std::string &_module)
+	: name(_name), module(_module) {
+	}
 
-    bool operator()(const RegisterInfoMap::RegisterInfo& elem) {
-      if ( (elem.reg_name == name) && (elem.reg_module == module) ){
-	return true;
-      }
-      return false;
-    }
+	bool operator()(const RegisterInfoMap::RegisterInfo& elem) {
+		if ( (elem.reg_name == name) && (elem.reg_module == module) ){
+			return true;
+		}
+		return false;
+	}
 };
 
 /**
@@ -37,16 +37,16 @@ public:
  */
 class findMetaDataByName_pred {
 private:
-    std::string name;
+	std::string name;
 public:
 
-    findMetaDataByName_pred(const std::string &_name) : name(_name) {
-    }
+	findMetaDataByName_pred(const std::string &_name) : name(_name) {
+	}
 
-    bool operator()(const RegisterInfoMap::metaData& elem) {
-        if (elem.name == name) return true;
-        return false;
-    }
+	bool operator()(const RegisterInfoMap::metaData& elem) {
+		if (elem.name == name) return true;
+		return false;
+	}
 };
 
 /**
@@ -54,16 +54,16 @@ public:
  */
 class findDevInPairByName_pred {
 private:
-    std::string name;
+	std::string name;
 public:
 
-    findDevInPairByName_pred(const std::string &_name) : name(_name) {
-    }
+	findDevInPairByName_pred(const std::string &_name) : name(_name) {
+	}
 
-    bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & elem) {
-      if (elem.first.dev_name == name) return true;
-        return false;
-    }
+	bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & elem) {
+		if (elem.first.dev_name == name) return true;
+		return false;
+	}
 };
 
 /**
@@ -71,16 +71,16 @@ public:
  */
 class findDevByName_pred {
 private:
-    std::string name;
+	std::string name;
 public:
 
-    findDevByName_pred(const std::string &_name) : name(_name) {
-    }
+	findDevByName_pred(const std::string &_name) : name(_name) {
+	}
 
-    bool operator()(const DMapFile::dRegisterInfo& elem) {
-        if (elem.dev_name == name) return true;
-        return false;
-    }
+	bool operator()(const DMapFile::dRegisterInfo& elem) {
+		if (elem.dev_name == name) return true;
+		return false;
+	}
 };
 
 /**
@@ -88,16 +88,16 @@ public:
  */
 class findMapFileByName_pred {
 private:
-    std::string name;
+	std::string name;
 public:
 
-    findMapFileByName_pred(const std::string &_name) : name(_name) {
-    }
+	findMapFileByName_pred(const std::string &_name) : name(_name) {
+	}
 
-    bool operator()(const ptrmapFile map) {
-        if (map->getMapFileName() == name) return true;
-        return false;
-    }
+	bool operator()(const ptrmapFile map) {
+		if (map->getMapFileName() == name) return true;
+		return false;
+	}
 };
 
 /**
@@ -106,13 +106,13 @@ public:
 class compareRegisterInfosByName_functor
 {
 public:
-    bool operator()(const RegisterInfoMap::RegisterInfo& first, const RegisterInfoMap::RegisterInfo& second){
-        if ( first.reg_module == second.reg_module ){
-	    return first.reg_name < second.reg_name;
+	bool operator()(const RegisterInfoMap::RegisterInfo& first, const RegisterInfoMap::RegisterInfo& second){
+		if ( first.reg_module == second.reg_module ){
+			return first.reg_name < second.reg_name;
+		}
+		else
+			return first.reg_module < second.reg_module;
 	}
-	else
-	    return first.reg_module < second.reg_module;	    
-    }
 };
 
 /**
@@ -121,9 +121,9 @@ public:
 class copmaredRegisterInfosByName_functor
 {
 public:
-    bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & first, const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & second){
-        return first.first.dev_name < second.first.dev_name;
-    }
+	bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & first, const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & second){
+		return first.first.dev_name < second.first.dev_name;
+	}
 };
 
 /**
@@ -132,21 +132,21 @@ public:
 class copmaredRegisterInfosByName2_functor
 {
 public:
-    bool operator()(const DMapFile::dRegisterInfo &first, const DMapFile::dRegisterInfo &second){
-        return first.dev_name < second.dev_name;
-    }
+	bool operator()(const DMapFile::dRegisterInfo &first, const DMapFile::dRegisterInfo &second){
+		return first.dev_name < second.dev_name;
+	}
 };
 
 /** Predicate to find RegisterInfoents in a std::vector by the module name. */
 class compareModuleName_pred{
- public:
- compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
-  bool operator()(const RegisterInfoMap::RegisterInfo & me) const{
-    return (me.reg_module == _moduleName);
-  }
-  typedef RegisterInfoMap::RegisterInfo argument_type;
- private:
-  std::string _moduleName;
+public:
+	compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
+	bool operator()(const RegisterInfoMap::RegisterInfo & me) const{
+		return (me.reg_module == _moduleName);
+	}
+	typedef RegisterInfoMap::RegisterInfo argument_type;
+private:
+	std::string _moduleName;
 };
 
 }//namespace mtca4u

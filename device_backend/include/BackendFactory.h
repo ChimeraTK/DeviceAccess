@@ -3,7 +3,6 @@
 
 
 #include "DummyBackend.h"
-//#include "Device.h"
 #include "PcieBackend.h"
 #include <boost/tuple/tuple.hpp>
 #include <boost/filesystem.hpp>

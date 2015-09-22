@@ -15,10 +15,7 @@ static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
   // open the mapped device:
-  //static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
-  //boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > mappedDevice =
-	//FactoryInstance.createDevice("PCIE3");
-  boost::shared_ptr< mtca4u::Device > mappedDevice (new mtca4u::Device());
+    boost::shared_ptr< mtca4u::Device > mappedDevice (new mtca4u::Device());
   mappedDevice->open("PCIE3");
   /** Entry in dmap file is
 	 *  PCIE3  sdm://./pci:mtcadummys0; muxedDataAcessor.map

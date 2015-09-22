@@ -5,114 +5,114 @@ using namespace boost::unit_test_framework;
 #include "helperFunctions.h"
 
 class DMapFileParserTest {
- public:
-  void testFileNotFound();
-  void testErrorInDmapFile();
-  void testNoDataInDmapFile();
-  void testParseFile();
+public:
+	void testFileNotFound();
+	void testErrorInDmapFile();
+	void testNoDataInDmapFile();
+	void testParseFile();
 };
 
 class DMapFileParserTestSuite : public test_suite {
- public:
-  DMapFileParserTestSuite() : test_suite("DMapFileParser class test suite") {
-    boost::shared_ptr<DMapFileParserTest> DMapFileParserTestPtr(
-        new DMapFileParserTest);
+public:
+	DMapFileParserTestSuite() : test_suite("DMapFileParser class test suite") {
+		boost::shared_ptr<DMapFileParserTest> DMapFileParserTestPtr(
+				new DMapFileParserTest);
 
-    test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(
-        &DMapFileParserTest::testFileNotFound, DMapFileParserTestPtr);
-    test_case* testErrorInDmapFile = BOOST_CLASS_TEST_CASE(
-        &DMapFileParserTest::testErrorInDmapFile, DMapFileParserTestPtr);
-    test_case* testNoDataInDmapFile = BOOST_CLASS_TEST_CASE(
-        &DMapFileParserTest::testNoDataInDmapFile, DMapFileParserTestPtr);
-    test_case* testParseFile = BOOST_CLASS_TEST_CASE(
-        &DMapFileParserTest::testParseFile, DMapFileParserTestPtr);
+		test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(
+				&DMapFileParserTest::testFileNotFound, DMapFileParserTestPtr);
+		test_case* testErrorInDmapFile = BOOST_CLASS_TEST_CASE(
+				&DMapFileParserTest::testErrorInDmapFile, DMapFileParserTestPtr);
+		test_case* testNoDataInDmapFile = BOOST_CLASS_TEST_CASE(
+				&DMapFileParserTest::testNoDataInDmapFile, DMapFileParserTestPtr);
+		test_case* testParseFile = BOOST_CLASS_TEST_CASE(
+				&DMapFileParserTest::testParseFile, DMapFileParserTestPtr);
 
-    add(testFileNotFound);
-    add(testErrorInDmapFile);
-    add(testParseFile);
-    add(testNoDataInDmapFile);
-  }
+		add(testFileNotFound);
+		add(testErrorInDmapFile);
+		add(testParseFile);
+		add(testNoDataInDmapFile);
+	}
 };
 
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
-  framework::master_test_suite().p_name.value =
-      "DMapFileParser class test suite";
-  framework::master_test_suite().add(new DMapFileParserTestSuite());
+	framework::master_test_suite().p_name.value =
+			"DMapFileParser class test suite";
+	framework::master_test_suite().add(new DMapFileParserTestSuite());
 
-  return NULL;
+	return NULL;
 }
 
 void DMapFileParserTest::testFileNotFound() {
-  std::string file_path = "../dummypath.dmap";
-  mtca4u::DMapFileParser fileParser;
+	std::string file_path = "../dummypath.dmap";
+	mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::LibMapException);
-  try {
-    fileParser.parse(file_path);
-  }
-  catch (mtca4u::LibMapException& dMapFileParserException) {
-    BOOST_CHECK(dMapFileParserException.getID() ==
-                mtca4u::LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
-  }
+	BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::LibMapException);
+	try {
+		fileParser.parse(file_path);
+	}
+	catch (mtca4u::LibMapException& dMapFileParserException) {
+		BOOST_CHECK(dMapFileParserException.getID() ==
+				mtca4u::LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
+	}
 }
 
 void DMapFileParserTest::testErrorInDmapFile() {
-  std::string incorrect_dmap_file = "invalid.dmap";
-  mtca4u::DMapFileParser fileParser;
+	std::string incorrect_dmap_file = "invalid.dmap";
+	mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::LibMapException);
-  try {
-    fileParser.parse(incorrect_dmap_file);
-  }
-  catch (mtca4u::LibMapException& dMapFileParserException) {
-    std::cout << dMapFileParserException;
-    BOOST_CHECK(dMapFileParserException.getID() ==
-                mtca4u::LibMapException::EX_DMAP_FILE_PARSE_ERROR);
-  }
+	BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::LibMapException);
+	try {
+		fileParser.parse(incorrect_dmap_file);
+	}
+	catch (mtca4u::LibMapException& dMapFileParserException) {
+		std::cout << dMapFileParserException;
+		BOOST_CHECK(dMapFileParserException.getID() ==
+				mtca4u::LibMapException::EX_DMAP_FILE_PARSE_ERROR);
+	}
 }
 
 void DMapFileParserTest::testNoDataInDmapFile() {
-  std::string empty_dmap_file = "empty.dmap";
-  mtca4u::DMapFileParser fileParser;
+	std::string empty_dmap_file = "empty.dmap";
+	mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::LibMapException);
-  try {
-    fileParser.parse(empty_dmap_file);
-  }
-  catch (mtca4u::LibMapException& dMapFileParserException) {
-    std::cout << dMapFileParserException;
-    BOOST_CHECK(dMapFileParserException.getID() ==
-                mtca4u::LibMapException::EX_NO_DMAP_DATA);
-  }
+	BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::LibMapException);
+	try {
+		fileParser.parse(empty_dmap_file);
+	}
+	catch (mtca4u::LibMapException& dMapFileParserException) {
+		std::cout << dMapFileParserException;
+		BOOST_CHECK(dMapFileParserException.getID() ==
+				mtca4u::LibMapException::EX_NO_DMAP_DATA);
+	}
 }
 
 void DMapFileParserTest::testParseFile() {
-  std::string file_path = "valid.dmap";
-  mtca4u::DMapFileParser fileParser;
-  boost::shared_ptr<mtca4u::DMapFile> mapFilePtr = fileParser.parse(file_path);
+	std::string file_path = "valid.dmap";
+	mtca4u::DMapFileParser fileParser;
+	boost::shared_ptr<mtca4u::DMapFile> mapFilePtr = fileParser.parse(file_path);
 
-  mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
-  mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
-  mtca4u::DMapFile::dRegisterInfo dRegisterInfoent3;
+	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
+	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
+	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent3;
 
-  populateDummydRegisterInfoent(dRegisterInfoent1, "valid.dmap", "card1", "/dev/dev1",
-                           "goodMapFile_withoutModules.map");
-  populateDummydRegisterInfoent(dRegisterInfoent2, "valid.dmap", "card2", "/dev/dev2",
-                           "./goodMapFile_withoutModules.map");
-  populateDummydRegisterInfoent(dRegisterInfoent3, "valid.dmap", "card3", "/dev/dev3",
-                           getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
-  std::cout<<getCurrentWorkingDirectory()<<std::endl;
+	populateDummydRegisterInfoent(dRegisterInfoent1, "valid.dmap", "card1", "/dev/dev1",
+			"goodMapFile_withoutModules.map");
+	populateDummydRegisterInfoent(dRegisterInfoent2, "valid.dmap", "card2", "/dev/dev2",
+			"./goodMapFile_withoutModules.map");
+	populateDummydRegisterInfoent(dRegisterInfoent3, "valid.dmap", "card3", "/dev/dev3",
+			getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
+	std::cout<<getCurrentWorkingDirectory()<<std::endl;
 
-  dRegisterInfoent1.dmap_file_line_nr = 3;
-  dRegisterInfoent2.dmap_file_line_nr = 4;
-  dRegisterInfoent3.dmap_file_line_nr = 5;
-  
-  // we use require here so it is safe to increase and dereference the iterator below
-  BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
+	dRegisterInfoent1.dmap_file_line_nr = 3;
+	dRegisterInfoent2.dmap_file_line_nr = 4;
+	dRegisterInfoent3.dmap_file_line_nr = 5;
 
-  mtca4u::DMapFile::const_iterator it = mapFilePtr->begin();
+	// we use require here so it is safe to increase and dereference the iterator below
+	BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
 
-  BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent1, *(it++)) == true);
-  BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent2, *(it++)) == true);
-  BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent3, *(it++)) == true);
+	mtca4u::DMapFile::const_iterator it = mapFilePtr->begin();
+
+	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent1, *(it++)) == true);
+	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent2, *(it++)) == true);
+	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent3, *(it++)) == true);
 }

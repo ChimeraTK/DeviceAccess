@@ -13,7 +13,6 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/Device.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceException.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/FixedPointConverter.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/libdevMap.h
    PARENT_SCOPE
 )
 

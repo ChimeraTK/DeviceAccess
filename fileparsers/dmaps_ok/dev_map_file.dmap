@@ -1,2 +1,0 @@
-ADC   /dev/llrfadcs11  	 ./sis_demo_1.map
-UTC   /dev/llrfutcs4     ./utc_demo_1.map

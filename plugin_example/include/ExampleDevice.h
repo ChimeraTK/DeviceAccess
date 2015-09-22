@@ -40,12 +40,6 @@ public:
 #endif
 		BackendFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
   }
-/*	static ExampleDeviceRegisterer & init()
-	{
-		static ExampleDeviceRegisterer globalExampleDeviceRegisterer;
-		return globalExampleDeviceRegisterer;
-	}*/
-
 };
 ExampleDeviceRegisterer globalExampleDeviceRegisterer;
 

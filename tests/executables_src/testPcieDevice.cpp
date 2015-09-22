@@ -94,7 +94,7 @@ private:
 class PcieDeviceTestSuite : public test_suite {
 public:
 	PcieDeviceTestSuite(std::string const & deviceFileName, unsigned int slot)
-: test_suite("devPCIE test suite") {
+	: test_suite("devPCIE test suite") {
 		// add member function test cases to a test suite
 		boost::shared_ptr<PcieDeviceTest> pcieDeviceTest( new PcieDeviceTest( deviceFileName, slot ) );
 
@@ -115,18 +115,6 @@ public:
 		test_case* closeiceTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testcloseice, pcieDeviceTest );
 
 		test_case* failIfDeviceClosedTestCase = BOOST_CLASS_TEST_CASE( &PcieDeviceTest::testFailIfDeviceClosed, pcieDeviceTest );
-
-
-
-		/*
-	readRegisterTestCase->depends_on( openTestCase );
-	writeRegisterTestCase->depends_on( readRegisterTestCase );
-	readTestCase->depends_on( openTestCase );
-	writeAreaTestCase->depends_on( readTestCase );
-	readDMATestCase->depends_on( openTestCase );
-	writeDMATestCase->depends_on( readDMATestCase );
-	closeTestCase->depends_on( openTestCase ); */
-
 
 		readRegisterTestCase->depends_on( openiceTestCase );
 		writeRegisterTestCase->depends_on( readRegisterTestCase );
@@ -226,7 +214,7 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 
 	_pcieDeviceInstance->close();
 	BOOST_CHECK_THROW( // _pcieDeviceInstance->readReg(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
-										_pcieDeviceInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4),
+			_pcieDeviceInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4),
 			PcieBackendException );
 	//BOOST_CHECK_THROW(  _pcieDeviceInstance->read(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
 	BOOST_CHECK_THROW(  _pcieDeviceInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
@@ -246,7 +234,6 @@ void PcieDeviceTest::testFailIfDeviceClosed()
 			PcieBackendException );
 
 }
-
 
 void PcieDeviceTest::testReadDeviceInfo(){
 	// The device info returns slot and driver version (major and minor).

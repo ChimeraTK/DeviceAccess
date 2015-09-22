@@ -20,32 +20,32 @@ namespace mtca4u{
  */
 class Exception : public std::exception {
 protected:
-    std::string         exMessage;      /**< exception description*/
-    unsigned int        exID;           /**< exception ID*/
+	std::string         exMessage;      /**< exception description*/
+	unsigned int        exID;           /**< exception ID*/
 public:
-    /**
-     * @brief Class constructor 
-     *  
-     * @param _exMessage exception description string
-     * @param _exID exception ID
-     */
-    Exception(const std::string &_exMessage, unsigned int _exID);
-    /**
-     * @brief Accessor. Returns exception description string
-     * 
-     * @return exception description string
-     */
-    virtual const char* what() const throw();
-    /**
-     * @brief Accessor. Returns exception ID
-     * 
-     * @return exception ID
-     */
-    virtual unsigned int getID() const;
-    /**
-     * Class destructor
-     */
-    virtual ~Exception() throw();
+	/**
+	 * @brief Class constructor
+	 *
+	 * @param _exMessage exception description string
+	 * @param _exID exception ID
+	 */
+	Exception(const std::string &_exMessage, unsigned int _exID);
+	/**
+	 * @brief Accessor. Returns exception description string
+	 *
+	 * @return exception description string
+	 */
+	virtual const char* what() const throw();
+	/**
+	 * @brief Accessor. Returns exception ID
+	 *
+	 * @return exception ID
+	 */
+	virtual unsigned int getID() const;
+	/**
+	 * Class destructor
+	 */
+	virtual ~Exception() throw();
 private:
 
 };

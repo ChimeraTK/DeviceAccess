@@ -1,12 +1,13 @@
 #include "DummyBackend.h"
 #include "Device.h"
 #include "PcieBackend.h"
+#include "DMapFilesParser.h"
 #include <cmath>
 
 
 namespace mtca4u{
 
- Device::~Device(){
+Device::~Device(){
 	// FIXME: do we want to close here? It will probably leave not working
 	// RegisterAccessors
 	// if(pdev) pdev->closeDev();
