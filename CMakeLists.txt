@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 2.8.7)
 
-Project(MtcaMappedDevice) #need to change the name
+Project(deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 18)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -34,7 +34,7 @@ FIND_PACKAGE(Boost COMPONENTS system filesystem)
 include_directories(${PROJECT_SOURCE_DIR}/exception/include exception_inc)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
-include_directories("${PROJECT_SOURCE_DIR}/device_backend/include")
+include_directories("${PROJECT_SOURCE_DIR}/device_backends/include")
 include_directories("${PROJECT_SOURCE_DIR}/device/include")
 # Only these include directories should be copied for examples. 
 get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -45,7 +45,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
-add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backend")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
