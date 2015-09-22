@@ -7,8 +7,8 @@
 
 #ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
 #define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
-#include "MtcaMappedDevice/DeviceBackendImpl.h"
-#include "MtcaMappedDevice/BackendFactory.h"
+#include <MtcaMappedDevice/DeviceBackendImpl.h>
+#include <MtcaMappedDevice/BackendFactory.h>
 #include <list>
 #include <iostream>
 #include <boost/shared_ptr.hpp>

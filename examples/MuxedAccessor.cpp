@@ -1,7 +1,7 @@
 #include <MtcaMappedDevice/Device.h>
 #include <MtcaMappedDevice/DeviceBackend.h>
 #include <MtcaMappedDevice/MultiplexedDataAccessor.h>
-#include "MtcaMappedDevice/BackendFactory.h"
+#include <MtcaMappedDevice/BackendFactory.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
