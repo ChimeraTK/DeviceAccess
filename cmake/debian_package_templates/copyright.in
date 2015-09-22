@@ -1,5 +1,5 @@
 Format: http://dep.debian.net/deps/dep5
-Source: <https://svnsrv.desy.de/public/mtca4u/MtcaMappedDevice/tags/@MtcaMappedDevice_VERSION@>
+Source: <https://svnsrv.desy.de/public/mtca4u/deviceaccess/tags/@mtc4u-deviceaccess_VERSION@>
 
 Files: *
 Copyright: 2013 Adam Piotrowski <adam.piotrowski@desy.de>

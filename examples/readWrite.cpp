@@ -1,7 +1,7 @@
-#include <MtcaMappedDevice/DummyBackend.h>
-#include <MtcaMappedDevice/PcieBackend.h>
-#include <MtcaMappedDevice/DeviceBackendImpl.h>
-#include <MtcaMappedDevice/Device.h>
+#include <mtca4u-deviceaccess/DummyBackend.h>
+#include <mtca4u-deviceaccess/PcieBackend.h>
+#include <mtca4u-deviceaccess/DeviceBackendImpl.h>
+#include <mtca4u-deviceaccess/Device.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>

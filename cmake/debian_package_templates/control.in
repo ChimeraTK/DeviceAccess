@@ -1,4 +1,4 @@
-Source: mtcamappeddevice
+Source: mtca4u-deviceaccess
 Priority: extra
 Maintainer: Martin Killenberg <martin.killenberg@desy.de>
 Build-Depends: debhelper (>= 7), cmake (>= 2.8), libboost-dev (>= 1.46), libboost-test-dev (>= 1.46), libboost-filesystem-dev (>=1.46), mtcadummy-dkms (>=0.9)
@@ -6,25 +6,25 @@ Standards-Version: 3.8.3
 Section: libs
 #Homepage: <insert the upstream URL, if relevant>
 
-Package: dev-mtcamappeddevice
+Package: dev-mtca4u-deviceaccess
 Section: libdevel
 Architecture: any
-Depends: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@, libboost-dev (>= 1.46)
-Recommends: mtcamappeddevice-doc
-Description: Header and cmake files for MTCA4U MtcaMappedDevice.
- The files you need to compile against MTCA4U MtcaMappedDevice.
+Depends: mtca4u-deviceaccess@mtca4u-deviceaccess_DEBVERSION@, libboost-dev (>= 1.46)
+Recommends: mtca4u-deviceaccess-doc
+Description: Header and cmake files for mtca4u-deviceaccess.
+ The files you need to compile against mtca4u-deviceaccess.
 
-Package: mtcamappeddevice@MtcaMappedDevice_DEBVERSION@
+Package: mtca4u-deviceaccess@mtca4u-deviceaccess_DEBVERSION@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: MTCA4U MtcaMappedDevice provides a C++ API to access MTCA.4 devices.
+Description: mtca4u-deviceaccess provides a C++ API to access MTCA.4 devices.
  MTCA4U is a software package which provides divers, a C++ API and tools for
- hardware monitoring on MicroTCA.4 crates. MtcaMappedDevice is the
+ hardware monitoring on MicroTCA.4 crates. mtca4u-deviceaccess is the
  C++ API which provides basic and generic access to the boards.
 
-Package: mtcamappeddevice-doc
+Package: mtca4u-deviceaccess-doc
 Section: libdevel
 Architecture: any
-Enhances: dev-mtcamappeddevice
-Description: The doxygen html documentation for MtcaMappedDevice and some examples.
+Enhances: dev-mtca4u-deviceaccess
+Description: The doxygen html documentation for mtca4u-deviceaccess and some examples.

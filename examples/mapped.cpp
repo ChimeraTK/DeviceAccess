@@ -1,5 +1,5 @@
-#include <MtcaMappedDevice/Device.h>
-#include <MtcaMappedDevice/BackendFactory.h>
+#include <mtca4u-deviceaccess/Device.h>
+#include <mtca4u-deviceaccess/BackendFactory.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>

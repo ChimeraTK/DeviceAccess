@@ -9,14 +9,14 @@ cd debian_package
 # lowecasepackagenname_package.ver.sion
 #As we have to make a tar-file, and tags don't change anyway, we use export
 #instead of checkout.
-svn export https://svnsrv.desy.de/public/mtca4u/MtcaMappedDevice/tags/@MtcaMappedDevice_VERSION@ mtcamappeddevice_@MtcaMappedDevice_VERSION@
+svn export https://svnsrv.desy.de/public/mtca4u/mtca4u-deviceaccess/tags/@mtca4u-deviceaccess_VERSION@ mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@
 #Debian convention: file has to end on .orig.tar.gz
-tar -czf mtcamappeddevice_@MtcaMappedDevice_VERSION@.orig.tar.gz  mtcamappeddevice_@MtcaMappedDevice_VERSION@
+tar -czf mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@.orig.tar.gz  mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@
 
 #Copy the prepared debian packaging config files to the source code 
 #directroy
-cp -r ../debian_from_template  mtcamappeddevice_@MtcaMappedDevice_VERSION@/debian
-cd mtcamappeddevice_@MtcaMappedDevice_VERSION@
+cp -r ../debian_from_template  mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@/debian
+cd mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@
 
 #The package versions for doocs / Ubuntu contain the codename of the distribution. Get it from the system.
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
@@ -25,7 +25,7 @@ CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 #because debchange does the right format and the current date, user name and email automatically for us.
 #Use the NAME and EMAIL environment variables to get correct values if needed (usually the email is
 # user@host instead of first.last@institute, for instance killenb@mskpcx18571.desy.de instead of martin.killenberg@desy.de).
-debchange --create --package mtcamappeddevice -v @MtcaMappedDevice_VERSION@-${CODENAME}1 --distribution ${CODENAME} Debian package for MTCA4U MtcaMappedDevice @MtcaMappedDevice_VERSION@
+debchange --create --package mtca4u-deviceaccess -v @mtca4u-deviceaccess_VERSION@-${CODENAME}1 --distribution ${CODENAME} Debian package for MTCA4U mtca4u-deviceaccess @mtca4u-deviceaccess_VERSION@
 
 #Now everything is prepared and we can actually build the package.
 #If you have a gpg signature you can remove the -us and -uc flags and sign the package.

@@ -8,8 +8,7 @@ using namespace boost::unit_test_framework;
 
 using namespace mtca4u;
 
-//typedef Device<PcieBackend> MtcaMappedDevice;
-typedef boost::shared_ptr<mtca4u::Device> MtcaMappedDevice;
+typedef boost::shared_ptr<mtca4u::Device> mtca4u_deviceaccess;
 #define VALID_MAPPING_FILE_NAME "mtcadummy_withoutModules.map"
 #define DUMMY_DEVICE_FILE_NAME "/dev/mtcadummys0"
 #define DEVICE_ALIAS "PCIE2"
@@ -72,7 +71,7 @@ public:
 	void getRegisterAccerrossInModule();
 
 private:
-	MtcaMappedDevice _mappedDevice;
+	mtca4u_deviceaccess _mappedDevice;
 
 	template <typename DataType>
 	void testRegObject_typedWriteBlock(DataType offsetValue);
@@ -114,7 +113,7 @@ public:
 
 // Register the test suite with the testing system so it is executed.
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
-	framework::master_test_suite().p_name.value = "MtcaMappedDevice test suite";
+	framework::master_test_suite().p_name.value = "mtca4u-deviceaccess test suite";
 
 	return new MtcaDeviceTestSuite;
 }
