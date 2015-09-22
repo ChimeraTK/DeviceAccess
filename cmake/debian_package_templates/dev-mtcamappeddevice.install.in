@@ -1,0 +1,5 @@
+usr/include/* usr/include/mtca4u
+usr/lib/lib*.so
+#the ./ in front of the CMAKE_ROOT is needed because CMAKE_ROOT is absolute,
+#but the path here has to be relative
+usr/*.cmake ./@CMAKE_ROOT@/Modules
