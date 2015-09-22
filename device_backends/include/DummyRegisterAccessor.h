@@ -34,7 +34,7 @@ class DummyRegisterElement {
 public:
 
 	DummyRegisterElement(FixedPointConverter *_fpc, int _nbytes, uint32_t *_buffer)
-: fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
+	: fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
 
 	/// Implicit type conversion to user type T.
 	/// This covers already a lot of operations like arithmetics and comparison
@@ -100,7 +100,7 @@ class DummyRegisterSequence {
 public:
 
 	DummyRegisterSequence(FixedPointConverter *_fpc, int _nbytes, int _pitch, uint32_t *_buffer)
-: fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
+	: fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
 
 	/// Get or set register content by [] operator.
 	inline DummyRegisterElement<T> operator[](unsigned int sample)
@@ -146,15 +146,15 @@ public:
 	/// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
 	/// DummyBackend itself. module and name denominate the register entry in the map file.
 	DummyRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-: _dev(dev)
-{
+	: _dev(dev)
+	{
 		_dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
 		fpc =  FixedPointConverter(registerInfo.reg_width, registerInfo.reg_frac_bits, registerInfo.reg_signed);
 		// initialise the base DummyRegisterElement
 		proxies::DummyRegisterElement<T>::fpcptr = &fpc;
 		proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
 		proxies::DummyRegisterElement<T>::buffer = getElement(0);
-}
+	}
 
 	/// Get or set register content by [] operator.
 	inline proxies::DummyRegisterElement<T> operator[](unsigned int index)

@@ -21,10 +21,10 @@ class DummyRegisterTest;
 class TestableDummyBackend : public DummyBackend {
 public:
 	TestableDummyBackend(std::string host, std::string instance, std::list<std::string> parameters)
-: DummyBackend(host,instance,parameters),
+	: DummyBackend(host,instance,parameters),
 	someRegister(this,"APP0","SOME_REGISTER"),
 	someMuxedRegister(this,"APP0","DAQ0_ADCA")
-{}
+	{}
 
 	DummyRegisterAccessor<int> someRegister;
 	DummyMultiplexedRegisterAccessor<int> someMuxedRegister;
@@ -37,11 +37,11 @@ public:
 class DummyRegisterTest {
 public:
 	DummyRegisterTest()
-{
+	{
 		std::list<std::string> params;
 		params.push_back(std::string(TEST_MAPPING_FILE));
 		device = boost::shared_ptr<TestableDummyBackend>( new TestableDummyBackend(".","dummy",params) );
-}
+	}
 
 	/// test the register accessor
 	void testRegisterAccessor();
