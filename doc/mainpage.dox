@@ -1,7 +1,7 @@
 /**
-\mainpage MtcaMappedDevice
+\mainpage mtca4u-deviceaccess
 
-MtcaMappedDevice is a device access library which implements device access
+mtca4u-deviceaccess is a device access library which implements device access
 abstraction and register name mapping.
 
 It originally was created as a PCIexpress access library, but is planned to
@@ -13,17 +13,17 @@ implementation, apart from the software dummy for testing.
 There are some tutorial examples available in the example directory. All examples 
 are complete and fully functional.
 
-\li \ref step_devBase
+\li \ref step_DeviceBackend
 \li \ref mapping
 \li \ref dmap
 
-\page step_devBase Directly addressing the device (no register mapping)
+\page step_DeviceBackend Directly addressing the device (no register mapping)
 
 \li The interface to access devices is called mtca4u::devBase. You open the device 
 by giving the
 name of the character device (try loading the mtcadymmy driver and accessing
 /dev/mtcadummys0).
-\li You can read and write to a register using  mtca4u::devBase::readReg and mtca4u::devBase::writeReg.
+\li You can read and write to a register using  mtca4u::devBase::readReg and mtca4u::DeviceBackend::writeReg.
 
 \include readWrite.cpp
 

@@ -9,7 +9,7 @@ is a combination of module and register name (MODULE_NAME.REGISTER_NAME).
 \note For historical reasons there are two kinds of mapping files: *.map and *.mapp<br>
 To use .map files take an empty string as module name.
 
-The class for the name mapped device is mtca4u::devMap.
+The class for the name mapped device is mtca4u::device.
 In addition to the read and write functions of devBase it provides read
 functions which take register and module name instead of its address and bar.
 To open the device, you give the name of the map file in addition.
@@ -19,7 +19,7 @@ To open the device, you give the name of the map file in addition.
 \section accessors Register accessors
 
 To repeatedly look up the address of a name during run time is not efficient.
-This is solved by mtca4u::devMap::RegisterAccessor objects, which cache the address.
+This is solved by mtca4u::device::RegisterAccessor objects, which cache the address.
 
 \code
   // Inefficient due to repeated table look-up of the address
@@ -28,7 +28,7 @@ This is solved by mtca4u::devMap::RegisterAccessor objects, which cache the addr
   }
 
   // Better use an accessor
-  mtca4u::devMap<devPCIE>::RegisterAccessor accessor 
+  mtca4u::device::RegisterAccessor accessor 
       =  myMappedDevice.getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
 
   for (int i = 0; i < 1000; ++i){
