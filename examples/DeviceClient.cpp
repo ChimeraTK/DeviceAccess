@@ -1,6 +1,6 @@
 #include <iostream>
 #include <plugin/ExampleDevice.h>
-#include <mtca4u-deviceaccess/BackendFactory.h>
+#include <mtca4u/BackendFactory.h>
 using namespace mtca4u;
 int main() {
 	//ExampleDeviceRegisterer::init();

@@ -1,7 +1,7 @@
-#include <mtca4u-deviceaccess/Device.h>
-#include <mtca4u-deviceaccess/DeviceBackend.h>
-#include <mtca4u-deviceaccess/MultiplexedDataAccessor.h>
-#include <mtca4u-deviceaccess/BackendFactory.h>
+#include <mtca4u/Device.h>
+#include <mtca4u/DeviceBackend.h>
+#include <mtca4u/MultiplexedDataAccessor.h>
+#include <mtca4u/BackendFactory.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>

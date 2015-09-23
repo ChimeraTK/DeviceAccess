@@ -1,7 +1,7 @@
-#include <mtca4u-deviceaccess/Device.h>
-#include <mtca4u-deviceaccess/DMapFilesParser.h>
-#include <mtca4u-deviceaccess/BackendFactory.h>
-#include <mtca4u-deviceaccess/DeviceBackendImpl.h>
+#include <mtca4u/Device.h>
+#include <mtca4u/DMapFilesParser.h>
+#include <mtca4u/BackendFactory.h>
+#include <mtca4u/DeviceBackendImpl.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
