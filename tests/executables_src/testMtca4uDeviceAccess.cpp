@@ -35,6 +35,7 @@ class MtcaDeviceTest {
 public:
 	MtcaDeviceTest();
 
+	void testConstructor();
 	void testOpenClose();
 	static void testThrowIfNeverOpened();
 
@@ -80,6 +81,8 @@ public:
 				new MtcaDeviceTest);
 
 		// add member functions using BOOST_CLASS_TEST_CASE
+		add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testConstructor,
+						mtcaDeviceTest));
 		add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testOpenClose,
 				mtcaDeviceTest));
 		add(BOOST_CLASS_TEST_CASE(
@@ -114,6 +117,11 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 }
 
 // The implementations of the individual tests
+void MtcaDeviceTest::testConstructor() {
+	//device default constructor does not throw and should always succced.
+	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
+	BOOST_CHECK( device  );
+}
 
 void MtcaDeviceTest::testOpenClose() {
   // test both open functions
