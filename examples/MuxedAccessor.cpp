@@ -14,13 +14,13 @@ static const std::string REGISTER_TO_SETUP_DMA_REGION = "AREA_DMAABLE";
 static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
-  // open the mapped device:
-    boost::shared_ptr< mtca4u::Device > mappedDevice (new mtca4u::Device());
-  mappedDevice->open("PCIE3");
+  // open the device:
+  boost::shared_ptr< mtca4u::Device > device (new mtca4u::Device());
+  device->open("PCIE3");
   /** Entry in dmap file is
-	 *  PCIE3  sdm://./pci:mtcadummys0; muxedDataAcessor.map
-	 */
-
+   *  PCIE3  sdm://./pci:mtcadummys0; muxedDataAcessor.map
+   */
+  
   // populate a memory region with multiple sequences so that we can use this
   // for demonstrating the use of the MultiplexedDataAccessor. It is important
   // to note that the MultiplexedDataAccessor expects all sequences to be of
@@ -58,7 +58,7 @@ int main() {
   // use of a hack. We can have write access to this region through a register
   // AREA_DMAABLE on the dummyDriver PCIE device.
   mtca4u::RegisterInfoMap::RegisterInfo info;
-  mappedDevice->getRegisterMap()->getRegisterInfo(REGISTER_TO_SETUP_DMA_REGION, info);
+  device->getRegisterMap()->getRegisterInfo(REGISTER_TO_SETUP_DMA_REGION, info);
   // frame a buffer with the muxed data [1, 64], which will be used to populate
   // the DMA region
   std::vector<uint16_t> ioBuffer(totalNumElementsInAllSequences);
@@ -68,7 +68,7 @@ int main() {
 
   // set up the 'DMA' region with the hack so that we can demonstrate the
   // DemultiplexedDataAccessor functionality
-  mappedDevice->writeArea(info.reg_address,
+  device->writeArea(info.reg_address,
                       reinterpret_cast<int32_t*>(&(ioBuffer[0])),
                       DATA_REGION_SIZE_IN_BYTES, info.reg_bar);
 

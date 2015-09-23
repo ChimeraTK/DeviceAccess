@@ -116,36 +116,28 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 // The implementations of the individual tests
 
 void MtcaDeviceTest::testOpenClose() {
-	// test all tree open functions
-	boost::shared_ptr<mtca4u::Device> mappedDevice ( new mtca4u::Device());
-	BOOST_CHECK_NO_THROW(mappedDevice->open(DEVICE_ALIAS));
-	BOOST_CHECK_NO_THROW(mappedDevice->close());
-	std::list<std::string> parameters;
-	boost::shared_ptr<DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
-	mapFileParser fileParser;
-	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
-	BOOST_CHECK_NO_THROW(mappedDevice->open(testDevice, registerMapping));
-	BOOST_CHECK_NO_THROW(mappedDevice->close());
+  // test both open functions
+  
+  // the first, recommended version is using the factory under the hood and just requires an alias name
+  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
+  BOOST_CHECK_NO_THROW(device->open(DEVICE_ALIAS));
+  int32_t readValue;
+  // read one known register to check that the device is open and the mapping is working
+  BOOST_CHECK_NO_THROW(device->getRegisterAccessor("WORD_CLK_DUMMY","ADC")->read(&readValue));
+  BOOST_CHECK(readValue==0x444D4D59);
+  BOOST_CHECK_NO_THROW(device->close());
 
-	boost::shared_ptr<mtca4u::Device> mappedDeviceAsBase (new mtca4u::Device());
-	// you cannot directly open a Device of BaseDevice. BaseDevice is purely virtual and
-	// cannot be instantiated.
-	/*  BOOST_CHECK_THROW(mappedDeviceAsBase.open(DUMMY_DEVICE_FILE_NAME,
-                                               VALID_MAPPING_FILE_NAME),
-                    DeviceException);*/
-
-	// you have to create an instance of an implementation like PcieBackend and
-	// pass it as a BaseDevice pointer
-	boost::shared_ptr<DeviceBackend> dummyDevice(new mtca4u::PcieBackend(".","mtcadummys0",parameters));
-
-	BOOST_CHECK_NO_THROW(
-			mappedDeviceAsBase->open(dummyDevice, registerMapping));
-
-	// get of a smart pointer gives a raw pointer of the object it points to
-	BOOST_CHECK(registerMapping.get() ==
-			mappedDeviceAsBase->getRegisterMap().get());
-
-	BOOST_CHECK_NO_THROW(mappedDeviceAsBase->close());
+  // you can open a device without using the factory, but you have to provide an instance 
+  // of the backend and the registerMapping yourself
+  std::list<std::string> parameters;
+  boost::shared_ptr<DeviceBackend> manualBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+  boost::shared_ptr<RegisterInfoMap> registerMapping = mapFileParser().parse(VALID_MAPPING_FILE_NAME);
+  BOOST_CHECK_NO_THROW(device->open(manualBackend, registerMapping));
+  BOOST_CHECK_NO_THROW(device->getRegisterAccessor("WORD_CLK_DUMMY","")->read(&readValue));
+  BOOST_CHECK(readValue==0x444D4D59);
+  // get of a smart pointer gives a raw pointer of the object it points to
+  BOOST_CHECK(registerMapping.get() == device->getRegisterMap().get());
+  BOOST_CHECK_NO_THROW(device->close());
 }
 
 MtcaDeviceTest::MtcaDeviceTest() {}

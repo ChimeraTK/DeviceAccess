@@ -1,5 +1,5 @@
-#ifndef MTCA4U_MAPPEDDEVICE_H
-#define MTCA4U_MAPPEDDEVICE_H
+#ifndef MTCA4U_DEVICE_H
+#define MTCA4U_DEVICE_H
 
 /**
  *      @file           Device.h
@@ -450,4 +450,4 @@ boost::shared_ptr<customClass> Device::getCustomAccessor(
 }
 } // namespace mtca4u
 
-#endif /* MTCA4U_MAPPEDDEVICE_H */
+#endif /* MTCA4U_DEVICE_H */

@@ -12,8 +12,8 @@ static const unsigned int WORD_USER_BAR = 0;
 
 int main(){
 
-	boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
-	myDevice->open("PCIE1");
+  boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
+  myDevice->open("PCIE1");
   // read and print a data word from a register
   int32_t dataWord;
   myDevice->readReg(WORD_USER_OFFSET, &dataWord, 0 /*bar 0*/);
