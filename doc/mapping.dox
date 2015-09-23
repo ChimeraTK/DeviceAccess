@@ -10,7 +10,7 @@ is a combination of module and register name (MODULE_NAME.REGISTER_NAME).
 To use .map files take an empty string as module name.
 
 The class for the name mapped device is mtca4u::device.
-In addition to the read and write functions of devBase it provides read
+In addition to the read and write functions of DeviceBackend it provides read
 functions which take register and module name instead of its address and bar.
 To open the device, you give the name of the map file in addition.
 

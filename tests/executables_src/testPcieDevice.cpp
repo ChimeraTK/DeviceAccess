@@ -28,9 +28,9 @@ using namespace mtca4u;
 #define NON_EXISTING_DEVICE "DUMMY9"
 
 
-/** The unit tests for the devPCIE class, based on the
+/** The unit tests for the PcieBackend class, based on the
  *  boost unit test library. We use a class which holds a private
- *  instance of the devPCIE to be tested, which avoids code duplication
+ *  instance of the PcieBackend to be tested, which avoids code duplication
  *  (instantiating and opening the device over and over again etc.)
  *
  *  The tests should be run in the order stated here. At least testOpen()
@@ -94,7 +94,7 @@ private:
 class PcieDeviceTestSuite : public test_suite {
 public:
 	PcieDeviceTestSuite(std::string const & deviceFileName, unsigned int slot)
-	: test_suite("devPCIE test suite") {
+	: test_suite("PcieBackend test suite") {
 		// add member function test cases to a test suite
 		boost::shared_ptr<PcieDeviceTest> pcieDeviceTest( new PcieDeviceTest( deviceFileName, slot ) );
 
@@ -150,7 +150,7 @@ private:
 test_suite*
 init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
-	framework::master_test_suite().p_name.value = "devPCIE test suite";
+	framework::master_test_suite().p_name.value = "PcieBackend test suite";
 
 	std::stringstream llrfdummyFileName;
 	llrfdummyFileName << "/dev/llrfdummys" << LLRFDRV_TEST_SLOT;
@@ -289,10 +289,8 @@ void PcieDeviceTest::testread(){
 	// Read the first two words, which are WORD_FIRMWARE and WORD_COMPILATION
 	// We checked that single reading worked, so we use it to create the reference.
 	int32_t firmwareContent;
-	//_pcieDeviceInstance->readReg(WORD_FIRMWARE_OFFSET, &firmwareContent, /*bar*/ 0);
 	_pcieDeviceInstance->read(/*bar*/ 0, WORD_FIRMWARE_OFFSET, &firmwareContent, 4);
 	int32_t compilationContent;
-	//_pcieDeviceInstance->readReg(WORD_COMPILATION_OFFSET, &compilationContent, /*bar*/ 0);
 	_pcieDeviceInstance->read( /*bar*/ 0, WORD_COMPILATION_OFFSET, &compilationContent, 4);
 
 	// Now try reading them as area
@@ -305,13 +303,11 @@ void PcieDeviceTest::testread(){
 
 	// now try to read only six of the eight bytes. This should throw an exception because it is
 	// not a multiple of 4.
-	//BOOST_CHECK_THROW( _pcieDeviceInstance->read( /*offset*/ 0, twoWords, /*nBytes*/ 6, /*bar*/ 0 ),
 	BOOST_CHECK_THROW( _pcieDeviceInstance->read( /*bar*/ 0, /*offset*/ 0, twoWords, /*nBytes*/ 6 ),
 			PcieBackendException );
 
 	// also check another bar
 	// Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer) with the default values (index^2) in the first 25 words.
-	//_pcieDeviceInstance->writeReg(/*bar*/ 0,WORD_ADC_ENA_OFFSET, 1 );
 	int32_t data = 1;
 	_pcieDeviceInstance->write(/*bar*/ 0,WORD_ADC_ENA_OFFSET, &data, 4 );
 	// use the same test as for DMA
@@ -330,12 +326,10 @@ void PcieDeviceTest::testWriteArea(){
 	int32_t increasedClockCounts[2];
 	int32_t readbackClockCounts[2];
 
-	//_pcieDeviceInstance->read( WORD_CLK_CNT_OFFSET, originalClockCounts, 2*sizeof(int32_t), /*bar*/ 0 );
 	_pcieDeviceInstance->read( /*bar*/ 0, WORD_CLK_CNT_OFFSET, originalClockCounts, 2*sizeof(int32_t) );
 	increasedClockCounts[0] = originalClockCounts[0]+1;
 	increasedClockCounts[1] = originalClockCounts[1]+1;
 	_pcieDeviceInstance->write( /*bar*/ 0, WORD_CLK_CNT_OFFSET, increasedClockCounts, 2*sizeof(int32_t) );
-	//_pcieDeviceInstance->read( WORD_CLK_CNT_OFFSET, readbackClockCounts, 2*sizeof(int32_t), /*bar*/ 0 );
 	_pcieDeviceInstance->read(  /*bar*/ 0, WORD_CLK_CNT_OFFSET, readbackClockCounts, 2*sizeof(int32_t) );
 	BOOST_CHECK( (increasedClockCounts[0] == readbackClockCounts[0]) &&
 			(increasedClockCounts[1] == readbackClockCounts[1]) );
@@ -350,7 +344,6 @@ void PcieDeviceTest::testWriteArea(){
 	std::vector<int32_t> writeBuffer(N_WORDS_DMA, 0xABCDEF01);
 	std::vector<int32_t> readbackBuffer(N_WORDS_DMA, -1);
 	_pcieDeviceInstance->write( /*bar*/ 2, 0, &writeBuffer[0], N_WORDS_DMA*sizeof(int32_t) );
-	//_pcieDeviceInstance->read( 0, &readbackBuffer[0], N_WORDS_DMA*sizeof(int32_t), /*bar*/ 2 );
 	_pcieDeviceInstance->read( /*bar*/ 2, 0, &readbackBuffer[0], N_WORDS_DMA*sizeof(int32_t) );
 	BOOST_CHECK(readbackBuffer == writeBuffer);
 }
@@ -386,12 +379,9 @@ void PcieDeviceTest::testWriteRegister()
 	// We read the user register, increment it by one, write it and reread it.
 	// As we checked that reading work, this is a reliable test that writing is ok.
 	int32_t originalUserWord, newUserWord;
-	//_pcieDeviceInstance->readReg(WORD_USER_OFFSET, &originalUserWord, /*bar*/ 0);
 	_pcieDeviceInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &originalUserWord, 4);
-	//_pcieDeviceInstance->writeReg( /*bar*/ 0, WORD_USER_OFFSET, originalUserWord +1);
 	int32_t data = originalUserWord+1;
 	_pcieDeviceInstance->write( /*bar*/ 0, WORD_USER_OFFSET, &data ,4);
-	//_pcieDeviceInstance->readReg(WORD_USER_OFFSET, &newUserWord, /*bar*/ 0);
 	_pcieDeviceInstance->read( /*bar*/ 0, WORD_USER_OFFSET, &newUserWord, 4);
 
 	BOOST_CHECK_EQUAL( originalUserWord +1, newUserWord );

@@ -1,5 +1,5 @@
-#ifndef _MTCA4U_BASE_DEVICE_H__
-#define _MTCA4U_BASE_DEVICE_H__
+#ifndef _MTCA4U_DEVICE_BACKEND_H__
+#define _MTCA4U_DEVICE_BACKEND_H__
 
 #include "Exception.h"
 #include <string>
@@ -48,4 +48,4 @@ public:
 
 } // namespace mtca4u
 
-#endif /*_MTCA4U_BASE_DEVICE_H__*/
+#endif /*_MTCA4U_DEVICE_BACKEND_H__*/

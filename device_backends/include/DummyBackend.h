@@ -1,5 +1,5 @@
-#ifndef MTCA4U_DUMMY_DEVICE_H
-#define MTCA4U_DUMMY_DEVICE_H
+#ifndef MTCA4U_DUMMY_BACKEND_H
+#define MTCA4U_DUMMY_BACKEND_H
 
 #include <vector>
 #include <map>
@@ -14,13 +14,13 @@
 
 namespace mtca4u{
 
-/** To provide exception for DummyDevice.
+/** To provide exception for DummyBackend.
  *
  */
-class DummyDeviceException : public DeviceBackendException {
+class DummyBackendException : public DeviceBackendException {
 public:
 	enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS, INVALID_PARAMETER};
-	DummyDeviceException(const std::string &message, unsigned int exceptionID)
+	DummyBackendException(const std::string &message, unsigned int exceptionID)
 	: DeviceBackendException( message, exceptionID ){}
 };
 
@@ -133,4 +133,4 @@ protected:
 
 }//namespace mtca4u
 
-#endif // MTCA4U_DUMMY_DEVICE_H
+#endif // MTCA4U_DUMMY_BACKEND_H

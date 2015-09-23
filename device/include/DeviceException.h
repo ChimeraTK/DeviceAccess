@@ -14,7 +14,7 @@ namespace mtca4u{
 class DeviceException : public DeviceBackendException {
 public:
 
-	enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVBASE
+	enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVICEBACKEND
 	};
 
 

@@ -1,5 +1,5 @@
-#ifndef MTCA4U_LIBDEV_STRUCT_H
-#define	MTCA4U_LIBDEV_STRUCT_H
+#ifndef MTCA4U_PCIE_BACKEND_H
+#define	MTCA4U_PCIE_BACKEND_H
 
 #include "DeviceBackendImpl.h"
 #include <stdint.h>
@@ -70,5 +70,5 @@ public:
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_LIBDEV_STRUCT_H */
+#endif	/* MTCA4U_PCIE_BACKEND_H */
 

@@ -133,7 +133,7 @@ void MtcaDeviceTest::testOpenClose() {
 	BOOST_CHECK_NO_THROW(mappedDevice->close());
 
 	boost::shared_ptr<mtca4u::Device> mappedDeviceAsBase (new mtca4u::Device());
-	// you cannot directly open a devMap of BaseDevice. BaseDevice is purely virtual and
+	// you cannot directly open a Device of BaseDevice. BaseDevice is purely virtual and
 	// cannot be instantiated.
 	/*  BOOST_CHECK_THROW(mappedDeviceAsBase.open(DUMMY_DEVICE_FILE_NAME,
                                                VALID_MAPPING_FILE_NAME),
@@ -142,9 +142,6 @@ void MtcaDeviceTest::testOpenClose() {
 	// you have to create an instance of an implementation like PcieBackend and
 	// pass it as a BaseDevice pointer
 	boost::shared_ptr<DeviceBackend> dummyDevice(new mtca4u::PcieBackend(".","mtcadummys0",parameters));
-	//dummyDevice->open(DUMMY_DEVICE_FILE_NAME);
-
-
 
 	BOOST_CHECK_NO_THROW(
 			mappedDeviceAsBase->open(dummyDevice, registerMapping));

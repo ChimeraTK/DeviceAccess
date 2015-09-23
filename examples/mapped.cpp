@@ -25,7 +25,7 @@ int main(){
   // write something different to the register, read it back and print it
   // A bit clumsy: As write can take multiple words we have to pass a 
   // pointer.
-  // Read the documentation  mtca4u::devMap< T >::readReg  if you
+  // Read the documentation  mtca4u::Device::readReg  if you
   // want to use arrays!
   int32_t writeWord = dataWord + 42;
   myDevice->writeReg(REGISTER_NAME, MODULE_NAME, &writeWord);

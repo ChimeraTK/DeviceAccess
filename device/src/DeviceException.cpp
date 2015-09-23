@@ -1,5 +1,5 @@
 /* 
- * File:   exdevMap.cpp
+ * File:   DeviceException.cpp
  * Author: apiotro
  * 
  * Created on 11 marzec 2012, 20:42

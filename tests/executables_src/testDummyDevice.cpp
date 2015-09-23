@@ -189,13 +189,13 @@ void DummyDeviceTest::testCheckSizeIsMultipleOfWordSize() {
 	BOOST_CHECK_NO_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(24));
 
 	BOOST_CHECK_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(25),
-			DummyDeviceException);
+			DummyBackendException);
 
 	BOOST_CHECK_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(26),
-			DummyDeviceException);
+			DummyBackendException);
 
 	BOOST_CHECK_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(27),
-			DummyDeviceException);
+			DummyBackendException);
 }
 
 void DummyDeviceTest::testReadWriteSingleWordRegister() {
@@ -223,18 +223,13 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
 			dummyDevice->read(bar, dummyDevice->_barContents[bar].size() *
 					sizeof(int32_t),
 					&dataContent, 4),
-					DummyDeviceException);
+					DummyBackendException);
 	BOOST_CHECK_THROW(dummyDevice->write(bar,
 			dummyDevice->_barContents[bar].size() * sizeof(int32_t),
 			&dataContent, 4),
-			DummyDeviceException);
+			DummyBackendException);
 }
-
-// void
-// DummyDeviceTest::testReadWriteMultiWordRegister(boost::function<void(uint32_t,
-// int32_t*, size_t, uint8_t)> readFunction){
 void DummyDeviceTest::testReadWriteMultiWordRegister(
-		//void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t)) {
 		void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t)) {
 	// freshlyopenice();
 	TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
@@ -280,11 +275,11 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
 			dummyDevice->_barContents[bar].size() * sizeof(int32_t),
 			//&(dataContent[0]), sizeInBytes, bar),
 			&(dataContent[0]),  sizeInBytes),
-			DummyDeviceException);
+			DummyBackendException);
 	BOOST_CHECK_THROW(dummyDevice->write(bar,
 			dummyDevice->_barContents[bar].size() * sizeof(int32_t),
 			&(dataContent[0]), sizeInBytes),
-			DummyDeviceException);
+			DummyBackendException);
 	// 2. size too large (works because the target register is not at offfset 0)
 	// resize the data vector for this test
 	dataContent.resize(dummyDevice->_barContents[bar].size());
@@ -292,27 +287,27 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
 			offset, &(dataContent[0]),
 			//dummyDevice->_barContents[bar].size() * sizeof(int32_t),bar),
 			dummyDevice->_barContents[bar].size() * sizeof(int32_t)),
-			DummyDeviceException);
+			DummyBackendException);
 	BOOST_CHECK_THROW(dummyDevice->write(bar,
 			offset, &(dataContent[0]),
 			dummyDevice->_barContents[bar].size() * sizeof(int32_t)
 	),
-			DummyDeviceException);
+			DummyBackendException);
 	// 3. size not multiple of 4
 	BOOST_CHECK_THROW(
 			//dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes - 1, bar),
 			dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes - 1),
-			DummyDeviceException);
+			DummyBackendException);
 	BOOST_CHECK_THROW(
 			dummyDevice->write(bar, offset, &(dataContent[0]), sizeInBytes - 1),
-			DummyDeviceException);
+			DummyBackendException);
 }
 
 void DummyDeviceTest::freshlyopenice() {
 	try {
 		_dummyDevice->open();
 	}
-	catch (DummyDeviceException&) {
+	catch (DummyBackendException&) {
 		// make sure the device was freshly opened, so
 		// registers are set to 0.
 		_dummyDevice->close();
@@ -378,7 +373,6 @@ void DummyDeviceTest::testReadOnly() {
 	std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 42);
 	dummyDevice->write(bar, offset, &(dataContent[0]), sizeInBytes);
 	std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
-	//dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
 	dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes);
 	BOOST_CHECK(dataContent[0] == 1);
 	BOOST_CHECK(dataContent[1] == 42);
@@ -397,7 +391,6 @@ void DummyDeviceTest::testReadOnly() {
 	}
 
 	std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
-	//dummyDevice->readArea(offset, &(dataContent[0]), sizeInBytes, bar);
 	dummyDevice->read(bar, offset, &(dataContent[0]), sizeInBytes);
 	BOOST_CHECK(dataContent[0] == 1);
 	BOOST_CHECK(dataContent[1] == 29);
@@ -406,12 +399,10 @@ void DummyDeviceTest::testReadOnly() {
 
 	// check that the next register is still writeable (boundary test)
 	int32_t originalNextDataWord;
-	//dummyDevice->readReg(offset + sizeInBytes, &originalNextDataWord, bar);
 	dummyDevice->read(bar, offset + sizeInBytes, &originalNextDataWord, 4);
 	int32_t writeWord = originalNextDataWord + 1 ;
 	dummyDevice->write(bar, offset + sizeInBytes, &writeWord , 4);
 	int32_t readbackWord;
-	//dummyDevice->readReg(offset + sizeInBytes, &readbackWord, bar);
 	dummyDevice->read(bar, offset + sizeInBytes, &readbackWord, 4);
 	BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
@@ -423,8 +414,6 @@ void DummyDeviceTest::testWriteCallbackFunctions() {
 	// but this is not the purpose of this test.
 
 	// from the previous test we know that adresses 32, 40 and 44 are write only
-	// TestableDummyDevice *dummyDevice = static_cast<TestableDummyDevice*
-	// >(BaseDeviceInstance);
 	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
 	BOOST_REQUIRE(dummyDevice->_barContents[0].size() >= 13);
 	a = 0;
@@ -527,11 +516,9 @@ void DummyDeviceTest::testWriteRegisterWithoutCallback() {
 	BOOST_CHECK(c == 0); // c must not change
 
 	// read only is also disabled for this internal function
-	//dummyDevice->readReg(40, &dataWord, 0);
 	dummyDevice->read(0, 40, &dataWord, 4);
 	dummyDevice->writeRegisterWithoutCallback(0, 40, dataWord + 1);
 	int32_t readbackDataWord;
-	//dummyDevice->readReg(40, &readbackDataWord, 0);
 	dummyDevice->read(0, 40, &readbackDataWord, 4);
 	BOOST_CHECK(readbackDataWord == dataWord + 1);
 }
@@ -609,11 +596,11 @@ void DummyDeviceTest::testOpencloseice() {
 	BOOST_CHECK(dummyDevice->_registerMapping);
 	BOOST_CHECK(dummyDevice->isOpen());
 	BOOST_CHECK_THROW(dummyDevice->open(),
-			DummyDeviceException);
+			DummyBackendException);
 
 	dummyDevice->close();
 	BOOST_CHECK(dummyDevice->isOpen() == false);
-	BOOST_CHECK_THROW(dummyDevice->close(), DummyDeviceException);
+	BOOST_CHECK_THROW(dummyDevice->close(), DummyBackendException);
 }
 
 void DummyDeviceTest::testcloseice() {

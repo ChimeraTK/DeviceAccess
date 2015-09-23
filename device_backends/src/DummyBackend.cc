@@ -17,7 +17,7 @@
 			errorMessage << "Invalid address offset " << address \
 			<< " in bar " << static_cast<int>(bar) << "."	\
 			<< "Caught out_of_range exception: " << outOfRangeException.what();\
-			throw DummyDeviceException(errorMessage.str(), DummyDeviceException::INVALID_ADDRESS);\
+			throw DummyBackendException(errorMessage.str(), DummyBackendException::INVALID_ADDRESS);\
 		}
 
 namespace mtca4u{
@@ -37,8 +37,8 @@ DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std
 		_mapFile = parameters.front();
 	}
 	else {
-		throw DummyDeviceException("No map file name given in the parameter list.",
-				DummyDeviceException::INVALID_PARAMETER);
+		throw DummyBackendException("No map file name given in the parameter list.",
+				DummyBackendException::INVALID_PARAMETER);
 	}
 	_registerMapping = mapFileParser().parse(_mapFile);
 	resizeBarContents();
@@ -56,7 +56,7 @@ void DummyBackend::open()
 #endif
 
 	if (_opened){
-		throw DummyDeviceException("Device is already open.", DummyDeviceException::ALREADY_OPEN);
+		throw DummyBackendException("Device is already open.", DummyBackendException::ALREADY_OPEN);
 	}
 	_opened=true;
 }
@@ -89,7 +89,7 @@ std::map< uint8_t, size_t > DummyBackend::getBarSizesInBytesFromRegisterMapping(
 
 void DummyBackend::close(){
 	if (!_opened){
-		throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
+		throw DummyBackendException("Device is already closed.", DummyBackendException::ALREADY_CLOSED);
 	}
 
 	_readOnlyAddresses.clear();
@@ -143,7 +143,7 @@ uint64_t DummyBackend::calculateVirtualAddress( uint32_t registerOffsetInBar,
 
 void DummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
 	if (sizeInBytes % sizeof(int32_t) ){
-		throw( DummyDeviceException("Read/write size has to be a multiple of 4", DummyDeviceException::WRONG_SIZE) );
+		throw( DummyBackendException("Read/write size has to be a multiple of 4", DummyBackendException::WRONG_SIZE) );
 	}
 }
 

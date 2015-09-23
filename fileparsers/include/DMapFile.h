@@ -45,9 +45,9 @@ public:
 		dRegisterInfo();
 
 		/** Convenience function to extract the device file name and the map file name as one object (a pair).
-		 *  This is all the information needed to open a devMap opject. As std::pair and std::string
-		 *  are standard objects no dependency between dmapFile and the devMap object is introduced, in contrast
-		 *  to passing a dRegisterInfo to devMap.
+		 *  This is all the information needed to open a Device opject. As std::pair and std::string
+		 *  are standard objects no dependency between dmapFile and the Device object is introduced, in contrast
+		 *  to passing a dRegisterInfo to Device.
 		 *  The function name is a bit lengthy to avoid confusion between device name (logical name) and
 		 *  device file name (name of the device in the /dev directory). The latter is the .first argument of
 		 *  the pair.

@@ -1,5 +1,5 @@
-#ifndef _MTCA4U_DEVBASEIMPL_H__
-#define _MTCA4U_DEVBASEIMPL_H__
+#ifndef _MTCA4U_DEVICEBACKENDIMPL_H__
+#define _MTCA4U_DEVICEBACKENDIMPL_H__
 
 #include "DeviceBackend.h"
 #include <list>
@@ -32,4 +32,4 @@ public:
 
 }//namespace mtca4u
 
-#endif /*_MTCA4U_LIBDEV_H__*/
+#endif /*_MTCA4U_DEVICEBACKENDIMPL_H__*/

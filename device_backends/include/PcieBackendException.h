@@ -1,5 +1,5 @@
-#ifndef MTCA4U_EXCPCIEDEVICE_H
-#define	MTCA4U_EXCPCIEDEVICE_H
+#ifndef MTCA4U_EXC_PCIEDEVICE_H
+#define	MTCA4U_EXC_PCIEDEVICE_H
 
 #include "DeviceBackend.h"
 
@@ -17,5 +17,5 @@ private:
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_EXCPCIEDEVICE_H */
+#endif	/* MTCA4U_EXC_PCIEDEVICE_H */
 
