@@ -8,6 +8,9 @@
 
 namespace mtca4u{
 
+/** A class to provide the Pcie device functionality."
+ *
+ */
 class PcieBackend : public DeviceBackendImpl
 {
 private:

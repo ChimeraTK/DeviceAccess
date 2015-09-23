@@ -14,6 +14,9 @@
 #include <boost/shared_ptr.hpp>
 using namespace mtca4u;
 
+/** An Example to show how to write a device class and add it to the factory.
+ *
+ */
 class ExampleDevice : public DeviceBackendImpl {
 private:
 	ExampleDevice(std::string host, std::string instance, std::list<std::string> parameters);
@@ -32,6 +35,9 @@ public:
   virtual std::string readDeviceInfo() {return std::string("Example_Device");}
 };
 
+/** This class is used as a way to register the device to the factory.
+ *
+ */
 class ExampleDeviceRegisterer{
 public:
 	ExampleDeviceRegisterer(){

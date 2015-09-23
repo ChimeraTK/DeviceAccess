@@ -10,7 +10,9 @@
 
 #include "DeviceBackend.h"
 namespace mtca4u{
-
+/** A class to provide exception for class device.
+ *
+ */
 class DeviceException : public DeviceBackendException {
 public:
 

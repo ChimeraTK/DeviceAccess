@@ -20,6 +20,9 @@
 #define TEST_DMAP_FILE_PATH  "/dummies.dmap"
 namespace mtca4u {
 
+/** A class to provide exception for BackendFactory.
+ *
+ */
 class BackendFactoryException : public Exception {
 public:
 	enum {UNKNOWN_ALIAS,UNREGISTERED_DEVICE,AMBIGUOUS_MAP_FILE_ENTRY};

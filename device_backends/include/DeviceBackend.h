@@ -9,6 +9,9 @@
 
 namespace mtca4u {
 
+/** Exception class for all device backends to inherit.
+ *
+ */
 class DeviceBackendException : public Exception {
 public:
 	DeviceBackendException(const std::string &message, unsigned int exceptionID)

@@ -4,7 +4,9 @@
 #include "DeviceBackend.h"
 
 namespace mtca4u{
-
+/** A class to provide the exceptions for Pcie device."
+ *
+ */
 class PcieBackendException : public DeviceBackendException {
 public:
     enum {EX_CANNOT_OPEN_DEVICE, EX_DEVICE_OPENED, EX_DEVICE_CLOSED, EX_READ_ERROR, EX_WRITE_ERROR,
