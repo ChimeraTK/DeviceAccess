@@ -237,7 +237,7 @@ public:
 	 *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
 	 *  The original readRaw function without module name, kept for backward
 	 * compatibility.
-	 *  The signature was changed and not extendet to keep the functionality of
+	 *  The signature was changed and not extended to keep the functionality of
 	 * the default parameters for
 	 *  dataSize and addRegOffset, as the module name will always be needed in
 	 * the
