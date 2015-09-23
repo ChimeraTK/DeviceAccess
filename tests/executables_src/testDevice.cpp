@@ -167,10 +167,7 @@ void DeviceTest::testDeviceReadRegisterByName() {
 }
 
 void DeviceTest::testDeviceReadArea() {
-	//mtca4u::Device pcieDevice;
-	//std::string dummyDevice = "/dev/mtcadummys0";
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
-	//pcieDevice.open(dummyDevice, validMappingFile);
 	std::list<std::string> parameters;
 	boost::shared_ptr<mtca4u::Device> pcieDevice ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> dummyDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));

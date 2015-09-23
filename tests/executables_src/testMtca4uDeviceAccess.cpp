@@ -8,7 +8,6 @@ using namespace boost::unit_test_framework;
 
 using namespace mtca4u;
 
-typedef boost::shared_ptr<mtca4u::Device> mtca4u_deviceaccess;
 #define VALID_MAPPING_FILE_NAME "mtcadummy_withoutModules.map"
 #define DUMMY_DEVICE_FILE_NAME "/dev/mtcadummys0"
 #define DEVICE_ALIAS "PCIE2"
@@ -69,10 +68,6 @@ public:
 
 	void getRegistersInModule();
 	void getRegisterAccerrossInModule();
-
-private:
-	mtca4u_deviceaccess _mappedDevice;
-
 	template <typename DataType>
 	void testRegObject_typedWriteBlock(DataType offsetValue);
 };
