@@ -657,7 +657,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT		       = @CMAKE_CURRENT_SOURCE_DIR@/device_backend \
+INPUT		       = @CMAKE_CURRENT_SOURCE_DIR@/device_backends \
 			 @CMAKE_CURRENT_SOURCE_DIR@/exception \
                          @CMAKE_CURRENT_SOURCE_DIR@/fileparsers \
                          @CMAKE_CURRENT_SOURCE_DIR@/device \
