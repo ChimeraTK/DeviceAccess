@@ -14,13 +14,9 @@ class DeviceBackendImpl: public DeviceBackend
 protected:
     bool        _opened;
     bool        _connected;
-    std::string _host;
-		std::string _instance;
-		std::list <std::string> _parameters;
+
 public:
-		DeviceBackendImpl() : _opened(false), _connected(true) {}
-		DeviceBackendImpl(std::string host, std::string instance, std::list<std::string> parameters)
-    : _opened(false), _connected(true) , _host(host), _instance(instance), _parameters(parameters){}
+    DeviceBackendImpl() : _opened(false), _connected(true) {}
     virtual ~DeviceBackendImpl(){}
     /** Return whether a device has been opened or not.
      *  This is the only function implemented here to avoid code duplication.

@@ -18,10 +18,8 @@ using namespace mtca4u;
  *
  */
 class ExampleDevice : public DeviceBackendImpl {
-private:
-	ExampleDevice(std::string host, std::string instance, std::list<std::string> parameters);
 public:
-  ExampleDevice(){};
+  ExampleDevice();
   virtual ~ExampleDevice();
   virtual void open();
   virtual void close();
@@ -40,11 +38,11 @@ public:
  */
 class ExampleDeviceRegisterer{
 public:
-	ExampleDeviceRegisterer(){
+  ExampleDeviceRegisterer(){
 #ifdef _DEBUG
-		std::cout<<"ExampleDeviceRegisterer"<<std::endl;
+    std::cout<<"ExampleDeviceRegisterer"<<std::endl;
 #endif
-		BackendFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
+    BackendFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
   }
 };
 ExampleDeviceRegisterer globalExampleDeviceRegisterer;

@@ -27,9 +27,7 @@ const unsigned int BAR_MASK = 0x7;
 // the bar number is stored in bits 60 to 62
 const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
-DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std::string> parameters)
-: DeviceBackendImpl(host,instance,parameters)
-{
+DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std::string> parameters){
 #ifdef _DEBUG
 	std::cout<<"dummy is connected"<<std::endl;
 #endif

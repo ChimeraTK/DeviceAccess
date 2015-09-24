@@ -25,14 +25,13 @@ PcieBackend::PcieBackend()
  _ioctlDMA(0)	{}
 
 PcieBackend::PcieBackend(std::string host, std::string instance, std::list<std::string> parameters)
-: DeviceBackendImpl(host,instance,parameters)
-, _deviceID(0),
+: _deviceID(0),
 _ioctlPhysicalSlot(0),
 _ioctlDriverVersion(0),
 _ioctlDMA(0)
 {
 	//temp
-	_instance = "/dev/"+_instance;
+	_instance = "/dev/"+ instance;
 #ifdef _DEBUG
 	std::cout<<"pci is connected"<<std::endl;
 #endif
