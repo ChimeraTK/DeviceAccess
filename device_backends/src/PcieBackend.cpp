@@ -31,7 +31,7 @@ _ioctlDriverVersion(0),
 _ioctlDMA(0)
 {
 	//temp
-	_instance = "/dev/"+ instance;
+	_deviceNodeName = "/dev/"+ instance;
 #ifdef _DEBUG
 	std::cout<<"pci is connected"<<std::endl;
 #endif
@@ -47,7 +47,7 @@ void PcieBackend::open() {
 		throw PcieBackendException("Device already has been _Opened",
 				PcieBackendException::EX_DEVICE_OPENED);
 	}
-	_deviceID = ::open(_instance.c_str(), O_RDWR);
+	_deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
 	if (_deviceID < 0) {
 		throw PcieBackendException(createErrorStringWithErrnoText("Cannot open device: "),
 				PcieBackendException::EX_CANNOT_OPEN_DEVICE);
@@ -111,7 +111,7 @@ void PcieBackend::determineDriverAndConfigureIoctl() {
 			<< createErrorStringWithErrnoText("Error is ") << std::endl;
 	;
 	::close(_deviceID);
-	throw PcieBackendException("Unsupported driver in device" + _instance,
+	throw PcieBackendException("Unsupported driver in device" + _deviceNodeName,
 			PcieBackendException::EX_UNSUPPORTED_DRIVER);
 }
 
@@ -331,7 +331,7 @@ std::string PcieBackend::readDeviceInfo() {
 std::string PcieBackend::createErrorStringWithErrnoText(
 		std::string const& startText) {
 	char errorBuffer[255];
-	return startText + _instance + ": " +
+	return startText + _deviceNodeName + ": " +
 			strerror_r(errno, errorBuffer, sizeof(errorBuffer));
 }
 

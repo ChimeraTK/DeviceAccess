@@ -20,8 +20,8 @@ using namespace mtca4u;
 class DummyRegisterTest;
 class TestableDummyBackend : public DummyBackend {
 public:
-	TestableDummyBackend(std::string host, std::string instance, std::list<std::string> parameters)
-	: DummyBackend(host,instance,parameters),
+	TestableDummyBackend(std::string mapFileName)
+	: DummyBackend(mapFileName),
 	someRegister(this,"APP0","SOME_REGISTER"),
 	someMuxedRegister(this,"APP0","DAQ0_ADCA")
 	{}
@@ -36,12 +36,9 @@ public:
 /**********************************************************************************************************************/
 class DummyRegisterTest {
 public:
-	DummyRegisterTest()
-	{
-		std::list<std::string> params;
-		params.push_back(std::string(TEST_MAPPING_FILE));
-		device = boost::shared_ptr<TestableDummyBackend>( new TestableDummyBackend(".","dummy",params) );
-	}
+  DummyRegisterTest(){
+    device = boost::shared_ptr<TestableDummyBackend>( new TestableDummyBackend(TEST_MAPPING_FILE) );
+  }
 
 	/// test the register accessor
 	void testRegisterAccessor();

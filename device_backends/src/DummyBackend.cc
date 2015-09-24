@@ -27,19 +27,9 @@ const unsigned int BAR_MASK = 0x7;
 // the bar number is stored in bits 60 to 62
 const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
-DummyBackend::DummyBackend(std::string host, std::string instance, std::list<std::string> parameters){
-#ifdef _DEBUG
-	std::cout<<"dummy is connected"<<std::endl;
-#endif
-	if (parameters.size() > 0) {
-		_mapFile = parameters.front();
-	}
-	else {
-		throw DummyBackendException("No map file name given in the parameter list.",
-				DummyBackendException::INVALID_PARAMETER);
-	}
-	_registerMapping = mapFileParser().parse(_mapFile);
-	resizeBarContents();
+DummyBackend::DummyBackend(std::string mapFileName): _mapFile(mapFileName){
+  _registerMapping = mapFileParser().parse(_mapFile);
+  resizeBarContents();
 }
 
 //Nothing to clean up, all objects clean up for themselves when
@@ -49,14 +39,10 @@ DummyBackend::~DummyBackend(){
 
 void DummyBackend::open()
 {
-#ifdef _DEBUG
-	std::cout<<"open DummyBackend"<<std::endl;
-#endif
-
-	if (_opened){
-		throw DummyBackendException("Device is already open.", DummyBackendException::ALREADY_OPEN);
-	}
-	_opened=true;
+  if (_opened){
+      throw DummyBackendException("Device is already open.", DummyBackendException::ALREADY_OPEN);
+  }
+  _opened=true;
 }
 
 void DummyBackend::resizeBarContents(){
@@ -211,7 +197,7 @@ bool DummyBackend::isWriteRangeOverlap( AddressRange firstRange, AddressRange se
 	uint32_t endAddress = std::min( firstRange.offset  + firstRange.sizeInBytes,
 			secondRange.offset + secondRange.sizeInBytes );
 
-	// if at least one register is writeable there is an overlap of writeable registers
+	// if at least one register is writable there is an overlap of writable registers
 	for ( uint32_t address = startAddress; address < endAddress; address += sizeof(int32_t) ){
 		if ( isReadOnly(firstRange.bar, address)==false ){
 			return true;
@@ -222,8 +208,15 @@ bool DummyBackend::isWriteRangeOverlap( AddressRange firstRange, AddressRange se
 	return false;
 }
 
-boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
-	return boost::shared_ptr<DeviceBackend> ( new DummyBackend(host,instance,parameters) );
+boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string /*host*/,
+							      std::string /*instance*/,
+							      std::list<std::string> parameters){
+  // the dummy is ignoring the instance and takes the first parameter as map file name
+  if (parameters.empty()){
+    throw DummyBackendException("No map file name given in the parameter list.",
+				DummyBackendException::INVALID_PARAMETER);
+  }
+  return boost::shared_ptr<DeviceBackend>( new DummyBackend(parameters.front()) );
 }
 
 }// namespace mtca4u

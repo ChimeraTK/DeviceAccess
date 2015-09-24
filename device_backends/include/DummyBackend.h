@@ -58,7 +58,7 @@ protected:
 	 *  Permissons and config are ignored.
 	 */
 public:
-	DummyBackend(std::string host, std::string instance, std::list<std::string> parameters);
+	DummyBackend(std::string mapFileName);
 	virtual ~DummyBackend();
 
 	virtual void open();

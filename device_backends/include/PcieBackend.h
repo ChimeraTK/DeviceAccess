@@ -18,7 +18,7 @@ private:
   unsigned long _ioctlPhysicalSlot;
   unsigned long _ioctlDriverVersion;
   unsigned long _ioctlDMA;
-  std::string _instance;
+  std::string _deviceNodeName;
 
   /// A function pointer which calls the correct dma read function (via ioctl or via struct)
   boost::function< void (uint8_t bar, uint32_t address, int32_t* data, size_t size)>

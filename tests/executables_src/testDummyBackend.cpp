@@ -19,100 +19,100 @@ using namespace mtca4u;
 #define NON_EXISTING_DEVICE "DUMMY9"
 
 static BackendFactory FactoryInstance = BackendFactory::getInstance();
-// forward declaration so we can declare it friend
-// of TestableDummyDevice.
-class DummyDeviceTest;
+// declaration so we can make it friend
+// of TestableDummyBackend.
+class DummyBackendTest;
 
-/** The TestableDummyDevice is derived from
+/** The TestableDummybackend is derived from
  *  DummyBackend to get access to the protected members.
- *  This is done by declaring DummyDeviceTest as a friend.
+ *  This is done by declaring DummybackendTest as a friend.
  */
-class TestableDummyDevice : public DummyBackend {
+class TestableDummyBackend : public DummyBackend {
 public:
-	TestableDummyDevice(std::string host, std::string instance, std::list<std::string> parameters)
-: DummyBackend(host,instance,parameters) {}
-	friend class DummyDeviceTest;
+	TestableDummyBackend(std::string mapFileName)
+: DummyBackend(mapFileName) {}
+	friend class DummyBackendTest;
 };
 
-class DummyDeviceTest {
+class DummyBackendTest {
 public:
-	DummyDeviceTest()
-: a(0), b(0), c(0), BaseDeviceInstance()
+  DummyBackendTest()
+: a(0), b(0), c(0), _backendInstance()
 {
-		std::list<std::string> parameters;
-		parameters.push_back(std::string(TEST_MAPPING_FILE));
-		_dummyDevice = boost::shared_ptr<TestableDummyDevice>(new TestableDummyDevice(".","dummy",parameters) );
+    std::list<std::string> parameters;
+    parameters.push_back(std::string(TEST_MAPPING_FILE));
+    _dummyBackend = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE) );
 }
 
-	static void testCalculateVirtualAddress();
-	static void testCheckSizeIsMultipleOfWordSize();
-	static void testAddressRange();
-	// void testOpenClose();
-	void testReadWriteSingleWordRegister();
-	/// The read function can be readDMA or readArea, the writeFunction is always
-	/// writeArea.
-	/// WriteDMA probably does not make sense at all.
-	/// The argument is a pointer to a member function of the DummyBackend class,
-	/// which
-	/// returns void and takes uint32_t, int32_t*, size_t, uint8_t as arguments.
-	void testReadWriteMultiWordRegister(
-			//void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
-			void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
-	void testWriteDMA();
-	void testReadDeviceInfo();
-	void testReadOnly();
-	void testWriteCallbackFunctions();
-	void testIsWriteRangeOverlap();
-	void testWriteRegisterWithoutCallback();
-	/// Test that all registers, read-only flags and callback functions are
-	/// removed
-	void testFinalClosing();
+  static void testCalculateVirtualAddress();
+  static void testCheckSizeIsMultipleOfWordSize();
+  static void testAddressRange();
+  // void testOpenClose();
+  void testReadWriteSingleWordRegister();
+  /// The read function can be readDMA or readArea, the writeFunction is always
+  /// writeArea.
+  /// WriteDMA probably does not make sense at all.
+  /// The argument is a pointer to a member function of the DummyBackend class,
+  /// which
+  /// returns void and takes uint32_t, int32_t*, size_t, uint8_t as arguments.
+  void testReadWriteMultiWordRegister(
+      //void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
+      void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
+  void testWriteDMA();
+  void testReadDeviceInfo();
+  void testReadOnly();
+  void testWriteCallbackFunctions();
+  void testIsWriteRangeOverlap();
+  void testWriteRegisterWithoutCallback();
+  /// Test that all registers, read-only flags and callback functions are
+  /// removed
+  void testFinalClosing();
 
-	// Try Creating a device and check if it is connected.
-	void testCreateDevice();
+  // Try Creating a device and check if it is connected.
+  void testCreateDevice();
 
-	// Try opening the created device and check it's open status.
-	void testopenice();
+  // Try opening the created device and check it's open status.
+  void testopenice();
 
-	// Try closing the created device and check it's open status.
-	void testcloseice();
+  // Try closing the created device and check it's open status.
+  void testcloseice();
 
-	void testOpencloseice();
+  void testOpencloseice();
 
 private:
-	boost::shared_ptr<TestableDummyDevice> _dummyDevice;
-	void freshlyopenice();
-	TestableDummyDevice* getBaseDeviceInstance(bool reOpen = false);
-	friend class DummyDeviceTestSuite;
+  boost::shared_ptr<TestableDummyBackend> _dummyBackend;
+  void freshlyopenice();
+  TestableDummyBackend* getBaseDeviceInstance(bool reOpen = false);
+  friend class DummyDeviceTestSuite;
 
-	// stuff for the callback function test
-	int a, b, c;
-	void increaseA() { ++a; }
-	void increaseB() { ++b; }
-	void increaseC() { ++c; }
-	boost::shared_ptr<mtca4u::DeviceBackend> BaseDeviceInstance;
+  // stuff for the callback function test
+  int a, b, c;
+  void increaseA() { ++a; }
+  void increaseB() { ++b; }
+  void increaseC() { ++c; }
+  boost::shared_ptr<mtca4u::DeviceBackend> _backendInstance;
 };
 
 class DummyDeviceTestSuite : public test_suite {
 public:
 	DummyDeviceTestSuite() : test_suite("DummyBackend test suite") {
-		boost::shared_ptr<DummyDeviceTest> dummyDeviceTest(new DummyDeviceTest);
+		boost::shared_ptr<DummyBackendTest> dummyDeviceTest(new DummyBackendTest);
 
 		// Pointers to test cases with dependencies. All other test cases are added
 		// directly.
 		test_case* readOnlyTestCase =
-				BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testReadOnly, dummyDeviceTest);
+				BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadOnly, dummyDeviceTest);
 		test_case* writeCallbackFunctionsTestCase = BOOST_CLASS_TEST_CASE(
-				&DummyDeviceTest::testWriteCallbackFunctions, dummyDeviceTest);
+				&DummyBackendTest::testWriteCallbackFunctions, dummyDeviceTest);
 		test_case* writeRegisterWithoutCallbackTestCase = BOOST_CLASS_TEST_CASE(
-				&DummyDeviceTest::testWriteRegisterWithoutCallback, dummyDeviceTest);
+				&DummyBackendTest::testWriteRegisterWithoutCallback, dummyDeviceTest);
 
 		test_case* createDeviceTestCase = BOOST_CLASS_TEST_CASE(
-				&DummyDeviceTest::testCreateDevice, dummyDeviceTest);
+				&DummyBackendTest::testCreateDevice, dummyDeviceTest);
 		test_case* openiceTestCase = BOOST_CLASS_TEST_CASE(
-				&DummyDeviceTest::testopenice, dummyDeviceTest);
+				&DummyBackendTest::testopenice, dummyDeviceTest);
 		test_case* opencloseiceTestCase = BOOST_CLASS_TEST_CASE(
-				&DummyDeviceTest::testOpencloseice, dummyDeviceTest);
+				&DummyBackendTest::testOpencloseice, dummyDeviceTest);
 		//test_case* closeiceTestCase = BOOST_CLASS_TEST_CASE(
 		//   &DummyDeviceTest::testcloseice, dummyDeviceTest);
 
@@ -128,33 +128,33 @@ public:
 		// testReadWriteMultiWordRegister function of the
 		// dummyDeviceTest instance.
 		boost::function<void(void)> testReadWriteArea =
-				boost::bind(&DummyDeviceTest::testReadWriteMultiWordRegister,
+				boost::bind(&DummyBackendTest::testReadWriteMultiWordRegister,
 						dummyDeviceTest, &DummyBackend::read);
 
 		/*boost::function<void(void)> testReadWriteDMA =
         boost::bind(&DummyDeviceTest::testReadWriteMultiWordRegister,
                     dummyDeviceTest, &DummyBackend::readDMA);*/
 
-		add(BOOST_TEST_CASE(DummyDeviceTest::testCalculateVirtualAddress));
-		add(BOOST_TEST_CASE(DummyDeviceTest::testCheckSizeIsMultipleOfWordSize));
-		add(BOOST_TEST_CASE(DummyDeviceTest::testAddressRange));
+		add(BOOST_TEST_CASE(DummyBackendTest::testCalculateVirtualAddress));
+		add(BOOST_TEST_CASE(DummyBackendTest::testCheckSizeIsMultipleOfWordSize));
+		add(BOOST_TEST_CASE(DummyBackendTest::testAddressRange));
 		// add( BOOST_CLASS_TEST_CASE( &DummyDeviceTest::testOpenClose,
 		// dummyDeviceTest ) );
-		add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testReadWriteSingleWordRegister,
+		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadWriteSingleWordRegister,
 				dummyDeviceTest));
 		add(BOOST_TEST_CASE(testReadWriteArea)); // not BOOST_CLASS_TEST_CASE as the
 		// functions are already bound to
 		// the instance
 		//add(BOOST_TEST_CASE(testReadWriteDMA));
-		add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testWriteDMA, dummyDeviceTest));
-		add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testReadDeviceInfo,
+		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteDMA, dummyDeviceTest));
+		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadDeviceInfo,
 				dummyDeviceTest));
 		add(readOnlyTestCase);
 		add(writeCallbackFunctionsTestCase);
 		add(writeRegisterWithoutCallbackTestCase);
-		add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testIsWriteRangeOverlap,
+		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testIsWriteRangeOverlap,
 				dummyDeviceTest));
-		add(BOOST_CLASS_TEST_CASE(&DummyDeviceTest::testFinalClosing,
+		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testFinalClosing,
 				dummyDeviceTest));
 		add(createDeviceTestCase);
 		add(openiceTestCase);
@@ -171,7 +171,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 	return NULL;
 }
 
-void DummyDeviceTest::testCalculateVirtualAddress() {
+void DummyBackendTest::testCalculateVirtualAddress() {
 	BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0) == 0UL);
 	BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x35, 0) == 0x35UL);
 	BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x67875, 0x3) ==
@@ -184,23 +184,23 @@ void DummyDeviceTest::testCalculateVirtualAddress() {
 			0x5000000000000123UL);
 }
 
-void DummyDeviceTest::testCheckSizeIsMultipleOfWordSize() {
+void DummyBackendTest::testCheckSizeIsMultipleOfWordSize() {
 	// just some arbitrary numbers to test %4 = 0, 1, 2, 3
-	BOOST_CHECK_NO_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(24));
+	BOOST_CHECK_NO_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(24));
 
-	BOOST_CHECK_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(25),
+	BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(25),
 			DummyBackendException);
 
-	BOOST_CHECK_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(26),
+	BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(26),
 			DummyBackendException);
 
-	BOOST_CHECK_THROW(TestableDummyDevice::checkSizeIsMultipleOfWordSize(27),
+	BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(27),
 			DummyBackendException);
 }
 
-void DummyDeviceTest::testReadWriteSingleWordRegister() {
+void DummyBackendTest::testReadWriteSingleWordRegister() {
 	// freshlyopenice();
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance(true);
 	RegisterInfoMap::RegisterInfo mappingElement;
 	dummyDevice->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING,
 			mappingElement);
@@ -229,10 +229,10 @@ void DummyDeviceTest::testReadWriteSingleWordRegister() {
 			&dataContent, 4),
 			DummyBackendException);
 }
-void DummyDeviceTest::testReadWriteMultiWordRegister(
+void DummyBackendTest::testReadWriteMultiWordRegister(
 		void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t)) {
 	// freshlyopenice();
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance(true);
 	RegisterInfoMap::RegisterInfo mappingElement;
 	dummyDevice->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
 			mappingElement);
@@ -303,40 +303,40 @@ void DummyDeviceTest::testReadWriteMultiWordRegister(
 			DummyBackendException);
 }
 
-void DummyDeviceTest::freshlyopenice() {
+void DummyBackendTest::freshlyopenice() {
 	try {
-		_dummyDevice->open();
+		_dummyBackend->open();
 	}
 	catch (DummyBackendException&) {
 		// make sure the device was freshly opened, so
 		// registers are set to 0.
-		_dummyDevice->close();
-		_dummyDevice->open();
+		_dummyBackend->close();
+		_dummyBackend->open();
 	}
 }
 
-void DummyDeviceTest::testWriteDMA() {
+void DummyBackendTest::testWriteDMA() {
 	// will probably never be implemented
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance();
 	BOOST_CHECK_THROW(dummyDevice->writeDMA(0, 0, NULL, 0),
 			NotImplementedException);
 }
 
-TestableDummyDevice* DummyDeviceTest::getBaseDeviceInstance(bool reOpen) {
-	if (BaseDeviceInstance == 0)
-		BaseDeviceInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
-	if (reOpen || (!BaseDeviceInstance->isOpen())) {
-		if (BaseDeviceInstance->isOpen())
-			BaseDeviceInstance->close();
-		BaseDeviceInstance->open();
+TestableDummyBackend* DummyBackendTest::getBaseDeviceInstance(bool reOpen) {
+	if (_backendInstance == 0)
+		_backendInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
+	if (reOpen || (!_backendInstance->isOpen())) {
+		if (_backendInstance->isOpen())
+			_backendInstance->close();
+		_backendInstance->open();
 	}
-	DeviceBackend * rawBasePointer = BaseDeviceInstance.get();
-	return (static_cast<TestableDummyDevice*>(rawBasePointer));
+	DeviceBackend * rawBasePointer = _backendInstance.get();
+	return (static_cast<TestableDummyBackend*>(rawBasePointer));
 }
 
-void DummyDeviceTest::testReadDeviceInfo() {
+void DummyBackendTest::testReadDeviceInfo() {
 	std::string deviceInfo;
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance();
 	deviceInfo = dummyDevice->readDeviceInfo();
 	std::cout << deviceInfo << std::endl;
 	BOOST_CHECK(deviceInfo ==
@@ -344,9 +344,9 @@ void DummyDeviceTest::testReadDeviceInfo() {
 					TEST_MAPPING_FILE));
 }
 
-void DummyDeviceTest::testReadOnly() {
+void DummyBackendTest::testReadOnly() {
 	// freshlyopenice();
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance(true);
 	RegisterInfoMap::RegisterInfo mappingElement;
 	dummyDevice->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
 			mappingElement);
@@ -381,7 +381,7 @@ void DummyDeviceTest::testReadOnly() {
 	// also set the last two words to read only. Now only the second word has to
 	// change.
 	// We use the addressRange interface for it to also cover this.
-	TestableDummyDevice::AddressRange lastTwoMuxRegisters(bar,
+	TestableDummyBackend::AddressRange lastTwoMuxRegisters(bar,
 			offset + 2 * sizeof(int32_t), 2 * sizeof(int32_t));
 	dummyDevice->setReadOnly(lastTwoMuxRegisters);
 	std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 29);
@@ -407,27 +407,27 @@ void DummyDeviceTest::testReadOnly() {
 	BOOST_CHECK(originalNextDataWord + 1 == readbackWord);
 }
 
-void DummyDeviceTest::testWriteCallbackFunctions() {
+void DummyBackendTest::testWriteCallbackFunctions() {
 	// We just require the first bar to be 12 registers long.
 	// Everything else would overcomplicate this test. For a real
 	// application one would always use register names from mapping,
 	// but this is not the purpose of this test.
 
 	// from the previous test we know that adresses 32, 40 and 44 are write only
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance();
 	BOOST_REQUIRE(dummyDevice->_barContents[0].size() >= 13);
 	a = 0;
 	b = 0;
 	c = 0;
 	dummyDevice->setWriteCallbackFunction(
-			TestableDummyDevice::AddressRange(0,36, 4),
-			boost::bind(&DummyDeviceTest::increaseA, this));
+			TestableDummyBackend::AddressRange(0,36, 4),
+			boost::bind(&DummyBackendTest::increaseA, this));
 	dummyDevice->setWriteCallbackFunction(
-			TestableDummyDevice::AddressRange(0, 28, 24),
-			boost::bind(&DummyDeviceTest::increaseB, this));
+			TestableDummyBackend::AddressRange(0, 28, 24),
+			boost::bind(&DummyBackendTest::increaseB, this));
 	dummyDevice->setWriteCallbackFunction(
-			TestableDummyDevice::AddressRange(0, 20, 12),
-			boost::bind(&DummyDeviceTest::increaseC, this));
+			TestableDummyBackend::AddressRange(0, 20, 12),
+			boost::bind(&DummyBackendTest::increaseC, this));
 
 	// test single writes
 	int32_t dataWord(42);
@@ -503,12 +503,12 @@ void DummyDeviceTest::testWriteCallbackFunctions() {
 	BOOST_CHECK(c == 4);
 }
 
-void DummyDeviceTest::testWriteRegisterWithoutCallback() {
+void DummyBackendTest::testWriteRegisterWithoutCallback() {
 	a = 0;
 	b = 0;
 	c = 0;
 	int32_t dataWord = 42;
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance();
 	dummyDevice->writeRegisterWithoutCallback(0,
 			20, dataWord); // c has callback installed on this register
 	BOOST_CHECK(a == 0);
@@ -523,18 +523,18 @@ void DummyDeviceTest::testWriteRegisterWithoutCallback() {
 	BOOST_CHECK(readbackDataWord == dataWord + 1);
 }
 
-void DummyDeviceTest::testAddressRange() {
-	TestableDummyDevice::AddressRange range24_8_0(0, 24, 8);
+void DummyBackendTest::testAddressRange() {
+	TestableDummyBackend::AddressRange range24_8_0(0, 24, 8);
 
 	BOOST_CHECK(range24_8_0.offset == 24);
 	BOOST_CHECK(range24_8_0.sizeInBytes == 8);
 	BOOST_CHECK(range24_8_0.bar == 0);
 
-	TestableDummyDevice::AddressRange range24_8_1(1, 24, 8); // larger bar
-	TestableDummyDevice::AddressRange range12_8_1(1, 12, 8); // larger bar, smaller offset
-	TestableDummyDevice::AddressRange range28_8_0(0, 28, 8); // larger offset
-	TestableDummyDevice::AddressRange range28_8_1(1, 28, 8); // larger bar, larger offset
-	TestableDummyDevice::AddressRange range24_12_0(0,24, 12); // different size, compares equal with range1
+	TestableDummyBackend::AddressRange range24_8_1(1, 24, 8); // larger bar
+	TestableDummyBackend::AddressRange range12_8_1(1, 12, 8); // larger bar, smaller offset
+	TestableDummyBackend::AddressRange range28_8_0(0, 28, 8); // larger offset
+	TestableDummyBackend::AddressRange range28_8_1(1, 28, 8); // larger bar, larger offset
+	TestableDummyBackend::AddressRange range24_12_0(0,24, 12); // different size, compares equal with range1
 
 	// compare 24_8_0 with the other cases as left argument
 	BOOST_CHECK((range24_8_0 < range24_8_1));
@@ -551,19 +551,19 @@ void DummyDeviceTest::testAddressRange() {
 	BOOST_CHECK(!(range24_12_0 < range24_8_0));
 }
 
-void DummyDeviceTest::testIsWriteRangeOverlap() {
+void DummyBackendTest::testIsWriteRangeOverlap() {
 	// the only test not covered by the writeCallbackFunction test:
 	// An overlapping range in different bars
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance();
 	bool overlap = dummyDevice->isWriteRangeOverlap(
-			TestableDummyDevice::AddressRange(0, 0, 12),
-			TestableDummyDevice::AddressRange(1, 0, 12));
+			TestableDummyBackend::AddressRange(0, 0, 12),
+			TestableDummyBackend::AddressRange(1, 0, 12));
 	BOOST_CHECK(overlap == false);
 }
 
-void DummyDeviceTest::testFinalClosing() {
+void DummyBackendTest::testFinalClosing() {
 	// all features have to be enabled before closing
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance();
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance();
 	BOOST_CHECK(dummyDevice->_barContents.size() != 0);
 	BOOST_CHECK(dummyDevice->_readOnlyAddresses.size() != 0);
 	BOOST_CHECK(dummyDevice->_writeCallbackFunctions.size() != 0);
@@ -575,9 +575,9 @@ void DummyDeviceTest::testFinalClosing() {
 	BOOST_CHECK(dummyDevice->_writeCallbackFunctions.size() == 0);
 }
 
-void DummyDeviceTest::testOpencloseice() {
+void DummyBackendTest::testOpencloseice() {
 
-	TestableDummyDevice* dummyDevice = getBaseDeviceInstance(true);
+	TestableDummyBackend* dummyDevice = getBaseDeviceInstance(true);
 	// there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes,
 	// plus the dma bar 0xD
 	// BOOST_CHECK((*dummyDevice)._barContents.size() == 3 );
@@ -603,29 +603,29 @@ void DummyDeviceTest::testOpencloseice() {
 	BOOST_CHECK_THROW(dummyDevice->close(), DummyBackendException);
 }
 
-void DummyDeviceTest::testcloseice() {
+void DummyBackendTest::testcloseice() {
 	/** Try closing the device */
-	BaseDeviceInstance->close();
+	_backendInstance->close();
 	/** device should not be open now */
-	BOOST_CHECK(BaseDeviceInstance->isOpen() == false);
+	BOOST_CHECK(_backendInstance->isOpen() == false);
 	/** device should remain in connected state */
-	BOOST_CHECK(BaseDeviceInstance->isConnected() == true);
+	BOOST_CHECK(_backendInstance->isConnected() == true);
 }
 
-void DummyDeviceTest::testopenice() {
-	BaseDeviceInstance->open();
-	BOOST_CHECK(BaseDeviceInstance->isOpen() == true);
-	BOOST_CHECK(BaseDeviceInstance->isConnected() == true);
+void DummyBackendTest::testopenice() {
+	_backendInstance->open();
+	BOOST_CHECK(_backendInstance->isOpen() == true);
+	BOOST_CHECK(_backendInstance->isConnected() == true);
 }
 
-void DummyDeviceTest::testCreateDevice() {
+void DummyBackendTest::testCreateDevice() {
 	/** Try creating a non existing device */
 	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),BackendFactoryException);
 	/** Try creating an existing device */
-	BaseDeviceInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
-	BOOST_CHECK(BaseDeviceInstance != 0);
+	_backendInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
+	BOOST_CHECK(_backendInstance);
 	/** Device should be in connect state now */
-	BOOST_CHECK(BaseDeviceInstance->isConnected() == true);
+	BOOST_CHECK(_backendInstance->isConnected() == true);
 	/** Device should not be in open state */
-	BOOST_CHECK(BaseDeviceInstance->isOpen() == false);
+	BOOST_CHECK(_backendInstance->isOpen() == false);
 }
