@@ -1,9 +1,9 @@
 set(SOURCE
    ${SOURCE}
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
    PARENT_SCOPE
 )
 
