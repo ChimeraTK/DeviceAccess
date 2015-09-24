@@ -18,26 +18,17 @@
 #include "PcieBackendException.h"
 namespace mtca4u {
 
-PcieBackend::PcieBackend()
-:_deviceID(0),
- _ioctlPhysicalSlot(0),
- _ioctlDriverVersion(0),
- _ioctlDMA(0)	{}
-
-PcieBackend::PcieBackend(std::string host, std::string instance, std::list<std::string> parameters)
-: _deviceID(0),
-_ioctlPhysicalSlot(0),
-_ioctlDriverVersion(0),
-_ioctlDMA(0)
-{
-	//temp
-	_deviceNodeName = "/dev/"+ instance;
-#ifdef _DEBUG
-	std::cout<<"pci is connected"<<std::endl;
-#endif
+PcieBackend::PcieBackend(std::string deviceNodeName)
+  : _deviceID(0),
+    _ioctlPhysicalSlot(0),
+    _ioctlDriverVersion(0),
+    _ioctlDMA(0),
+    _deviceNodeName(deviceNodeName){
 }
 
-PcieBackend::~PcieBackend() {close(); }
+PcieBackend::~PcieBackend(){
+  close();
+}
 
 void PcieBackend::open() {
 #ifdef _DEBUG
@@ -59,60 +50,59 @@ void PcieBackend::open() {
 }
 
 void PcieBackend::determineDriverAndConfigureIoctl() {
-	// determine the driver by trying the physical slot ioctl
-	device_ioctrl_data ioctlData = { 0, 0, 0, 0 };
+  // determine the driver by trying the physical slot ioctl
+  device_ioctrl_data ioctlData = { 0, 0, 0, 0 };
+  
+  if (ioctl(_deviceID, PCIEDEV_PHYSICAL_SLOT, &ioctlData) >= 0) {
+    // it's the pciedev driver
+    _ioctlPhysicalSlot = PCIEDEV_PHYSICAL_SLOT;
+    _ioctlDriverVersion = PCIEDEV_DRIVER_VERSION;
+    _ioctlDMA = PCIEDEV_READ_DMA;
+    _readDMAFunction =
+      boost::bind(&PcieBackend::readDMAViaIoctl, this, _1, _2, _3, _4);
+    _writeFunction =
+      boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3, _4);
+    _readFunction =
+      boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3, _4);
+    return;
+  }
 
-	if (ioctl(_deviceID, PCIEDEV_PHYSICAL_SLOT, &ioctlData) >= 0) {
-		// it's the pciedev driver
-		_ioctlPhysicalSlot = PCIEDEV_PHYSICAL_SLOT;
-		_ioctlDriverVersion = PCIEDEV_DRIVER_VERSION;
-		_ioctlDMA = PCIEDEV_READ_DMA;
-		_readDMAFunction =
-				boost::bind(&PcieBackend::readDMAViaIoctl, this, _1, _2, _3, _4);
-		_writeFunction =
-				boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3, _4);
-		_readFunction =
-				boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3, _4);
+  if (ioctl(_deviceID, LLRFDRV_PHYSICAL_SLOT, &ioctlData) >= 0) {
+    // it's the llrf driver
+    _ioctlPhysicalSlot = LLRFDRV_PHYSICAL_SLOT;
+    _ioctlDriverVersion = LLRFDRV_DRIVER_VERSION;
+    _ioctlDMA = 0;
+    _readDMAFunction =
+      boost::bind(&PcieBackend::readDMAViaStruct, this, _1, _2, _3, _4);
+    _writeFunction =
+      boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3, _4);
+    _readFunction =
+      boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3, _4);
+    return;
+  }
+
+  if (ioctl(_deviceID, PCIEUNI_PHYSICAL_SLOT, &ioctlData) >= 0) {
+    // it's the pcieuni
+    _ioctlPhysicalSlot = PCIEUNI_PHYSICAL_SLOT;
+    _ioctlDriverVersion = PCIEUNI_DRIVER_VERSION;
+    _ioctlDMA = PCIEUNI_READ_DMA;
+    _readDMAFunction =
+      boost::bind(&PcieBackend::readDMAViaIoctl, this, _1, _2, _3, _4);
+    _writeFunction =
+      boost::bind(&PcieBackend::directWrite, this, _1, _2, _3, _4);
+    _readFunction =
+      boost::bind(&PcieBackend::directRead, this, _1, _2, _3, sizeof(int32_t));
+    _readFunction =
+      boost::bind(&PcieBackend::directRead, this, _1, _2, _3, _4);
 		return;
-	}
+  }
 
-	if (ioctl(_deviceID, LLRFDRV_PHYSICAL_SLOT, &ioctlData) >= 0) {
-		// it's the llrf driver
-		_ioctlPhysicalSlot = LLRFDRV_PHYSICAL_SLOT;
-		_ioctlDriverVersion = LLRFDRV_DRIVER_VERSION;
-		_ioctlDMA = 0;
-		_readDMAFunction =
-				boost::bind(&PcieBackend::readDMAViaStruct, this, _1, _2, _3, _4);
-		_writeFunction =
-				boost::bind(&PcieBackend::writeWithStruct, this, _1, _2, _3, _4);
-		_readFunction =
-				boost::bind(&PcieBackend::readWithStruct, this, _1, _2, _3, _4);
-		return;
-	}
-
-	if (ioctl(_deviceID, PCIEUNI_PHYSICAL_SLOT, &ioctlData) >= 0) {
-		// it's the pcieuni
-		_ioctlPhysicalSlot = PCIEUNI_PHYSICAL_SLOT;
-		_ioctlDriverVersion = PCIEUNI_DRIVER_VERSION;
-		_ioctlDMA = PCIEUNI_READ_DMA;
-		_readDMAFunction =
-				boost::bind(&PcieBackend::readDMAViaIoctl, this, _1, _2, _3, _4);
-		_writeFunction =
-				boost::bind(&PcieBackend::directWrite, this, _1, _2, _3, _4);
-		_readFunction =
-				boost::bind(&PcieBackend::directRead, this, _1, _2, _3, sizeof(int32_t));
-		_readFunction =
-				boost::bind(&PcieBackend::directRead, this, _1, _2, _3, _4);
-		return;
-	}
-
-	// No working driver. Close the device and throw an exception.
-	std::cerr << "Unsupported driver. "
-			<< createErrorStringWithErrnoText("Error is ") << std::endl;
-	;
-	::close(_deviceID);
-	throw PcieBackendException("Unsupported driver in device" + _deviceNodeName,
-			PcieBackendException::EX_UNSUPPORTED_DRIVER);
+  // No working driver. Close the device and throw an exception.
+  std::cerr << "Unsupported driver. "
+	    << createErrorStringWithErrnoText("Error is ") << std::endl;
+  ::close(_deviceID);
+  throw PcieBackendException("Unsupported driver in device" + _deviceNodeName,
+			     PcieBackendException::EX_UNSUPPORTED_DRIVER);
 }
 
 void PcieBackend::close() {
@@ -328,15 +318,16 @@ std::string PcieBackend::readDeviceInfo() {
 	return os.str();
 }
 
-std::string PcieBackend::createErrorStringWithErrnoText(
-		std::string const& startText) {
-	char errorBuffer[255];
-	return startText + _deviceNodeName + ": " +
-			strerror_r(errno, errorBuffer, sizeof(errorBuffer));
+std::string PcieBackend::createErrorStringWithErrnoText(std::string const& startText) {
+  char errorBuffer[255];
+  return startText + _deviceNodeName + ": " +
+    strerror_r(errno, errorBuffer, sizeof(errorBuffer));
 }
 
-boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string host, std::string instance, std::list<std::string> parameters) {
-	return boost::shared_ptr<DeviceBackend> (new PcieBackend(host,instance,parameters));
+boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string /*host*/,
+							     std::string instance,
+							     std::list<std::string> /*parameters*/){
+  return boost::shared_ptr<DeviceBackend> (new PcieBackend("/dev/"+instance));
 }
 
 } // namespace mtca4u

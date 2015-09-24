@@ -53,23 +53,22 @@ private:
   /** constructor called through createInstance to create device object */
 
 public:
-	PcieBackend();
-	PcieBackend(std::string host, std::string instance, std::list<std::string> parameters);
-	virtual ~PcieBackend();
+  PcieBackend(std::string deviceNodeName);
+  virtual ~PcieBackend();
 
-	virtual void open();
-	virtual void close();
-
-	virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
-	virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
-
-	virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
-	virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
-
-	virtual std::string readDeviceInfo();
-
-	/*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
-	static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+  virtual void open();
+  virtual void close();
+  
+  virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
+  virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
+  
+  virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
+  virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
+  
+  virtual std::string readDeviceInfo();
+  
+  /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 };
 
 }//namespace mtca4u

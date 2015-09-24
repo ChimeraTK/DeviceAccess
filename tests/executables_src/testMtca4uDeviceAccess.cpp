@@ -138,7 +138,7 @@ void MtcaDeviceTest::testOpenClose() {
   // you can open a device without using the factory, but you have to provide an instance 
   // of the backend and the registerMapping yourself
   std::list<std::string> parameters;
-  boost::shared_ptr<DeviceBackend> manualBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+  boost::shared_ptr<DeviceBackend> manualBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
   boost::shared_ptr<RegisterInfoMap> registerMapping = mapFileParser().parse(VALID_MAPPING_FILE_NAME);
   BOOST_CHECK_NO_THROW(device->open(manualBackend, registerMapping));
   BOOST_CHECK_NO_THROW(device->getRegisterAccessor("WORD_CLK_DUMMY","")->read(&readValue));
@@ -210,8 +210,7 @@ void MtcaDeviceTest::testThrowIfNeverOpened() {
 
 void MtcaDeviceTest::testMapFileParser_parse() {
 	boost::shared_ptr<mtca4u::Device> virginDevice ( new mtca4u::Device());
-	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
 	mapFileParser fileParser;
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_1_MAPPING_FILE_NAME),MapFileParserException);
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_2_MAPPING_FILE_NAME),MapFileParserException);
@@ -224,8 +223,7 @@ void MtcaDeviceTest::testMapFileParser_parse() {
 
 void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
@@ -283,8 +281,7 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 	// trigger the "DAQ" sequence which writes i*i into the first 25 registers, so
 	// we know what we have
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
@@ -364,8 +361,7 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 
 void MtcaDeviceTest::testRegObject_readSimple() {
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
@@ -414,8 +410,7 @@ void MtcaDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue) {
 		writeBuffer[i] = i + offsetValue;
 	}
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
@@ -461,8 +456,7 @@ void MtcaDeviceTest::testRegObject_writeBlock() {
 void MtcaDeviceTest::testRegObject_writeSimple() {
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
