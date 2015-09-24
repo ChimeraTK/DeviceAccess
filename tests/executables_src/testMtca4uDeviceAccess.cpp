@@ -211,28 +211,28 @@ void MtcaDeviceTest::testThrowIfNeverOpened() {
 void MtcaDeviceTest::testMapFileParser_parse() {
 	boost::shared_ptr<mtca4u::Device> virginDevice ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mapFileParser fileParser;
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_1_MAPPING_FILE_NAME),MapFileParserException);
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_2_MAPPING_FILE_NAME),MapFileParserException);
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_3_MAPPING_FILE_NAME),MapFileParserException);
-	/*BOOST_CHECK_THROW(virginDevice->open(testDevice,
+	/*BOOST_CHECK_THROW(virginDevice->open(testBackend,
  																						 registerMapping), //FXPNT_ERROR_1_MAPPING_FILE_NAME),
                      MapFileParserException);*/
 
 }
 
 void MtcaDeviceTest::testRegObject_getRegisterInfo() {
-	boost::shared_ptr<mtca4u::Device> mappedDevice ( new mtca4u::Device());
+	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
-	mappedDevice->open(testDevice, registerMapping);
+	device->open(testBackend, registerMapping);
 	// Sorry, this test is hard coded against the mtcadummy implementation.
 	// PP: Is there a different way of testing it?
 	mtca4u::Device::regObject registerAccessor =
-			mappedDevice->getRegObject("AREA_DMAABLE");
+			device->getRegObject("AREA_DMAABLE");
 	RegisterInfoMap::RegisterInfo registerInfo = registerAccessor.getRegisterInfo();
 	BOOST_CHECK(registerInfo.reg_address == 0x0);
 	BOOST_CHECK(registerInfo.reg_elem_nr == 0x400);
@@ -245,7 +245,7 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 	BOOST_CHECK(registerInfo.reg_signed == true);
 	BOOST_CHECK(registerInfo.reg_name == "AREA_DMAABLE");
 
-	registerAccessor = mappedDevice->getRegObject("WORD_FIRMWARE");
+	registerAccessor = device->getRegObject("WORD_FIRMWARE");
 	registerInfo = registerAccessor.getRegisterInfo();
 	BOOST_CHECK(registerInfo.reg_name == "WORD_FIRMWARE");
 	BOOST_CHECK(registerInfo.reg_address == 0x0);
@@ -256,7 +256,7 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 	BOOST_CHECK(registerInfo.reg_frac_bits == 0);
 	BOOST_CHECK(registerInfo.reg_signed == false);
 
-	registerAccessor = mappedDevice->getRegObject("WORD_INCOMPLETE_1");
+	registerAccessor = device->getRegObject("WORD_INCOMPLETE_1");
 	registerInfo = registerAccessor.getRegisterInfo();
 	BOOST_CHECK(registerInfo.reg_name == "WORD_INCOMPLETE_1");
 	BOOST_CHECK(registerInfo.reg_address == 0x60);
@@ -267,7 +267,7 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 	BOOST_CHECK(registerInfo.reg_frac_bits == 0);
 	BOOST_CHECK(registerInfo.reg_signed == true);
 
-	registerAccessor = mappedDevice->getRegObject("WORD_INCOMPLETE_2");
+	registerAccessor = device->getRegObject("WORD_INCOMPLETE_2");
 	registerInfo = registerAccessor.getRegisterInfo();
 	BOOST_CHECK(registerInfo.reg_name == "WORD_INCOMPLETE_2");
 	BOOST_CHECK(registerInfo.reg_address == 0x64);
@@ -282,18 +282,18 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 void MtcaDeviceTest::testRegObject_readBlock() {
 	// trigger the "DAQ" sequence which writes i*i into the first 25 registers, so
 	// we know what we have
-	boost::shared_ptr<mtca4u::Device> mappedDevice ( new mtca4u::Device());
+	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
-	mappedDevice->open(testDevice, registerMapping);
+	device->open(testBackend, registerMapping);
 	int32_t tempWord = 0;
-	mappedDevice->writeReg("WORD_ADC_ENA", &tempWord);
+	device->writeReg("WORD_ADC_ENA", &tempWord);
 	tempWord = 1;
-	mappedDevice->writeReg("WORD_ADC_ENA", &tempWord);
+	device->writeReg("WORD_ADC_ENA", &tempWord);
 	mtca4u::Device::regObject registerAccessor =
-			mappedDevice->getRegObject("AREA_DMAABLE");
+			device->getRegObject("AREA_DMAABLE");
 	// there are 25 elements with value i*i. ignore the first 2
 	static const size_t N_ELEMENTS = 23;
 	static const size_t OFFSET_ELEMENTS = 2;
@@ -310,7 +310,7 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 	// fractioanal
 	// settings (1 fractional bit, 10 bits, signed)
 	mtca4u::Device::regObject registerAccessor10_1 =
-			mappedDevice->getRegObject("AREA_DMAABLE_FIXEDPOINT10_1");
+			device->getRegObject("AREA_DMAABLE_FIXEDPOINT10_1");
 
 	registerAccessor10_1.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
@@ -363,15 +363,15 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 }
 
 void MtcaDeviceTest::testRegObject_readSimple() {
-	boost::shared_ptr<mtca4u::Device> mappedDevice ( new mtca4u::Device());
+	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
-	mappedDevice->open(testDevice, registerMapping);
+	device->open(testBackend, registerMapping);
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-	registerAccessor = mappedDevice->getRegisterAccessor("WORD_USER");
+	registerAccessor = device->getRegisterAccessor("WORD_USER");
 	// 3 fractional bits, 12 bits, signed (from the map file)
 
 	static const int inputValue = 0xFA5;
@@ -413,16 +413,16 @@ void MtcaDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue) {
 	for (size_t i = 0; i < N_ELEMENTS; ++i) {
 		writeBuffer[i] = i + offsetValue;
 	}
-	boost::shared_ptr<mtca4u::Device> mappedDevice ( new mtca4u::Device());
+	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
-	mappedDevice->open(testDevice, registerMapping);
+	device->open(testBackend, registerMapping);
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
 	registerAccessor =
-			mappedDevice->getRegisterAccessor("AREA_DMAABLE_FIXEDPOINT16_3");
+			device->getRegisterAccessor("AREA_DMAABLE_FIXEDPOINT16_3");
 	// 16 bits, 3 fractional signed
 
 	// use raw write to zero the registers
@@ -460,18 +460,17 @@ void MtcaDeviceTest::testRegObject_writeBlock() {
 
 void MtcaDeviceTest::testRegObject_writeSimple() {
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
-	boost::shared_ptr<mtca4u::Device> mappedDevice ( new mtca4u::Device());
+	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	std::list<std::string> parameters;
-	boost::shared_ptr<mtca4u::DeviceBackend> testDevice ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
+	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(".","mtcadummys0",parameters));
 	mapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
-	mappedDevice->open(testDevice, registerMapping);
+	device->open(testBackend, registerMapping);
 
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-	registerAccessor = mappedDevice->getRegisterAccessor("WORD_USER");
+	registerAccessor = device->getRegisterAccessor("WORD_USER");
 	// the word has 3 fractional bits, 12 bits, signed, just to be different from
-	// the
-	// other setting. Values coming from the map file.
+	// the other setting. Values coming from the map file.
 
 	static const int startValue = 0;
 	// write something we are going to change
