@@ -7,9 +7,10 @@ Each register is identified by a register name and a module name. In the mapping
 is a combination of module and register name (MODULE_NAME.REGISTER_NAME). 
 
 \note For historical reasons there are two kinds of mapping files: *.map and *.mapp<br>
-To use .map files take an empty string as module name.
+*.map files can be with out without module name. *.mapp always have a module name. To use 
+a *.map file without module names take an empty string as module name.
 
-The class for the name mapped device is mtca4u::device.
+The class which provides acces with name mapping is mtca4u::Device.
 In addition to the read and write functions of DeviceBackend it provides read
 functions which take register and module name instead of its address and bar.
 To open the device, you give the name of the map file in addition.

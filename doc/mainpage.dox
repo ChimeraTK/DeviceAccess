@@ -19,7 +19,7 @@ are complete and fully functional.
 
 \page step_DeviceBackend Directly addressing the device (no register mapping)
 
-\li The interface to access devices is called mtca4u::DeviceBackend. You open the device 
+\li The low level interface to access devices is called mtca4u::DeviceBackend. You open the backend
 by giving the
 name of the character device (try loading the mtcadymmy driver and accessing
 /dev/mtcadummys0).

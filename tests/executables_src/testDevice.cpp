@@ -615,7 +615,6 @@ void DeviceTest::testGetRegistersInModule() {
 	BOOST_CHECK(registerInfo->reg_name == "WORD_STATUS");
 	BOOST_CHECK(registerInfo->reg_module == "APP0");
 
-	//delete device;
 }
 
 #include <DeviceBackend.h>
@@ -646,11 +645,11 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
 }
 #ifdef _0
 void DeviceTest::testAccessorForMuxedData() {
-	// create mapped dummy device
+	// create dummy device without using the factory
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMap =
 			mtca4u::mapFileParser().parse("sequences.map");
-	boost::shared_ptr<mtca4u::DeviceBackend> ioDevice(new mtca4u::DeviceBackend);
-	ioDevice->open("sequences.map");
+	boost::shared_ptr<mtca4u::DeviceBackend> backend(new mtca4u::DummyBackend);
+	backend->open("sequences.map");
 
 	mtca4u::RegisterInfoMap::RegisterInfo sequenceInfo;
 	registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DMA", sequenceInfo,
@@ -663,13 +662,13 @@ void DeviceTest::testAccessorForMuxedData() {
 		ioBuffer[i] = i;
 	}
 
-	ioDevice->writeArea(sequenceInfo.reg_address,
+	backend->writeArea(sequenceInfo.reg_address,
 			reinterpret_cast<int32_t*>(&(ioBuffer[0])),
 			sequenceInfo.reg_size, sequenceInfo.reg_bar);
 
-	// create the mapped device
+	// mor create the device itself
 	mtca4u::Device device;
-	device.open(ioDevice, registerMap);
+	device.open(backend, registerMap);
 
 	boost::shared_ptr<mtca4u::MultiplexedDataAccessor<double> > deMultiplexer =
 			device.getCustomAccessor<mtca4u::MultiplexedDataAccessor<double> >(
