@@ -42,7 +42,7 @@ public:
 #ifdef _DEBUG
     std::cout<<"ExampleDeviceRegisterer"<<std::endl;
 #endif
-    BackendFactory::getInstance().registerDeviceType("exx","",&ExampleDevice::createInstance);
+    BackendFactory::getInstance().registerBackendType("exx","",&ExampleDevice::createInstance);
   }
 };
 ExampleDeviceRegisterer globalExampleDeviceRegisterer;

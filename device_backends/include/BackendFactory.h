@@ -37,9 +37,9 @@ class BackendFactory {
 private:
 	/** Add known device */
 	BackendFactory() {
-		registerDeviceType("pci","",&PcieBackend::createInstance);
-		registerDeviceType("pci","pcie",&PcieBackend::createInstance);
-		registerDeviceType("dummy","",&DummyBackend::createInstance);
+	  registerBackendType("pci","",&PcieBackend::createInstance);
+	  registerBackendType("pci","pcie",&PcieBackend::createInstance);
+	  registerBackendType("dummy","",&DummyBackend::createInstance);
 	};
 
 	boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> parseDMap(std::string devName);
@@ -57,7 +57,7 @@ private:
 public:
 	/** This functions add new device using uri as a key. If a key already exist
 	 * it replaces it*/
-	void registerDeviceType(std::string interface, std::string protocol,
+	void registerBackendType(std::string interface, std::string protocol,
 			boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters));
 
 	/** Create a new device by calling the constructor and returning a pointer to

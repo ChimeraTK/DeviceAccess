@@ -15,7 +15,7 @@
 
 namespace mtca4u {
 
-void BackendFactory::registerDeviceType(std::string interface, std::string protocol,
+void BackendFactory::registerBackendType(std::string interface, std::string protocol,
 		boost::shared_ptr<mtca4u::DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
 {
 #ifdef _DEBUG
