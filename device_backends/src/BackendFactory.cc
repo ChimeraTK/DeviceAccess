@@ -25,17 +25,14 @@ void BackendFactory::registerBackendType(std::string interface, std::string prot
 }
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
-  boost::shared_ptr<DeviceBackend> base;
   return parseDMap(aliasName);
 }
-
 
 boost::shared_ptr<DeviceBackend> BackendFactory::parseDMap(std::string devName)
 {
   std::vector<std::string> device_info;
   std::string uri;
   DMapFilesParser filesParser;
-  DMapFile::dRegisterInfo dRegisterInfoent;
   std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
   //std::cout<<"testFilePath:"<<testFilePath<<std::endl;
   try {
@@ -67,7 +64,6 @@ boost::shared_ptr<DeviceBackend> BackendFactory::parseDMap(std::string devName)
       std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
 #endif
       uri = (*deviceIter).first.dev_file;
-      dRegisterInfoent = (*deviceIter).first;
       found = true;
       break;
     }
