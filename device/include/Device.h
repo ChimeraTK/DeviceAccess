@@ -18,6 +18,10 @@
 #include <boost/shared_ptr.hpp>
 namespace mtca4u {
 
+  // forward declaration
+  template<typename UserType>
+  class BufferingRegisterAccessor;
+
   /**
    *      @class  Device
    *      @brief  Class allows to read/write registers from device
@@ -53,9 +57,16 @@ namespace mtca4u {
 
       typedef boost::shared_ptr<DeviceBackend> _ptrDeviceBackend;
 
+      /** Non-buffering RegisterAccessor class
+       *  Allows reading and writing registers with user-provided buffer via plain pointers.
+       *  Supports conversion of fixed-point data into standard C data types.
+       */
       class RegisterAccessor {
         public:
 
+          /** Constructer. @attention Do not normally use directly.
+           *  Users should call Device::getRegisterAccessor() to obtain an instance instead.
+           */
         RegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
             typename Device::_ptrDeviceBackend pDeviceBackend);
 
@@ -339,11 +350,22 @@ namespace mtca4u {
        */
       regObject getRegObject(const std::string &regName) const;
 
-      /** Get a RegisterAccessor object from the register name.
+      /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
+       * buffers and plain pointers.
        */
       boost::shared_ptr<RegisterAccessor> getRegisterAccessor(
           const std::string &registerName,
           const std::string &module = std::string()) const;
+
+      /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
+       *  by using the accessor object like a variable of the type UserType. Conversion to and from the UserType
+       *  will be handled by the FixedPointConverter matching the register description in the map.
+       *  Note: This function returns an object, not a (shared) pointer to the object. This is necessary to use
+       *  operators (e.g. = or []) directly on the object.
+       */
+      template<typename UserType>
+      BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(
+          const std::string &module, const std::string &registerName) const;
 
       /**
        * returns an accssesor which is used for interpreting  data contained in a
@@ -355,7 +377,7 @@ namespace mtca4u {
        * interpreting this multiplexed data is provided through the custom class -
        * MultiplexedDataAccessor<userType>
        */
-      template <typename customClass>
+      template<typename customClass>
       boost::shared_ptr<customClass> getCustomAccessor(
           const std::string &dataRegionName,
           const std::string &module = std::string()) const;
@@ -451,6 +473,14 @@ namespace mtca4u {
     return (
         customClass::createInstance(dataRegionName, module, _pDeviceBackend, _registerMap));
   }
+
+
+  template<typename UserType>
+  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
+      const std::string &module, const std::string &registerName) const {
+    return BufferingRegisterAccessor<UserType>::createInstance(registerName, module, _pDeviceBackend, _registerMap);
+  }
+
 } // namespace mtca4u
 
 #endif /* MTCA4U_DEVICE_H */
