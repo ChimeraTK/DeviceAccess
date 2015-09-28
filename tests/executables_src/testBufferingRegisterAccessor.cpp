@@ -58,7 +58,7 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 void BufferingRegisterTest::testRegisterAccessor() {
   std::cout << "testRegisterAccessor" << std::endl;
 
-  // obtain register accessor
+  // obtain register accessor with integral type
   BufferingRegisterAccessor<int> intRegister = device->getBufferingRegisterAccessor<int>("APP0","MODULE0");
 
   // variable to read to for comparison
@@ -97,6 +97,19 @@ void BufferingRegisterTest::testRegisterAccessor() {
   device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
   BOOST_CHECK( compare == 999 );
 
-  // close the device
-  device->close();
+  // obtain register accessor with fractional type, to check if fixed-point conversion is working (3 fractional bits)
+  BufferingRegisterAccessor<double> floatRegister = device->getBufferingRegisterAccessor<double>("MODULE0","WORD_USER1");
+
+  // test operator=
+  floatRegister = 42. / 8.;
+  floatRegister.write();
+  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 42 );
+
+  // test implicit type conversion
+  compare = 120;
+  device->writeReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  floatRegister.read();
+  BOOST_CHECK( floatRegister == 120./8. );
+
 }
