@@ -42,7 +42,7 @@ private:
 	  registerBackendType("dummy","",&DummyBackend::createInstance);
 	};
 
-	boost::tuple<boost::shared_ptr<DeviceBackend>, DMapFile::dRegisterInfo> parseDMap(std::string devName);
+	boost::shared_ptr<DeviceBackend> parseDMap(std::string devName);
 
 	//BackendFactory(BackendFactory const&);     /** To avoid making copies */
 
