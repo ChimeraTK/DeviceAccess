@@ -26,7 +26,12 @@ namespace mtca4u {
   };
 
   /*********************************************************************************************************************/
-  /** TODO documentation
+  /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
+   *  type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
+   *  register description in the map. Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
+   *
+   *  Note: Transfers between the device and the internal buffer need to be triggered using the read() and write()
+   *  functions before reading from resp. after writing to the buffer using the operators.
    */
   template<typename T>
   class BufferingRegisterAccessor {
@@ -89,7 +94,7 @@ namespace mtca4u {
         return cookedBuffer[0];
       }
 
-      /** Factory function (for compatibility with the Device::getCustomAccessor() function)
+      /** Factory function as called by Device::getBufferingRegisterAccessor() and Device::getCustomAccessor()
        */
       static BufferingRegisterAccessor<T> createInstance(
           std::string const &dataRegionName, std::string const &module, boost::shared_ptr<DeviceBackend> const &backend,
