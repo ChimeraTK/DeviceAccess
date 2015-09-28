@@ -322,7 +322,7 @@ void DummyBackendTest::testWriteDMA() {
 
 TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
 	if (_backendInstance == 0)
-		_backendInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
+		_backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
 	if (reOpen || (!_backendInstance->isOpen())) {
 		if (_backendInstance->isOpen())
 			_backendInstance->close();
@@ -618,9 +618,9 @@ void DummyBackendTest::testOpen() {
 
 void DummyBackendTest::testCreateBackend() {
 	/** Try creating a non existing backend */
-	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),BackendFactoryException);
+	BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE),BackendFactoryException);
 	/** Try creating an existing backend */
-	_backendInstance = FactoryInstance.createDevice(EXISTING_DEVICE);
+	_backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
 	BOOST_CHECK(_backendInstance);
 	/** backend should be in connect state now */
 	BOOST_CHECK(_backendInstance->isConnected() == true);

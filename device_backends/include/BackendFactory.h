@@ -64,7 +64,7 @@ public:
 	 * the
 	 * device */
 
-	boost::shared_ptr<DeviceBackend> createDevice(std::string aliasName);
+	boost::shared_ptr<DeviceBackend> createBackend(std::string aliasName);
 
 	/**Static function to get an instance of factory */
 	static BackendFactory& getInstance() {

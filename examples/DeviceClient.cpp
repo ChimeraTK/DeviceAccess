@@ -6,7 +6,7 @@ int main() {
 	//ExampleDeviceRegisterer::init();
 	BackendFactory FactoryInstance = BackendFactory::getInstance();
 	boost::shared_ptr<DeviceBackend> _pcieDeviceInstance;
-	_pcieDeviceInstance = FactoryInstance.createDevice("PCIE0");
+	_pcieDeviceInstance = FactoryInstance.createBackend("PCIE0");
 	if (_pcieDeviceInstance == 0)
 	{
 		std::cout<<"Device Failed"<<std::endl;
@@ -18,7 +18,7 @@ int main() {
 	if (_pcieDeviceInstance->isOpen() == false )
 		std::cout<<"Device status: Closed"<<std::endl;
 
-	boost::shared_ptr<DeviceBackend> exampleDeviceInstance = FactoryInstance.createDevice("example");
+	boost::shared_ptr<DeviceBackend> exampleDeviceInstance = FactoryInstance.createBackend("example");
 	if (exampleDeviceInstance == 0)
 	{
 		std::cout<<"Device Failed"<<std::endl;

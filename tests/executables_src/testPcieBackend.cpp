@@ -412,10 +412,10 @@ void PcieBackendTest::testOpen(){
 
 void PcieBackendTest::testCreateBackend(){
 	/** Try creating a non existing device */
-	BOOST_CHECK_THROW(FactoryInstance.createDevice(NON_EXISTING_DEVICE),BackendFactoryException);
+	BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE),BackendFactoryException);
 	/** Try creating an existing device */
 	std::cout<<"DeviceName"<<_deviceFileName<<std::endl;
-	_pcieBackendInstance = FactoryInstance.createDevice(_deviceFileName);
+	_pcieBackendInstance = FactoryInstance.createBackend(_deviceFileName);
 	BOOST_CHECK(_pcieBackendInstance != 0);
 	/** Backend should be in connect state now */
 	BOOST_CHECK(_pcieBackendInstance->isConnected() == true );

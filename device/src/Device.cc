@@ -363,7 +363,7 @@ void Device::open(boost::shared_ptr<DeviceBackend> DeviceBackend,
 
 void Device::open(std::string const & aliasName) {
 	BackendFactory FactoryInstance = BackendFactory::getInstance();
-	_pDeviceBackend =  FactoryInstance.createDevice(aliasName);
+	_pDeviceBackend =  FactoryInstance.createBackend(aliasName);
 	if (_pDeviceBackend)
 		_pDeviceBackend->open();
 	else

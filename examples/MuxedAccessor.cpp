@@ -76,7 +76,7 @@ int main() {
   // Start of Real Example, now that DMA region is set up with multiplexed
   // sequences
   //boost::shared_ptr< mtca4u::Device< mtca4u::DeviceBackend > > myDevice =
-  //	FactoryInstance.createDevice("PCIE3");
+  //	FactoryInstance.createBackend("PCIE3");
   boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
   myDevice->open("PCIE3");
   // The 16 bit elements in the 'DMA' region are converted into double because

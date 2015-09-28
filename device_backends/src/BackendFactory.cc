@@ -24,7 +24,7 @@ void BackendFactory::registerDeviceType(std::string interface, std::string proto
 	creatorMap[make_pair(interface,protocol)] = creatorFunction;
 }
 
-boost::shared_ptr<DeviceBackend> BackendFactory::createDevice(std::string aliasName) {
+boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
 	boost::shared_ptr<DeviceBackend> base;
 	DMapFile::dRegisterInfo elem;
 	boost::tie(base, elem) = parseDMap(aliasName);
