@@ -50,25 +50,12 @@ namespace mtca4u {
    */
   class Device {
     public:
+
       typedef boost::shared_ptr<DeviceBackend> _ptrDeviceBackend;
 
-    private:
-      _ptrDeviceBackend _pDeviceBackend;
-      std::string _mapFileName;
-      ptrmapFile _registerMap;
-
-    public:
       class RegisterAccessor {
-        RegisterInfoMap::RegisterInfo _registerInfo;
-        typename Device::_ptrDeviceBackend _pDeviceBackend;
-        FixedPointConverter _fixedPointConverter;
-
-        private:
-        static void checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo, size_t dataSize,
-            uint32_t addRegOffset, uint32_t &retDataSize,
-            uint32_t &retRegOff);
-
         public:
+
         RegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
             typename Device::_ptrDeviceBackend pDeviceBackend);
 
@@ -201,6 +188,17 @@ namespace mtca4u {
          *  converter for the register
          */
         FixedPointConverter const &getFixedPointConverter() const;
+
+        private:
+
+        RegisterInfoMap::RegisterInfo _registerInfo;
+        typename Device::_ptrDeviceBackend _pDeviceBackend;
+        FixedPointConverter _fixedPointConverter;
+
+        static void checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo, size_t dataSize,
+            uint32_t addRegOffset, uint32_t &retDataSize,
+            uint32_t &retRegOff);
+
       };
 
       /** A typedef for backward compatibility.
@@ -383,6 +381,11 @@ namespace mtca4u {
       virtual ~Device();
 
     private:
+
+      _ptrDeviceBackend _pDeviceBackend;
+      std::string _mapFileName;
+      ptrmapFile _registerMap;
+
       void checkRegister(const std::string &regName,
           const std::string &registerModule, size_t dataSize,
           uint32_t addRegOffset, uint32_t &retDataSize,
