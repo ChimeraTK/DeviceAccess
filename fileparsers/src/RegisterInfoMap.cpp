@@ -6,17 +6,17 @@
 
 namespace mtca4u{
 
-std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& registerInfoMap) {
 	size_t size;
 	os << "=======================================" << std::endl;
-	os << "MAP FILE NAME: " << me.map_file_name << std::endl;
+	os << "MAP FILE NAME: " << registerInfoMap.map_file_name << std::endl;
 	os << "---------------------------------------" << std::endl;
-	for (size = 0; size < me.metadata.size(); size++) {
-		os << me.metadata[size];
+	for (size = 0; size < registerInfoMap.metadata.size(); size++) {
+		os << registerInfoMap.metadata[size];
 	}
 	os << "---------------------------------------" << std::endl;
-	for (size = 0; size < me.map_file_elems.size(); size++) {
-		os << me.map_file_elems[size] << std::endl;
+	for (size = 0; size < registerInfoMap.map_file_elems.size(); size++) {
+		os << registerInfoMap.map_file_elems[size] << std::endl;
 	}
 	os << "=======================================";
 	return os;
@@ -138,12 +138,12 @@ std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::metaData& me) 
 	return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo& me) {
-	os << me.reg_name << " 0x" << std::hex << me.reg_elem_nr << " 0x" << me.reg_address
-			<< " 0x" << me.reg_size << " 0x" << me.reg_bar << std::dec
-			<< " " << me.reg_width << " " << me.reg_frac_bits << " "
-			<< (me.reg_signed?"true":"false" )
-			<< (!me.reg_module.empty()?" "+me.reg_module:"");
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo& registerInfo) {
+	os << registerInfo.reg_name << " 0x" << std::hex << registerInfo.reg_elem_nr << " 0x" << registerInfo.reg_address
+			<< " 0x" << registerInfo.reg_size << " 0x" << registerInfo.reg_bar << std::dec
+			<< " " << registerInfo.reg_width << " " << registerInfo.reg_frac_bits << " "
+			<< (registerInfo.reg_signed?"true":"false" )
+			<< (!registerInfo.reg_module.empty()?" "+registerInfo.reg_module:"");
 	return os;
 }
 

@@ -61,7 +61,7 @@ public:
 		bool     reg_signed; /**< Signed/Unsigned flag */
 		uint32_t line_nr; /**< Number of line with description of register in MAP file */
 		std::string reg_module; /**< Name of the module this register is in*/
-		friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& me);
+		friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
 		/// Convenience constructor which sets all data members. They all have default values, so this
 		/// also acts as default constructor.
@@ -139,7 +139,7 @@ public:
 		void insert(const errorElem& elem);
 
 	};
-	friend std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& me);
+	friend std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& registerInfoMap);
 
 	/**
 	 * @brief Returns detailed information about selected register

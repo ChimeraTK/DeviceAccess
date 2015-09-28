@@ -141,8 +141,8 @@ public:
 class compareModuleName_pred{
 public:
 	compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
-	bool operator()(const RegisterInfoMap::RegisterInfo & me) const{
-		return (me.reg_module == _moduleName);
+	bool operator()(const RegisterInfoMap::RegisterInfo & registerInfo) const{
+		return (registerInfo.reg_module == _moduleName);
 	}
 	typedef RegisterInfoMap::RegisterInfo argument_type;
 private:

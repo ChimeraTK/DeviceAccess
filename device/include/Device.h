@@ -64,12 +64,12 @@ public:
 		FixedPointConverter _fixedPointConverter;
 
 	private:
-		static void checkRegister(const RegisterInfoMap::RegisterInfo &me, size_t dataSize,
+		static void checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo, size_t dataSize,
 				uint32_t addRegOffset, uint32_t &retDataSize,
 				uint32_t &retRegOff);
 
 	public:
-		RegisterAccessor(const RegisterInfoMap::RegisterInfo &_me,
+		RegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
 				typename Device::_ptrDeviceBackend pDeviceBackend);
 
 		/** Read one ore more words from the device. It calls DeviceBackend::readArea,

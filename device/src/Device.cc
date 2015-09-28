@@ -21,19 +21,19 @@ Device::RegisterAccessor Device::getRegObject(
 		const std::string &regName) const {
 	checkPointersAreNotNull();
 
-	RegisterInfoMap::RegisterInfo me;
-	_registerMap->getRegisterInfo(regName, me);
-	return Device::RegisterAccessor(me, _pDeviceBackend);
+	RegisterInfoMap::RegisterInfo registerInfo;
+	_registerMap->getRegisterInfo(regName, registerInfo);
+	return Device::RegisterAccessor(registerInfo, _pDeviceBackend);
 }
 
 boost::shared_ptr<Device::RegisterAccessor> Device::getRegisterAccessor(const std::string &regName,
 		const std::string &module) const {
 	checkPointersAreNotNull();
 
-	RegisterInfoMap::RegisterInfo me;
-	_registerMap->getRegisterInfo(regName, me, module);
+	RegisterInfoMap::RegisterInfo registerInfo;
+	_registerMap->getRegisterInfo(regName, registerInfo, module);
 	return boost::shared_ptr<Device::RegisterAccessor>(
-			new Device::RegisterAccessor(me, _pDeviceBackend));
+			new Device::RegisterAccessor(registerInfo, _pDeviceBackend));
 }
 
 std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(
@@ -67,8 +67,8 @@ void Device::checkRegister(const std::string &regName,
 		uint32_t &retRegOff, uint8_t &retRegBar) const {
 	checkPointersAreNotNull();
 
-	RegisterInfoMap::RegisterInfo me;
-	_registerMap->getRegisterInfo(regName, me, regModule);
+	RegisterInfoMap::RegisterInfo registerInfo;
+	_registerMap->getRegisterInfo(regName, registerInfo, regModule);
 	if (addRegOffset % 4) {
 		throw DeviceException("Register offset must be divisible by 4",
 				DeviceException::EX_WRONG_PARAMETER);
@@ -78,16 +78,16 @@ void Device::checkRegister(const std::string &regName,
 			throw DeviceException("Data size must be divisible by 4",
 					DeviceException::EX_WRONG_PARAMETER);
 		}
-		if (dataSize > me.reg_size - addRegOffset) {
+		if (dataSize > registerInfo.reg_size - addRegOffset) {
 			throw DeviceException("Data size exceed register size",
 					DeviceException::EX_WRONG_PARAMETER);
 		}
 		retDataSize = dataSize;
 	} else {
-		retDataSize = me.reg_size;
+		retDataSize = registerInfo.reg_size;
 	}
-	retRegBar = me.reg_bar;
-	retRegOff = me.reg_address + addRegOffset;
+	retRegBar = registerInfo.reg_bar;
+	retRegOff = registerInfo.reg_address + addRegOffset;
 }
 
 void Device::readReg(const std::string &regName, int32_t *data,
@@ -338,7 +338,7 @@ void Device::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
 }
 
 RegisterInfoMap::RegisterInfo const &Device::RegisterAccessor::getRegisterInfo() const {
-	return _registerInfo; // me is the RegisterInfoent
+	return _registerInfo; // registerInfo is the RegisterInfoent
 }
 
 FixedPointConverter const &Device::RegisterAccessor::getFixedPointConverter()
