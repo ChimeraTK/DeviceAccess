@@ -3,6 +3,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 #add check if boost not found
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/plugin_example/include")
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src testSources)
 add_library( ${PROJECT_NAME}_TEST_LIBRARY ${testSources} )
 

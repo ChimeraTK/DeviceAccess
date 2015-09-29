@@ -1,5 +1,4 @@
 #include <boost/test/included/unit_test.hpp>
-#include <memory>
 using namespace boost::unit_test_framework;
 
 #include "Utilities.h"

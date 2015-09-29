@@ -1,12 +1,12 @@
 /*
- * ExampleDevice.h
+ * ExampleBackend.h
  *
  *  Created on: Jul 31, 2015
  *      Author: nshehzad
  */
 
-#ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
-#define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_
+#ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
+#define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
 #include <mtca4u/DeviceBackendImpl.h>
 #include <mtca4u/BackendFactory.h>
 #include <list>
@@ -14,13 +14,13 @@
 #include <boost/shared_ptr.hpp>
 using namespace mtca4u;
 
-/** An Example to show how to write a device class and add it to the factory.
+/** An Example to show how to write a backend device class and add it to the factory.
  *
  */
-class ExampleDevice : public DeviceBackendImpl {
+class ExampleBackend : public DeviceBackendImpl {
 public:
-  ExampleDevice();
-  virtual ~ExampleDevice();
+  ExampleBackend();
+  virtual ~ExampleBackend();
   virtual void open();
   virtual void close();
   static boost::shared_ptr<mtca4u::DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
@@ -36,16 +36,16 @@ public:
 /** This class is used as a way to register the device to the factory.
  *
  */
-class ExampleDeviceRegisterer{
+class ExampleBackendRegisterer{
 public:
-  ExampleDeviceRegisterer(){
+  ExampleBackendRegisterer(){
 #ifdef _DEBUG
-    std::cout<<"ExampleDeviceRegisterer"<<std::endl;
+    std::cout<<"ExampleBackendRegisterer"<<std::endl;
 #endif
-    BackendFactory::getInstance().registerBackendType("exx","",&ExampleDevice::createInstance);
+    BackendFactory::getInstance().registerBackendType("exx","",&ExampleBackend::createInstance);
   }
 };
-ExampleDeviceRegisterer globalExampleDeviceRegisterer;
+ExampleBackendRegisterer globalExampleBackendRegisterer;
 
 
-#endif /* SOURCE_DIRECTORY__EXAMPLES_EXAMPLEDEVICE_H_ */
+#endif /* SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_ */

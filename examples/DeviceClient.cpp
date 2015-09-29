@@ -1,5 +1,5 @@
 #include <iostream>
-#include <plugin/ExampleDevice.h>
+#include <plugin/ExampleBackend.h>
 #include <mtca4u/BackendFactory.h>
 using namespace mtca4u;
 int main() {
@@ -33,6 +33,12 @@ int main() {
 	exampleDeviceInstance->open();
 	if (exampleDeviceInstance->isOpen() == true )
 		std::cout<<"Device status: Open"<<std::endl;
+	exampleDeviceInstance->readDeviceInfo();
+	int *test = 0;
+	exampleDeviceInstance->read(0,0,test,0);
+	exampleDeviceInstance->write(0,0,0,0);
+	exampleDeviceInstance->readDMA(0,0,test,0);
+	exampleDeviceInstance->writeDMA(0,0,0,0);
 	exampleDeviceInstance->close();
 	if (exampleDeviceInstance->isOpen() == false )
 		std::cout<<"Device status: Closed"<<std::endl;
