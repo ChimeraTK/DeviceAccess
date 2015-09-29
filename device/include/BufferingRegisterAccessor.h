@@ -14,17 +14,6 @@
 
 namespace mtca4u {
 
-  /// Exception class
-  class BufferingRegisterAccessorException: public Exception {
-    public:
-      enum {
-        EMPTY_AREA
-      };
-      BufferingRegisterAccessorException(const std::string &message, unsigned int exceptionID)
-      : Exception(message, exceptionID) {
-      }
-  };
-
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
    *  type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
@@ -41,12 +30,18 @@ namespace mtca4u {
        *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
        */
       BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, RegisterInfoMap::RegisterInfo &registerInfo)
-    : _registerInfo(registerInfo), _dev(dev) {
+          : _registerInfo(registerInfo),
+            _dev(dev) {
         fixedPointConverter = FixedPointConverter(registerInfo.reg_width, registerInfo.reg_frac_bits,
             registerInfo.reg_signed);
         rawBuffer.resize(registerInfo.reg_elem_nr);
         cookedBuffer.resize(registerInfo.reg_elem_nr);
       }
+
+      /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
+       *  @attention Accessors created with this constructors will be dysfunctional!
+       */
+      BufferingRegisterAccessor() {}
 
       /** Read the data from the device, convert it and store in buffer.
        */
