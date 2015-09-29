@@ -40,7 +40,7 @@ public:
 class Utilities {
 
 public:
-	Utilities();
+	Utilities(){};
 	Sdm static parseSdm(std::string sdmString);
 	Sdm static parseDeviceString(std::string deviceEntry);
 	bool static isSdm(std::string theString);

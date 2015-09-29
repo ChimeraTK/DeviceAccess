@@ -12,14 +12,6 @@
 
 namespace mtca4u {
 
-Utilities::Utilities() {
-
-}
-
-Utilities::~Utilities() {
-
-}
-
 size_t Utilities::countOccurence(std::string theString, char delimiter)
 {
 	size_t  count = std::count(theString.begin(), theString.end(), delimiter);

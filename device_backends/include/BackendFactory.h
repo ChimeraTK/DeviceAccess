@@ -7,7 +7,6 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/filesystem.hpp>
 #include "DMapFile.h"
-//#define _DEBUG
 #ifdef _DEBUG
 #include <iostream>
 #endif
