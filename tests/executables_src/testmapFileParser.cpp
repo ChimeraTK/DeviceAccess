@@ -57,7 +57,7 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 }
 
 void MapFileParserTest::testFileDoesNotExist(){
-	mtca4u::mapFileParser fileparser;
+	mtca4u::MapFileParser fileparser;
 	BOOST_CHECK_THROW(fileparser.parse("NonexistentFile.map"),
 			mtca4u::MapFileException);
 	try{
@@ -69,7 +69,7 @@ void MapFileParserTest::testFileDoesNotExist(){
 }
 
 void MapFileParserTest::testInvalidMetadata(){
-	mtca4u::mapFileParser map_file_parser;
+	mtca4u::MapFileParser map_file_parser;
 	BOOST_CHECK_THROW(map_file_parser.parse("invalid_metadata.map"),
 			mtca4u::MapFileException);
 
@@ -82,7 +82,7 @@ void MapFileParserTest::testInvalidMetadata(){
 }
 
 void MapFileParserTest::testMandatoryRegisterFieldMissing () {
-	mtca4u::mapFileParser map_file_parser;
+	mtca4u::MapFileParser map_file_parser;
 	BOOST_CHECK_THROW(map_file_parser.parse("MandatoryRegisterfIeldMissing.map"),
 			mtca4u::MapFileException);
 	try{
@@ -95,7 +95,7 @@ void MapFileParserTest::testMandatoryRegisterFieldMissing () {
 }
 
 void MapFileParserTest::testIncorrectRegisterWidth () {
-	mtca4u::mapFileParser map_file_parser;
+	mtca4u::MapFileParser map_file_parser;
 	BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth.map"),
 			mtca4u::MapFileException);
 	try{
@@ -108,8 +108,8 @@ void MapFileParserTest::testIncorrectRegisterWidth () {
 }
 
 void MapFileParserTest::testFracBits () {
-	mtca4u::mapFileParser map_file_parser1;
-	mtca4u::mapFileParser map_file_parser2;
+	mtca4u::MapFileParser map_file_parser1;
+	mtca4u::MapFileParser map_file_parser2;
 	BOOST_CHECK_THROW(map_file_parser1.parse("IncorrectFracBits1.map"),
 			mtca4u::MapFileException);
 	BOOST_CHECK_THROW(map_file_parser2.parse("IncorrectFracBits2.map"),
@@ -133,7 +133,7 @@ void MapFileParserTest::testFracBits () {
 }
 
 void MapFileParserTest::testGoodMapFileParse () {
-	mtca4u::mapFileParser map_file_parser;
+	mtca4u::MapFileParser map_file_parser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> ptrmapFile =
 			map_file_parser.parse("goodMapFile_withoutModules.map");
 
@@ -183,7 +183,7 @@ void MapFileParserTest::testGoodMapFileParse () {
 }
 
 void MapFileParserTest::testGoodMappFileParse () {
-	mtca4u::mapFileParser map_file_parser;
+	mtca4u::MapFileParser map_file_parser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> ptrmapFile =
 			map_file_parser.parse("goodMapFile.map");
 
@@ -238,7 +238,7 @@ void MapFileParserTest::testGoodMappFileParse () {
 }
 
 void MapFileParserTest::testMixedMapFileParse () {
-	mtca4u::mapFileParser map_file_parser;
+	mtca4u::MapFileParser map_file_parser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> ptrmapFile =
 			map_file_parser.parse("mixedMapFile.map");
 
@@ -276,34 +276,34 @@ void MapFileParserTest::testSplitStringAtLastDot(){
 	std::string justDot(".");
 
 	std::pair<std::string, std::string> stringPair =
-			mtca4u::mapFileParser::splitStringAtLastDot(simple);
+			mtca4u::MapFileParser::splitStringAtLastDot(simple);
 	BOOST_CHECK( stringPair.first.empty() );
 	BOOST_CHECK( stringPair.second == simple );
 
-	stringPair = mtca4u::mapFileParser::splitStringAtLastDot(normal);
+	stringPair = mtca4u::MapFileParser::splitStringAtLastDot(normal);
 	BOOST_CHECK( stringPair.first == "MODULE" );
 	BOOST_CHECK( stringPair.second == "REGISTER" );
 
-	stringPair = mtca4u::mapFileParser::splitStringAtLastDot(withDots);
+	stringPair = mtca4u::MapFileParser::splitStringAtLastDot(withDots);
 	BOOST_CHECK( stringPair.first == "MODULE.NAME.WITH.DOTS" );
 	BOOST_CHECK( stringPair.second == "REGISTER" );
 
-	stringPair = mtca4u::mapFileParser::splitStringAtLastDot(stillRegister);
+	stringPair = mtca4u::MapFileParser::splitStringAtLastDot(stillRegister);
 	BOOST_CHECK( stringPair.first.empty() );
 	BOOST_CHECK( stringPair.second == "STILL_REGISTER" );
 
-	stringPair = mtca4u::mapFileParser::splitStringAtLastDot(emptyRegister);
+	stringPair = mtca4u::MapFileParser::splitStringAtLastDot(emptyRegister);
 	BOOST_CHECK( stringPair.first == "MODULE" );
 	BOOST_CHECK( stringPair.second.empty() );
 
-	stringPair = mtca4u::mapFileParser::splitStringAtLastDot(justDot);
+	stringPair = mtca4u::MapFileParser::splitStringAtLastDot(justDot);
 	BOOST_CHECK( stringPair.first.empty() );
 	BOOST_CHECK( stringPair.second.empty() );
 
 }
 
 void MapFileParserTest::testBadMappFileParse(){
-	mtca4u::mapFileParser fileparser;
+	mtca4u::MapFileParser fileparser;
 	BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"),
 			mtca4u::MapFileException);
 	try{

@@ -28,7 +28,7 @@ const unsigned int BAR_MASK = 0x7;
 const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
 DummyBackend::DummyBackend(std::string mapFileName): _mapFile(mapFileName){
-  _registerMapping = mapFileParser().parse(_mapFile);
+  _registerMapping = MapFileParser().parse(_mapFile);
   resizeBarContents();
 }
 

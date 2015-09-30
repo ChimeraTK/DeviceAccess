@@ -25,13 +25,13 @@ namespace mtca4u{
  */
 class DMapFilesParser {
 public:
-	typedef std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::iterator iterator;
-	typedef std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> >::const_iterator const_iterator;
+	typedef std::vector<std::pair<DMapFile::DRegisterInfo, ptrmapFile> >::iterator iterator;
+	typedef std::vector<std::pair<DMapFile::DRegisterInfo, ptrmapFile> >::const_iterator const_iterator;
 
 private:
 	DMapFileParser dmap_file_parser; /**< DMAP file parser*/
-	mapFileParser map_file_parser; /**< MAP file parser*/
-	std::vector<std::pair<DMapFile::dRegisterInfo, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
+	MapFileParser map_file_parser; /**< MAP file parser*/
+	std::vector<std::pair<DMapFile::DRegisterInfo, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
 	std::vector<ptrmapFile> map_files; /**< vector of parsed MAP files*/
 	/**
 	 * @brief Performs parsing of all DMAP files located in directory passed as a parameter and all MAP files
@@ -130,7 +130,7 @@ public:
 	/** Get the dRegisterInfo from the device name.
 	 *  @deprecated Use the getter function which returns the result instead of passing it by reference.
 	 */
-	void getdMapFileElem(const std::string& devName, DMapFile::dRegisterInfo &dMapFileElem);
+	void getdMapFileElem(const std::string& devName, DMapFile::DRegisterInfo &dMapFileElem);
 
 	/** Get the dRegisterInfo from the device name.
 	 *  @attention The reference is only valid as long as the dmapFilesParser object is in scope
@@ -138,7 +138,7 @@ public:
 	 *  <pre>dmapFile::dRegisterInfo myDRegisterInfo = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
 	 *   <pre>dmapFile::dRegisterInfo const & myDRegisterInfo = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre>
 	 */
-	DMapFile::dRegisterInfo const &  getdMapFileElem(const std::string& devName);
+	DMapFile::DRegisterInfo const &  getdMapFileElem(const std::string& devName);
 
 
 	/**
@@ -148,7 +148,7 @@ public:
 	 * @param elem_nr device number
 	 * @param dMapFileElem detailed information about register specified by number
 	 */
-	void getdMapFileElem(int elem_nr, DMapFile::dRegisterInfo &dMapFileElem);
+	void getdMapFileElem(int elem_nr, DMapFile::DRegisterInfo &dMapFileElem);
 	/**
 	 * @brief  Checks correctness of DMAP files and associated MAP files
 	 *
@@ -159,7 +159,7 @@ public:
 	 * @return true if succeed, otherwise false
 	 *
 	 */
-	bool check(DMapFile::errorList::errorElem::TYPE dlevel, RegisterInfoMap::errorList::errorElem::TYPE mlevel, DMapFile::errorList &err, RegisterInfoMap::errorList &map_err);
+	bool check(DMapFile::ErrorList::ErrorElem::TYPE dlevel, RegisterInfoMap::ErrorList::ErrorElem::TYPE mlevel, DMapFile::ErrorList &err, RegisterInfoMap::ErrorList &map_err);
 	/**
 	 * @brief Returns iterator to first pair of device and its MAP file described in DMAP file
 	 *

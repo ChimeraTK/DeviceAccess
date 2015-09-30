@@ -26,7 +26,7 @@ void RegisterInfoMap::insert(RegisterInfo &elem) {
 	map_file_elems.push_back(elem);
 }
 
-void RegisterInfoMap::insert(metaData &elem) {
+void RegisterInfoMap::insert(MetaData &elem) {
 	metadata.push_back(elem);
 }
 
@@ -51,7 +51,7 @@ void RegisterInfoMap::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
 }
 
 void RegisterInfoMap::getMetaData(const std::string &metaDataName, std::string& metaDataValue) const{
-	std::vector<RegisterInfoMap::metaData>::const_iterator iter;
+	std::vector<RegisterInfoMap::MetaData>::const_iterator iter;
 
 	iter = std::find_if(metadata.begin(), metadata.end(), findMetaDataByName_pred(metaDataName));
 	if (iter == metadata.end()) {
@@ -70,7 +70,7 @@ typedef struct _addresses {
 
 }
 
-bool RegisterInfoMap::check(errorList &err, RegisterInfoMap::errorList::errorElem::TYPE level) {
+bool RegisterInfoMap::check(ErrorList &err, RegisterInfoMap::ErrorList::ErrorElem::TYPE level) {
 	std::vector<addresses> v_addresses;
 	std::vector<addresses>::iterator v_iter;
 	addresses address;
@@ -87,8 +87,8 @@ bool RegisterInfoMap::check(errorList &err, RegisterInfoMap::errorList::errorEle
 	iter_n = iter_p + 1;
 	while (1) {
 		if ( (iter_p->reg_name == iter_n->reg_name) && (iter_p->reg_module == iter_n->reg_module) ) {
-			err.insert(errorList::errorElem(errorList::errorElem::ERROR,
-					errorList::errorElem::NONUNIQUE_REGISTER_NAME,
+			err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::ERROR,
+					ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME,
 					*iter_p, *iter_n, map_file_name));
 			ret = false;
 		}
@@ -112,16 +112,16 @@ bool RegisterInfoMap::check(errorList &err, RegisterInfoMap::errorList::errorEle
 			if (iter_p->reg_bar == (v_iter->iter)->reg_bar) {
 				if ( (v_iter->start >= iter_p->reg_address) &&
 						(v_iter->start < (iter_p->reg_address + iter_p->reg_size)) ) {
-					if (level >= errorList::errorElem::WARNING){
-						err.insert(errorList::errorElem(errorList::errorElem::WARNING,
-								errorList::errorElem::WRONG_REGISTER_ADDRESSES,
+					if (level >= ErrorList::ErrorElem::WARNING){
+						err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::WARNING,
+								ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES,
 								*iter_p, *(v_iter->iter), map_file_name));
 						ret = false;
 					}
 				} else if ( (v_iter->start <= iter_p->reg_address) && (iter_p->reg_address < v_iter->end) ) {
-					if (level >= errorList::errorElem::WARNING){
-						err.insert(errorList::errorElem(errorList::errorElem::WARNING,
-								errorList::errorElem::WRONG_REGISTER_ADDRESSES,
+					if (level >= ErrorList::ErrorElem::WARNING){
+						err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::WARNING,
+								ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES,
 								*iter_p, *(v_iter->iter), map_file_name));
 						ret = false;
 					}
@@ -133,7 +133,7 @@ bool RegisterInfoMap::check(errorList &err, RegisterInfoMap::errorList::errorEle
 	return ret;
 }
 
-std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::metaData& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::MetaData& me) {
 	os << "METADATA-> NAME: \"" << me.name << "\" VALUE: " << me.value << std::endl;
 	return os;
 }
@@ -147,12 +147,12 @@ std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo& 
 	return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList::errorElem::TYPE& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::ErrorList::ErrorElem::TYPE& me) {
 	switch (me) {
-	case RegisterInfoMap::errorList::errorElem::ERROR:
+	case RegisterInfoMap::ErrorList::ErrorElem::ERROR:
 		os << "ERROR";
 		break;
-	case RegisterInfoMap::errorList::errorElem::WARNING:
+	case RegisterInfoMap::ErrorList::ErrorElem::WARNING:
 		os << "WARNING";
 		break;
 	default:
@@ -162,7 +162,7 @@ std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList::err
 	return os;
 }
 
-RegisterInfoMap::errorList::errorElem::errorElem(RegisterInfoMap::errorList::errorElem::TYPE info_type, RegisterInfoMap::errorList::errorElem::MAP_FILE_ERR e_type, const RegisterInfoMap::RegisterInfo &reg_1, const RegisterInfoMap::RegisterInfo &reg_2, const std::string &file_name) {
+RegisterInfoMap::ErrorList::ErrorElem::ErrorElem(RegisterInfoMap::ErrorList::ErrorElem::TYPE info_type, RegisterInfoMap::ErrorList::ErrorElem::MAP_FILE_ERR e_type, const RegisterInfoMap::RegisterInfo &reg_1, const RegisterInfoMap::RegisterInfo &reg_2, const std::string &file_name) {
 	err_type = e_type;
 	err_reg_1 = reg_1;
 	err_reg_2 = reg_2;
@@ -170,28 +170,28 @@ RegisterInfoMap::errorList::errorElem::errorElem(RegisterInfoMap::errorList::err
 	type = info_type;
 }
 
-std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList::errorElem& me) {
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::ErrorList::ErrorElem& me) {
 	switch (me.err_type) {
-	case RegisterInfoMap::errorList::errorElem::NONUNIQUE_REGISTER_NAME:
+	case RegisterInfoMap::ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME:
 		os << me.type << ": Found two registers with the same name: \"" << me.err_reg_1.reg_name << "\" in file " << me.err_file_name << " in lines " << me.err_reg_1.line_nr << " and " << me.err_reg_2.line_nr;
 		break;
-	case RegisterInfoMap::errorList::errorElem::WRONG_REGISTER_ADDRESSES:
+	case RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES:
 		os << me.type << ": Found two registers with overlapping addresses: \"" << me.err_reg_1.reg_name << "\" and \"" << me.err_reg_2.reg_name << "\" in file " << me.err_file_name << " in lines " << me.err_reg_1.line_nr << " and " << me.err_reg_2.line_nr;
 		break;
 	}
 	return os;
 }
 
-void RegisterInfoMap::errorList::clear() {
+void RegisterInfoMap::ErrorList::clear() {
 	errors.clear();
 }
 
-void RegisterInfoMap::errorList::insert(const RegisterInfoMap::errorList::errorElem& elem) {
+void RegisterInfoMap::ErrorList::insert(const RegisterInfoMap::ErrorList::ErrorElem& elem) {
 	errors.push_back(elem);
 }
 
-std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::errorList& me) {
-	std::list<RegisterInfoMap::errorList::errorElem>::const_iterator iter;
+std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::ErrorList& me) {
+	std::list<RegisterInfoMap::ErrorList::ErrorElem>::const_iterator iter;
 	for (iter = me.errors.begin(); iter != me.errors.end(); iter++) {
 		os << *iter << std::endl;
 	}
@@ -256,7 +256,7 @@ std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule
 	return RegisterInfoentList;
 }
 
-RegisterInfoMap::metaData::metaData( std::string const & the_name,
+RegisterInfoMap::MetaData::MetaData( std::string const & the_name,
 		std::string const & the_value)
 : name(the_name), value(the_value)
 {}

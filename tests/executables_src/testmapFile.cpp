@@ -132,9 +132,9 @@ void MapFileTest::testInsertElement(){
 void MapFileTest::testInsertMetadata(){
 	mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
 
-	mtca4u::RegisterInfoMap::metaData metaData1("HW_VERSION", "1.6");
-	mtca4u::RegisterInfoMap::metaData metaData2("FW_VERSION", "2.5");
-	mtca4u::RegisterInfoMap::metaData metaData3("TEST", "Some additional information");
+	mtca4u::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
+	mtca4u::RegisterInfoMap::MetaData metaData2("FW_VERSION", "2.5");
+	mtca4u::RegisterInfoMap::MetaData metaData3("TEST", "Some additional information");
 
 	dummyMapFile.insert(metaData1);
 	dummyMapFile.insert(metaData2);
@@ -202,7 +202,7 @@ void MapFileTest::testGetRegisterInfo () {
 
 void MapFileTest::testGetMetaData () {
 	mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
-	mtca4u::RegisterInfoMap::metaData metaData1("HW_VERSION", "1.6");
+	mtca4u::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
 	dummyMapFile.insert(metaData1);
 
 	std::string metaDataNameToRetrive;
@@ -234,38 +234,38 @@ void MapFileTest::testCheckRegistersOfSameName(){
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 3, 32, 0, true, 1, "Module1");
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 3, 32, 0, true, 2, "Module2");
 
-	mtca4u::RegisterInfoMap::errorList errorList;
+	mtca4u::RegisterInfoMap::ErrorList errorList;
 	dummyMapFile.insert(RegisterInfoent1);
 	// check after the first element to cover the specific branch (special case)
-	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 	BOOST_CHECK(errorList.errors.empty());
 
 	dummyMapFile.insert(RegisterInfoentModule1);
 	dummyMapFile.insert(RegisterInfoentModule2);
-	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 	BOOST_CHECK(errorList.errors.empty());
 
 	dummyMapFile.insert(RegisterInfoent2);
 	dummyMapFile.insert(RegisterInfoent3);
 	dummyMapFile.insert(RegisterInfoent4);
-	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 	BOOST_CHECK(errorList.errors.size() == 2);
 
-	std::list<mtca4u::RegisterInfoMap::errorList::errorElem>::iterator errorIterator;
+	std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
 	for(errorIterator = errorList.errors.begin();
 			errorIterator != errorList.errors.end();
 			++errorIterator){
 
 		BOOST_CHECK(errorIterator->err_type ==
-				mtca4u::RegisterInfoMap::errorList::errorElem::NONUNIQUE_REGISTER_NAME);
+				mtca4u::RegisterInfoMap::ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME);
 		BOOST_CHECK(errorIterator->type ==
-				mtca4u::RegisterInfoMap::errorList::errorElem::ERROR);
+				mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
 	}
 
 	// duplicate identical entries is an error
 	dummyMapFile.insert(RegisterInfoent4);
 	// only get the errors. There also is an overlap warning now.
-	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::errorList::errorElem::ERROR);
+	dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
 	BOOST_CHECK(errorList.errors.size() == 3);
 }
 
@@ -289,34 +289,34 @@ void MapFileTest::testCheckRegisterAddressOverlap(){
 	dummyMapFile.insert(RegisterInfoent6);
 	dummyMapFile.insert(RegisterInfoent7);
 
-	mtca4u::RegisterInfoMap::errorList errorList;
+	mtca4u::RegisterInfoMap::ErrorList errorList;
 	dummyMapFile.check(errorList,
-			mtca4u::RegisterInfoMap::errorList::errorElem::ERROR);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
 	BOOST_CHECK(errorList.errors.empty());
 	dummyMapFile.check(errorList,
-			mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 	BOOST_CHECK(errorList.errors.size() == 2);
-	std::list<mtca4u::RegisterInfoMap::errorList::errorElem>::iterator errorIterator;
+	std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
 
 	errorIterator = errorList.errors.begin();
 	BOOST_CHECK(errorIterator->err_reg_1.reg_name == "TEST_REGISTER_NAME_3");
 	BOOST_CHECK(errorIterator->err_reg_2.reg_name == "TEST_REGISTER_NAME_2");
 	BOOST_CHECK(errorIterator->err_type ==
-			mtca4u::RegisterInfoMap::errorList::errorElem::WRONG_REGISTER_ADDRESSES);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
 	BOOST_CHECK(errorIterator->type ==
-			mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 
 	++errorIterator;
 	BOOST_CHECK(errorIterator->err_reg_1.reg_name == "TEST_REGISTER_NAME_4");
 	BOOST_CHECK(errorIterator->err_reg_2.reg_name == "TEST_REGISTER_NAME_1");
 	BOOST_CHECK(errorIterator->err_type ==
-			mtca4u::RegisterInfoMap::errorList::errorElem::WRONG_REGISTER_ADDRESSES);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
 	BOOST_CHECK(errorIterator->type ==
-			mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 }
 
 void MapFileTest::testMetadataCoutStreamOperator(){
-	mtca4u::RegisterInfoMap::metaData meta_data("metadata_name", "metadata_value");
+	mtca4u::RegisterInfoMap::MetaData meta_data("metadata_name", "metadata_value");
 	std::stringstream expected_stream;
 	expected_stream << "METADATA-> NAME: \"" <<
 			"metadata_name" << "\" VALUE: " << "metadata_value" << std::endl;
@@ -348,15 +348,15 @@ void MapFileTest::testRegisterInfoCoutStreamOperator(){
 
 void MapFileTest::testErrElemTypeCoutStreamOperator(){
 	std::stringstream stream1;
-	stream1 << mtca4u::RegisterInfoMap::errorList::errorElem::ERROR;
+	stream1 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR;
 	BOOST_CHECK(stream1.str() == "ERROR");
 
 	std::stringstream stream2;
-	stream2 << mtca4u::RegisterInfoMap::errorList::errorElem::WARNING;
+	stream2 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING;
 	BOOST_CHECK(stream2.str() == "WARNING");
 
 	std::stringstream stream3;
-	stream3 << mtca4u::RegisterInfoMap::errorList::errorElem::TYPE(4);
+	stream3 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::TYPE(4);
 	BOOST_CHECK(stream3.str() == "UNKNOWN");
 }
 
@@ -369,16 +369,16 @@ void MapFileTest::testErrorElemCoutStreamOperator(){
 	dummyMapFile.insert(RegisterInfoent1);
 	dummyMapFile.insert(RegisterInfoent2);
 
-	mtca4u::RegisterInfoMap::errorList errorList;
+	mtca4u::RegisterInfoMap::ErrorList errorList;
 	dummyMapFile.check(errorList,
-			mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 	std::stringstream expected_stream;
-	expected_stream << mtca4u::RegisterInfoMap::errorList::errorElem::WARNING <<
+	expected_stream << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING <<
 			": Found two registers with overlapping addresses: \"" <<
 			"TEST_REGISTER_NAME_2" << "\" and \"" << "TEST_REGISTER_NAME_1" <<
 			"\" in file " << "dummy.map" << " in lines "
 			<< 0 << " and " << 0;
-	std::list<mtca4u::RegisterInfoMap::errorList::errorElem>::iterator errorIterator;
+	std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
 	errorIterator = errorList.errors.begin();
 
 	std::stringstream actual_stream;
@@ -390,17 +390,17 @@ void MapFileTest::testErrorElemCoutStreamOperator(){
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
 	dummyMapFile1.insert(RegisterInfoent3);
 	dummyMapFile1.insert(RegisterInfoent4);
-	mtca4u::RegisterInfoMap::errorList errorList1;
+	mtca4u::RegisterInfoMap::ErrorList errorList1;
 
 	dummyMapFile1.check(errorList1,
-			mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
-	std::list<mtca4u::RegisterInfoMap::errorList::errorElem>::iterator errorIterator1;
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+	std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator1;
 	errorIterator1 = errorList1.errors.begin();
 	std::stringstream actual_stream1;
 	actual_stream1 << *errorIterator1;
 
 	std::stringstream expected_stream1;
-	expected_stream1 << mtca4u::RegisterInfoMap::errorList::errorElem::ERROR <<
+	expected_stream1 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR <<
 			": Found two registers with the same name: \"" <<
 			"TEST_REGISTER_NAME_1" <<
 			"\" in file " << "dummy.map" <<\
@@ -423,17 +423,17 @@ MapFileTest::testErrorListCoutStreamOperator () {
 	dummyMapFile.insert(RegisterInfoent3);
 	dummyMapFile.insert(RegisterInfoent4);
 
-	mtca4u::RegisterInfoMap::errorList errorList;
+	mtca4u::RegisterInfoMap::ErrorList errorList;
 	dummyMapFile.check(errorList,
-			mtca4u::RegisterInfoMap::errorList::errorElem::WARNING);
+			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 
 	std::stringstream expected_stream;
-	expected_stream << mtca4u::RegisterInfoMap::errorList::errorElem::ERROR <<
+	expected_stream << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR <<
 			": Found two registers with the same name: \"" <<
 			"TEST_REGISTER_NAME_1" <<
 			"\" in file " << "dummy.map" <<\
 			" in lines " << 0 << " and " << 0 <<std::endl;
-	expected_stream << mtca4u::RegisterInfoMap::errorList::errorElem::WARNING <<
+	expected_stream << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING <<
 			": Found two registers with overlapping addresses: \"" <<
 			"TEST_REGISTER_NAME_3" << "\" and \"" << "TEST_REGISTER_NAME_1" <<
 			"\" in file " << "dummy.map" << " in lines "
@@ -450,7 +450,7 @@ void MapFileTest::testMapFileCoutStreamOperator(){
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1");
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1,
 			18, 3, false, 0, "TEST_MODULE");
-	mtca4u::RegisterInfoMap::metaData metaData1("HW_VERSION", "1.6");
+	mtca4u::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
 
 	dummyMapFile.insert(metaData1);
 	dummyMapFile.insert(RegisterInfoent1);

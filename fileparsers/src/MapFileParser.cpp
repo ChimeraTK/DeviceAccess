@@ -6,7 +6,7 @@
 
 namespace mtca4u{
 
-ptrmapFile mapFileParser::parse(const std::string &file_name)
+ptrmapFile MapFileParser::parse(const std::string &file_name)
 {
 	std::ifstream           file;
 	std::string             line;
@@ -29,7 +29,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
 		if (line[0] == '#')     {continue;}
 		if (line[0] == '@'){
 			std::string org_line = line;
-			RegisterInfoMap::metaData md;
+			RegisterInfoMap::MetaData md;
 			// Remove the '@' character...
 			line.erase(line.begin(), line.begin() + 1);
 			// ... and remove all the whitespace after it
@@ -116,7 +116,7 @@ ptrmapFile mapFileParser::parse(const std::string &file_name)
 	return pmap;
 }
 
-std::pair<std::string, std::string> mapFileParser::splitStringAtLastDot( std::string moduleDotName){
+std::pair<std::string, std::string> MapFileParser::splitStringAtLastDot( std::string moduleDotName){
 	size_t lastDotPosition = moduleDotName.rfind('.');
 
 	// some special case handlings to avoid string::split from throwing exceptions

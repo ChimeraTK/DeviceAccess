@@ -123,14 +123,14 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 	std::cout<<getCurrentWorkingDirectory()<<std::endl;
 	std::cout<<path_to_dmap_file<<std::endl;
 	filesParser.parse_file(path_to_dmap_file);
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent2;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent3;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent4;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent4;
 
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent2;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent3;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, path_to_dmap_file, "card1",
 			"/dev/dev1", path_to_map_file1);
@@ -173,7 +173,7 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 				mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
 	}
 
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent5 =
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent5 =
 			filesParser.getdMapFileElem("card2");
 
 	BOOST_CHECK(compareDRegisterInfoents(expectedDRegisterInfoent2,
@@ -189,7 +189,7 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 				mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
 	}
 
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent6;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent6;
 	filesParser.getdMapFileElem("card2", reterievedDRegisterInfoent6);
 	BOOST_CHECK(compareDRegisterInfoents(expectedDRegisterInfoent2,
 			reterievedDRegisterInfoent6) == true);
@@ -398,30 +398,30 @@ void DMapFilesParserTest::testCheckParsedInInfo() {
 	filesParser.parse_file(path_to_dmap_file);
 	filesParser1.parse_file("dMapDir/oneDevice.dmap");
 
-	mtca4u::DMapFile::errorList dmap_err_list;
-	mtca4u::RegisterInfoMap::errorList map_err_list;
+	mtca4u::DMapFile::ErrorList dmap_err_list;
+	mtca4u::RegisterInfoMap::ErrorList map_err_list;
 
 	bool returnValue =
-			filesParser1.check(mtca4u::DMapFile::errorList::errorElem::ERROR,
-					mtca4u::RegisterInfoMap::errorList::errorElem::WARNING,
+			filesParser1.check(mtca4u::DMapFile::ErrorList::ErrorElem::ERROR,
+					mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING,
 					dmap_err_list, map_err_list);
 	BOOST_CHECK(returnValue == true);
 
 	bool status =
-			filesParser.check(mtca4u::DMapFile::errorList::errorElem::ERROR,
-					mtca4u::RegisterInfoMap::errorList::errorElem::WARNING,
+			filesParser.check(mtca4u::DMapFile::ErrorList::ErrorElem::ERROR,
+					mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING,
 					dmap_err_list, map_err_list);
 
 	BOOST_CHECK(status == false);
 	int numberOfIncorrectLinesInFile = dmap_err_list.errors.size();
 	BOOST_CHECK(numberOfIncorrectLinesInFile == 1);
-	std::list<mtca4u::DMapFile::errorList::errorElem>::iterator errorIterator =
+	std::list<mtca4u::DMapFile::ErrorList::ErrorElem>::iterator errorIterator =
 			dmap_err_list.errors.begin();
 	BOOST_CHECK(
 			(errorIterator->err_dev_1.dev_name == errorIterator->err_dev_2.dev_name));
 
 	BOOST_CHECK(map_err_list.errors.size() == 2);
-	std::list<mtca4u::RegisterInfoMap::errorList::errorElem>::iterator mapErrIt;
+	std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator mapErrIt;
 	mapErrIt = map_err_list.errors.begin();
 
 	bool areNonUniqueRegistersPresent =
@@ -438,9 +438,9 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
 	std::string path_to_dmap_file = "dMapDir/valid.dmap";
 	filesParser.parse_file(path_to_dmap_file);
 
-	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
-	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, path_to_dmap_file, "card1",
 			"/dev/dev1", "goodMapFile_withoutModules.map");
@@ -472,9 +472,9 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 
 	std::string currentWrkingDir = getCurrentWorkingDirectory();
 
-	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent2;
-	mtca4u::DMapFile::dRegisterInfo dRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, path_to_dmap_file, "card1",
 			"/dev/dev1", "goodMapFile_withoutModules.map");
@@ -488,7 +488,7 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 	dRegisterInfoent2.dmap_file_line_nr = 4;
 	dRegisterInfoent3.dmap_file_line_nr = 5;
 
-	mtca4u::DMapFile::dRegisterInfo* tmpArray1[3];
+	mtca4u::DMapFile::DRegisterInfo* tmpArray1[3];
 	tmpArray1[0] = &dRegisterInfoent1;
 	tmpArray1[1] = &dRegisterInfoent2;
 	tmpArray1[2] = &dRegisterInfoent3;
@@ -503,9 +503,9 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 	tmpArray2[1] = &s2;
 	tmpArray2[2] = &s3;
 
-	std::vector<std::pair<mtca4u::DMapFile::dRegisterInfo,
+	std::vector<std::pair<mtca4u::DMapFile::DRegisterInfo,
 	mtca4u::ptrmapFile> >::iterator iter;
-	std::vector<std::pair<mtca4u::DMapFile::dRegisterInfo,
+	std::vector<std::pair<mtca4u::DMapFile::DRegisterInfo,
 	mtca4u::ptrmapFile> >::const_iterator const_iter;
 	uint8_t i;
 	for (iter = filesParser.begin(), i = 0;
@@ -572,15 +572,15 @@ void DMapFilesParserTest::testParseDirWithGoodDmaps() {
 	mtca4u::DMapFilesParser filesParser;
 	filesParser.parse_dir("./GoodDmapDir");
 
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent2;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent3;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent4;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent4;
 
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent2;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent3;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent4;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent4;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, "./GoodDmapDir/first.dmap",
 			"card1", "/dev/dev1", "./mapFile1.map");
@@ -622,11 +622,11 @@ void DMapFilesParserTest::testParseDirs() {
 	mtca4u::DMapFilesParser filesParser;
 	filesParser.parse_dirs(a);
 
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent2;
 
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent2;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent2;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, "./GoodDmapDir/first.dmap",
 			"card1", "/dev/dev1", "./mapFile1.map");
@@ -648,11 +648,11 @@ void DMapFilesParserTest::testParseDirs() {
 inline void DMapFilesParserTest::testConstructor() {
 	mtca4u::DMapFilesParser filesParser("./GoodDmapDir");
 
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo reterievedDRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo reterievedDRegisterInfoent3;
 
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DMapFile::dRegisterInfo expectedDRegisterInfoent3;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent1;
+	mtca4u::DMapFile::DRegisterInfo expectedDRegisterInfoent3;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, "./GoodDmapDir/first.dmap",
 			"card1", "/dev/dev1", "./mapFile1.map");

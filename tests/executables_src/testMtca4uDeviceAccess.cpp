@@ -139,7 +139,7 @@ void MtcaDeviceTest::testOpenClose() {
   // of the backend and the registerMapping yourself
   std::list<std::string> parameters;
   boost::shared_ptr<DeviceBackend> manualBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-  boost::shared_ptr<RegisterInfoMap> registerMapping = mapFileParser().parse(VALID_MAPPING_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMapping = MapFileParser().parse(VALID_MAPPING_FILE_NAME);
   BOOST_CHECK_NO_THROW(device->open(manualBackend, registerMapping));
   BOOST_CHECK_NO_THROW(device->getRegisterAccessor("WORD_CLK_DUMMY","")->read(&readValue));
   BOOST_CHECK(readValue==0x444D4D59);
@@ -211,7 +211,7 @@ void MtcaDeviceTest::testThrowIfNeverOpened() {
 void MtcaDeviceTest::testMapFileParser_parse() {
 	boost::shared_ptr<mtca4u::Device> virginDevice ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-	mapFileParser fileParser;
+	MapFileParser fileParser;
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_1_MAPPING_FILE_NAME),MapFileParserException);
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_2_MAPPING_FILE_NAME),MapFileParserException);
 	BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_3_MAPPING_FILE_NAME),MapFileParserException);
@@ -224,7 +224,7 @@ void MtcaDeviceTest::testMapFileParser_parse() {
 void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-	mapFileParser fileParser;
+	MapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
 	// Sorry, this test is hard coded against the mtcadummy implementation.
@@ -282,7 +282,7 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 	// we know what we have
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-	mapFileParser fileParser;
+	MapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
 	int32_t tempWord = 0;
@@ -362,7 +362,7 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 void MtcaDeviceTest::testRegObject_readSimple() {
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-	mapFileParser fileParser;
+	MapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
@@ -411,7 +411,7 @@ void MtcaDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue) {
 	}
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-	mapFileParser fileParser;
+	MapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
@@ -457,7 +457,7 @@ void MtcaDeviceTest::testRegObject_writeSimple() {
 	//boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
-	mapFileParser fileParser;
+	MapFileParser fileParser;
 	boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
 	device->open(testBackend, registerMapping);
 

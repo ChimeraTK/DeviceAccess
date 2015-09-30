@@ -25,12 +25,12 @@ std::ostream& operator<<(std::ostream &os, const DMapFile& me) {
 	return os;
 }
 
-void DMapFile::insert(const dRegisterInfo &elem) {
+void DMapFile::insert(const DRegisterInfo &elem) {
 	dmap_file_elems.push_back(elem);
 }
 
-void DMapFile::getDeviceInfo(const std::string& dev_name, dRegisterInfo &value) {
-	std::vector<dRegisterInfo>::iterator iter;
+void DMapFile::getDeviceInfo(const std::string& dev_name, DRegisterInfo &value) {
+	std::vector<DRegisterInfo>::iterator iter;
 	iter = find_if(dmap_file_elems.begin(), dmap_file_elems.end(), findDevByName_pred(dev_name));
 	if (iter == dmap_file_elems.end()) {
 		throw DMapFileException("Cannot find device \"" + dev_name + "\"in DMAP file", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -38,25 +38,25 @@ void DMapFile::getDeviceInfo(const std::string& dev_name, dRegisterInfo &value) 
 	value = *iter;
 }
 
-DMapFile::dRegisterInfo::dRegisterInfo() : dmap_file_line_nr(0)
+DMapFile::DRegisterInfo::DRegisterInfo() : dmap_file_line_nr(0)
 {
 }        
 
-std::pair<std::string, std::string> DMapFile::dRegisterInfo::getDeviceFileAndMapFileName() const
+std::pair<std::string, std::string> DMapFile::DRegisterInfo::getDeviceFileAndMapFileName() const
 {
 	return std::pair<std::string, std::string>(dev_file, map_file_name);
 }        
 
-std::ostream& operator<<(std::ostream &os, const DMapFile::dRegisterInfo& de) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::DRegisterInfo& de) {
 	os << "(" << de.dmap_file_name << ") NAME: " << de.dev_name << " DEV : " << de.dev_file << " MAP : " << de.map_file_name;
 	return os;
 }
 
 //fixme: why is level not used?
-bool DMapFile::check(DMapFile::errorList &err, DMapFile::errorList::errorElem::TYPE /*level*/) {
+bool DMapFile::check(DMapFile::ErrorList &err, DMapFile::ErrorList::ErrorElem::TYPE /*level*/) {
 
-	std::vector<DMapFile::dRegisterInfo> dmaps = dmap_file_elems;
-	std::vector<DMapFile::dRegisterInfo>::iterator iter_p, iter_n;
+	std::vector<DMapFile::DRegisterInfo> dmaps = dmap_file_elems;
+	std::vector<DMapFile::DRegisterInfo>::iterator iter_p, iter_n;
 	bool ret = true;
 
 	err.clear();
@@ -70,7 +70,7 @@ bool DMapFile::check(DMapFile::errorList &err, DMapFile::errorList::errorElem::T
 	while (1) {
 		if ((*iter_p).dev_name == (*iter_n).dev_name) {
 			if ((*iter_p).dev_file != (*iter_n).dev_file || (*iter_p).map_file_name != (*iter_n).map_file_name) {
-				err.insert(errorList::errorElem(errorList::errorElem::ERROR, errorList::errorElem::NONUNIQUE_DEVICE_NAME, (*iter_p), (*iter_n)));
+				err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::ERROR, ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME, (*iter_p), (*iter_n)));
 				ret = false;
 			}
 		}
@@ -83,12 +83,12 @@ bool DMapFile::check(DMapFile::errorList &err, DMapFile::errorList::errorElem::T
 	return ret;
 }
 
-std::ostream& operator<<(std::ostream &os, const DMapFile::errorList::errorElem::TYPE& me) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::ErrorList::ErrorElem::TYPE& me) {
 	switch (me) {
-	case DMapFile::errorList::errorElem::ERROR:
+	case DMapFile::ErrorList::ErrorElem::ERROR:
 		os << "ERROR";
 		break;
-	case DMapFile::errorList::errorElem::WARNING:
+	case DMapFile::ErrorList::ErrorElem::WARNING:
 		os << "WARNING";
 		break;
 	default:
@@ -98,32 +98,32 @@ std::ostream& operator<<(std::ostream &os, const DMapFile::errorList::errorElem:
 	return os;
 }
 
-DMapFile::errorList::errorElem::errorElem(DMapFile::errorList::errorElem::TYPE info_type, DMapFile::errorList::errorElem::DMAP_FILE_ERR e_type, const DMapFile::dRegisterInfo &dev_1, const DMapFile::dRegisterInfo &dev_2) {
+DMapFile::ErrorList::ErrorElem::ErrorElem(DMapFile::ErrorList::ErrorElem::TYPE info_type, DMapFile::ErrorList::ErrorElem::DMAP_FILE_ERR e_type, const DMapFile::DRegisterInfo &dev_1, const DMapFile::DRegisterInfo &dev_2) {
 	err_type = e_type;
 	err_dev_1 = dev_1;
 	err_dev_2 = dev_2;
 	type = info_type;
 }
 
-std::ostream& operator<<(std::ostream &os, const DMapFile::errorList::errorElem& me) {
+std::ostream& operator<<(std::ostream &os, const DMapFile::ErrorList::ErrorElem& me) {
 	switch (me.err_type) {
-	case DMapFile::errorList::errorElem::NONUNIQUE_DEVICE_NAME:
+	case DMapFile::ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME:
 		os << me.type << ": Found two devices with the same name but different properties: \"" << me.err_dev_1.dev_name << "\" in file \"" << me.err_dev_1.dmap_file_name << "\" in line " << me.err_dev_1.dmap_file_line_nr << " and \"" << me.err_dev_2.dmap_file_name << "\" in line " << me.err_dev_2.dmap_file_line_nr;
 		break;
 	}
 	return os;
 }
 
-void DMapFile::errorList::clear() {
+void DMapFile::ErrorList::clear() {
 	errors.clear();
 }
 
-void DMapFile::errorList::insert(const errorElem& elem) {
+void DMapFile::ErrorList::insert(const ErrorElem& elem) {
 	errors.push_back(elem);
 }
 
-std::ostream& operator<<(std::ostream &os, const DMapFile::errorList& me) {
-	std::list<DMapFile::errorList::errorElem>::const_iterator iter;
+std::ostream& operator<<(std::ostream &os, const DMapFile::ErrorList& me) {
+	std::list<DMapFile::ErrorList::ErrorElem>::const_iterator iter;
 	for (iter = me.errors.begin(); iter != me.errors.end(); ++iter) {
 		os << (*iter) << std::endl;
 	}

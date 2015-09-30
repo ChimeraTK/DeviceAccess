@@ -43,7 +43,7 @@ public:
 	findMetaDataByName_pred(const std::string &_name) : name(_name) {
 	}
 
-	bool operator()(const RegisterInfoMap::metaData& elem) {
+	bool operator()(const RegisterInfoMap::MetaData& elem) {
 		if (elem.name == name) return true;
 		return false;
 	}
@@ -60,7 +60,7 @@ public:
 	findDevInPairByName_pred(const std::string &_name) : name(_name) {
 	}
 
-	bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & elem) {
+	bool operator()(const std::pair<DMapFile::DRegisterInfo, ptrmapFile> & elem) {
 		if (elem.first.dev_name == name) return true;
 		return false;
 	}
@@ -77,7 +77,7 @@ public:
 	findDevByName_pred(const std::string &_name) : name(_name) {
 	}
 
-	bool operator()(const DMapFile::dRegisterInfo& elem) {
+	bool operator()(const DMapFile::DRegisterInfo& elem) {
 		if (elem.dev_name == name) return true;
 		return false;
 	}
@@ -121,7 +121,7 @@ public:
 class copmaredRegisterInfosByName_functor
 {
 public:
-	bool operator()(const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & first, const std::pair<DMapFile::dRegisterInfo, ptrmapFile> & second){
+	bool operator()(const std::pair<DMapFile::DRegisterInfo, ptrmapFile> & first, const std::pair<DMapFile::DRegisterInfo, ptrmapFile> & second){
 		return first.first.dev_name < second.first.dev_name;
 	}
 };
@@ -132,7 +132,7 @@ public:
 class copmaredRegisterInfosByName2_functor
 {
 public:
-	bool operator()(const DMapFile::dRegisterInfo &first, const DMapFile::dRegisterInfo &second){
+	bool operator()(const DMapFile::DRegisterInfo &first, const DMapFile::DRegisterInfo &second){
 		return first.dev_name < second.dev_name;
 	}
 };

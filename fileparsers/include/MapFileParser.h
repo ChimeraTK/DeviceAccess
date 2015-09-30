@@ -22,7 +22,7 @@ namespace mtca4u{
  * @brief  Provides method to parse MAP file 
  *      
  */
-class mapFileParser {
+class MapFileParser {
 public:
 	/**
 	 * @brief Performs parsing of specified MAP file. Returns pointer to

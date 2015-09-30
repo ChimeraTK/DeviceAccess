@@ -32,15 +32,15 @@ namespace mtca4u{
        * Stores metadata, additional attribute in form of pair name-value associeted
        * with map file
        */
-      class metaData {
+      class MetaData {
         public:
         std::string name; /**< Name of metadata attribute */
         std::string value; /**< Value of metadata attribute */
-        friend std::ostream& operator<<(std::ostream &os, const metaData& me);
+        friend std::ostream& operator<<(std::ostream &os, const MetaData& me);
 
         /// Convenience constructor which sets all data members. They all have default values, so this
         /// also acts as default constructor.
-        metaData(std::string const & the_name = std::string(), // an empty string
+        MetaData(std::string const & the_name = std::string(), // an empty string
             std::string const & the_value = std::string()); // another empty string
       };
 
@@ -83,7 +83,7 @@ namespace mtca4u{
        *
        * Stores information about all errors and warnings detected during MAP file correctness check
        */
-      class errorList {
+      class ErrorList {
           friend class RegisterInfoMap;
           friend class DMapFilesParser;
         public:
@@ -93,7 +93,7 @@ namespace mtca4u{
            *
            * Stores detailed information about one error or warnings detected during MAP file correctness check
            */
-          class errorElem {
+          class ErrorElem {
             public:
 
             /**
@@ -128,15 +128,15 @@ namespace mtca4u{
              * @param reg_2 detailed information about second register that generate problem
              * @param file_name MAP file name
              */
-            errorElem(TYPE info_type, MAP_FILE_ERR e_type, const RegisterInfo &reg_1, const RegisterInfo &reg_2, const std::string &file_name);
+            ErrorElem(TYPE info_type, MAP_FILE_ERR e_type, const RegisterInfo &reg_1, const RegisterInfo &reg_2, const std::string &file_name);
             friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
-            friend std::ostream& operator<<(std::ostream &os, const errorElem& me);
+            friend std::ostream& operator<<(std::ostream &os, const ErrorElem& me);
           };
-          std::list<errorElem> errors; /**< Lists of errors or warnings detected during MAP file correctness checking*/
-          friend std::ostream& operator<<(std::ostream &os, const errorList& me);
+          std::list<ErrorElem> errors; /**< Lists of errors or warnings detected during MAP file correctness checking*/
+          friend std::ostream& operator<<(std::ostream &os, const ErrorList& me);
         private:
           void clear();
-          void insert(const errorElem& elem);
+          void insert(const ErrorElem& elem);
 
       };
       friend std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& registerInfoMap);
@@ -189,7 +189,7 @@ namespace mtca4u{
        * @return false if error or warning was detected, otherwise true
        *
        */
-      bool check(errorList &err, errorList::errorElem::TYPE level);
+      bool check(ErrorList &err, ErrorList::ErrorElem::TYPE level);
       /**
        * @brief Returns name of MAP file check
        *
@@ -251,11 +251,11 @@ namespace mtca4u{
        *
        * @param elem reference to metadata information available in file.
        */
-      void insert(metaData &elem);
+      void insert(MetaData &elem);
 
     private:
       std::vector<RegisterInfo> map_file_elems; /**< list of all registers described in MAP file*/
-      std::vector<metaData> metadata; /**< list of all metadata detected in MAP file*/
+      std::vector<MetaData> metadata; /**< list of all metadata detected in MAP file*/
       std::string map_file_name; /**< name of MAP file*/
   };
   /**

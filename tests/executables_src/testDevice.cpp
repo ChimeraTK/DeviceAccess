@@ -143,7 +143,7 @@ void DeviceTest::testDeviceReadRegisterByName() {
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -169,7 +169,7 @@ void DeviceTest::testDeviceReadArea() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -191,7 +191,7 @@ void DeviceTest::testDeviceReadDMA() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -212,7 +212,7 @@ void DeviceTest::testDeviceReadDMAErrors() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -232,7 +232,7 @@ void DeviceTest::testDeviceWriteRegisterByName() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	int32_t input_data = 16;
@@ -258,7 +258,7 @@ void DeviceTest::testDeviceWriteDMA() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -284,7 +284,7 @@ void DeviceTest::testDeviceCheckRegister() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -329,7 +329,7 @@ void DeviceTest::testRegAccsorReadDMA() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -356,7 +356,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -400,7 +400,7 @@ void DeviceTest::testRegAccsorWriteDMA() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -428,7 +428,7 @@ void DeviceTest::testRegAccsorReadReg() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
@@ -442,7 +442,7 @@ void DeviceTest::testRegAccsorWriteReg() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
@@ -458,7 +458,7 @@ void DeviceTest::testDeviceReadRegister() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	uint32_t offset_word_clk_dummy = 0x0000003C;
@@ -472,7 +472,7 @@ void DeviceTest::testDeviceWriteRegister() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	int32_t input_data = 16;
@@ -489,7 +489,7 @@ void DeviceTest::testDeviceInfo() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	std::string deviceInfo;
@@ -504,7 +504,7 @@ void DeviceTest::testReadBadReg() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 
@@ -523,7 +523,7 @@ void DeviceTest::testWriteBadReg() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	int32_t data = 0;
@@ -541,7 +541,7 @@ void DeviceTest::testDMAReadSizeTooSmall() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	int32_t adcdata[2];
@@ -562,7 +562,7 @@ void DeviceTest::testDMAReadViaStruct() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
 	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/llrfdummys4"));
-	mtca4u::mapFileParser fileParser;
+	mtca4u::MapFileParser fileParser;
 	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
 	device->open(testBackend, registerMapping);
 	int32_t data = 1;
