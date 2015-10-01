@@ -617,6 +617,9 @@ void DummyBackendTest::testOpen() {
 }
 
 void DummyBackendTest::testCreateBackend() {
+  /** Only for testing purpose */
+  std::list <std::string> pararmeters;
+  BOOST_CHECK_THROW(DummyBackend::createInstance("","",pararmeters),DummyBackendException);
 	/** Try creating a non existing backend */
 	BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE),BackendFactoryException);
 	/** Try creating an existing backend */

@@ -363,6 +363,7 @@ void PcieBackendTest::testReadRegister()
 
 	_pcieBackendInstance->open();// no need to check if this works because we did the open test first
 	//_pcieBackendInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
+	BOOST_CHECK_THROW(_pcieBackendInstance->open(),PcieBackendException);// try opening again will cause an exception
 	_pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4);
 	BOOST_CHECK_EQUAL( dataWord, DMMY_AS_ASCII );
 

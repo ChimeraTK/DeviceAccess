@@ -382,6 +382,7 @@ void Device::open(std::string const & aliasName) {
 			filesParser.parse_file(DMAP_FILE_PATH);
 		}
 	}
+	//this would never happen. If there is a issue with dmapfile the function returns before reaching this point.
 	catch (Exception& e) {
 		std::cout << e.what() << std::endl;
 	}

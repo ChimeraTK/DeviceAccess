@@ -357,6 +357,8 @@ void MtcaDeviceTest::testRegObject_readBlock() {
 		BOOST_CHECK(floatBuffer[i] == value);
 		BOOST_CHECK(doubleBuffer[i] == value);
 	}
+	FixedPointConverter fpc = registerAccessor10_1.getFixedPointConverter();
+	BOOST_CHECK(fpc.isSigned());
 }
 
 void MtcaDeviceTest::testRegObject_readSimple() {
