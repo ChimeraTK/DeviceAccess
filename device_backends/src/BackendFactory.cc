@@ -12,7 +12,6 @@
 #include "DMapFilesParser.h"
 #include "Exception.h"
 #include <boost/algorithm/string.hpp>
-
 namespace mtca4u {
 
 void BackendFactory::registerBackendType(std::string interface, std::string protocol,
@@ -87,14 +86,9 @@ boost::shared_ptr<DeviceBackend> BackendFactory::parseDMap(std::string devName)
   catch(UtilitiesException &e)
   {
     std::cout<<e.what()<<std::endl;
-    try {
-        sdm = Utilities::parseDeviceString(uri);
-      }
-      catch(UtilitiesException &ue)
-      {
-        std::cout<<ue.what()<<std::endl;
-      }
-      std::cout<<"This format is obsolete, please change to sdm."<<std::endl;
+    //parseDeviceString currently does not throw
+    sdm = Utilities::parseDeviceString(uri);
+    std::cout<<"This format is obsolete, please change to sdm."<<std::endl;
   }
 #ifdef _DEBUG
         std::cout<< "sdm._SdmVersion:"<<sdm._SdmVersion<< std::endl;
