@@ -45,6 +45,8 @@ public:
 	Sdm static parseDeviceString(std::string deviceEntry);
 	bool static isSdm(std::string theString);
 	static size_t countOccurence(std::string theString, char delimiter);
+	std::string static aliasLookUp(std::string aliasName, std::string dmapFilePath);
+	std::string static findFirstOfAlias(std::string aliasName);
 	virtual ~Utilities();
 };
 

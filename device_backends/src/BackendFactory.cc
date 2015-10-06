@@ -23,63 +23,37 @@ void BackendFactory::registerBackendType(std::string interface, std::string prot
 	creatorMap[make_pair(interface,protocol)] = creatorFunction;
 }
 
-boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
-  return parseDMap(aliasName);
+void BackendFactory::setDMapFilePath(std::string dMapFilePath)
+{
+  _dMapFilePath = dMapFilePath;
 }
 
-boost::shared_ptr<DeviceBackend> BackendFactory::parseDMap(std::string devName)
+std::string BackendFactory::getDMapFilePath()
 {
-  std::vector<std::string> device_info;
+  return _dMapFilePath;
+}
+
+boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
   std::string uri;
-  DMapFilesParser filesParser;
-  std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
-  //std::cout<<"testFilePath:"<<testFilePath<<std::endl;
-  try {
-    if ( boost::filesystem::exists(testFilePath ) )
-      filesParser.parse_file(testFilePath);
-    else
-      filesParser.parse_file(DMAP_FILE_PATH);
+  char const* ptr_env_var = std::getenv(ENV_VAR_DMAP_FILE);
+  if ( ptr_env_var != NULL ) {
+    uri = Utilities::aliasLookUp(aliasName,std::string(ptr_env_var));
   }
-  catch (Exception& e) {
-    std::cout << e.what() << std::endl;
-    return boost::shared_ptr<DeviceBackend>();
-  }
-
-#ifdef _DEBUG
-  for (DMapFilesParser::iterator deviceIter = filesParser.begin();
-      deviceIter != filesParser.end(); ++deviceIter) {
-    std::cout << (*deviceIter).first.dev_name << std::endl;
-    std::cout << (*deviceIter).first.dev_file << std::endl;
-    std::cout << (*deviceIter).first.map_file_name << std::endl;
-    std::cout << (*deviceIter).first.dmap_file_name << std::endl;
-    std::cout << (*deviceIter).first.dmap_file_line_nr << std::endl;
-  }
-#endif
-  bool found = false;
-  for (DMapFilesParser::iterator deviceIter = filesParser.begin();
-      deviceIter != filesParser.end(); ++deviceIter) {
-    if (boost::iequals((*deviceIter).first.dev_name, devName)) {
-#ifdef _DEBUG
-      std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
-#endif
-      uri = (*deviceIter).first.dev_file;
-      found = true;
-      break;
-    }
-  }
-  if (!found)
-  {
-    // do not throw here because theoretically client could work with multiple unrelated devices
+  if (uri.empty())
+    uri = Utilities::aliasLookUp(aliasName, _dMapFilePath);
+  if (uri.empty())
+    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_PATH);
+  if (uri.empty())
     throw BackendFactoryException("Unknown device alias.", BackendFactoryException::UNKNOWN_ALIAS);
-    return boost::shared_ptr<DeviceBackend>();
-  }
+ return createBackendInternal(uri);
+}
 
+boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::string uri) {
 #ifdef _DEBUG
   std::cout << "uri to parse" << uri << std::endl;
   std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
-
-  Sdm sdm;
+Sdm sdm;
   try {
     sdm = Utilities::parseSdm(uri);
   }

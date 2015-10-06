@@ -6,6 +6,8 @@
  */
 
 #include "Utilities.h"
+#include "DMapFilesParser.h"
+#include "BackendFactory.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -137,4 +139,56 @@ Sdm Utilities::parseDeviceString(std::string deviceString) {
 	return sdmInfo;
 }
 
+std::string Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
+{
+  std::string uri;
+  DMapFilesParser filesParser;
+  try {
+    filesParser.parse_file(dmapFilePath);
+  }
+  catch (Exception& e) {
+      std::cout << e.what() << std::endl;
+      return uri;
+  }
+#ifdef _DEBUG
+  for (DMapFilesParser::iterator deviceIter = filesParser.begin();
+      deviceIter != filesParser.end(); ++deviceIter) {
+    std::cout << (*deviceIter).first.dev_name << std::endl;
+    std::cout << (*deviceIter).first.dev_file << std::endl;
+    std::cout << (*deviceIter).first.map_file_name << std::endl;
+    std::cout << (*deviceIter).first.dmap_file_name << std::endl;
+    std::cout << (*deviceIter).first.dmap_file_line_nr << std::endl;
+  }
+#endif
+  for (DMapFilesParser::iterator deviceIter = filesParser.begin();
+      deviceIter != filesParser.end(); ++deviceIter) {
+    if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {
+#ifdef _DEBUG
+      std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
+#endif
+      uri = (*deviceIter).first.dev_file;
+      break;
+    }
+  }
+  return uri;
+}
+
+std::string Utilities::findFirstOfAlias(std::string aliasName)
+{
+  std::string uri;
+  char const* ptr_env_var = std::getenv(ENV_VAR_DMAP_FILE);
+  if ( ptr_env_var != NULL ) {
+    uri = aliasLookUp(aliasName,std::string(ptr_env_var));
+  }
+  if (!uri.empty())
+    return std::string(ptr_env_var);
+  std::string dMapFilePath = BackendFactory::getInstance().getDMapFilePath();
+  uri = aliasLookUp(aliasName, dMapFilePath);
+  if (!uri.empty())
+    return dMapFilePath;
+  uri = aliasLookUp(aliasName, DMAP_FILE_PATH);
+  if (!uri.empty())
+    return DMAP_FILE_PATH;
+  return uri;
+}
 } /* namespace mtca4u */

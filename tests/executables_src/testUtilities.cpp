@@ -2,7 +2,7 @@
 using namespace boost::unit_test_framework;
 
 #include "Utilities.h"
-
+#include "BackendFactory.h"
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
 #define INVALID_SDM "://./pci:pcieunidummys6;" //no sdm at the start
@@ -26,6 +26,8 @@ public:
   static void testParseDeviceString();
   static void testcountOccurence();
   static void testIsSdm();
+  static void testAliasLookUp();
+  static void testFindFirstOfAlias();
 };
 
 class UtilitiesTestSuite : public test_suite {
@@ -36,6 +38,8 @@ class UtilitiesTestSuite : public test_suite {
       add(BOOST_TEST_CASE(UtilitiesTest::testParseDeviceString));
       add(BOOST_TEST_CASE(UtilitiesTest::testcountOccurence));
       add(BOOST_TEST_CASE(UtilitiesTest::testIsSdm));
+      add(BOOST_TEST_CASE(UtilitiesTest::testAliasLookUp));
+      add(BOOST_TEST_CASE(UtilitiesTest::testFindFirstOfAlias));
     }
 };
 
@@ -94,3 +98,24 @@ void UtilitiesTest::testIsSdm() {
   BOOST_CHECK(Utilities::isSdm(INVALID_SDM) == false);
   BOOST_CHECK(Utilities::isSdm(VALID_PCI_STRING) == false);
 }
+
+void UtilitiesTest::testAliasLookUp() {
+  setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
+  std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+  BackendFactory::getInstance().setDMapFilePath(testFilePath);
+  std::string uri = Utilities::aliasLookUp("test",testFilePath);
+  BOOST_CHECK(uri.empty());
+  uri = Utilities::aliasLookUp("DUMMYD0",testFilePath);
+  BOOST_CHECK(!uri.empty());
+}
+
+void UtilitiesTest::testFindFirstOfAlias() {
+  setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
+  std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+  BackendFactory::getInstance().setDMapFilePath(testFilePath);
+  std::string dmapfile = Utilities::findFirstOfAlias("test");
+  BOOST_CHECK(dmapfile.empty());
+  dmapfile = Utilities::findFirstOfAlias("DUMMYD0");
+  BOOST_CHECK(!dmapfile.empty());
+}
+

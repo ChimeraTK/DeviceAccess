@@ -31,22 +31,21 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 
 void BackendFactoryTest::testCreateBackend() {
+  setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
   std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
   std::string oldtestFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH + (std::string)("Old");;
-  std::string rntestFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH + (std::string)("disabled");
-  std::rename(testFilePath.c_str(),rntestFilePath.c_str());
-  boost::shared_ptr<DeviceBackend> testPtr = BackendFactory::getInstance().createBackend("test");//cannot open dmap file
-  BOOST_CHECK(!testPtr);
-  std::rename(oldtestFilePath.c_str(),testFilePath.c_str());
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),Exception); //not an existing alias.
-  testPtr.reset();
+  std::string invalidtestFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH + (std::string)("disabled");
+  BackendFactory::getInstance().setDMapFilePath(invalidtestFilePath);
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),BackendFactoryException);//file does not exist. alias cannot be found in any other file.
+  BackendFactory::getInstance().setDMapFilePath(oldtestFilePath);
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),BackendFactoryException); //file found but not an existing alias.
+  boost::shared_ptr<DeviceBackend> testPtr;
   BOOST_CHECK_NO_THROW(testPtr = BackendFactory::getInstance().createBackend("DUMMYD0")); //entry in old dummies.dmap
   BOOST_CHECK(testPtr);
   testPtr.reset();
-  std::rename(testFilePath.c_str(),oldtestFilePath.c_str());
-  std::rename(rntestFilePath.c_str(),testFilePath.c_str());
+  BackendFactory::getInstance().setDMapFilePath(testFilePath);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),Exception); //not an existing alias.
-  BOOST_CHECK_NO_THROW(testPtr = BackendFactory::getInstance().createBackend("DUMMYD0")); //entry in dummiesdmap
+  BOOST_CHECK_NO_THROW(testPtr = BackendFactory::getInstance().createBackend("DUMMYD9")); //entry in dummies.dmap
   BOOST_CHECK(testPtr);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("FAKE1"),BackendFactoryException); //entry in dummies.dmap for unregistered device
 }

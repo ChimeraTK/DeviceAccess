@@ -2,6 +2,7 @@
 #include "Device.h"
 #include "PcieBackend.h"
 #include "DMapFilesParser.h"
+#include "Utilities.h"
 #include <cmath>
 
 
@@ -368,36 +369,30 @@ void Device::open(std::string const & aliasName) {
 		_pDeviceBackend->open();
 	else
 		return;
-	DMapFilesParser filesParser;
-	std::string dmapFileName = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
-	try
-	{
-		if ( boost::filesystem::exists(dmapFileName ) )
-		{
-			filesParser.parse_file(dmapFileName);
-		}
-		else
-		{
-			dmapFileName = DMAP_FILE_PATH;
-			filesParser.parse_file(DMAP_FILE_PATH);
-		}
-	}
-	//this would never happen. If there is a issue with dmapfile the function returns before reaching this point.
-	catch (Exception& e) {
-		std::cout << e.what() << std::endl;
-	}
-
-    DMapFile::DRegisterInfo DRegisterInfoent;
-    for (DMapFilesParser::iterator deviceIter = filesParser.begin();
-        deviceIter != filesParser.end(); ++deviceIter) {
-      if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {
-        DRegisterInfoent = (*deviceIter).first;
-        _mapFileName = DRegisterInfoent.map_file_name;
-        _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
-        break;
-      }
+	//find the file containing first occurance of alias name.
+  std::string dmapfile = Utilities::findFirstOfAlias(aliasName);
+  DMapFilesParser filesParser;
+  try
+  {
+    if ( boost::filesystem::exists(dmapfile ) )
+    {
+      filesParser.parse_file(dmapfile);
     }
   }
+  catch (Exception& e) {
+    std::cout << e.what() << std::endl;
+  }
+  DMapFile::DRegisterInfo DRegisterInfoent;
+  for (DMapFilesParser::iterator deviceIter = filesParser.begin();
+      deviceIter != filesParser.end(); ++deviceIter) {
+    if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {
+      DRegisterInfoent = (*deviceIter).first;
+      _mapFileName = DRegisterInfoent.map_file_name;
+      _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
+      break;
+    }
+  }
+}
 
 
 }// namespace mtca4u

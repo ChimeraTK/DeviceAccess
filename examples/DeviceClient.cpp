@@ -34,10 +34,10 @@ int main() {
     if (exampleDeviceInstance->isOpen() == true )
       std::cout<<"Device status: Open"<<std::endl;
     exampleDeviceInstance->readDeviceInfo();
-    int *test = 0;
-    exampleDeviceInstance->read(0,0,test,0);
+    int32_t test;
+    exampleDeviceInstance->read(0,0,&test,0);
     exampleDeviceInstance->write(0,0,0,0);
-    exampleDeviceInstance->readDMA(0,0,test,0);
+    exampleDeviceInstance->readDMA(0,0,&test,0);
     exampleDeviceInstance->writeDMA(0,0,0,0);
     exampleDeviceInstance->close();
     if (exampleDeviceInstance->isOpen() == false )

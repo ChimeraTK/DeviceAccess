@@ -15,8 +15,8 @@
  * program is being executed it would be used as dmap file. The default dmap file
  * would be DMAP_FILE_PATH.
  */
-#define DMAP_FILE_PATH  "/usr/local/etc/mtca4u/BackendFactory.dmap"
 #define TEST_DMAP_FILE_PATH  "/dummies.dmap"
+#define ENV_VAR_DMAP_FILE "DMAP_PATH_ENV"
 namespace mtca4u {
 
 /** A class to provide exception for BackendFactory.
@@ -33,18 +33,16 @@ public:
  * It is implemented as a Meyers' singleton.
  */
 class BackendFactory {
+public:
+  std::string _dMapFilePath;
 private:
   /** Add known device */
   BackendFactory() {
+    _dMapFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
     registerBackendType("pci","",&PcieBackend::createInstance);
     registerBackendType("pci","pcie",&PcieBackend::createInstance);
     registerBackendType("dummy","",&DummyBackend::createInstance);
   };
-
-  /**parse the dmap file and return a DeviceBackend if a
-   * match found.
-   */
-  boost::shared_ptr<DeviceBackend> parseDMap(std::string devName);
 
   //BackendFactory(BackendFactory const&);     /** To avoid making copies */
 
@@ -55,8 +53,23 @@ private:
 
   std::map< std::pair<std::string, std::string>, boost::shared_ptr<DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters) > creatorMap;
 
+  /** Look for the alias and if found return a uri */
+  std::string aliasLookUp(std::string aliasName, std::string dmapFilePath);
+
+  /** Internal function to return a DeviceBackend */
+  boost::shared_ptr<DeviceBackend> createBackendInternal(std::string uri);
 
 public:
+  /** This function sets the _DMapFilePath. This dmap file path is the
+   *  second path where factory looks for dmap file. The first location
+   *  where dmap file path is searched by library is set by enviroment
+   *  variable.
+   */
+  void setDMapFilePath(std::string dMapFilePath);
+
+  /** Returns the _DMapFilePath */
+  std::string getDMapFilePath();
+
   /** This functions add new device using uri as a key. If a key already exist
    * it replaces it*/
   void registerBackendType(std::string interface, std::string protocol,
