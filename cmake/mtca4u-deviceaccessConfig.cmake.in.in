@@ -27,7 +27,7 @@ get_filename_component(@PROJECT_NAME@_LIBRARY_DIR "${@PROJECT_NAME@_LIBRARY}" PA
 #Now set the variables to be exported. These are the plural versions as
 #for instance more so files might be implemented later.
 set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
-set(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_LIBRARY})
+set(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_LIBRARY} @Boost_LIBRARIES@)
 set(@PROJECT_NAME@_LIBRARY_DIRS ${@PROJECT_NAME@_LIBRARY_DIR})
 
 set(@PROJECT_NAME@_VERSION @@PROJECT_NAME@_SOVERSION@)
