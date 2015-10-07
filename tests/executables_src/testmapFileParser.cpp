@@ -264,7 +264,13 @@ void MapFileParserTest::testMixedMapFileParse () {
 		BOOST_CHECK_MESSAGE( compareRegisterInfoents(*mapIter, *elementsIter) == true,
 				message.str());
 	}
-
+	//Ugly, just to get Code Coverage.
+  std::stringstream message;
+	message << "Failure";
+	mapIter = ptrmapFile->begin();
+	elementsIter = RegisterInfoents.begin();
+	++elementsIter;
+	BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter,*elementsIter) == false, message.str());
 }
 
 void MapFileParserTest::testSplitStringAtLastDot(){
