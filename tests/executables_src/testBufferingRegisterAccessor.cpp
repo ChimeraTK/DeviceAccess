@@ -127,6 +127,16 @@ void BufferingRegisterTest::testRegisterAccessor() {
     ic++;
   }
 
+  // test swap with std::vector
+  std::vector<int> x(2);
+  x[0] = 11;
+  x[1] = 22;
+  intRegister.swap(x);
+  BOOST_CHECK( x[0] == 1234 );
+  BOOST_CHECK( x[1] == 2468 );
+  BOOST_CHECK( intRegister[0] == 11 );
+  BOOST_CHECK( intRegister[1] == 22 );
+
   // obtain register accessor with fractional type, to check if fixed-point conversion is working (3 fractional bits)
   BufferingRegisterAccessor<double> floatRegister = device->getBufferingRegisterAccessor<double>("MODULE0","WORD_USER1");
 

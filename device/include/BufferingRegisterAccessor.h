@@ -83,14 +83,20 @@ namespace mtca4u {
       typedef typename std::vector<T>::const_iterator const_iterator;
       typedef typename std::vector<T>::reverse_iterator reverse_iterator;
       typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
-      iterator begin() { return cookedBuffer.begin(); }
-      const_iterator begin() const { return cookedBuffer.begin(); }
-      iterator end() { return cookedBuffer.end(); }
-      const_iterator end() const { return cookedBuffer.end(); }
-      reverse_iterator rbegin() { return cookedBuffer.rbegin(); }
-      const_reverse_iterator rbegin() const { return cookedBuffer.rbegin(); }
-      reverse_iterator rend() { return cookedBuffer.rend(); }
-      const_reverse_iterator rend() const { return cookedBuffer.rend(); }
+      inline iterator begin() { return cookedBuffer.begin(); }
+      inline const_iterator begin() const { return cookedBuffer.begin(); }
+      inline iterator end() { return cookedBuffer.end(); }
+      inline const_iterator end() const { return cookedBuffer.end(); }
+      inline reverse_iterator rbegin() { return cookedBuffer.rbegin(); }
+      inline const_reverse_iterator rbegin() const { return cookedBuffer.rbegin(); }
+      inline reverse_iterator rend() { return cookedBuffer.rend(); }
+      inline const_reverse_iterator rend() const { return cookedBuffer.rend(); }
+
+      /* Swap content of (cooked) buffer with std::vector
+       */
+      inline void swap(std::vector<T> &x) {
+        cookedBuffer.swap(x);
+      }
 
       /** Factory function as called by Device::getBufferingRegisterAccessor() and Device::getCustomAccessor()
        */
