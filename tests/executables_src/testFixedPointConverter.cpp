@@ -724,8 +724,6 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction32 ){
 	// these values are out of range
 	checkToRaw( converter,  0.75, 0x7FFFFFFF );
 	checkToRaw( converter, -0.75, 0x80000000 );
-
-	// these values are out of range
 	checkToRaw( converter,  3.25, 0x7FFFFFFF );
 	checkToRaw( converter, -3.25, 0x80000000 );
 	checkToRaw( converter,  5.75, 0x7FFFFFFF );
@@ -737,6 +735,7 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction32 ){
 	checkToRaw( converter, (int)0x55555555, 0x7FFFFFFF );
 	checkToRaw( converter, (int)0xAAAAAAAA, 0x80000000 );
 	checkToRaw( converter, (int)0, 0 );
+        checkToRaw( converter, (int)1, 0x7FFFFFFF );
 	checkToRaw( converter, (int)-1, 0x80000000 );
 	//checkToRaw( converter, (unsigned int)0x55555555, 0x7FFFFFFF );
 	checkToRaw( converter, (short)0x5555, 0x7FFFFFFF );

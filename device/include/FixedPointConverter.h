@@ -241,10 +241,10 @@ namespace mtca4u{
 
     // Do a range check first. The later overflow check in the conversion is not sufficient, since we can have
     // non-standard word sizes like 12 bits.
-    if (cookedValue < boost::fusion::at_key<UserType>(_minCookedValues)){
+    if(cookedValue < boost::fusion::at_key<UserType>(_minCookedValues)) {
       return _minRawValue;
     }
-    if (cookedValue > boost::fusion::at_key<UserType>(_maxCookedValues)){
+    if(cookedValue > boost::fusion::at_key<UserType>(_maxCookedValues)) {
       return _maxRawValue;
     }
 
@@ -275,7 +275,9 @@ namespace mtca4u{
       // Convert into either signed or uinsigned int32_t, depending on _isSigned, so the conversion handls
       // the sign correctly. Store always in a uint32_t, since this is our raw type.
       // The conversion will properly round, when needed.
-      // Overflow exceptions need to be cought for some corner cases.
+      // Negative overflow exceptions need to be cought for some corner cases (e.g. number of fractional bits >= number
+      // of bits in total). Positive overflow cannot happen due to the rangecheck above (the negative branch has one
+      // more possible value).
       uint32_t raw;
       try {
         if(_isSigned) {
@@ -290,9 +292,6 @@ namespace mtca4u{
               Round<double> >   converter_unsigned;
           raw = converter_unsigned::convert(d_cooked);
         }
-      }
-      catch(boost::numeric::positive_overflow &e) {
-        raw =  _maxRawValue;
       }
       catch(boost::numeric::negative_overflow &e) {
         raw =  _minRawValue;
