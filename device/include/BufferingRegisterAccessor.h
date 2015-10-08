@@ -77,6 +77,21 @@ namespace mtca4u {
         return cookedBuffer.size();
       }
 
+      /** Access data with std::vector-like iterators
+       */
+      typedef typename std::vector<T>::iterator iterator;
+      typedef typename std::vector<T>::const_iterator const_iterator;
+      typedef typename std::vector<T>::reverse_iterator reverse_iterator;
+      typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
+      iterator begin() { return cookedBuffer.begin(); }
+      const_iterator begin() const { return cookedBuffer.begin(); }
+      iterator end() { return cookedBuffer.end(); }
+      const_iterator end() const { return cookedBuffer.end(); }
+      reverse_iterator rbegin() { return cookedBuffer.rbegin(); }
+      const_reverse_iterator rbegin() const { return cookedBuffer.rbegin(); }
+      reverse_iterator rend() { return cookedBuffer.rend(); }
+      const_reverse_iterator rend() const { return cookedBuffer.rend(); }
+
       /** Factory function as called by Device::getBufferingRegisterAccessor() and Device::getCustomAccessor()
        */
       static BufferingRegisterAccessor<T> createInstance(

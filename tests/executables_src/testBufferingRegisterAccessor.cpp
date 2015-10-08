@@ -85,6 +85,48 @@ void BufferingRegisterTest::testRegisterAccessor() {
   device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
   BOOST_CHECK( compare == 999 );
 
+  // test iterators with begin and end
+  int ic = 0;
+  for(BufferingRegisterAccessor<int>::iterator it = intRegister.begin(); it != intRegister.end(); ++it) {
+    *it = 1000*(ic+1);
+    ic++;
+  }
+  intRegister.write();
+  device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 1000 );
+  device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
+  BOOST_CHECK( compare == 2000 );
+
+  // test iterators with rbegin and rend
+  ic = 0;
+  for(BufferingRegisterAccessor<int>::reverse_iterator it = intRegister.rbegin(); it != intRegister.rend(); ++it) {
+    *it = 333*(ic+1);
+    ic++;
+  }
+  intRegister.write();
+  device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 666 );
+  device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
+  BOOST_CHECK( compare == 333 );
+
+  // test const iterators in both directions
+  compare = 1234;
+  device->writeReg("MODULE0","APP0", &compare, sizeof(int), 0);
+  compare = 2468;
+  device->writeReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
+  intRegister.read();
+  const BufferingRegisterAccessor<int> const_intRegister = intRegister;
+  ic = 0;
+  for(BufferingRegisterAccessor<int>::const_iterator it = const_intRegister.begin(); it != const_intRegister.end(); ++it) {
+    BOOST_CHECK( *it == 1234*(ic+1) );
+    ic++;
+  }
+  ic = 0;
+  for(BufferingRegisterAccessor<int>::const_reverse_iterator it = const_intRegister.rbegin(); it != const_intRegister.rend(); ++it) {
+    BOOST_CHECK( *it == 1234*(2-ic) );
+    ic++;
+  }
+
   // obtain register accessor with fractional type, to check if fixed-point conversion is working (3 fractional bits)
   BufferingRegisterAccessor<double> floatRegister = device->getBufferingRegisterAccessor<double>("MODULE0","WORD_USER1");
 
