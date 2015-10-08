@@ -77,18 +77,6 @@ namespace mtca4u {
         return cookedBuffer.size();
       }
 
-      /** Access the 0th element on l.h.s. with = operator
-       */
-      inline T& operator=(T rhs) {
-        return cookedBuffer[0] = rhs;
-      }
-
-      /** Access the 0th element on r.h.s. via type conversion
-       */
-      inline operator T() {
-        return cookedBuffer[0];
-      }
-
       /** Factory function as called by Device::getBufferingRegisterAccessor() and Device::getCustomAccessor()
        */
       static BufferingRegisterAccessor<T> createInstance(

@@ -67,49 +67,37 @@ void BufferingRegisterTest::testRegisterAccessor() {
   // check number of elements getter
   BOOST_CHECK( intRegister.getNumberOfElements() == 2 );
 
-  // test operator=
-  intRegister = 3;
-  intRegister.write();
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == 3 );
-
-  // test implicit type conversion
-  compare = 42;
-  device->writeReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  intRegister.read();
-  BOOST_CHECK( intRegister == 42 );
-
   // test operator[] on r.h.s.
   compare = 5;
   device->writeReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  compare = 77;
+  compare = -77;
   device->writeReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
   intRegister.read();
   BOOST_CHECK( intRegister[0] == 5 );
-  BOOST_CHECK( intRegister[1] == 77 );
+  BOOST_CHECK( intRegister[1] == -77 );
 
   // test operator[] on l.h.s.
-  intRegister[0] = 666;
+  intRegister[0] = -666;
   intRegister[1] = 999;
   intRegister.write();
   device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == 666 );
+  BOOST_CHECK( compare == -666 );
   device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
   BOOST_CHECK( compare == 999 );
 
   // obtain register accessor with fractional type, to check if fixed-point conversion is working (3 fractional bits)
   BufferingRegisterAccessor<double> floatRegister = device->getBufferingRegisterAccessor<double>("MODULE0","WORD_USER1");
 
-  // test operator=
-  floatRegister = 42. / 8.;
+  // test operator[] on r.h.s.
+  compare = -120;
+  device->writeReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  floatRegister.read();
+  BOOST_CHECK( floatRegister[0] == -120./8. );
+
+  // test operator[] on l.h.s.
+  floatRegister[0] = 42. / 8.;
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 42 );
-
-  // test implicit type conversion
-  compare = 120;
-  device->writeReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
-  floatRegister.read();
-  BOOST_CHECK( floatRegister == 120./8. );
 
 }
