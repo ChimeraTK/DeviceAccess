@@ -15,6 +15,7 @@ using namespace boost::unit_test_framework;
 using namespace mtca4u;
 
 #define TEST_MAPPING_FILE "testDummyRegisterAccessors.map"
+#define INVALID_MAPPING_FILE "invalidSequences.map"
 
 // Test implementation of the dummy backend with two accessors
 class DummyRegisterTest;
@@ -32,6 +33,18 @@ class TestableDummyBackend : public DummyBackend {
     friend class DummyRegisterTest;
 };
 
+// Test implementation of the dummy backend for the invalid map file
+class InvalidDummyBackend : public DummyBackend {
+  public:
+    InvalidDummyBackend(std::string mapFileName)
+  : DummyBackend(mapFileName),
+    invalidRegister(this,"INVALID","NO_WORDS")
+  {}
+
+    DummyMultiplexedRegisterAccessor<int> invalidRegister;
+
+    friend class DummyRegisterTest;
+};
 
 /**********************************************************************************************************************/
 class DummyRegisterTest {
@@ -39,6 +52,9 @@ class DummyRegisterTest {
     DummyRegisterTest(){
       device = boost::shared_ptr<TestableDummyBackend>( new TestableDummyBackend(TEST_MAPPING_FILE) );
     }
+
+    /// test exceptions
+    void testExceptions();
 
     /// test the register accessor
     void testRegisterAccessor();
@@ -61,6 +77,7 @@ class  DummyRegisterTestSuite : public test_suite {
 
       add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testRegisterAccessor, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testMuxedRegisterAccessor, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testExceptions, dummyDeviceTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -72,6 +89,23 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
   return NULL;
 }
 
+
+/**********************************************************************************************************************/
+void DummyRegisterTest::testExceptions() {
+  std::cout << "testExceptions" << std::endl;
+
+  try {
+    boost::shared_ptr<InvalidDummyBackend> invalid_device =
+        boost::shared_ptr<InvalidDummyBackend>( new InvalidDummyBackend(INVALID_MAPPING_FILE) );
+    // in a sucessful test (which is required for the code coverage report)
+    // the following line is not executed. Exclude it from the lcov report
+    BOOST_ERROR( "opening the invalid device did not throw." ); //LCOV_EXCL_LINE
+  }
+  catch(DummyRegisterException &e) {
+    BOOST_CHECK( e.getID() == DummyRegisterException::EMPTY_AREA );
+  }
+
+}
 
 /**********************************************************************************************************************/
 void DummyRegisterTest::testRegisterAccessor() {
