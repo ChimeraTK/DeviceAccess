@@ -62,6 +62,9 @@ class DummyRegisterTest {
     /// test the register accessor
     void testMuxedRegisterAccessor();
 
+    /// test the DummyRegisterAddressChecker class
+    void testDummyRegisterAddressChecker();
+
   private:
     boost::shared_ptr<TestableDummyBackend> device;
     friend class DummyRegisterTestSuite;
@@ -78,6 +81,8 @@ class  DummyRegisterTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testRegisterAccessor, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testMuxedRegisterAccessor, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testExceptions, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &DummyRegisterTest::testDummyRegisterAddressChecker, dummyDeviceTest ) );
+
     }};
 
 /**********************************************************************************************************************/
@@ -383,6 +388,38 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     BOOST_CHECK( mixedReg.cooked.r14 == 10*14 + i );
     BOOST_CHECK( mixedReg.cooked.r15 == (unsigned int) (10*15 + i) );
   }
+
+  // close the device
+  device->close();
+}
+
+/**********************************************************************************************************************/
+void DummyRegisterTest::testDummyRegisterAddressChecker() {
+  std::cout << "testMuxedRegisterAccessor" << std::endl;
+
+  // first test class directly
+  RegisterInfoMap::RegisterInfo info;
+  device->_registerMapping->getRegisterInfo("ANOTHER_REGISTER",info,"APP0");
+  DummyRegisterAddressChecker checker(info);
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar, info.reg_address, 1) == true );
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar, info.reg_address, 4) == true );
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar, info.reg_address, 5) == false );
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar + 1, info.reg_address, 1) == false );
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar, info.reg_address - 1, 1) == false);
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar, info.reg_address + 3, 1) == true );
+  BOOST_CHECK( checker.isAddressInRange(info.reg_bar, info.reg_address + 4, 1) == false );
+
+  // open the device
+  device->open();
+
+  // check via DummyRegisterAccessor
+  device->_registerMapping->getRegisterInfo("SOME_REGISTER",info,"APP0");
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.reg_bar, info.reg_address, 1) == true );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.reg_bar, info.reg_address, 40) == true );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.reg_bar, info.reg_address, 41) == false );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.reg_bar + 1, info.reg_address, 1) == false );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.reg_bar, info.reg_address + 39, 1) == true );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.reg_bar, info.reg_address + 40, 1) == false );
 
   // close the device
   device->close();

@@ -125,6 +125,31 @@ namespace mtca4u {
     };
   }     // namespace proxies
 
+  /*********************************************************************************************************************/
+  /** Class providing a function to check whether a given address is inside the address range of a register or not.
+   */
+  class DummyRegisterAddressChecker {
+    public:
+      DummyRegisterAddressChecker(RegisterInfoMap::RegisterInfo _registerInfo)
+      : registerInfo(_registerInfo)
+      {}
+
+      /// check if the given address is in range of the register
+      bool isAddressInRange(uint8_t bar, uint32_t address, uint32_t length) {
+        return ( bar == registerInfo.reg_bar &&
+                 address >= registerInfo.reg_address &&
+                 address+length <= registerInfo.reg_address+registerInfo.reg_size );
+      }
+
+    protected:
+
+      /// constructor for derived classes
+      DummyRegisterAddressChecker() {}
+
+      /// register map information
+      RegisterInfoMap::RegisterInfo registerInfo;
+  };
+
 
   /*********************************************************************************************************************/
   /** Register accessor for accessing single word or 1D array registers internally of a DummyBackend implementation.
@@ -139,22 +164,22 @@ namespace mtca4u {
    *  using the [0] operator.
    */
   template<typename T>
-  class DummyRegisterAccessor : public proxies::DummyRegisterElement<T> {
+  class DummyRegisterAccessor : public proxies::DummyRegisterElement<T>, public DummyRegisterAddressChecker {
     public:
 
       /// Constructor should normally be called in the constructor of the DummyBackend implementation.
       /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
       /// DummyBackend itself. module and name denominate the register entry in the map file.
       DummyRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-    : _dev(dev)
-    {
+      : _dev(dev)
+      {
         _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
         fpc =  FixedPointConverter(registerInfo.reg_width, registerInfo.reg_frac_bits, registerInfo.reg_signed);
         // initialise the base DummyRegisterElement
         proxies::DummyRegisterElement<T>::fpcptr = &fpc;
         proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
         proxies::DummyRegisterElement<T>::buffer = getElement(0);
-    }
+      }
 
       /// Get or set register content by [] operator.
       inline proxies::DummyRegisterElement<T> operator[](unsigned int index)
@@ -172,9 +197,6 @@ namespace mtca4u {
       using proxies::DummyRegisterElement<T>::operator=;
 
     protected:
-
-      /// register map information
-      RegisterInfoMap::RegisterInfo registerInfo;
 
       /// pointer to VirtualDevice
       DummyBackend *_dev;
@@ -204,7 +226,7 @@ namespace mtca4u {
    *  DummyRegister accessor, so it can again be used mostly like a variable of the type T.
    */
   template<typename T>
-  class DummyMultiplexedRegisterAccessor {
+  class DummyMultiplexedRegisterAccessor : public DummyRegisterAddressChecker {
     public:
 
       /// Constructor should normally be called in the constructor of the DummyBackend implementation.
@@ -212,8 +234,8 @@ namespace mtca4u {
       /// DummyBackend itself. module and name denominate the register entry in the map file.
       /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the name when searching for the register.
       DummyMultiplexedRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-    : _dev(dev), pitch(0)
-    {
+      : _dev(dev), pitch(0)
+      {
         _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX+name, registerInfo, module);
 
         int i = 0;
@@ -243,7 +265,7 @@ namespace mtca4u {
 
         // compute number of elements per sequence
         nElements = registerInfo.reg_elem_nr/fpc.size();
-    }
+      }
 
       /// return number of elements per sequence
       unsigned int getNumberOfElements()
@@ -269,9 +291,6 @@ namespace mtca4u {
       }
 
     protected:
-
-      /// register map information
-      RegisterInfoMap::RegisterInfo registerInfo;
 
       /// pointer to VirtualDevice
       DummyBackend *_dev;
