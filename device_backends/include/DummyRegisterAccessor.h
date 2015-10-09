@@ -135,7 +135,7 @@ namespace mtca4u {
       {}
 
       /// check if the given address is in range of the register
-      bool isAddressInRange(uint8_t bar, uint32_t address, uint32_t length) {
+      bool isAddressInRange(uint8_t bar, uint32_t address, size_t length) {
         return ( bar == registerInfo.reg_bar &&
                  address >= registerInfo.reg_address &&
                  address+length <= registerInfo.reg_address+registerInfo.reg_size );
