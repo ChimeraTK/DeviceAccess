@@ -15,6 +15,7 @@
 
 #define HEX_TO_DOUBLE( INPUT ) static_cast<double>( INPUT )
 #define SIGNED_HEX_TO_DOUBLE( INPUT ) static_cast<double>( static_cast<int32_t>(INPUT) )
+#define SIGNED_HEX_TO_INT64( INPUT ) static_cast<int64_t>( static_cast<int32_t>(INPUT) )
 
 #define CHECK_SIGNED_FIXED_POINT_NO_FRACTIONAL\
 		checkToFixedPoint( converter, 0.25, 0 );\
@@ -47,9 +48,10 @@ DEF_TYPENAME(int16_t)
 DEF_TYPENAME(uint16_t)
 DEF_TYPENAME(int8_t)
 DEF_TYPENAME(uint8_t)
+DEF_TYPENAME(int64_t)
+DEF_TYPENAME(uint64_t)
 DEF_TYPENAME(float)
 DEF_TYPENAME(double)
-
 
 
 
@@ -91,13 +93,13 @@ void checkToCooked(FixedPointConverter const & converter,
 
 	std::stringstream message;
 	message << "testToCooked failed for type " << typeName<T>() << " with input " << std::hex << "0x" << input
-			<< std::dec << ", expected " << expectedValue;
+			<< std::hex << ", expected 0x" << expectedValue << std::dec;
 
 	BOOST_TEST_CHECKPOINT(message.str());
 
 	T result = converter.template toCooked<T>( input );
 
-	message << ", output " << result;
+	message << std::hex << ", output 0x" << result << std::dec;
 
 	BOOST_CHECK_MESSAGE( result == expectedValue, message.str() );
 }
@@ -107,8 +109,8 @@ void checkToRaw(FixedPointConverter const & converter,
 		T input, uint32_t expectedValue){
 
 	std::stringstream message;
-	message << "testToRaw failed for type " << typeName<T>() << " with input " << input << std::hex
-			<< ", expected 0x" << expectedValue;
+	message << "testToRaw failed for type " << typeName<T>() << " with input 0x" <<  std::hex << input
+			<< ", expected 0x" << expectedValue << std::dec;
 
 	BOOST_TEST_CHECKPOINT(message.str());
 
@@ -142,6 +144,9 @@ BOOST_AUTO_TEST_CASE( testInt32 ){
 	checkToCooked( converter, 0x55555555, HEX_TO_DOUBLE( 0x55555555) );
 	checkToCooked( converter, 0xAAAAAAAA, (int)0xAAAAAAAA );
 	checkToCooked( converter, 0x55555555, (int)0x55555555 );
+	checkToCooked( converter, 0xAAAAAAAA, SIGNED_HEX_TO_INT64(0xAAAAAAAA) );
+	checkToCooked( converter, 0x55555555, (uint64_t)0x55555555 );
+
 	checkToCookedOverflowNeg<unsigned int>( converter, 0xAAAAAAAA);
 	checkToCooked( converter, 0x55555555, (unsigned int)0x55555555 );
 	checkToCookedOverflowNeg<short>( converter, 0xAAAAAAAA);
@@ -166,6 +171,11 @@ BOOST_AUTO_TEST_CASE( testInt32 ){
 	checkToRaw( converter, (short)0xAAAA, 0xFFFFAAAA );
 	checkToRaw( converter, (unsigned short)0x5555, 0x5555 );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0xAAAA );
+	checkToRaw( converter, (int64_t)0x5555, 0x5555 );
+	checkToRaw( converter, (int64_t)0xFFFFFFFFFFFFAAAA, 0xFFFFAAAA );
+	checkToRaw( converter, (int64_t)0xFFFFFFFAAAAAAAAA, 0x80000000 ); // Smallest signed representation possible
+	checkToRaw( converter, (int64_t)0xFFFFFFFFF, 0x7FFFFFFF );
+	checkToRaw( converter, (uint64_t)0xFFFFFFFFF, 0x7FFFFFFF ); // max signed representation possible
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32 ){
@@ -179,6 +189,9 @@ BOOST_AUTO_TEST_CASE( testUInt32 ){
 	checkToCooked( converter, 0x55555555, (unsigned int)0x55555555 );
 	checkToCookedOverflowPos<short>( converter, 0xAAAAAAAA);
 	checkToCookedOverflowPos<unsigned short>( converter, 0x55555555);
+	checkToCooked( converter, 0xAAAAAAAA, (int64_t)0xAAAAAAAA );
+	checkToCooked( converter, 0x55555555, (uint64_t)0x55555555 );
+
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -197,6 +210,10 @@ BOOST_AUTO_TEST_CASE( testUInt32 ){
 	checkToRaw( converter, (short)0xAAAA, 0 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x5555 );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0xAAAA );
+	checkToRaw( converter, (int64_t)0x5555, 0x5555 );
+	checkToRaw( converter, SIGNED_HEX_TO_INT64(0xAAAAAAAA), 0x0 ); // Lowest range of 32 bit wide unsigned register
+	checkToRaw( converter, (int64_t)0x100000000, 0xFFFFFFFF );
+	checkToRaw( converter, (uint64_t)0x100000000, 0xFFFFFFFF ); // max signed representation possible
 }
 
 BOOST_AUTO_TEST_CASE( testInt16 ){
@@ -212,6 +229,11 @@ BOOST_AUTO_TEST_CASE( testInt16 ){
 	checkToCooked( converter, 0x5555, (short) 0x5555 );
 	checkToCookedOverflowNeg<unsigned short>( converter, 0xAAAA);
 	checkToCooked( converter, 0x5555, (unsigned short) 0x5555 );
+	checkToCooked( converter, 0x5555, (int64_t)0x5555 );
+	checkToCooked( converter, 0xAAAA, static_cast<int64_t>(static_cast<int16_t>(0xAAAA) ));
+
+	checkToCooked( converter, 0x5555, (uint64_t)0x5555 );
+	checkToCookedOverflowNeg<uint64_t>( converter, 0xAAAA );
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -230,6 +252,14 @@ BOOST_AUTO_TEST_CASE( testInt16 ){
 	checkToRaw( converter, (short)0xAAAA, 0xAAAA );
 	checkToRaw( converter, (unsigned short)0x5555, 0x5555 );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x7FFF );
+	checkToRaw( converter, (int64_t)0x5555, 0x5555 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int16_t>(0xAAAA) ), 0xAAAA );
+	checkToRaw( converter, (int64_t)0x555555, 0x7FFF );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA) ), 0x8000);
+	checkToRaw( converter, (uint64_t)0x5555, 0x5555 );
+	checkToRaw( converter, (uint64_t)0x0, 0x0 );
+	checkToRaw( converter, (uint64_t)0xF555, 0x7FFF );
+
 }
 
 BOOST_AUTO_TEST_CASE( testUInt16 ){
@@ -245,6 +275,10 @@ BOOST_AUTO_TEST_CASE( testUInt16 ){
 	checkToCooked( converter, 0x5555, (short) 0x5555 );
 	checkToCooked( converter, 0xAAAA, (unsigned short) 0xAAAA );
 	checkToCooked( converter, 0x5555, (unsigned short) 0x5555 );
+	checkToCooked( converter, 0x5555, (int64_t)0x5555 );
+	checkToCooked( converter, 0xAAAA, (int64_t)0xAAAA);
+	checkToCooked( converter, 0x5555, (uint64_t)0x5555 );
+	checkToCooked( converter, 0xAAAA, (uint64_t)0xAAAA);
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -263,6 +297,12 @@ BOOST_AUTO_TEST_CASE( testUInt16 ){
 	checkToRaw( converter, (short)0xAAAA, 0 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x5555 );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0xAAAA );
+	checkToRaw( converter, (int64_t)0x5555, 0x5555 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int16_t>(0xAAAA) ), 0 );
+	checkToRaw( converter, (int64_t)0x555555, 0xFFFF );
+	checkToRaw( converter, (uint64_t)0x5555, 0x5555 );
+	checkToRaw( converter, (uint64_t)0x0, 0x0);
+	checkToRaw( converter, (uint64_t)0xFF555, 0xFFFF );
 }
 
 BOOST_AUTO_TEST_CASE( testInt8 ){
@@ -278,6 +318,11 @@ BOOST_AUTO_TEST_CASE( testInt8 ){
 	checkToCooked( converter, 0x55, (short) 0x55 );
 	checkToCookedOverflowNeg<unsigned short>( converter, 0xAA);
 	checkToCooked( converter, 0x55, (unsigned short) 0x55 );
+	checkToCooked( converter, 0x55, (int64_t)0x55 );
+	checkToCooked( converter, 0xAA, static_cast<int64_t>(static_cast<int8_t>(0xAA) ));
+	checkToCooked( converter, 0x55, (uint64_t)0x55 );
+	checkToCookedOverflowNeg<uint64_t>( converter, 0xAA );
+
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -296,6 +341,14 @@ BOOST_AUTO_TEST_CASE( testInt8 ){
 	checkToRaw( converter, (short)0xAAAA, 0x80 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x7F );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x7F );
+
+
+	checkToRaw( converter, (int64_t)0x55, 0x55 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int8_t>(0xAA) ), 0xAA );
+	checkToRaw( converter, (int64_t)0x5555, 0x7F );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA) ), 0x80);
+	checkToRaw( converter, (uint64_t)0x55, 0x55 );
+	checkToRaw( converter, (uint64_t)0xF5, 0x7F );
 }
 
 BOOST_AUTO_TEST_CASE( testUInt8 ){
@@ -311,6 +364,10 @@ BOOST_AUTO_TEST_CASE( testUInt8 ){
 	checkToCooked( converter, 0x55, (short) 0x55 );
 	checkToCooked( converter, 0xAA, (unsigned short) 0xAA );
 	checkToCooked( converter, 0x55, (unsigned short) 0x55 );
+	checkToCooked( converter, 0x55, (int64_t)0x55 );
+	checkToCooked( converter, 0xAA, (int64_t)0xAA);
+	checkToCooked( converter, 0x55, (uint64_t)0x55 );
+	checkToCooked( converter, 0xAA, (uint64_t)0xAA);
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -329,12 +386,18 @@ BOOST_AUTO_TEST_CASE( testUInt8 ){
 	checkToRaw( converter, (short)0xAAAA, 0 );
 	checkToRaw( converter, (unsigned short)0x5555, 0xFF );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0xFF );
+	checkToRaw( converter, (int64_t)0x55, 0x55 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int16_t>(0xAAAA) ), 0 );
+	checkToRaw( converter, (int64_t)0x555555, 0xFF );
+	checkToRaw( converter, (uint64_t)0x55, 0x55 );
+	checkToRaw( converter, (uint64_t)0x0, 0x0);
+	checkToRaw( converter, (uint64_t)0xFF555, 0xFF );
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fractionMinus12 ){
 	FixedPointConverter converter(32, -12); // 32 bits, -12 fractional bits, signed
 
-	checkToCooked( converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2,12) );
+	checkToCooked( converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2,12) );// Basically a left shift 12 places
 	checkToCooked( converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2,12) );
 	checkToCookedOverflowPos<int>( converter, 0x000AAAAA);
 	checkToCooked( converter, 0xFFFAAAAA, (int)0xAAAAA000 );
@@ -342,6 +405,10 @@ BOOST_AUTO_TEST_CASE( testInt32_fractionMinus12 ){
 	checkToCookedOverflowNeg<unsigned int>( converter, 0xFFFAAAAA);
 	checkToCooked( converter, 0x00055555, (unsigned int)0x55555000 );
 	checkToCooked( converter, 0x000AAAAA, (unsigned int)0xAAAAA000 );
+	checkToCooked( converter, 0xAAAAAAAA, (int64_t)0xFFFFFAAAAAAAA000);
+	checkToCooked( converter, 0x55555555, (int64_t)0x55555555000);
+	checkToCooked( converter, 0x55555555, (uint64_t)0x55555555000);
+	checkToCookedOverflowNeg<uint64_t>( converter, 0xAAAAAAAA);
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -360,6 +427,12 @@ BOOST_AUTO_TEST_CASE( testInt32_fractionMinus12 ){
 	checkToRaw( converter, (short)0xAAAA, 0xFFFFFFFB );
 	checkToRaw( converter, (unsigned short)0x5555, 0x00000005 );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x0000000B );
+	checkToRaw( converter, (int64_t)0x55555555, 0x00055555 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA) ), 0XFFFAAAAB );
+	checkToRaw( converter, (int64_t)0x5555555555555, 0x7fffffff ); // full range
+	checkToRaw( converter, (int64_t)0xFFFFA55555555555, 0x80000000 );
+	checkToRaw( converter, (uint64_t)0x55555, 0x00000055 );
+	checkToRaw( converter, (uint64_t)0x5555555555555, 0X7FFFFFFF );
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32_fractionMinus12 ){
@@ -372,6 +445,11 @@ BOOST_AUTO_TEST_CASE( testUInt32_fractionMinus12 ){
 	checkToCooked( converter, 0x00055555, (unsigned int)0x55555000 );
 	checkToCooked( converter, 0x000AAAAA, (unsigned int)0xAAAAA000 );
 	checkToCookedOverflowPos<unsigned short>( converter, 0x000AAAAA);
+	checkToCooked( converter, 0x00055555, (int64_t)0x55555000 );
+  checkToCooked( converter, 0x000AAAAA, (int64_t)0xAAAAA000);
+  checkToCooked( converter, 0xAAAAAAAA, (int64_t)0xAAAAAAAA000);
+	checkToCooked( converter, 0x00055555, (uint64_t)0x55555000 );
+	checkToCooked( converter, 0xAAAAAAAA, (uint64_t)0xAAAAAAAA000);
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -390,6 +468,11 @@ BOOST_AUTO_TEST_CASE( testUInt32_fractionMinus12 ){
 	checkToRaw( converter, (short)0xAAAA, 0 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x00000005 );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x0000000B );
+	checkToRaw( converter, (int64_t)0x55555555, 0x00055555 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0x0 );
+	checkToRaw( converter, (int64_t)0x5555555555555, 0xFFFFFFFF ); // full range
+	checkToRaw( converter, (uint64_t)0x55555, 0x00000055 );
+	checkToRaw( converter, (uint64_t)0x5555555555555, 0XFFFFFFFF );
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fractionMinus1 ){
@@ -404,6 +487,7 @@ BOOST_AUTO_TEST_CASE( testInt32_fractionMinus1 ){
 	checkToCooked( converter, 0x55555555, (unsigned int)0xAAAAAAAA );
 	checkToCooked( converter, 0x22222202, (unsigned int)0x44444404 );
 	checkToCooked( converter, 0x7FFFFFFF, (unsigned int)0xFFFFFFFE );
+	checkToCooked( converter, 0xAAAAAAAA, (int64_t)0xFFFFFFFF55555554 );
 
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
@@ -427,6 +511,8 @@ BOOST_AUTO_TEST_CASE( testInt32_fractionMinus1 ){
 	checkToRaw( converter, (short)0xAAAA, 0xFFFFD555 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x00002AAB );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x00005555 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0xD5555555 );
+	checkToRaw( converter, static_cast<uint64_t>(0xAAAAAAAA), 0x55555555 );
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32_fractionMinus1 ){
@@ -476,6 +562,8 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction1 ){
 	checkToCooked( converter, 0x22222202, (int)0x11111101 );
 	checkToCooked( converter, 0x55555555, (unsigned int)0x2AAAAAAB );
 	checkToCooked( converter, 0x22222202, (unsigned int)0x11111101 );
+	checkToCooked( converter, 0xAAAAAAAA, (int64_t)0xFFFFFFFFD5555555 );
+	checkToCooked( converter, 0x55555555, (int64_t)0x2AAAAAAB );
 
 	checkToRaw( converter, 0.25, 0x1 );
 	checkToRaw( converter, -0.25, 0xFFFFFFFF );
@@ -499,6 +587,8 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction1 ){
 	checkToRaw( converter, (short)0xAAAA, 0xFFFF5554 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x0000AAAA );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x00015554 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xFAAAAAAA)), 0XF5555554 );
+	checkToRaw( converter, static_cast<uint64_t>(0xAAAAAAA), 0X15555554 );
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32_fraction1 ){
@@ -512,6 +602,8 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction1 ){
 	checkToCooked( converter, 0xAAAAAAAA, (unsigned int)0x55555555 );
 	checkToCooked( converter, 0x55555555, (unsigned int)0x2AAAAAAB );
 	checkToCooked( converter, 0x22222202, (unsigned int)0x11111101 );
+	checkToCooked( converter, 0xAAAAAAAA, (int64_t)0x55555555 );
+	checkToCooked( converter, 0x55555555, (int64_t)0x2AAAAAAB );
 
 	checkToRaw( converter, 0.25, 0x1 );
 	checkToRaw( converter, -0.25, 0x0 );
@@ -535,6 +627,8 @@ BOOST_AUTO_TEST_CASE( testUInt32_fraction1 ){
 	checkToRaw( converter, (short)0xAAAA, 0 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x0000AAAA );
 	checkToRaw( converter, (unsigned short)0xAAAA, 0x00015554 );
+	checkToRaw( converter, static_cast<int64_t>(static_cast<int32_t>(0xFAAAAAAA)), 0x0 );
+	checkToRaw( converter, static_cast<uint64_t>(0xFAAAAAAA), 0XFFFFFFFF );
 }
 
 BOOST_AUTO_TEST_CASE( testInt32_fraction7 ){
@@ -796,6 +890,8 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction43 ){
 	checkToCooked( converter, 0x55555555, (short) 0 );
 	checkToCooked( converter, 0xAAAAAAAA, (unsigned short) 0 );
 	checkToCooked( converter, 0x55555555, (unsigned short) 0 );
+	checkToCooked( converter, 0x555, (int64_t)0 );
+	checkToCooked( converter, 0x555, (uint64_t)0 );
 
 	// all out of range
 	checkToRaw( converter, 0.25, 0x7FFFFFFF );
@@ -817,6 +913,8 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction43 ){
 	checkToRaw( converter, (short)0xAAAA, 0x80000000 );
 	checkToRaw( converter, (short)-1, 0x80000000 );
 	checkToRaw( converter, (unsigned short)0x5555, 0x7FFFFFFF );
+	checkToRaw( converter, (int64_t)0xFFFFFFFAAAAAAAAA, 0x80000000);
+	checkToRaw( converter, (uint64_t)0xAAAAAAAAA, 0x7FFFFFFF );
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32_fraction43 ){
@@ -934,6 +1032,10 @@ BOOST_AUTO_TEST_CASE( testInt18_fraction0 ){
 	checkToCooked( converter, 0x15555, (int)0x15555 );
 	checkToCooked( converter, 0x15555, (unsigned int)0x15555 );
 
+	checkToCooked( converter, 0x2AAAA, (int64_t)0xFFFFFFFFFFFEAAAA );
+	checkToCooked( converter, 0x15555, (int64_t)0x15555 );
+	checkToCooked( converter, 0x15555, (uint64_t)0x15555 );
+
 	checkToRaw( converter, 0.25, 0 );
 	checkToRaw( converter, -0.25, 0 );
 	checkToRaw( converter, 0.75, 1 );
@@ -950,6 +1052,11 @@ BOOST_AUTO_TEST_CASE( testInt18_fraction0 ){
 	checkToRaw( converter, (short)0xA000, 0x3A000 );
 	checkToRaw( converter, (short)0x5000, 0x05000 );
 	checkToRaw( converter, (unsigned short)0xA000, 0x0A000 );
+
+	checkToRaw( converter, (int64_t)0xFFFFFFFFFFFFA000, 0x3A000 );
+	checkToRaw( converter, (int64_t)0xA000, 0xA000 );
+	checkToRaw( converter, (uint64_t)0xA000, 0x0A000 );
+
 }
 
 BOOST_AUTO_TEST_CASE( testUInt18_fraction0 ){

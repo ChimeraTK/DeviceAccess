@@ -94,6 +94,8 @@ namespace mtca4u{
           boost::fusion::pair<uint16_t,uint16_t>,
           boost::fusion::pair<int32_t,int32_t>,
           boost::fusion::pair<uint32_t,uint32_t>,
+          boost::fusion::pair<int64_t,int64_t>,
+          boost::fusion::pair<uint64_t,uint64_t>,
           boost::fusion::pair<float,float>,
           boost::fusion::pair<double,double> >    userTypeMap;
 
