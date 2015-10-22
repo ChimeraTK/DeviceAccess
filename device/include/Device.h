@@ -18,7 +18,8 @@
 #include <boost/shared_ptr.hpp>
 namespace mtca4u {
 
-  // forward declaration
+  // Just declare the class, no need to include the header because
+  // it is template code and the header is included by the calling code.
   template<typename UserType>
   class BufferingRegisterAccessor;
 
@@ -32,25 +33,20 @@ namespace mtca4u {
    *      as a template parameter and must be an type defined in libdev class.
    *
    *      The device can open and close a device for you. If you let the Device
-   *open
+   *      open
    *      the device you will not be able to get a handle to this device
-   *directly,
-   *you
+   *      directly, you
    *      can only close it with the Device. Should you create RegisterAccessor
-   *objects, which contain
+   *      objects, which contain
    *      shared pointers to this device, the device will stay opened and
-   *functional even
+   *      functional even
    *      if the Device object which created the RegisterAccessor goes out of
-   *scope. In this case
+   *      scope. In this case
    *      you cannot close the device. It will finally be closed when the the
-   *last
-   *      RegisterAccessor pointing to it goes out if scope.
+   *      last RegisterAccessor pointing to it goes out if scope.
    *      The same holds if you open another device with the same Device: You
-   *lose
-   *direct access
-   *      to the previous device, which stays open as long as there are
-   *RegisterAccessors pointing to it.
-   *
+   *      lose direct access to the previous device, which stays open as long
+   *      as there are RegisterAccessors pointing to it.
    */
   class Device {
     public:
@@ -218,8 +214,6 @@ namespace mtca4u {
        *  Use RegisterAccessor instead.
        */
       typedef RegisterAccessor regObject;
-
-      Device(){};
 
       virtual void open(std::string const & aliasName);
 
