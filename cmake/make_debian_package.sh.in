@@ -9,7 +9,7 @@ cd debian_package
 # lowecasepackagenname_package.ver.sion
 #As we have to make a tar-file, and tags don't change anyway, we use export
 #instead of checkout.
-svn export https://svnsrv.desy.de/public/mtca4u/mtca4u-deviceaccess/tags/@mtca4u-deviceaccess_VERSION@ mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@
+svn export https://svnsrv.desy.de/public/mtca4u/deviceaccess/tags/@mtca4u-deviceaccess_VERSION@ mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@
 #Debian convention: file has to end on .orig.tar.gz
 tar -czf mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@.orig.tar.gz  mtca4u-deviceaccess_@mtca4u-deviceaccess_VERSION@
 
