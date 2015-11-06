@@ -20,7 +20,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wunini
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
-add_definitions(-DDMAP_FILE_PREFIX="${CMAKE_INSTALL_PREFIX}")
+add_definitions(-DDMAP_FILE_PATH="${DMAP_FILE_PATH}")
 
 #use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
 #build. The 'make doc' target will still exist

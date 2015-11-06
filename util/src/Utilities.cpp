@@ -8,7 +8,6 @@
 #include "Utilities.h"
 #include "DMapFilesParser.h"
 #include "BackendFactory.h"
-#include "DMapFileDefaults.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -177,22 +176,19 @@ std::string Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePa
 std::string Utilities::findFirstOfAlias(std::string aliasName)
 {
   std::string uri;
-  char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
-  if ( dmapFileFromEnvironment != NULL ) {
-    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment);
+  char const* ptr_env_var = std::getenv(ENV_VAR_DMAP_FILE);
+  if ( ptr_env_var != NULL ) {
+    uri = aliasLookUp(aliasName,std::string(ptr_env_var));
   }
   if (!uri.empty())
-    return dmapFileFromEnvironment;
-
+    return std::string(ptr_env_var);
   std::string dMapFilePath = BackendFactory::getInstance().getDMapFilePath();
   uri = aliasLookUp(aliasName, dMapFilePath);
   if (!uri.empty())
     return dMapFilePath;
-
-  uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT);
+  uri = aliasLookUp(aliasName, DMAP_FILE_PATH);
   if (!uri.empty())
-    return DMAP_FILE_DEFAULT;
-
-  return std::string(); // no alias found, return an empty string
+    return DMAP_FILE_PATH;
+  return uri;
 }
 } /* namespace mtca4u */

@@ -10,7 +10,6 @@
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "DMapFilesParser.h"
-#include "DMapFileDefaults.h"
 #include "Exception.h"
 #include <boost/algorithm/string.hpp>
 namespace mtca4u {
@@ -26,34 +25,27 @@ void BackendFactory::registerBackendType(std::string interface, std::string prot
 
 void BackendFactory::setDMapFilePath(std::string dMapFilePath)
 {
-  _dMapFile = dMapFilePath;
+  _dMapFilePath = dMapFilePath;
 }
 
 std::string BackendFactory::getDMapFilePath()
 {
-  return _dMapFile;
+  return _dMapFilePath;
 }
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
   std::string uri;
-  char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
-  if ( dmapFileFromEnvironment != NULL ) {
-    std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment);
+  char const* ptr_env_var = std::getenv(ENV_VAR_DMAP_FILE);
+  if ( ptr_env_var != NULL ) {
+    uri = Utilities::aliasLookUp(aliasName,std::string(ptr_env_var));
   }
-  if (uri.empty()){
-    std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, _dMapFile);
-  }
-  if (uri.empty()){
-    std::cout << "creating backend from " << DMAP_FILE_DEFAULT << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT);
-  }
-  if (uri.empty()){
+  if (uri.empty())
+    uri = Utilities::aliasLookUp(aliasName, _dMapFilePath);
+  if (uri.empty())
+    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_PATH);
+  if (uri.empty())
     throw BackendFactoryException("Unknown device alias.", BackendFactoryException::UNKNOWN_ALIAS);
-  }
-
-  return createBackendInternal(uri);
+ return createBackendInternal(uri);
 }
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::string uri) {
@@ -61,7 +53,7 @@ boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::stri
   std::cout << "uri to parse" << uri << std::endl;
   std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
-  Sdm sdm;
+Sdm sdm;
   try {
     sdm = Utilities::parseSdm(uri);
   }
