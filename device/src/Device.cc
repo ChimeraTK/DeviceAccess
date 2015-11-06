@@ -365,17 +365,18 @@ namespace mtca4u{
 void Device::open(std::string const & aliasName) {
 	BackendFactory FactoryInstance = BackendFactory::getInstance();
 	_pDeviceBackend =  FactoryInstance.createBackend(aliasName);
-	if (_pDeviceBackend)
-		_pDeviceBackend->open();
-	else
-		return;
+	if (_pDeviceBackend){
+	  _pDeviceBackend->open();
+	}
+	else{
+	  return;
+	}
 	//find the file containing first occurance of alias name.
   std::string dmapfile = Utilities::findFirstOfAlias(aliasName);
   DMapFilesParser filesParser;
   try
   {
-    if ( boost::filesystem::exists(dmapfile ) )
-    {
+    if ( boost::filesystem::exists(dmapfile ) ){
       filesParser.parse_file(dmapfile);
     }
   }
