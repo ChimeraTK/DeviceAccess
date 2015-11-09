@@ -19,7 +19,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-#include "exTcpCtrl.h"
+#include <RebotBackendException.h>
 
 using boost::asio::ip::tcp;
 

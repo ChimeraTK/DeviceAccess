@@ -6,7 +6,6 @@
  */
 
 #include "TcpCtrl.h"
-using boost::asio::ip::tcp;
 using namespace mtca4u;
 
 TcpCtrl::TcpCtrl(std::string ipaddr, int port) : _ipAddress(ipaddr), _port(port) {

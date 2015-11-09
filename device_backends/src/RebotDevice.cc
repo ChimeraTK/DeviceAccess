@@ -1,7 +1,6 @@
+#include <RebotBackendException.h>
 #include "RebotDevice.h"
-#include "exTcpCtrl.h"
 
-using boost::asio::ip::tcp;
 
 namespace mtca4u {
 
