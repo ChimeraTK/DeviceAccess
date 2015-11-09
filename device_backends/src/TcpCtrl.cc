@@ -51,7 +51,7 @@ void TcpCtrl::receiveData(boost::array<char, 4> &receivedArray) {
   boost::system::error_code ec;
   _socket->read_some(boost::asio::buffer(receivedArray), ec);
   if (ec) {
-    throw RebotBackendException("Error reading from socket", RebotBackendException::EX_RDSOCK);
+    throw RebotBackendException("Error reading from socket", RebotBackendException::EX_SOCKET_READ_FAILED);
   }
 }
 
@@ -59,7 +59,7 @@ void TcpCtrl::sendData(const std::vector<char> &data) {
   boost::system::error_code ec;
   _socket->write_some(boost::asio::buffer(&data[0],data.size()),ec);	
   if(ec) {
-    throw RebotBackendException("Error writing to socket", RebotBackendException::EX_WRSOCK);
+    throw RebotBackendException("Error writing to socket", RebotBackendException::EX_SOCKET_WRITE_FAILED);
   }
 }
 
@@ -69,7 +69,7 @@ std::string TcpCtrl::getAddress() {
 
 void TcpCtrl::setAddress(std::string ipaddr) {
   if (_socket->is_open()) {
-    throw RebotBackendException("Error setting IP. The socket is open", RebotBackendException::EX_SETIP);
+    throw RebotBackendException("Error setting IP. The socket is open", RebotBackendException::EX_SET_IP_FAILED);
   }
   _ipAddress = ipaddr;
 }
@@ -80,7 +80,7 @@ int TcpCtrl::getPort() {
 
 void TcpCtrl::setPort(int port) {
   if (_socket->is_open()) {
-    throw RebotBackendException("Error setting port. The socket is open", RebotBackendException::EX_SETPORT);
+    throw RebotBackendException("Error setting port. The socket is open", RebotBackendException::EX_SET_PORT_FAILED);
   }
   _port = port;
 }

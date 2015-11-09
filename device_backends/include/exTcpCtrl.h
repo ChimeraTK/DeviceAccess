@@ -20,12 +20,12 @@ public:
     EX_OPEN_SOCKET,
 		EX_CONNECTION_FAILED,
     EX_CLOSE_SOCKET_FAILED,
-    EX_WRSOCK,
-    EX_RDSOCK,
+    EX_SOCKET_WRITE_FAILED,
+    EX_SOCKET_READ_FAILED,
     EX_DEVICE_CLOSED,
-    EX_SETIP,
-    EX_SETPORT,
-    EX_SIZEMULT
+    EX_SET_IP_FAILED,
+    EX_SET_PORT_FAILED,
+    EX_SIZE_INVALID
   };
   RebotBackendException(const std::string &_exMessage, unsigned int _exID);
 };
