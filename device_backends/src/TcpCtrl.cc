@@ -42,7 +42,7 @@ void TcpCtrl::closeConnection() {
   boost::system::error_code ec;
   _socket->close(ec);
   if (ec) {
-    throw RebotBackendException("Error closing socket", RebotBackendException::EX_CLOSESOCK);	
+    throw RebotBackendException("Error closing socket", RebotBackendException::EX_CLOSE_SOCKET_FAILED);
   }
 }
 
