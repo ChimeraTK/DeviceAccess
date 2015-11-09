@@ -9,6 +9,6 @@
 
 namespace mtca4u {
 
-exTcpCtrl::exTcpCtrl(const std::string &_exMessage, unsigned int _exID) : Exception(_exMessage, _exID) { }
+RebotBackendException::RebotBackendException(const std::string &_exMessage, unsigned int _exID) : Exception(_exMessage, _exID) { }
 
 } //namespace mtca4u
