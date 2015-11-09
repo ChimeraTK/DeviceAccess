@@ -33,7 +33,7 @@ void TcpCtrl::openConnection() {
   }
 
   if (ec) {
-    throw RebotBackendException("Error connecting endpoint", RebotBackendException::EX_CONNECT);
+    throw RebotBackendException("Error connecting endpoint", RebotBackendException::EX_CONNECTION_FAILED);
   }
 
 }

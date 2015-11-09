@@ -17,8 +17,8 @@ namespace mtca4u {
 class RebotBackendException : public DeviceBackendException {
 public:
   enum {
-    EX_OPENSOCK,
-    EX_CONNECT,
+    EX_OPEN_SOCKET,
+		EX_CONNECTION_FAILED,
     EX_CLOSESOCK,
     EX_WRSOCK,
     EX_RDSOCK,
