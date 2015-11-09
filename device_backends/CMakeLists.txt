@@ -6,6 +6,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotDevice.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TcpCtrl.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/exTcpCtrl.cc
    PARENT_SCOPE
 )
 
