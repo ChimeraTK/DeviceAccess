@@ -23,10 +23,10 @@ void RebotDevice::open() {
 
 void RebotDevice::read(uint8_t /*bar*/, uint32_t address, int32_t* data,  size_t sizeInBytes){
   if(!isOpen()) {
-    throw exTcpCtrl("Device is closed", exTcpCtrl::EX_DEVICE_CLOSED);
+    throw RebotBackendException("Device is closed", RebotBackendException::EX_DEVICE_CLOSED);
   }
   if (sizeInBytes % 4 != 0) {
-    throw exTcpCtrl("\"size\" argument must be a multiplicity of 4", exTcpCtrl::EX_SIZEMULT);
+    throw RebotBackendException("\"size\" argument must be a multiplicity of 4", RebotBackendException::EX_SIZEMULT);
   }
 
   int mode = 3;
@@ -63,10 +63,10 @@ void RebotDevice::read(uint8_t /*bar*/, uint32_t address, int32_t* data,  size_t
 
 void RebotDevice::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,  size_t sizeInBytes){
   if (!isOpen()) {
-    throw exTcpCtrl("Device is closed", exTcpCtrl::EX_DEVICE_CLOSED);
+    throw RebotBackendException("Device is closed", RebotBackendException::EX_DEVICE_CLOSED);
   }
   if (sizeInBytes % 4 != 0) {
-    throw exTcpCtrl("\"size\" argument must be a multiplicity of 4", exTcpCtrl::EX_SIZEMULT);
+    throw RebotBackendException("\"size\" argument must be a multiplicity of 4", RebotBackendException::EX_SIZEMULT);
   }
 
   int mode = 1;
