@@ -7,8 +7,10 @@
 
 namespace mtca4u {
   static const std::string DMAP_FILE_ENVIROMENT_VARIABLE("DMAP_FILE"); ///< The envorinment variable which contains the dmap file
-  static const std::string DMAP_FILE_DEFAULT(std::string(DMAP_FILE_PREFIX)
-					     +"/etc/mtca4u/devices.dmap"); ///< The default dmap file
+  static const std::string DMAP_FILE_DEFAULT_DIRECTORY(std::string(DMAP_FILE_PREFIX)
+						       +"/etc/mtca4u/"); ///< The default dmap file directorY (without file name)
+  static const std::string DMAP_FILE_DEFAULT_NAME("devices.dmap"); ///< The default dmap file name (without directory)
+  
 }// namespace mtca4u
 
 #endif //_MTCA4U_DMAP_FILE_DEFAULTS_H__

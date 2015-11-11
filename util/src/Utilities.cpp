@@ -140,16 +140,16 @@ Sdm Utilities::parseDeviceString(std::string deviceString) {
 	return sdmInfo;
 }
 
-std::string Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
+DMapFile::DRegisterInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
 {
-  std::string uri;
+  DMapFile::DRegisterInfo deviceInfo;
   DMapFilesParser filesParser;
   try {
     filesParser.parse_file(dmapFilePath);
   }
   catch (Exception& e) {
       std::cout << e.what() << std::endl;
-      return uri;
+      return deviceInfo;
   }
 #ifdef _DEBUG
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
@@ -167,11 +167,11 @@ std::string Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePa
 #ifdef _DEBUG
       std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
 #endif
-      uri = (*deviceIter).first.dev_file;
+      deviceInfo = deviceIter->first;
       break;
     }
   }
-  return uri;
+  return deviceInfo;
 }
 
 std::string Utilities::findFirstOfAlias(std::string aliasName)
@@ -179,19 +179,19 @@ std::string Utilities::findFirstOfAlias(std::string aliasName)
   std::string uri;
   char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
   if ( dmapFileFromEnvironment != NULL ) {
-    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment);
+    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).dev_file;
   }
   if (!uri.empty())
     return dmapFileFromEnvironment;
 
   std::string dMapFilePath = BackendFactory::getInstance().getDMapFilePath();
-  uri = aliasLookUp(aliasName, dMapFilePath);
+  uri = aliasLookUp(aliasName, dMapFilePath).dev_file;
   if (!uri.empty())
     return dMapFilePath;
 
-  uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT);
+  uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME).dev_file;
   if (!uri.empty())
-    return DMAP_FILE_DEFAULT;
+    return DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME;
 
   return std::string(); // no alias found, return an empty string
 }
