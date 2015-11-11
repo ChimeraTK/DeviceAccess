@@ -89,11 +89,11 @@ void DMapFileParserTest::testNoDataInDmapFile() {
 void DMapFileParserTest::testParseFile() {
 	std::string file_path = "valid.dmap";
 	mtca4u::DMapFileParser fileParser;
-	boost::shared_ptr<mtca4u::DMapFile> mapFilePtr = fileParser.parse(file_path);
+	boost::shared_ptr<mtca4u::DeviceInfoMap> mapFilePtr = fileParser.parse(file_path);
 
-	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent2;
-	mtca4u::DMapFile::DRegisterInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, "valid.dmap", "card1", "/dev/dev1",
 			"goodMapFile_withoutModules.map");
@@ -110,7 +110,7 @@ void DMapFileParserTest::testParseFile() {
 	// we use require here so it is safe to increase and dereference the iterator below
 	BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
 
-	mtca4u::DMapFile::const_iterator it = mapFilePtr->begin();
+	mtca4u::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
 
 	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent1, *(it++)) == true);
 	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent2, *(it++)) == true);

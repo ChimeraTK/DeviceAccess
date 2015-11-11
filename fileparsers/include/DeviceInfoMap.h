@@ -24,7 +24,7 @@ namespace mtca4u{
  *      device and checking for DMAP file correctness. Does not perform DMAP file parsing
  *
  */
-class DMapFile {
+class DeviceInfoMap {
 	friend class DMapFilesParser;
 public:
 
@@ -65,7 +65,7 @@ public:
 	 * Stores information about all errors and warnings detected during DMAP file correctness check
 	 */
 	class ErrorList {
-		friend class DMapFile;
+		friend class DeviceInfoMap;
 		friend class DMapFilesParser;
 	public:
 
@@ -94,8 +94,8 @@ public:
 				ERROR, /**< Critical error was detected */
 				WARNING /**< Non-critical error was detected */
 			} TYPE;
-			DMapFile::DRegisterInfo err_dev_1; /**< Detailed information about first device that generate error or warning */
-			DMapFile::DRegisterInfo err_dev_2; /**< Detailed information about second device that generate error or warning */
+			DeviceInfoMap::DRegisterInfo err_dev_1; /**< Detailed information about first device that generate error or warning */
+			DeviceInfoMap::DRegisterInfo err_dev_2; /**< Detailed information about second device that generate error or warning */
 			DMAP_FILE_ERR err_type; /**< Type of detected problem */
 			TYPE type; /**< Class of detected problem - ERROR or WARNING*/
 
@@ -108,7 +108,7 @@ public:
 			 * @param dev_1 detailed information about first device that generate problem
 			 * @param dev_2 detailed information about second device that generate problem
 			 */
-			ErrorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DMapFile::DRegisterInfo &dev_1, const DMapFile::DRegisterInfo &dev_2);
+			ErrorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DeviceInfoMap::DRegisterInfo &dev_1, const DeviceInfoMap::DRegisterInfo &dev_2);
 			friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
 			friend std::ostream& operator<<(std::ostream &os, const ErrorElem& me);
 		};
@@ -143,7 +143,7 @@ public:
 	 */
 	bool check(ErrorList &err, ErrorList::ErrorElem::TYPE level);
 
-	friend std::ostream& operator<<(std::ostream &os, const DMapFile& me);
+	friend std::ostream& operator<<(std::ostream &os, const DeviceInfoMap& me);
 	/**
 	 * @brief Returns information about specified device
 	 *
@@ -188,7 +188,7 @@ public:
 	 *
 	 * @param file_name name of DMAP file
 	 */
-	DMapFile(const std::string &file_name);
+	DeviceInfoMap(const std::string &file_name);
 	/**
 	 * @brief Insert new element read from DMAP file
 	 * @param elem element describing detailes of one device taken from DMAP file
@@ -198,7 +198,7 @@ public:
 /**
  * @typedef Introduce specialisation of shared_pointer template for pointers to RegisterInfoMap object as a ptrdmapFile
  */
-typedef boost::shared_ptr<DMapFile> ptrdmapFile;
+typedef boost::shared_ptr<DeviceInfoMap> ptrdmapFile;
 
 }//namespace mtca4u
 
