@@ -1,5 +1,5 @@
 /**
- *      @file           DMapFile.h
+ *      @file           DeviceInfoMap.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @version        1.0
  *      @brief          Provides storage object for devices descriptions                

@@ -9,7 +9,7 @@
 #define HELPERFUNCTIONS_H_
 
 #include "RegisterInfoMap.h"
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 
 void populateDummydRegisterInfoent(mtca4u::DMapFile::DRegisterInfo& dRegisterInfoent,
                               std::string dmapFileName,

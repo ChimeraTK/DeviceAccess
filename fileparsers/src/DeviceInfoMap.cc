@@ -1,6 +1,6 @@
 #include "predicates.h"
 #include "MapException.h"
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 #include <algorithm>
 
 namespace mtca4u{

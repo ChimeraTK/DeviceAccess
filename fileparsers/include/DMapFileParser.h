@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include <string>
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 
 namespace mtca4u{
 

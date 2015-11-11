@@ -7,7 +7,7 @@
 #ifndef MTCA4U_PREDICATES_H
 #define	MTCA4U_PREDICATES_H
 
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 #include "RegisterInfoMap.h"
 
 namespace mtca4u{

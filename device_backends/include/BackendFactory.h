@@ -5,7 +5,7 @@
 #include "PcieBackend.h"
 #include <boost/tuple/tuple.hpp>
 #include <boost/filesystem.hpp>
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 #ifdef _DEBUG
 #include <iostream>
 #endif

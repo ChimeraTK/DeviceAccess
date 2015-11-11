@@ -10,7 +10,7 @@
 
 #include <list>
 #include "Exception.h"
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 
 namespace mtca4u {
 /**This structure holds the information of an SDM.
