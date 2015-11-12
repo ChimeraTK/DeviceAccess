@@ -9,7 +9,7 @@ DeviceInfoMap::DeviceInfoMap(const std::string &file_name)
 : dmap_file_name(file_name) {
 }
 
-size_t DeviceInfoMap::getdmapFileSize() {
+size_t DeviceInfoMap::getSize() {
 	return dmap_file_elems.size();
 }
 

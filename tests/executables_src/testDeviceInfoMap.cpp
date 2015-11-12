@@ -4,66 +4,66 @@ using namespace boost::unit_test_framework;
 #include "MapException.h"
 #include "helperFunctions.h"
 
-class DMapFileTest {
+class DeviceInfoMapTest {
 public:
 	void testInsertElement();
 	void testGetDeviceInfo();
 	void testCheckForDuplicateElements();
-	void testgetDeviceFileAndMapFileName();
-	void testerrorElemErrTypeCoutStreamOperator();
-	void testdRegisterInfoCoutStreamOperator();
-	void testdmapCoutStreamOperator();
-	void testerrorElemCoutStreamOperator();
-	void testErrorListCoutStreamOperator();
+	void testGetDeviceFileAndMapFileName();
+	void testErrorElemErrTypeStreamOperator();
+	void testDeviceInfoStreamOperator();
+	void testDeviceInfoMapStreamOperator();
+	void testErrorElemStreamOperator();
+	void testErrorListStreamOperator();
 };
 
-class DMapFileTestSuite : public test_suite {
+class DeviceInfoMapTestSuite : public test_suite {
 public:
-	DMapFileTestSuite() : test_suite("dMapFile class test suite") {
+	DeviceInfoMapTestSuite() : test_suite("DeviceInfoMap test suite") {
 
-		boost::shared_ptr<DMapFileTest> DmapFileTestPtr(new DMapFileTest());
+		boost::shared_ptr<DeviceInfoMapTest> deviceInfoMapTest(new DeviceInfoMapTest());
 
 		test_case* insertElementsTestCase = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testInsertElement, DmapFileTestPtr);
+				&DeviceInfoMapTest::testInsertElement, deviceInfoMapTest);
 		test_case* getDeviceInfoTestCase = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testGetDeviceInfo, DmapFileTestPtr);
+				&DeviceInfoMapTest::testGetDeviceInfo, deviceInfoMapTest);
 		test_case* checkForDuplicateElementEntries = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testCheckForDuplicateElements, DmapFileTestPtr);
-		test_case* testgetDeviceFileAndMapFileName = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testgetDeviceFileAndMapFileName, DmapFileTestPtr);
-		test_case* testerrorElemErrTypeCoutStreamOperator = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testerrorElemErrTypeCoutStreamOperator, DmapFileTestPtr);
-		test_case* testdRegisterInfoCoutStreamOperator = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testdRegisterInfoCoutStreamOperator, DmapFileTestPtr);
-		test_case* testdmapCoutStreamOperator = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testdmapCoutStreamOperator, DmapFileTestPtr);
-		test_case* testerrorElemCoutStreamOperator = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testerrorElemCoutStreamOperator, DmapFileTestPtr);
+				&DeviceInfoMapTest::testCheckForDuplicateElements, deviceInfoMapTest);
+		test_case* testGetDeviceFileAndMapFileName = BOOST_CLASS_TEST_CASE(
+				&DeviceInfoMapTest::testGetDeviceFileAndMapFileName, deviceInfoMapTest);
+		test_case* testErrorElemErrTypeStreamOperator = BOOST_CLASS_TEST_CASE(
+				&DeviceInfoMapTest::testErrorElemErrTypeStreamOperator, deviceInfoMapTest);
+		test_case* testDeviceInfoStreamOperator = BOOST_CLASS_TEST_CASE(
+				&DeviceInfoMapTest::testDeviceInfoStreamOperator, deviceInfoMapTest);
+		test_case* testDeviceInfoMapStreamOperator = BOOST_CLASS_TEST_CASE(
+				&DeviceInfoMapTest::testDeviceInfoMapStreamOperator, deviceInfoMapTest);
+		test_case* testErrorElemStreamOperator = BOOST_CLASS_TEST_CASE(
+				&DeviceInfoMapTest::testErrorElemStreamOperator, deviceInfoMapTest);
 
-		test_case* testErrorListCoutStreamOperator = BOOST_CLASS_TEST_CASE(
-				&DMapFileTest::testErrorListCoutStreamOperator, DmapFileTestPtr);
+		test_case* testErrorListStreamOperator = BOOST_CLASS_TEST_CASE(
+				&DeviceInfoMapTest::testErrorListStreamOperator, deviceInfoMapTest);
 		add(insertElementsTestCase);
 		add(getDeviceInfoTestCase);
 		add(checkForDuplicateElementEntries);
-		add(testgetDeviceFileAndMapFileName);
-		add(testerrorElemErrTypeCoutStreamOperator);
-		add(testdRegisterInfoCoutStreamOperator);
-		add(testdmapCoutStreamOperator);
-		add(testerrorElemCoutStreamOperator);
-		add(testErrorListCoutStreamOperator);
+		add(testGetDeviceFileAndMapFileName);
+		add(testErrorElemErrTypeStreamOperator);
+		add(testDeviceInfoStreamOperator);
+		add(testDeviceInfoMapStreamOperator);
+		add(testErrorElemStreamOperator);
+		add(testErrorListStreamOperator);
 	}
 };
 
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
-	framework::master_test_suite().p_name.value = "dmapFile test suite";
-	framework::master_test_suite().add(new DMapFileTestSuite());
+	framework::master_test_suite().p_name.value = "DeviceInfoMap test suite";
+	framework::master_test_suite().add(new DeviceInfoMapTestSuite());
 
 	return NULL;
 }
 
-void DMapFileTest::testInsertElement() {
+void DeviceInfoMapTest::testInsertElement() {
 	std::string dMapFileName = "dummy.map";
-	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
+	mtca4u::DeviceInfoMap deviceInfoMap(dMapFileName);
 
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
@@ -73,9 +73,9 @@ void DMapFileTest::testInsertElement() {
 	populateDummyDeviceInfo(deviceInfo2, dMapFileName);
 	populateDummyDeviceInfo(deviceInfo3, dMapFileName);
 
-	RegisterInfoMap.insert(deviceInfo1);
-	RegisterInfoMap.insert(deviceInfo2);
-	RegisterInfoMap.insert(deviceInfo3);
+	deviceInfoMap.insert(deviceInfo1);
+	deviceInfoMap.insert(deviceInfo2);
+	deviceInfoMap.insert(deviceInfo3);
 
 	mtca4u::DeviceInfoMap::DeviceInfo* ptrList[3];
 	ptrList[0] = &deviceInfo1;
@@ -84,15 +84,15 @@ void DMapFileTest::testInsertElement() {
 	int index;
 
 	mtca4u::DeviceInfoMap::iterator it;
-	for (it = RegisterInfoMap.begin(), index = 0;
-			(it != RegisterInfoMap.end())  && (index < 3);
+	for (it = deviceInfoMap.begin(), index = 0;
+			(it != deviceInfoMap.end())  && (index < 3);
 			++it, ++index) {
 		BOOST_CHECK((compareDeviceInfos(*ptrList[index], *it)) == true);
 	}
-	BOOST_CHECK(RegisterInfoMap.getdmapFileSize() == 3);
+	BOOST_CHECK(deviceInfoMap.getSize() == 3);
 }
 
-void DMapFileTest::testGetDeviceInfo() {
+void DeviceInfoMapTest::testGetDeviceInfo() {
 	std::string dMapFileName = "dummy.map";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
@@ -126,7 +126,7 @@ void DMapFileTest::testGetDeviceInfo() {
 	}
 }
 
-void DMapFileTest::testCheckForDuplicateElements() {
+void DeviceInfoMapTest::testCheckForDuplicateElements() {
 	std::string dMapFileName = "dummy.map";
 	std::string commonCardName = "common_card";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
@@ -171,7 +171,7 @@ void DMapFileTest::testCheckForDuplicateElements() {
 	}
 }
 
-void DMapFileTest::testgetDeviceFileAndMapFileName() {
+void DeviceInfoMapTest::testGetDeviceFileAndMapFileName() {
 
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	deviceInfo1.dev_file = "/dev/test";
@@ -184,7 +184,7 @@ void DMapFileTest::testgetDeviceFileAndMapFileName() {
 	BOOST_CHECK(expected_pair == actual_pair);
 }
 
-void DMapFileTest::testerrorElemErrTypeCoutStreamOperator() {
+void DeviceInfoMapTest::testErrorElemErrTypeStreamOperator() {
 	std::stringstream file_stream1;
 	file_stream1 << mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR;
 	BOOST_CHECK(file_stream1.str() == "ERROR");
@@ -198,7 +198,7 @@ void DMapFileTest::testerrorElemErrTypeCoutStreamOperator() {
 	BOOST_CHECK(file_stream3.str() == "UNKNOWN");
 }
 
-void DMapFileTest::testdRegisterInfoCoutStreamOperator() {
+void DeviceInfoMapTest::testDeviceInfoStreamOperator() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	deviceInfo1.dev_file = "/dev/dev1";
 	deviceInfo1.dev_name = "card1";
@@ -222,14 +222,14 @@ void DMapFileTest::testdRegisterInfoCoutStreamOperator() {
 	BOOST_CHECK(expected_file_stream.str() == actual_file_stream.str());
 }
 
-void DMapFileTest::testdmapCoutStreamOperator() {
+void DeviceInfoMapTest::testDeviceInfoMapStreamOperator() {
 	std::string dMapFileName = "dummy.dmap";
-	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
+	mtca4u::DeviceInfoMap deviceInfoMap(dMapFileName);
 
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	populateDummyDeviceInfo(deviceInfo1, dMapFileName, "card1", "/dev/dev1",
 			"map_file");
-	RegisterInfoMap.insert(deviceInfo1);
+	deviceInfoMap.insert(deviceInfo1);
 
 	std::stringstream expected_file_stream;
 	expected_file_stream << "======================================="
@@ -251,11 +251,11 @@ void DMapFileTest::testdmapCoutStreamOperator() {
 	expected_file_stream << "=======================================";
 
 	std::stringstream actual_file_stream;
-	actual_file_stream << RegisterInfoMap;
+	actual_file_stream << deviceInfoMap;
 	BOOST_CHECK(expected_file_stream.str() == actual_file_stream.str());
 }
 
-void DMapFileTest::testerrorElemCoutStreamOperator() {
+void DeviceInfoMapTest::testErrorElemStreamOperator() {
 	std::string dMapFileName = "dummy.map";
 	//std::string commonCardName = "common_card";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
@@ -292,7 +292,7 @@ void DMapFileTest::testerrorElemCoutStreamOperator() {
 	BOOST_CHECK(expected_file_stream.str() == actual_file_stream.str());
 }
 
-void DMapFileTest::testErrorListCoutStreamOperator() {
+void DeviceInfoMapTest::testErrorListStreamOperator() {
 	std::string dMapFileName = "dummy.dmap";
 	std::string commonCardName = "card1";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);

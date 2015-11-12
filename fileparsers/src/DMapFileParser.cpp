@@ -43,7 +43,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
         is.clear();
     }
     file.close();
-    if (dmap->getdmapFileSize() == 0) {
+    if (dmap->getSize() == 0) {
         throw DMapFileParserException("No data in in dmap file: \"" + file_name + "\"", LibMapException::EX_NO_DMAP_DATA);
     }
     return dmap;

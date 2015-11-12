@@ -108,7 +108,7 @@ void DMapFileParserTest::testParseFile() {
 	deviceInfo3.dmap_file_line_nr = 5;
 
 	// we use require here so it is safe to increase and dereference the iterator below
-	BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
+	BOOST_REQUIRE( mapFilePtr->getSize() == 3);
 
 	mtca4u::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
 

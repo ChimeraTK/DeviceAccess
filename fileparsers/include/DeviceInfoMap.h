@@ -158,7 +158,7 @@ public:
 	 *
 	 * @return number of records in DMAP file
 	 */
-	size_t getdmapFileSize();
+	size_t getSize();
 	/**
 	 * @brief Return iterator to first device described in DMAP file
 	 *
