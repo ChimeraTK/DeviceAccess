@@ -210,7 +210,7 @@ DeviceInfoMap::DeviceInfo const & DMapFilesParser::getdMapFileElem(const std::st
 void DMapFilesParser::getdMapFileElem(int elem_nr, DeviceInfoMap::DeviceInfo &dMapFileElem) {
   try {
     dMapFileElem = dmap_elems.at(elem_nr).first;
-  } catch (std::out_of_range) {
+  } catch (std::out_of_range &) {
     throw DMapFileParserException("Cannot find device", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
 }
