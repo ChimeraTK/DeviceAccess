@@ -383,7 +383,7 @@ void Device::open(std::string const & aliasName) {
   catch (Exception& e) {
     std::cout << e.what() << std::endl;
   }
-  DeviceInfoMap::DRegisterInfo DRegisterInfoent;
+  DeviceInfoMap::DeviceInfo DRegisterInfoent;
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
     if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {

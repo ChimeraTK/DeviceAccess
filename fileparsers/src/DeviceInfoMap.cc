@@ -25,12 +25,12 @@ std::ostream& operator<<(std::ostream &os, const DeviceInfoMap& me) {
 	return os;
 }
 
-void DeviceInfoMap::insert(const DRegisterInfo &elem) {
+void DeviceInfoMap::insert(const DeviceInfo &elem) {
 	dmap_file_elems.push_back(elem);
 }
 
-void DeviceInfoMap::getDeviceInfo(const std::string& dev_name, DRegisterInfo &value) {
-	std::vector<DRegisterInfo>::iterator iter;
+void DeviceInfoMap::getDeviceInfo(const std::string& dev_name, DeviceInfo &value) {
+	std::vector<DeviceInfo>::iterator iter;
 	iter = find_if(dmap_file_elems.begin(), dmap_file_elems.end(), findDevByName_pred(dev_name));
 	if (iter == dmap_file_elems.end()) {
 		throw DMapFileException("Cannot find device \"" + dev_name + "\"in DMAP file", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -38,16 +38,16 @@ void DeviceInfoMap::getDeviceInfo(const std::string& dev_name, DRegisterInfo &va
 	value = *iter;
 }
 
-DeviceInfoMap::DRegisterInfo::DRegisterInfo() : dmap_file_line_nr(0)
+DeviceInfoMap::DeviceInfo::DeviceInfo() : dmap_file_line_nr(0)
 {
 }        
 
-std::pair<std::string, std::string> DeviceInfoMap::DRegisterInfo::getDeviceFileAndMapFileName() const
+std::pair<std::string, std::string> DeviceInfoMap::DeviceInfo::getDeviceFileAndMapFileName() const
 {
 	return std::pair<std::string, std::string>(dev_file, map_file_name);
 }        
 
-std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::DRegisterInfo& de) {
+std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::DeviceInfo& de) {
 	os << "(" << de.dmap_file_name << ") NAME: " << de.dev_name << " DEV : " << de.dev_file << " MAP : " << de.map_file_name;
 	return os;
 }
@@ -55,8 +55,8 @@ std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::DRegisterInfo& d
 //fixme: why is level not used?
 bool DeviceInfoMap::check(DeviceInfoMap::ErrorList &err, DeviceInfoMap::ErrorList::ErrorElem::TYPE /*level*/) {
 
-	std::vector<DeviceInfoMap::DRegisterInfo> dmaps = dmap_file_elems;
-	std::vector<DeviceInfoMap::DRegisterInfo>::iterator iter_p, iter_n;
+	std::vector<DeviceInfoMap::DeviceInfo> dmaps = dmap_file_elems;
+	std::vector<DeviceInfoMap::DeviceInfo>::iterator iter_p, iter_n;
 	bool ret = true;
 
 	err.clear();
@@ -98,7 +98,7 @@ std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::ErrorList::Error
 	return os;
 }
 
-DeviceInfoMap::ErrorList::ErrorElem::ErrorElem(DeviceInfoMap::ErrorList::ErrorElem::TYPE info_type, DeviceInfoMap::ErrorList::ErrorElem::DMAP_FILE_ERR e_type, const DeviceInfoMap::DRegisterInfo &dev_1, const DeviceInfoMap::DRegisterInfo &dev_2) {
+DeviceInfoMap::ErrorList::ErrorElem::ErrorElem(DeviceInfoMap::ErrorList::ErrorElem::TYPE info_type, DeviceInfoMap::ErrorList::ErrorElem::DMAP_FILE_ERR e_type, const DeviceInfoMap::DeviceInfo &dev_1, const DeviceInfoMap::DeviceInfo &dev_2) {
 	err_type = e_type;
 	err_dev_1 = dev_1;
 	err_dev_2 = dev_2;

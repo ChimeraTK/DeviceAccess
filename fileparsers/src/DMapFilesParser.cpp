@@ -27,7 +27,7 @@ namespace mtca4u{
 
   void DMapFilesParser::parse_file(const std::string &fileName) {
     ptrdmapFile dmap;
-    std::vector<DeviceInfoMap::DRegisterInfo>::iterator dmap_elem_iter;
+    std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
     std::vector<ptrmapFile>::iterator map_file_iter;
     ptrmapFile map;
     std::string absolutePathToDMapDir = getCurrentWorkingDirectory();
@@ -70,7 +70,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
   size_t found;
   std::string file_name;
   ptrdmapFile dmap;
-  std::vector<DeviceInfoMap::DRegisterInfo>::iterator dmap_elem_iter;
+  std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
   std::vector<ptrmapFile>::iterator map_file_iter;
   ptrmapFile map;
   std::string dir_new = dir;
@@ -143,8 +143,8 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
 //FIXME: Why is dlevel not used?
 bool DMapFilesParser::check(DeviceInfoMap::ErrorList::ErrorElem::TYPE /*dlevel*/, RegisterInfoMap::ErrorList::ErrorElem::TYPE mlevel, DeviceInfoMap::ErrorList &dmap_err, RegisterInfoMap::ErrorList &map_err) {
 
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> > dmaps = dmap_elems;
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> >::iterator iter_p, iter_n;
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> > dmaps = dmap_elems;
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator iter_p, iter_n;
   bool ret = true;
 
   dmap_err.clear();
@@ -186,7 +186,7 @@ bool DMapFilesParser::check(DeviceInfoMap::ErrorList::ErrorElem::TYPE /*dlevel*/
 }
 
 ptrmapFile DMapFilesParser::getMapFile(const std::string &dev_name) {
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> >::iterator dmap_iter;
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator dmap_iter;
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
     throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -194,12 +194,12 @@ ptrmapFile DMapFilesParser::getMapFile(const std::string &dev_name) {
   return (*dmap_iter).second;
 }
 
-void DMapFilesParser::getdMapFileElem(const std::string &dev_name, DeviceInfoMap::DRegisterInfo &dMapFileElem) {
+void DMapFilesParser::getdMapFileElem(const std::string &dev_name, DeviceInfoMap::DeviceInfo &dMapFileElem) {
   dMapFileElem = getdMapFileElem( dev_name );
 }
 
-DeviceInfoMap::DRegisterInfo const & DMapFilesParser::getdMapFileElem(const std::string &dev_name) {
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> >::iterator dmap_iter;
+DeviceInfoMap::DeviceInfo const & DMapFilesParser::getdMapFileElem(const std::string &dev_name) {
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator dmap_iter;
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
     throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
@@ -207,7 +207,7 @@ DeviceInfoMap::DRegisterInfo const & DMapFilesParser::getdMapFileElem(const std:
   return (*dmap_iter).first;
 }
 
-void DMapFilesParser::getdMapFileElem(int elem_nr, DeviceInfoMap::DRegisterInfo &dMapFileElem) {
+void DMapFilesParser::getdMapFileElem(int elem_nr, DeviceInfoMap::DeviceInfo &dMapFileElem) {
   try {
     dMapFileElem = dmap_elems.at(elem_nr).first;
   } catch (std::out_of_range) {
@@ -216,7 +216,7 @@ void DMapFilesParser::getdMapFileElem(int elem_nr, DeviceInfoMap::DRegisterInfo 
 }
 
 void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, uint32_t& reg_elem_nr, uint32_t& reg_offset, uint32_t& reg_size, uint32_t& reg_bar) {
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> >::iterator dmap_iter;
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator dmap_iter;
   RegisterInfoMap::RegisterInfo elem;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
@@ -235,7 +235,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
 }
 
 void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, RegisterInfoMap::RegisterInfo &elem) {
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> >::iterator dmap_iter;
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator dmap_iter;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
     dev_name = dmap_elems[0].first.dev_name;
@@ -249,7 +249,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
 }
 
 std::ostream& operator<<(std::ostream &os, const DMapFilesParser& dmfp) {
-  std::vector<std::pair<DeviceInfoMap::DRegisterInfo, ptrmapFile> >::const_iterator iter;
+  std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::const_iterator iter;
   for (iter = dmfp.dmap_elems.begin(); iter != dmfp.dmap_elems.end(); ++iter) {
     os << (*iter).first << std::endl;
   }

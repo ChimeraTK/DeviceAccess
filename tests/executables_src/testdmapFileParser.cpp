@@ -91,9 +91,9 @@ void DMapFileParserTest::testParseFile() {
 	mtca4u::DMapFileParser fileParser;
 	boost::shared_ptr<mtca4u::DeviceInfoMap> mapFilePtr = fileParser.parse(file_path);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, "valid.dmap", "card1", "/dev/dev1",
 			"goodMapFile_withoutModules.map");

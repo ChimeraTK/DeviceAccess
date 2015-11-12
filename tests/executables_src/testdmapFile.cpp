@@ -65,9 +65,9 @@ void DMapFileTest::testInsertElement() {
 	std::string dMapFileName = "dummy.map";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName);
 	populateDummydRegisterInfoent(dRegisterInfoent2, dMapFileName);
@@ -77,7 +77,7 @@ void DMapFileTest::testInsertElement() {
 	RegisterInfoMap.insert(dRegisterInfoent2);
 	RegisterInfoMap.insert(dRegisterInfoent3);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo* ptrList[3];
+	mtca4u::DeviceInfoMap::DeviceInfo* ptrList[3];
 	ptrList[0] = &dRegisterInfoent1;
 	ptrList[1] = &dRegisterInfoent2;
 	ptrList[2] = &dRegisterInfoent3;
@@ -96,8 +96,8 @@ void DMapFileTest::testGetDeviceInfo() {
 	std::string dMapFileName = "dummy.map";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName);
 	populateDummydRegisterInfoent(dRegisterInfoent2, dMapFileName);
@@ -105,9 +105,9 @@ void DMapFileTest::testGetDeviceInfo() {
 	RegisterInfoMap.insert(dRegisterInfoent1);
 	RegisterInfoMap.insert(dRegisterInfoent2);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo retrievedElement1;
-	mtca4u::DeviceInfoMap::DRegisterInfo retrievedElement2;
-	mtca4u::DeviceInfoMap::DRegisterInfo retrievedElement3;
+	mtca4u::DeviceInfoMap::DeviceInfo retrievedElement1;
+	mtca4u::DeviceInfoMap::DeviceInfo retrievedElement2;
+	mtca4u::DeviceInfoMap::DeviceInfo retrievedElement3;
 
 	RegisterInfoMap.getDeviceInfo(dRegisterInfoent1.dev_name, retrievedElement1);
 	RegisterInfoMap.getDeviceInfo(dRegisterInfoent2.dev_name, retrievedElement2);
@@ -131,10 +131,10 @@ void DMapFileTest::testCheckForDuplicateElements() {
 	std::string commonCardName = "common_card";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent3;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent4;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent4;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName);
 	populateDummydRegisterInfoent(dRegisterInfoent2, dMapFileName);
@@ -173,7 +173,7 @@ void DMapFileTest::testCheckForDuplicateElements() {
 
 void DMapFileTest::testgetDeviceFileAndMapFileName() {
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
 	dRegisterInfoent1.dev_file = "/dev/test";
 	dRegisterInfoent1.map_file_name = "test_mapfile";
 
@@ -199,7 +199,7 @@ void DMapFileTest::testerrorElemErrTypeCoutStreamOperator() {
 }
 
 void DMapFileTest::testdRegisterInfoCoutStreamOperator() {
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
 	dRegisterInfoent1.dev_file = "/dev/dev1";
 	dRegisterInfoent1.dev_name = "card1";
 	dRegisterInfoent1.dmap_file_line_nr = 1;
@@ -226,7 +226,7 @@ void DMapFileTest::testdmapCoutStreamOperator() {
 	std::string dMapFileName = "dummy.dmap";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
 	populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName, "card1", "/dev/dev1",
 			"map_file");
 	RegisterInfoMap.insert(dRegisterInfoent1);
@@ -260,8 +260,8 @@ void DMapFileTest::testerrorElemCoutStreamOperator() {
 	//std::string commonCardName = "common_card";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, "dummy.dmap", "card1", "/dev/dev1",
 			"map_file");
@@ -297,8 +297,8 @@ void DMapFileTest::testErrorListCoutStreamOperator() {
 	std::string commonCardName = "card1";
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, dMapFileName);
 	populateDummydRegisterInfoent(dRegisterInfoent2, dMapFileName);

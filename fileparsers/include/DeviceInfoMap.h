@@ -31,7 +31,7 @@ public:
 	/**
 	 * @brief  Stores information about one device
 	 */
-	class DRegisterInfo {
+	class DeviceInfo {
 	public:
 		std::string dev_name; /**< logical name of the device*/
 		std::string dev_file; /**< name of dev file (in direcotry /dev)*/
@@ -42,7 +42,7 @@ public:
 		/**
 		 * Default class constructor
 		 */
-		DRegisterInfo();
+		DeviceInfo();
 
 		/** Convenience function to extract the device file name and the map file name as one object (a pair).
 		 *  This is all the information needed to open a Device opject. As std::pair and std::string
@@ -54,11 +54,11 @@ public:
 		 */
 		std::pair<std::string, std::string> getDeviceFileAndMapFileName() const;
 
-		friend std::ostream& operator<<(std::ostream &os, const DRegisterInfo& de);
+		friend std::ostream& operator<<(std::ostream &os, const DeviceInfo& de);
 	};
 
-	typedef std::vector<DRegisterInfo>::iterator iterator;
-	typedef std::vector<DRegisterInfo>::const_iterator const_iterator;
+	typedef std::vector<DeviceInfo>::iterator iterator;
+	typedef std::vector<DeviceInfo>::const_iterator const_iterator;
 	/**
 	 * @brief  Stores information about errors and warnings
 	 *
@@ -94,8 +94,8 @@ public:
 				ERROR, /**< Critical error was detected */
 				WARNING /**< Non-critical error was detected */
 			} TYPE;
-			DeviceInfoMap::DRegisterInfo err_dev_1; /**< Detailed information about first device that generate error or warning */
-			DeviceInfoMap::DRegisterInfo err_dev_2; /**< Detailed information about second device that generate error or warning */
+			DeviceInfoMap::DeviceInfo err_dev_1; /**< Detailed information about first device that generate error or warning */
+			DeviceInfoMap::DeviceInfo err_dev_2; /**< Detailed information about second device that generate error or warning */
 			DMAP_FILE_ERR err_type; /**< Type of detected problem */
 			TYPE type; /**< Class of detected problem - ERROR or WARNING*/
 
@@ -108,7 +108,7 @@ public:
 			 * @param dev_1 detailed information about first device that generate problem
 			 * @param dev_2 detailed information about second device that generate problem
 			 */
-			ErrorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DeviceInfoMap::DRegisterInfo &dev_1, const DeviceInfoMap::DRegisterInfo &dev_2);
+			ErrorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DeviceInfoMap::DeviceInfo &dev_1, const DeviceInfoMap::DeviceInfo &dev_2);
 			friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
 			friend std::ostream& operator<<(std::ostream &os, const ErrorElem& me);
 		};
@@ -152,7 +152,7 @@ public:
 	 * @param value detailed information about device taken from DMAP file
 	 *
 	 */
-	void getDeviceInfo(const std::string& dev_name, DRegisterInfo &value);
+	void getDeviceInfo(const std::string& dev_name, DeviceInfo &value);
 	/**
 	 * @brief Returns number of records in DMAP file
 	 *
@@ -177,7 +177,7 @@ public:
 	const_iterator end() const;
 
 private:
-	std::vector<DRegisterInfo> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/
+	std::vector<DeviceInfo> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/
 	std::string dmap_file_name; /**< name of DMAP file*/
 
 public:
@@ -193,7 +193,7 @@ public:
 	 * @brief Insert new element read from DMAP file
 	 * @param elem element describing detailes of one device taken from DMAP file
 	 */
-	void insert(const DRegisterInfo &elem);
+	void insert(const DeviceInfo &elem);
 };
 /**
  * @typedef Introduce specialisation of shared_pointer template for pointers to RegisterInfoMap object as a ptrdmapFile

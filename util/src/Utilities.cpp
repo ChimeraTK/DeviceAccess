@@ -140,9 +140,9 @@ Sdm Utilities::parseDeviceString(std::string deviceString) {
 	return sdmInfo;
 }
 
-DeviceInfoMap::DRegisterInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
+DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
 {
-  DeviceInfoMap::DRegisterInfo deviceInfo;
+  DeviceInfoMap::DeviceInfo deviceInfo;
   DMapFilesParser filesParser;
   try {
     filesParser.parse_file(dmapFilePath);

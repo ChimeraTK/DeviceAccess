@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-void populateDummydRegisterInfoent(mtca4u::DeviceInfoMap::DRegisterInfo& dRegisterInfoent,
+void populateDummydRegisterInfoent(mtca4u::DeviceInfoMap::DeviceInfo& dRegisterInfoent,
                               std::string dmapFileName, std::string deviceName,
                               std::string dev_file, std::string map_file_name) {
   static int lineNumber = 1;
@@ -26,8 +26,8 @@ std::string appendNumberToName(std::string name, int suffixNumber) {
   return (deviceName.str());
 }
 
-bool compareDRegisterInfoents(const mtca4u::DeviceInfoMap::DRegisterInfo& dRegisterInfoent1,
-                         const mtca4u::DeviceInfoMap::DRegisterInfo& dRegisterInfoent2) {
+bool compareDRegisterInfoents(const mtca4u::DeviceInfoMap::DeviceInfo& dRegisterInfoent1,
+                         const mtca4u::DeviceInfoMap::DeviceInfo& dRegisterInfoent2) {
   bool result =
       (dRegisterInfoent1.dev_name == dRegisterInfoent2.dev_name) &&
       (dRegisterInfoent1.dev_file == dRegisterInfoent2.dev_file) &&

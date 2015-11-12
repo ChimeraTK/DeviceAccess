@@ -123,14 +123,14 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 	std::cout<<getCurrentWorkingDirectory()<<std::endl;
 	std::cout<<path_to_dmap_file<<std::endl;
 	filesParser.parse_file(path_to_dmap_file);
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent3;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent4;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent4;
 
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent3;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, path_to_dmap_file, "card1",
 			"/dev/dev1", path_to_map_file1);
@@ -173,7 +173,7 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 				mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
 	}
 
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent5 =
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent5 =
 			filesParser.getdMapFileElem("card2");
 
 	BOOST_CHECK(compareDRegisterInfoents(expectedDRegisterInfoent2,
@@ -189,7 +189,7 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 				mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
 	}
 
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent6;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent6;
 	filesParser.getdMapFileElem("card2", reterievedDRegisterInfoent6);
 	BOOST_CHECK(compareDRegisterInfoents(expectedDRegisterInfoent2,
 			reterievedDRegisterInfoent6) == true);
@@ -438,9 +438,9 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
 	std::string path_to_dmap_file = "dMapDir/valid.dmap";
 	filesParser.parse_file(path_to_dmap_file);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, path_to_dmap_file, "card1",
 			"/dev/dev1", "goodMapFile_withoutModules.map");
@@ -472,9 +472,9 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 
 	std::string currentWrkingDir = getCurrentWorkingDirectory();
 
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent3;
 
 	populateDummydRegisterInfoent(dRegisterInfoent1, path_to_dmap_file, "card1",
 			"/dev/dev1", "goodMapFile_withoutModules.map");
@@ -488,7 +488,7 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 	dRegisterInfoent2.dmap_file_line_nr = 4;
 	dRegisterInfoent3.dmap_file_line_nr = 5;
 
-	mtca4u::DeviceInfoMap::DRegisterInfo* tmpArray1[3];
+	mtca4u::DeviceInfoMap::DeviceInfo* tmpArray1[3];
 	tmpArray1[0] = &dRegisterInfoent1;
 	tmpArray1[1] = &dRegisterInfoent2;
 	tmpArray1[2] = &dRegisterInfoent3;
@@ -503,9 +503,9 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 	tmpArray2[1] = &s2;
 	tmpArray2[2] = &s3;
 
-	std::vector<std::pair<mtca4u::DeviceInfoMap::DRegisterInfo,
+	std::vector<std::pair<mtca4u::DeviceInfoMap::DeviceInfo,
 	mtca4u::ptrmapFile> >::iterator iter;
-	std::vector<std::pair<mtca4u::DeviceInfoMap::DRegisterInfo,
+	std::vector<std::pair<mtca4u::DeviceInfoMap::DeviceInfo,
 	mtca4u::ptrmapFile> >::const_iterator const_iter;
 	uint8_t i;
 	for (iter = filesParser.begin(), i = 0;
@@ -572,15 +572,15 @@ void DMapFilesParserTest::testParseDirWithGoodDmaps() {
 	mtca4u::DMapFilesParser filesParser;
 	filesParser.parse_dir("./GoodDmapDir");
 
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent3;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent4;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent4;
 
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent3;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent4;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent4;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, "./GoodDmapDir/first.dmap",
 			"card1", "/dev/dev1", "./mapFile1.map");
@@ -622,11 +622,11 @@ void DMapFilesParserTest::testParseDirs() {
 	mtca4u::DMapFilesParser filesParser;
 	filesParser.parse_dirs(a);
 
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent2;
 
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent2;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent2;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, "./GoodDmapDir/first.dmap",
 			"card1", "/dev/dev1", "./mapFile1.map");
@@ -648,11 +648,11 @@ void DMapFilesParserTest::testParseDirs() {
 inline void DMapFilesParserTest::testConstructor() {
 	mtca4u::DMapFilesParser filesParser("./GoodDmapDir");
 
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo reterievedDRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo reterievedDRegisterInfoent3;
 
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DRegisterInfo expectedDRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent1;
+	mtca4u::DeviceInfoMap::DeviceInfo expectedDRegisterInfoent3;
 
 	populateDummydRegisterInfoent(expectedDRegisterInfoent1, "./GoodDmapDir/first.dmap",
 			"card1", "/dev/dev1", "./mapFile1.map");

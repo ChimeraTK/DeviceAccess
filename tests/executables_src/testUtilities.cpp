@@ -103,7 +103,7 @@ void UtilitiesTest::testIsSdm() {
 void UtilitiesTest::testAliasLookUp() {
   std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
 
-  DeviceInfoMap::DRegisterInfo deviceInfo = Utilities::aliasLookUp("test",testFilePath);
+  DeviceInfoMap::DeviceInfo deviceInfo = Utilities::aliasLookUp("test",testFilePath);
   BOOST_CHECK( deviceInfo.dev_name.empty() );
   deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
   BOOST_CHECK(deviceInfo.dev_name =="DUMMYD0");

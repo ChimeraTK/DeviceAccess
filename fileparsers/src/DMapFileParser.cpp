@@ -11,7 +11,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
     std::istringstream is;
-    DeviceInfoMap::DRegisterInfo de;
+    DeviceInfoMap::DeviceInfo de;
     uint32_t line_nr = 0;
 
     file.open(file_name.c_str());

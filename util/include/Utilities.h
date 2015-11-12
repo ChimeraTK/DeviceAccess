@@ -50,7 +50,7 @@ public:
 
 	/// Search for an alias in a given DMap file and return the DeviceInfo entry.
 	/// If the alias is not found, the DeviceInfo will have empty strings.
-	DeviceInfoMap::DRegisterInfo static aliasLookUp(std::string aliasName, std::string dmapFilePath);
+	DeviceInfoMap::DeviceInfo static aliasLookUp(std::string aliasName, std::string dmapFilePath);
 	
 	/// Search for an alias in all possible dmap file.
 	/// The return value is the DeviceInfo and the dmap file name where the alias was found.
