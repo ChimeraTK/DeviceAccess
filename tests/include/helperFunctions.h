@@ -11,7 +11,7 @@
 #include "RegisterInfoMap.h"
 #include "DeviceInfoMap.h"
 
-void populateDummydRegisterInfoent(mtca4u::DeviceInfoMap::DeviceInfo& dRegisterInfoent,
+void populateDummydeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string dmapFileName,
                               std::string deviceName = "card",
                               std::string dev_file =
@@ -19,8 +19,8 @@ void populateDummydRegisterInfoent(mtca4u::DeviceInfoMap::DeviceInfo& dRegisterI
                               std::string map_file_name =
                                   "/dev/dummy_map_file");
 std::string appendNumberToName(std::string name, int cardNumber);
-bool compareDRegisterInfoents(const mtca4u::DeviceInfoMap::DeviceInfo& dRegisterInfoent1,
-                         const mtca4u::DeviceInfoMap::DeviceInfo& dRegisterInfoent2);
+bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
+                         const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo2);
 
 bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
                         const mtca4u::RegisterInfoMap::RegisterInfo& element2);

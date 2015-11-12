@@ -383,12 +383,12 @@ void Device::open(std::string const & aliasName) {
   catch (Exception& e) {
     std::cout << e.what() << std::endl;
   }
-  DeviceInfoMap::DeviceInfo DRegisterInfoent;
+  DeviceInfoMap::DeviceInfo DeviceInfo;
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
     if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {
-      DRegisterInfoent = (*deviceIter).first;
-      _mapFileName = DRegisterInfoent.map_file_name;
+      DeviceInfo = (*deviceIter).first;
+      _mapFileName = DeviceInfo.map_file_name;
       _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
       break;
     }

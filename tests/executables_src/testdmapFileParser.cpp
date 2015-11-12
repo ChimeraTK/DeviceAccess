@@ -91,28 +91,28 @@ void DMapFileParserTest::testParseFile() {
 	mtca4u::DMapFileParser fileParser;
 	boost::shared_ptr<mtca4u::DeviceInfoMap> mapFilePtr = fileParser.parse(file_path);
 
-	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent1;
-	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent2;
-	mtca4u::DeviceInfoMap::DeviceInfo dRegisterInfoent3;
+	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
+	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
+	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-	populateDummydRegisterInfoent(dRegisterInfoent1, "valid.dmap", "card1", "/dev/dev1",
+	populateDummydeviceInfo(deviceInfo1, "valid.dmap", "card1", "/dev/dev1",
 			"goodMapFile_withoutModules.map");
-	populateDummydRegisterInfoent(dRegisterInfoent2, "valid.dmap", "card2", "/dev/dev2",
+	populateDummydeviceInfo(deviceInfo2, "valid.dmap", "card2", "/dev/dev2",
 			"./goodMapFile_withoutModules.map");
-	populateDummydRegisterInfoent(dRegisterInfoent3, "valid.dmap", "card3", "/dev/dev3",
+	populateDummydeviceInfo(deviceInfo3, "valid.dmap", "card3", "/dev/dev3",
 			getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 	std::cout<<getCurrentWorkingDirectory()<<std::endl;
 
-	dRegisterInfoent1.dmap_file_line_nr = 3;
-	dRegisterInfoent2.dmap_file_line_nr = 4;
-	dRegisterInfoent3.dmap_file_line_nr = 5;
+	deviceInfo1.dmap_file_line_nr = 3;
+	deviceInfo2.dmap_file_line_nr = 4;
+	deviceInfo3.dmap_file_line_nr = 5;
 
 	// we use require here so it is safe to increase and dereference the iterator below
 	BOOST_REQUIRE( mapFilePtr->getdmapFileSize() == 3);
 
 	mtca4u::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
 
-	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent1, *(it++)) == true);
-	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent2, *(it++)) == true);
-	BOOST_CHECK( compareDRegisterInfoents(dRegisterInfoent3, *(it++)) == true);
+	BOOST_CHECK( compareDeviceInfos(deviceInfo1, *(it++)) == true);
+	BOOST_CHECK( compareDeviceInfos(deviceInfo2, *(it++)) == true);
+	BOOST_CHECK( compareDeviceInfos(deviceInfo3, *(it++)) == true);
 }

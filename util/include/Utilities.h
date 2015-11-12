@@ -53,8 +53,9 @@ public:
 	DeviceInfoMap::DeviceInfo static aliasLookUp(std::string aliasName, std::string dmapFilePath);
 	
 	/// Search for an alias in all possible dmap file.
-	/// The return value is the DeviceInfo and the dmap file name where the alias was found.
-	//	std::pair<DMapFile::DRegisterInfo. std::string> static findFirstOfAlias(std::string aliasName);
+	/// The return value is the DeviceInfo where the alias was found (also
+	/// containg the DMap file where the entry was found)
+	// DeviceInfoMap::DeviceInfo static findFirstOfAlias(std::string aliasName);
 	std::string static findFirstOfAlias(std::string aliasName);
 };
 
