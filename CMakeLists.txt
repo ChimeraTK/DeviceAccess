@@ -33,7 +33,7 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 FIND_PACKAGE(Boost COMPONENTS system filesystem)
 
 
-include_directories(${PROJECT_SOURCE_DIR}/exception/include exception_inc)
+include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/device_backends/include")
