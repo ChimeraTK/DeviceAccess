@@ -95,11 +95,11 @@ void DMapFileParserTest::testParseFile() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-	populateDummydeviceInfo(deviceInfo1, "valid.dmap", "card1", "/dev/dev1",
+	populateDummyDeviceInfo(deviceInfo1, "valid.dmap", "card1", "/dev/dev1",
 			"goodMapFile_withoutModules.map");
-	populateDummydeviceInfo(deviceInfo2, "valid.dmap", "card2", "/dev/dev2",
+	populateDummyDeviceInfo(deviceInfo2, "valid.dmap", "card2", "/dev/dev2",
 			"./goodMapFile_withoutModules.map");
-	populateDummydeviceInfo(deviceInfo3, "valid.dmap", "card3", "/dev/dev3",
+	populateDummyDeviceInfo(deviceInfo3, "valid.dmap", "card3", "/dev/dev3",
 			getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 	std::cout<<getCurrentWorkingDirectory()<<std::endl;
 

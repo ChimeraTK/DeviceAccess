@@ -135,8 +135,8 @@ public:
 	/** Get the dRegisterInfo from the device name.
 	 *  @attention The reference is only valid as long as the dmapFilesParser object is in scope
 	 *  and no new parse action has been performed. In practice this should not be a limitation. Just use
-	 *  <pre>dmapFile::dRegisterInfo myDRegisterInfo = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
-	 *   <pre>dmapFile::dRegisterInfo const & myDRegisterInfo = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre>
+	 *  <pre>dmapFile::dRegisterInfo myDeviceInfo = myDmapFilesParser->getdMapFileElem(deviceName); //creates a copy</pre> instead of
+	 *   <pre>dmapFile::dRegisterInfo const & myDeviceInfo = myDmapFilesParser->getdMapFileElem(deviceName); //does not create a copy</pre>
 	 */
 	DeviceInfoMap::DeviceInfo const &  getdMapFileElem(const std::string& devName);
 

@@ -69,9 +69,9 @@ void DMapFileTest::testInsertElement() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-	populateDummydeviceInfo(deviceInfo1, dMapFileName);
-	populateDummydeviceInfo(deviceInfo2, dMapFileName);
-	populateDummydeviceInfo(deviceInfo3, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo1, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo2, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo3, dMapFileName);
 
 	RegisterInfoMap.insert(deviceInfo1);
 	RegisterInfoMap.insert(deviceInfo2);
@@ -99,8 +99,8 @@ void DMapFileTest::testGetDeviceInfo() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 
-	populateDummydeviceInfo(deviceInfo1, dMapFileName);
-	populateDummydeviceInfo(deviceInfo2, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo1, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo2, dMapFileName);
 
 	RegisterInfoMap.insert(deviceInfo1);
 	RegisterInfoMap.insert(deviceInfo2);
@@ -136,10 +136,10 @@ void DMapFileTest::testCheckForDuplicateElements() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo4;
 
-	populateDummydeviceInfo(deviceInfo1, dMapFileName);
-	populateDummydeviceInfo(deviceInfo2, dMapFileName);
-	populateDummydeviceInfo(deviceInfo3, dMapFileName);
-	populateDummydeviceInfo(deviceInfo4, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo1, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo2, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo3, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo4, dMapFileName);
 
 	deviceInfo1.dev_name = commonCardName;
 	deviceInfo2.dev_name = commonCardName;
@@ -227,7 +227,7 @@ void DMapFileTest::testdmapCoutStreamOperator() {
 	mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-	populateDummydeviceInfo(deviceInfo1, dMapFileName, "card1", "/dev/dev1",
+	populateDummyDeviceInfo(deviceInfo1, dMapFileName, "card1", "/dev/dev1",
 			"map_file");
 	RegisterInfoMap.insert(deviceInfo1);
 
@@ -263,9 +263,9 @@ void DMapFileTest::testerrorElemCoutStreamOperator() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 
-	populateDummydeviceInfo(deviceInfo1, "dummy.dmap", "card1", "/dev/dev1",
+	populateDummyDeviceInfo(deviceInfo1, "dummy.dmap", "card1", "/dev/dev1",
 			"map_file");
-	populateDummydeviceInfo(deviceInfo2, "dummy.dmap", "card1", "/dev/dev1",
+	populateDummyDeviceInfo(deviceInfo2, "dummy.dmap", "card1", "/dev/dev1",
 			"map_file");
 
 	deviceInfo1.dmap_file_line_nr = 1;
@@ -300,8 +300,8 @@ void DMapFileTest::testErrorListCoutStreamOperator() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 
-	populateDummydeviceInfo(deviceInfo1, dMapFileName);
-	populateDummydeviceInfo(deviceInfo2, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo1, dMapFileName);
+	populateDummyDeviceInfo(deviceInfo2, dMapFileName);
 
 	deviceInfo1.dev_name = commonCardName;
 	deviceInfo2.dev_name = commonCardName;

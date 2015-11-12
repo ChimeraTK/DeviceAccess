@@ -161,38 +161,38 @@ void MapFileTest::testGetRegisterInfo () {
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2, 0, 8);
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 0, 32, 0, true, 1, "Module1");
 	mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 0, 32, 0, true, 2, "Module2");
-	mtca4u::RegisterInfoMap::RegisterInfo reterivedeviceInfo;
+	mtca4u::RegisterInfoMap::RegisterInfo retrievedDeviceInfo;
 
 	dummyMapFile.insert(RegisterInfoent1);
 	dummyMapFile.insert(RegisterInfoentModule1);
 	dummyMapFile.insert(RegisterInfoentModule2);
 
-	dummyMapFile.getRegisterInfo("TEST_REGISTER_NAME_1", reterivedeviceInfo);
-	BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, reterivedeviceInfo) == true);
+	dummyMapFile.getRegisterInfo("TEST_REGISTER_NAME_1", retrievedDeviceInfo);
+	BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, retrievedDeviceInfo) == true);
 
-	dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", reterivedeviceInfo, "Module1");
-	BOOST_CHECK(compareRegisterInfoents(RegisterInfoentModule1, reterivedeviceInfo) == true);
+	dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", retrievedDeviceInfo, "Module1");
+	BOOST_CHECK(compareRegisterInfoents(RegisterInfoentModule1, retrievedDeviceInfo) == true);
 
-	dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", reterivedeviceInfo, "Module2");
-	BOOST_CHECK(compareRegisterInfoents(RegisterInfoentModule2, reterivedeviceInfo) == true);
+	dummyMapFile.getRegisterInfo("COMMON_REGISTER_NAME", retrievedDeviceInfo, "Module2");
+	BOOST_CHECK(compareRegisterInfoents(RegisterInfoentModule2, retrievedDeviceInfo) == true);
 
 	BOOST_CHECK_THROW(
-			dummyMapFile.getRegisterInfo("some_name", reterivedeviceInfo),
+			dummyMapFile.getRegisterInfo("some_name", retrievedDeviceInfo),
 			mtca4u::MapFileException);
 	try{
-		dummyMapFile.getRegisterInfo("some_name", reterivedeviceInfo);
+		dummyMapFile.getRegisterInfo("some_name", retrievedDeviceInfo);
 	} catch(mtca4u::MapFileException& mapFileException){
 		BOOST_CHECK(mapFileException.getID() ==
 				mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
 	}
 
-	dummyMapFile.getRegisterInfo(0, reterivedeviceInfo);
-	BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, reterivedeviceInfo) == true);
+	dummyMapFile.getRegisterInfo(0, retrievedDeviceInfo);
+	BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, retrievedDeviceInfo) == true);
 	BOOST_CHECK_THROW(
-			dummyMapFile.getRegisterInfo(3, reterivedeviceInfo),
+			dummyMapFile.getRegisterInfo(3, retrievedDeviceInfo),
 			mtca4u::MapFileException);
 	try{
-		dummyMapFile.getRegisterInfo(3, reterivedeviceInfo);
+		dummyMapFile.getRegisterInfo(3, retrievedDeviceInfo);
 	} catch(mtca4u::MapFileException& mapFileException){
 		BOOST_CHECK(mapFileException.getID() ==
 				mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);

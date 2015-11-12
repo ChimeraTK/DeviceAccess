@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-void populateDummydeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
+void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string dmapFileName, std::string deviceName,
                               std::string dev_file, std::string map_file_name) {
   static int lineNumber = 1;

@@ -11,7 +11,7 @@
 #include "RegisterInfoMap.h"
 #include "DeviceInfoMap.h"
 
-void populateDummydeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
+void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string dmapFileName,
                               std::string deviceName = "card",
                               std::string dev_file =

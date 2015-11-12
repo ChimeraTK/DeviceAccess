@@ -234,16 +234,16 @@ RegisterInfoMap::iterator RegisterInfoMap::end(){
 std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule( std::string const & moduleName){
 	// first sort all elements accordind the names (module first, then register in module)
 	// make a copy to keep the original order from the map file
-	std::vector<RegisterInfo> sortedeviceInfos = map_file_elems;
-	std::sort(sortedeviceInfos.begin(), sortedeviceInfos.end(), compareRegisterInfosByName_functor());
+	std::vector<RegisterInfo> sortedDeviceInfos = map_file_elems;
+	std::sort(sortedDeviceInfos.begin(), sortedDeviceInfos.end(), compareRegisterInfosByName_functor());
 
 	// The vector is sorted, first module, than register name.
 	// Find the first iterator with the module name, starting at the beginning,
 	// then search for the first iterator with another name, starting from the previousy found first match.
 	std::vector<RegisterInfo>::iterator firstMatchingIterator =
-			std::find_if( sortedeviceInfos.begin(), sortedeviceInfos.end(), compareModuleName_pred( moduleName ) );
+			std::find_if( sortedDeviceInfos.begin(), sortedDeviceInfos.end(), compareModuleName_pred( moduleName ) );
 	std::vector<RegisterInfo>::iterator firstNotMatchingIterator =
-			std::find_if( firstMatchingIterator, sortedeviceInfos.end(),
+			std::find_if( firstMatchingIterator, sortedDeviceInfos.end(),
 					std::not1( compareModuleName_pred(moduleName) ) );
 
 	// fill the list
