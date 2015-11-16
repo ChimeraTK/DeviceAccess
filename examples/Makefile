@@ -7,9 +7,12 @@ LDFLAGS +=  $(shell mtca4u-deviceaccess-config --ldflags)
 SOURCES = $(shell ls *.cpp)
 TARGETS = $(basename $(SOURCES))
 
-#LDFLAGS += 
+LDFLAGS += -lboost_system -lboost_filesystem
 
-all: print readWrite mapped accessor dmap MuxedAccessor DeviceClient
+#all: $(TARGETS)
+#@todo FIXME do not build all targets, DeviceClient currently fails
+# because the plugin library is missing. Move this to the plugin example
+all: readWrite mapped accessor dmap MuxedAccessor #DeviceClient
 
 print:
 	echo SOURCES = $(SOURCES)
@@ -17,3 +20,6 @@ print:
 
 % : %.cpp
 	g++ $^ $(CPPFLAGS) $(LDFLAGS) -o $@
+
+clean:
+	rm -rf $(TARGETS)

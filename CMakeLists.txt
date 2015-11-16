@@ -120,11 +120,17 @@ configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in.in
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
  
+configure_file(cmake/PROJECT_NAME-config.in
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
+
 # Install the ..Config.cmake and ..ConfigVersion.cmake
 install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
   "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
   DESTINATION . COMPONENT dev)
+
+install(PROGRAMS "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config"
+  DESTINATION bin COMPONENT dev)
 
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
 find_package(Doxygen)
