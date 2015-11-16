@@ -7,7 +7,7 @@
 
 namespace mtca4u{
 
-ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
+DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
     std::istringstream is;
@@ -19,7 +19,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
         throw DMapFileParserException("Cannot open dmap file: \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
     }
 
-    ptrdmapFile dmap(new DeviceInfoMap(file_name));
+    DeviceInfoMapPointer dmap(new DeviceInfoMap(file_name));
     while (std::getline(file, line)) {
         line_nr++;
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));

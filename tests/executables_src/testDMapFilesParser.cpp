@@ -14,7 +14,7 @@ public:
 	void testParseNonExistentDmapFile(std::string dmapFile);
 	void testGetMapFile();
 	void testGetRegisterInfo();
-	void testGetNumberOfDmapDevices();
+	void testGetDMapFileSize();
 	void testCheckParsedInInfo();
 	void testOverloadedStreamOperator();
 	void testIteratorBeginEnd();
@@ -62,7 +62,7 @@ public:
 		test_case* testRegisterInfo = BOOST_CLASS_TEST_CASE(
 				&DMapFilesParserTest::testGetRegisterInfo, DMapFilesParserTestPtr);
 		test_case* testGetDMapFileSize =
-				BOOST_CLASS_TEST_CASE(&DMapFilesParserTest::testGetNumberOfDmapDevices,
+				BOOST_CLASS_TEST_CASE(&DMapFilesParserTest::testGetDMapFileSize,
 						DMapFilesParserTestPtr);
 		test_case* testCheckParsedInInfo = BOOST_CLASS_TEST_CASE(
 				&DMapFilesParserTest::testCheckParsedInInfo, DMapFilesParserTestPtr);
@@ -383,7 +383,7 @@ void DMapFilesParserTest::testGetRegisterInfo() {
 	}
 }
 
-void DMapFilesParserTest::testGetNumberOfDmapDevices() {
+void DMapFilesParserTest::testGetDMapFileSize() {
 	mtca4u::DMapFilesParser filesParser;
 	std::string path_to_dmap_file = "dMapDir/valid.dmap";
 	filesParser.parse_file(path_to_dmap_file);

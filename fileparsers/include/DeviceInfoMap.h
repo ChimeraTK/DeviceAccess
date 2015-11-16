@@ -196,9 +196,9 @@ public:
 	void insert(const DeviceInfo &elem);
 };
 /**
- * @typedef Introduce specialisation of shared_pointer template for pointers to RegisterInfoMap object as a ptrdmapFile
+ * @typedef Introduce specialisation of shared_pointer template for pointers to RegisterInfoMap object as a DeviceInfoMapPointer
  */
-typedef boost::shared_ptr<DeviceInfoMap> ptrdmapFile;
+typedef boost::shared_ptr<DeviceInfoMap> DeviceInfoMapPointer;
 
 }//namespace mtca4u
 

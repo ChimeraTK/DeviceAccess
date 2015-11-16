@@ -26,7 +26,7 @@ namespace mtca4u{
   }
 
   void DMapFilesParser::parse_file(const std::string &fileName) {
-    ptrdmapFile dmap;
+    DeviceInfoMapPointer dmap;
     std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
     std::vector<ptrmapFile>::iterator map_file_iter;
     ptrmapFile map;
@@ -69,7 +69,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
   struct dirent *dirp;
   size_t found;
   std::string file_name;
-  ptrdmapFile dmap;
+  DeviceInfoMapPointer dmap;
   std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
   std::vector<ptrmapFile>::iterator map_file_iter;
   ptrmapFile map;

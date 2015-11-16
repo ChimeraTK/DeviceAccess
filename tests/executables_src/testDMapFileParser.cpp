@@ -15,17 +15,17 @@ public:
 class DMapFileParserTestSuite : public test_suite {
 public:
 	DMapFileParserTestSuite() : test_suite("DMapFileParser class test suite") {
-		boost::shared_ptr<DMapFileParserTest> DMapFileParserTestPtr(
+		boost::shared_ptr<DMapFileParserTest> dMapFileParserTest(
 				new DMapFileParserTest);
 
 		test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(
-				&DMapFileParserTest::testFileNotFound, DMapFileParserTestPtr);
+				&DMapFileParserTest::testFileNotFound, dMapFileParserTest);
 		test_case* testErrorInDmapFile = BOOST_CLASS_TEST_CASE(
-				&DMapFileParserTest::testErrorInDmapFile, DMapFileParserTestPtr);
+				&DMapFileParserTest::testErrorInDmapFile, dMapFileParserTest);
 		test_case* testNoDataInDmapFile = BOOST_CLASS_TEST_CASE(
-				&DMapFileParserTest::testNoDataInDmapFile, DMapFileParserTestPtr);
+				&DMapFileParserTest::testNoDataInDmapFile, dMapFileParserTest);
 		test_case* testParseFile = BOOST_CLASS_TEST_CASE(
-				&DMapFileParserTest::testParseFile, DMapFileParserTestPtr);
+				&DMapFileParserTest::testParseFile, dMapFileParserTest);
 
 		add(testFileNotFound);
 		add(testErrorInDmapFile);

@@ -33,7 +33,7 @@ public:
 	 * @param file_name name of DMAP file
 	 * @return pointer to dmapFile object
 	 */
-	ptrdmapFile parse(const std::string &file_name);
+	DeviceInfoMapPointer parse(const std::string &file_name);
 };
 
 }//namespace mtca4u
