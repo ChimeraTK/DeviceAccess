@@ -62,9 +62,6 @@ public:
   virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
   virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
   
-  virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
-  virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
-  
   virtual std::string readDeviceInfo();
   
   /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/

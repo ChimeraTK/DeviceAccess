@@ -204,10 +204,12 @@ namespace mtca4u {
 
   void PcieBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes)
   {
-    // Yes I know, the order of bar and size is reversed. The writeArea interface
-    // got it wrong and I wanted to break it to keep the internal functions nice.
-    _readFunction(bar, address, data, sizeInBytes);
-    //read(bar, address, data);
+    if(bar != 0xD) {
+      _readFunction(bar, address, data, sizeInBytes);
+    }
+    else {
+      _readDMAFunction(bar, address, data, sizeInBytes );
+    }
   }
 
   void PcieBackend::writeWithStruct(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
@@ -225,10 +227,6 @@ namespace mtca4u {
 
   void PcieBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
     _writeFunction(bar, address, data, sizeInBytes);
-  }
-
-  void PcieBackend::readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) {
-    _readDMAFunction(bar, address, data, sizeInBytes );
   }
 
   void PcieBackend::readDMAViaStruct(uint8_t /*bar*/, uint32_t address, int32_t* data,  size_t sizeInBytes) {
@@ -295,10 +293,6 @@ namespace mtca4u {
           createErrorStringWithErrnoText("Cannot read data from device "),
           PcieBackendException::EX_DMA_READ_ERROR);
     }
-  }
-
-  void PcieBackend::writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/,  size_t /*sizeInBytes*/) {
-    throw PcieBackendException("Operation not supported yet", PcieBackendException::EX_DMA_WRITE_ERROR);
   }
 
   std::string PcieBackend::readDeviceInfo() {
