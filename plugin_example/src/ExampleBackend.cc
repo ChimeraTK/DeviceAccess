@@ -10,6 +10,10 @@
 #include <iostream>
 using namespace mtca4u;
 
+// The only instance of the backend registerer. It is instantiated when the library is loaded, which 
+// registers the signature of the backend to the factory.
+ExampleBackend::BackendRegisterer ExampleBackend::backendRegisterer;
+
 ExampleBackend::ExampleBackend(){
 }
 

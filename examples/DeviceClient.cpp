@@ -1,5 +1,11 @@
 #include <iostream>
+
+// Currently needed: we have to access one symbol from the library so the linker is forced to load the library.
+// We just get the reference to the registerer, but we don't do anything with it.
+// This will be removed when the loading of the library via dmap file is implemented.
 #include <plugin/ExampleBackend.h>
+ExampleBackend::BackendRegisterer &theRegisterer = ExampleBackend::backendRegisterer;
+
 #include <mtca4u/BackendFactory.h>
 using namespace mtca4u;
 int main() {
