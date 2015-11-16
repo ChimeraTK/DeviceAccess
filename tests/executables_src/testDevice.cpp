@@ -25,7 +25,7 @@ public:
 	void testDeviceWriteDMA();
 	void testDeviceCheckRegister();
 	void testRegAccsorReadDMA();
-	void testRegAccsorWriteDMA();
+	//void testRegAccsorWriteDMA();
 	void testRegAccsorCheckRegister();
 	void testRegAccsorReadReg();
 	void testRegAccsorWriteReg();
@@ -80,8 +80,8 @@ public:
 		test_case* testRegAccsorCheckRegister = BOOST_CLASS_TEST_CASE(
 				&DeviceTest::testRegAccsorCheckRegister, DeviceTestPtr);
 
-		test_case* testRegAccsorWriteDMA = BOOST_CLASS_TEST_CASE(
-				&DeviceTest::testRegAccsorWriteDMA, DeviceTestPtr);
+		/*test_case* testRegAccsorWriteDMA = BOOST_CLASS_TEST_CASE(
+				&DeviceTest::testRegAccsorWriteDMA, DeviceTestPtr);*/
 
 		test_case* testRegAccsorReadReg =
 				BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorReadReg, DeviceTestPtr);
@@ -115,7 +115,7 @@ public:
 		add(testDeviceCheckRegister);
 		add(testRegAccsorReadDMA);
 		add(testRegAccsorCheckRegister);
-		add(testRegAccsorWriteDMA);
+		//add(testRegAccsorWriteDMA);
 		add(testRegAccsorReadReg);
 		add(testRegAccsorWriteReg);
 		add(testDeviceInfo);
@@ -336,7 +336,7 @@ void DeviceTest::testRegAccsorReadDMA() {
 	int32_t data = 1;
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
 	non_dma_accesible_reg = device->getRegisterAccessor("AREA_DMAABLE");
-	BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::DeviceException);
+	//BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::DeviceException); // there is no distinction any more...
 
 	device->writeReg("WORD_ADC_ENA", &data);
 	int32_t retreived_data[6];
@@ -395,7 +395,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
 		BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
 	}
 }
-
+/*
 void DeviceTest::testRegAccsorWriteDMA() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
@@ -423,7 +423,7 @@ void DeviceTest::testRegAccsorWriteDMA() {
 	BOOST_CHECK_THROW(dma_accesible_reg->writeDMA(adcdata, dataSizeInBytes),
 			mtca4u::PcieBackendException);
 }
-
+*/
 void DeviceTest::testRegAccsorReadReg() {
 	std::string validMappingFile = "mtcadummy_withoutModules.map";
 	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
