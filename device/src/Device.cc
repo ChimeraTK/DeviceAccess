@@ -4,6 +4,7 @@
 #include "DMapFilesParser.h"
 #include "Utilities.h"
 #include <cmath>
+#include <boost/filesystem.hpp>
 
 
 namespace mtca4u{

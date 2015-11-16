@@ -12,6 +12,8 @@
 #include "DMapFilesParser.h"
 #include "Exception.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+
 namespace mtca4u {
 
 void BackendFactory::registerBackendType(std::string interface, std::string protocol,
@@ -32,6 +34,14 @@ std::string BackendFactory::getDMapFilePath()
 {
   return _dMapFilePath;
 }
+
+BackendFactory::BackendFactory(){
+  _dMapFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+  registerBackendType("pci","",&PcieBackend::createInstance);
+  registerBackendType("pci","pcie",&PcieBackend::createInstance);
+  registerBackendType("dummy","",&DummyBackend::createInstance);
+}
+
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
   std::string uri;

@@ -30,7 +30,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS system filesystem)
+FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/exception/include exception_inc)
@@ -54,6 +54,7 @@ add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+link_directories(${Boost_LIBRARY_DIRS})
 target_link_libraries( ${PROJECT_NAME} ${libexception} ${libfileparser} ${libutil} ${Boost_LIBRARIES}) 
 
 enable_testing()  
