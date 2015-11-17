@@ -45,25 +45,19 @@ BackendFactory::BackendFactory(){
 
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
-  // try to get an alias of the DMap file set at run time by setDMapFilePath()
-  std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
-  std::string uri = Utilities::aliasLookUp(aliasName, _dMapFile).dev_file;
+  std::string uri;
   
   // check if an alias was found, if not try the environment variable
-  if (uri.empty()){
-    char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
-    if ( dmapFileFromEnvironment != NULL ) {
-      std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
-      uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).dev_file;
-    }
+  char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
+  if ( dmapFileFromEnvironment != NULL ) {
+    std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
+    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).dev_file;
   }
 
-  // if there still is no alias try a local file (current directory) with the default name
+  // try to get an alias of the DMap file set at run time by setDMapFilePath()
   if (uri.empty()){
-    std::cout << "creating backend from " <<  boost::filesystem::initial_path().string() +"/" 
-      + DMAP_FILE_DEFAULT_NAME << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, boost::filesystem::initial_path().string() +"/" 
-				 + DMAP_FILE_DEFAULT_NAME).dev_file;
+    std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
+    uri = Utilities::aliasLookUp(aliasName, _dMapFile).dev_file;
   }
 
   // finally try the system/compile time default
