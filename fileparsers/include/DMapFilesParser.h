@@ -29,10 +29,10 @@ public:
 	typedef std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> >::const_iterator const_iterator;
 
 private:
-	DMapFileParser dmap_file_parser; /**< DMAP file parser*/
-	MapFileParser map_file_parser; /**< MAP file parser*/
-	std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
-	std::vector<RegisterInfoMapPointer> map_files; /**< vector of parsed MAP files*/
+	DMapFileParser _dmapFileParser; /**< DMAP file parser*/
+	MapFileParser _mapFileParser; /**< MAP file parser*/
+	std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> > _dmapElements; /**< vector composed of devices and associated pointers to parsed MAP files*/
+	std::vector<RegisterInfoMapPointer> _mapFiles; /**< vector of parsed MAP files*/
 	/**
 	 * @brief Performs parsing of all DMAP files located in directory passed as a parameter and all MAP files
 	 * taken from DMAP file and associated with devices .
