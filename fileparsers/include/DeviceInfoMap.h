@@ -1,11 +1,11 @@
 /**
- *      @file           DeviceInfoMap.h
+
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @version        1.0
  *      @brief          Provides storage object for devices descriptions                
  */
-#ifndef MTCA4U_DMAP_FILE_H
-#define	MTCA4U_DMAP_FILE_H
+#ifndef MTCA4U_DEVICE_INFO_MAP_H
+#define MTCA4U_DEVICE_INFO_MAP_H
 
 #include <string>
 #include <stdint.h>
@@ -202,4 +202,4 @@ typedef boost::shared_ptr<DeviceInfoMap> DeviceInfoMapPointer;
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_DMAP_FILE_H */
+#endif	/* MTCA4U_DEVICE_INFO_MAP_H */
