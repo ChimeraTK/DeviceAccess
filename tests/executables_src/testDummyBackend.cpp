@@ -58,7 +58,7 @@ public:
   void testReadWriteMultiWordRegister(
       //void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
       void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
-  void testWriteDMA();
+  //void testWriteDMA();
   void testReadDeviceInfo();
   void testReadOnly();
   void testWriteCallbackFunctions();
@@ -146,7 +146,7 @@ public:
 		// functions are already bound to
 		// the instance
 		//add(BOOST_TEST_CASE(testReadWriteDMA));
-		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteDMA, dummyBackendTest));
+		//add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteDMA, dummyBackendTest));
 		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadDeviceInfo,
 				dummyBackendTest));
 		add(readOnlyTestCase);
@@ -312,13 +312,14 @@ void DummyBackendTest::freshlyopenice() {
 		_dummyBackend->open();
 	}
 }
-
+/*
 void DummyBackendTest::testWriteDMA() {
 	// will probably never be implemented
 	TestableDummyBackend* dummyBackend = getBackendInstance();
 	BOOST_CHECK_THROW(dummyBackend->writeDMA(0, 0, NULL, 0),
 			NotImplementedException);
 }
+*/
 
 TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
 	if (_backendInstance == 0)

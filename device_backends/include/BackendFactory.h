@@ -3,8 +3,6 @@
 
 #include "DummyBackend.h"
 #include "PcieBackend.h"
-#include <boost/tuple/tuple.hpp>
-#include <boost/filesystem.hpp>
 #include "DeviceInfoMap.h"
 #ifdef _DEBUG
 #include <iostream>
@@ -37,12 +35,7 @@ protected:
   
 private:
   /** Add known backend types */
-  BackendFactory() {
-    _dMapFile = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
-    registerBackendType("pci","",&PcieBackend::createInstance);
-    registerBackendType("pci","pcie",&PcieBackend::createInstance);
-    registerBackendType("dummy","",&DummyBackend::createInstance);
-  };
+  BackendFactory();
 
   //BackendFactory(BackendFactory const&);     /** To avoid making copies */
 

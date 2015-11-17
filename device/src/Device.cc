@@ -4,6 +4,7 @@
 #include "DMapFilesParser.h"
 #include "Utilities.h"
 #include <cmath>
+#include <boost/filesystem.hpp>
 
 
 namespace mtca4u{
@@ -251,13 +252,13 @@ namespace mtca4u{
   void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size,
       uint8_t bar) const {
     checkPointersAreNotNull();
-    _pDeviceBackend->readDMA(bar, regOffset, data, size);
+    _pDeviceBackend->read(bar, regOffset, data, size);
   }
 
   void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
       uint8_t bar) {
     checkPointersAreNotNull();
-    _pDeviceBackend->writeDMA(bar, regOffset, data, size);
+    _pDeviceBackend->write(bar, regOffset, data, size);
   }
 
   std::string Device::readDeviceInfo() const {
@@ -314,28 +315,12 @@ namespace mtca4u{
 
   void Device::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
       uint32_t addRegOffset) const {
-    uint32_t retDataSize;
-    uint32_t retRegOff;
-    checkRegister(_registerInfo, dataSize, addRegOffset, retDataSize, retRegOff);
-    if (_registerInfo.reg_bar != 0xD) {
-      throw DeviceException("Cannot read data from register \"" + _registerInfo.reg_name +
-          "\" through DMA",
-          DeviceException::EX_WRONG_PARAMETER);
-    }
-    _pDeviceBackend->readDMA(_registerInfo.reg_bar, retRegOff, data, retDataSize);
+    readRaw(data,dataSize,addRegOffset);
   }
 
   void Device::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
       uint32_t addRegOffset) {
-    uint32_t retDataSize;
-    uint32_t retRegOff;
-    checkRegister(_registerInfo, dataSize, addRegOffset, retDataSize, retRegOff);
-    if (_registerInfo.reg_bar != 0xD) {
-      throw DeviceException("Cannot read data from register \"" + _registerInfo.reg_name +
-          "\" through DMA",
-          DeviceException::EX_WRONG_PARAMETER);
-    }
-    _pDeviceBackend->writeDMA(_registerInfo.reg_bar, retRegOff, data, retDataSize);
+    writeRaw(data,dataSize,addRegOffset);
   }
 
   RegisterInfoMap::RegisterInfo const &Device::RegisterAccessor::getRegisterInfo() const {

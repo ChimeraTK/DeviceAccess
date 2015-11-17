@@ -86,9 +86,17 @@ namespace mtca4u {
         void writeRaw(int32_t const *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0);
 
+        /** \deprecated
+         *  This function is deprecated. Use readRaw() instead!
+         *  @todo Add printed runtime warning after release of version 0.2
+         */
         void readDMA(int32_t *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0) const;
 
+        /** \deprecated
+         *  This function is deprecated. Use writeRaw() instead!
+         *  @todo Add printed runtime warning after release of version 0.2
+         */
         void writeDMA(int32_t const *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0);
 
@@ -226,10 +234,20 @@ namespace mtca4u {
           uint8_t bar) const;
       virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
+
+      /** \deprecated
+       *  This function is deprecated. Use readArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.2
+       */
       virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
           uint8_t bar) const;
+      /** \deprecated
+       *  This function is deprecated. Use writeArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.2
+       */
       virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
+
       virtual std::string readDeviceInfo() const;
 
       /** Read one or more words from the device. It calls DeviceBackend::readArea, not

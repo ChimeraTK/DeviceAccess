@@ -105,14 +105,6 @@ void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  si
 	runWriteCallbackFunctionsForAddressRange( AddressRange(bar, address, sizeInBytes ) );
 }
 
-void DummyBackend::readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
-	return read(bar, address, data, sizeInBytes);
-}
-
-void DummyBackend::writeDMA(uint8_t /* bar */, uint32_t /* address */, int32_t const * /* data */, size_t /* sizeInBytes */){
-	throw NotImplementedException("DummyBackend::writeDMA is not implemented yet.");
-}
-
 std::string DummyBackend::readDeviceInfo(){
 	std::stringstream info;
 	info << "DummyBackend with mapping file " << _registerMapping->getMapFileName();

@@ -11,12 +11,11 @@ endforeach( TARGET )
   # They go into a the examples directory because the dmapFliesParser scans the whole 
   # directory and in the main build directory there are also ivalid ones.
   # We also copy the bad mapping file so we can reuse dummies.dmap.
-  MACRO( COPY_MAPPING_FILES )
   foreach( FILE goodMapFile.map mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map  muxedDataAcessor.map dummies.dmap )
     configure_file( ${CMAKE_SOURCE_DIR}/tests/${FILE} ${PROJECT_BINARY_DIR}/examples/${FILE} copyonly)
   endforeach( FILE )
-  ENDMACRO( COPY_MAPPING_FILES )
-  COPY_MAPPING_FILES()
-   
 
-
+ #also install the example source code 
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION . COMPONENT dev
+  FILES_MATCHING PATTERN "*.cpp"  PATTERN  Makefile PATTERN CMakeLists.txt PATTERN ".svn" EXCLUDE )
+ 

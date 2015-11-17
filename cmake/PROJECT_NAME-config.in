@@ -1,0 +1,23 @@
+#!/bin/sh
+
+print_usage(){
+    echo "usage: $0 [--cppflags] [--ldflags]" 1>&2
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+      --cppflags)
+        OUTPUT="${OUTPUT}-I@CMAKE_INSTALL_PREFIX@/include "
+        shift;;
+      --ldflags)
+        OUTPUT="${OUTPUT}-L@CMAKE_INSTALL_PREFIX@/lib -l@PROJECT_NAME@ "
+        OUTPUT="${OUTPUT}-Wl,-rpath=@CMAKE_INSTALL_PREFIX@/lib,--enable-new-dtags "
+        shift;;
+      *)
+        echo "invalid option: $1" 1>&2
+        print_usage
+        exit 1;;
+    esac
+done
+
+echo ${OUTPUT}

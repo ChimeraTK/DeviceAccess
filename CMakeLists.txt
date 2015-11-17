@@ -30,7 +30,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS system filesystem)
+FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/exception/include)
@@ -54,6 +54,7 @@ add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+link_directories(${Boost_LIBRARY_DIRS})
 target_link_libraries( ${PROJECT_NAME} ${libexception} ${libfileparser} ${libutil} ${Boost_LIBRARIES}) 
 
 enable_testing()  
@@ -120,11 +121,17 @@ configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in.in
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
  
+configure_file(cmake/PROJECT_NAME-config.in
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
+
 # Install the ..Config.cmake and ..ConfigVersion.cmake
 install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
   "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
   DESTINATION . COMPONENT dev)
+
+install(PROGRAMS "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config"
+  DESTINATION bin COMPONENT dev)
 
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
 find_package(Doxygen)

@@ -18,12 +18,33 @@ protected:
 public:
     DeviceBackendImpl() : _opened(false), _connected(true) {}
     virtual ~DeviceBackendImpl(){}
+
     /** Return whether a device has been opened or not.
      *  This is the only function implemented here to avoid code duplication.
      *  All other functions stay purely virtual.
      */
     virtual bool isOpen(){ return _opened; }
     virtual bool isConnected(){ return _connected; }
+
+
+    /** \deprecated {
+     *  This function is deprecated. Use read() instead!
+     *  @todo Add printed warning after release of version 0.2
+     *  }
+     */
+    virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) {
+      read(bar, address, data,  sizeInBytes);
+    }
+
+    /** \deprecated {
+     *  This function is deprecated. Use write() instead!
+     *  @todo Add printed warning after release of version 0.2
+     *  }
+     */
+    virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
+      write(bar, address, data,  sizeInBytes);
+    }
+
 };
 
 }//namespace mtca4u
