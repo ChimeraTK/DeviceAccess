@@ -61,7 +61,7 @@ public:
 	}
 
 	bool operator()(const std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> & elem) {
-		if (elem.first.dev_name == name) return true;
+		if (elem.first._deviceName == name) return true;
 		return false;
 	}
 };
@@ -78,7 +78,7 @@ public:
 	}
 
 	bool operator()(const DeviceInfoMap::DeviceInfo& elem) {
-		if (elem.dev_name == name) return true;
+		if (elem._deviceName == name) return true;
 		return false;
 	}
 };
@@ -122,7 +122,7 @@ class copmaredRegisterInfosByName_functor
 {
 public:
 	bool operator()(const std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> & first, const std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> & second){
-		return first.first.dev_name < second.first.dev_name;
+		return first.first._deviceName < second.first._deviceName;
 	}
 };
 
@@ -133,7 +133,7 @@ class copmaredRegisterInfosByName2_functor
 {
 public:
 	bool operator()(const DeviceInfoMap::DeviceInfo &first, const DeviceInfoMap::DeviceInfo &second){
-		return first.dev_name < second.dev_name;
+		return first._deviceName < second._deviceName;
 	}
 };
 

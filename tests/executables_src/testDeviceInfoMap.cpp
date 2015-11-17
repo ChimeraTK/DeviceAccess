@@ -109,8 +109,8 @@ void DeviceInfoMapTest::testGetDeviceInfo() {
 	mtca4u::DeviceInfoMap::DeviceInfo retrievedElement2;
 	mtca4u::DeviceInfoMap::DeviceInfo retrievedElement3;
 
-	RegisterInfoMap.getDeviceInfo(deviceInfo1.dev_name, retrievedElement1);
-	RegisterInfoMap.getDeviceInfo(deviceInfo2.dev_name, retrievedElement2);
+	RegisterInfoMap.getDeviceInfo(deviceInfo1._deviceName, retrievedElement1);
+	RegisterInfoMap.getDeviceInfo(deviceInfo2._deviceName, retrievedElement2);
 
 	BOOST_CHECK((compareDeviceInfos(retrievedElement1, deviceInfo1)) == true);
 	BOOST_CHECK((compareDeviceInfos(retrievedElement2, deviceInfo2)) == true);
@@ -141,9 +141,9 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
 	populateDummyDeviceInfo(deviceInfo3, dMapFileName);
 	populateDummyDeviceInfo(deviceInfo4, dMapFileName);
 
-	deviceInfo1.dev_name = commonCardName;
-	deviceInfo2.dev_name = commonCardName;
-	deviceInfo3.dev_name = commonCardName;
+	deviceInfo1._deviceName = commonCardName;
+	deviceInfo2._deviceName = commonCardName;
+	deviceInfo3._deviceName = commonCardName;
 
 	mtca4u::DeviceInfoMap::ErrorList elementDuplications;
 	RegisterInfoMap.insert(deviceInfo1);
@@ -158,15 +158,15 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
 	RegisterInfoMap.check(elementDuplications,
 			mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR);
 
-	int numberOfIncorrectLinesInFile = elementDuplications.errors.size();
+	int numberOfIncorrectLinesInFile = elementDuplications._errors.size();
 	BOOST_CHECK(numberOfIncorrectLinesInFile == 2);
 
 	std::list<mtca4u::DeviceInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
-	for (errorIterator = elementDuplications.errors.begin();
-			errorIterator != elementDuplications.errors.end(); ++errorIterator) {
+	for (errorIterator = elementDuplications._errors.begin();
+			errorIterator != elementDuplications._errors.end(); ++errorIterator) {
 		bool doesDetectedElementsHaveSameName =
-				(errorIterator->err_dev_1.dev_name ==
-						errorIterator->err_dev_2.dev_name);
+				(errorIterator->_errorDevice1._deviceName ==
+						errorIterator->_errorDevice2._deviceName);
 		BOOST_CHECK(doesDetectedElementsHaveSameName);
 	}
 }
@@ -174,8 +174,8 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
 void DeviceInfoMapTest::testGetDeviceFileAndMapFileName() {
 
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-	deviceInfo1.dev_file = "/dev/test";
-	deviceInfo1.map_file_name = "test_mapfile";
+	deviceInfo1._deviceFile = "/dev/test";
+	deviceInfo1._mapFileName = "test_mapfile";
 
 	std::pair<std::string, std::string> expected_pair("/dev/test",
 			"test_mapfile");
@@ -200,11 +200,11 @@ void DeviceInfoMapTest::testErrorElemErrTypeStreamOperator() {
 
 void DeviceInfoMapTest::testDeviceInfoStreamOperator() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-	deviceInfo1.dev_file = "/dev/dev1";
-	deviceInfo1.dev_name = "card1";
-	deviceInfo1.dmap_file_line_nr = 1;
-	deviceInfo1.dmap_file_name = "dummy.dmap";
-	deviceInfo1.map_file_name = "mapped_file";
+	deviceInfo1._deviceFile = "/dev/dev1";
+	deviceInfo1._deviceName = "card1";
+	deviceInfo1._dmapFileLineNumber = 1;
+	deviceInfo1._dmapFileName = "dummy.dmap";
+	deviceInfo1._mapFileName = "mapped_file";
 
 	std::stringstream expected_file_stream;
 	expected_file_stream << "("
@@ -268,8 +268,8 @@ void DeviceInfoMapTest::testErrorElemStreamOperator() {
 	populateDummyDeviceInfo(deviceInfo2, "dummy.dmap", "card1", "/dev/dev1",
 			"map_file");
 
-	deviceInfo1.dmap_file_line_nr = 1;
-	deviceInfo2.dmap_file_line_nr = 2;
+	deviceInfo1._dmapFileLineNumber = 1;
+	deviceInfo2._dmapFileLineNumber = 2;
 
 	mtca4u::DeviceInfoMap::ErrorList::ErrorElem error_element(
 			mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR,
@@ -303,11 +303,11 @@ void DeviceInfoMapTest::testErrorListStreamOperator() {
 	populateDummyDeviceInfo(deviceInfo1, dMapFileName);
 	populateDummyDeviceInfo(deviceInfo2, dMapFileName);
 
-	deviceInfo1.dev_name = commonCardName;
-	deviceInfo2.dev_name = commonCardName;
+	deviceInfo1._deviceName = commonCardName;
+	deviceInfo2._deviceName = commonCardName;
 
-	deviceInfo1.dmap_file_line_nr = 1;
-	deviceInfo2.dmap_file_line_nr = 2;
+	deviceInfo1._dmapFileLineNumber = 1;
+	deviceInfo2._dmapFileLineNumber = 2;
 
 	mtca4u::DeviceInfoMap::ErrorList elementDuplications;
 	RegisterInfoMap.insert(deviceInfo1);

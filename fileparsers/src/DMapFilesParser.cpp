@@ -37,10 +37,10 @@ namespace mtca4u{
     }
     cleanAll();
     dmap = dmap_file_parser.parse(fileName);
-    for (dmap_elem_iter = dmap->dmap_file_elems.begin();
-         dmap_elem_iter != dmap->dmap_file_elems.end(); ++dmap_elem_iter) {
+    for (dmap_elem_iter = dmap->_dmapFileElements.begin();
+         dmap_elem_iter != dmap->_dmapFileElements.end(); ++dmap_elem_iter) {
       std::string absPathToCurrentMapFile = absolutePathToDMapDir;
-      combinePaths(absPathToCurrentMapFile, dmap_elem_iter->map_file_name);
+      combinePaths(absPathToCurrentMapFile, dmap_elem_iter->_mapFileName);
       map_file_iter = std::find_if(map_files.begin(), map_files.end(),
                                    findMapFileByName_pred(absPathToCurrentMapFile));
       if (map_file_iter == map_files.end()) {
@@ -101,14 +101,14 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
 	throw;
       }
       /* fixme? repetition from parse_file structure this better?*/
-	  for (dmap_elem_iter = dmap->dmap_file_elems.begin(); dmap_elem_iter != dmap->dmap_file_elems.end(); ++dmap_elem_iter) {
-	    map_file_iter = std::find_if(map_files.begin(), map_files.end(), findMapFileByName_pred((*dmap_elem_iter).map_file_name));
+	  for (dmap_elem_iter = dmap->_dmapFileElements.begin(); dmap_elem_iter != dmap->_dmapFileElements.end(); ++dmap_elem_iter) {
+	    map_file_iter = std::find_if(map_files.begin(), map_files.end(), findMapFileByName_pred((*dmap_elem_iter)._mapFileName));
 	    if (map_file_iter == map_files.end()) {
 	      try {
-		if ((*dmap_elem_iter).map_file_name[0] == '.'){
-		  map = map_file_parser.parse(dir_new + (*dmap_elem_iter).map_file_name);
+		if ((*dmap_elem_iter)._mapFileName[0] == '.'){
+		  map = map_file_parser.parse(dir_new + (*dmap_elem_iter)._mapFileName);
 		} else {
-		  map = map_file_parser.parse((*dmap_elem_iter).map_file_name);
+		  map = map_file_parser.parse((*dmap_elem_iter)._mapFileName);
 		}
 	      } catch (LibMapException &e) {
 		closedir(dp);
@@ -158,8 +158,8 @@ bool DMapFilesParser::check(DeviceInfoMap::ErrorList::ErrorElem::TYPE /*dlevel*/
   iter_p = dmaps.begin();
   iter_n = iter_p + 1;
   while (1) {
-    if ((*iter_p).first.dev_name == (*iter_n).first.dev_name) {
-      if ((*iter_p).first.dev_file != (*iter_n).first.dev_file || (*iter_p).first.map_file_name != (*iter_n).first.map_file_name) {
+    if ((*iter_p).first._deviceName == (*iter_n).first._deviceName) {
+      if ((*iter_p).first._deviceFile != (*iter_n).first._deviceFile || (*iter_p).first._mapFileName != (*iter_n).first._mapFileName) {
 	dmap_err.insert(DeviceInfoMap::ErrorList::ErrorElem(DeviceInfoMap::ErrorList::ErrorElem::ERROR, DeviceInfoMap::ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME, (*iter_p).first, (*iter_n).first));
 	ret = false;
       }
@@ -194,15 +194,15 @@ ptrmapFile DMapFilesParser::getMapFile(const std::string &dev_name) {
   return (*dmap_iter).second;
 }
 
-void DMapFilesParser::getdMapFileElem(const std::string &dev_name, DeviceInfoMap::DeviceInfo &dMapFileElem) {
-  dMapFileElem = getdMapFileElem( dev_name );
+void DMapFilesParser::getdMapFileElem(const std::string& devName, DeviceInfoMap::DeviceInfo &dMapFileElem) {
+  dMapFileElem = getdMapFileElem(devName);
 }
 
-DeviceInfoMap::DeviceInfo const & DMapFilesParser::getdMapFileElem(const std::string &dev_name) {
+DeviceInfoMap::DeviceInfo const & DMapFilesParser::getdMapFileElem(const std::string &devName) {
   std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator dmap_iter;
-  dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
+  dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(devName));
   if (dmap_iter == dmap_elems.end()) {
-    throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+    throw DMapFileParserException("Cannot find device " + devName, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   return (*dmap_iter).first;
 }
@@ -220,7 +220,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   RegisterInfoMap::RegisterInfo elem;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
-    dev_name = dmap_elems[0].first.dev_name;
+	  dev_name = dmap_elems[0].first._deviceName;
   }
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
@@ -231,21 +231,21 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   reg_size = elem.reg_size;
   reg_elem_nr = elem.reg_elem_nr;
   reg_bar = elem.reg_bar;
-  dev_file = (*dmap_iter).first.dev_file;
+  dev_file = (*dmap_iter).first._deviceFile;
 }
 
 void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, RegisterInfoMap::RegisterInfo &elem) {
   std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator dmap_iter;
 
   if (dev_name == "" && dmap_elems.size() == 1) {
-    dev_name = dmap_elems[0].first.dev_name;
+	  dev_name = dmap_elems[0].first._deviceName;
   }
   dmap_iter = std::find_if(dmap_elems.begin(), dmap_elems.end(), findDevInPairByName_pred(dev_name));
   if (dmap_iter == dmap_elems.end()) {
     throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   (*dmap_iter).second->getRegisterInfo(reg_name, elem);
-  dev_file = (*dmap_iter).first.dev_file;
+  dev_file = (*dmap_iter).first._deviceFile;
 }
 
 std::ostream& operator<<(std::ostream &os, const DMapFilesParser& dmfp) {

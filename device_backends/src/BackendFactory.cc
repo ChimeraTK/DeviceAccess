@@ -51,20 +51,20 @@ boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string alias
   char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
   if ( dmapFileFromEnvironment != NULL ) {
     std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).dev_file;
+    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment)._deviceFile;
   }
 
   // try to get an alias of the DMap file set at run time by setDMapFilePath()
   if (uri.empty()){
     std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, _dMapFile).dev_file;
+    uri = Utilities::aliasLookUp(aliasName, _dMapFile)._deviceFile;
   }
 
   // finally try the system/compile time default
   if (uri.empty()){
     std::cout << "creating backend from " << DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME 
 	      << " for alias " << aliasName << std::endl;
-    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME).dev_file;
+    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME)._deviceFile;
   }
   
   // if there still is no alias we are out of options and have to give up.

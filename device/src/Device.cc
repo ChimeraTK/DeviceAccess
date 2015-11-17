@@ -371,9 +371,9 @@ void Device::open(std::string const & aliasName) {
   DeviceInfoMap::DeviceInfo DeviceInfo;
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
-    if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {
+    if (boost::iequals((*deviceIter).first._deviceName, aliasName)) {
       DeviceInfo = (*deviceIter).first;
-      _mapFileName = DeviceInfo.map_file_name;
+      _mapFileName = DeviceInfo._mapFileName;
       _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
       break;
     }

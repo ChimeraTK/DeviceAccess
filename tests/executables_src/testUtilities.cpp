@@ -107,9 +107,9 @@ void UtilitiesTest::testAliasLookUp() {
   std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
 
   DeviceInfoMap::DeviceInfo deviceInfo = Utilities::aliasLookUp("test",testFilePath);
-  BOOST_CHECK( deviceInfo.dev_name.empty() );
+  BOOST_CHECK( deviceInfo._deviceName.empty() );
   deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
-  BOOST_CHECK(deviceInfo.dev_name =="DUMMYD0");
+  BOOST_CHECK(deviceInfo._deviceName =="DUMMYD0");
 }
 
 void UtilitiesTest::testFindFirstOfAlias() {

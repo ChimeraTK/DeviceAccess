@@ -4,20 +4,20 @@
 
 void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string dmapFileName, std::string deviceName,
-                              std::string dev_file, std::string map_file_name) {
+                              std::string _deviceFile, std::string _mapFileName) {
   static int lineNumber = 1;
   if (deviceName == "card")
     deviceName = appendNumberToName(deviceName, lineNumber);
-  if (dev_file == "/dev/dummy_device_identifier")
-    dev_file = appendNumberToName(deviceName, lineNumber);
-  if (map_file_name == "/dev/dummy_map_file")
-    map_file_name = appendNumberToName(deviceName, lineNumber);
+  if (_deviceFile == "/dev/dummy_device_identifier")
+    _deviceFile = appendNumberToName(deviceName, lineNumber);
+  if (_mapFileName == "/dev/dummy_map_file")
+    _mapFileName = appendNumberToName(deviceName, lineNumber);
 
-  deviceInfo.dev_name = deviceName;
-  deviceInfo.dev_file = dev_file;
-  deviceInfo.map_file_name = map_file_name;
-  deviceInfo.dmap_file_name = dmapFileName;
-  deviceInfo.dmap_file_line_nr = ++lineNumber;
+  deviceInfo._deviceName = deviceName;
+  deviceInfo._deviceFile = _deviceFile;
+  deviceInfo._mapFileName = _mapFileName;
+  deviceInfo._dmapFileName = dmapFileName;
+  deviceInfo._dmapFileLineNumber = ++lineNumber;
 }
 
 std::string appendNumberToName(std::string name, int suffixNumber) {
@@ -29,11 +29,11 @@ std::string appendNumberToName(std::string name, int suffixNumber) {
 bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
                          const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo2) {
   bool result =
-      (deviceInfo1.dev_name == deviceInfo2.dev_name) &&
-      (deviceInfo1.dev_file == deviceInfo2.dev_file) &&
-      (deviceInfo1.map_file_name == deviceInfo2.map_file_name) &&
-      (deviceInfo1.dmap_file_name == deviceInfo2.dmap_file_name) &&
-      (deviceInfo1.dmap_file_line_nr == deviceInfo2.dmap_file_line_nr);
+      (deviceInfo1._deviceName == deviceInfo2._deviceName) &&
+      (deviceInfo1._deviceFile == deviceInfo2._deviceFile) &&
+      (deviceInfo1._mapFileName == deviceInfo2._mapFileName) &&
+      (deviceInfo1._dmapFileName == deviceInfo2._dmapFileName) &&
+      (deviceInfo1._dmapFileLineNumber == deviceInfo2._dmapFileLineNumber);
   return result;
 }
 

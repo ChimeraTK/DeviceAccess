@@ -33,11 +33,11 @@ public:
 	 */
 	class DeviceInfo {
 	public:
-		std::string dev_name; /**< logical name of the device*/
-		std::string dev_file; /**< name of dev file (in direcotry /dev)*/
-		std::string map_file_name; /**< name of the MAP file storing information about PCIe registers mapping*/
-		std::string dmap_file_name; /**< name of the DMAP file*/
-		uint32_t dmap_file_line_nr; /**< line number in DMAP file storing listed above information*/
+		std::string _deviceName; /**< logical name of the device*/
+		std::string _deviceFile; /**< name of dev file (in direcotry /dev)*/
+		std::string _mapFileName; /**< name of the MAP file storing information about PCIe registers mapping*/
+		std::string _dmapFileName; /**< name of the DMAP file*/
+		uint32_t _dmapFileLineNumber;/**< line number in DMAP file storing listed above information*/
 	public:
 		/**
 		 * Default class constructor
@@ -54,7 +54,7 @@ public:
 		 */
 		std::pair<std::string, std::string> getDeviceFileAndMapFileName() const;
 
-		friend std::ostream& operator<<(std::ostream &os, const DeviceInfo& de);
+		friend std::ostream& operator<<(std::ostream &os, const DeviceInfo& deviceInfo);
 	};
 
 	typedef std::vector<DeviceInfo>::iterator iterator;
@@ -94,25 +94,25 @@ public:
 				ERROR, /**< Critical error was detected */
 				WARNING /**< Non-critical error was detected */
 			} TYPE;
-			DeviceInfoMap::DeviceInfo err_dev_1; /**< Detailed information about first device that generate error or warning */
-			DeviceInfoMap::DeviceInfo err_dev_2; /**< Detailed information about second device that generate error or warning */
-			DMAP_FILE_ERR err_type; /**< Type of detected problem */
-			TYPE type; /**< Class of detected problem - ERROR or WARNING*/
+			DeviceInfoMap::DeviceInfo _errorDevice1; /**< Detailed information about first device that generate error or warning */
+			DeviceInfoMap::DeviceInfo _errorDevice2; /**< Detailed information about second device that generate error or warning */
+			DMAP_FILE_ERR _errorType; /**< Type of detected problem */
+			TYPE _type; /**< Class of detected problem - ERROR or WARNING*/
 
 		public:
 			/**
 			 * Creates obiect that describe one detected error or warning
 			 *
-			 * @param info_type type of detected problem - ERROR or WARNING
-			 * @param e_type detailed type of detected problem
-			 * @param dev_1 detailed information about first device that generate problem
-			 * @param dev_2 detailed information about second device that generate problem
+			 * @param infoType type of detected problem - ERROR or WARNING
+			 * @param errorType detailed type of detected problem
+			 * @param device1 detailed information about first device that generate problem
+			 * @param device2 detailed information about second device that generate problem
 			 */
-			ErrorElem(TYPE info_type, DMAP_FILE_ERR e_type, const DeviceInfoMap::DeviceInfo &dev_1, const DeviceInfoMap::DeviceInfo &dev_2);
+			ErrorElem(TYPE infoType, DMAP_FILE_ERR errorType, const DeviceInfoMap::DeviceInfo &device1, const DeviceInfoMap::DeviceInfo &device2);
 			friend std::ostream& operator<<(std::ostream &os, const TYPE& me);
 			friend std::ostream& operator<<(std::ostream &os, const ErrorElem& me);
 		};
-		std::list<ErrorElem> errors; /**< Lists of errors or warnings detected during MAP file correctness checking*/
+		std::list<ErrorElem> _errors; /**< Lists of errors or warnings detected during MAP file correctness checking*/
 
 	public:
 		friend std::ostream& operator<<(std::ostream &os, const ErrorList& me);
@@ -143,16 +143,16 @@ public:
 	 */
 	bool check(ErrorList &err, ErrorList::ErrorElem::TYPE level);
 
-	friend std::ostream& operator<<(std::ostream &os, const DeviceInfoMap& me);
+	friend std::ostream& operator<<(std::ostream &os, const DeviceInfoMap& deviceInfoMap);
 	/**
 	 * @brief Returns information about specified device
 	 *
 	 * @throw exDmapFile [exLibMap::EX_NO_DEVICE_IN_DMAP_FILE] - no device with specified name
-	 * @param dev_name name of the device
+	 * @param deviceName name of the device
 	 * @param value detailed information about device taken from DMAP file
 	 *
 	 */
-	void getDeviceInfo(const std::string& dev_name, DeviceInfo &value);
+	void getDeviceInfo(const std::string& deviceName, DeviceInfo &value);
 	/**
 	 * @brief Returns number of records in DMAP file
 	 *
@@ -177,8 +177,8 @@ public:
 	const_iterator end() const;
 
 private:
-	std::vector<DeviceInfo> dmap_file_elems; /**< vector storing parsed contents of DMAP file*/
-	std::string dmap_file_name; /**< name of DMAP file*/
+	std::vector<DeviceInfo> _dmapFileElements; /**< vector storing parsed contents of DMAP file*/
+	std::string _dmapFileName; /**< name of DMAP file*/
 
 public:
 	/**
@@ -186,9 +186,9 @@ public:
 	 *
 	 * Initialize DMAP file name stored into object but does not perform DMAP file parsing
 	 *
-	 * @param file_name name of DMAP file
+	 * @param fileName name of DMAP file
 	 */
-	DeviceInfoMap(const std::string &file_name);
+	DeviceInfoMap(const std::string &fileName);
 	/**
 	 * @brief Insert new element read from DMAP file
 	 * @param elem element describing detailes of one device taken from DMAP file
