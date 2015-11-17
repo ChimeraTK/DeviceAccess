@@ -57,6 +57,9 @@ namespace mtca4u {
        * A device is considered connected when it is created.
        */
       virtual bool isConnected() = 0;
+
+      /** Every virtual class needs a virtual desctructor. */
+      virtual ~DeviceBackend(){}
   };
 
 } // namespace mtca4u
