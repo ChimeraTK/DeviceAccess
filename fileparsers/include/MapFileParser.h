@@ -36,7 +36,7 @@ public:
 	 *
 	 *
 	 */
-	ptrmapFile    parse(const std::string &file_name);
+	RegisterInfoMapPointer parse(const std::string &file_name);
 
 	/** Split the string at the last dot. The part up to the last dot is the first returned argument,
 	 *	the part after the last dot is the second. Hence, the first part can contain dots itself, the second

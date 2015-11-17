@@ -80,16 +80,16 @@ namespace mtca4u{
         throw DeviceException("Data size must be divisible by 4",
             DeviceException::EX_WRONG_PARAMETER);
       }
-      if (dataSize > registerInfo.reg_size - addRegOffset) {
+      if (dataSize > registerInfo._size - addRegOffset) {
         throw DeviceException("Data size exceed register size",
             DeviceException::EX_WRONG_PARAMETER);
       }
       retDataSize = dataSize;
     } else {
-      retDataSize = registerInfo.reg_size;
+      retDataSize = registerInfo._size;
     }
-    retRegBar = registerInfo.reg_bar;
-    retRegOff = registerInfo.reg_address + addRegOffset;
+    retRegBar = registerInfo._bar;
+    retRegOff = registerInfo._addressOffset + addRegOffset;
   }
 
   void Device::readReg(const std::string &regName, int32_t *data,
@@ -270,7 +270,7 @@ namespace mtca4u{
       _ptrDeviceBackend pDeviceBackend)
   : _registerInfo(registerInfo),
     _pDeviceBackend(pDeviceBackend),
-    _fixedPointConverter(_registerInfo.reg_width, _registerInfo.reg_frac_bits, _registerInfo.reg_signed) {}
+    _fixedPointConverter(_registerInfo._width, _registerInfo._fractionalBits, _registerInfo._signedFlag) {}
 
   void Device::RegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo,
       size_t dataSize,
@@ -286,15 +286,15 @@ namespace mtca4u{
         throw DeviceException("Data size must be divisible by 4",
             DeviceException::EX_WRONG_PARAMETER);
       }
-      if (dataSize > registerInfo.reg_size - addRegOffset) {
+      if (dataSize > registerInfo._size - addRegOffset) {
         throw DeviceException("Data size exceed register size",
             DeviceException::EX_WRONG_PARAMETER);
       }
       retDataSize = dataSize;
     } else {
-      retDataSize = registerInfo.reg_size;
+      retDataSize = registerInfo._size;
     }
-    retRegOff = registerInfo.reg_address + addRegOffset;
+    retRegOff = registerInfo._addressOffset + addRegOffset;
   }
 
   void Device::RegisterAccessor::readRaw(int32_t *data, size_t dataSize,
@@ -302,7 +302,7 @@ namespace mtca4u{
     uint32_t retDataSize;
     uint32_t retRegOff;
     checkRegister(_registerInfo, dataSize, addRegOffset, retDataSize, retRegOff);
-    _pDeviceBackend->read(_registerInfo.reg_bar, retRegOff, data, retDataSize);
+    _pDeviceBackend->read(_registerInfo._bar, retRegOff, data, retDataSize);
   }
 
   void Device::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
@@ -310,7 +310,7 @@ namespace mtca4u{
     uint32_t retDataSize;
     uint32_t retRegOff;
     checkRegister(_registerInfo, dataSize, addRegOffset, retDataSize, retRegOff);
-    _pDeviceBackend->write(_registerInfo.reg_bar, retRegOff, data, retDataSize);
+    _pDeviceBackend->write(_registerInfo._bar, retRegOff, data, retDataSize);
   }
 
   void Device::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,

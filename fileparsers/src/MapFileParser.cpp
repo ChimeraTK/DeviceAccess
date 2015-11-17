@@ -6,7 +6,7 @@
 
 namespace mtca4u{
 
-ptrmapFile MapFileParser::parse(const std::string &file_name)
+RegisterInfoMapPointer MapFileParser::parse(const std::string &file_name)
 {
 	std::ifstream           file;
 	std::string             line;
@@ -17,7 +17,7 @@ ptrmapFile MapFileParser::parse(const std::string &file_name)
 	if (!file){
 		throw MapFileException("Cannot open file \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_MAP_FILE);
 	}
-	ptrmapFile pmap(new RegisterInfoMap(file_name));
+	RegisterInfoMapPointer pmap(new RegisterInfoMap(file_name));
 	RegisterInfoMap::RegisterInfo registerInfo;
 
 	while (std::getline(file, line)) {
@@ -35,15 +35,15 @@ ptrmapFile MapFileParser::parse(const std::string &file_name)
 			// ... and remove all the whitespace after it
 			line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
 			is.str(line);
-			is >> md.name;
+			is >> md._name;
 			if (!is){
 				std::ostringstream os;
 				os << line_nr;
 				throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + org_line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
 			}
-			line.erase(line.begin(), line.begin() + md.name.length());
+			line.erase(line.begin(), line.begin() + md._name.length());
 			line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
-			md.value = line;
+			md._value = line;
 			pmap->insert(md);
 			is.clear();
 			continue;
@@ -54,35 +54,35 @@ ptrmapFile MapFileParser::parse(const std::string &file_name)
 		is >> moduleAndRegisterName;
 
 		std::pair<std::string, std::string> moduleAndNamePair = splitStringAtLastDot(moduleAndRegisterName);
-		registerInfo.reg_module = moduleAndNamePair.first;
-		registerInfo.reg_name = moduleAndNamePair.second;
-		if ( registerInfo.reg_name.empty() ){
+		registerInfo._module = moduleAndNamePair.first;
+		registerInfo._name = moduleAndNamePair.second;
+		if ( registerInfo._name.empty() ){
 			std::ostringstream errorMessage;
 			errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
 			throw MapFileParserException(errorMessage.str(), LibMapException::EX_MAP_FILE_PARSE_ERROR);
 		}
 
-		is >> std::setbase(0) >> registerInfo.reg_elem_nr >> std::setbase(0) >> registerInfo.reg_address >> std::setbase(0) >> registerInfo.reg_size;
+		is >> std::setbase(0) >> registerInfo._elementCount >> std::setbase(0) >> registerInfo._addressOffset >> std::setbase(0) >> registerInfo._size;
 		if (!is){
 			std::ostringstream os;
 			os << line_nr;
 			throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
 		}
 		// first, set default values for 'optional' fields
-		registerInfo.reg_bar = 0x0;
-		registerInfo.reg_width= 32;
-		registerInfo.reg_frac_bits = 0;
-		registerInfo.reg_signed = true;
-		is >> std::setbase(0) >> registerInfo.reg_bar;
+		registerInfo._bar = 0x0;
+		registerInfo._width= 32;
+		registerInfo._fractionalBits = 0;
+		registerInfo._signedFlag = true;
+		is >> std::setbase(0) >> registerInfo._bar;
 		if (is.fail()){
 			failed = true;
 		}
 		if (!failed) {
-			is >> std::setbase(0) >> registerInfo.reg_width;
+			is >> std::setbase(0) >> registerInfo._width;
 			if (is.fail()){
 				failed = true;
 			} else {
-				if (registerInfo.reg_width > 32) {
+				if (registerInfo._width > 32) {
 					std::ostringstream os;
 					os << line_nr;
 					throw MapFileParserException("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
@@ -90,11 +90,11 @@ ptrmapFile MapFileParser::parse(const std::string &file_name)
 			}
 		}
 		if (!failed) {
-			is >> std::setbase(0) >> registerInfo.reg_frac_bits;
+			is >> std::setbase(0) >> registerInfo._fractionalBits;
 			if (is.fail()){
 				failed = true;
 			} else {
-				if (registerInfo.reg_frac_bits > 1023 || registerInfo.reg_frac_bits < -1024) {
+				if (registerInfo._fractionalBits > 1023 || registerInfo._fractionalBits < -1024) {
 					std::ostringstream os;
 					os << line_nr;
 					throw MapFileParserException("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
@@ -103,14 +103,14 @@ ptrmapFile MapFileParser::parse(const std::string &file_name)
 		}
 
 		if (!failed) {
-			is >> std::setbase(0) >> registerInfo.reg_signed;
+			is >> std::setbase(0) >> registerInfo._signedFlag;
 			// no need to check if 'is' failed. Insert a check to set the failed flags if more fields are added
 			//if (is.fail()){
 			//  failed = true;
 			//}
 		}
 		is.clear();
-		registerInfo.line_nr = line_nr;
+		registerInfo._descriptionLineNumber = line_nr;
 		pmap->insert(registerInfo);
 	}
 	return pmap;

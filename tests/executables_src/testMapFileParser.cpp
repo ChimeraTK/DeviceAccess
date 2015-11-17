@@ -229,8 +229,8 @@ void MapFileParserTest::testGoodMappFileParse () {
 			mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end();
 			++mapIter, ++elementsIter){
 		std::stringstream message;
-		message << "Failed comparison on Register '" << (*elementsIter).reg_name
-				<< "', module '" << (elementsIter->reg_module) << "'";
+		message << "Failed comparison on Register '" << (*elementsIter)._name
+				<< "', module '" << (elementsIter->_module) << "'";
 		BOOST_CHECK_MESSAGE( compareRegisterInfoents(*mapIter, *elementsIter) == true,
 				message.str());
 	}
@@ -259,8 +259,8 @@ void MapFileParserTest::testMixedMapFileParse () {
 			mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end();
 			++mapIter, ++elementsIter){
 		std::stringstream message;
-		message << "Failed comparison on Register '" << (*elementsIter).reg_name
-				<< "', module '" << (elementsIter->reg_module) << "'";
+		message << "Failed comparison on Register '" << (*elementsIter)._name
+				<< "', module '" << (elementsIter->_module) << "'";
 		BOOST_CHECK_MESSAGE( compareRegisterInfoents(*mapIter, *elementsIter) == true,
 				message.str());
 	}

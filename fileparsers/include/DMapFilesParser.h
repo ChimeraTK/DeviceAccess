@@ -25,14 +25,14 @@ namespace mtca4u{
  */
 class DMapFilesParser {
 public:
-	typedef std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::iterator iterator;
-	typedef std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> >::const_iterator const_iterator;
+	typedef std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> >::iterator iterator;
+	typedef std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> >::const_iterator const_iterator;
 
 private:
 	DMapFileParser dmap_file_parser; /**< DMAP file parser*/
 	MapFileParser map_file_parser; /**< MAP file parser*/
-	std::vector<std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
-	std::vector<ptrmapFile> map_files; /**< vector of parsed MAP files*/
+	std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> > dmap_elems; /**< vector composed of devices and associated pointers to parsed MAP files*/
+	std::vector<RegisterInfoMapPointer> map_files; /**< vector of parsed MAP files*/
 	/**
 	 * @brief Performs parsing of all DMAP files located in directory passed as a parameter and all MAP files
 	 * taken from DMAP file and associated with devices .
@@ -119,7 +119,7 @@ public:
 	 * @param dev_name name of device
 	 * @return pointer to parser MAP file asociated with selected device
 	 */
-	ptrmapFile getMapFile(const std::string &dev_name);
+	RegisterInfoMapPointer getMapFile(const std::string &dev_name);
 	/**
 	 * @brief Returns number of elements in parsed DMAP files
 	 *

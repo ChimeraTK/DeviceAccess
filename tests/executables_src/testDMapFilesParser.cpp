@@ -425,11 +425,11 @@ void DMapFilesParserTest::testCheckParsedInInfo() {
 	mapErrIt = map_err_list.errors.begin();
 
 	bool areNonUniqueRegistersPresent =
-			((mapErrIt->err_reg_1.reg_name == mapErrIt->err_reg_2.reg_name) &&
-					((mapErrIt->err_reg_1.reg_address != mapErrIt->err_reg_2.reg_address) ||
-							(mapErrIt->err_reg_1.reg_bar != mapErrIt->err_reg_2.reg_bar) ||
-							(mapErrIt->err_reg_1.reg_elem_nr != mapErrIt->err_reg_2.reg_elem_nr) ||
-							(mapErrIt->err_reg_1.reg_size != mapErrIt->err_reg_2.reg_size)));
+			((mapErrIt->_errorRegister1._name == mapErrIt->_errorRegister2._name) &&
+					((mapErrIt->_errorRegister1._addressOffset != mapErrIt->_errorRegister2._addressOffset) ||
+							(mapErrIt->_errorRegister1._bar != mapErrIt->_errorRegister2._bar) ||
+							(mapErrIt->_errorRegister1._elementCount != mapErrIt->_errorRegister2._elementCount) ||
+							(mapErrIt->_errorRegister1._size != mapErrIt->_errorRegister2._size)));
 	BOOST_CHECK(areNonUniqueRegistersPresent);
 }
 
@@ -504,9 +504,9 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 	tmpArray2[2] = &s3;
 
 	std::vector<std::pair<mtca4u::DeviceInfoMap::DeviceInfo,
-	mtca4u::ptrmapFile> >::iterator iter;
+	mtca4u::RegisterInfoMapPointer> >::iterator iter;
 	std::vector<std::pair<mtca4u::DeviceInfoMap::DeviceInfo,
-	mtca4u::ptrmapFile> >::const_iterator const_iter;
+	mtca4u::RegisterInfoMapPointer> >::const_iterator const_iter;
 	uint8_t i;
 	for (iter = filesParser.begin(), i = 0;
 			(iter != filesParser.end()) && (i < 3);

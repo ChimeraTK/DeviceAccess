@@ -418,7 +418,7 @@ namespace mtca4u {
 
       _ptrDeviceBackend _pDeviceBackend;
       std::string _mapFileName;
-      ptrmapFile _registerMap;
+      RegisterInfoMapPointer _registerMap;
 
       void checkRegister(const std::string &regName,
           const std::string &registerModule, size_t dataSize,

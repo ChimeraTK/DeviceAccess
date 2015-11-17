@@ -584,17 +584,17 @@ void DeviceTest::testGetRegistersInModule() {
 	BOOST_CHECK(registerInfoList.size() == 4);
 	std::list<mtca4u::RegisterInfoMap::RegisterInfo>::iterator registerInfo =
 			registerInfoList.begin();
-	BOOST_CHECK(registerInfo->reg_name == "MODULE0");
-	BOOST_CHECK(registerInfo->reg_module == "APP0");
+	BOOST_CHECK(registerInfo->_name == "MODULE0");
+	BOOST_CHECK(registerInfo->_module == "APP0");
 	++registerInfo;
-	BOOST_CHECK(registerInfo->reg_name == "MODULE1");
-	BOOST_CHECK(registerInfo->reg_module == "APP0");
+	BOOST_CHECK(registerInfo->_name == "MODULE1");
+	BOOST_CHECK(registerInfo->_module == "APP0");
 	++registerInfo;
-	BOOST_CHECK(registerInfo->reg_name == "WORD_SCRATCH");
-	BOOST_CHECK(registerInfo->reg_module == "APP0");
+	BOOST_CHECK(registerInfo->_name == "WORD_SCRATCH");
+	BOOST_CHECK(registerInfo->_module == "APP0");
 	++registerInfo;
-	BOOST_CHECK(registerInfo->reg_name == "WORD_STATUS");
-	BOOST_CHECK(registerInfo->reg_module == "APP0");
+	BOOST_CHECK(registerInfo->_name == "WORD_STATUS");
+	BOOST_CHECK(registerInfo->_module == "APP0");
 
 }
 
@@ -612,17 +612,17 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
 
 	std::list<mtca4u::Device::RegisterAccessor>::iterator
 	accessor = accessorList.begin();
-	BOOST_CHECK(accessor->getRegisterInfo().reg_name == "MODULE0");
-	BOOST_CHECK(accessor->getRegisterInfo().reg_module == "APP0");
+	BOOST_CHECK(accessor->getRegisterInfo()._name == "MODULE0");
+	BOOST_CHECK(accessor->getRegisterInfo()._module == "APP0");
 	++accessor;
-	BOOST_CHECK(accessor->getRegisterInfo().reg_name == "MODULE1");
-	BOOST_CHECK(accessor->getRegisterInfo().reg_module == "APP0");
+	BOOST_CHECK(accessor->getRegisterInfo()._name == "MODULE1");
+	BOOST_CHECK(accessor->getRegisterInfo()._module == "APP0");
 	++accessor;
-	BOOST_CHECK(accessor->getRegisterInfo().reg_name == "WORD_SCRATCH");
-	BOOST_CHECK(accessor->getRegisterInfo().reg_module == "APP0");
+	BOOST_CHECK(accessor->getRegisterInfo()._name == "WORD_SCRATCH");
+	BOOST_CHECK(accessor->getRegisterInfo()._module == "APP0");
 	++accessor;
-	BOOST_CHECK(accessor->getRegisterInfo().reg_name == "WORD_STATUS");
-	BOOST_CHECK(accessor->getRegisterInfo().reg_module == "APP0");
+	BOOST_CHECK(accessor->getRegisterInfo()._name == "WORD_STATUS");
+	BOOST_CHECK(accessor->getRegisterInfo()._module == "APP0");
 }
 #ifdef _0
 void DeviceTest::testAccessorForMuxedData() {

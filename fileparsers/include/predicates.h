@@ -25,7 +25,7 @@ public:
 	}
 
 	bool operator()(const RegisterInfoMap::RegisterInfo& elem) {
-		if ( (elem.reg_name == name) && (elem.reg_module == module) ){
+		if ( (elem._name == name) && (elem._module == module) ){
 			return true;
 		}
 		return false;
@@ -37,14 +37,14 @@ public:
  */
 class findMetaDataByName_pred {
 private:
-	std::string name;
+	std::string _name;
 public:
 
-	findMetaDataByName_pred(const std::string &_name) : name(_name) {
+	findMetaDataByName_pred(const std::string &name) : _name(name) {
 	}
 
 	bool operator()(const RegisterInfoMap::MetaData& elem) {
-		if (elem.name == name) return true;
+		if (elem._name == _name) return true;
 		return false;
 	}
 };
@@ -54,14 +54,14 @@ public:
  */
 class findDevInPairByName_pred {
 private:
-	std::string name;
+	std::string _name;
 public:
 
-	findDevInPairByName_pred(const std::string &_name) : name(_name) {
+	findDevInPairByName_pred(const std::string &name) : _name(name) {
 	}
 
-	bool operator()(const std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> & elem) {
-		if (elem.first._deviceName == name) return true;
+	bool operator()(const std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> & elem) {
+		if (elem.first._deviceName == _name) return true;
 		return false;
 	}
 };
@@ -71,14 +71,14 @@ public:
  */
 class findDevByName_pred {
 private:
-	std::string name;
+	std::string _name;
 public:
 
-	findDevByName_pred(const std::string &_name) : name(_name) {
+	findDevByName_pred(const std::string &name) : _name(name) {
 	}
 
 	bool operator()(const DeviceInfoMap::DeviceInfo& elem) {
-		if (elem._deviceName == name) return true;
+		if (elem._deviceName == _name) return true;
 		return false;
 	}
 };
@@ -88,14 +88,14 @@ public:
  */
 class findMapFileByName_pred {
 private:
-	std::string name;
+	std::string _name;
 public:
 
-	findMapFileByName_pred(const std::string &_name) : name(_name) {
+	findMapFileByName_pred(const std::string &name) : _name(name) {
 	}
 
-	bool operator()(const ptrmapFile map) {
-		if (map->getMapFileName() == name) return true;
+	bool operator()(const RegisterInfoMapPointer map) {
+		if (map->getMapFileName() == _name) return true;
 		return false;
 	}
 };
@@ -107,11 +107,11 @@ class compareRegisterInfosByName_functor
 {
 public:
 	bool operator()(const RegisterInfoMap::RegisterInfo& first, const RegisterInfoMap::RegisterInfo& second){
-		if ( first.reg_module == second.reg_module ){
-			return first.reg_name < second.reg_name;
+		if ( first._module == second._module ){
+			return first._name < second._name;
 		}
 		else
-			return first.reg_module < second.reg_module;
+			return first._module < second._module;
 	}
 };
 
@@ -121,7 +121,7 @@ public:
 class copmaredRegisterInfosByName_functor
 {
 public:
-	bool operator()(const std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> & first, const std::pair<DeviceInfoMap::DeviceInfo, ptrmapFile> & second){
+	bool operator()(const std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> & first, const std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> & second){
 		return first.first._deviceName < second.first._deviceName;
 	}
 };
@@ -142,7 +142,7 @@ class compareModuleName_pred{
 public:
 	compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
 	bool operator()(const RegisterInfoMap::RegisterInfo & registerInfo) const{
-		return (registerInfo.reg_module == _moduleName);
+		return (registerInfo._module == _moduleName);
 	}
 	typedef RegisterInfoMap::RegisterInfo argument_type;
 private:

@@ -34,8 +34,8 @@ namespace mtca4u{
        */
       class MetaData {
         public:
-        std::string name; /**< Name of metadata attribute */
-        std::string value; /**< Value of metadata attribute */
+        std::string _name; /**< Name of metadata attribute */
+        std::string _value; /**< Value of metadata attribute */
         friend std::ostream& operator<<(std::ostream &os, const MetaData& me);
 
         /// Convenience constructor which sets all data members. They all have default values, so this
@@ -51,16 +51,16 @@ namespace mtca4u{
        */
       class RegisterInfo {
         public:
-          std::string reg_name; /**< Name of register */
-          uint32_t reg_elem_nr; /**< Number of elements in register */
-          uint32_t reg_address; /**< Offset in bytes from begining of PCIe bar */
-          uint32_t reg_size; /**< Size of register expressed in bytes */
-          uint32_t reg_bar; /**< Number of bar with register */
-          uint32_t reg_width; /**< Number of significant bits in the register */
-          int32_t  reg_frac_bits; /**< Number of fractional bits */
-          bool     reg_signed; /**< Signed/Unsigned flag */
-          uint32_t line_nr; /**< Number of line with description of register in MAP file */
-          std::string reg_module; /**< Name of the module this register is in*/
+          std::string _name; /**< Name of register */
+          uint32_t _elementCount; /**< Number of elements in register */
+          uint32_t _addressOffset; /**< Offset in bytes from begining of PCIe bar */
+          uint32_t _size; /**< Size of register expressed in bytes */
+          uint32_t _bar; /**< Number of bar with register */
+          uint32_t _width; /**< Number of significant bits in the register */
+          int32_t  _fractionalBits; /**< Number of fractional bits */
+          bool     _signedFlag; /**< Signed/Unsigned flag */
+          uint32_t _descriptionLineNumber; /**< Number of line with description of register in MAP file */
+          std::string _module; /**< Name of the module this register is in*/
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
           /// Convenience constructor which sets all data members. They all have default values, so this
@@ -73,7 +73,7 @@ namespace mtca4u{
               uint32_t the_reg_width = 32,
               int32_t  the_reg_frac_bits = 0,
               bool     the_reg_signed = true,
-              uint32_t the_line_nr = 0,
+              uint32_t the_line = 0,
               std::string const & the_reg_module = std::string() );
       };
       typedef std::vector<RegisterInfo>::iterator iterator;
@@ -114,11 +114,11 @@ namespace mtca4u{
               ERROR, /**< Critical error was detected */
               WARNING /**< Non-critical error was detected */
             } TYPE;
-            RegisterInfo err_reg_1; /**< Detailed information about first register that generate error or warning */
-            RegisterInfo err_reg_2; /**< Detailed information about second register that generate error or warning */
-            std::string err_file_name; /**< Name of the MAP file with detected error or warning*/
-            MAP_FILE_ERR err_type; /**< Type of detected problem */
-            TYPE type; /**< Class of detected problem - ERROR or WARNING*/
+            RegisterInfo _errorRegister1; /**< Detailed information about first register that generate error or warning */
+            RegisterInfo _errorRegister2; /**< Detailed information about second register that generate error or warning */
+            std::string _errorFileName; /**< Name of the MAP file with detected error or warning*/
+            MAP_FILE_ERR _errorType; /**< Type of detected problem */
+            TYPE _type; /**< Class of detected problem - ERROR or WARNING*/
             /**
              * Creates obiect that describe one detected error or warning
              *
@@ -254,14 +254,14 @@ namespace mtca4u{
       void insert(MetaData &elem);
 
     private:
-      std::vector<RegisterInfo> map_file_elems; /**< list of all registers described in MAP file*/
-      std::vector<MetaData> metadata; /**< list of all metadata detected in MAP file*/
-      std::string map_file_name; /**< name of MAP file*/
+      std::vector<RegisterInfo> _mapFileElements; /**< list of all registers described in MAP file*/
+      std::vector<MetaData> _metadata; /**< list of all metadata detected in MAP file*/
+      std::string _mapFileName; /**< name of MAP file*/
   };
   /**
-   * @typedef Introduce specialisation of shared_ptr template for pointers to RegisterInfoMap object as a ptrmapFile
+   * @typedef Introduce specialisation of shared_ptr template for pointers to RegisterInfoMap object as a RegisterInfoMapPointer
    */
-  typedef boost::shared_ptr<RegisterInfoMap> ptrmapFile;
+  typedef boost::shared_ptr<RegisterInfoMap> RegisterInfoMapPointer;
 
 
 }//namespace mtca4u

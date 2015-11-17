@@ -39,16 +39,16 @@ bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
 
 bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
                         const mtca4u::RegisterInfoMap::RegisterInfo& element2) {
-  bool result = (element1.line_nr == element2.line_nr) &&
-                (element1.reg_address == element2.reg_address) &&
-                (element1.reg_bar == element2.reg_bar) &&
-                (element1.reg_elem_nr == element2.reg_elem_nr) &&
-                (element1.reg_frac_bits == element2.reg_frac_bits) &&
-                (element1.reg_name == element2.reg_name) &&
-                (element1.reg_signed == element2.reg_signed) &&
-                (element1.reg_size == element2.reg_size) &&
-                (element1.reg_width == element2.reg_width) &&
-                (element1.reg_module == element2.reg_module);
+  bool result = (element1._descriptionLineNumber == element2._descriptionLineNumber) &&
+                (element1._addressOffset == element2._addressOffset) &&
+                (element1._bar == element2._bar) &&
+                (element1._elementCount == element2._elementCount) &&
+                (element1._fractionalBits == element2._fractionalBits) &&
+                (element1._name == element2._name) &&
+                (element1._signedFlag == element2._signedFlag) &&
+                (element1._size == element2._size) &&
+                (element1._width == element2._width) &&
+                (element1._module == element2._module);
   if (!result){
     std::cout << "Error in comparison: " << element1 << " : "<< element2 << std::endl;
   }

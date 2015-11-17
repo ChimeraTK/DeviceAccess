@@ -68,9 +68,9 @@ int main() {
 
   // set up the 'DMA' region with the hack so that we can demonstrate the
   // DemultiplexedDataAccessor functionality
-  device->writeArea(info.reg_address,
+  device->writeArea(info._addressOffset,
                       reinterpret_cast<int32_t*>(&(ioBuffer[0])),
-                      DATA_REGION_SIZE_IN_BYTES, info.reg_bar);
+                      DATA_REGION_SIZE_IN_BYTES, info._bar);
 
   /**********************************************************************/
   // Start of Real Example, now that DMA region is set up with multiplexed
