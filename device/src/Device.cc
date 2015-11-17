@@ -315,12 +315,12 @@ namespace mtca4u{
 
   void Device::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
       uint32_t addRegOffset) const {
-    read(data,dataSize,addRegOffset);
+    readRaw(data,dataSize,addRegOffset);
   }
 
   void Device::RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
       uint32_t addRegOffset) {
-    write(data,dataSize,addRegOffset);
+    writeRaw(data,dataSize,addRegOffset);
   }
 
   RegisterInfoMap::RegisterInfo const &Device::RegisterAccessor::getRegisterInfo() const {
