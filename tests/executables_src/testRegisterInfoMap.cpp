@@ -299,16 +299,16 @@ void MapFileTest::testCheckRegisterAddressOverlap(){
 	std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
 
 	errorIterator = errorList.errors.begin();
-	BOOST_CHECK(errorIterator->_errorRegister1._name == "TEST_REGISTER_NAME_3");
-	BOOST_CHECK(errorIterator->_errorRegister2._name == "TEST_REGISTER_NAME_2");
+	BOOST_CHECK(errorIterator->_errorRegister1.name == "TEST_REGISTER_NAME_3");
+	BOOST_CHECK(errorIterator->_errorRegister2.name == "TEST_REGISTER_NAME_2");
 	BOOST_CHECK(errorIterator->_errorType ==
 			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
 	BOOST_CHECK(errorIterator->_type ==
 			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 
 	++errorIterator;
-	BOOST_CHECK(errorIterator->_errorRegister1._name == "TEST_REGISTER_NAME_4");
-	BOOST_CHECK(errorIterator->_errorRegister2._name == "TEST_REGISTER_NAME_1");
+	BOOST_CHECK(errorIterator->_errorRegister1.name == "TEST_REGISTER_NAME_4");
+	BOOST_CHECK(errorIterator->_errorRegister2.name == "TEST_REGISTER_NAME_1");
 	BOOST_CHECK(errorIterator->_errorType ==
 			mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
 	BOOST_CHECK(errorIterator->_type ==
@@ -480,16 +480,16 @@ void MapFileTest::testMapFileCoutStreamOperator(){
 void MapFileTest::testRegisterInfo(){
 	// just test the constructor. Default and all arguments
 	mtca4u::RegisterInfoMap::RegisterInfo defaultRegisterInfo;
-	BOOST_CHECK( defaultRegisterInfo._name.empty() );
-	BOOST_CHECK( defaultRegisterInfo._elementCount == 0 );
-	BOOST_CHECK( defaultRegisterInfo._addressOffset == 0 );
-	BOOST_CHECK( defaultRegisterInfo._size == 0 );
-	BOOST_CHECK( defaultRegisterInfo._bar == 0 );
-	BOOST_CHECK( defaultRegisterInfo._width == 32 );
-	BOOST_CHECK( defaultRegisterInfo._fractionalBits == 0 );
-	BOOST_CHECK( defaultRegisterInfo._signedFlag == true );
-	BOOST_CHECK( defaultRegisterInfo._descriptionLineNumber == 0 );
-	BOOST_CHECK( defaultRegisterInfo._module.empty() );
+	BOOST_CHECK( defaultRegisterInfo.name.empty() );
+	BOOST_CHECK( defaultRegisterInfo.nElements == 0 );
+	BOOST_CHECK( defaultRegisterInfo.address == 0 );
+	BOOST_CHECK( defaultRegisterInfo.nBytes == 0 );
+	BOOST_CHECK( defaultRegisterInfo.bar == 0 );
+	BOOST_CHECK( defaultRegisterInfo.width == 32 );
+	BOOST_CHECK( defaultRegisterInfo.nFractionalBits == 0 );
+	BOOST_CHECK( defaultRegisterInfo.signedFlag == true );
+	BOOST_CHECK( defaultRegisterInfo.lineNumber == 0 );
+	BOOST_CHECK( defaultRegisterInfo.module.empty() );
 
 	// Set values which are all different from the default
 	mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo( "MY_NAME",
@@ -500,18 +500,18 @@ void MapFileTest::testRegisterInfo(){
 			18, // width
 			5, // frac_bits
 			false, // signed
-			123, //_descriptionLineNumber
+			123, //lineNumber
 			"MY_MODULE");
-	BOOST_CHECK( myRegisterInfo._name == "MY_NAME" );
-	BOOST_CHECK( myRegisterInfo._elementCount == 4 );
-	BOOST_CHECK( myRegisterInfo._addressOffset == 0x42 );
-	BOOST_CHECK( myRegisterInfo._size == 16 );
-	BOOST_CHECK( myRegisterInfo._bar == 3 );
-	BOOST_CHECK( myRegisterInfo._width == 18 );
-	BOOST_CHECK( myRegisterInfo._fractionalBits == 5 );
-	BOOST_CHECK( myRegisterInfo._signedFlag == false );
-	BOOST_CHECK( myRegisterInfo._descriptionLineNumber == 123 );
-	BOOST_CHECK( myRegisterInfo._module == "MY_MODULE" );
+	BOOST_CHECK( myRegisterInfo.name == "MY_NAME" );
+	BOOST_CHECK( myRegisterInfo.nElements == 4 );
+	BOOST_CHECK( myRegisterInfo.address == 0x42 );
+	BOOST_CHECK( myRegisterInfo.nBytes == 16 );
+	BOOST_CHECK( myRegisterInfo.bar == 3 );
+	BOOST_CHECK( myRegisterInfo.width == 18 );
+	BOOST_CHECK( myRegisterInfo.nFractionalBits == 5 );
+	BOOST_CHECK( myRegisterInfo.signedFlag == false );
+	BOOST_CHECK( myRegisterInfo.lineNumber == 123 );
+	BOOST_CHECK( myRegisterInfo.module == "MY_MODULE" );
 }
 
 void MapFileTest::testGetRegistersInModule(){
@@ -552,8 +552,8 @@ void MapFileTest::testGetRegistersInModule(){
 			(resultIter != resultList.end()) && (referenceIter != referenceList.end());
 			++resultIter, ++referenceIter){
 		std::stringstream message;
-		message << "Failed comparison on Register '" << referenceIter->_name
-				<< "', module '" << referenceIter->_module << "'";
+		message << "Failed comparison on Register '" << referenceIter->name
+				<< "', module '" << referenceIter->module << "'";
 		BOOST_CHECK( compareRegisterInfoents( *resultIter, *referenceIter ) == true );
 	}
 

@@ -228,10 +228,10 @@ namespace mtca4u{
       SequenceInfo const & areaInfo,
       std::vector< FixedPointConverter > const & converters ) :
       MultiplexedDataAccessor<UserType>(ioDevice, converters),
-      _ioBuffer(areaInfo._size),
+      _ioBuffer(areaInfo.nBytes),
       _areaInfo(areaInfo){
 
-      MultiplexedDataAccessor<UserType>::_nBlocks = areaInfo._size / sizeof(SequenceWordType) / converters.size();
+      MultiplexedDataAccessor<UserType>::_nBlocks = areaInfo.nBytes / sizeof(SequenceWordType) / converters.size();
 
       for (size_t i=0; i<MultiplexedDataAccessor<UserType>::_sequences.size(); ++i){
         MultiplexedDataAccessor<UserType>::_sequences[i].resize(MultiplexedDataAccessor<UserType>::_nBlocks);
@@ -249,14 +249,14 @@ namespace mtca4u{
       // if this is not a dma area -> use the readArea from the interface
       // else the read DMA
       if (isDMAMemoryArea()) {
-        MultiplexedDataAccessor<UserType>::_ioDevice->readDMA(_areaInfo._bar,
-            _areaInfo._addressOffset, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
-            _areaInfo._size);
+        MultiplexedDataAccessor<UserType>::_ioDevice->readDMA(_areaInfo.bar,
+            _areaInfo.address, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
+            _areaInfo.nBytes);
       } else {
-        MultiplexedDataAccessor<UserType>::_ioDevice->read(_areaInfo._bar,
-            _areaInfo._addressOffset, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
+        MultiplexedDataAccessor<UserType>::_ioDevice->read(_areaInfo.bar,
+            _areaInfo.address, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
             //_areaInfo.reg_size, _areaInfo.reg_bar);
-            _areaInfo._size);
+            _areaInfo.nBytes);
       }
 
       fillSequences();
@@ -283,9 +283,9 @@ namespace mtca4u{
       if (isDMAMemoryArea()) {
         throw NotImplementedException("writeViaDMA is not implemented yet");
       } else {
-        MultiplexedDataAccessor<UserType>::_ioDevice->write(_areaInfo._bar,
-            _areaInfo._addressOffset, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
-            _areaInfo._size);
+        MultiplexedDataAccessor<UserType>::_ioDevice->write(_areaInfo.bar,
+            _areaInfo.address, reinterpret_cast<int32_t*>(&(_ioBuffer[0])),
+            _areaInfo.nBytes);
       }
   }
 
@@ -309,7 +309,7 @@ namespace mtca4u{
       std::vector<SequenceInfo> const& sequenceInfos,
       std::vector< FixedPointConverter > const & converters ) :
       MultiplexedDataAccessor<UserType>(ioDevice, converters),
-      _ioBuffer(areaInfo._size),
+      _ioBuffer(areaInfo.nBytes),
       _areaInfo(areaInfo),
       _sequenceInfos(sequenceInfos){
       size_t indexTemp = 0;
@@ -318,10 +318,10 @@ namespace mtca4u{
       _sizeOneBlock = 0;
       //to change. retrieve actual size from the map file
       while (indexTemp<converters.size()){
-        wordSize += _sequenceInfos[indexTemp]._size;
+        wordSize += _sequenceInfos[indexTemp].nBytes;
         if (wordSize > 4){
           _sizeOneBlock++;
-          wordSize = _sequenceInfos[indexTemp]._size;
+          wordSize = _sequenceInfos[indexTemp].nBytes;
         }
         indexTemp++;
         if (indexTemp == converters.size()){
@@ -329,7 +329,7 @@ namespace mtca4u{
         }
       }
 
-      MultiplexedDataAccessor<UserType>::_nBlocks = areaInfo._size / 4 / _sizeOneBlock ;
+      MultiplexedDataAccessor<UserType>::_nBlocks = areaInfo.nBytes / 4 / _sizeOneBlock ;
 
       for (size_t i=0; i<MultiplexedDataAccessor<UserType>::_sequences.size(); ++i){
         MultiplexedDataAccessor<UserType>::_sequences[i].resize(MultiplexedDataAccessor<UserType>::_nBlocks);
@@ -343,14 +343,14 @@ namespace mtca4u{
       // else the read DMA
       if (isDMAMemoryArea()) {
         MultiplexedDataAccessor<UserType>::_ioDevice->readDMA(
-            _areaInfo._bar,
-            _areaInfo._addressOffset, &(_ioBuffer[0]),
-            _areaInfo._size);
+            _areaInfo.bar,
+            _areaInfo.address, &(_ioBuffer[0]),
+            _areaInfo.nBytes);
       } else {
         MultiplexedDataAccessor<UserType>::_ioDevice->read(
-            _areaInfo._bar,
-            _areaInfo._addressOffset, &(_ioBuffer[0]),
-            _areaInfo._size);
+            _areaInfo.bar,
+            _areaInfo.address, &(_ioBuffer[0]),
+            _areaInfo.nBytes);
       }
 
       fillSequences();
@@ -365,7 +365,7 @@ namespace mtca4u{
         for(size_t sequenceIndex=0;
             sequenceIndex < MultiplexedDataAccessor<UserType>::_converters.size();
             ++sequenceIndex){
-          switch(_sequenceInfos[sequenceIndex]._size){
+          switch(_sequenceInfos[sequenceIndex].nBytes){
             case 1: //8 bit variables
               MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
                   MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
@@ -394,9 +394,9 @@ namespace mtca4u{
         throw NotImplementedException("writeViaDMA is not implemented yet");
       } else {
         MultiplexedDataAccessor<UserType>::_ioDevice->write(
-            _areaInfo._bar,
-            _areaInfo._addressOffset, &(_ioBuffer[0]),
-            _areaInfo._size);
+            _areaInfo.bar,
+            _areaInfo.address, &(_ioBuffer[0]),
+            _areaInfo.nBytes);
       }
   }
 
@@ -409,7 +409,7 @@ namespace mtca4u{
         for(size_t sequenceIndex=0;
             sequenceIndex < MultiplexedDataAccessor<UserType>::_converters.size();
             ++sequenceIndex){
-          switch(_sequenceInfos[sequenceIndex]._size){
+          switch(_sequenceInfos[sequenceIndex].nBytes){
             case 1: //8 bit variables
               *(standOfMyioBuffer) = MultiplexedDataAccessor<UserType>::_converters[sequenceIndex].toRaw(
                   MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
@@ -463,18 +463,18 @@ namespace mtca4u{
           break;
         }
 
-        if( sequenceInfo._elementCount != 1 ){
+        if( sequenceInfo.nElements != 1 ){
           throw MultiplexedDataAccessorException( "Sequence words must have exactly one element",
               MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
         }
         sequencesInfo.push_back( sequenceInfo );
-        converters.push_back( FixedPointConverter( sequenceInfo._width,
-            sequenceInfo._fractionalBits,
-            sequenceInfo._signedFlag ) );
+        converters.push_back( FixedPointConverter( sequenceInfo.width,
+            sequenceInfo.nFractionalBits,
+            sequenceInfo.signedFlag ) );
         if(converters.size()==1){
-          sequenceWordSize=sequenceInfo._size;
+          sequenceWordSize=sequenceInfo.nBytes;
         }else{
-          if(sequenceWordSize != sequenceInfo._size){
+          if(sequenceWordSize != sequenceInfo.nBytes){
             useFixedType=false;
           }
         }
@@ -533,7 +533,7 @@ SequenceWordType>::isDMAMemoryArea() {
     // 0xD as the  register bar is used to indicate DMA regions in the current
     // implementation;
     // This is a detail which would probably change in the future
-    return (_areaInfo._bar == 0xD);
+    return (_areaInfo.bar == 0xD);
 }
 
 template <class UserType>
@@ -541,7 +541,7 @@ bool mtca4u::MixedTypeMuxedDataAccessor<UserType>::isDMAMemoryArea() {
     // 0xD as the  register bar is used to indicate DMA regions in the current
     // implementation;
     // This is a detail which would probably change in the future
-    return (_areaInfo._bar == 0xD);
+    return (_areaInfo.bar == 0xD);
 }
 
 #endif // _MTCA4U_SEQUENCE_DE_MULTIPLEXER_H_

@@ -425,11 +425,11 @@ void DMapFilesParserTest::testCheckParsedInInfo() {
 	mapErrIt = map_err_list.errors.begin();
 
 	bool areNonUniqueRegistersPresent =
-			((mapErrIt->_errorRegister1._name == mapErrIt->_errorRegister2._name) &&
-					((mapErrIt->_errorRegister1._addressOffset != mapErrIt->_errorRegister2._addressOffset) ||
-							(mapErrIt->_errorRegister1._bar != mapErrIt->_errorRegister2._bar) ||
-							(mapErrIt->_errorRegister1._elementCount != mapErrIt->_errorRegister2._elementCount) ||
-							(mapErrIt->_errorRegister1._size != mapErrIt->_errorRegister2._size)));
+			((mapErrIt->_errorRegister1.name == mapErrIt->_errorRegister2.name) &&
+					((mapErrIt->_errorRegister1.address != mapErrIt->_errorRegister2.address) ||
+							(mapErrIt->_errorRegister1.bar != mapErrIt->_errorRegister2.bar) ||
+							(mapErrIt->_errorRegister1.nElements != mapErrIt->_errorRegister2.nElements) ||
+							(mapErrIt->_errorRegister1.nBytes != mapErrIt->_errorRegister2.nBytes)));
 	BOOST_CHECK(areNonUniqueRegistersPresent);
 }
 

@@ -136,9 +136,9 @@ namespace mtca4u {
 
       /// check if the given address is in range of the register
       bool isAddressInRange(uint8_t bar, uint32_t address, size_t length) {
-        return ( bar == registerInfo._bar &&
-                 address >= registerInfo._addressOffset &&
-                 address+length <= registerInfo._addressOffset+registerInfo._size );
+        return ( bar == registerInfo.bar &&
+                 address >= registerInfo.address &&
+                 address+length <= registerInfo.address+registerInfo.nBytes );
       }
 
     protected:
@@ -174,7 +174,7 @@ namespace mtca4u {
       : _dev(dev)
       {
         _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
-        fpc =  FixedPointConverter(registerInfo._width, registerInfo._fractionalBits, registerInfo._signedFlag);
+        fpc =  FixedPointConverter(registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
         // initialise the base DummyRegisterElement
         proxies::DummyRegisterElement<T>::fpcptr = &fpc;
         proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
@@ -190,7 +190,7 @@ namespace mtca4u {
       /// return number of elements
       unsigned int getNumberOfElements()
       {
-        return registerInfo._elementCount;
+        return registerInfo.nElements;
       }
 
       /// expose = operator from base class
@@ -207,7 +207,7 @@ namespace mtca4u {
       /// return element
       inline uint32_t* getElement(unsigned int index) {
         return reinterpret_cast<uint32_t*>
-        (&(_dev->_barContents[registerInfo._bar][registerInfo._addressOffset/sizeof(uint32_t) + index]));
+        (&(_dev->_barContents[registerInfo.bar][registerInfo.address/sizeof(uint32_t) + index]));
       }
 
       /// return a proxy object
@@ -251,12 +251,12 @@ namespace mtca4u {
             break;
           }
           // create fixed point converter for sequence
-          fpc.push_back( FixedPointConverter(elem._width, elem._fractionalBits, elem._signedFlag) );
+          fpc.push_back( FixedPointConverter(elem.width, elem.nFractionalBits, elem.signedFlag) );
           // store offsets and number of bytes per word
-          offsets.push_back(elem._addressOffset);
-          nbytes.push_back(elem._size);
+          offsets.push_back(elem.address);
+          nbytes.push_back(elem.nBytes);
           // determine pitch
-          pitch += elem._size;
+          pitch += elem.nBytes;
         }
 
         if(fpc.empty()) {
@@ -264,7 +264,7 @@ namespace mtca4u {
         }
 
         // compute number of elements per sequence
-        nElements = registerInfo._elementCount/fpc.size();
+        nElements = registerInfo.nElements/fpc.size();
       }
 
       /// return number of elements per sequence
@@ -285,8 +285,8 @@ namespace mtca4u {
       /// Example: myMuxRegister[3][987] will give you the 988th sample of the 4th channel.
       inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence)
       {
-        int8_t *basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo._bar].data());
-        uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + (registerInfo._addressOffset + offsets[sequence]));
+        int8_t *basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.bar].data());
+        uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + (registerInfo.address + offsets[sequence]));
         return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
       }
 

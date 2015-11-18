@@ -32,10 +32,10 @@ namespace mtca4u {
       BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, RegisterInfoMap::RegisterInfo &registerInfo)
           : _registerInfo(registerInfo),
             _dev(dev) {
-        fixedPointConverter = FixedPointConverter(registerInfo._width, registerInfo._fractionalBits,
-            registerInfo._signedFlag);
-        rawBuffer.resize(registerInfo._elementCount);
-        cookedBuffer.resize(registerInfo._elementCount);
+        fixedPointConverter = FixedPointConverter(registerInfo.width, registerInfo.nFractionalBits,
+            registerInfo.signedFlag);
+        rawBuffer.resize(registerInfo.nElements);
+        cookedBuffer.resize(registerInfo.nElements);
       }
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
@@ -46,7 +46,7 @@ namespace mtca4u {
       /** Read the data from the device, convert it and store in buffer.
        */
       void read() {
-        _dev->read(_registerInfo._bar, _registerInfo._addressOffset, rawBuffer.data(),
+        _dev->read(_registerInfo.bar, _registerInfo.address, rawBuffer.data(),
             getNumberOfElements() * sizeof(uint32_t));
         for(unsigned int i = 0; i < getNumberOfElements(); i++) {
           cookedBuffer[i] = fixedPointConverter.template toCooked<T>(rawBuffer[i]);
@@ -59,7 +59,7 @@ namespace mtca4u {
         for(unsigned int i = 0; i < getNumberOfElements(); i++) {
           rawBuffer[i] = fixedPointConverter.toRaw(cookedBuffer[i]);
         }
-        _dev->write(_registerInfo._bar, _registerInfo._addressOffset, rawBuffer.data(),
+        _dev->write(_registerInfo.bar, _registerInfo.address, rawBuffer.data(),
             getNumberOfElements() * sizeof(uint32_t));
       }
 

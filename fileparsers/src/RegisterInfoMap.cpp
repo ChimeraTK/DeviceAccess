@@ -57,7 +57,7 @@ void RegisterInfoMap::getMetaData(const std::string &metaDataName, std::string& 
 	if (iter == _metadata.end()) {
 		throw MapFileException("Cannot find metadata " + metaDataName + " in map file: " + _mapFileName, LibMapException::EX_NO_METADATA_IN_MAP_FILE);
 	}
-	metaDataValue = (*iter)._value;
+	metaDataValue = (*iter).value;
 }
 
 namespace {
@@ -86,7 +86,7 @@ bool RegisterInfoMap::check(ErrorList &err, RegisterInfoMap::ErrorList::ErrorEle
 	iter_p = map_file.begin();
 	iter_n = iter_p + 1;
 	while (1) {
-		if ( (iter_p->_name == iter_n->_name) && (iter_p->_module == iter_n->_module) ) {
+		if ( (iter_p->name == iter_n->name) && (iter_p->module == iter_n->module) ) {
 			err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::ERROR,
 					ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME,
 					*iter_p, *iter_n, _mapFileName));
@@ -100,25 +100,25 @@ bool RegisterInfoMap::check(ErrorList &err, RegisterInfoMap::ErrorList::ErrorEle
 	}
 
 	for (iter_p = map_file.begin(); iter_p != map_file.end(); iter_p++) {
-		address.start = iter_p->_addressOffset;
-		address.end = iter_p->_addressOffset + iter_p->_size;
+		address.start = iter_p->address;
+		address.end = iter_p->address + iter_p->nBytes;
 		address.iter = iter_p;
 		for (v_iter = v_addresses.begin(); v_iter != v_addresses.end(); v_iter++) {
 			// only addresses in the same module are considered to overlap
-			if (iter_p->_module != v_iter->iter->_module){
+			if (iter_p->module != v_iter->iter->module){
 				continue;
 			}
 
-			if (iter_p->_bar == (v_iter->iter)->_bar) {
-				if ( (v_iter->start >= iter_p->_addressOffset) &&
-						(v_iter->start < (iter_p->_addressOffset + iter_p->_size)) ) {
+			if (iter_p->bar == (v_iter->iter)->bar) {
+				if ( (v_iter->start >= iter_p->address) &&
+						(v_iter->start < (iter_p->address + iter_p->nBytes)) ) {
 					if (level >= ErrorList::ErrorElem::WARNING){
 						err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::WARNING,
 								ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES,
 								*iter_p, *(v_iter->iter), _mapFileName));
 						ret = false;
 					}
-				} else if ( (v_iter->start <= iter_p->_addressOffset) && (iter_p->_addressOffset < v_iter->end) ) {
+				} else if ( (v_iter->start <= iter_p->address) && (iter_p->address < v_iter->end) ) {
 					if (level >= ErrorList::ErrorElem::WARNING){
 						err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::WARNING,
 								ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES,
@@ -134,16 +134,16 @@ bool RegisterInfoMap::check(ErrorList &err, RegisterInfoMap::ErrorList::ErrorEle
 }
 
 std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::MetaData& me) {
-	os << "METADATA-> NAME: \"" << me._name << "\" VALUE: " << me._value << std::endl;
+	os << "METADATA-> NAME: \"" << me.name << "\" VALUE: " << me.value << std::endl;
 	return os;
 }
 
 std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo& registerInfo) {
-	os << registerInfo._name << " 0x" << std::hex << registerInfo._elementCount << " 0x" << registerInfo._addressOffset
-			<< " 0x" << registerInfo._size << " 0x" << registerInfo._bar << std::dec
-			<< " " << registerInfo._width << " " << registerInfo._fractionalBits << " "
-			<< (registerInfo._signedFlag?"true":"false" )
-			<< (!registerInfo._module.empty()?" "+registerInfo._module:"");
+	os << registerInfo.name << " 0x" << std::hex << registerInfo.nElements << " 0x" << registerInfo.address
+			<< " 0x" << registerInfo.nBytes << " 0x" << registerInfo.bar << std::dec
+			<< " " << registerInfo.width << " " << registerInfo.nFractionalBits << " "
+			<< (registerInfo.signedFlag?"true":"false" )
+			<< (!registerInfo.module.empty()?" "+registerInfo.module:"");
 	return os;
 }
 
@@ -173,10 +173,10 @@ RegisterInfoMap::ErrorList::ErrorElem::ErrorElem(RegisterInfoMap::ErrorList::Err
 std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::ErrorList::ErrorElem& me) {
 	switch (me._errorType) {
 	case RegisterInfoMap::ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME:
-		os << me._type << ": Found two registers with the same name: \"" << me._errorRegister1._name << "\" in file " << me._errorFileName << " in lines " << me._errorRegister1._descriptionLineNumber << " and " << me._errorRegister2._descriptionLineNumber;
+		os << me._type << ": Found two registers with the same name: \"" << me._errorRegister1.name << "\" in file " << me._errorFileName << " in lines " << me._errorRegister1.lineNumber << " and " << me._errorRegister2.lineNumber;
 		break;
 	case RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES:
-		os << me._type << ": Found two registers with overlapping addresses: \"" << me._errorRegister1._name << "\" and \"" << me._errorRegister2._name << "\" in file " << me._errorFileName << " in lines " << me._errorRegister1._descriptionLineNumber << " and " << me._errorRegister2._descriptionLineNumber;
+		os << me._type << ": Found two registers with overlapping addresses: \"" << me._errorRegister1.name << "\" and \"" << me._errorRegister2.name << "\" in file " << me._errorFileName << " in lines " << me._errorRegister1.lineNumber << " and " << me._errorRegister2.lineNumber;
 		break;
 	}
 	return os;
@@ -256,24 +256,24 @@ std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule
 	return RegisterInfoentList;
 }
 
-RegisterInfoMap::MetaData::MetaData( std::string const & the_name,
-		std::string const & the_value)
-: _name(the_name), _value(the_value)
+RegisterInfoMap::MetaData::MetaData( std::string const & name_,
+		std::string const & value_)
+: name(name_), value(value_)
 {}
 
-RegisterInfoMap::RegisterInfo::RegisterInfo( std::string const & the_reg_name,
-		uint32_t the_reg_elem_nr,
-		uint32_t the_reg_address,
-		uint32_t the_reg_size,
-		uint32_t the_reg_bar,
-		uint32_t the_reg_width,
-		int32_t  the_reg_frac_bits,
-		bool     the_reg_signed,
-		uint32_t the_line_nr,
-		std::string const & the_reg_module)
-: _name( the_reg_name ),  _elementCount(the_reg_elem_nr), _addressOffset(the_reg_address),
-	_size(the_reg_size), _bar(the_reg_bar), _width(the_reg_width), _fractionalBits(the_reg_frac_bits),
-	_signedFlag(the_reg_signed), _descriptionLineNumber(the_line_nr), _module(the_reg_module)
+RegisterInfoMap::RegisterInfo::RegisterInfo( std::string const & name_,
+		uint32_t nElements_,
+		uint32_t address_,
+		uint32_t nBytes_,
+		uint32_t bar_,
+		uint32_t width_,
+		int32_t  nFractionalBits_,
+		bool     signedFlag_,
+		uint32_t lineNumber_,
+		std::string const & module_)
+: name( name_ ),  nElements(nElements_), address(address_),
+  nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
+  signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
 {}
 
 }//namespace mtca4u

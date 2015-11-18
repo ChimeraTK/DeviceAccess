@@ -39,7 +39,7 @@ void testDeMultiplexing(std::string areaName){
 	SequenceInfo sequenceInfo;
 	registerMap->getRegisterInfo(areaName, sequenceInfo, TEST_MODULE_NAME);
 
-	std::vector< SequenceWordType > ioBuffer( sequenceInfo._size/
+	std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/
 			sizeof(SequenceWordType) );
 	ioBuffer[0] = 'A';
 	ioBuffer[1] = 'a';
@@ -57,9 +57,9 @@ void testDeMultiplexing(std::string areaName){
 	ioBuffer[13] = 'e';
 	ioBuffer[14] = '4';
 
-	ioDevice->write( sequenceInfo._bar, sequenceInfo._addressOffset,
+	ioDevice->write( sequenceInfo.bar, sequenceInfo.address,
 			reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-			sequenceInfo._size
+			sequenceInfo.nBytes
 	);
 
 	FixedTypeMuxedDataAccessor< SequenceWordType, SequenceWordType >
@@ -90,9 +90,9 @@ void testDeMultiplexing(std::string areaName){
 	}
 
 	deMultiplexer.write();
-	ioDevice->read( sequenceInfo._bar, sequenceInfo._addressOffset,
+	ioDevice->read( sequenceInfo.bar, sequenceInfo.address,
 			reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-			sequenceInfo._size );
+			sequenceInfo.nBytes );
 
 	BOOST_CHECK( ioBuffer[0] == 'F' );
 	BOOST_CHECK( ioBuffer[1] == 'f' );
@@ -137,16 +137,16 @@ void testWithConversion(std::string multiplexedSequenceName){
 	registerMap->getRegisterInfo( MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName,
 			sequenceInfo, TEST_MODULE_NAME);
 
-	std::vector< SequenceWordType > ioBuffer( sequenceInfo._size/
+	std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/
 			sizeof(SequenceWordType) );
 
 	for (size_t i=0; i < ioBuffer.size(); ++i){
 		ioBuffer[i] = i;
 	}
 
-	ioDevice->write( sequenceInfo._bar , sequenceInfo._addressOffset,
+	ioDevice->write( sequenceInfo.bar , sequenceInfo.address,
 			reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-			sequenceInfo._size
+			sequenceInfo.nBytes
 	);
 
 	boost::shared_ptr< MultiplexedDataAccessor< float > >
@@ -179,11 +179,11 @@ void testWithConversion(std::string multiplexedSequenceName){
 	}
 
 	deMultiplexer->write();
-	ioDevice->read( sequenceInfo._bar, sequenceInfo._addressOffset,
+	ioDevice->read( sequenceInfo.bar, sequenceInfo.address,
 			reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-			//sequenceInfo._size,
-			//sequenceInfo._bar );
-			sequenceInfo._size );
+			//sequenceInfo.nBytes,
+			//sequenceInfo.bar );
+			sequenceInfo.nBytes );
 
 	for (size_t i=0; i < 15; ++i){
 		// with i%3+1 fractional bits the added floating point value of 1
@@ -257,15 +257,15 @@ BOOST_AUTO_TEST_CASE( testReadWriteToDMARegion ){
 			sequenceInfo, TEST_MODULE_NAME);
 
 
-	std::vector<int16_t> ioBuffer( sequenceInfo._size / sizeof(int16_t) );
+	std::vector<int16_t> ioBuffer( sequenceInfo.nBytes / sizeof(int16_t) );
 
 	for (size_t i = 0; i < ioBuffer.size(); ++i){
 		ioBuffer[i]=i;
 	}
 
-	ioDevice->write( sequenceInfo._bar, sequenceInfo._addressOffset,
+	ioDevice->write( sequenceInfo.bar, sequenceInfo.address,
 			reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-			sequenceInfo._size
+			sequenceInfo.nBytes
 	);
 
 	boost::shared_ptr< MultiplexedDataAccessor< double > >deMultiplexer =
@@ -324,9 +324,9 @@ BOOST_AUTO_TEST_CASE(testMixed){
 			break;
 		}
 		sequencesInfo.push_back( sequenceInfo );
-		converters.push_back( FixedPointConverter( sequenceInfo._width,
-				sequenceInfo._fractionalBits,
-				sequenceInfo._signedFlag ) );
+		converters.push_back( FixedPointConverter( sequenceInfo.width,
+				sequenceInfo.nFractionalBits,
+				sequenceInfo.signedFlag ) );
 	}
 
 	MixedTypeMuxedDataAccessor<double> myMixedData( ioDevice,

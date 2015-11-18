@@ -203,8 +203,8 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
 	RegisterInfoMap::RegisterInfo mappingElement;
 	dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING,
 			mappingElement);
-	uint32_t offset = mappingElement._addressOffset;
-	uint8_t bar = mappingElement._bar;
+	uint32_t offset = mappingElement.address;
+	uint8_t bar = mappingElement.bar;
 	int32_t dataContent = -1;
 	//BOOST_CHECK_NO_THROW(dummyBackend->readReg(bar, offset, &dataContent));
 	BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &dataContent,4));
@@ -235,10 +235,10 @@ void DummyBackendTest::testReadWriteMultiWordRegister(
 	dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
 			mappingElement);
 
-	uint32_t offset = mappingElement._addressOffset;
-	uint8_t bar = mappingElement._bar;
-	size_t sizeInBytes = mappingElement._size;
-	size_t sizeInWords = mappingElement._size / sizeof(int32_t);
+	uint32_t offset = mappingElement.address;
+	uint8_t bar = mappingElement.bar;
+	size_t sizeInBytes = mappingElement.nBytes;
+	size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
 	std::vector<int32_t> dataContent(sizeInWords, -1);
 
 	BOOST_CHECK_NO_THROW((dummyBackend->*readFunction)(bar, offset, &(dataContent[0]),
@@ -350,10 +350,10 @@ void DummyBackendTest::testReadOnly() {
 	dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
 			mappingElement);
 
-	uint32_t offset = mappingElement._addressOffset;
-	uint8_t bar = mappingElement._bar;
-	size_t sizeInBytes = mappingElement._size;
-	size_t sizeInWords = mappingElement._size / sizeof(int32_t);
+	uint32_t offset = mappingElement.address;
+	uint8_t bar = mappingElement.bar;
+	size_t sizeInBytes = mappingElement.nBytes;
+	size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
 	std::stringstream errorMessage;
 	errorMessage << "This register should have 4 words. "
 			<< "If you changed your mapping you have to adapt "

@@ -227,10 +227,10 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
     throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   (*dmap_iter).second->getRegisterInfo(reg_name, elem);
-  reg_offset = elem._addressOffset;
-  reg_size = elem._size;
-  reg_elem_nr = elem._elementCount;
-  reg_bar = elem._bar;
+  reg_offset = elem.address;
+  reg_size = elem.nBytes;
+  reg_elem_nr = elem.nElements;
+  reg_bar = elem.bar;
   dev_file = (*dmap_iter).first.deviceFile;
 }
 

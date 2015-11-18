@@ -34,8 +34,8 @@ namespace mtca4u{
        */
       class MetaData {
         public:
-        std::string _name; /**< Name of metadata attribute */
-        std::string _value; /**< Value of metadata attribute */
+        std::string name; /**< Name of metadata attribute */
+        std::string value; /**< Value of metadata attribute */
         friend std::ostream& operator<<(std::ostream &os, const MetaData& me);
 
         /// Convenience constructor which sets all data members. They all have default values, so this
@@ -51,30 +51,30 @@ namespace mtca4u{
        */
       class RegisterInfo {
         public:
-          std::string _name; /**< Name of register */
-          uint32_t _elementCount; /**< Number of elements in register */
-          uint32_t _addressOffset; /**< Offset in bytes from begining of PCIe bar */
-          uint32_t _size; /**< Size of register expressed in bytes */
-          uint32_t _bar; /**< Number of bar with register */
-          uint32_t _width; /**< Number of significant bits in the register */
-          int32_t  _fractionalBits; /**< Number of fractional bits */
-          bool     _signedFlag; /**< Signed/Unsigned flag */
-          uint32_t _descriptionLineNumber; /**< Number of line with description of register in MAP file */
-          std::string _module; /**< Name of the module this register is in*/
+          std::string name; /**< Name of register */
+          uint32_t nElements; /**< Number of elements in register */
+          uint32_t address; /**< Relative address in bytes from beginning  of the bar(Base Address Range)*/
+          uint32_t nBytes; /**< Size of register expressed in bytes */
+          uint32_t bar; /**< Number of bar with register */
+          uint32_t width; /**< Number of significant bits in the register */
+          int32_t  nFractionalBits; /**< Number of fractional bits */
+          bool     signedFlag; /**< Signed/Unsigned flag */
+          uint32_t lineNumber; /**< Number of line with description of register in MAP file */
+          std::string module; /**< Name of the module this register is in*/
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
           /// Convenience constructor which sets all data members. They all have default values, so this
           /// also acts as default constructor.
-          RegisterInfo(std::string const & the_reg_name = std::string(), // an empty string
-              uint32_t the_reg_elem_nr = 0,
-              uint32_t the_reg_address = 0,
-              uint32_t the_reg_size = 0,
-              uint32_t the_reg_bar = 0,
-              uint32_t the_reg_width = 32,
-              int32_t  the_reg_frac_bits = 0,
-              bool     the_reg_signed = true,
-              uint32_t the_line = 0,
-              std::string const & the_reg_module = std::string() );
+          RegisterInfo(std::string const & name_ = std::string(), // an empty string
+              uint32_t nElements_ = 0,
+              uint32_t address_ = 0,
+              uint32_t nBytes_ = 0,
+              uint32_t bar_ = 0,
+              uint32_t width_ = 32,
+              int32_t  nFractionalBits_ = 0,
+              bool     signedFlag_ = true,
+              uint32_t lineNumber_ = 0,
+              std::string const & module_ = std::string() );
       };
       typedef std::vector<RegisterInfo>::iterator iterator;
       typedef std::vector<RegisterInfo>::const_iterator const_iterator;

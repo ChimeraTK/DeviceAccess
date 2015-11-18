@@ -35,15 +35,15 @@ RegisterInfoMapPointer MapFileParser::parse(const std::string &file_name)
 			// ... and remove all the whitespace after it
 			line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
 			is.str(line);
-			is >> md._name;
+			is >> md.name;
 			if (!is){
 				std::ostringstream os;
 				os << line_nr;
 				throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + org_line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
 			}
-			line.erase(line.begin(), line.begin() + md._name.length());
+			line.erase(line.begin(), line.begin() + md.name.length());
 			line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
-			md._value = line;
+			md.value = line;
 			pmap->insert(md);
 			is.clear();
 			continue;
@@ -54,35 +54,35 @@ RegisterInfoMapPointer MapFileParser::parse(const std::string &file_name)
 		is >> moduleAndRegisterName;
 
 		std::pair<std::string, std::string> moduleAndNamePair = splitStringAtLastDot(moduleAndRegisterName);
-		registerInfo._module = moduleAndNamePair.first;
-		registerInfo._name = moduleAndNamePair.second;
-		if ( registerInfo._name.empty() ){
+		registerInfo.module = moduleAndNamePair.first;
+		registerInfo.name = moduleAndNamePair.second;
+		if ( registerInfo.name.empty() ){
 			std::ostringstream errorMessage;
 			errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
 			throw MapFileParserException(errorMessage.str(), LibMapException::EX_MAP_FILE_PARSE_ERROR);
 		}
 
-		is >> std::setbase(0) >> registerInfo._elementCount >> std::setbase(0) >> registerInfo._addressOffset >> std::setbase(0) >> registerInfo._size;
+		is >> std::setbase(0) >> registerInfo.nElements >> std::setbase(0) >> registerInfo.address >> std::setbase(0) >> registerInfo.nBytes;
 		if (!is){
 			std::ostringstream os;
 			os << line_nr;
 			throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
 		}
 		// first, set default values for 'optional' fields
-		registerInfo._bar = 0x0;
-		registerInfo._width= 32;
-		registerInfo._fractionalBits = 0;
-		registerInfo._signedFlag = true;
-		is >> std::setbase(0) >> registerInfo._bar;
+		registerInfo.bar = 0x0;
+		registerInfo.width= 32;
+		registerInfo.nFractionalBits = 0;
+		registerInfo.signedFlag = true;
+		is >> std::setbase(0) >> registerInfo.bar;
 		if (is.fail()){
 			failed = true;
 		}
 		if (!failed) {
-			is >> std::setbase(0) >> registerInfo._width;
+			is >> std::setbase(0) >> registerInfo.width;
 			if (is.fail()){
 				failed = true;
 			} else {
-				if (registerInfo._width > 32) {
+				if (registerInfo.width > 32) {
 					std::ostringstream os;
 					os << line_nr;
 					throw MapFileParserException("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
@@ -90,11 +90,11 @@ RegisterInfoMapPointer MapFileParser::parse(const std::string &file_name)
 			}
 		}
 		if (!failed) {
-			is >> std::setbase(0) >> registerInfo._fractionalBits;
+			is >> std::setbase(0) >> registerInfo.nFractionalBits;
 			if (is.fail()){
 				failed = true;
 			} else {
-				if (registerInfo._fractionalBits > 1023 || registerInfo._fractionalBits < -1024) {
+				if (registerInfo.nFractionalBits > 1023 || registerInfo.nFractionalBits < -1024) {
 					std::ostringstream os;
 					os << line_nr;
 					throw MapFileParserException("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
@@ -103,14 +103,14 @@ RegisterInfoMapPointer MapFileParser::parse(const std::string &file_name)
 		}
 
 		if (!failed) {
-			is >> std::setbase(0) >> registerInfo._signedFlag;
+			is >> std::setbase(0) >> registerInfo.signedFlag;
 			// no need to check if 'is' failed. Insert a check to set the failed flags if more fields are added
 			//if (is.fail()){
 			//  failed = true;
 			//}
 		}
 		is.clear();
-		registerInfo._descriptionLineNumber = line_nr;
+		registerInfo.lineNumber = line_nr;
 		pmap->insert(registerInfo);
 	}
 	return pmap;

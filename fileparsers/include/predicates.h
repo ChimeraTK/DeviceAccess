@@ -17,15 +17,15 @@ namespace mtca4u{
  */
 class findRegisterByName_pred {
 private:
-	std::string name, module;
+	std::string _name, _module;
 public:
 
-	findRegisterByName_pred(const std::string &_name, const std::string &_module)
-	: name(_name), module(_module) {
+	findRegisterByName_pred(const std::string &name, const std::string &module)
+	: _name(name), _module(module) {
 	}
 
 	bool operator()(const RegisterInfoMap::RegisterInfo& elem) {
-		if ( (elem._name == name) && (elem._module == module) ){
+		if ( (elem.name == _name) && (elem.module == _module) ){
 			return true;
 		}
 		return false;
@@ -44,7 +44,7 @@ public:
 	}
 
 	bool operator()(const RegisterInfoMap::MetaData& elem) {
-		if (elem._name == _name) return true;
+		if (elem.name == _name) return true;
 		return false;
 	}
 };
@@ -107,11 +107,11 @@ class compareRegisterInfosByName_functor
 {
 public:
 	bool operator()(const RegisterInfoMap::RegisterInfo& first, const RegisterInfoMap::RegisterInfo& second){
-		if ( first._module == second._module ){
-			return first._name < second._name;
+		if ( first.module == second.module ){
+			return first.name < second.name;
 		}
 		else
-			return first._module < second._module;
+			return first.module < second.module;
 	}
 };
 
@@ -142,7 +142,7 @@ class compareModuleName_pred{
 public:
 	compareModuleName_pred(std::string const & moduleName) : _moduleName(moduleName){}
 	bool operator()(const RegisterInfoMap::RegisterInfo & registerInfo) const{
-		return (registerInfo._module == _moduleName);
+		return (registerInfo.module == _moduleName);
 	}
 	typedef RegisterInfoMap::RegisterInfo argument_type;
 private:

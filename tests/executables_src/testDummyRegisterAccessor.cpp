@@ -401,25 +401,25 @@ void DummyRegisterTest::testDummyRegisterAddressChecker() {
   RegisterInfoMap::RegisterInfo info;
   device->_registerMapping->getRegisterInfo("ANOTHER_REGISTER",info,"APP0");
   DummyRegisterAddressChecker checker(info);
-  BOOST_CHECK( checker.isAddressInRange(info._bar, info._addressOffset, 1) == true );
-  BOOST_CHECK( checker.isAddressInRange(info._bar, info._addressOffset, 4) == true );
-  BOOST_CHECK( checker.isAddressInRange(info._bar, info._addressOffset, 5) == false );
-  BOOST_CHECK( checker.isAddressInRange(info._bar + 1, info._addressOffset, 1) == false );
-  BOOST_CHECK( checker.isAddressInRange(info._bar, info._addressOffset - 1, 1) == false);
-  BOOST_CHECK( checker.isAddressInRange(info._bar, info._addressOffset + 3, 1) == true );
-  BOOST_CHECK( checker.isAddressInRange(info._bar, info._addressOffset + 4, 1) == false );
+  BOOST_CHECK( checker.isAddressInRange(info.bar, info.address, 1) == true );
+  BOOST_CHECK( checker.isAddressInRange(info.bar, info.address, 4) == true );
+  BOOST_CHECK( checker.isAddressInRange(info.bar, info.address, 5) == false );
+  BOOST_CHECK( checker.isAddressInRange(info.bar + 1, info.address, 1) == false );
+  BOOST_CHECK( checker.isAddressInRange(info.bar, info.address - 1, 1) == false);
+  BOOST_CHECK( checker.isAddressInRange(info.bar, info.address + 3, 1) == true );
+  BOOST_CHECK( checker.isAddressInRange(info.bar, info.address + 4, 1) == false );
 
   // open the device
   device->open();
 
   // check via DummyRegisterAccessor
   device->_registerMapping->getRegisterInfo("SOME_REGISTER",info,"APP0");
-  BOOST_CHECK( device->someRegister.isAddressInRange(info._bar, info._addressOffset, 1) == true );
-  BOOST_CHECK( device->someRegister.isAddressInRange(info._bar, info._addressOffset, 40) == true );
-  BOOST_CHECK( device->someRegister.isAddressInRange(info._bar, info._addressOffset, 41) == false );
-  BOOST_CHECK( device->someRegister.isAddressInRange(info._bar + 1, info._addressOffset, 1) == false );
-  BOOST_CHECK( device->someRegister.isAddressInRange(info._bar, info._addressOffset + 39, 1) == true );
-  BOOST_CHECK( device->someRegister.isAddressInRange(info._bar, info._addressOffset + 40, 1) == false );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.bar, info.address, 1) == true );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.bar, info.address, 40) == true );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.bar, info.address, 41) == false );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.bar + 1, info.address, 1) == false );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.bar, info.address + 39, 1) == true );
+  BOOST_CHECK( device->someRegister.isAddressInRange(info.bar, info.address + 40, 1) == false );
 
   // close the device
   device->close();
