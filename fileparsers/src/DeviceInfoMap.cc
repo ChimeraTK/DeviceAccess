@@ -10,7 +10,7 @@ DeviceInfoMap::DeviceInfoMap(const std::string &fileName)
 }
 
 size_t DeviceInfoMap::getSize() {
-	return _dmapFileElements.size();
+	return _deviceInfoElements.size();
 }
 
 std::ostream& operator<<(std::ostream &os, const DeviceInfoMap& deviceInfoMap) {
@@ -18,44 +18,44 @@ std::ostream& operator<<(std::ostream &os, const DeviceInfoMap& deviceInfoMap) {
 	os << "=======================================" << std::endl;
 	os << "MAP FILE NAME: " << deviceInfoMap._dmapFileName << std::endl;
 	os << "---------------------------------------" << std::endl;
-	for (size = 0; size < deviceInfoMap._dmapFileElements.size(); size++) {
-		os << deviceInfoMap._dmapFileElements[size] << std::endl;
+	for (size = 0; size < deviceInfoMap._deviceInfoElements.size(); size++) {
+		os << deviceInfoMap._deviceInfoElements[size] << std::endl;
 	}
 	os << "=======================================";
 	return os;
 }
 
 void DeviceInfoMap::insert(const DeviceInfo &elem) {
-	_dmapFileElements.push_back(elem);
+  _deviceInfoElements.push_back(elem);
 }
 
 void DeviceInfoMap::getDeviceInfo(const std::string& deviceName, DeviceInfo &value) {
 	std::vector<DeviceInfo>::iterator iter;
-	iter = find_if(_dmapFileElements.begin(), _dmapFileElements.end(), findDevByName_pred(deviceName));
-	if (iter == _dmapFileElements.end()) {
+	iter = find_if(_deviceInfoElements.begin(), _deviceInfoElements.end(), findDevByName_pred(deviceName));
+	if (iter == _deviceInfoElements.end()) {
 		throw DMapFileException("Cannot find device \"" + deviceName + "\"in DMAP file", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
 	}
 	value = *iter;
 }
 
-DeviceInfoMap::DeviceInfo::DeviceInfo() : _dmapFileLineNumber(0)
+DeviceInfoMap::DeviceInfo::DeviceInfo() : dmapFileLineNumber(0)
 {
 }        
 
 std::pair<std::string, std::string> DeviceInfoMap::DeviceInfo::getDeviceFileAndMapFileName() const
 {
-	return std::pair<std::string, std::string>(_deviceFile, _mapFileName);
+	return std::pair<std::string, std::string>(deviceFile, mapFileName);
 }        
 
 std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::DeviceInfo& deviceInfo) {
-	os << "(" << deviceInfo._dmapFileName << ") NAME: " << deviceInfo._deviceName << " DEV : " << deviceInfo._deviceFile << " MAP : " << deviceInfo._mapFileName;
+	os << "(" << deviceInfo.dmapFileName << ") NAME: " << deviceInfo.deviceName << " DEV : " << deviceInfo.deviceFile << " MAP : " << deviceInfo.mapFileName;
 	return os;
 }
 
 //fixme: why is level not used?
 bool DeviceInfoMap::check(DeviceInfoMap::ErrorList &err, DeviceInfoMap::ErrorList::ErrorElem::TYPE /*level*/) {
 
-	std::vector<DeviceInfoMap::DeviceInfo> dmaps = _dmapFileElements;
+	std::vector<DeviceInfoMap::DeviceInfo> dmaps = _deviceInfoElements;
 	std::vector<DeviceInfoMap::DeviceInfo>::iterator iter_p, iter_n;
 	bool ret = true;
 
@@ -68,8 +68,8 @@ bool DeviceInfoMap::check(DeviceInfoMap::ErrorList &err, DeviceInfoMap::ErrorLis
 	iter_p = dmaps.begin();
 	iter_n = iter_p + 1;
 	while (1) {
-		if ((*iter_p)._deviceName == (*iter_n)._deviceName) {
-			if ((*iter_p)._deviceFile != (*iter_n)._deviceFile || (*iter_p)._mapFileName != (*iter_n)._mapFileName) {
+		if ((*iter_p).deviceName == (*iter_n).deviceName) {
+			if ((*iter_p).deviceFile != (*iter_n).deviceFile || (*iter_p).mapFileName != (*iter_n).mapFileName) {
 				err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::ERROR, ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME, (*iter_p), (*iter_n)));
 				ret = false;
 			}
@@ -108,7 +108,7 @@ DeviceInfoMap::ErrorList::ErrorElem::ErrorElem(TYPE infoType, DMAP_FILE_ERR erro
 std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::ErrorList::ErrorElem& me) {
 	switch (me._errorType) {
 	case DeviceInfoMap::ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME:
-		os << me._type << ": Found two devices with the same name but different properties: \"" << me._errorDevice1._deviceName << "\" in file \"" << me._errorDevice1._dmapFileName << "\" in line " << me._errorDevice1._dmapFileLineNumber << " and \"" << me._errorDevice2._dmapFileName << "\" in line " << me._errorDevice2._dmapFileLineNumber;
+		os << me._type << ": Found two devices with the same name but different properties: \"" << me._errorDevice1.deviceName << "\" in file \"" << me._errorDevice1.dmapFileName << "\" in line " << me._errorDevice1.dmapFileLineNumber << " and \"" << me._errorDevice2.dmapFileName << "\" in line " << me._errorDevice2.dmapFileLineNumber;
 		break;
 	}
 	return os;
@@ -131,11 +131,11 @@ std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::ErrorList& me) {
 }
 
 DeviceInfoMap::iterator DeviceInfoMap::begin() {
-	return _dmapFileElements.begin();
+	return _deviceInfoElements.begin();
 }
 
 DeviceInfoMap::iterator DeviceInfoMap::end() {
-	return _dmapFileElements.end();
+	return _deviceInfoElements.end();
 }
 
 }//namespace mtca4u

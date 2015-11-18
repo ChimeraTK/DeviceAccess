@@ -30,10 +30,10 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
             continue;
         }
         is.str(line);
-        is >> de._deviceName >> de._deviceFile >> de._mapFileName;
+        is >> de.deviceName >> de.deviceFile >> de.mapFileName;
         if (is) {
-            de._dmapFileName = file_name;
-            de._dmapFileLineNumber = line_nr;
+            de.dmapFileName = file_name;
+            de.dmapFileLineNumber = line_nr;
             dmap->insert(de);
         } else {
             std::ostringstream os;

@@ -103,9 +103,9 @@ void DMapFileParserTest::testParseFile() {
 			getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 	std::cout<<getCurrentWorkingDirectory()<<std::endl;
 
-	deviceInfo1._dmapFileLineNumber = 3;
-	deviceInfo2._dmapFileLineNumber = 4;
-	deviceInfo3._dmapFileLineNumber = 5;
+	deviceInfo1.dmapFileLineNumber = 3;
+	deviceInfo2.dmapFileLineNumber = 4;
+	deviceInfo3.dmapFileLineNumber = 5;
 
 	// we use require here so it is safe to increase and dereference the iterator below
 	BOOST_REQUIRE( mapFilePtr->getSize() == 3);

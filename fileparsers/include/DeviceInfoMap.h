@@ -33,11 +33,11 @@ public:
 	 */
 	class DeviceInfo {
 	public:
-		std::string _deviceName; /**< logical name of the device*/
-		std::string _deviceFile; /**< name of dev file (in direcotry /dev)*/
-		std::string _mapFileName; /**< name of the MAP file storing information about PCIe registers mapping*/
-		std::string _dmapFileName; /**< name of the DMAP file*/
-		uint32_t _dmapFileLineNumber;/**< line number in DMAP file storing listed above information*/
+		std::string deviceName; /**< logical name of the device*/
+		std::string deviceFile; /**< name of dev file (in direcotry /dev)*/
+		std::string mapFileName; /**< name of the MAP file storing information about PCIe registers mapping*/
+		std::string dmapFileName; /**< name of the DMAP file*/
+		uint32_t dmapFileLineNumber;/**< line number in DMAP file storing listed above information*/
 	public:
 		/**
 		 * Default class constructor
@@ -177,7 +177,7 @@ public:
 	const_iterator end() const;
 
 private:
-	std::vector<DeviceInfo> _dmapFileElements; /**< vector storing parsed contents of DMAP file*/
+	std::vector<DeviceInfo> _deviceInfoElements; /**< vector storing parsed contents of DMAP file*/
 	std::string _dmapFileName; /**< name of DMAP file*/
 
 public:

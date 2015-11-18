@@ -155,7 +155,7 @@ DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::str
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
     std::cout << (*deviceIter).first.dev_name << std::endl;
-    std::cout << (*deviceIter).first._deviceFile << std::endl;
+    std::cout << (*deviceIter).first.deviceFile << std::endl;
     std::cout << (*deviceIter).first.map_file_name << std::endl;
     std::cout << (*deviceIter).first.dmap_file_name << std::endl;
     std::cout << (*deviceIter).first.dmap_file_line_nr << std::endl;
@@ -163,9 +163,9 @@ DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::str
 #endif
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
-    if (boost::iequals((*deviceIter).first._deviceName, aliasName)) {
+    if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
 #ifdef _DEBUG
-      std::cout << "found:" << (*deviceIter).first._deviceFile << std::endl;
+      std::cout << "found:" << (*deviceIter).first.deviceFile << std::endl;
 #endif
       deviceInfo = deviceIter->first;
       break;
@@ -179,17 +179,17 @@ std::string Utilities::findFirstOfAlias(std::string aliasName)
   std::string uri;
   char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
   if ( dmapFileFromEnvironment != NULL ) {
-    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment)._deviceFile;
+    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).deviceFile;
   }
   if (!uri.empty())
     return dmapFileFromEnvironment;
 
   std::string dMapFilePath = BackendFactory::getInstance().getDMapFilePath();
-  uri = aliasLookUp(aliasName, dMapFilePath)._deviceFile;
+  uri = aliasLookUp(aliasName, dMapFilePath).deviceFile;
   if (!uri.empty())
     return dMapFilePath;
 
-  uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME)._deviceFile;
+  uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME).deviceFile;
   if (!uri.empty())
     return DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME;
 
