@@ -45,7 +45,7 @@ void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfo 
 void RegisterInfoMap::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
 	try {
 		value = _mapFileElements.at(reg_nr);
-	} catch (std::out_of_range) {
+	} catch (std::out_of_range &) {
 		throw MapFileException("Cannot find register in map file", LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
 	}
 }
@@ -234,26 +234,26 @@ RegisterInfoMap::iterator RegisterInfoMap::end(){
 std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule( std::string const & moduleName){
 	// first sort all elements accordind the names (module first, then register in module)
 	// make a copy to keep the original order from the map file
-	std::vector<RegisterInfo> sortedDeviceInfos = _mapFileElements;
-	std::sort(sortedDeviceInfos.begin(), sortedDeviceInfos.end(), compareRegisterInfosByName_functor());
+	std::vector<RegisterInfo> sortedRegisterInfos = _mapFileElements;
+	std::sort(sortedRegisterInfos.begin(), sortedRegisterInfos.end(), compareRegisterInfosByName_functor());
 
 	// The vector is sorted, first module, than register name.
 	// Find the first iterator with the module name, starting at the beginning,
 	// then search for the first iterator with another name, starting from the previousy found first match.
 	std::vector<RegisterInfo>::iterator firstMatchingIterator =
-			std::find_if( sortedDeviceInfos.begin(), sortedDeviceInfos.end(), compareModuleName_pred( moduleName ) );
+			std::find_if( sortedRegisterInfos.begin(), sortedRegisterInfos.end(), compareModuleName_pred( moduleName ) );
 	std::vector<RegisterInfo>::iterator firstNotMatchingIterator =
-			std::find_if( firstMatchingIterator, sortedDeviceInfos.end(),
+			std::find_if( firstMatchingIterator, sortedRegisterInfos.end(),
 					std::not1( compareModuleName_pred(moduleName) ) );
 
 	// fill the list
-	std::list<RegisterInfo> RegisterInfoentList;
+	std::list<RegisterInfo> registerInfoList;
 	for (std::vector<RegisterInfo>::iterator it = firstMatchingIterator;
 			it != firstNotMatchingIterator; ++it){
-		RegisterInfoentList.push_back( *it );
+		registerInfoList.push_back( *it );
 	}
 
-	return RegisterInfoentList;
+	return registerInfoList;
 }
 
 RegisterInfoMap::MetaData::MetaData( std::string const & name_,

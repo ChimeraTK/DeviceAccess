@@ -337,24 +337,24 @@ namespace mtca4u{
     }
   }
 
-  void Device::open(boost::shared_ptr<DeviceBackend> DeviceBackend,
+  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend,
       boost::shared_ptr<RegisterInfoMap> registerInfoMap)
   {
-    _deviceBackendPointer = DeviceBackend;
+    _deviceBackendPointer = deviceBackend;
     _deviceBackendPointer->open();
     _registerMap = registerInfoMap;
   }
 
 void Device::open(std::string const & aliasName) {
-	BackendFactory FactoryInstance = BackendFactory::getInstance();
-	_deviceBackendPointer =  FactoryInstance.createBackend(aliasName);
-	if (_deviceBackendPointer){
-	  _deviceBackendPointer->open();
-	}
-	else{
-	  return;
-	}
-	//find the file containing first occurance of alias name.
+  BackendFactory factoryInstance = BackendFactory::getInstance();
+  _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
+  if (_deviceBackendPointer){
+    _deviceBackendPointer->open();
+  }
+  else{
+    return;
+  }
+  //find the file containing first occurrence of alias name.
   std::string dmapfile = Utilities::findFirstOfAlias(aliasName);
   DMapFilesParser filesParser;
   try
@@ -366,13 +366,13 @@ void Device::open(std::string const & aliasName) {
   catch (Exception& e) {
     std::cout << e.what() << std::endl;
   }
-  DeviceInfoMap::DeviceInfo DeviceInfo;
+  DeviceInfoMap::DeviceInfo deviceInfo;
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
-      if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
-        DeviceInfo = (*deviceIter).first;
-        _mapFileName = DeviceInfo.mapFileName;
-        _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
+    if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
+      deviceInfo = (*deviceIter).first;
+      _mapFileName = deviceInfo.mapFileName;
+      _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
       break;
     }
   }
