@@ -20,7 +20,7 @@
 
 namespace mtca4u {
 
-class RebotDevice : public DeviceBackendImpl {
+class RebotBackend : public DeviceBackendImpl {
 
 private:
   std::string _boardAddr;
@@ -28,8 +28,8 @@ private:
   boost::shared_ptr<TcpCtrl> _tcpObject;
 
 public:
-  RebotDevice(std::string boardAddr, int port);
-  ~RebotDevice();
+  RebotBackend(std::string boardAddr, int port);
+  ~RebotBackend();
   ///The function opens the connection to the device
   virtual void open();
   virtual void close();

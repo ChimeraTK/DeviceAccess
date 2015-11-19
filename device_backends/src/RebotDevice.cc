@@ -3,23 +3,23 @@
 
 namespace mtca4u {
 
-RebotDevice::RebotDevice(std::string boardAddr, int port)
+RebotBackend::RebotBackend(std::string boardAddr, int port)
     : _boardAddr(boardAddr),
       _port(port),
       _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port)) {}
 
-RebotDevice::~RebotDevice() {
+RebotBackend::~RebotBackend() {
   if (isOpen()) {
     _tcpObject->closeConnection();
   }
 }
 
-void RebotDevice::open() {
+void RebotBackend::open() {
   _tcpObject->openConnection();
   _opened = true;
 }
 
-void RebotDevice::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
+void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
                        size_t sizeInBytes) {
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
@@ -61,7 +61,7 @@ void RebotDevice::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
   }
 }
 
-void RebotDevice::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
+void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
                         size_t sizeInBytes) {
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
@@ -94,7 +94,7 @@ void RebotDevice::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
   }
 }
 
-void RebotDevice::close() {
+void RebotBackend::close() {
   _opened = false;
   _tcpObject->closeConnection();
 }
