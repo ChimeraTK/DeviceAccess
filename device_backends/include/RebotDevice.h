@@ -1,6 +1,6 @@
 //#include <mtca4u/DeviceBackend.h>
 //#include <mtca4u/devConfigBase.h>
-#include <mtca4u/DeviceBackendImpl.h>
+#include "DeviceBackendImpl.h"
 
 #include <iostream>
 #include <iomanip>
