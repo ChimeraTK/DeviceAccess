@@ -8,6 +8,7 @@
 #include "Utilities.h"
 #include "DMapFilesParser.h"
 #include "BackendFactory.h"
+#include "DMapFileDefaults.h"
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -139,22 +140,22 @@ Sdm Utilities::parseDeviceString(std::string deviceString) {
 	return sdmInfo;
 }
 
-std::string Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
+DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
 {
-  std::string uri;
+  DeviceInfoMap::DeviceInfo deviceInfo;
   DMapFilesParser filesParser;
   try {
     filesParser.parse_file(dmapFilePath);
   }
   catch (Exception& e) {
       std::cout << e.what() << std::endl;
-      return uri;
+      return deviceInfo;
   }
 #ifdef _DEBUG
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
     std::cout << (*deviceIter).first.dev_name << std::endl;
-    std::cout << (*deviceIter).first.dev_file << std::endl;
+    std::cout << (*deviceIter).first.uri << std::endl;
     std::cout << (*deviceIter).first.map_file_name << std::endl;
     std::cout << (*deviceIter).first.dmap_file_name << std::endl;
     std::cout << (*deviceIter).first.dmap_file_line_nr << std::endl;
@@ -162,33 +163,36 @@ std::string Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePa
 #endif
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
-    if (boost::iequals((*deviceIter).first.dev_name, aliasName)) {
+    if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
 #ifdef _DEBUG
-      std::cout << "found:" << (*deviceIter).first.dev_file << std::endl;
+      std::cout << "found:" << (*deviceIter).first.uri << std::endl;
 #endif
-      uri = (*deviceIter).first.dev_file;
+      deviceInfo = deviceIter->first;
       break;
     }
   }
-  return uri;
+  return deviceInfo;
 }
 
 std::string Utilities::findFirstOfAlias(std::string aliasName)
 {
   std::string uri;
-  char const* ptr_env_var = std::getenv(ENV_VAR_DMAP_FILE);
-  if ( ptr_env_var != NULL ) {
-    uri = aliasLookUp(aliasName,std::string(ptr_env_var));
+  char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
+  if ( dmapFileFromEnvironment != NULL ) {
+    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).uri;
   }
   if (!uri.empty())
-    return std::string(ptr_env_var);
+    return dmapFileFromEnvironment;
+
   std::string dMapFilePath = BackendFactory::getInstance().getDMapFilePath();
-  uri = aliasLookUp(aliasName, dMapFilePath);
+  uri = aliasLookUp(aliasName, dMapFilePath).uri;
   if (!uri.empty())
     return dMapFilePath;
-  uri = aliasLookUp(aliasName, DMAP_FILE_PATH);
+
+  uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME).uri;
   if (!uri.empty())
-    return DMAP_FILE_PATH;
-  return uri;
+    return DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME;
+
+  return std::string(); // no alias found, return an empty string
 }
 } /* namespace mtca4u */

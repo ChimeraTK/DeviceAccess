@@ -232,49 +232,49 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
 	mtca4u::Device::regObject registerAccessor =
 			device->getRegObject("AREA_DMAABLE");
 	RegisterInfoMap::RegisterInfo registerInfo = registerAccessor.getRegisterInfo();
-	BOOST_CHECK(registerInfo.reg_address == 0x0);
-	BOOST_CHECK(registerInfo.reg_elem_nr == 0x400);
-	BOOST_CHECK(registerInfo.reg_size = 0x1000);
-	BOOST_CHECK(registerInfo.reg_bar == 2);
+	BOOST_CHECK(registerInfo.address == 0x0);
+	BOOST_CHECK(registerInfo.nElements == 0x400);
+	BOOST_CHECK(registerInfo.nBytes = 0x1000);
+	BOOST_CHECK(registerInfo.bar == 2);
 	// the dmaable area has no fixed point settings, which has to result in
 	// the default 32 0 true (like raw words)
-	BOOST_CHECK(registerInfo.reg_width == 32);
-	BOOST_CHECK(registerInfo.reg_frac_bits == 0);
-	BOOST_CHECK(registerInfo.reg_signed == true);
-	BOOST_CHECK(registerInfo.reg_name == "AREA_DMAABLE");
+	BOOST_CHECK(registerInfo.width == 32);
+	BOOST_CHECK(registerInfo.nFractionalBits == 0);
+	BOOST_CHECK(registerInfo.signedFlag == true);
+	BOOST_CHECK(registerInfo.name == "AREA_DMAABLE");
 
 	registerAccessor = device->getRegObject("WORD_FIRMWARE");
 	registerInfo = registerAccessor.getRegisterInfo();
-	BOOST_CHECK(registerInfo.reg_name == "WORD_FIRMWARE");
-	BOOST_CHECK(registerInfo.reg_address == 0x0);
-	BOOST_CHECK(registerInfo.reg_elem_nr == 0x1);
-	BOOST_CHECK(registerInfo.reg_size = 0x4);
-	BOOST_CHECK(registerInfo.reg_bar == 0);
-	BOOST_CHECK(registerInfo.reg_width == 32);
-	BOOST_CHECK(registerInfo.reg_frac_bits == 0);
-	BOOST_CHECK(registerInfo.reg_signed == false);
+	BOOST_CHECK(registerInfo.name == "WORD_FIRMWARE");
+	BOOST_CHECK(registerInfo.address == 0x0);
+	BOOST_CHECK(registerInfo.nElements == 0x1);
+	BOOST_CHECK(registerInfo.nBytes = 0x4);
+	BOOST_CHECK(registerInfo.bar == 0);
+	BOOST_CHECK(registerInfo.width == 32);
+	BOOST_CHECK(registerInfo.nFractionalBits == 0);
+	BOOST_CHECK(registerInfo.signedFlag == false);
 
 	registerAccessor = device->getRegObject("WORD_INCOMPLETE_1");
 	registerInfo = registerAccessor.getRegisterInfo();
-	BOOST_CHECK(registerInfo.reg_name == "WORD_INCOMPLETE_1");
-	BOOST_CHECK(registerInfo.reg_address == 0x60);
-	BOOST_CHECK(registerInfo.reg_elem_nr == 0x1);
-	BOOST_CHECK(registerInfo.reg_size = 0x4);
-	BOOST_CHECK(registerInfo.reg_bar == 0);
-	BOOST_CHECK(registerInfo.reg_width == 13);
-	BOOST_CHECK(registerInfo.reg_frac_bits == 0);
-	BOOST_CHECK(registerInfo.reg_signed == true);
+	BOOST_CHECK(registerInfo.name == "WORD_INCOMPLETE_1");
+	BOOST_CHECK(registerInfo.address == 0x60);
+	BOOST_CHECK(registerInfo.nElements == 0x1);
+	BOOST_CHECK(registerInfo.nBytes = 0x4);
+	BOOST_CHECK(registerInfo.bar == 0);
+	BOOST_CHECK(registerInfo.width == 13);
+	BOOST_CHECK(registerInfo.nFractionalBits == 0);
+	BOOST_CHECK(registerInfo.signedFlag == true);
 
 	registerAccessor = device->getRegObject("WORD_INCOMPLETE_2");
 	registerInfo = registerAccessor.getRegisterInfo();
-	BOOST_CHECK(registerInfo.reg_name == "WORD_INCOMPLETE_2");
-	BOOST_CHECK(registerInfo.reg_address == 0x64);
-	BOOST_CHECK(registerInfo.reg_elem_nr == 0x1);
-	BOOST_CHECK(registerInfo.reg_size = 0x4);
-	BOOST_CHECK(registerInfo.reg_bar == 0);
-	BOOST_CHECK(registerInfo.reg_width == 13);
-	BOOST_CHECK(registerInfo.reg_frac_bits == 8);
-	BOOST_CHECK(registerInfo.reg_signed == true);
+	BOOST_CHECK(registerInfo.name == "WORD_INCOMPLETE_2");
+	BOOST_CHECK(registerInfo.address == 0x64);
+	BOOST_CHECK(registerInfo.nElements == 0x1);
+	BOOST_CHECK(registerInfo.nBytes = 0x4);
+	BOOST_CHECK(registerInfo.bar == 0);
+	BOOST_CHECK(registerInfo.width == 13);
+	BOOST_CHECK(registerInfo.nFractionalBits == 8);
+	BOOST_CHECK(registerInfo.signedFlag == true);
 }
 
 void MtcaDeviceTest::testRegObject_readBlock() {

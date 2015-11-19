@@ -3,6 +3,10 @@ using namespace boost::unit_test_framework;
 
 #include "Utilities.h"
 #include "BackendFactory.h"
+#include "DeviceInfoMap.h"
+
+#include <boost/filesystem.hpp>
+
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
 #define INVALID_SDM "://./pci:pcieunidummys6;" //no sdm at the start
@@ -100,13 +104,12 @@ void UtilitiesTest::testIsSdm() {
 }
 
 void UtilitiesTest::testAliasLookUp() {
-  setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
   std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
-  BackendFactory::getInstance().setDMapFilePath(testFilePath);
-  std::string uri = Utilities::aliasLookUp("test",testFilePath);
-  BOOST_CHECK(uri.empty());
-  uri = Utilities::aliasLookUp("DUMMYD0",testFilePath);
-  BOOST_CHECK(!uri.empty());
+
+  DeviceInfoMap::DeviceInfo deviceInfo = Utilities::aliasLookUp("test",testFilePath);
+  BOOST_CHECK( deviceInfo.deviceName.empty() );
+  deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
+  BOOST_CHECK(deviceInfo.deviceName =="DUMMYD0");
 }
 
 void UtilitiesTest::testFindFirstOfAlias() {

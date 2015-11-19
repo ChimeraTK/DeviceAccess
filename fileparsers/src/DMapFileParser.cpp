@@ -7,11 +7,11 @@
 
 namespace mtca4u{
 
-ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
+DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
     std::istringstream is;
-    DMapFile::DRegisterInfo de;
+    DeviceInfoMap::DeviceInfo deviceInfo;
     uint32_t line_nr = 0;
 
     file.open(file_name.c_str());
@@ -19,7 +19,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
         throw DMapFileParserException("Cannot open dmap file: \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
     }
 
-    ptrdmapFile dmap(new DMapFile(file_name));
+    DeviceInfoMapPointer dmap(new DeviceInfoMap(file_name));
     while (std::getline(file, line)) {
         line_nr++;
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));
@@ -30,11 +30,11 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
             continue;
         }
         is.str(line);
-        is >> de.dev_name >> de.dev_file >> de.map_file_name;                        
+        is >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
         if (is) {
-            de.dmap_file_name = file_name;
-            de.dmap_file_line_nr = line_nr; 
-            dmap->insert(de);
+            deviceInfo.dmapFileName = file_name;
+            deviceInfo.dmapFileLineNumber = line_nr;
+            dmap->insert(deviceInfo);
         } else {
             std::ostringstream os;
             os << line_nr;
@@ -43,7 +43,7 @@ ptrdmapFile DMapFileParser::parse(const std::string &file_name) {
         is.clear();
     }
     file.close();
-    if (dmap->getdmapFileSize() == 0) {
+    if (dmap->getSize() == 0) {
         throw DMapFileParserException("No data in in dmap file: \"" + file_name + "\"", LibMapException::EX_NO_DMAP_DATA);
     }
     return dmap;

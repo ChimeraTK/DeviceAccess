@@ -1,12 +1,9 @@
 #ifndef _MTCA4U_DEVICE_FACTORY_H__
 #define _MTCA4U_DEVICE_FACTORY_H__
 
-
 #include "DummyBackend.h"
 #include "PcieBackend.h"
-#include <boost/tuple/tuple.hpp>
-#include <boost/filesystem.hpp>
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 #ifdef _DEBUG
 #include <iostream>
 #endif
@@ -33,16 +30,12 @@ public:
  * It is implemented as a Meyers' singleton.
  */
 class BackendFactory {
-public:
-  std::string _dMapFilePath;
+protected:
+  std::string _dMapFile; ///< The dmap file set at run time
+  
 private:
-  /** Add known device */
-  BackendFactory() {
-    _dMapFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
-    registerBackendType("pci","",&PcieBackend::createInstance);
-    registerBackendType("pci","pcie",&PcieBackend::createInstance);
-    registerBackendType("dummy","",&DummyBackend::createInstance);
-  };
+  /** Add known backend types */
+  BackendFactory();
 
   //BackendFactory(BackendFactory const&);     /** To avoid making copies */
 

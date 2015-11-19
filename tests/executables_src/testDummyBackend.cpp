@@ -58,7 +58,7 @@ public:
   void testReadWriteMultiWordRegister(
       //void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
       void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
-  void testWriteDMA();
+  //void testWriteDMA();
   void testReadDeviceInfo();
   void testReadOnly();
   void testWriteCallbackFunctions();
@@ -146,7 +146,7 @@ public:
 		// functions are already bound to
 		// the instance
 		//add(BOOST_TEST_CASE(testReadWriteDMA));
-		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteDMA, dummyBackendTest));
+		//add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteDMA, dummyBackendTest));
 		add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadDeviceInfo,
 				dummyBackendTest));
 		add(readOnlyTestCase);
@@ -203,8 +203,8 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
 	RegisterInfoMap::RegisterInfo mappingElement;
 	dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING,
 			mappingElement);
-	uint32_t offset = mappingElement.reg_address;
-	uint8_t bar = mappingElement.reg_bar;
+	uint32_t offset = mappingElement.address;
+	uint8_t bar = mappingElement.bar;
 	int32_t dataContent = -1;
 	//BOOST_CHECK_NO_THROW(dummyBackend->readReg(bar, offset, &dataContent));
 	BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &dataContent,4));
@@ -235,10 +235,10 @@ void DummyBackendTest::testReadWriteMultiWordRegister(
 	dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
 			mappingElement);
 
-	uint32_t offset = mappingElement.reg_address;
-	uint8_t bar = mappingElement.reg_bar;
-	size_t sizeInBytes = mappingElement.reg_size;
-	size_t sizeInWords = mappingElement.reg_size / sizeof(int32_t);
+	uint32_t offset = mappingElement.address;
+	uint8_t bar = mappingElement.bar;
+	size_t sizeInBytes = mappingElement.nBytes;
+	size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
 	std::vector<int32_t> dataContent(sizeInWords, -1);
 
 	BOOST_CHECK_NO_THROW((dummyBackend->*readFunction)(bar, offset, &(dataContent[0]),
@@ -312,13 +312,14 @@ void DummyBackendTest::freshlyopenice() {
 		_dummyBackend->open();
 	}
 }
-
+/*
 void DummyBackendTest::testWriteDMA() {
 	// will probably never be implemented
 	TestableDummyBackend* dummyBackend = getBackendInstance();
 	BOOST_CHECK_THROW(dummyBackend->writeDMA(0, 0, NULL, 0),
 			NotImplementedException);
 }
+*/
 
 TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
 	if (_backendInstance == 0)
@@ -349,10 +350,10 @@ void DummyBackendTest::testReadOnly() {
 	dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
 			mappingElement);
 
-	uint32_t offset = mappingElement.reg_address;
-	uint8_t bar = mappingElement.reg_bar;
-	size_t sizeInBytes = mappingElement.reg_size;
-	size_t sizeInWords = mappingElement.reg_size / sizeof(int32_t);
+	uint32_t offset = mappingElement.address;
+	uint8_t bar = mappingElement.bar;
+	size_t sizeInBytes = mappingElement.nBytes;
+	size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
 	std::stringstream errorMessage;
 	errorMessage << "This register should have 4 words. "
 			<< "If you changed your mapping you have to adapt "

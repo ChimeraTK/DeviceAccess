@@ -63,10 +63,10 @@ std::map< uint8_t, size_t > DummyBackend::getBarSizesInBytesFromRegisterMapping(
 	std::map< uint8_t, size_t > barSizesInBytes;
 	for (RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
 			mappingElementIter <  _registerMapping->end(); ++mappingElementIter ) {
-		barSizesInBytes[mappingElementIter->reg_bar] =
-				std::max( barSizesInBytes[mappingElementIter->reg_bar],
-						static_cast<size_t> (mappingElementIter->reg_address +
-								mappingElementIter->reg_size ) );
+		barSizesInBytes[mappingElementIter->bar] =
+				std::max( barSizesInBytes[mappingElementIter->bar],
+						static_cast<size_t> (mappingElementIter->address +
+								mappingElementIter->nBytes ) );
 	}
 	return barSizesInBytes;
 }
@@ -103,14 +103,6 @@ void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  si
 		TRY_REGISTER_ACCESS( _barContents[bar].at(wordBaseIndex+wordIndex) = data[wordIndex]; );
 	}
 	runWriteCallbackFunctionsForAddressRange( AddressRange(bar, address, sizeInBytes ) );
-}
-
-void DummyBackend::readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
-	return read(bar, address, data, sizeInBytes);
-}
-
-void DummyBackend::writeDMA(uint8_t /* bar */, uint32_t /* address */, int32_t const * /* data */, size_t /* sizeInBytes */){
-	throw NotImplementedException("DummyBackend::writeDMA is not implemented yet.");
 }
 
 std::string DummyBackend::readDeviceInfo(){

@@ -51,7 +51,7 @@ namespace mtca4u {
   class Device {
     public:
 
-      typedef boost::shared_ptr<DeviceBackend> _ptrDeviceBackend;
+      typedef boost::shared_ptr<DeviceBackend> DeviceBackendPointer;
 
       /** Non-buffering RegisterAccessor class
        *  Allows reading and writing registers with user-provided buffer via plain pointers.
@@ -64,7 +64,7 @@ namespace mtca4u {
            *  Users should call Device::getRegisterAccessor() to obtain an instance instead.
            */
         RegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
-            typename Device::_ptrDeviceBackend pDeviceBackend);
+            typename Device::DeviceBackendPointer deviceBackendPointer);
 
         /** Read one ore more words from the device. It calls DeviceBackend::readArea,
          * not
@@ -86,9 +86,17 @@ namespace mtca4u {
         void writeRaw(int32_t const *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0);
 
+        /** \deprecated
+         *  This function is deprecated. Use readRaw() instead!
+         *  @todo Add printed runtime warning after release of version 0.2
+         */
         void readDMA(int32_t *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0) const;
 
+        /** \deprecated
+         *  This function is deprecated. Use writeRaw() instead!
+         *  @todo Add printed runtime warning after release of version 0.2
+         */
         void writeDMA(int32_t const *data, size_t dataSize = 0,
             uint32_t addRegOffset = 0);
 
@@ -199,7 +207,7 @@ namespace mtca4u {
         private:
 
         RegisterInfoMap::RegisterInfo _registerInfo;
-        typename Device::_ptrDeviceBackend _pDeviceBackend;
+        typename Device::DeviceBackendPointer _deviceBackendPointer;
         FixedPointConverter _fixedPointConverter;
 
         static void checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo, size_t dataSize,
@@ -226,10 +234,20 @@ namespace mtca4u {
           uint8_t bar) const;
       virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
+
+      /** \deprecated
+       *  This function is deprecated. Use readArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.2
+       */
       virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
           uint8_t bar) const;
+      /** \deprecated
+       *  This function is deprecated. Use writeArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.2
+       */
       virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
+
       virtual std::string readDeviceInfo() const;
 
       /** Read one or more words from the device. It calls DeviceBackend::readArea, not
@@ -398,9 +416,9 @@ namespace mtca4u {
 
     private:
 
-      _ptrDeviceBackend _pDeviceBackend;
+      DeviceBackendPointer _deviceBackendPointer;
       std::string _mapFileName;
-      ptrmapFile _registerMap;
+      RegisterInfoMapPointer _registerMap;
 
       void checkRegister(const std::string &regName,
           const std::string &registerModule, size_t dataSize,
@@ -465,14 +483,14 @@ namespace mtca4u {
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
     return (
-        customClass::createInstance(dataRegionName, module, _pDeviceBackend, _registerMap));
+        customClass::createInstance(dataRegionName, module, _deviceBackendPointer, _registerMap));
   }
 
 
   template<typename UserType>
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
-    return BufferingRegisterAccessor<UserType>::createInstance(registerName, module, _pDeviceBackend, _registerMap);
+    return BufferingRegisterAccessor<UserType>::createInstance(registerName, module, _deviceBackendPointer, _registerMap);
   }
 
 } // namespace mtca4u
