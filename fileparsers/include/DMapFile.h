@@ -7,12 +7,14 @@
 
 namespace mtca4u{
 
-  /** @deprecated Using DMapFile is deprecated. The class has been renamed to DeviceInfoMap.
+  /** Using DMapFile is deprecated. The class has been renamed to DeviceInfoMap.
+   *  @deprecated Using DMapFile is deprecated. The class has been renamed to DeviceInfoMap.
    */
  class DMapFile: public DeviceInfoMap{
  public:
-   /** @deprecated The name DRegisterInfo was a misnomer due to refactoring. Use DeviceInfo instead.
+   /** The name DRegisterInfo was a misnomer due to refactoring. Use DeviceInfo instead.
     *  This alias does not make DRegisterInfo work the way it did because the members have also been renamed.
+    * @deprecated The name DRegisterInfo was a misnomer due to refactoring. Use DeviceInfo instead.
     */
    typedef DeviceInfo DRegisterInfo;
  };
