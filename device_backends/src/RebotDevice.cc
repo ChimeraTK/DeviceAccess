@@ -25,8 +25,7 @@ void RebotDevice::read(uint8_t /*bar*/, uint32_t address, int32_t* data,  size_t
     throw RebotBackendException("Device is closed", RebotBackendException::EX_DEVICE_CLOSED);
   }
   if (sizeInBytes % 4 != 0) {
-  	// remove this later
-    throw RebotBackendException("\"size\" argument must be a multiplicity of 4; Adding this Here to cause a conflict", RebotBackendException::EX_SIZE_INVALID);
+    throw RebotBackendException("\"size\" argument must be a multiplicity of 4;Conflict", RebotBackendException::EX_SIZE_INVALID);
   }
 
   int mode = 3;
