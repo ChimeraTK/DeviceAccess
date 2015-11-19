@@ -4,7 +4,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotDevice.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TcpCtrl.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackendException.cc
    PARENT_SCOPE
@@ -22,7 +22,7 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/llrfdrv_io_compat.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/pciedev_io.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/pcieuni_io_compat.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/RebotDevice.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/RebotBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TcpCtrl.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/RebotBackendException.h
    PARENT_SCOPE
