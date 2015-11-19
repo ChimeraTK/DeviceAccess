@@ -63,10 +63,10 @@ std::map< uint8_t, size_t > DummyBackend::getBarSizesInBytesFromRegisterMapping(
 	std::map< uint8_t, size_t > barSizesInBytes;
 	for (RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
 			mappingElementIter <  _registerMapping->end(); ++mappingElementIter ) {
-		barSizesInBytes[mappingElementIter->reg_bar] =
-				std::max( barSizesInBytes[mappingElementIter->reg_bar],
-						static_cast<size_t> (mappingElementIter->reg_address +
-								mappingElementIter->reg_size ) );
+		barSizesInBytes[mappingElementIter->bar] =
+				std::max( barSizesInBytes[mappingElementIter->bar],
+						static_cast<size_t> (mappingElementIter->address +
+								mappingElementIter->nBytes ) );
 	}
 	return barSizesInBytes;
 }

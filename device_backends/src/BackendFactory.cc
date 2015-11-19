@@ -10,6 +10,7 @@
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "DMapFilesParser.h"
+#include "DMapFileDefaults.h"
 #include "Exception.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -27,16 +28,16 @@ void BackendFactory::registerBackendType(std::string interface, std::string prot
 
 void BackendFactory::setDMapFilePath(std::string dMapFilePath)
 {
-  _dMapFilePath = dMapFilePath;
+  _dMapFile = dMapFilePath;
 }
 
 std::string BackendFactory::getDMapFilePath()
 {
-  return _dMapFilePath;
+  return _dMapFile;
 }
 
 BackendFactory::BackendFactory(){
-  _dMapFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+  _dMapFile = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
   registerBackendType("pci","",&PcieBackend::createInstance);
   registerBackendType("pci","pcie",&PcieBackend::createInstance);
   registerBackendType("dummy","",&DummyBackend::createInstance);
@@ -45,17 +46,33 @@ BackendFactory::BackendFactory(){
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
   std::string uri;
-  char const* ptr_env_var = std::getenv(ENV_VAR_DMAP_FILE);
-  if ( ptr_env_var != NULL ) {
-    uri = Utilities::aliasLookUp(aliasName,std::string(ptr_env_var));
+  
+  // check if an alias was found, if not try the environment variable
+  char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
+  if ( dmapFileFromEnvironment != NULL ) {
+std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
+    uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).uri;
   }
-  if (uri.empty())
-    uri = Utilities::aliasLookUp(aliasName, _dMapFilePath);
-  if (uri.empty())
-    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_PATH);
-  if (uri.empty())
+
+  // try to get an alias of the DMap file set at run time by setDMapFilePath()
+  if (uri.empty()){
+    //std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
+    uri = Utilities::aliasLookUp(aliasName, _dMapFile).uri;
+  }
+
+  // finally try the system/compile time default
+  if (uri.empty()){
+    //std::cout << "creating backend from " << DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME
+	      //<< " for alias " << aliasName << std::endl;
+    uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME).uri;
+  }
+  
+  // if there still is no alias we are out of options and have to give up.
+  if (uri.empty()){
     throw BackendFactoryException("Unknown device alias.", BackendFactoryException::UNKNOWN_ALIAS);
- return createBackendInternal(uri);
+  }
+
+  return createBackendInternal(uri);
 }
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::string uri) {
@@ -63,7 +80,7 @@ boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::stri
   std::cout << "uri to parse" << uri << std::endl;
   std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
-Sdm sdm;
+  Sdm sdm;
   try {
     sdm = Utilities::parseSdm(uri);
   }

@@ -10,6 +10,8 @@
 
 #include <list>
 #include "Exception.h"
+#include "DeviceInfoMap.h"
+
 namespace mtca4u {
 /**This structure holds the information of an SDM.
  *
@@ -45,9 +47,16 @@ public:
 	Sdm static parseDeviceString(std::string deviceEntry);
 	bool static isSdm(std::string theString);
 	static size_t countOccurence(std::string theString, char delimiter);
-	std::string static aliasLookUp(std::string aliasName, std::string dmapFilePath);
+
+	/// Search for an alias in a given DMap file and return the DeviceInfo entry.
+	/// If the alias is not found, the DeviceInfo will have empty strings.
+	DeviceInfoMap::DeviceInfo static aliasLookUp(std::string aliasName, std::string dmapFilePath);
+	
+	/// Search for an alias in all possible dmap file.
+	/// The return value is the DeviceInfo where the alias was found (also
+	/// containg the DMap file where the entry was found)
+	// DeviceInfoMap::DeviceInfo static findFirstOfAlias(std::string aliasName);
 	std::string static findFirstOfAlias(std::string aliasName);
-	virtual ~Utilities();
 };
 
 } /* namespace mtca4u */

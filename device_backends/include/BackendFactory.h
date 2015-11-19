@@ -3,7 +3,7 @@
 
 #include "DummyBackend.h"
 #include "PcieBackend.h"
-#include "DMapFile.h"
+#include "DeviceInfoMap.h"
 #ifdef _DEBUG
 #include <iostream>
 #endif
@@ -30,10 +30,11 @@ public:
  * It is implemented as a Meyers' singleton.
  */
 class BackendFactory {
-public:
-  std::string _dMapFilePath;
+protected:
+  std::string _dMapFile; ///< The dmap file set at run time
+  
 private:
-  /** Add known device */
+  /** Add known backend types */
   BackendFactory();
 
   //BackendFactory(BackendFactory const&);     /** To avoid making copies */

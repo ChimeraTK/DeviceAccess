@@ -100,7 +100,7 @@ protected:
 	std::map< uint8_t, std::vector<int32_t> > _barContents;
 	std::set< uint64_t > _readOnlyAddresses;
 	std::multimap< AddressRange, boost::function<void(void)> > _writeCallbackFunctions;
-	ptrmapFile _registerMapping;
+	RegisterInfoMapPointer _registerMapping;
 
 	void resizeBarContents();
 	std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
