@@ -174,7 +174,7 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
 void DeviceInfoMapTest::testGetDeviceFileAndMapFileName() {
 
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-	deviceInfo1.deviceFile = "/dev/test";
+	deviceInfo1.uri = "/dev/test";
 	deviceInfo1.mapFileName = "test_mapfile";
 
 	std::pair<std::string, std::string> expected_pair("/dev/test",
@@ -200,7 +200,7 @@ void DeviceInfoMapTest::testErrorElemErrTypeStreamOperator() {
 
 void DeviceInfoMapTest::testDeviceInfoStreamOperator() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-	deviceInfo1.deviceFile = "/dev/dev1";
+	deviceInfo1.uri = "/dev/dev1";
 	deviceInfo1.deviceName = "card1";
 	deviceInfo1.dmapFileLineNumber = 1;
 	deviceInfo1.dmapFileName = "dummy.dmap";

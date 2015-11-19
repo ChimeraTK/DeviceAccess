@@ -14,7 +14,7 @@ void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
     mapFileName = appendNumberToName(deviceName, lineNumber);
 
   deviceInfo.deviceName = deviceName;
-  deviceInfo.deviceFile = deviceFile;
+  deviceInfo.uri = deviceFile;
   deviceInfo.mapFileName = mapFileName;
   deviceInfo.dmapFileName = dmapFileName;
   deviceInfo.dmapFileLineNumber = ++lineNumber;
@@ -30,7 +30,7 @@ bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
                          const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo2) {
   bool result =
       (deviceInfo1.deviceName == deviceInfo2.deviceName) &&
-      (deviceInfo1.deviceFile == deviceInfo2.deviceFile) &&
+      (deviceInfo1.uri == deviceInfo2.uri) &&
       (deviceInfo1.mapFileName == deviceInfo2.mapFileName) &&
       (deviceInfo1.dmapFileName == deviceInfo2.dmapFileName) &&
       (deviceInfo1.dmapFileLineNumber == deviceInfo2.dmapFileLineNumber);

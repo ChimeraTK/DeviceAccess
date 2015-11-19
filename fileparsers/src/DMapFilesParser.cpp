@@ -159,7 +159,7 @@ bool DMapFilesParser::check(DeviceInfoMap::ErrorList::ErrorElem::TYPE /*dlevel*/
   iter_n = iter_p + 1;
   while (1) {
     if ((*iter_p).first.deviceName == (*iter_n).first.deviceName) {
-      if ((*iter_p).first.deviceFile != (*iter_n).first.deviceFile || (*iter_p).first.mapFileName != (*iter_n).first.mapFileName) {
+      if ((*iter_p).first.uri != (*iter_n).first.uri || (*iter_p).first.mapFileName != (*iter_n).first.mapFileName) {
 	dmap_err.insert(DeviceInfoMap::ErrorList::ErrorElem(DeviceInfoMap::ErrorList::ErrorElem::ERROR, DeviceInfoMap::ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME, (*iter_p).first, (*iter_n).first));
 	ret = false;
       }
@@ -231,7 +231,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
   reg_size = elem.nBytes;
   reg_elem_nr = elem.nElements;
   reg_bar = elem.bar;
-  dev_file = (*dmap_iter).first.deviceFile;
+  dev_file = (*dmap_iter).first.uri;
 }
 
 void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &reg_name, std::string& dev_file, RegisterInfoMap::RegisterInfo &elem) {
@@ -245,7 +245,7 @@ void DMapFilesParser::getRegisterInfo(std::string dev_name, const std::string &r
     throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
   }
   (*dmap_iter).second->getRegisterInfo(reg_name, elem);
-  dev_file = (*dmap_iter).first.deviceFile;
+  dev_file = (*dmap_iter).first.uri;
 }
 
 std::ostream& operator<<(std::ostream &os, const DMapFilesParser& dmfp) {

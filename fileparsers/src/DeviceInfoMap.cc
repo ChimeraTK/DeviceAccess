@@ -44,11 +44,11 @@ DeviceInfoMap::DeviceInfo::DeviceInfo() : dmapFileLineNumber(0)
 
 std::pair<std::string, std::string> DeviceInfoMap::DeviceInfo::getDeviceFileAndMapFileName() const
 {
-	return std::pair<std::string, std::string>(deviceFile, mapFileName);
+	return std::pair<std::string, std::string>(uri, mapFileName);
 }        
 
 std::ostream& operator<<(std::ostream &os, const DeviceInfoMap::DeviceInfo& deviceInfo) {
-	os << "(" << deviceInfo.dmapFileName << ") NAME: " << deviceInfo.deviceName << " DEV : " << deviceInfo.deviceFile << " MAP : " << deviceInfo.mapFileName;
+	os << "(" << deviceInfo.dmapFileName << ") NAME: " << deviceInfo.deviceName << " DEV : " << deviceInfo.uri << " MAP : " << deviceInfo.mapFileName;
 	return os;
 }
 
@@ -69,7 +69,7 @@ bool DeviceInfoMap::check(DeviceInfoMap::ErrorList &err, DeviceInfoMap::ErrorLis
 	iter_n = iter_p + 1;
 	while (1) {
 		if ((*iter_p).deviceName == (*iter_n).deviceName) {
-			if ((*iter_p).deviceFile != (*iter_n).deviceFile || (*iter_p).mapFileName != (*iter_n).mapFileName) {
+			if ((*iter_p).uri != (*iter_n).uri || (*iter_p).mapFileName != (*iter_n).mapFileName) {
 				err.insert(ErrorList::ErrorElem(ErrorList::ErrorElem::ERROR, ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME, (*iter_p), (*iter_n)));
 				ret = false;
 			}

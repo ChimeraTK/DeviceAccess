@@ -34,7 +34,7 @@ public:
 	class DeviceInfo {
 	public:
 		std::string deviceName; /**< logical name of the device*/
-		std::string deviceFile; /**< name of dev file (in direcotry /dev)*/
+		std::string uri; /**< uri which describes the device (or name of the device file in /dev in backward compatibility mode)*/
 		std::string mapFileName; /**< name of the MAP file storing information about PCIe registers mapping*/
 		std::string dmapFileName; /**< name of the DMAP file*/
 		uint32_t dmapFileLineNumber;/**< line number in DMAP file storing listed above information*/
@@ -46,8 +46,8 @@ public:
 
 		/** Convenience function to extract the device file name and the map file name as one object (a pair).
 		 *  This is all the information needed to open a Device opject. As std::pair and std::string
-		 *  are standard objects no dependency between dmapFile and the Device object is introduced, in contrast
-		 *  to passing a dRegisterInfo to Device.
+		 *  are standard objects no dependency between DeviceInfoMap and the Device object is introduced, in contrast
+		 *  to passing a DeviceInfo to Device.
 		 *  The function name is a bit lengthy to avoid confusion between device name (logical name) and
 		 *  device file name (name of the device in the /dev directory). The latter is the .first argument of
 		 *  the pair.
