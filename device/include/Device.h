@@ -51,7 +51,7 @@ namespace mtca4u {
   class Device {
     public:
 
-      typedef boost::shared_ptr<DeviceBackend> _ptrDeviceBackend;
+      typedef boost::shared_ptr<DeviceBackend> DeviceBackendPointer;
 
       /** Non-buffering RegisterAccessor class
        *  Allows reading and writing registers with user-provided buffer via plain pointers.
@@ -64,7 +64,7 @@ namespace mtca4u {
            *  Users should call Device::getRegisterAccessor() to obtain an instance instead.
            */
         RegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
-            typename Device::_ptrDeviceBackend pDeviceBackend);
+            typename Device::DeviceBackendPointer deviceBackendPointer);
 
         /** Read one ore more words from the device. It calls DeviceBackend::readArea,
          * not
@@ -207,7 +207,7 @@ namespace mtca4u {
         private:
 
         RegisterInfoMap::RegisterInfo _registerInfo;
-        typename Device::_ptrDeviceBackend _pDeviceBackend;
+        typename Device::DeviceBackendPointer _deviceBackendPointer;
         FixedPointConverter _fixedPointConverter;
 
         static void checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo, size_t dataSize,
@@ -416,7 +416,7 @@ namespace mtca4u {
 
     private:
 
-      _ptrDeviceBackend _pDeviceBackend;
+      DeviceBackendPointer _deviceBackendPointer;
       std::string _mapFileName;
       RegisterInfoMapPointer _registerMap;
 
@@ -483,14 +483,14 @@ namespace mtca4u {
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
     return (
-        customClass::createInstance(dataRegionName, module, _pDeviceBackend, _registerMap));
+        customClass::createInstance(dataRegionName, module, _deviceBackendPointer, _registerMap));
   }
 
 
   template<typename UserType>
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
-    return BufferingRegisterAccessor<UserType>::createInstance(registerName, module, _pDeviceBackend, _registerMap);
+    return BufferingRegisterAccessor<UserType>::createInstance(registerName, module, _deviceBackendPointer, _registerMap);
   }
 
 } // namespace mtca4u

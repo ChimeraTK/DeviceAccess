@@ -25,7 +25,7 @@ namespace mtca4u{
 
     RegisterInfoMap::RegisterInfo registerInfo;
     _registerMap->getRegisterInfo(regName, registerInfo);
-    return Device::RegisterAccessor(registerInfo, _pDeviceBackend);
+    return Device::RegisterAccessor(registerInfo, _deviceBackendPointer);
   }
 
   boost::shared_ptr<Device::RegisterAccessor> Device::getRegisterAccessor(const std::string &regName,
@@ -35,7 +35,7 @@ namespace mtca4u{
     RegisterInfoMap::RegisterInfo registerInfo;
     _registerMap->getRegisterInfo(regName, registerInfo, module);
     return boost::shared_ptr<Device::RegisterAccessor>(
-        new Device::RegisterAccessor(registerInfo, _pDeviceBackend));
+        new Device::RegisterAccessor(registerInfo, _deviceBackendPointer));
   }
 
   std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(
@@ -57,7 +57,7 @@ namespace mtca4u{
         registerInfoList.begin();
         regInfo != registerInfoList.end(); ++regInfo) {
       accessorList.push_back(
-          Device::RegisterAccessor(*regInfo, _pDeviceBackend));
+          Device::RegisterAccessor(*regInfo, _deviceBackendPointer));
     }
 
     return accessorList;
@@ -171,7 +171,7 @@ namespace mtca4u{
 
   void Device::close() {
     checkPointersAreNotNull();
-    _pDeviceBackend->close();
+    _deviceBackendPointer->close();
   }
 
   /**
@@ -194,8 +194,7 @@ namespace mtca4u{
 
   void Device::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
     checkPointersAreNotNull();
-    //pdev->readReg(regOffset, data, bar);
-    _pDeviceBackend->read(bar, regOffset, data , 4);
+    _deviceBackendPointer->read(bar, regOffset, data , 4);
   }
 
   /**
@@ -217,7 +216,7 @@ namespace mtca4u{
 
   void Device::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
     checkPointersAreNotNull();
-    _pDeviceBackend->write(bar, regOffset, &data, 4);
+    _deviceBackendPointer->write(bar, regOffset, &data, 4);
   }
 
   /**
@@ -239,37 +238,36 @@ namespace mtca4u{
   void Device::readArea(uint32_t regOffset, int32_t *data, size_t size,
       uint8_t bar) const {
     checkPointersAreNotNull();
-    //pdev->readArea(regOffset, data, size, bar);
-    _pDeviceBackend->read(bar, regOffset, data, size);
+    _deviceBackendPointer->read(bar, regOffset, data, size);
   }
 
   void Device::writeArea(uint32_t regOffset, int32_t const *data, size_t size,
       uint8_t bar) {
     checkPointersAreNotNull();
-    _pDeviceBackend->write(bar, regOffset, data, size);
+    _deviceBackendPointer->write(bar, regOffset, data, size);
   }
 
   void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size,
       uint8_t bar) const {
     checkPointersAreNotNull();
-    _pDeviceBackend->read(bar, regOffset, data, size);
+    _deviceBackendPointer->read(bar, regOffset, data, size);
   }
 
   void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
       uint8_t bar) {
     checkPointersAreNotNull();
-    _pDeviceBackend->write(bar, regOffset, data, size);
+    _deviceBackendPointer->write(bar, regOffset, data, size);
   }
 
   std::string Device::readDeviceInfo() const {
     checkPointersAreNotNull();
-    return _pDeviceBackend->readDeviceInfo();
+    return _deviceBackendPointer->readDeviceInfo();
   }
 
   Device::RegisterAccessor::RegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
-      _ptrDeviceBackend pDeviceBackend)
+      DeviceBackendPointer deviceBackendPointer)
   : _registerInfo(registerInfo),
-    _pDeviceBackend(pDeviceBackend),
+    _deviceBackendPointer(deviceBackendPointer),
     _fixedPointConverter(_registerInfo.width, _registerInfo.nFractionalBits, _registerInfo.signedFlag) {}
 
   void Device::RegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo,
@@ -302,7 +300,7 @@ namespace mtca4u{
     uint32_t retDataSize;
     uint32_t retRegOff;
     checkRegister(_registerInfo, dataSize, addRegOffset, retDataSize, retRegOff);
-    _pDeviceBackend->read(_registerInfo.bar, retRegOff, data, retDataSize);
+    _deviceBackendPointer->read(_registerInfo.bar, retRegOff, data, retDataSize);
   }
 
   void Device::RegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
@@ -310,7 +308,7 @@ namespace mtca4u{
     uint32_t retDataSize;
     uint32_t retRegOff;
     checkRegister(_registerInfo, dataSize, addRegOffset, retDataSize, retRegOff);
-    _pDeviceBackend->write(_registerInfo.bar, retRegOff, data, retDataSize);
+    _deviceBackendPointer->write(_registerInfo.bar, retRegOff, data, retDataSize);
   }
 
   void Device::RegisterAccessor::readDMA(int32_t *data, size_t dataSize,
@@ -324,7 +322,7 @@ namespace mtca4u{
   }
 
   RegisterInfoMap::RegisterInfo const &Device::RegisterAccessor::getRegisterInfo() const {
-    return _registerInfo; // registerInfo is the RegisterInfoent
+    return _registerInfo;
   }
 
   FixedPointConverter const &Device::RegisterAccessor::getFixedPointConverter()
@@ -333,7 +331,7 @@ namespace mtca4u{
   }
 
   void Device::checkPointersAreNotNull() const {
-    if ((_pDeviceBackend == false) || (_registerMap == false)) {
+    if ((_deviceBackendPointer == false) || (_registerMap == false)) {
       throw DeviceException("Device has not been opened correctly",
           DeviceException::EX_NOT_OPENED);
     }
@@ -342,16 +340,16 @@ namespace mtca4u{
   void Device::open(boost::shared_ptr<DeviceBackend> DeviceBackend,
       boost::shared_ptr<RegisterInfoMap> registerInfoMap)
   {
-    _pDeviceBackend = DeviceBackend;
-    _pDeviceBackend->open();
+    _deviceBackendPointer = DeviceBackend;
+    _deviceBackendPointer->open();
     _registerMap = registerInfoMap;
   }
 
 void Device::open(std::string const & aliasName) {
 	BackendFactory FactoryInstance = BackendFactory::getInstance();
-	_pDeviceBackend =  FactoryInstance.createBackend(aliasName);
-	if (_pDeviceBackend){
-	  _pDeviceBackend->open();
+	_deviceBackendPointer =  FactoryInstance.createBackend(aliasName);
+	if (_deviceBackendPointer){
+	  _deviceBackendPointer->open();
 	}
 	else{
 	  return;
@@ -371,10 +369,10 @@ void Device::open(std::string const & aliasName) {
   DeviceInfoMap::DeviceInfo DeviceInfo;
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
-    if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
-      DeviceInfo = (*deviceIter).first;
-      _mapFileName = DeviceInfo.mapFileName;
-      _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
+      if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
+        DeviceInfo = (*deviceIter).first;
+        _mapFileName = DeviceInfo.mapFileName;
+        _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
       break;
     }
   }
