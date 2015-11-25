@@ -36,7 +36,7 @@ private:
   boost::asio::io_service _io;
   ip::tcp::endpoint _serverEndpoint;
   ip::tcp::acceptor _connectionAcceptor;
-  ip::tcp::socket _incomingConnection;
+  ip::tcp::socket _currentClientConnection;
 
   void processReceivedCommand(std::vector<uint32_t> &buffer);
   bool writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
