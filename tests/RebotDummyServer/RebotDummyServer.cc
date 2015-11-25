@@ -8,7 +8,6 @@
 #include "RebotDummyServer.h"
 
 #include <iostream>
-#include <thread>
 
 namespace mtca4u {
 
@@ -88,7 +87,7 @@ void RebotDummyServer::readRegisterAndSendData(uint32_t* buffer) {
   uint32_t registerAddress = buffer[1];
   const uint32_t numberOfWordsToRead = buffer[2];
   std::vector<int32_t> dataToSend(
-      numberOfWordsToRead + 1); // +1 to accomodate // READ_SUCCESS_INDICATION
+      numberOfWordsToRead + 1); // +1 to accomodate  READ_SUCCESS_INDICATION
   dataToSend[0] = READ_SUCCESS_INDICATION;
   uint8_t bar = 0;
 
