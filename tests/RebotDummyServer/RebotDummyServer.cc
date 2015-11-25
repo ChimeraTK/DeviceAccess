@@ -34,6 +34,7 @@ void RebotDummyServer::start() {
       if (status == boost::asio::error::eof) { // The client has closed the
                                                // connection; move to the outer
                                                // loop to accept new connections
+        _incomingConnection.close();
         break;
       } else if (status) {
         throw boost::system::system_error(status);
@@ -110,6 +111,8 @@ void RebotDummyServer::sendResponseForWriteCommand(bool status) {
 }
 
 RebotDummyServer::~RebotDummyServer() {
+  _connectionAcceptor.close();
+  _incomingConnection.close();
   // TODO Auto-generated destructor stub
 }
 
