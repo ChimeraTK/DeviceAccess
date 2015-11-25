@@ -23,6 +23,8 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
 void RebotDummyServer::start() {
   // open a tcp connection on localhost:port and listen for commands
   // reuse tcp control ?
+
+  // A ip::tcp::acceptor object needs to be created to listen for new connections. It is initialised to listen on TCP port 13, for IP version 4.
   boost::shared_ptr<boost::asio::io_service> _io_service;
   boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
 
