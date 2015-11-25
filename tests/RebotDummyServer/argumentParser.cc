@@ -5,6 +5,7 @@ static const unsigned int DEFAULT_SERVER_PORT = 5001;
 static const std::string DEFAULT_MAP_FILE = "testFile.map";
 
 
+/**************************************************************************/
 struct Argument {
   std::string _shortName;
   std::string _longName;
@@ -12,9 +13,9 @@ struct Argument {
   Argument(std::string shortName, std::string longName)
       : _shortName(shortName), _longName(longName) {}
 };
-
 std::string getArgumentValue(Argument& argument, char** argumentArray);
 
+/**************************************************************************/
 
 unsigned int getPortNumber(char** argumentArray) {
 
@@ -28,7 +29,6 @@ unsigned int getPortNumber(char** argumentArray) {
     return DEFAULT_SERVER_PORT;
   }
 }
-
 std::string getMapFileLocation(char** argumentArray) {
 
   Argument mapFileLocationFlag("-m", "--mapfile");
