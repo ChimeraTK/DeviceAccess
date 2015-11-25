@@ -19,7 +19,7 @@ void RebotBackend::open() {
 }
 
 void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
-                       size_t sizeInBytes) {
+                        size_t sizeInBytes) {
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
                                 RebotBackendException::EX_DEVICE_CLOSED);
@@ -61,7 +61,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
 }
 
 void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
-                        size_t sizeInBytes) {
+                         size_t sizeInBytes) {
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
                                 RebotBackendException::EX_DEVICE_CLOSED);
@@ -98,19 +98,21 @@ void RebotBackend::close() {
   _tcpObject->closeConnection();
 }
 
-boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(std::string /*host*/,
-    std::string /*instance*/,
-    std::list<std::string> parameters){
-  if(parameters.size() < 2) { // expecting tmcb ip and port
+boost::shared_ptr<DeviceBackend> RebotBackend::createInstance( std::string /*host*/,
+                                                               std::string /*instance*/,
+                                                               std::list<std::string> parameters) {
+
+  if (parameters.size() < 2) { // expecting tmcb ip and port
     throw RebotBackendException(
-        "Tmcb ip address and port not forund in the parameter list",
+        "Tmcb ip address and port not found in the parameter list",
         RebotBackendException::EX_INVALID_PARAMETERS);
   }
+
   std::list<std::string>::iterator it = parameters.begin();
+
   std::string tmcbIP = *it;
   int portNumber = std::stoi(*(++it));
-
-  return boost::shared_ptr<RebotBackend> (new RebotBackend(tmcbIP, portNumber));
+  return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber));
 }
 
 } // namespace mtca4u
