@@ -22,7 +22,7 @@ void RebotDummyServer::start() {
       std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
       boost::system::error_code errorCode;
       _incomingConnection.read_some(boost::asio::buffer(dataBuffer), errorCode);
-
+     // FIXME: Will fail if the command is sent in two successive tcp packets
 
       if (errorCode == boost::asio::error::eof) { // The client has closed the
                                                   // connection; move to the
