@@ -98,7 +98,7 @@ void RebotBackend::close() {
   _tcpObject->closeConnection();
 }
 
-boost::shared_ptr<RebotBackend> RebotBackend::createInstance(std::string /*host*/,
+boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(std::string /*host*/,
     std::string /*instance*/,
     std::list<std::string> parameters){
   if(parameters.size() < 2) { // expecting tmcb ip and port
