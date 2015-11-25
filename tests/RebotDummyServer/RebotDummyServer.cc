@@ -59,7 +59,7 @@ void RebotDummyServer::processReceivedCommand(char* buffer) {
     case 3: { // multi word read
       uint32_t numberOfWordsToRead = dataBuffer[2];
       if (numberOfWordsToRead > 361) { // not supported
-        boost::array<int32_t, 1> data;
+        std::vector<int32_t> data(1);
         data[0] = TOO_MUCH_DATA_REQUESTED;
         boost::asio::write(_incomingConnection, boost::asio::buffer(data));
       } else {
@@ -101,7 +101,7 @@ void RebotDummyServer::readRegisterAndSendData(uint32_t* buffer) {
 }
 
 void RebotDummyServer::sendResponseForWriteCommand(bool status) {
-  boost::array<int32_t, 1> data;
+  std::vector<int32_t> data(1);
   if (status == true) { // WriteSuccessful
     data[0] = WRITE_SUCCESS_INDICATION;
     boost::asio::write(_incomingConnection, boost::asio::buffer(data));
