@@ -21,6 +21,12 @@ foreach( testExecutableSrcFile ${testExecutables})
 add_test(${excutableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${excutableName})
  endforeach(testExecutableSrcFile)
 
+#
+# Instructions for compiling the rebot dummy server
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer srcFilesForDummyServer)
+add_executable(RebotDummyServer ${srcFilesForDummyServer})
+target_link_libraries(RebotDummyServer ${PROJECT_NAME} ${BOOST_LIBRARIES})
+
 MACRO( COPY_MAPPING_FILES )
   foreach( MAPPING_FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
   mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp
