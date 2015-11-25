@@ -1,10 +1,3 @@
-/*
- * RebotDummyServer.h
- *
- *  Created on: Nov 23, 2015
- *      Author: varghese
- */
-
 #ifndef SOURCE_DIRECTORY__TESTS_REBOTDUMMYSERVER_REBOTDUMMYSERVER_H_
 #define SOURCE_DIRECTORY__TESTS_REBOTDUMMYSERVER_REBOTDUMMYSERVER_H_
 
@@ -30,7 +23,7 @@ public:
 
 private:
 
-  static const int MAX_SEGMENT_LENGTH_IN_BYTES = 1024;
+  static const int BUFFER_SIZE_IN_WORDS = 256;
   static const int32_t READ_SUCCESS_INDICATION = 1000;
   static const int32_t WRITE_SUCCESS_INDICATION = 1001;
   static const int32_t TOO_MUCH_DATA_REQUESTED = -1010;

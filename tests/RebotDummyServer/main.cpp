@@ -1,9 +1,3 @@
-/*
- * RebotDummyServer.cpp
- *
- *  Created on: Nov 20, 2015
- *      Author: varghese
- */
 
 #include <iostream>
 

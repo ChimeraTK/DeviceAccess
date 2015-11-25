@@ -32,7 +32,8 @@ unsigned int getPortNumber(char** argumentArray) {
 std::string getMapFileLocation(char** argumentArray) {
 
   Argument mapFileLocationFlag("-m", "--mapfile");
-  std::string mapFileLocation = getArgumentValue(mapFileLocationFlag, argumentArray);
+  std::string mapFileLocation = getArgumentValue(mapFileLocationFlag,
+                                                 argumentArray);
 
   if (mapFileLocation.empty()) {
     return DEFAULT_MAP_FILE;
