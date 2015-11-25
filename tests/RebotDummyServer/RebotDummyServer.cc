@@ -27,7 +27,9 @@ void RebotDummyServer::start() {
   while (true) { // loop accepts client connections - one at a time
     _connectionAcceptor.accept(_incomingConnection);
     while (true) { // This loop handles the accepted connection
+
       char dataBuffer[MAX_SEGMENT_LENGTH_IN_BYTES];
+
       boost::system::error_code status;
       _incomingConnection.read_some(boost::asio::buffer(dataBuffer), status);
       if (status == boost::asio::error::eof) { // The client has closed the
@@ -54,7 +56,10 @@ void RebotDummyServer::processReceivedCommand(char* buffer) {
       sendResponseForWriteCommand(status);
       break;
     }
-    case 3: { break; }
+    case 3: { // multi word read
+
+      break;
+    }
   }
 }
 
@@ -73,10 +78,10 @@ bool RebotDummyServer::writeWordToRequestedAddress(uint32_t* buffer) {
 }
 
 void RebotDummyServer::sendResponseForWriteCommand(bool status) {
-  int32_t data;
+  boost::array<int32_t, 1> data;
   if (status == true) { // WriteSuccessful
-    data = WRITE_SUCCESS_INDICATION;
-    boost::asio::write(sock, boost::asio::buffer(data, length));
+    data[0] = WRITE_SUCCESS_INDICATION;
+    boost::asio::write(_incomingConnection, boost::asio::buffer(data));
   } else {
     // FIXME: We currently have nothing for write failure
   }
