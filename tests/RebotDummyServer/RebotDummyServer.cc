@@ -10,7 +10,6 @@
 #include <iostream>
 #include <thread>
 
-
 namespace mtca4u {
 
 RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
@@ -57,7 +56,14 @@ void RebotDummyServer::processReceivedCommand(char* buffer) {
       break;
     }
     case 3: { // multi word read
-
+      uint32_t numberOfWordsToRead = dataBuffer[2];
+      if (numberOfWordsToRead > 361) { // not supported
+        boost::array<int32_t, 1> data;
+        data[0] = TOO_MUCH_DATA_REQUESTED;
+        boost::asio::write(_incomingConnection, boost::asio::buffer(data));
+      } else {
+        readRegisterAndSendData(dataBuffer);
+      }
       break;
     }
   }
@@ -75,6 +81,22 @@ bool RebotDummyServer::writeWordToRequestedAddress(uint32_t* buffer) {
   catch (...) {
     return false;
   }
+}
+
+void RebotDummyServer::readRegisterAndSendData(uint32_t* buffer) {
+  uint32_t registerAddress = buffer[1];
+  const uint32_t numberOfWordsToRead = buffer[2];
+  std::vector<int32_t> dataToSend(
+      numberOfWordsToRead + 1); // +1 to accomodate // READ_SUCCESS_INDICATION
+  dataToSend[0] = READ_SUCCESS_INDICATION;
+  uint8_t bar = 0;
+
+  // start putting in the read values from dataToSend[1]:
+  int32_t* startAddressForData = (&dataToSend[0]) + 1;
+  _registerSpace.read(bar, registerAddress, startAddressForData,
+                      numberOfWordsToRead * sizeof(int32_t));
+
+  boost::asio::write(_incomingConnection, boost::asio::buffer(dataToSend));
 }
 
 void RebotDummyServer::sendResponseForWriteCommand(bool status) {

@@ -47,6 +47,7 @@ private:
 
   void processReceivedCommand(char* buffer);
   bool writeWordToRequestedAddress(uint32_t* buffer);
+  void readRegisterAndSendData(uint32_t* buffer);
   void sendResponseForWriteCommand(bool status);
 };
 
