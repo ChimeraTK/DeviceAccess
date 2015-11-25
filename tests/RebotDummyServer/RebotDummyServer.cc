@@ -26,7 +26,7 @@ void RebotDummyServer::start() {
     _connectionAcceptor.accept(_incomingConnection);
     while (true) { // This loop handles the accepted connection
 
-      char dataBuffer[MAX_SEGMENT_LENGTH_IN_BYTES];
+      std::vector<uint32_t> dataBuffer(MAX_SEGMENT_LENGTH_IN_BYTES/4);
 
       boost::system::error_code status;
       _incomingConnection.read_some(boost::asio::buffer(dataBuffer), status);
@@ -43,33 +43,31 @@ void RebotDummyServer::start() {
   }
 }
 
-void RebotDummyServer::processReceivedCommand(char* buffer) {
-  uint32_t dataBuffer[MAX_SEGMENT_LENGTH_IN_BYTES / 4];
-  memcpy(dataBuffer, buffer, sizeof(dataBuffer));
+void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
 
-  uint32_t requestedAction = dataBuffer[0];
+  uint32_t requestedAction = buffer[0];
 
   switch (requestedAction) {
     case 1: { // Write one word to a register
-      bool status = writeWordToRequestedAddress(dataBuffer);
+      bool status = writeWordToRequestedAddress(buffer);
       sendResponseForWriteCommand(status);
       break;
     }
     case 3: { // multi word read
-      uint32_t numberOfWordsToRead = dataBuffer[2];
+      uint32_t numberOfWordsToRead = buffer[2];
       if (numberOfWordsToRead > 361) { // not supported
         std::vector<int32_t> data(1);
         data[0] = TOO_MUCH_DATA_REQUESTED;
         boost::asio::write(_incomingConnection, boost::asio::buffer(data));
       } else {
-        readRegisterAndSendData(dataBuffer);
+        readRegisterAndSendData(buffer);
       }
       break;
     }
   }
 }
 
-bool RebotDummyServer::writeWordToRequestedAddress(uint32_t* buffer) {
+bool RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer) {
   uint32_t registerAddress = buffer[1];
   int32_t wordToWrite = buffer[2];
   try {
@@ -83,7 +81,7 @@ bool RebotDummyServer::writeWordToRequestedAddress(uint32_t* buffer) {
   }
 }
 
-void RebotDummyServer::readRegisterAndSendData(uint32_t* buffer) {
+void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
   uint32_t registerAddress = buffer[1];
   const uint32_t numberOfWordsToRead = buffer[2];
   std::vector<int32_t> dataToSend(
@@ -112,7 +110,6 @@ void RebotDummyServer::sendResponseForWriteCommand(bool status) {
 RebotDummyServer::~RebotDummyServer() {
   _connectionAcceptor.close();
   _incomingConnection.close();
-  // TODO Auto-generated destructor stub
 }
 
 } /* namespace mtca4u */

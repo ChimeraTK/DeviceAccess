@@ -45,9 +45,9 @@ private:
   ip::tcp::acceptor _connectionAcceptor;
   ip::tcp::socket _incomingConnection;
 
-  void processReceivedCommand(char* buffer);
-  bool writeWordToRequestedAddress(uint32_t* buffer);
-  void readRegisterAndSendData(uint32_t* buffer);
+  void processReceivedCommand(std::vector<uint32_t> &buffer);
+  bool writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
+  void readRegisterAndSendData(std::vector<uint32_t> &buffer);
   void sendResponseForWriteCommand(bool status);
 };
 
