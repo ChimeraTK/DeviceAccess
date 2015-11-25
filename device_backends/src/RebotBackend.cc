@@ -98,4 +98,19 @@ void RebotBackend::close() {
   _tcpObject->closeConnection();
 }
 
+boost::shared_ptr<RebotBackend> RebotBackend::createInstance(std::string /*host*/,
+    std::string /*instance*/,
+    std::list<std::string> parameters){
+  if(parameters.size() < 2) { // expecting tmcb ip and port
+    throw RebotBackendException(
+        "Tmcb ip address and port not forund in the parameter list",
+        RebotBackendException::EX_INVALID_PARAMETERS);
+  }
+  std::list<std::string>::iterator it = parameters.begin();
+  std::string tmcbIP = *it;
+  int portNumber = std::stoi(*(++it));
+
+  return boost::shared_ptr<RebotBackend> (new RebotBackend(tmcbIP, portNumber));
+}
+
 } // namespace mtca4u

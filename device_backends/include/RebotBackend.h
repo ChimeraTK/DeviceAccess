@@ -41,6 +41,7 @@ public:
   virtual void readDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/, size_t /*sizeInBytes*/) {};
   ///Not implemented
   virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
+  static boost::shared_ptr<RebotBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
 };
 
 } //namespace mtca4u
