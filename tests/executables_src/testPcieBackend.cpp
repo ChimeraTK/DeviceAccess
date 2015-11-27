@@ -37,7 +37,7 @@ using namespace mtca4u;
  *  has to be executed first, and testClose() has to be executed last.
  *  Further dependencies are implemented in the teste suite.
  */
-static BackendFactory FactoryInstance = BackendFactory::getInstance();
+static BackendFactory &FactoryInstance = BackendFactory::getInstance();
 class PcieBackendTest
 {
 public:

@@ -2,7 +2,7 @@
 #include "argumentParser.h"
 
 static const unsigned int DEFAULT_SERVER_PORT = 5001;
-static const std::string DEFAULT_MAP_FILE = "testFile.map";
+static const std::string DEFAULT_MAP_FILE = "./testFile.map";
 
 
 /**************************************************************************/

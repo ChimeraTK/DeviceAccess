@@ -6,12 +6,9 @@
 
 static const std::string REGISTER_NAME = "WORD_USER";
 static const std::string MODULE_NAME = "BOARD";
-static const std::string DEVICE_NAME = "/dev/mtcadummys0";
-static const std::string MAP_NAME = "mtcadummy.map";
 
 int main() {
 
-	static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
 	/** Entry in dmap file is
 	 * PCIE1     sdm://./pci:pcieunidummys6; mtcadummy.map
 	 */

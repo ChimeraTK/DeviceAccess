@@ -54,10 +54,10 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
       uint32_t numberOfWordsToRead = buffer.at(2);
 
       if (numberOfWordsToRead > 361) { // not supported
-        std::vector<int32_t> data(1);
-        data.at(0) = TOO_MUCH_DATA_REQUESTED;
+        std::vector<int32_t> dataToSend(1);
+        dataToSend.at(0) = TOO_MUCH_DATA_REQUESTED;
 
-        boost::asio::write(_currentClientConnection, boost::asio::buffer(data));
+        boost::asio::write(_currentClientConnection, boost::asio::buffer(dataToSend));
       } else {
         readRegisterAndSendData(buffer);
       }
@@ -69,8 +69,8 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
 bool RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer) {
   uint32_t registerAddress = buffer.at(1);
   int32_t wordToWrite = buffer.at(2);
+  uint8_t bar = 0;
   try {
-    uint8_t bar = 0;
     _registerSpace.write(bar, registerAddress, &wordToWrite,
                          sizeof(wordToWrite));
     return true;
@@ -89,7 +89,7 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
   dataToSend.at(0) = READ_SUCCESS_INDICATION;
 
   uint8_t bar = 0;
-  // start putting in the read values from dataToSend[1]:
+  // start putting in the read values from location dataToSend[1]:
   int32_t* startAddressForReadInData = dataToSend.data() + 1;
   _registerSpace.read(bar, registerAddress, startAddressForReadInData,
                       numberOfWordsToRead * sizeof(int32_t));

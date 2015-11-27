@@ -346,7 +346,7 @@ namespace mtca4u{
   }
 
 void Device::open(std::string const & aliasName) {
-  BackendFactory factoryInstance = BackendFactory::getInstance();
+  BackendFactory &factoryInstance = BackendFactory::getInstance();
   _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
   if (_deviceBackendPointer){
     _deviceBackendPointer->open();
