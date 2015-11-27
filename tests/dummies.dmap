@@ -10,4 +10,5 @@ DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.ma
 DUMMYD1   sdm://./dummy=goodMapFile.map goodMapFile.map
 example   sdm://./exx:examp=bus,1  ./mtcadummy_withoutModules.map
 DUMMYD9   sdm://./dummy=goodMapFile.map goodMapFile.map
+mskrebot   sdm://./rebot=someip,22 goodMapFile.map
 
