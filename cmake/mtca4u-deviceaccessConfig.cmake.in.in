@@ -4,6 +4,9 @@
 # @PROJECT_NAME@_LIBRARIES    : libraries to link against
 # @PROJECT_NAME@_LIBRARY_DIRS : path to the library directory
 # @PROJECT_NAME@_VERSION      : the version of this library
+#
+# @PROJECT_NAME@  mtca4u-deviceaccess_CPPFLAGS     : compiler flags for regular Makefiles
+# @PROJECT_NAME@  mtca4u-deviceaccess_LDFLAGS      : linker flags for regular Makefiles
  
 # Compute paths
 get_filename_component(@PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
@@ -30,5 +33,8 @@ set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
 set(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_LIBRARY} @Boost_LIBRARIES@)
 set(@PROJECT_NAME@_LIBRARY_DIRS ${@PROJECT_NAME@_LIBRARY_DIR})
 
-set(@PROJECT_NAME@_VERSION @@PROJECT_NAME@_SOVERSION@)
+set(@PROJECT_NAME@_CPPFLAGS @@PROJECT_NAME@_CPPFLAGS@)
+set(@PROJECT_NAME@_LDFLAGS @@PROJECT_NAME@_LDFLAGS@)
+
+set(@PROJECT_NAME@_VERSION @@PROJECT_NAME@_VERSION@)
 
