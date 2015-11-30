@@ -122,11 +122,7 @@ void RebotTestClass::testConnection() {
   // TODO: add the commented test after the dummy server takes care of handle
   // one connection at a time
    mtca4u::RebotBackend rebotBackend1(_rebotServer.ip, _rebotServer.port);
-   rebotBackend1.open();
-
-   mtca4u::RebotBackend rebotBackend2(_rebotServer.ip, _rebotServer.port);
-   rebotBackend2.open();
-   //BOOST_CHECK_THROW(rebotBackend1.open());
+   BOOST_CHECK_THROW(rebotBackend1.open(), mtca4u::RebotBackendException);
 }
 
 void RebotTestClass::testWrite() {
