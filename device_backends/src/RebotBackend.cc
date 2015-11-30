@@ -82,7 +82,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
       datasend[j] = 0;
     }
     for (int j = 4; j < 8; ++j) {
-      datasend[j] = ((address + i) >> (8 * (j - 4))) & 0xFF;
+      datasend[j] = ((address + i * sizeof(int32_t)) >> (8 * (j - 4))) & 0xFF;
     }
     for (int j = 8; j < 12; ++j) {
       datasend[j] = (data[i] >> (8 * (j - 8))) & 0xFF;
