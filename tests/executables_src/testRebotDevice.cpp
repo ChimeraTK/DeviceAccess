@@ -154,6 +154,6 @@ rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
   rebotBackend.read(0, word_clk_mux_addr, readInData, sizeof(readInData));
 
   for(int i = 0; i < 4; i++){
-    BOOST_CHECK_EQUAL(dataToWrite, readInData);
+    BOOST_CHECK_EQUAL(dataToWrite[i], readInData[i]);
   }
 }

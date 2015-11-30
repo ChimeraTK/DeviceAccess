@@ -12,7 +12,7 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
       _serverPort(portNumber),
       _io(),
       _serverEndpoint(ip::tcp::v4(), _serverPort),
-      _connectionAcceptor(_io, _serverEndpoint, false),
+      _connectionAcceptor(_io, _serverEndpoint),
       _currentClientConnection() {
   // set the acceptor backlog to 1
 /*  _connectionAcceptor.open(_serverEndpoint.protocol());
