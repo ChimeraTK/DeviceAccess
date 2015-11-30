@@ -417,7 +417,6 @@ namespace mtca4u {
     private:
 
       DeviceBackendPointer _deviceBackendPointer;
-      std::string _mapFileName;
       RegisterInfoMapPointer _registerMap;
 
       void checkRegister(const std::string &regName,
