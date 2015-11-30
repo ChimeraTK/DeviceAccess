@@ -10,9 +10,14 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
       _serverPort(portNumber),
       _io(),
       _serverEndpoint(ip::tcp::v4(), _serverPort),
-      _connectionAcceptor(_io, _serverEndpoint),
+      _connectionAcceptor(_io),
       _currentClientConnection(_io) {
-  _connectionAcceptor.listen(0);
+  // set the acceptor backlog to 1
+  _connectionAcceptor.open(_serverEndpoint.protocol());
+  _connectionAcceptor.bind(_serverEndpoint);
+  _connectionAcceptor.listen(1);
+  std::cout << "listen(1) outside constructor" << std::endl;
+
 }
 
 void RebotDummyServer::start() {

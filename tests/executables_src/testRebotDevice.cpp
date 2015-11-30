@@ -35,6 +35,7 @@ public:
     // unaligned read/write
     // read/write when device closed
   void testConnection();
+  void testWrite();
 
 
 
@@ -55,6 +56,7 @@ public:
           : test_suite("RebotDeviceTestSuite") {
     boost::shared_ptr<RebotTestClass> rebotTest(new RebotTestClass(cardAlias));
     add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testConnection, rebotTest));
+    add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testWrite, rebotTest));
   }
 };
 
@@ -111,11 +113,19 @@ RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri)
 void RebotTestClass::testConnection() {
 
   // create connection with good ip and port see that there are no exceptions
-  mtca4u::RebotBackend goodConnection(_rebotServer.ip, _rebotServer.port);
-  mtca4u::RebotBackend goodConnection1(_rebotServer.ip, _rebotServer.port);
-  BOOST_CHECK_EQUAL(goodConnection.isConnected(), true);
-  BOOST_CHECK_EQUAL(goodConnection.isOpen(), false);
-  BOOST_CHECK_NO_THROW(goodConnection.open());
-  goodConnection1.open();
-  BOOST_CHECK_NO_THROW(goodConnection.close());
+  mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
+  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
+  BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
+  BOOST_CHECK_NO_THROW(rebotBackend.open());
+  BOOST_CHECK_NO_THROW(rebotBackend.close());
+
+  // TODO: add the commented test after the dummy server takes care of handle
+  // one connection at a time
+   mtca4u::RebotBackend rebotBackend1(_rebotServer.ip, _rebotServer.port);
+   rebotBackend1.open();
+   //BOOST_CHECK_THROW(rebotBackend1.open());
+}
+
+void RebotTestClass::testWrite() {
+
 }
