@@ -1,7 +1,10 @@
 #include <boost/test/included/unit_test.hpp>
 #include "BackendFactory.h"
+#include "RebotBackend.h"
+
 #include "Utilities.h"
 #include "DMapFileParser.h"
+
 using namespace boost::unit_test_framework;
 
 typedef mtca4u::DeviceInfoMap::DeviceInfo DeviceInfo;
@@ -24,6 +27,17 @@ private:
 public:
   RebotTestClass(std::string const& cardAlias);
 
+  // the actual tests
+  // Backend tests:
+    // connection test
+    // Multiple write
+    // Multiple read
+    // unaligned read/write
+    // read/write when device closed
+  void testConnection();
+
+
+
 private:
   /*
    * parse the relevant dmap file to extract ip and port which would be required
@@ -40,6 +54,7 @@ public:
   RebotDeviceTestSuite(std::string const& cardAlias)
           : test_suite("RebotDeviceTestSuite") {
     boost::shared_ptr<RebotTestClass> rebotTest(new RebotTestClass(cardAlias));
+    add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testConnection, rebotTest));
   }
 };
 
@@ -62,6 +77,8 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
 }
 
 /******************************************************************************/
+
+
 RebotTestClass::RebotTestClass(std::string const& cardAlias)
     : _cardAlias(cardAlias), _rebotServer(getServerDetails()) {}
 
@@ -82,11 +99,23 @@ DeviceInfo RebotTestClass::getDeviceDetailsFromDMap() {
   return deviceDetails;
 }
 
-inline RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri) {
+RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri) {
   mtca4u::Sdm parsedSDM = mtca4u::Utilities::parseSdm(uri);
   std::list<std::string> &serverParameters = parsedSDM._Parameters;
   std::list<std::string>::iterator it = serverParameters.begin();
   std::string ip = *it;
   int port = std::stoi(*(++it));
   return RebotServerDetails(ip, port);
+}
+
+void RebotTestClass::testConnection() {
+
+  // create connection with good ip and port see that there are no exceptions
+  mtca4u::RebotBackend goodConnection(_rebotServer.ip, _rebotServer.port);
+  mtca4u::RebotBackend goodConnection1(_rebotServer.ip, _rebotServer.port);
+  BOOST_CHECK_EQUAL(goodConnection.isConnected(), true);
+  BOOST_CHECK_EQUAL(goodConnection.isOpen(), false);
+  BOOST_CHECK_NO_THROW(goodConnection.open());
+  goodConnection1.open();
+  BOOST_CHECK_NO_THROW(goodConnection.close());
 }

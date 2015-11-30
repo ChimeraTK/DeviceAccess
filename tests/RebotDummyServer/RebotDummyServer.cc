@@ -11,12 +11,19 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
       _io(),
       _serverEndpoint(ip::tcp::v4(), _serverPort),
       _connectionAcceptor(_io, _serverEndpoint),
-      _currentClientConnection(_io) {}
+      _currentClientConnection(_io) {
+  _connectionAcceptor.listen(0);
+}
 
 void RebotDummyServer::start() {
 
   while (true) { // loop accepts client connections - one at a time
     _connectionAcceptor.accept(_currentClientConnection);
+
+    std::string remoteIp = _currentClientConnection.remote_endpoint().address().to_string();
+    int remotePort = _currentClientConnection.remote_endpoint().port();
+    std::cout << "connection established with - " << remoteIp << ":" << remotePort << std::endl;
+
     while (true) { // This loop handles the accepted connection
 
       std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
@@ -29,6 +36,7 @@ void RebotDummyServer::start() {
                                                   // outer  loop to accept new
                                                   // connections
         _currentClientConnection.close();
+        std::cout << "connection closed" << std::endl;
         break;
       } else if (errorCode) {
         throw boost::system::system_error(errorCode);
