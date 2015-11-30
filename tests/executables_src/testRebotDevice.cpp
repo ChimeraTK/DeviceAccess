@@ -114,17 +114,46 @@ void RebotTestClass::testConnection() {
 
   // create connection with good ip and port see that there are no exceptions
   mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
+   mtca4u::RebotBackend secondConnectionToServer(_rebotServer.ip, _rebotServer.port);
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
-  BOOST_CHECK_NO_THROW(rebotBackend.open());
-  BOOST_CHECK_NO_THROW(rebotBackend.close());
 
-  // TODO: add the commented test after the dummy server takes care of handle
-  // one connection at a time
-   mtca4u::RebotBackend rebotBackend1(_rebotServer.ip, _rebotServer.port);
-   BOOST_CHECK_THROW(rebotBackend1.open(), mtca4u::RebotBackendException);
+  BOOST_CHECK_NO_THROW(rebotBackend.open());
+  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
+  BOOST_CHECK_EQUAL(rebotBackend.isOpen(), true);
+
+  //BOOST_CHECK_THROW(secondConnectionToServer.open(), mtca4u::RebotBackendException);
+
+  BOOST_CHECK_NO_THROW(rebotBackend.close());
+  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
+  BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 }
 
 void RebotTestClass::testWrite() {
+  mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
+  rebotBackend.open();
+  /****************************************************************************/
+  // Single word read -  Hardcoding addresses for now
+  uint32_t word_status_register_address = 0x8;
+  int32_t data = -987;
+  // Register
+rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
 
+  int32_t readValue;
+  rebotBackend.read(0, word_status_register_address, &readValue, sizeof(readValue));
+
+  BOOST_CHECK_EQUAL(data, readValue);
+  /****************************************************************************/
+
+  // Multiword read/write
+  uint32_t word_clk_mux_addr = 0x20;
+  int32_t dataToWrite[4] = {rand(), rand(), rand(), rand()};
+  int32_t readInData[4];
+
+  rebotBackend.write(0, word_clk_mux_addr, dataToWrite, sizeof(dataToWrite));
+  rebotBackend.read(0, word_clk_mux_addr, readInData, sizeof(readInData));
+
+  for(int i = 0; i < 4; i++){
+    BOOST_CHECK_EQUAL(dataToWrite, readInData);
+  }
 }
