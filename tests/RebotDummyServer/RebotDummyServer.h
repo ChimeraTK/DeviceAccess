@@ -36,12 +36,13 @@ private:
   boost::asio::io_service _io;
   ip::tcp::endpoint _serverEndpoint;
   ip::tcp::acceptor _connectionAcceptor;
-  ip::tcp::socket _currentClientConnection;
+  boost::shared_ptr<ip::tcp::socket> _currentClientConnection;
 
   void processReceivedCommand(std::vector<uint32_t> &buffer);
   bool writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
   void sendResponseForWriteCommand(bool status);
+  void handleAcceptedConnection(boost::shared_ptr<ip::tcp::socket>& );
 };
 
 } /* namespace mtca4u */

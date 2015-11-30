@@ -1,6 +1,8 @@
 
 #include "RebotDummyServer.h"
 #include <iostream>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
 
 namespace mtca4u {
 
@@ -11,7 +13,7 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
       _io(),
       _serverEndpoint(ip::tcp::v4(), _serverPort),
       _connectionAcceptor(_io),
-      _currentClientConnection(_io) {
+      _currentClientConnection() {
   // set the acceptor backlog to 1
   _connectionAcceptor.open(_serverEndpoint.protocol());
   _connectionAcceptor.bind(_serverEndpoint);
@@ -23,32 +25,11 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
 void RebotDummyServer::start() {
 
   while (true) { // loop accepts client connections - one at a time
-    _connectionAcceptor.accept(_currentClientConnection);
-
-    std::string remoteIp = _currentClientConnection.remote_endpoint().address().to_string();
-    int remotePort = _currentClientConnection.remote_endpoint().port();
-    std::cout << "connection established with - " << remoteIp << ":" << remotePort << std::endl;
-
-    while (true) { // This loop handles the accepted connection
-
-      std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
-      boost::system::error_code errorCode;
-      _currentClientConnection.read_some(boost::asio::buffer(dataBuffer), errorCode);
-     // FIXME: Will fail if the command is sent in two successive tcp packets
-
-      if (errorCode == boost::asio::error::eof) { // The client has closed the
-                                                  // connection; move to the
-                                                  // outer  loop to accept new
-                                                  // connections
-        _currentClientConnection.close();
-        std::cout << "connection closed" << std::endl;
-        break;
-      } else if (errorCode) {
-        throw boost::system::system_error(errorCode);
-      }
-
-      processReceivedCommand(dataBuffer);
-    }
+    boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
+    _connectionAcceptor.accept(*incomingConnection);
+    // http://www.boost.org/doc/libs/1_46_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
+    RebotDummyServer::handleAcceptedConnection(incomingConnection);
+    //boost::asio::detail::thread t(boost::bind(&RebotDummyServer::handleAcceptedConnection, this, incomingConnection));
   }
 }
 
@@ -70,7 +51,7 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
         std::vector<int32_t> dataToSend(1);
         dataToSend.at(0) = TOO_MUCH_DATA_REQUESTED;
 
-        boost::asio::write(_currentClientConnection, boost::asio::buffer(dataToSend));
+        boost::asio::write(*_currentClientConnection, boost::asio::buffer(dataToSend));
       } else {
         readRegisterAndSendData(buffer);
       }
@@ -108,14 +89,14 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
                       numberOfWordsToRead * sizeof(int32_t));
 
   // FIXME: Nothing in protocol to indicate read failure.
-  boost::asio::write(_currentClientConnection, boost::asio::buffer(dataToSend));
+  boost::asio::write(*_currentClientConnection, boost::asio::buffer(dataToSend));
 }
 
 void RebotDummyServer::sendResponseForWriteCommand(bool status) {
   if (status == true) { // WriteSuccessful
     std::vector<int32_t> data(1);
     data.at(0) = WRITE_SUCCESS_INDICATION;
-    boost::asio::write(_currentClientConnection, boost::asio::buffer(data));
+    boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
   }// else {
     // FIXME: We currently have nothing for write failure
   //}
@@ -123,7 +104,34 @@ void RebotDummyServer::sendResponseForWriteCommand(bool status) {
 
 RebotDummyServer::~RebotDummyServer() {
   _connectionAcceptor.close();
-  _currentClientConnection.close();
+  _currentClientConnection->close();
+}
+
+void RebotDummyServer::handleAcceptedConnection(
+     boost::shared_ptr<ip::tcp::socket>& incomingSocket) {
+  _currentClientConnection = incomingSocket;
+
+  while (true) { // This loop handles the accepted connection
+
+    std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
+    boost::system::error_code errorCode;
+    _currentClientConnection->read_some(boost::asio::buffer(dataBuffer), errorCode);
+   // FIXME: Will fail if the command is sent in two successive tcp packets
+
+    if (errorCode == boost::asio::error::eof) { // The client has closed the
+                                                // connection; move to the
+                                                // outer  loop to accept new
+                                                // connections
+      _currentClientConnection->close();
+      std::cout << "connection closed" << std::endl;
+      break;
+    } else if (errorCode) {
+      throw boost::system::system_error(errorCode);
+    }
+
+    processReceivedCommand(dataBuffer);
+  }
 }
 
 } /* namespace mtca4u */
+
