@@ -6,6 +6,9 @@
 
 namespace mtca4u {
 
+bool sigterm_caught = false;
+
+
 RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
                                    std::string& mapFile)
     : _registerSpace(mapFile),
@@ -22,7 +25,7 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
 
 void RebotDummyServer::start() {
 
-  while (true) { // loop accepts client connections - one at a time
+  while (sigterm_caught == false) { // loop accepts client connections - one at a time
     boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
     _connectionAcceptor.accept(*incomingConnection);
     // http://www.boost.org/doc/libs/1_46_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
@@ -109,7 +112,7 @@ void RebotDummyServer::handleAcceptedConnection(
      boost::shared_ptr<ip::tcp::socket>& incomingSocket) {
   _currentClientConnection = incomingSocket;
 
-  while (true) { // This loop handles the accepted connection
+  while (sigterm_caught == false) { // This loop handles the accepted connection
 
     std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
     boost::system::error_code errorCode;
