@@ -3,8 +3,8 @@ cmake_minimum_required (VERSION 2.8.7)
 Project(mtca4u-deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 01)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 02)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -122,6 +122,11 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
 #create the config files by filling the correct variables into the template (*.cmake.in)
 #All variables @VARIABLE@ are replaced with the current values
 
+#some variables we need for regular Makefiles, for which we also provide the config
+set(${PROJECT_NAME}_CPPFLAGS "-I${CMAKE_INSTALL_PREFIX}/include ")
+set(${PROJECT_NAME}_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME} ")
+set(${PROJECT_NAME}_LDFLAGS "${${PROJECT_NAME}_LDFLAGS} -Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags ")
+
 #We have nested @-statements, so we have to parse twice
 configure_file(cmake/${PROJECT_NAME}Config.cmake.in.in
   "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in" @ONLY)
@@ -133,7 +138,9 @@ configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in.in
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
  
-configure_file(cmake/PROJECT_NAME-config.in
+configure_file(cmake/PROJECT_NAME-config.in.in
+  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in" @ONLY)
+configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
 
 # Install the ..Config.cmake and ..ConfigVersion.cmake

@@ -9,6 +9,9 @@
 #   mtca4u-deviceaccess_LIBRARY_DIRS : path to the library directory
 #   mtca4u-deviceaccess_LIBRARY      : the provided libraries
 #
+#   mtca4u-deviceaccess_CPPFLAGS     : compiler flags for regular Makefiles
+#   mtca4u-deviceaccess_LDFLAGS      : linker flags for regular Makefiles
+#
 # @author Martin Killenberg, DESY
 #
 
