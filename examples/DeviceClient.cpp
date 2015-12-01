@@ -10,7 +10,7 @@ ExampleBackend::BackendRegisterer &theRegisterer = ExampleBackend::backendRegist
 using namespace mtca4u;
 int main() {
   //ExampleDeviceRegisterer::init();
-  BackendFactory FactoryInstance = BackendFactory::getInstance();
+  BackendFactory &FactoryInstance = BackendFactory::getInstance();
   boost::shared_ptr<DeviceBackend> _pcieDeviceInstance;
   _pcieDeviceInstance = FactoryInstance.createBackend("PCIE0");
   if (_pcieDeviceInstance != 0)

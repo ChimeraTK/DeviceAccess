@@ -9,6 +9,7 @@
 #include "Utilities.h"
 #include "BackendFactory.h"
 #include "MapFileParser.h"
+#include "RebotBackend.h"
 #include "DMapFilesParser.h"
 #include "DMapFileDefaults.h"
 #include "Exception.h"
@@ -41,6 +42,7 @@ BackendFactory::BackendFactory(){
   registerBackendType("pci","",&PcieBackend::createInstance);
   registerBackendType("pci","pcie",&PcieBackend::createInstance);
   registerBackendType("dummy","",&DummyBackend::createInstance);
+  registerBackendType("rebot","",&RebotBackend::createInstance); // FIXME: Do we use protocol for tmcb?
 }
 
 

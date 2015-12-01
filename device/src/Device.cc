@@ -346,7 +346,7 @@ namespace mtca4u{
   }
 
 void Device::open(std::string const & aliasName) {
-  BackendFactory factoryInstance = BackendFactory::getInstance();
+  BackendFactory &factoryInstance = BackendFactory::getInstance();
   _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
   if (_deviceBackendPointer){
     _deviceBackendPointer->open();
@@ -370,9 +370,7 @@ void Device::open(std::string const & aliasName) {
   for (DMapFilesParser::iterator deviceIter = filesParser.begin();
       deviceIter != filesParser.end(); ++deviceIter) {
     if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
-      deviceInfo = (*deviceIter).first;
-      _mapFileName = deviceInfo.mapFileName;
-      _registerMap = mtca4u::MapFileParser().parse(_mapFileName);
+      _registerMap = (*deviceIter).second;
       break;
     }
   }

@@ -18,7 +18,7 @@ using namespace mtca4u;
 #define EXISTING_DEVICE "DUMMYD0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
-static BackendFactory FactoryInstance = BackendFactory::getInstance();
+static BackendFactory &FactoryInstance = BackendFactory::getInstance();
 // declaration so we can make it friend
 // of TestableDummyBackend.
 class DummyBackendTest;

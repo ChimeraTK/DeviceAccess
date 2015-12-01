@@ -11,7 +11,6 @@ static const std::string MODULE_NAME = "BOARD";
 
 int main(){
 
-  static mtca4u::BackendFactory FactoryInstance = mtca4u::BackendFactory::getInstance();
   // Entry in dmap file is
   // PCIE2  sdm://./pci:mtcadummys0; mtcadummy.map
   boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());

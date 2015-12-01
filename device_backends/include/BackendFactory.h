@@ -37,7 +37,7 @@ private:
   /** Add known backend types */
   BackendFactory();
 
-  //BackendFactory(BackendFactory const&);     /** To avoid making copies */
+  BackendFactory(BackendFactory const&);     /** To avoid making copies */
 
   void operator=(BackendFactory const&); /** To avoid making copies */
 
