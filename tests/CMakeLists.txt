@@ -2,6 +2,10 @@ FIND_PACKAGE(Boost COMPONENTS system filesystem unit_test_framework)
 include_directories(${Boost_INCLUDE_DIRS})
 #add check if boost not found
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+include(helperMacros)
+
+
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/plugin_example/include")
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src testSources)
@@ -14,18 +18,43 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/executables_src testExecutables
 
 
 foreach( testExecutableSrcFile ${testExecutables})
-    #NAME_WE means the base name without path and (longest) extension
-    get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
-    add_executable(${excutableName} ${testExecutableSrcFile})
-    target_link_libraries(${excutableName} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES}) 
-add_test(${excutableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${excutableName})
- endforeach(testExecutableSrcFile)
+  #NAME_WE means the base name without path and (longest) extension
+  get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
+  add_executable(${excutableName} ${testExecutableSrcFile})
+  target_link_libraries(${excutableName} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES}) 
+  add_test(${excutableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${excutableName})
+endforeach(testExecutableSrcFile)
 
 #
 # Instructions for compiling the rebot dummy server
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer srcFilesForDummyServer)
 add_executable(RebotDummyServer ${srcFilesForDummyServer})
 target_link_libraries(RebotDummyServer ${PROJECT_NAME} ${BOOST_LIBRARIES})
+
+# 
+# Introduced directory unitTestsNotUnderCtest; This contains the boost unit
+# tests (currently for the rebot backend). The tests in this directory should
+# not be added as ctest tests. The idea is to call them indirectly through a
+# wrapper shell script that sets up the environment before they can be run. (eg.
+# start the rebot dummy server first.) The lines below would create executables
+# for the cpp files in this directory, but not add them to ctest
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/unitTestsNotUnderCtest  executables)
+foreach( executablesrc ${executables})
+  get_filename_component(exename ${executablesrc} NAME_WE)
+  add_executable(${exename} ${executablesrc})
+  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES})
+endforeach(executablesrc)
+
+
+#
+# copy the scripts directory to the build location:
+COPY_CONTENT_TO_BUILD_DIR("${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+#
+# Add the scripts as ctests.
+FILE(GLOB location_of_script_files 
+    "${PROJECT_BINARY_DIR}/scripts/*.sh")
+ADD_SCRIPTS_AS_TESTS( "${location_of_script_files}" )
+
 
 MACRO( COPY_MAPPING_FILES )
   foreach( MAPPING_FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
