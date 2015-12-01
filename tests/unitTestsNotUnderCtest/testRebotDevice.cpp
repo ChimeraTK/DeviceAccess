@@ -59,6 +59,7 @@ public:
     boost::shared_ptr<RebotTestClass> rebotTest(new RebotTestClass(cardAlias));
     add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testConnection, rebotTest));
     add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testWrite, rebotTest));
+    add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testFactory, rebotTest));
   }
 };
 
