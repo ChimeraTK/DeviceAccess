@@ -1,6 +1,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include "BackendFactory.h"
 #include "RebotBackend.h"
+#include "Device.h"
 
 #include "Utilities.h"
 #include "DMapFileParser.h"
@@ -36,6 +37,7 @@ public:
     // read/write when device closed
   void testConnection();
   void testWrite();
+  void testFactory();
 
 
 
@@ -152,6 +154,23 @@ rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
 
   rebotBackend.write(0, word_clk_mux_addr, dataToWrite, sizeof(dataToWrite));
   rebotBackend.read(0, word_clk_mux_addr, readInData, sizeof(readInData));
+
+  for(int i = 0; i < 4; i++){
+    BOOST_CHECK_EQUAL(dataToWrite[i], readInData[i]);
+  }
+}
+
+inline void RebotTestClass::testFactory() {
+  mtca4u::Device rebotDevice;
+  // assuming that the working directory for this test is the tests directory in
+  // the build folder
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
+  rebotDevice.open("mskrebot");
+
+  int32_t dataToWrite[4] = {rand(), rand(), rand(), rand()};
+  int32_t readInData[4];
+  rebotDevice.writeReg("WORD_CLK_MUX", "ADC", dataToWrite, sizeof(dataToWrite));
+  rebotDevice.readReg("WORD_CLK_MUX", "ADC", readInData, sizeof(readInData));
 
   for(int i = 0; i < 4; i++){
     BOOST_CHECK_EQUAL(dataToWrite[i], readInData[i]);
