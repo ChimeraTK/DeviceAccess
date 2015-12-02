@@ -9,7 +9,6 @@ namespace ip = boost::asio::ip;
 
 namespace mtca4u {
 
-extern bool sigterm_caught;
 
 /*
  * starts a blocking Rebot server on localhost:port. where port is the
