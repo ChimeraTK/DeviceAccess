@@ -6,7 +6,7 @@
 
 namespace mtca4u {
 
-bool sigterm_caught = false;
+bool volatile sigterm_caught = false;
 
 
 RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
@@ -26,8 +26,21 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
 void RebotDummyServer::start() {
 
   while (sigterm_caught == false) { // loop accepts client connections - one at a time
+      std::cout << "this is start " << std::endl;
+
     boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
-    _connectionAcceptor.accept(*incomingConnection);
+    try{
+//      incomingConnection.reset(new ip::tcp::socket(_io));
+      _connectionAcceptor.accept(*incomingConnection);
+    }catch( boost::system::system_error &e){
+	std::cout << "caught boost::system error " << e.what()  << std::endl;
+	if (sigterm_caught){
+         break; // exit gracefully
+       }else{
+         throw; // something else went wrong, rethrow the exception
+       }
+    }
+
     // http://www.boost.org/doc/libs/1_46_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
     RebotDummyServer::handleAcceptedConnection(incomingConnection);
     //boost::asio::detail::thread t(boost::bind(&RebotDummyServer::handleAcceptedConnection, this, incomingConnection));
@@ -105,7 +118,12 @@ void RebotDummyServer::sendResponseForWriteCommand(bool status) {
 
 RebotDummyServer::~RebotDummyServer() {
   _connectionAcceptor.close();
-  _currentClientConnection->close();
+
+  // if the terminate signal is caught while waiting for a connection
+  // there is no client connection, so we have to check the pointer here
+  if ( _currentClientConnection ){
+    _currentClientConnection->close();
+  }
 }
 
 void RebotDummyServer::handleAcceptedConnection(
@@ -125,6 +143,12 @@ void RebotDummyServer::handleAcceptedConnection(
                                                 // connections
       _currentClientConnection->close();
       std::cout << "connection closed" << std::endl;
+      break;
+    } else if (errorCode && sigterm_caught) { // reading was interrupted by a terminate signal;
+                                              // move to the outer loop which will also quit
+	                                      // and end the server gracefully
+      _currentClientConnection->close();
+      std::cout << "Terminate signal detected while reading. Connection closed, will exit now." << std::endl;
       break;
     } else if (errorCode) {
       throw boost::system::system_error(errorCode);

@@ -5,10 +5,11 @@
 #include "RebotDummyServer.h"
 #include "argumentParser.h"
 
-void setSigtemIndicator(int /*signalNumber*/){
+void setSigtemIndicator(int signalNumber =0){
   // should handle signal numbers according to what is received; Letting this
   // slide for now as we would only receive the term signal, the way we are
   // testing currently
+  std::cout << "caught signal " << signalNumber<< std::endl;
   mtca4u::sigterm_caught = true;
 }
 
@@ -26,6 +27,8 @@ int main(int, char** argv) {
 
   mtca4u::RebotDummyServer testServer(portNumber, mapFileLocation);
   testServer.start();
+
+  std::cout << "RebotDummyServer exits gracefully." << std::endl;
 
   return 0;
 }
