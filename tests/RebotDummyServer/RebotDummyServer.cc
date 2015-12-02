@@ -26,14 +26,11 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
 void RebotDummyServer::start() {
 
   while (sigterm_caught == false) { // loop accepts client connections - one at a time
-      std::cout << "this is start " << std::endl;
 
     boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
     try{
-//      incomingConnection.reset(new ip::tcp::socket(_io));
       _connectionAcceptor.accept(*incomingConnection);
     }catch( boost::system::system_error &e){
-	std::cout << "caught boost::system error " << e.what()  << std::endl;
 	if (sigterm_caught){
          break; // exit gracefully
        }else{
