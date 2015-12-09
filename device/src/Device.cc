@@ -4,8 +4,6 @@
 #include "DMapFilesParser.h"
 #include "Utilities.h"
 #include <cmath>
-#include <boost/filesystem.hpp>
-
 
 namespace mtca4u{
 
@@ -348,31 +346,20 @@ namespace mtca4u{
 void Device::open(std::string const & aliasName) {
   BackendFactory &factoryInstance = BackendFactory::getInstance();
   _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
-  if (_deviceBackendPointer){
+  try{
     _deviceBackendPointer->open();
-  }
-  else{
-    return;
-  }
-  //find the file containing first occurrence of alias name.
-  std::string dmapfile = Utilities::findFirstOfAlias(aliasName);
-  DMapFilesParser filesParser;
-  try
-  {
-    if ( boost::filesystem::exists(dmapfile ) ){
-      filesParser.parse_file(dmapfile);
-    }
-  }
-  catch (Exception& e) {
-    std::cout << e.what() << std::endl;
-  }
-  DeviceInfoMap::DeviceInfo deviceInfo;
-  for (DMapFilesParser::iterator deviceIter = filesParser.begin();
-      deviceIter != filesParser.end(); ++deviceIter) {
-    if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
-      _registerMap = (*deviceIter).second;
-      break;
-    }
+
+    //find the file containing first occurrence of alias name. 
+    // \todo FIXME: get rid of the findFirstOf logic. The factory should
+    // only use the one dmap file that's been set 
+    std::string dmapfile = Utilities::findFirstOfAlias(aliasName);
+    DeviceInfoMap::DeviceInfo deviceInfo = Utilities::aliasLookUp(aliasName, dmapfile);
+
+    _registerMap = MapFileParser().parse( deviceInfo.mapFileName );
+  }catch(Exception &e){
+    // The backend has already been allocated and probably opened.
+    // Reset the pointer so the backend is closed and released.
+    _deviceBackendPointer.reset();
   }
 }
 
