@@ -42,8 +42,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
-
+FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")

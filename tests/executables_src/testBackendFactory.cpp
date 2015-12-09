@@ -2,7 +2,6 @@
 using namespace boost::unit_test_framework;
 
 #include <cstdio>
-#include <boost/filesystem.hpp>
 
 #include "BackendFactory.h"
 

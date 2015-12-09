@@ -1,4 +1,4 @@
-FIND_PACKAGE(Boost COMPONENTS system filesystem unit_test_framework)
+FIND_PACKAGE(Boost COMPONENTS system unit_test_framework)
 include_directories(${Boost_INCLUDE_DIRS})
 #add check if boost not found
 

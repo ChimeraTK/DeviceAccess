@@ -1,5 +1,4 @@
 #include <boost/test/included/unit_test.hpp>
-#include <boost/filesystem.hpp>
 #include <cstring>
 
 #include "Device.h"
