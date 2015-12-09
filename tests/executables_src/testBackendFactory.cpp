@@ -20,6 +20,7 @@ public:
 class BackendFactoryTestSuite : public test_suite {
   public:
     BackendFactoryTestSuite() : test_suite("Utilities test suite") {
+      BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
       boost::shared_ptr<BackendFactoryTest> backendFactoryTest(new BackendFactoryTest);
       add(BOOST_TEST_CASE(BackendFactoryTest::testCreateBackend));
     }
@@ -34,9 +35,9 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 
 void BackendFactoryTest::testCreateBackend() {
   setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
-  std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
-  std::string oldtestFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH + (std::string)("Old");;
-  std::string invalidtestFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH + (std::string)("disabled");
+  std::string testFilePath = TEST_DMAP_FILE_PATH;
+  std::string oldtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "Old";
+  std::string invalidtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "disabled";
   BackendFactory::getInstance().setDMapFilePath(invalidtestFilePath);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),BackendFactoryException);//file does not exist. alias cannot be found in any other file.
   BackendFactory::getInstance().setDMapFilePath(oldtestFilePath);

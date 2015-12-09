@@ -7,8 +7,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <Device.h>
-#include <BufferingRegisterAccessor.h>
+#include "Device.h"
+#include "BufferingRegisterAccessor.h"
+#include "DMapFileDefaults.h"
+#include "BackendFactory.h"
 
 using namespace boost::unit_test_framework;
 
@@ -39,6 +41,7 @@ class BufferingRegisterTest {
 class  BufferingRegisterTestSuite : public test_suite {
   public:
     BufferingRegisterTestSuite() : test_suite("DummyRegister test suite") {
+      BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
       boost::shared_ptr<BufferingRegisterTest> bufferingRegisterTest( new BufferingRegisterTest );
 
       add( BOOST_CLASS_TEST_CASE( &BufferingRegisterTest::testRegisterAccessor, bufferingRegisterTest ) );

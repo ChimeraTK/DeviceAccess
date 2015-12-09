@@ -76,6 +76,7 @@ public:
 class MtcaDeviceTestSuite : public test_suite {
 public:
 	MtcaDeviceTestSuite() : test_suite("PcieBackend test suite") {
+	        BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
 		// add member function test cases to a test suite
 		boost::shared_ptr<MtcaDeviceTest> mtcaDeviceTest(
 				new MtcaDeviceTest);

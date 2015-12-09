@@ -14,6 +14,13 @@ static const std::string REGISTER_TO_SETUP_DMA_REGION = "AREA_DMAABLE";
 static const uint totalNumElementsInAllSequences = 64;
 
 int main() {
+  // Before you use a device you have to tell the factory 
+  // which dmap file to use.
+  // \todo Fixme: we use one from the unit tests. examples should have its own
+  // \todo There should be a global function to do this. It is an implementation
+  // detail that it's the factory which has to know it.
+  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+
   // open the device:
   boost::shared_ptr< mtca4u::Device > device (new mtca4u::Device());
   device->open("PCIE3");

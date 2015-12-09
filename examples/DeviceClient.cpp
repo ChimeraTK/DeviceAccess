@@ -9,12 +9,14 @@ ExampleBackend::BackendRegisterer &theRegisterer = ExampleBackend::backendRegist
 #include <mtca4u/BackendFactory.h>
 using namespace mtca4u;
 int main() {
-  //ExampleDeviceRegisterer::init();
-  BackendFactory &FactoryInstance = BackendFactory::getInstance();
-  boost::shared_ptr<DeviceBackend> _pcieDeviceInstance;
-  _pcieDeviceInstance = FactoryInstance.createBackend("PCIE0");
-  if (_pcieDeviceInstance != 0)
-  {
+  // before you use the factory you have to set a dmap file
+  // Fixme: we use one from the unit tests. examples should have its own
+  BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+
+  boost::shared_ptr<DeviceBackend> _pcieDeviceInstance =
+    BackendFactory::getInstance().createBackend("PCIE0");
+
+  if (_pcieDeviceInstance != 0){
     //std::cout<<"Device Failed"<<std::endl;
     //return 1;
 
@@ -24,7 +26,8 @@ int main() {
     if (_pcieDeviceInstance->isOpen() == false )
       std::cout<<"Device status: Closed"<<std::endl;
   }
-  boost::shared_ptr<DeviceBackend> exampleDeviceInstance = FactoryInstance.createBackend("example");
+  boost::shared_ptr<DeviceBackend> exampleDeviceInstance = 
+    BackendFactory::getInstance().createBackend("example");
   if (exampleDeviceInstance != 0)
   {
     //std::cout<<"Device Failed"<<std::endl;

@@ -44,7 +44,7 @@ public:
 class DeviceTestSuite : public test_suite {
 public:
 	DeviceTestSuite() : test_suite("Device class test suite") {
-
+	  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
 		boost::shared_ptr<DeviceTest> DeviceTestPtr(new DeviceTest());
 
 		test_case* testDeviceReadRegisterByName = BOOST_CLASS_TEST_CASE(

@@ -10,6 +10,12 @@ static const std::string REGISTER_NAME = "WORD_USER";
 static const std::string MODULE_NAME = "BOARD";
 
 int main(){
+  // Before you use a device you have to tell the factory 
+  // which dmap file to use.
+  // \todo Fixme: we use one from the unit tests. examples should have its own
+  // \todo There should be a global function to do this. It is an implementation
+  // detail that it's the factory which has to know it.
+  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
 
   // Entry in dmap file is
   // PCIE2  sdm://./pci:mtcadummys0; mtcadummy.map

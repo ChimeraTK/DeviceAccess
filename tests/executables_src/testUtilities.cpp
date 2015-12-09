@@ -37,6 +37,7 @@ public:
 class UtilitiesTestSuite : public test_suite {
   public:
     UtilitiesTestSuite() : test_suite("Utilities test suite") {
+      BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
       boost::shared_ptr<UtilitiesTest> utilitiesTest(new UtilitiesTest);
       add(BOOST_TEST_CASE(UtilitiesTest::testParseSdm));
       add(BOOST_TEST_CASE(UtilitiesTest::testParseDeviceString));
@@ -104,7 +105,7 @@ void UtilitiesTest::testIsSdm() {
 }
 
 void UtilitiesTest::testAliasLookUp() {
-  std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+  std::string testFilePath = TEST_DMAP_FILE_PATH;
 
   DeviceInfoMap::DeviceInfo deviceInfo = Utilities::aliasLookUp("test",testFilePath);
   BOOST_CHECK( deviceInfo.deviceName.empty() );
@@ -114,7 +115,7 @@ void UtilitiesTest::testAliasLookUp() {
 
 void UtilitiesTest::testFindFirstOfAlias() {
   setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
-  std::string testFilePath = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
+  std::string testFilePath = TEST_DMAP_FILE_PATH;
   BackendFactory::getInstance().setDMapFilePath(testFilePath);
   std::string dmapfile = Utilities::findFirstOfAlias("test");
   BOOST_CHECK(dmapfile.empty());

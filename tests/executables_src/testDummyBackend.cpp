@@ -96,6 +96,7 @@ private:
 class DummyBackendTestSuite : public test_suite {
 public:
 	DummyBackendTestSuite() : test_suite("DummyBackend test suite") {
+	        BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
 		boost::shared_ptr<DummyBackendTest> dummyBackendTest(new DummyBackendTest);
 
 		// Pointers to test cases with dependencies. All other test cases are added

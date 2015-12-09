@@ -11,6 +11,12 @@ static const unsigned int WORD_USER_OFFSET = 0xC;
 static const unsigned int WORD_USER_BAR = 0;
 
 int main(){
+  // Before you use a device you have to tell the factory 
+  // which dmap file to use.
+  // \todo Fixme: we use one from the unit tests. examples should have its own
+  // \todo There should be a global function to do this. It is an implementation
+  // detail that it's the factory which has to know it.
+  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
 
   boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
   myDevice->open("PCIE1");

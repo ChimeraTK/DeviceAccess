@@ -14,7 +14,6 @@
 #include "DMapFileDefaults.h"
 #include "Exception.h"
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
 namespace mtca4u {
 
@@ -38,7 +37,6 @@ std::string BackendFactory::getDMapFilePath()
 }
 
 BackendFactory::BackendFactory(){
-  _dMapFile = boost::filesystem::initial_path().string() + (std::string)TEST_DMAP_FILE_PATH;
   registerBackendType("pci","",&PcieBackend::createInstance);
   registerBackendType("pci","pcie",&PcieBackend::createInstance);
   registerBackendType("dummy","",&DummyBackend::createInstance);

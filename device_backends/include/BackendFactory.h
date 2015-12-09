@@ -12,7 +12,7 @@
  * program is being executed it would be used as dmap file. The default dmap file
  * would be DMAP_FILE_PATH.
  */
-#define TEST_DMAP_FILE_PATH  "/dummies.dmap"
+#define TEST_DMAP_FILE_PATH  "./dummies.dmap"
 #define ENV_VAR_DMAP_FILE "DMAP_PATH_ENV"
 namespace mtca4u {
 

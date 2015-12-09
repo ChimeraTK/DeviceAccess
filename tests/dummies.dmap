@@ -10,5 +10,6 @@ DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.ma
 DUMMYD1   sdm://./dummy=goodMapFile.map goodMapFile.map
 example   sdm://./exx:examp=bus,1  ./mtcadummy_withoutModules.map
 DUMMYD9   sdm://./dummy=goodMapFile.map goodMapFile.map
-mskrebot   sdm://./rebot=127.0.0.1,5001 mtcadummy.map
-
+mskrebot  sdm://./rebot=127.0.0.1,5001 mtcadummy.map
+#an entry with the old /dev/ syntax for compatibility tests
+OLD_PCIE  /dev/mtcadummys0 mtcadummy.map
