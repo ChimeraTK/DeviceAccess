@@ -15,7 +15,7 @@ namespace mtca4u{
   void DMapFilesParser::parse_dirs(const std::vector<std::string> &dirs) {
     std::vector<std::string>::const_iterator iter;
     cleanAll();
-    for (iter = dirs.begin(); iter != dirs.end(); iter++) {
+    for (iter = dirs.begin(); iter != dirs.end(); ++iter) {
       parse_one_directory(*iter);
     }
   }
@@ -123,7 +123,7 @@ void DMapFilesParser::parse_one_directory(const std::string &dir) {
     }
   }
   closedir(dp);
-  if (_dmapElements.size() == 0) {
+  if (_dmapElements.empty()) {
     //TODO: change message? No dmap files in dir
     throw DMapFileParserException("DMAP file is empty or does not exist", LibMapException::EX_NO_DMAP_DATA);
   }
@@ -175,7 +175,7 @@ bool DMapFilesParser::check(DeviceInfoMap::ErrorList::ErrorElem::TYPE /*dlevel*/
    * */
   RegisterInfoMap::ErrorList mapErr;
   std::vector<RegisterInfoMapPointer>::iterator map_iter;
-  for (map_iter = _mapFiles.begin(); map_iter != _mapFiles.end(); map_iter++) {
+  for (map_iter = _mapFiles.begin(); map_iter != _mapFiles.end(); ++map_iter) {
     if (!(*map_iter)->check(mapErr, mlevel)) {
       map_err.errors.splice(map_err.errors.end(), mapErr.errors);
       ret = false;

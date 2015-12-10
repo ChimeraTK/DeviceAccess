@@ -99,11 +99,11 @@ bool RegisterInfoMap::check(ErrorList &err, RegisterInfoMap::ErrorList::ErrorEle
 		}
 	}
 
-	for (iter_p = map_file.begin(); iter_p != map_file.end(); iter_p++) {
+	for (iter_p = map_file.begin(); iter_p != map_file.end(); ++iter_p) {
 		address.start = iter_p->address;
 		address.end = iter_p->address + iter_p->nBytes;
 		address.iter = iter_p;
-		for (v_iter = v_addresses.begin(); v_iter != v_addresses.end(); v_iter++) {
+		for (v_iter = v_addresses.begin(); v_iter != v_addresses.end(); ++v_iter) {
 			// only addresses in the same module are considered to overlap
 			if (iter_p->module != v_iter->iter->module){
 				continue;
@@ -192,7 +192,7 @@ void RegisterInfoMap::ErrorList::insert(const RegisterInfoMap::ErrorList::ErrorE
 
 std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::ErrorList& me) {
 	std::list<RegisterInfoMap::ErrorList::ErrorElem>::const_iterator iter;
-	for (iter = me.errors.begin(); iter != me.errors.end(); iter++) {
+	for (iter = me.errors.begin(); iter != me.errors.end(); ++iter) {
 		os << *iter << std::endl;
 	}
 	return os;
