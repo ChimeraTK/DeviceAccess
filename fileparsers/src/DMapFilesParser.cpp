@@ -32,9 +32,8 @@ namespace mtca4u{
     std::vector<RegisterInfoMapPointer>::iterator map_file_iter;
     RegisterInfoMapPointer map;
     std::string absolutePathToDMapDir = Utilities::getAbsolutePathToDirectory(fileName);
-    std::string absFileName = Utilities::getAbsolutePathToFile(fileName);
     cleanAll();
-    dmap = _dmapFileParser.parse(absFileName);
+    dmap = _dmapFileParser.parse(fileName);
     for (dmap_elem_iter = dmap->_deviceInfoElements.begin();
          dmap_elem_iter != dmap->_deviceInfoElements.end(); ++dmap_elem_iter) {
       std::string absPathToCurrentMapFile =  Utilities::combinePaths(absolutePathToDMapDir, dmap_elem_iter->mapFileName);

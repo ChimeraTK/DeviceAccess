@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include "DMapFileParser.h"
+#include "Utilities.h"
 
 namespace mtca4u{
 
@@ -14,12 +15,14 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     DeviceInfoMap::DeviceInfo deviceInfo;
     uint32_t line_nr = 0;
 
-    file.open(file_name.c_str());
+    std::string absPathToFileName = Utilities::getAbsolutePathToFile(file_name);
+
+    file.open(absPathToFileName.c_str());
     if (!file) {        
-        throw DMapFileParserException("Cannot open dmap file: \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
+        throw DMapFileParserException("Cannot open dmap file: \"" + absPathToFileName + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
     }
 
-    DeviceInfoMapPointer dmap(new DeviceInfoMap(file_name));
+    DeviceInfoMapPointer dmap(new DeviceInfoMap(absPathToFileName));
     while (std::getline(file, line)) {
         line_nr++;
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));
@@ -31,8 +34,14 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
         }
         is.str(line);
         is >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
+
+        // deviceInfo.mapFileName should contain the absolute path to the mapfile:
+        std::string absPathToDmapDirectory = Utilities::getAbsolutePathToDirectory(absPathToFileName);
+        std::string absPathToMapFile = Utilities::combinePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
+        deviceInfo.mapFileName = absPathToMapFile;
+
         if (is) {
-            deviceInfo.dmapFileName = file_name;
+            deviceInfo.dmapFileName = absPathToFileName;
             deviceInfo.dmapFileLineNumber = line_nr;
             dmap->insert(deviceInfo);
         } else {

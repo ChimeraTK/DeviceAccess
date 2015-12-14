@@ -131,12 +131,15 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo2;
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo3;
 
-	populateDummyDeviceInfo(expectedDeviceInfo1, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card1",
-			"/dev/dev1", path_to_map_file1);
-	populateDummyDeviceInfo(expectedDeviceInfo2, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card2",
-			"/dev/dev2", path_to_map_file2);
-	populateDummyDeviceInfo(expectedDeviceInfo3, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card3",
-			"/dev/dev3", path_to_map_file3);
+	std::string absolutePathToDMapFile = mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file);
+	std::string absolutePathToDMapDir = mtca4u::Utilities::getAbsolutePathToDirectory(path_to_dmap_file);
+
+	populateDummyDeviceInfo(expectedDeviceInfo1, absolutePathToDMapFile, "card1",
+			"/dev/dev1", mtca4u::Utilities::combinePaths(absolutePathToDMapDir, path_to_map_file1));
+	populateDummyDeviceInfo(expectedDeviceInfo2, absolutePathToDMapFile, "card2",
+			"/dev/dev2", mtca4u::Utilities::combinePaths(absolutePathToDMapDir, path_to_map_file2));
+	populateDummyDeviceInfo(expectedDeviceInfo3, absolutePathToDMapFile, "card3",
+			"/dev/dev3", mtca4u::Utilities::combinePaths(absolutePathToDMapDir, path_to_map_file3));
 
 	expectedDeviceInfo1.dmapFileLineNumber = 3;
 	expectedDeviceInfo2.dmapFileLineNumber = 4;
@@ -441,11 +444,14 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-	populateDummyDeviceInfo(deviceInfo1, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card1",
-			"/dev/dev1", "goodMapFile_withoutModules.map");
-	populateDummyDeviceInfo(deviceInfo2, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card2",
-			"/dev/dev2", "./goodMapFile_withoutModules.map");
-	populateDummyDeviceInfo(deviceInfo3, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card3",
+	std::string absPathToDMapFile = mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file);
+	std::string absPathToDMapDir = mtca4u::Utilities::getAbsolutePathToDirectory(path_to_dmap_file);
+
+	populateDummyDeviceInfo(deviceInfo1, absPathToDMapFile, "card1",
+			"/dev/dev1", mtca4u::Utilities::combinePaths(absPathToDMapDir, "goodMapFile_withoutModules.map"));
+	populateDummyDeviceInfo(deviceInfo2, absPathToDMapFile, "card2",
+			"/dev/dev2", mtca4u::Utilities::combinePaths(absPathToDMapDir, "./goodMapFile_withoutModules.map"));
+	populateDummyDeviceInfo(deviceInfo3, absPathToDMapFile, "card3",
 			"/dev/dev3", getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 
 	deviceInfo1.dmapFileLineNumber = 3;
@@ -475,12 +481,15 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-	populateDummyDeviceInfo(deviceInfo1, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card1",
-			"/dev/dev1", "goodMapFile_withoutModules.map");
-	populateDummyDeviceInfo(deviceInfo2, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card2",
-			"/dev/dev2", "./goodMapFile_withoutModules.map");
+    std::string absPathToDMapFile = mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file);
+    std::string absPathToDMapDir = mtca4u::Utilities::getAbsolutePathToDirectory(path_to_dmap_file);
+
+	populateDummyDeviceInfo(deviceInfo1, absPathToDMapFile, "card1",
+			"/dev/dev1", mtca4u::Utilities::combinePaths(absPathToDMapDir, "goodMapFile_withoutModules.map"));
+	populateDummyDeviceInfo(deviceInfo2, absPathToDMapFile, "card2",
+			"/dev/dev2", mtca4u::Utilities::combinePaths(absPathToDMapDir, "./goodMapFile_withoutModules.map"));
 	// the third path is absolute, does not change with the location of the dmap file
-	populateDummyDeviceInfo(deviceInfo3, mtca4u::Utilities::getAbsolutePathToFile(path_to_dmap_file), "card3",
+	populateDummyDeviceInfo(deviceInfo3, absPathToDMapFile, "card3",
 			"/dev/dev3", getCurrentWorkingDirectory() + "/goodMapFile_withoutModules.map");
 
 	deviceInfo1.dmapFileLineNumber = 3;
@@ -581,15 +590,22 @@ void DMapFilesParserTest::testParseDirWithGoodDmaps() {
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo3;
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo4;
 
-	populateDummyDeviceInfo(expectedDeviceInfo1, "./GoodDmapDir/first.dmap",
-			"card1", "/dev/dev1", "./mapFile1.map");
-	populateDummyDeviceInfo(expectedDeviceInfo2, "./GoodDmapDir/second.dmap",
-			"card2", "/dev/dev2", "./mapFile2.map");
+	std::string absPathToDmap1 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/first.dmap");
+	std::string absPathToDmap2 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/second.dmap");
+	std::string absPathToDmap3 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/second.dmap");
+	std::string absPathToDmap4 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/first.dmap");
 
-	populateDummyDeviceInfo(expectedDeviceInfo3, "./GoodDmapDir/second.dmap",
-			"card3", "/dev/dev3", "./mapFile2.map");
-	populateDummyDeviceInfo(expectedDeviceInfo4, "./GoodDmapDir/first.dmap",
-			"card4", "/dev/dev4", "mtcadummy_withoutModules.map");
+	std::string absPathToDmapDir = mtca4u::Utilities::getAbsolutePathToDirectory("./GoodDmapDir/first.dmap");
+
+	populateDummyDeviceInfo(expectedDeviceInfo1, absPathToDmap1,
+			"card1", "/dev/dev1",  mtca4u::Utilities::combinePaths(absPathToDmapDir , "./mapFile1.map"));
+	populateDummyDeviceInfo(expectedDeviceInfo2, absPathToDmap2,
+			"card2", "/dev/dev2", mtca4u::Utilities::combinePaths(absPathToDmapDir ,"./mapFile2.map"));
+
+	populateDummyDeviceInfo(expectedDeviceInfo3, absPathToDmap3,
+			"card3", "/dev/dev3", mtca4u::Utilities::combinePaths(absPathToDmapDir , "./mapFile2.map"));
+	populateDummyDeviceInfo(expectedDeviceInfo4, absPathToDmap4,
+			"card4", "/dev/dev4", mtca4u::Utilities::combinePaths(absPathToDmapDir , "mtcadummy_withoutModules.map"));
 
 	expectedDeviceInfo1.dmapFileLineNumber = 3;
 	expectedDeviceInfo2.dmapFileLineNumber = 1;
@@ -627,10 +643,15 @@ void DMapFilesParserTest::testParseDirs() {
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo1;
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo2;
 
-	populateDummyDeviceInfo(expectedDeviceInfo1, "./GoodDmapDir/first.dmap",
-			"card1", "/dev/dev1", "./mapFile1.map");
-	populateDummyDeviceInfo(expectedDeviceInfo2, "./GoodDmapDir/second.dmap",
-			"card2", "/dev/dev2", "./mapFile2.map");
+    std::string absPathToDmap1 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/first.dmap");
+    std::string absPathToDmap2 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/second.dmap");
+
+    std::string absPathToDmapDir = mtca4u::Utilities::getAbsolutePathToDirectory("./GoodDmapDir/first.dmap");
+
+	populateDummyDeviceInfo(expectedDeviceInfo1, absPathToDmap1,
+			"card1", "/dev/dev1", mtca4u::Utilities::combinePaths(absPathToDmapDir, "./mapFile1.map"));
+	populateDummyDeviceInfo(expectedDeviceInfo2, absPathToDmap2,
+			"card2", "/dev/dev2", mtca4u::Utilities::combinePaths(absPathToDmapDir, "./mapFile2.map"));
 
 	expectedDeviceInfo1.dmapFileLineNumber = 3;
 	expectedDeviceInfo2.dmapFileLineNumber = 1;
@@ -653,10 +674,15 @@ inline void DMapFilesParserTest::testConstructor() {
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo1;
 	mtca4u::DeviceInfoMap::DeviceInfo expectedDeviceInfo3;
 
-	populateDummyDeviceInfo(expectedDeviceInfo1, "./GoodDmapDir/first.dmap",
-			"card1", "/dev/dev1", "./mapFile1.map");
-	populateDummyDeviceInfo(expectedDeviceInfo3, "./GoodDmapDir/second.dmap",
-			"card3", "/dev/dev3", "./mapFile2.map");
+    std::string absPathToDmap1 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/first.dmap");
+    std::string absPathToDmap2 = mtca4u::Utilities::getAbsolutePathToFile("./GoodDmapDir/second.dmap");
+
+    std::string absPathToDmapDir = mtca4u::Utilities::getAbsolutePathToDirectory("./GoodDmapDir/first.dmap");
+
+	populateDummyDeviceInfo(expectedDeviceInfo1, absPathToDmap1,
+			"card1", "/dev/dev1", mtca4u::Utilities::combinePaths(absPathToDmapDir, "./mapFile1.map"));
+	populateDummyDeviceInfo(expectedDeviceInfo3, absPathToDmap2,
+			"card3", "/dev/dev3", mtca4u::Utilities::combinePaths(absPathToDmapDir, "./mapFile2.map"));
 
 	expectedDeviceInfo1.dmapFileLineNumber = 3;
 	expectedDeviceInfo3.dmapFileLineNumber = 2;
