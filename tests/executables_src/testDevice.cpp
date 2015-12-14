@@ -24,7 +24,6 @@ public:
 	void testDeviceWriteDMA();
 	void testDeviceCheckRegister();
 	void testRegAccsorReadDMA();
-	//void testRegAccsorWriteDMA();
 	void testRegAccsorCheckRegister();
 	void testRegAccsorReadReg();
 	void testRegAccsorWriteReg();
@@ -38,6 +37,7 @@ public:
 	void testGetRegistersInModule();
 	void testGetRegisterAccessorsInModule();
 	void testAccessorForMuxedData();
+	void testDeviceCreation();
 };
 
 class DeviceTestSuite : public test_suite {
@@ -103,6 +103,9 @@ public:
 		test_case* testDMAReadViaStruct =
 				BOOST_CLASS_TEST_CASE(&DeviceTest::testDMAReadViaStruct, DeviceTestPtr);
 
+		test_case* testDeviceCreation =
+		     BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceCreation, DeviceTestPtr);
+
 		add(testDeviceReadRegisterByName);
 		add(testDeviceReadRegister);
 		add(testDeviceReadArea);
@@ -122,6 +125,7 @@ public:
 		add(testWriteBadReg);
 		add(testDMAReadSizeTooSmall);
 		add(testDMAReadViaStruct);
+	    add(testDeviceCreation);
 
 		add(BOOST_CLASS_TEST_CASE(&DeviceTest::testGetRegistersInModule,
 				DeviceTestPtr));
@@ -623,6 +627,31 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
 	BOOST_CHECK(accessor->getRegisterInfo().name == "WORD_STATUS");
 	BOOST_CHECK(accessor->getRegisterInfo().module == "APP0");
 }
+
+void DeviceTest::testDeviceCreation() {
+  std::string initialDmapFilePath = mtca4u::BackendFactory::getInstance().getDMapFilePath();
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dMapDir/testRelativePaths.dmap");
+
+  mtca4u::Device device1;
+  device1.open("PCIE0");
+  BOOST_CHECK_NO_THROW(device1.open("PCIE0"));
+  mtca4u::Device device2;
+  device2.open("PCIE1");
+  BOOST_CHECK_NO_THROW(device2.open("PCIE1"));
+
+/* TODO
+  mtca4u::Device device3;
+  BOOST_CHECK_NO_THROW(device3.open("DUMMYD0"));
+  mtca4u::Device device4;
+  BOOST_CHECK_NO_THROW(device4.open("DUMMYD1"));
+*/
+
+  //Now that we are done with the tests, move the factory to the state it was in
+  //before we started
+  mtca4u::BackendFactory::getInstance().setDMapFilePath(initialDmapFilePath);
+
+}
+
 #ifdef _0
 void DeviceTest::testAccessorForMuxedData() {
 	// create dummy device without using the factory

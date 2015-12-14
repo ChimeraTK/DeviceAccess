@@ -1,0 +1,11 @@
+PCIE0     sdm://./pci:pcieunidummys6; ../mtcadummy_withoutModules.map
+PCIE1     sdm://./pci:pcieunidummys6; ./mapFile.map
+
+DUMMYD0   sdm://./dummy=../mtcadummy_withoutModules.map ../mtcadummy_withoutModules.map
+DUMMYD1   sdm://./dummy=mapFile.map mapFile.map
+
+FAKE0     sdm://./fake:Reference_Device ../mtcadummy_withoutModules.map
+FAKE1     sdm://./fake:DummyDevice ./mapFile.map
+
+example0   sdm://./exx:examp=bus,1  ../mtcadummy_withoutModules.map
+example1   sdm://./exx:examp=bus,1  ./mapFile.map
