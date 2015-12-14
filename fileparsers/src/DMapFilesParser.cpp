@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <fstream>
 #include <stdexcept>
+#include "Utilities.h"
 
 namespace mtca4u{
 
@@ -30,17 +31,13 @@ namespace mtca4u{
     std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
     std::vector<RegisterInfoMapPointer>::iterator map_file_iter;
     RegisterInfoMapPointer map;
-    std::string absolutePathToDMapDir = getCurrentWorkingDirectory();
-    size_t pos = fileName.find_last_of('/');
-    if (pos != std::string::npos) {
-      combinePaths(absolutePathToDMapDir, fileName.substr(0, pos));
-    }
+    std::string absolutePathToDMapDir = Utilities::getAbsolutePathToDirectory(fileName);
+    std::string absFileName = Utilities::getAbsolutePathToFile(fileName);
     cleanAll();
-    dmap = _dmapFileParser.parse(fileName);
+    dmap = _dmapFileParser.parse(absFileName);
     for (dmap_elem_iter = dmap->_deviceInfoElements.begin();
          dmap_elem_iter != dmap->_deviceInfoElements.end(); ++dmap_elem_iter) {
-      std::string absPathToCurrentMapFile = absolutePathToDMapDir;
-      combinePaths(absPathToCurrentMapFile, dmap_elem_iter->mapFileName);
+      std::string absPathToCurrentMapFile =  Utilities::combinePaths(absolutePathToDMapDir, dmap_elem_iter->mapFileName);
       map_file_iter = std::find_if(_mapFiles.begin(), _mapFiles.end(),
                                    findMapFileByName_pred(absPathToCurrentMapFile));
       if (map_file_iter == _mapFiles.end()) {
@@ -293,33 +290,6 @@ DMapFilesParser::iterator DMapFilesParser::end() {
 DMapFilesParser::const_iterator DMapFilesParser::end() const{
   return _dmapElements.end();
 }
-
-std::string DMapFilesParser::getCurrentWorkingDirectory() {
-  char *currentWorkingDir = get_current_dir_name();
-  if (!currentWorkingDir) {
-    throw;
-  }
-  std::string dir(currentWorkingDir);
-  free(currentWorkingDir);
-  return dir;
-}
-
-void DMapFilesParser::combinePaths(std::string &absoluteBasePath,
-                                   const std::string &pathToAppend) {
-  /* pathToAppend can only be empty if a dmap file in the root directory has been requested.
-   * In this case the search for '/' has returned pos=0, resulting in an empty pathToAppend.
-   */
-  if(pathToAppend.empty()){
-    absoluteBasePath = "/";
-  }
-
-  if (pathToAppend[0] == '/') {// absolute path, replace the base path
-    absoluteBasePath = pathToAppend;
-  } else {// relative path
-    absoluteBasePath = absoluteBasePath + '/' + pathToAppend;
-  }
-}
-
-} //namespace mtca4u
+} // namespace mtca4u
 
 

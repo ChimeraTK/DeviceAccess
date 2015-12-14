@@ -185,11 +185,7 @@ private:
 	 * @brief Clean all data structures used to store information about MAP and DMAP files contents
 	 */
 	void cleanAll();
-	std::string getCurrentWorkingDirectory();
-	/** Appends pathToAppend to the base path if pathToAppend is a relative path.
-	 *  Repaces the base bath with pathToAppend if it is an absolute path.
-	 */
-	void combinePaths(std::string& absoluteBasePath, const std::string& pathToAppend);
+
 };
 
 }//namespace mtca4u

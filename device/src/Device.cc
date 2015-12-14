@@ -360,6 +360,7 @@ void Device::open(std::string const & aliasName) {
     // The backend has already been allocated and probably opened.
     // Reset the pointer so the backend is closed and released.
     _deviceBackendPointer.reset();
+    throw;
   }
 }
 
