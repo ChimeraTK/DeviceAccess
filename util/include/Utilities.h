@@ -26,13 +26,13 @@ struct Sdm
 	std::list<std::string> _Parameters;
 	Sdm():_SdmVersion(0.1){}
 };
-/** A class to provide exceptions to the Utilities."
+/** A dedicated exception for the sdm parser."
  *
  */
-class UtilitiesException : public Exception {
+class SdmUriParseException : public Exception {
 public:
 	enum {INVALID_SDM};
-	UtilitiesException(const std::string &message, unsigned int exceptionID)
+	SdmUriParseException(const std::string &message, unsigned int exceptionID)
 	: Exception( message, exceptionID ){}
 };
 

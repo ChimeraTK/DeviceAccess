@@ -26,7 +26,7 @@ bool Utilities::isSdm(std::string sdmString) {
 	{
 		parseSdm(sdmString);
 	}
-	catch(UtilitiesException &ue)
+	catch(SdmUriParseException &ue)
 	{
 		return false;
 	}
@@ -37,11 +37,11 @@ Sdm Utilities::parseSdm(std::string sdmString) {
 	Sdm sdmInfo;
 	size_t signatureLen = 6;
 	if (sdmString.empty())
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	if (sdmString.length() < signatureLen)
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	if (sdmString.substr(0,6) !="sdm://")
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	int pos = 6;
 
 	std::size_t found = sdmString.find_first_of("/", pos);
@@ -52,7 +52,7 @@ Sdm Utilities::parseSdm(std::string sdmString) {
 	}
 	else
 	{
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	}
 	if (sdmString.length() < found+1)
 		return sdmInfo;
@@ -60,15 +60,15 @@ Sdm Utilities::parseSdm(std::string sdmString) {
 	//let's do a sanity check, only one delimiter occurrence is allowed.
 	if (countOccurence(subUri,':') > 1) /* check ':' */
 	{
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	}
 	if (countOccurence(subUri,';') > 1) /* check ';' */
 	{
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	}
 	if (countOccurence(subUri,'=') > 1) /* check '=' */
 	{
-		throw UtilitiesException("Invalid sdm.", UtilitiesException::INVALID_SDM);
+		throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
 	}
 	std::vector<std::string> tokens;
 	boost::split(tokens, subUri, boost::is_any_of(":;="));

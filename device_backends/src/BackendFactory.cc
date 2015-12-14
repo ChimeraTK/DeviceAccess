@@ -84,12 +84,15 @@ boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::stri
   try {
     sdm = Utilities::parseSdm(uri);
   }
-  catch(UtilitiesException &e)
-  {
-    std::cout<<e.what()<<std::endl;
+  catch(SdmUriParseException &e){
+    //fixme: the programme flow should not use exceptions here. It is a supported 
+    // condition that the old device syntax is used.
+
     //parseDeviceString currently does not throw
     sdm = Utilities::parseDeviceString(uri);
-    std::cout<<"This format is obsolete, please change to sdm."<<std::endl;
+    // todo: enable the deprecated warning. As long as most servers are still using MtcaMappedDevice
+    // DMap files have to stay with device node, but QtHardMon would print the message, which causes confusion.
+    //std::cout<<"# Using the device node in a dmap file is deprecated. Please change to sdm if applicable."<<std::endl;
   }
 #ifdef _DEBUG
         std::cout<< "sdm._SdmVersion:"<<sdm._SdmVersion<< std::endl;

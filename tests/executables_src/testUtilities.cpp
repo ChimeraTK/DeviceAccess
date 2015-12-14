@@ -65,13 +65,13 @@ void UtilitiesTest::testParseSdm() {
   BOOST_CHECK(sdm._Interface == "dummy");
   BOOST_CHECK(sdm._Parameters.size() == 1);
   BOOST_CHECK(sdm._Parameters.front() == "goodMapFile.map");
-  BOOST_CHECK_THROW(Utilities::parseSdm(""),UtilitiesException); //Empty string
-  BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"),UtilitiesException); //shorter than sdm:// signature
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM),UtilitiesException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_2),UtilitiesException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_3),UtilitiesException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_4),UtilitiesException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5),UtilitiesException);
+  BOOST_CHECK_THROW(Utilities::parseSdm(""),SdmUriParseException); //Empty string
+  BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"),SdmUriParseException); //shorter than sdm:// signature
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM),SdmUriParseException);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_2),SdmUriParseException);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_3),SdmUriParseException);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_4),SdmUriParseException);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5),SdmUriParseException);
 }
 
 void UtilitiesTest::testParseDeviceString() {
