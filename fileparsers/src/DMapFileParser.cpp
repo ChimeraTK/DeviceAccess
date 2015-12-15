@@ -35,12 +35,11 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
         is.str(line);
         is >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
 
-        // deviceInfo.mapFileName should contain the absolute path to the mapfile:
-        std::string absPathToDmapDirectory = Utilities::getAbsolutePathToDirectory(absPathToFileName);
-        std::string absPathToMapFile = Utilities::combinePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
-        deviceInfo.mapFileName = absPathToMapFile;
-
         if (is) {
+            // deviceInfo.mapFileName should contain the absolute path to the mapfile:
+            std::string absPathToDmapDirectory = Utilities::getAbsolutePathToDirectory(absPathToFileName);
+            std::string absPathToMapFile = Utilities::combinePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
+            deviceInfo.mapFileName = absPathToMapFile;
             deviceInfo.dmapFileName = absPathToFileName;
             deviceInfo.dmapFileLineNumber = line_nr;
             dmap->insert(deviceInfo);
