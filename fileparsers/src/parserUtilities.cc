@@ -2,6 +2,17 @@
 #include "parserUtilities.h"
 #include "Utilities.h"
 
+std::string mtca4u::parserUtilities::getCurrentWorkingDirectory() {
+  char *currentWorkingDir = get_current_dir_name();
+  if (currentWorkingDir == NULL) {
+    throw std::runtime_error("Could not get the current working directory");
+  }
+  std::string returnValue(currentWorkingDir);
+  free(currentWorkingDir);
+  return returnValue + "/";
+}
+
+
 std::string mtca4u::parserUtilities::combinePaths(std::string& absoluteBasePath,
                                          const std::string& pathToAppend) {
   std::string combinedPaths;
@@ -10,7 +21,6 @@ std::string mtca4u::parserUtilities::combinePaths(std::string& absoluteBasePath,
   } else {
     combinedPaths = absoluteBasePath + '/';
   }
-
   if (pathToAppend[0] == '/') { // absolute path, replace the base path
     combinedPaths = pathToAppend;
   } else { // relative path
@@ -39,15 +49,7 @@ std::string mtca4u::parserUtilities::getAbsolutePathToFile(const std::string& fi
          extractFileNameFromPath(fileName);
 }
 
-std::string mtca4u::parserUtilities::getCurrentWorkingDirectory() {
-  char *currentWorkingDir = get_current_dir_name();
-  if (!currentWorkingDir) {
-    throw std::runtime_error("Could not get the current working directory");
-  }
-  std::string dir(currentWorkingDir);
-  free(currentWorkingDir);
-  return dir + "/";
-}
+
 std::string mtca4u::parserUtilities::extractFileNameFromPath(
     const std::string& fileName) {
   std::string extractedName = fileName;
