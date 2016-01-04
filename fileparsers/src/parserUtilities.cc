@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "parserUtilities.h"
 #include "Utilities.h"
 
@@ -21,7 +22,7 @@ std::string mtca4u::parserUtilities::combinePaths(std::string& absoluteBasePath,
 std::string mtca4u::parserUtilities::getAbsolutePathToDirectory(
     const std::string& fileName) {
   std::string currentWorkingDir =
-      mtca4u::Utilities::getCurrentWorkingDirectory();
+      getCurrentWorkingDirectory();
   size_t pos = fileName.find_last_of('/');
   if (pos == std::string::npos) { // No forward slashes; just the file name
     // so we return the absolute path of the current dir
@@ -38,6 +39,15 @@ std::string mtca4u::parserUtilities::getAbsolutePathToFile(const std::string& fi
          extractFileNameFromPath(fileName);
 }
 
+std::string mtca4u::parserUtilities::getCurrentWorkingDirectory() {
+  char *currentWorkingDir = get_current_dir_name();
+  if (!currentWorkingDir) {
+    throw std::runtime_error("Could not get the current working directory");
+  }
+  std::string dir(currentWorkingDir);
+  free(currentWorkingDir);
+  return dir + "/";
+}
 std::string mtca4u::parserUtilities::extractFileNameFromPath(
     const std::string& fileName) {
   std::string extractedName = fileName;

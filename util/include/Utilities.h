@@ -59,8 +59,6 @@ public:
 	std::string static findFirstOfAlias(std::string aliasName);
 
 
-    /// Get the current working directory of the program
-    static std::string getCurrentWorkingDirectory();
 };
 
 } /* namespace mtca4u */

@@ -195,14 +195,4 @@ std::string Utilities::findFirstOfAlias(std::string aliasName)
 
   return std::string(); // no alias found, return an empty string
 }
-
-std::string Utilities::getCurrentWorkingDirectory() {
-  char *currentWorkingDir = get_current_dir_name();
-  if (!currentWorkingDir) {
-    throw std::runtime_error("Could not get the current working directory");
-  }
-  std::string dir(currentWorkingDir);
-  free(currentWorkingDir);
-  return dir + "/";
-}
 } /* namespace mtca4u */
