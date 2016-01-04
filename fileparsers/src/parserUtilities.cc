@@ -1,7 +1,7 @@
-#include "HelperMethods.h"
+#include "parserUtilities.h"
 #include "Utilities.h"
 
-std::string mtca4u::helper::combinePaths(std::string& absoluteBasePath,
+std::string mtca4u::parserUtilities::combinePaths(std::string& absoluteBasePath,
                                          const std::string& pathToAppend) {
   std::string combinedPaths;
   if (absoluteBasePath.back() == '/') {
@@ -18,7 +18,7 @@ std::string mtca4u::helper::combinePaths(std::string& absoluteBasePath,
   return combinedPaths;
 }
 
-std::string mtca4u::helper::getAbsolutePathToDirectory(
+std::string mtca4u::parserUtilities::getAbsolutePathToDirectory(
     const std::string& fileName) {
   std::string currentWorkingDir =
       mtca4u::Utilities::getCurrentWorkingDirectory();
@@ -33,12 +33,12 @@ std::string mtca4u::helper::getAbsolutePathToDirectory(
   }
 }
 
-std::string mtca4u::helper::getAbsolutePathToFile(const std::string& fileName) {
+std::string mtca4u::parserUtilities::getAbsolutePathToFile(const std::string& fileName) {
   return getAbsolutePathToDirectory(fileName) +
          extractFileNameFromPath(fileName);
 }
 
-std::string mtca4u::helper::extractFileNameFromPath(
+std::string mtca4u::parserUtilities::extractFileNameFromPath(
     const std::string& fileName) {
   std::string extractedName = fileName;
   size_t pos = fileName.find_last_of('/');

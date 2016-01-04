@@ -3,7 +3,7 @@ using namespace boost::unit_test_framework;
 #include "DMapFileParser.h"
 #include "MapException.h"
 #include "helperFunctions.h"
-#include "HelperMethods.h"
+#include "parserUtilities.h"
 #include "Utilities.h"
 
 class DMapFileParserTest {
@@ -97,13 +97,13 @@ void DMapFileParserTest::testParseFile() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-    std::string absPathToDmap = mtca4u::helper::getAbsolutePathToFile("valid.dmap");
-    std::string absPathToDmapDir = mtca4u::helper::getAbsolutePathToDirectory("valid.dmap");
+    std::string absPathToDmap = mtca4u::parserUtilities::getAbsolutePathToFile("valid.dmap");
+    std::string absPathToDmapDir = mtca4u::parserUtilities::getAbsolutePathToDirectory("valid.dmap");
 
 	populateDummyDeviceInfo(deviceInfo1, absPathToDmap, "card1", "/dev/dev1",
-	    mtca4u::helper::combinePaths(absPathToDmapDir, "goodMapFile_withoutModules.map"));
+	    mtca4u::parserUtilities::combinePaths(absPathToDmapDir, "goodMapFile_withoutModules.map"));
 	populateDummyDeviceInfo(deviceInfo2, absPathToDmap, "card2", "/dev/dev2",
-	    mtca4u::helper::combinePaths(absPathToDmapDir, "./goodMapFile_withoutModules.map"));
+	    mtca4u::parserUtilities::combinePaths(absPathToDmapDir, "./goodMapFile_withoutModules.map"));
 	populateDummyDeviceInfo(deviceInfo3, absPathToDmap, "card3", "/dev/dev3",
 			getCurrentWorkingDirectory()+"/goodMapFile_withoutModules.map");
 	std::cout<<getCurrentWorkingDirectory()<<std::endl;

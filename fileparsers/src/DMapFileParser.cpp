@@ -1,3 +1,4 @@
+#include <parserUtilities.h>
 #include "MapException.h"
 #include <iostream>
 #include <algorithm>
@@ -5,9 +6,8 @@
 #include <fstream>
 #include "DMapFileParser.h"
 #include "Utilities.h"
-#include "HelperMethods.h"
 
-namespace utl = mtca4u::helper;
+namespace utilities = mtca4u::parserUtilities;
 
 namespace mtca4u{
 
@@ -18,7 +18,7 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     DeviceInfoMap::DeviceInfo deviceInfo;
     uint32_t line_nr = 0;
 
-    std::string absPathToFileName = utl::getAbsolutePathToFile(file_name);
+    std::string absPathToFileName = utilities::getAbsolutePathToFile(file_name);
 
     file.open(absPathToFileName.c_str());
     if (!file) {        
@@ -40,8 +40,8 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
 
         if (is) {
             // deviceInfo.mapFileName should contain the absolute path to the mapfile:
-            std::string absPathToDmapDirectory = utl::getAbsolutePathToDirectory(absPathToFileName);
-            std::string absPathToMapFile = utl::combinePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
+            std::string absPathToDmapDirectory = utilities::getAbsolutePathToDirectory(absPathToFileName);
+            std::string absPathToMapFile = utilities::combinePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
             deviceInfo.mapFileName = absPathToMapFile;
             deviceInfo.dmapFileName = absPathToFileName;
             deviceInfo.dmapFileLineNumber = line_nr;

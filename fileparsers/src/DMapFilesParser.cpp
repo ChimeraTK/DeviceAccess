@@ -6,14 +6,14 @@
 #include <algorithm>
 #include <sstream>
 #include <dirent.h>
+#include <parserUtilities.h>
 #include <sys/types.h>
 #include <fstream>
 #include <stdexcept>
 #include "Utilities.h"
-#include "HelperMethods.h"
 
 
-namespace utl = mtca4u::helper;
+namespace utilities = mtca4u::parserUtilities;
 
 namespace mtca4u{
 
@@ -35,12 +35,12 @@ namespace mtca4u{
     std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
     std::vector<RegisterInfoMapPointer>::iterator map_file_iter;
     RegisterInfoMapPointer map;
-    std::string absolutePathToDMapDir = utl::getAbsolutePathToDirectory(fileName);
+    std::string absolutePathToDMapDir = utilities::getAbsolutePathToDirectory(fileName);
     cleanAll();
     dmap = _dmapFileParser.parse(fileName);
     for (dmap_elem_iter = dmap->_deviceInfoElements.begin();
          dmap_elem_iter != dmap->_deviceInfoElements.end(); ++dmap_elem_iter) {
-      std::string absPathToCurrentMapFile =  utl::combinePaths(absolutePathToDMapDir, dmap_elem_iter->mapFileName);
+      std::string absPathToCurrentMapFile =  utilities::combinePaths(absolutePathToDMapDir, dmap_elem_iter->mapFileName);
       map_file_iter = std::find_if(_mapFiles.begin(), _mapFiles.end(),
                                    findMapFileByName_pred(absPathToCurrentMapFile));
       if (map_file_iter == _mapFiles.end()) {
