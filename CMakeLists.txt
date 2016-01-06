@@ -103,6 +103,8 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 endforeach(headerFile)
 endforeach(dir)
 
+include_directories("${PROJECT_BINARY_DIR}/include")
+
 add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
 
