@@ -16,7 +16,7 @@ public:
   ParserUtilsTestClass(std::string const& currentWorkingDirectory);
   void testGetCurrentWorkingDir();
   void testConvertToAbsPath();
-  void testGetAbsolutePathToDirectory();
+  void testExtractDirectory();
   void testExtractFileName();
   void testConcatenatePaths();
 private:
@@ -33,7 +33,7 @@ public:
                               parserUtilTest));
     add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConvertToAbsPath,
                               parserUtilTest));
-    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testGetAbsolutePathToDirectory,
+    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractDirectory,
                               parserUtilTest));
     add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractFileName,
                               parserUtilTest));
@@ -74,15 +74,15 @@ void ParserUtilsTestClass::testConvertToAbsPath() {
   BOOST_CHECK(utils::convertToAbsolutePath("") == _currentWorkingDir + "/");
 }
 
-void ParserUtilsTestClass::testGetAbsolutePathToDirectory(){
-  BOOST_CHECK(utils::extractDirectory("./test") == _currentWorkingDir + "/" + "./");
-  BOOST_CHECK(utils::extractDirectory("./test/") == _currentWorkingDir + "/" + "./test/");
+void ParserUtilsTestClass::testExtractDirectory(){
+  BOOST_CHECK(utils::extractDirectory("./test") ==  "./");
+  BOOST_CHECK(utils::extractDirectory("./test/") == "./test/");
   BOOST_CHECK(utils::extractDirectory("/test") == "/");
   BOOST_CHECK(utils::extractDirectory("/") == "/");
   BOOST_CHECK(utils::extractDirectory("/test/") == "/test/");
-  BOOST_CHECK(utils::extractDirectory("test") == _currentWorkingDir + "/");
-  BOOST_CHECK(utils::extractDirectory("test/") == _currentWorkingDir + "/" + "test/");
-  BOOST_CHECK(utils::convertToAbsolutePath("") == _currentWorkingDir + "/");
+  BOOST_CHECK(utils::extractDirectory("test") == "./");
+  BOOST_CHECK(utils::extractDirectory("test/") == "test/");
+  BOOST_CHECK(utils::extractDirectory("") == "./");
 }
 
 void ParserUtilsTestClass::testExtractFileName() {

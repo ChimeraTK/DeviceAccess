@@ -9,7 +9,7 @@ namespace parserUtilities {
 
   /*!
   * @brief Returns absolute path to current working directory.
-  * The returned path terminates in a forward slash.
+  * The returned path ends with a forward slash.
   *
   * @return Current working directory of the program terminating in a
   *         forward slash.
@@ -34,13 +34,13 @@ namespace parserUtilities {
   * @brief Returns the path to the directory containing the file
   * provided as the input parameter.
   *
-  * @param path path to a file/directory.
+  * @param path Path to a file.
   * @return <ul>
   *           <li> Path to the directory containing the file when
-  *                the input is a path to a file. (i.e path does not end in a
-  *                '/')
-  *           <li> Path to the directory when the input is a path
-  *                to a directory. (i.e input path ends in a '/')
+  *                the input is a path to a file. (i.e input parameter, path
+  *                does not end in a '/')
+  *           <li> Path to the directory when the input is a path to the
+  *                directory. (i.e input parameter, path ends in a '/')
   *         </ul>
   */
   std::string extractDirectory(std::string const& path);
@@ -49,8 +49,8 @@ namespace parserUtilities {
   * @brief Extract the string after the last '/' in a path. Returned substring
   * does not include the '/' character.
   *
-  * @param path string representing file/directory paths.
-  * @return substring containing characters after the last '/' in the input
+  * @param path String representing file path.
+  * @return Substring containing characters after the last '/' in the input
   *                   string. The '/' is excluded in this substring.
   */
   std::string extractFileName(std::string const& path);
@@ -61,10 +61,11 @@ namespace parserUtilities {
   * Method returns path2 when input parameter path2 is an absolute
   * path. Otherwise path1 is concatenated with path2 and returned.
   *
-  * @param path1, path2 strings representing file/directory paths.
+  * @param path1 Path to a directory
+  * @param path2 Path to file/directory.
   * @return
   *        <ul>
-  *          <li> path2 when the input parameter path2 is an absolute path.
+  *          <li> path2 when the input parameter, path2 is an absolute path.
   *          <li> path1 concatenated with path2 when path2 is a relative path.
   *        </ul>
   */
