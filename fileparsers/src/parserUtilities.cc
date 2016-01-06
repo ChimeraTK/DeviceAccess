@@ -23,14 +23,11 @@ std::string mtca4u::parserUtilities::getCurrentWorkingDirectory() {
   return appendForwardSlash(returnValue);
 }
 
-
 std::string mtca4u::parserUtilities::convertToAbsolutePath(
     const std::string& relativePath) {
 
   return concatenatePaths(getCurrentWorkingDirectory(), relativePath);
-
 }
-
 
 std::string mtca4u::parserUtilities::concatenatePaths(
     const std::string& path1, const std::string& path2) {
@@ -48,7 +45,6 @@ std::string mtca4u::parserUtilities::concatenatePaths(
   return returnValue;
 }
 
-
 std::string mtca4u::parserUtilities::extractDirectory(const std::string& path) {
 
   size_t pos = path.find_last_of('/');
@@ -63,7 +59,6 @@ std::string mtca4u::parserUtilities::extractDirectory(const std::string& path) {
                                     // string
   }
 }
-
 
 std::string mtca4u::parserUtilities::extractFileName(const std::string& path) {
 
@@ -80,7 +75,6 @@ std::string mtca4u::parserUtilities::extractFileName(const std::string& path) {
 
   return extractedName;
 }
-
 
 std::string appendForwardSlash(const std::string& path) {
   if (path.back() == '/') { // path ends with '/'
