@@ -4,7 +4,7 @@
 #include <string>
 
 namespace mtca4u {
-//! common methods for dmap file parsing
+//! common utility methods for dmap file parsing
 namespace parserUtilities {
 
   /*!
