@@ -75,13 +75,13 @@ void ParserUtilsTestClass::testConvertToAbsPath() {
 }
 
 void ParserUtilsTestClass::testGetAbsolutePathToDirectory(){
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("./test") == _currentWorkingDir + "/" + "./");
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("./test/") == _currentWorkingDir + "/" + "./test/");
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("/test") == "/");
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("/") == "/");
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("/test/") == "/test/");
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("test") == _currentWorkingDir + "/");
-  BOOST_CHECK(utils::getAbsolutePathToDirectory("test/") == _currentWorkingDir + "/" + "test/");
+  BOOST_CHECK(utils::extractDirectory("./test") == _currentWorkingDir + "/" + "./");
+  BOOST_CHECK(utils::extractDirectory("./test/") == _currentWorkingDir + "/" + "./test/");
+  BOOST_CHECK(utils::extractDirectory("/test") == "/");
+  BOOST_CHECK(utils::extractDirectory("/") == "/");
+  BOOST_CHECK(utils::extractDirectory("/test/") == "/test/");
+  BOOST_CHECK(utils::extractDirectory("test") == _currentWorkingDir + "/");
+  BOOST_CHECK(utils::extractDirectory("test/") == _currentWorkingDir + "/" + "test/");
   BOOST_CHECK(utils::convertToAbsolutePath("") == _currentWorkingDir + "/");
 }
 

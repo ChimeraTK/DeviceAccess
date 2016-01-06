@@ -31,25 +31,19 @@ namespace parserUtilities {
   std::string convertToAbsolutePath(std::string const& relativePath);
 
   /*!
-  * @brief Returns the absolute path to the directory containing the file
+  * @brief Returns the path to the directory containing the file
   * provided as the input parameter.
   *
-  * Function also accepts relative paths. These are expected to be relative to
-  * the programs current working directory. When the input is a directory name,
-  * the method returns its absolute path. For a filename as input, it returns
-  * the absolute path of the directory containing that file.
-  *
-  * @param path absolute/relative path to file/directory. Relative paths are
-  *             expected to be relative to the programs current working
-  *             directory.
+  * @param path path to a file/directory.
   * @return <ul>
-  *           <li> The absolute path to the directory containing the file when
-  *                the input is a path to a file.
-  *           <li> The absolute path to the directory when the input is a path
-  *                to a directory.
+  *           <li> Path to the directory containing the file when
+  *                the input is a path to a file. (i.e path does not end in a
+  *                '/')
+  *           <li> Path to the directory when the input is a path
+  *                to a directory. (i.e input path ends in a '/')
   *         </ul>
   */
-  std::string getAbsolutePathToDirectory(std::string const& path);
+  std::string extractDirectory(std::string const& path);
 
   /*!
   * @brief Extract the string after the last '/' in a path. Returned substring

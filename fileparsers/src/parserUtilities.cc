@@ -21,13 +21,10 @@ std::string mtca4u::parserUtilities::getCurrentWorkingDirectory() {
 
 std::string mtca4u::parserUtilities::convertToAbsolutePath(
     const std::string& relativePath) {
-
-  return (getAbsolutePathToDirectory(relativePath) +
-          extractFileName(relativePath));
-
+  return concatenatePaths(getCurrentWorkingDirectory(), relativePath);
 }
 
-std::string mtca4u::parserUtilities::getAbsolutePathToDirectory(
+std::string mtca4u::parserUtilities::extractDirectory(
     const std::string& path) {
 
   std::string currentWorkingDir = getCurrentWorkingDirectory();

@@ -18,14 +18,14 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     DeviceInfoMap::DeviceInfo deviceInfo;
     uint32_t line_nr = 0;
 
-    std::string absPathToFileName = utilities::convertToAbsolutePath(file_name);
+    std::string absPathToDMapFile = utilities::convertToAbsolutePath(file_name);
 
-    file.open(absPathToFileName.c_str());
+    file.open(absPathToDMapFile.c_str());
     if (!file) {        
-        throw DMapFileParserException("Cannot open dmap file: \"" + absPathToFileName + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
+        throw DMapFileParserException("Cannot open dmap file: \"" + absPathToDMapFile + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
     }
 
-    DeviceInfoMapPointer dmap(new DeviceInfoMap(absPathToFileName));
+    DeviceInfoMapPointer dmap(new DeviceInfoMap(absPathToDMapFile));
     while (std::getline(file, line)) {
         line_nr++;
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));
@@ -40,10 +40,10 @@ DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
 
         if (is) {
             // deviceInfo.mapFileName should contain the absolute path to the mapfile:
-            std::string absPathToDmapDirectory = utilities::getAbsolutePathToDirectory(absPathToFileName);
+            std::string absPathToDmapDirectory = utilities::extractDirectory(absPathToDMapFile);
             std::string absPathToMapFile = utilities::concatenatePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
             deviceInfo.mapFileName = absPathToMapFile;
-            deviceInfo.dmapFileName = absPathToFileName;
+            deviceInfo.dmapFileName = absPathToDMapFile;
             deviceInfo.dmapFileLineNumber = line_nr;
             dmap->insert(deviceInfo);
         } else {

@@ -98,7 +98,7 @@ void DMapFileParserTest::testParseFile() {
 	mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
 
     std::string absPathToDmap = mtca4u::parserUtilities::convertToAbsolutePath("valid.dmap");
-    std::string absPathToDmapDir = mtca4u::parserUtilities::getAbsolutePathToDirectory("valid.dmap");
+    std::string absPathToDmapDir = mtca4u::parserUtilities::getCurrentWorkingDirectory();
 
 	populateDummyDeviceInfo(deviceInfo1, absPathToDmap, "card1", "/dev/dev1",
 	    mtca4u::parserUtilities::concatenatePaths(absPathToDmapDir, "goodMapFile_withoutModules.map"));

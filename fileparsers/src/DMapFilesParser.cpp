@@ -35,7 +35,7 @@ namespace mtca4u{
     std::vector<DeviceInfoMap::DeviceInfo>::iterator dmap_elem_iter;
     std::vector<RegisterInfoMapPointer>::iterator map_file_iter;
     RegisterInfoMapPointer map;
-    std::string absolutePathToDMapDir = utilities::getAbsolutePathToDirectory(fileName);
+    std::string absolutePathToDMapDir = utilities::convertToAbsolutePath(utilities::extractDirectory(fileName));
     cleanAll();
     dmap = _dmapFileParser.parse(fileName);
     for (dmap_elem_iter = dmap->_deviceInfoElements.begin();
