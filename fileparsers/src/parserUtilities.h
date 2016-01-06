@@ -25,7 +25,6 @@ namespace parserUtilities {
   *
   * @param relativePath Path to a file/directory relative to the programs
   *                     current working directory.
-  *
   * @return The absolute path to the file/directory, that had its relative path
   *         provided as the function parameter.
   */
@@ -43,7 +42,6 @@ namespace parserUtilities {
   * @param path absolute/relative path to file/directory. Relative paths are
   *             expected to be relative to the programs current working
   *             directory.
-  *
   * @return <ul>
   *           <li> The absolute path to the directory containing the file when
   *                the input is a path to a file.
@@ -54,13 +52,10 @@ namespace parserUtilities {
   std::string getAbsolutePathToDirectory(std::string const& path);
 
   /*!
-  * @brief Extract the string after the last '/' in a path.
-  *
-  *  The extracted substring from the input parameter path , does not  include
-  *  the last '/' character.
+  * @brief Extract the string after the last '/' in a path. Returned substring
+  * does not include the '/' character.
   *
   * @param path string representing file/directory paths.
-  *
   * @return substring containing characters after the last '/' in the input
   *                   string. The '/' is excluded in this substring.
   */
@@ -73,15 +68,14 @@ namespace parserUtilities {
   * path. Otherwise path1 is concatenated with path2 and returned.
   *
   * @param path1, path2 strings representing file/directory paths.
-  *
   * @return
   *        <ul>
   *          <li> path2 when the input parameter path2 is an absolute path.
   *          <li> path1 concatenated with path2 when path2 is a relative path.
   *        </ul>
   */
-  std::string concatenatePaths(const std::string& path1, const std::string& path2);
-
+  std::string concatenatePaths(const std::string& path1,
+                               const std::string& path2);
 }
 }
 
