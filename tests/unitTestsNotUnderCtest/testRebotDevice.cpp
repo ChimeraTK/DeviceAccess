@@ -27,25 +27,15 @@ private:
 
 public:
   RebotTestClass(std::string const& cardAlias);
-
-  // the actual tests
-  // Backend tests:
-    // connection test
-    // Multiple write
-    // Multiple read
-    // unaligned read/write
-    // read/write when device closed
   void testConnection();
   void testWrite();
   void testFactory();
 
-
-
 private:
   /*
-   * parse the relevant dmap file to extract ip and port which would be required
-   * for testing the rebot backend
-   */
+  * parse the relevant dmap file to extract ip and port which would be required
+  * for testing the rebot backend
+  */
   RebotServerDetails getServerDetails();
   DeviceInfo getDeviceDetailsFromDMap();
   RebotServerDetails extractServerDetailsFromUri(std::string &uri);
@@ -65,18 +55,17 @@ public:
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
   if (argc < 2) {
-
     std::cout << "Usage: " << argv[0] << " cardAlias [dmapFile]" << std::endl;
-
+    return nullptr;
   }
   bool hasSecondArgument = (argv[2] != nullptr);
+
+  // take dmap file location if given, else search for cardAlias in the
+  // factory default dmap file
   if (hasSecondArgument) {
-
-    // take dmap file location if given, else search for cardAlias in the
-    // factory default dmap file
     mtca4u::BackendFactory::getInstance().setDMapFilePath(argv[2]);
-
   }
+
   return new RebotDeviceTestSuite(argv[1]);
 
 }

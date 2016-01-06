@@ -3,14 +3,13 @@ cmake_minimum_required (VERSION 2.8.7)
 Project(mtca4u-deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 04)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 03)
+set(${PROJECT_NAME}_PATCH_VERSION 03)
 
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
 
-Message ( Root )
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -52,8 +51,16 @@ include_directories("${PROJECT_SOURCE_DIR}/device/include")
 # Only these include directories should be copied for examples. 
 get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
-#Now add other includes
+# Now add other includes; headers added after this point will  not be copied as
+# part of the installation
 include_directories(${Boost_INCLUDE_DIRS})
+# FIXME: The reason this source directory is added to the include path is
+# because of fileparsers/parserUtilities.h. This header was intended to be
+# localized to the fileparser source directory; But unit tests need access to
+# this header. For now including the source directory to the project include
+# path. Moving this header to a dedicated location may be considered later.
+include_directories("${PROJECT_SOURCE_DIR}/fileparsers/src")
+
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
@@ -95,7 +102,6 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 endforeach(headerFile)
 endforeach(dir)
 
-	
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")

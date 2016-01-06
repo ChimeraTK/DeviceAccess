@@ -55,12 +55,3 @@ bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& elemen
   return result;
 }
 
-std::string getCurrentWorkingDirectory() {
-  char *currentWorkingDir = get_current_dir_name();
-  if (!currentWorkingDir) {
-    throw;
-  }
-  std::string dir(currentWorkingDir);
-  free(currentWorkingDir);
-  return dir;
-}

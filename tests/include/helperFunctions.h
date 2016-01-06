@@ -25,6 +25,4 @@ bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
 bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
                         const mtca4u::RegisterInfoMap::RegisterInfo& element2);
 
-std::string getCurrentWorkingDirectory();
-
 #endif /* HELPERFUNCTIONS_H_ */
