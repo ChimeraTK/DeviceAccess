@@ -59,12 +59,6 @@ public:
 	std::string static findFirstOfAlias(std::string aliasName);
 
 
-	// TODO: Documentation pending <geogin>
-    static std::string getCurrentWorkingDirectory();
-    static std::string combinePaths(std::string& absoluteBasePath, const std::string& pathToAppend);
-    static std::string getAbsolutePathToDirectory(std::string const&);
-    static std::string getAbsolutePathToFile(std::string const&);
-    static std::string extractFileNameFromPath(std::string const&);
 };
 
 } /* namespace mtca4u */
