@@ -39,6 +39,8 @@ private:
   RebotServerDetails getServerDetails();
   DeviceInfo getDeviceDetailsFromDMap();
   RebotServerDetails extractServerDetailsFromUri(std::string &uri);
+
+  void checkWriteReadFromRegister(mtca4u::Device &rebotDevice);
 };
 
 /******************************************************************************/
@@ -110,6 +112,7 @@ void RebotTestClass::testConnection() {
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 
+  rebotBackend.open();
   BOOST_CHECK_NO_THROW(rebotBackend.open());
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), true);
@@ -151,12 +154,18 @@ rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
 }
 
 inline void RebotTestClass::testFactory() {
-  mtca4u::Device rebotDevice;
   // assuming that the working directory for this test is the tests directory in
   // the build folder
   mtca4u::BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
-  rebotDevice.open("mskrebot");
 
+  mtca4u::Device rebotDevice;
+  rebotDevice.open(_cardAlias);
+  checkWriteReadFromRegister(rebotDevice);
+
+}
+
+void RebotTestClass::checkWriteReadFromRegister(
+    mtca4u::Device& rebotDevice) {
   int32_t dataToWrite[4] = {rand(), rand(), rand(), rand()};
   int32_t readInData[4];
   rebotDevice.writeReg("WORD_CLK_MUX", "ADC", dataToWrite, sizeof(dataToWrite));

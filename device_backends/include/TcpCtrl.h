@@ -21,15 +21,13 @@
 
 #include <RebotBackendException.h>
 
-using boost::asio::ip::tcp;
-
 ///Handles the communication over TCP protocol with RebotDevice-based devices
 class TcpCtrl {
 private:
   std::string _ipAddress;
   int _port;
   boost::shared_ptr<boost::asio::io_service> _io_service;
-  boost::shared_ptr<tcp::socket> _socket;
+  boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
 
 public:
 
@@ -53,7 +51,18 @@ public:
   ///Sets port in an object. Can be done when connection is closed.
   void setPort(int port);
 
+private:
 
+  /*!
+   * @brief connect to the first available endpoint from a list of endpoints.
+   * The endpoint list is accessed through the provided Iterator
+   *
+   * The code in this method is based on  boost::asio::connect. This convenience
+   * function is not available in the version of the boost library (1.46) used
+   * currently.
+   */
+  boost::system::error_code connectToResolvedEndPoints(
+      boost::asio::ip::tcp::resolver::iterator endpointIterator);
 };
 
 #endif /* TCPCTRL_H_ */

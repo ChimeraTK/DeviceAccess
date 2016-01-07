@@ -7,6 +7,7 @@
 
 #include "TcpCtrl.h"
 using namespace mtca4u;
+using namespace boost::asio::ip;
 
 TcpCtrl::TcpCtrl(std::string ipaddr, int port)
     : _ipAddress(ipaddr), _port(port) {
@@ -18,11 +19,17 @@ TcpCtrl::~TcpCtrl() {}
 
 void TcpCtrl::openConnection() {
 
+  boost::asio::ip::tcp::resolver resolver(*_io_service);
+  boost::asio::ip::tcp::resolver::query query(_ipAddress, std::to_string(_port));
+  boost::asio::ip::tcp::resolver::iterator endPointIterator = resolver.resolve(query);
+
   boost::system::error_code ec;
-  tcp::endpoint endp(boost::asio::ip::address::from_string(_ipAddress), _port);
   int connectionCounter = 0;
   while (1) {
-    _socket->connect(endp, ec);
+    // Try connecting to the first working endpoint in the list returned by the
+    // resolver and retry 30 times(FIXME: why 30) if all endpoints in the list
+    // fails to connect.
+    ec = connectToResolvedEndPoints(endPointIterator);
     if (!ec || connectionCounter > 30) {
       break;
     }
@@ -81,4 +88,20 @@ void TcpCtrl::setPort(int port) {
                                 RebotBackendException::EX_SET_PORT_FAILED);
   }
   _port = port;
+}
+
+boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
+    boost::asio::ip::tcp::resolver::iterator endpointIterator) {
+  boost::system::error_code ec;
+  for (; endpointIterator != tcp::resolver::iterator(); ++endpointIterator) {
+    _socket->close();
+    _socket->connect(*endpointIterator, ec);
+    if (ec == boost::system::errc::success) { // conncetion successful
+      return ec;
+    }
+  }
+  // Reaching here implies We failed to connect to every endpoint in the list.
+  // Indicate connection error in this case
+  ec = boost::asio::error::not_found;
+  return ec;
 }
