@@ -18,15 +18,5 @@ fi
 ../bin/testRebotDevice mskrebot1 ./dummies.dmap
 TEST_RESULT=$? 
 
-if [ $TEST_RESULT -ne 0 ] ; then # The above test failed; so do not proceed 
-                                 # further and return 
- kill $SERVER_PID
- exit $TEST_RESULT
-fi 
-
-# mskrebot2 is a bad hostname. DNS resolution would fail for this entry 
-../bin/testRebotDevice mskrebot2 ./dummies.dmap
-TEST_RESULT=$? 
-
  kill $SERVER_PID
  exit $TEST_RESULT

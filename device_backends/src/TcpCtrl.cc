@@ -7,10 +7,13 @@
 
 #include "TcpCtrl.h"
 using namespace mtca4u;
-using namespace boost::asio::ip;
+namespace boost_ip = boost::asio::ip;
+typedef boost::asio::ip::tcp::resolver  resolver;
+typedef boost::asio::ip::tcp::resolver::query  query;
+typedef boost_ip::tcp::resolver::iterator  iterator;
 
-TcpCtrl::TcpCtrl(std::string ipaddr, int port)
-    : _ipAddress(ipaddr), _port(port) {
+TcpCtrl::TcpCtrl(std::string address, int port)
+    : _serverAddress(address), _port(port) {
   _io_service = boost::make_shared<boost::asio::io_service>();
   _socket = boost::make_shared<tcp::socket>(*_io_service);
 }
@@ -18,27 +21,35 @@ TcpCtrl::TcpCtrl(std::string ipaddr, int port)
 TcpCtrl::~TcpCtrl() {}
 
 void TcpCtrl::openConnection() {
+  try {
+    // Use boost resolver for DNS name resolution when server address is a
+    // hostname
+    resolver dnsResolver(*_io_service);
+    query query(_serverAddress, std::to_string(_port));
+    iterator endPointIterator = dnsResolver.resolve(query);
 
-  boost::asio::ip::tcp::resolver resolver(*_io_service);
-  boost::asio::ip::tcp::resolver::query query(_ipAddress, std::to_string(_port));
-  boost::asio::ip::tcp::resolver::iterator endPointIterator = resolver.resolve(query);
+    boost::system::error_code ec;
+    int connectionCounter = 0;
 
-  boost::system::error_code ec;
-  int connectionCounter = 0;
-  while (1) {
-    // Try connecting to the first working endpoint in the list returned by the
-    // resolver and retry 30 times(FIXME: why 30) if all endpoints in the list
-    // fails to connect.
-    ec = connectToResolvedEndPoints(endPointIterator);
-    if (!ec || connectionCounter > 30) {
-      break;
+    while (1) {
+      // Try connecting to the first working endpoint in the list returned by
+      // the resolver and retry 30 times if all endpoints in the list
+      // fails to connect (FIXME: why 30? why retry anyway).
+      ec = connectToResolvedEndPoints(endPointIterator);
+      if (!ec || connectionCounter > 30) {
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      connectionCounter++;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    connectionCounter++;
+    // we are unsuccessful after 30 retries
+    if (ec) {
+      throw RebotBackendException("Could not connect to server",
+                                  RebotBackendException::EX_CONNECTION_FAILED);
+    }
   }
-
-  if (ec) {
-    throw RebotBackendException("Error connecting endpoint",
+  catch (std::exception &exception) {
+    throw RebotBackendException(exception.what(),
                                 RebotBackendException::EX_CONNECTION_FAILED);
   }
 }
@@ -70,14 +81,14 @@ void TcpCtrl::sendData(const std::vector<char> &data) {
   }
 }
 
-std::string TcpCtrl::getAddress() { return _ipAddress; }
+std::string TcpCtrl::getAddress() { return _serverAddress; }
 
 void TcpCtrl::setAddress(std::string ipaddr) {
   if (_socket->is_open()) {
     throw RebotBackendException("Error setting IP. The socket is open",
                                 RebotBackendException::EX_SET_IP_FAILED);
   }
-  _ipAddress = ipaddr;
+  _serverAddress = ipaddr;
 }
 
 int TcpCtrl::getPort() { return _port; }
@@ -96,7 +107,8 @@ boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
   for (; endpointIterator != tcp::resolver::iterator(); ++endpointIterator) {
     _socket->close();
     _socket->connect(*endpointIterator, ec);
-    if (ec == boost::system::errc::success) { // conncetion successful
+    if (ec == boost::system::errc::success) { // return if connection to server
+                                              // successful
       return ec;
     }
   }

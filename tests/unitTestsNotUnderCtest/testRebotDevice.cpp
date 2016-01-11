@@ -74,7 +74,6 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
 
 /******************************************************************************/
 
-
 RebotTestClass::RebotTestClass(std::string const& cardAlias)
     : _cardAlias(cardAlias), _rebotServer(getServerDetails()) {}
 
@@ -127,21 +126,30 @@ void RebotTestClass::testConnection() {
 void RebotTestClass::testWrite() {
   mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
   rebotBackend.open();
+
+  /*****************
+   * The dummy server wites 0xDEADDEAD to the start address 0x04. Use this for
+   * testing
+   */
+  uint32_t address = 0x04;
+  int32_t readValue = 0;
+  rebotBackend.read(0, address, &readValue, sizeof(readValue));
+  BOOST_CHECK_EQUAL(0xDEADDEAD, readValue);
+
   /****************************************************************************/
   // Single word read -  Hardcoding addresses for now
   uint32_t word_status_register_address = 0x8;
   int32_t data = -987;
   // Register
-rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
+  rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
 
-  int32_t readValue;
   rebotBackend.read(0, word_status_register_address, &readValue, sizeof(readValue));
 
-  BOOST_CHECK_EQUAL(data, readValue);
+BOOST_CHECK_EQUAL(data, readValue);
   /****************************************************************************/
 
   // Multiword read/write
-  uint32_t word_clk_mux_addr = 0x20;
+  uint32_t word_clk_mux_addr = 28;
   int32_t dataToWrite[4] = {rand(), rand(), rand(), rand()};
   int32_t readInData[4];
 
@@ -154,14 +162,10 @@ rebotBackend.write(0, word_status_register_address, &data, sizeof(data));
 }
 
 inline void RebotTestClass::testFactory() {
-  // assuming that the working directory for this test is the tests directory in
-  // the build folder
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
 
   mtca4u::Device rebotDevice;
   rebotDevice.open(_cardAlias);
   checkWriteReadFromRegister(rebotDevice);
-
 }
 
 void RebotTestClass::checkWriteReadFromRegister(

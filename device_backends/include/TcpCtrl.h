@@ -24,7 +24,7 @@
 ///Handles the communication over TCP protocol with RebotDevice-based devices
 class TcpCtrl {
 private:
-  std::string _ipAddress;
+  std::string _serverAddress;
   int _port;
   boost::shared_ptr<boost::asio::io_service> _io_service;
   boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
