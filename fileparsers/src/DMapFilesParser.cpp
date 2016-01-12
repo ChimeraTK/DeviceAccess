@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <sstream>
 #include <dirent.h>
-#include <parserUtilities.h>
+#include "parserUtilities.h"
 #include <sys/types.h>
 #include <fstream>
 #include <stdexcept>

@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <unistd.h>
 #include "parserUtilities.h"
 
 /*
