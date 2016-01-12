@@ -7,6 +7,8 @@
 
 #include "NotImplementedException.h"
 #include "MapFileParser.h"
+#include "parserUtilities.h"
+#include "BackendFactory.h"
 
 //macro to avoid code duplication
 #define TRY_REGISTER_ACCESS(COMMAND)\
@@ -20,12 +22,17 @@
 			throw DummyBackendException(errorMessage.str(), DummyBackendException::INVALID_ADDRESS);\
 		}
 
+
 namespace mtca4u{
 // Valid bar numbers are 0 to 5 , so they must be contained
 // in three bits.
 const unsigned int BAR_MASK = 0x7;
 // the bar number is stored in bits 60 to 62
 const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
+
+// This method converts a mapfilename that is in a location relative to the
+// dmapfile used by the factory, to its absolute path
+static std::string convertPathRelativeToDmapToAbs(std::string const & mapfileName);
 
 DummyBackend::DummyBackend(std::string mapFileName): _mapFile(mapFileName){
   _registerMapping = MapFileParser().parse(_mapFile);
@@ -204,11 +211,25 @@ boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string /*host
 							      std::string /*instance*/,
 							      std::list<std::string> parameters){
   // the dummy is ignoring the instance and takes the first parameter as map file name
-  if (parameters.empty()){
+  if (parameters.empty()) {
     throw DummyBackendException("No map file name given in the parameter list.",
-				DummyBackendException::INVALID_PARAMETER);
+                                DummyBackendException::INVALID_PARAMETER);
   }
-  return boost::shared_ptr<DeviceBackend>( new DummyBackend(parameters.front()) );
+  std::string mapfilename = parameters.front();
+  // when the factory is used to create the dummy device, mapfile path is
+  // relative to the dmapfile location. To make sure file path is correct we
+  // Convert to absolute path before using it
+  std::string absPathToMapfile = convertPathRelativeToDmapToAbs(mapfilename);
+
+  return boost::shared_ptr<DeviceBackend>(new DummyBackend(absPathToMapfile));
 }
 
-}// namespace mtca4u
+std::string convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
+  std::string dmapDir = parserUtilities::extractDirectory( BackendFactory::getInstance().getDMapFilePath());
+  std::string absPathToDmapDir = parserUtilities::convertToAbsolutePath(dmapDir);
+  // the map file is relative to the dmap file location. Convert the relative
+  // mapfilename to an absolute path
+  return parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
+}
+
+} // namespace mtca4u

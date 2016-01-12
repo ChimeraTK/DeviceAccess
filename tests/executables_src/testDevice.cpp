@@ -639,12 +639,10 @@ void DeviceTest::testDeviceCreation() {
   device2.open("PCIE1");
   BOOST_CHECK_NO_THROW(device2.open("PCIE1"));
 
-/* TODO
   mtca4u::Device device3;
   BOOST_CHECK_NO_THROW(device3.open("DUMMYD0"));
   mtca4u::Device device4;
   BOOST_CHECK_NO_THROW(device4.open("DUMMYD1"));
-*/
 
   //Now that we are done with the tests, move the factory to the state it was in
   //before we started

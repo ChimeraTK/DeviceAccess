@@ -127,6 +127,7 @@ protected:
 	template<typename T>
 	friend class DummyMultiplexedRegisterAccessor;
 
+
 };
 
 }//namespace mtca4u

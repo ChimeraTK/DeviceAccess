@@ -7,6 +7,7 @@ using namespace boost::unit_test_framework;
 #include "BackendFactory.h"
 #include "DummyBackend.h"
 #include "NotImplementedException.h"
+#include "parserUtilities.h"
 using namespace mtca4u;
 
 #define TEST_MAPPING_FILE "mtcadummy_withoutModules.map"
@@ -339,9 +340,14 @@ void DummyBackendTest::testReadDeviceInfo() {
 	TestableDummyBackend* dummyBackend = getBackendInstance();
 	deviceInfo = dummyBackend->readDeviceInfo();
 	std::cout << deviceInfo << std::endl;
-	BOOST_CHECK(deviceInfo ==
-			(std::string("DummyBackend with mapping file ") +
-					TEST_MAPPING_FILE));
+
+	// DummyDevice instances created using the factory now deals with absolute
+	// paths to the dmap file. We frame an absolute path for comaprison
+	std::string absolutePathToMapfile = mtca4u::parserUtilities::getCurrentWorkingDirectory() + "./" + TEST_MAPPING_FILE;
+
+        BOOST_CHECK(deviceInfo ==
+                    (std::string("DummyBackend with mapping file ") +
+                     absolutePathToMapfile));
 }
 
 void DummyBackendTest::testReadOnly() {
