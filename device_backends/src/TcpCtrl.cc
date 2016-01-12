@@ -8,14 +8,14 @@
 #include "TcpCtrl.h"
 using namespace mtca4u;
 namespace boost_ip = boost::asio::ip;
-typedef boost::asio::ip::tcp::resolver  resolver;
-typedef boost::asio::ip::tcp::resolver::query  query;
-typedef boost_ip::tcp::resolver::iterator  iterator;
+typedef boost::asio::ip::tcp::resolver  resolver_t;
+typedef boost::asio::ip::tcp::resolver::query  query_t;
+typedef boost_ip::tcp::resolver::iterator  iterator_t;
 
 TcpCtrl::TcpCtrl(std::string address, int port)
     : _serverAddress(address), _port(port) {
   _io_service = boost::make_shared<boost::asio::io_service>();
-  _socket = boost::make_shared<tcp::socket>(*_io_service);
+  _socket = boost::make_shared<boost_ip::tcp::socket>(*_io_service);
 }
 
 TcpCtrl::~TcpCtrl() {}
@@ -24,9 +24,9 @@ void TcpCtrl::openConnection() {
   try {
     // Use boost resolver for DNS name resolution when server address is a
     // hostname
-    resolver dnsResolver(*_io_service);
-    query query(_serverAddress, std::to_string(_port));
-    iterator endPointIterator = dnsResolver.resolve(query);
+    resolver_t dnsResolver(*_io_service);
+    query_t query(_serverAddress, std::to_string(_port));
+    iterator_t endPointIterator = dnsResolver.resolve(query);
 
     boost::system::error_code ec;
     int connectionCounter = 0;
@@ -104,7 +104,7 @@ void TcpCtrl::setPort(int port) {
 boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
     boost::asio::ip::tcp::resolver::iterator endpointIterator) {
   boost::system::error_code ec;
-  for (; endpointIterator != tcp::resolver::iterator(); ++endpointIterator) {
+  for (; endpointIterator != resolver_t::iterator(); ++endpointIterator) {
     _socket->close();
     _socket->connect(*endpointIterator, ec);
     if (ec == boost::system::errc::success) { // return if connection to server
