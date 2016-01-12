@@ -1,22 +1,22 @@
-#! /bin/bash
+#!/bin/bash
 
 ../bin/RebotDummyServer -m ./mtcadummy.map&
 SERVER_PID=$!
 sleep .1
 
+TEST_RESULT=0
+
 # run the test now; mskrebot uses ip address of the server in the dmap file 
 ../bin/testRebotDevice mskrebot ./dummies.dmap
-TEST_RESULT=$? 
-
-if [ $TEST_RESULT -ne 0 ] ; then # The above test failed; so do not proceed 
-                                 # further and return 
- kill $SERVER_PID
- exit $TEST_RESULT
+if [ $? -ne 0 ] ; then # The above test failed;
+ TEST_RESULT=1
 fi 
 
 # mskrebot1 uses hostname of the server in the dmap file 
 ../bin/testRebotDevice mskrebot1 ./dummies.dmap
-TEST_RESULT=$? 
+if [ $? -ne 0 ] ; then # The above test failed;
+ TEST_RESULT=$(( $TEST_RESULT  + 2 ))
+fi 
 
  kill $SERVER_PID
  exit $TEST_RESULT
