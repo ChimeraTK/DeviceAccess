@@ -26,7 +26,8 @@ public:
     EX_SET_IP_FAILED,
     EX_SET_PORT_FAILED,
     EX_SIZE_INVALID,
-    EX_INVALID_PARAMETERS
+    EX_INVALID_PARAMETERS,
+    EX_INVALID_REGISTER_ADDRESS
   };
   RebotBackendException(const std::string &_exMessage, unsigned int _exID);
 };

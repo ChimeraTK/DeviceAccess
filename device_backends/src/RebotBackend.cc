@@ -28,7 +28,14 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
     throw RebotBackendException("\"size\" argument must be a multiplicity of 4",
                                 RebotBackendException::EX_SIZE_INVALID);
   }
-
+  // address == byte address; This should be converted into word address
+  if (address % 4 != 0) {
+    throw RebotBackendException(
+        "Register address is not valid",
+        RebotBackendException::EX_INVALID_REGISTER_ADDRESS);
+  } else {
+    address = address / 4;
+  }
   int mode = 3;
   boost::array<char, 4> receivedData;
 
@@ -70,6 +77,14 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
     throw RebotBackendException("\"size\" argument must be a multiplicity of 4",
                                 RebotBackendException::EX_SIZE_INVALID);
   }
+  // address == byte address; This should be converted into word address
+  if (address % 4 != 0) {
+    throw RebotBackendException(
+        "Register address is not valid",
+        RebotBackendException::EX_INVALID_REGISTER_ADDRESS);
+  } else {
+    address = address / 4;
+  }
 
   int mode = 1;
   unsigned int packetsize = sizeInBytes / 4;
@@ -82,7 +97,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
       datasend[j] = 0;
     }
     for (int j = 4; j < 8; ++j) {
-      datasend[j] = ((address + i * sizeof(int32_t)) >> (8 * (j - 4))) & 0xFF;
+      datasend[j] = ((address + i) >> (8 * (j - 4))) & 0xFF;
     }
     for (int j = 8; j < 12; ++j) {
       datasend[j] = (data[i] >> (8 * (j - 8))) & 0xFF;

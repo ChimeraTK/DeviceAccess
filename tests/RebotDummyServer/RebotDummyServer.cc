@@ -80,7 +80,10 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
 }
 
 bool RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer) {
-  uint32_t registerAddress = buffer.at(1);
+  uint32_t registerAddress = buffer.at(1); // This is the word offset; since
+                                           // dummy device deals with byte
+                                           // addresses convert to bytes FIXME
+  registerAddress = registerAddress * 4;
   int32_t wordToWrite = buffer.at(2);
   uint8_t bar = 0;
   try {
@@ -94,7 +97,8 @@ bool RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer
 }
 
 void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
-  uint32_t registerAddress = buffer.at(1);
+  uint32_t registerAddress = buffer.at(1); // This is a word offset. convert to bytes before use. FIXME
+  registerAddress = registerAddress * 4;
   uint32_t numberOfWordsToRead = buffer.at(2);
 
   std::vector<int32_t> dataToSend(numberOfWordsToRead + 1); // +1 to accomodate
