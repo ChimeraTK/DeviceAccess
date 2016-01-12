@@ -127,6 +127,8 @@ protected:
 	template<typename T>
 	friend class DummyMultiplexedRegisterAccessor;
 
+	std::string getAbsPathOfMapFile(std::string const & mapfileName);
+
 };
 
 }//namespace mtca4u

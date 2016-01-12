@@ -27,7 +27,7 @@ const unsigned int BAR_MASK = 0x7;
 // the bar number is stored in bits 60 to 62
 const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
-DummyBackend::DummyBackend(std::string mapFileName): _mapFile(mapFileName){
+DummyBackend::DummyBackend(std::string mapFileName): _mapFile(getAbsPathOfMapFile(mapFileName)){
   _registerMapping = MapFileParser().parse(_mapFile);
   resizeBarContents();
 }
@@ -211,4 +211,8 @@ boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string /*host
   return boost::shared_ptr<DeviceBackend>( new DummyBackend(parameters.front()) );
 }
 
-}// namespace mtca4u
+std::string DummyBackend::getAbsPathOfMapFile(const std::string& mapfileName) {
+  return mapfileName;
+}
+
+} // namespace mtca4u
