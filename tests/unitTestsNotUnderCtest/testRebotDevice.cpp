@@ -111,7 +111,6 @@ void RebotTestClass::testConnection() {
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 
-  rebotBackend.open();
   BOOST_CHECK_NO_THROW(rebotBackend.open());
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), true);
