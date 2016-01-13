@@ -38,8 +38,9 @@ public:
   void openConnection(); 
   ///Closes a connection with the device.
   void closeConnection();
-  ///Receives 4 bytes from the socket.
-  void receiveData(boost::array<char, 4> &receiveArray); 
+  ///Receives int32_t words from the socket.
+  std::vector<int32_t> receiveData(uint32_t const &numWordsToRead);
+  void receiveData(boost::array<char, 4>& receivedArray);
   ///Sends a std::vector of bytes to the socket.
   void sendData(const std::vector<char> &data); 
   ///Returns an IP address associated with an object of the class.

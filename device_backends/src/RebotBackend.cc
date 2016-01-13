@@ -1,4 +1,5 @@
 #include "RebotBackend.h"
+#include "TcpCtrl.h"
 
 namespace mtca4u {
 
@@ -36,14 +37,32 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
   } else {
     address = address / 4;
   }
+
+  unsigned int wordsToRead = sizeInBytes / 4;
+
+  // address, words to read -> command
+  sendRebotReadRequest(address, wordsToRead);
+
+  // read wordsToRead + 1. The extra byte is the read status indicator. The
+  // returned status indicator from the server should be handled FIXME
+  std::vector<int32_t> readData = _tcpObject->receiveData(wordsToRead + 1);
+
+  // remove the first byte form the read in data; this will be the read status
+  // indicator returned from the server
+  readData.erase(readData.begin());
+
+  transferVectorToDataPtr(readData, data);
+}
+
+void RebotBackend::sendRebotReadRequest(const uint32_t address,
+                                        const uint32_t wordsToRead) {
   int mode = 3;
-  boost::array<char, 4> receivedData;
 
   unsigned int datasendSize = 3 * sizeof(int);
   std::vector<char> datasend(datasendSize);
   datasend[0] = mode;
-  unsigned int packetsize = sizeInBytes / 4;
 
+  // send out an n word read request
   for (int j = 1; j < 4; ++j) {
     datasend[j] = 0;
   }
@@ -51,22 +70,20 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
     datasend[j] = (address >> (8 * (j - 4))) & 0xFF;
   }
   for (int j = 8; j < 12; ++j) {
-    datasend[j] = ((packetsize) >> (8 * (j - 8))) & 0xFF;
+    datasend[j] = ((wordsToRead) >> (8 * (j - 8))) & 0xFF;
   }
 
   _tcpObject->sendData(datasend);
-  _tcpObject->receiveData(receivedData);
-
-  for (unsigned int i = 0; i < packetsize; ++i) {
-    int u32data = 0;
-    _tcpObject->receiveData(receivedData);
-    for (int j = 0; j < 4; ++j) {
-      u32data |= ((receivedData[j] & 0xFF) << 8 * j);
-    }
-    data[i] = u32data;
-  }
 }
 
+void RebotBackend::transferVectorToDataPtr(std::vector<int32_t> source,
+                                           int32_t* destination) {
+  for (auto &i : source) {
+    *destination = i;
+    ++destination; // this will not change the destination ptr value outside the
+                   // scope of this function
+  }
+}
 void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
                          size_t sizeInBytes) {
   if (!isOpen()) {
@@ -113,9 +130,9 @@ void RebotBackend::close() {
   _tcpObject->closeConnection();
 }
 
-boost::shared_ptr<DeviceBackend> RebotBackend::createInstance( std::string /*host*/,
-                                                               std::string /*instance*/,
-                                                               std::list<std::string> parameters) {
+boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
+    std::string /*host*/, std::string /*instance*/,
+    std::list<std::string> parameters) {
 
   if (parameters.size() < 2) { // expecting tmcb ip and port
     throw RebotBackendException(
@@ -129,5 +146,4 @@ boost::shared_ptr<DeviceBackend> RebotBackend::createInstance( std::string /*hos
   int portNumber = std::stoi(*(++it));
   return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber));
 }
-
 } // namespace mtca4u

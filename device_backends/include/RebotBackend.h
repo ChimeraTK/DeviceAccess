@@ -15,9 +15,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
-#include "TcpCtrl.h"
 
-
+class TcpCtrl;
 namespace mtca4u {
 
 class RebotBackend : public DeviceBackendImpl {
@@ -42,6 +41,24 @@ public:
   ///Not implemented
   virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
   static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+
+private:
+  /*!
+   * @brief Frame a rebot 'n' word read request and send it over the socket.
+   *
+   * @param address     The start address to read from. Method expects this
+   *                    address to be byte aligned to the register address
+   *                    space.
+   * @param wordsToRead Number of 32 bit words that should be returned from the
+   *                    start address (value at start address inclusive).
+   */
+  void sendRebotReadRequest(uint32_t const address, uint32_t const wordsToRead);
+
+
+  /*!
+   * @brief Copy contents of a vector to a preallocated memory region
+   */
+  void transferVectorToDataPtr(std::vector<int32_t> source, int32_t* destination);
 };
 
 } //namespace mtca4u
