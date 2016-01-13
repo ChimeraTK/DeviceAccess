@@ -158,6 +158,20 @@ BOOST_CHECK_EQUAL(data, readValue);
   for(int i = 0; i < 4; i++){
     BOOST_CHECK_EQUAL(dataToWrite[i], readInData[i]);
   }
+
+  uint32_t test_area_Addr = 0x00000030;
+  std::vector<int32_t> test_area_data(1024);
+  for (uint32_t i = 0; i < test_area_data.size(); ++i) {
+    test_area_data.at(i) = i;
+  }
+  std::vector<int32_t> test_area_ReadIndata(1024);
+
+  rebotBackend.write(0, test_area_Addr, test_area_data.data(), sizeof(int32_t) * test_area_data.size());
+  rebotBackend.read(0, test_area_Addr, test_area_ReadIndata.data(), sizeof(int32_t) * test_area_ReadIndata.size());
+
+  for(uint32_t i = 0; i < test_area_ReadIndata.size(); i++){
+    BOOST_CHECK_EQUAL(test_area_data[i], test_area_ReadIndata[i]);
+  }
 }
 
 inline void RebotTestClass::testFactory() {

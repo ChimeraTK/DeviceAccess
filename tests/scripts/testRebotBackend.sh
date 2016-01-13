@@ -1,6 +1,6 @@
 #!/bin/bash
 
-../bin/RebotDummyServer -m ./mtcadummy.map&
+../bin/RebotDummyServer -m ./mtcadummy_rebot.map&
 SERVER_PID=$!
 sleep .1
 
