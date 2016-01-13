@@ -15,6 +15,7 @@ ADC.WORD_CLK_DUMMY            0x00000001    0x0000003C    0x00000004    0x000000
 ADC.WORD_CLK_RST              0x00000001    0x00000040    0x00000004    0x00000000       32         0         0
 ADC.WORD_ADC_ENA              0x00000001    0x00000044    0x00000004    0x00000000       32         0         0
 
+
 #The broken register cannot be read or written, it always causes an I/O error for testing
 TESTING.BROKEN_REGISTER       0x00000001    0x00000048    0x00000004    0x00000000       32         0         0
 #Reading is possible, but writing causes an I/O error. Content is the offset.

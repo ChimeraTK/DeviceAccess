@@ -63,12 +63,15 @@ void TcpCtrl::closeConnection() {
   }
 }
 
-void TcpCtrl::receiveData(boost::array<char, 4> &receivedArray) {
+std::vector<int32_t> TcpCtrl::receiveData(uint32_t const &numWordsToRead) {
   boost::system::error_code ec;
-  _socket->read_some(boost::asio::buffer(receivedArray), ec);
+  std::vector<int32_t> readData(numWordsToRead);
+  _socket->read_some(boost::asio::buffer(readData), ec);
   if (ec) {
     throw RebotBackendException("Error reading from socket",
                                 RebotBackendException::EX_SOCKET_READ_FAILED);
+  } else {
+    return readData;
   }
 }
 
@@ -116,4 +119,14 @@ boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
   // Indicate connection error in this case
   ec = boost::asio::error::not_found;
   return ec;
+}
+
+// FIXME: remove this later; Do not want to do a cleanup at this point
+void TcpCtrl::receiveData(boost::array<char, 4> &receivedArray) {
+  boost::system::error_code ec;
+  _socket->read_some(boost::asio::buffer(receivedArray), ec);
+  if (ec) {
+    throw RebotBackendException("Error reading from socket",
+                                RebotBackendException::EX_SOCKET_READ_FAILED);
+  }
 }

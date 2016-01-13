@@ -92,7 +92,8 @@ bool RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer
     return true;
   }
   catch (...) {
-    return false;
+  		// let theexception through false is not handled right now
+    throw;
   }
 }
 
