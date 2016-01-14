@@ -40,7 +40,7 @@ private:
   boost::shared_ptr<ip::tcp::socket> _currentClientConnection;
 
   void processReceivedCommand(std::vector<uint32_t> &buffer);
-  bool writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
+  void writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
   void sendResponseForWriteCommand(bool status);
   void handleAcceptedConnection(boost::shared_ptr<ip::tcp::socket>& );

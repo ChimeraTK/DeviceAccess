@@ -59,8 +59,9 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
   switch (requestedAction) {
 
     case 1: { // Write one word to a register
-      bool status = writeWordToRequestedAddress(buffer);
-      sendResponseForWriteCommand(status);
+      writeWordToRequestedAddress(buffer);
+      // if  writeWordToRequestedAddress dosent throw, we can safely assume write was a success	
+      sendResponseForWriteCommand(true);
       break;
     }
     case 3: { // multi word read
@@ -79,22 +80,15 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
   }
 }
 
-bool RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer) {
+void RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer) {
   uint32_t registerAddress = buffer.at(1); // This is the word offset; since
                                            // dummy device deals with byte
                                            // addresses convert to bytes FIXME
   registerAddress = registerAddress * 4;
   int32_t wordToWrite = buffer.at(2);
   uint8_t bar = 0;
-  try {
     _registerSpace.write(bar, registerAddress, &wordToWrite,
                          sizeof(wordToWrite));
-    return true;
-  }
-  catch (...) {
-  		// let theexception through false is not handled right now
-    throw;
-  }
 }
 
 void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
@@ -121,9 +115,7 @@ void RebotDummyServer::sendResponseForWriteCommand(bool status) {
     std::vector<int32_t> data(1);
     data.at(0) = WRITE_SUCCESS_INDICATION;
     boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
-  }// else {
-    // FIXME: We currently have nothing for write failure
-  //}
+  }
 }
 
 RebotDummyServer::~RebotDummyServer() {
