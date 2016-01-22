@@ -75,13 +75,7 @@ public:
   boost::shared_ptr<DeviceBackend> createBackend(std::string aliasName);
 
   /**Static function to get an instance of factory */
-  static BackendFactory& getInstance() {
-#ifdef _DEBUG
-    std::cout << "getInstance" << std::endl << std::flush;
-#endif
-    static BackendFactory factoryInstance; /** Thread safe in C++11*/
-    return factoryInstance;
-  }
+  static BackendFactory& getInstance();
 };
 
 } // namespace mtca4u

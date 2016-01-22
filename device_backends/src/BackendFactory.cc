@@ -43,6 +43,13 @@ BackendFactory::BackendFactory(){
   registerBackendType("rebot","",&RebotBackend::createInstance); // FIXME: Do we use protocol for tmcb?
 }
 
+BackendFactory & BackendFactory::getInstance(){
+#ifdef _DEBUG
+  std::cout << "getInstance" << std::endl << std::flush;
+#endif
+  static BackendFactory factoryInstance; /** Thread safe in C++11*/
+  return factoryInstance;
+}
 
 boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
   std::string uri;
