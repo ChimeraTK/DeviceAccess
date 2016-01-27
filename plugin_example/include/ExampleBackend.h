@@ -46,8 +46,8 @@ public:
     }
   };
   /** The one static instance of the registerer. Currently we keep it public so there is an object which
-   *  can be used in the client code. This is trick needed to force the library to be loaded
-   *  as long as the loading mechanism is not implemented into the map file
+   *  can be used in the client code. This trick is needed to force the library to be loaded
+   *  as long as the loading mechanism is not implemented into the dmap file
    *  (see DeviceClient.cpp how to do it).
    */
   static BackendRegisterer backendRegisterer;  
