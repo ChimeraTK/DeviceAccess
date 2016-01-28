@@ -26,5 +26,6 @@ Description: mtca4u-deviceaccess provides a C++ API to access MTCA.4 devices.
 Package: libmtca4u-deviceaccess-doc
 Section: libdevel
 Architecture: any
+Depends: libmtca4u-deviceaccess-dev (>= @mtca4u-deviceaccess_SOVERSION@), libmtca4u-deviceaccess-dev (<= @mtca4u-deviceaccess_SOVERSION@.99)
 Enhances: libmtca4u-deviceaccess-dev
 Description: The doxygen html documentation for libmtca4u-deviceaccess and some examples.
