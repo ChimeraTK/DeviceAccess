@@ -8,7 +8,7 @@
 #ifndef EXTCPCTRL_H_
 #define EXTCPCTRL_H_
 
-#include <DeviceException.h>
+#include <DeviceBackendException.h>
 #include <string>
 
 namespace mtca4u {

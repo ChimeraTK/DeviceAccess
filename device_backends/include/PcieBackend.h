@@ -1,7 +1,7 @@
 #ifndef MTCA4U_PCIE_BACKEND_H
 #define	MTCA4U_PCIE_BACKEND_H
 
-#include "DeviceBackendImpl.h"
+#include "AddressBasedBackend.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <boost/function.hpp>
@@ -11,7 +11,7 @@ namespace mtca4u{
 /** A class to provide the Pcie device functionality."
  *
  */
-class PcieBackend : public DeviceBackendImpl
+class PcieBackend : public AddressBasedBackend
 {
 private:
   int  _deviceID;
@@ -53,7 +53,7 @@ private:
   /** constructor called through createInstance to create device object */
 
 public:
-  PcieBackend(std::string deviceNodeName);
+  PcieBackend(std::string deviceNodeName, std::string mapFileName);
   virtual ~PcieBackend();
 
   virtual void open();
@@ -65,7 +65,7 @@ public:
   virtual std::string readDeviceInfo();
   
   /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName);
 };
 
 }//namespace mtca4u

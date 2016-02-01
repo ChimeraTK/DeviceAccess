@@ -9,7 +9,7 @@
 #include <boost/function.hpp>
 
 #include "Exception.h"
-#include "DeviceBackendImpl.h"
+#include "AddressBasedBackend.h"
 #include "RegisterInfoMap.h"
 
 namespace mtca4u{
@@ -47,7 +47,7 @@ template<typename T> class DummyMultiplexedRegisterAccessor;
  *  case a write operation will just be ignored and no callback
  *  function is executed.
  */
-class DummyBackend : public DeviceBackendImpl
+class DummyBackend : public AddressBasedBackend
 {
 private:
 	/** _mapFile is first and only item of arugment parameters  */
@@ -83,7 +83,7 @@ public:
 
 
 
-	static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters);
+	static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName);
 
 protected:
 	struct AddressRange{

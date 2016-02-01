@@ -18,7 +18,7 @@
 namespace mtca4u {
 
   void BackendFactory::registerBackendType(std::string interface, std::string protocol,
-      boost::shared_ptr<mtca4u::DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters))
+      boost::shared_ptr<mtca4u::DeviceBackend> (*creatorFunction)(std::string host, std::string instance,std::list<std::string>parameters, std::string mapFileName))
   {
 #ifdef _DEBUG
     std::cout << "adding:" << interface << std::endl << std::flush;
@@ -52,51 +52,51 @@ namespace mtca4u {
   }
 
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
-    std::string uri;
+    DeviceInfoMap::DeviceInfo deviceInfo;
 
     // check if an alias was found, if not try the environment variable
     char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
     if ( dmapFileFromEnvironment != NULL ) {
       std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
-      uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).uri;
+      deviceInfo = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment);
     }
 
     // try to get an alias of the DMap file set at run time by setDMapFilePath()
-    if (uri.empty()){
+    if (deviceInfo.uri.empty()){
       //std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
-      uri = Utilities::aliasLookUp(aliasName, _dMapFile).uri;
+      deviceInfo = Utilities::aliasLookUp(aliasName, _dMapFile);
     }
 
     // finally try the system/compile time default
-    if (uri.empty()){
+    if (deviceInfo.uri.empty()){
       //std::cout << "creating backend from " << DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME
       //<< " for alias " << aliasName << std::endl;
-      uri = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME).uri;
+      deviceInfo = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME);
     }
 
     // if there still is no alias we are out of options and have to give up.
-    if (uri.empty()){
+    if (deviceInfo.uri.empty()){
       throw BackendFactoryException("Unknown device alias.", BackendFactoryException::UNKNOWN_ALIAS);
     }
 
-    return createBackendInternal(uri);
+    return createBackendInternal(deviceInfo);
   }
 
-  boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(std::string uri) {
+  boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(const DeviceInfoMap::DeviceInfo &deviceInfo) {
 #ifdef _DEBUG
     std::cout << "uri to parse" << uri << std::endl;
     std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
     Sdm sdm;
     try {
-      sdm = Utilities::parseSdm(uri);
+      sdm = Utilities::parseSdm(deviceInfo.uri);
     }
     catch(SdmUriParseException &e){
       //fixme: the programme flow should not use exceptions here. It is a supported
       // condition that the old device syntax is used.
 
       //parseDeviceString currently does not throw
-      sdm = Utilities::parseDeviceString(uri);
+      sdm = Utilities::parseDeviceString(deviceInfo.uri);
       // todo: enable the deprecated warning. As long as most servers are still using MtcaMappedDevice
       // DMap files have to stay with device node, but QtHardMon would print the message, which causes confusion.
       //std::cout<<"# Using the device node in a dmap file is deprecated. Please change to sdm if applicable."<<std::endl;
@@ -113,18 +113,16 @@ namespace mtca4u {
       std::cout<<*it<<std::endl;
     }
 #endif
-for (std::map< std::pair<std::string, std::string>, boost::shared_ptr<mtca4u::DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters)>::iterator iter =
-    creatorMap.begin();
-    iter != creatorMap.end(); ++iter) {
+    for(auto iter = creatorMap.begin(); iter != creatorMap.end(); ++iter) {
 #ifdef _DEBUG
-  std::cout<<"Pair:"<<iter->first.first<<"+"<<iter->first.second<<std::endl;
+      std::cout<<"Pair:"<<iter->first.first<<"+"<<iter->first.second<<std::endl;
 #endif
-  if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
-    return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters);
-}
+      if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
+        return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
+    }
 
-throw BackendFactoryException("Unregistered device.", BackendFactoryException::UNREGISTERED_DEVICE);
-return boost::shared_ptr<DeviceBackend>(); //won't execute
-  }
+    throw BackendFactoryException("Unregistered device.", BackendFactoryException::UNREGISTERED_DEVICE);
+      return boost::shared_ptr<DeviceBackend>(); //won't execute
+    }
 
 } // namespace mtca4u

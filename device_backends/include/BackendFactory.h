@@ -44,13 +44,13 @@ private:
   /** Holds  device type and function pointer to the createInstance function of
    * plugin*/
 
-  std::map< std::pair<std::string, std::string>, boost::shared_ptr<DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters) > creatorMap;
+  std::map< std::pair<std::string, std::string>, boost::shared_ptr<DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters, std::string mapFileName) > creatorMap;
 
   /** Look for the alias and if found return a uri */
   std::string aliasLookUp(std::string aliasName, std::string dmapFilePath);
 
   /** Internal function to return a DeviceBackend */
-  boost::shared_ptr<DeviceBackend> createBackendInternal(std::string uri);
+  boost::shared_ptr<DeviceBackend> createBackendInternal(const DeviceInfoMap::DeviceInfo &deviceInfo);
 
 public:
   /** This function sets the _DMapFilePath. This dmap file path is the
@@ -66,7 +66,7 @@ public:
   /** This functions add new device using uri as a key. If a key already exist
    * it replaces it*/
   void registerBackendType(std::string interface, std::string protocol,
-      boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters));
+      boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters, std::string));
 
   /** Create a new device by calling the constructor and returning a pointer to
    * the

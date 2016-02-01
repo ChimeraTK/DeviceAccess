@@ -34,8 +34,12 @@ const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 // dmapfile used by the factory, to its absolute path
 static std::string convertPathRelativeToDmapToAbs(std::string const & mapfileName);
 
-DummyBackend::DummyBackend(std::string mapFileName): _mapFile(mapFileName){
-  _registerMapping = MapFileParser().parse(_mapFile);
+DummyBackend::DummyBackend(std::string mapFileName)
+: AddressBasedBackend(mapFileName),
+  _mapFile(mapFileName)
+{
+  _registerMap = MapFileParser().parse(_mapFile);
+  _registerMapping = _registerMap;
   resizeBarContents();
 }
 
@@ -209,17 +213,17 @@ bool DummyBackend::isWriteRangeOverlap( AddressRange firstRange, AddressRange se
 
 boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string /*host*/,
 							      std::string /*instance*/,
-							      std::list<std::string> parameters){
+							      std::list<std::string> parameters,
+							      std::string mapFileName) {
   // the dummy is ignoring the instance and takes the first parameter as map file name
   if (parameters.empty()) {
     throw DummyBackendException("No map file name given in the parameter list.",
                                 DummyBackendException::INVALID_PARAMETER);
   }
-  std::string mapfilename = parameters.front();
   // when the factory is used to create the dummy device, mapfile path is
   // relative to the dmapfile location. To make sure file path is correct we
   // Convert to absolute path before using it
-  std::string absPathToMapfile = convertPathRelativeToDmapToAbs(mapfilename);
+  std::string absPathToMapfile = convertPathRelativeToDmapToAbs(mapFileName);
 
   return boost::shared_ptr<DeviceBackend>(new DummyBackend(absPathToMapfile));
 }

@@ -5,10 +5,15 @@ namespace mtca4u {
 
 static const int READ_BLOCK_SIZE = 361;
 
-RebotBackend::RebotBackend(std::string boardAddr, int port)
-    : _boardAddr(boardAddr),
+RebotBackend::RebotBackend(std::string boardAddr, int port, std::string mapFileName)
+    : AddressBasedBackend(mapFileName),
+      _boardAddr(boardAddr),
       _port(port),
-      _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port)) {}
+      _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port))
+  {
+    MapFileParser parser;
+    _registerMap = parser.parse(mapFileName);
+  }
 
 RebotBackend::~RebotBackend() {
   if (isOpen()) {
@@ -105,7 +110,7 @@ void RebotBackend::close() {
 
 boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
     std::string /*host*/, std::string /*instance*/,
-    std::list<std::string> parameters) {
+    std::list<std::string> parameters, std::string mapFileName) {
 
   if (parameters.size() < 2) { // expecting tmcb ip and port
     throw RebotBackendException(
@@ -117,7 +122,7 @@ boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
 
   std::string tmcbIP = *it;
   int portNumber = std::stoi(*(++it));
-  return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber));
+  return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName));
 }
 
 void RebotBackend::fetchFromRebotServer(uint32_t wordAddress,

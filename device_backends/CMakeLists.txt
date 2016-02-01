@@ -1,6 +1,7 @@
 set(SOURCE
    ${SOURCE}
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/AddressBasedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
@@ -15,6 +16,10 @@ set(HEADERS
    ${HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedBackend.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedBufferingRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedMuxedDataAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyBackend.h

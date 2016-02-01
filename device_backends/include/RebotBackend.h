@@ -1,6 +1,4 @@
-//#include <mtca4u/DeviceBackend.h>
-//#include <mtca4u/devConfigBase.h>
-#include "DeviceBackendImpl.h"
+#include "AddressBasedBackend.h"
 
 #include <iostream>
 #include <iomanip>
@@ -19,7 +17,7 @@
 class TcpCtrl;
 namespace mtca4u {
 
-class RebotBackend : public DeviceBackendImpl {
+class RebotBackend : public AddressBasedBackend {
 
 private:
   std::string _boardAddr;
@@ -27,7 +25,7 @@ private:
   boost::shared_ptr<TcpCtrl> _tcpObject;
 
 public:
-  RebotBackend(std::string boardAddr, int port);
+  RebotBackend(std::string boardAddr, int port, std::string mapFileName);
   ~RebotBackend();
   /// The function opens the connection to the device
   virtual void open();
@@ -46,7 +44,7 @@ public:
                         int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
   static boost::shared_ptr<DeviceBackend> createInstance(
       std::string host, std::string instance,
-      std::list<std::string> parameters);
+      std::list<std::string> parameters, std::string mapFileName);
 
 private:
   /*!
