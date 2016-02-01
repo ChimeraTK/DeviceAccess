@@ -4,7 +4,7 @@
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "DeviceBackend.h"
-#include "MultiplexedDataAccessorException.h"
+#include "Exception.h"
 #include "MapException.h"
 #include "NotImplementedException.h"
 #include <sstream>
@@ -23,6 +23,18 @@ namespace mtca4u{
 
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
+
+  /** Exception class for MulxiplexedDataAccessor
+   */
+  class MultiplexedDataAccessorException : public Exception {
+    public:
+
+      enum { EMPTY_AREA, INVALID_WORD_SIZE, INVALID_N_ELEMENTS };
+
+
+      MultiplexedDataAccessorException(const std::string &message, unsigned int ID)
+      : Exception(message, ID){}
+  };
 
   /** Base class which does not depend on the SequenceWordType.
    */
