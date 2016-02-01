@@ -24,6 +24,10 @@ namespace mtca4u {
   // it is template code and the header is included by the calling code.
   template<typename UserType>
   class BufferingRegisterAccessor;
+
+  // Also just declare this class, since it is only used as template arguments within this header file.
+  // The corresponding include defining the class is included where needed (and for comaptibility at the
+  // end of this file).
   class RegisterAccessor;
 
   /**
@@ -36,17 +40,13 @@ namespace mtca4u {
    *      as a template parameter and must be an type defined in libdev class.
    *
    *      The device can open and close a device for you. If you let the Device
-   *      open
-   *      the device you will not be able to get a handle to this device
-   *      directly, you
-   *      can only close it with the Device. Should you create RegisterAccessor
-   *      objects, which contain
-   *      shared pointers to this device, the device will stay opened and
-   *      functional even
-   *      if the Device object which created the RegisterAccessor goes out of
-   *      scope. In this case
-   *      you cannot close the device. It will finally be closed when the the
-   *      last RegisterAccessor pointing to it goes out if scope.
+   *      open the device you will not be able to get a handle to this device
+   *      directly, you can only close it with the Device. Should you create
+   *      RegisterAccessor objects, which contain shared pointers to this
+   *      device, the device will stay opened and functional even if the
+   *      Device object which created the RegisterAccessor goes out of scope.
+   *      In this case you cannot close the device. It will finally be closed
+   *      when the the last RegisterAccessor pointing to it goes out of scope.
    *      The same holds if you open another device with the same Device: You
    *      lose direct access to the previous device, which stays open as long
    *      as there are RegisterAccessors pointing to it.
@@ -294,5 +294,6 @@ namespace mtca4u {
 
 //
 // Include the register accessor header for backwards compatibility, as it used to be part of the Device class.
+// This include must be at the end of this file as it uses the Device class.
 //
 #include "RegisterAccessor.h"
