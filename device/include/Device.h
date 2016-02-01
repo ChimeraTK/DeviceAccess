@@ -11,8 +11,6 @@
  */
 
 #include "DeviceException.h"
-#include "FixedPointConverter.h"
-#include "MultiplexedDataAccessor.h"
 #include "BackendFactory.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>

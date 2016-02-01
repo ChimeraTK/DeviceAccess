@@ -1,8 +1,7 @@
-#include "RegisterAccessor.h"
-#include "DummyBackend.h"
 #include "Device.h"
-#include "PcieBackend.h"
-#include "DMapFilesParser.h"
+#include "RegisterAccessor.h"
+#include "DeviceBackend.h"
+#include "MapFileParser.h"
 #include "Utilities.h"
 #include <cmath>
 

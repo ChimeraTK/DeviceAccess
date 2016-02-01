@@ -10,6 +10,7 @@
 
 
 #include "RegisterInfoMap.h"
+#include "MapException.h"
 #include <iomanip>
 #include <stdint.h>
 #include <string>

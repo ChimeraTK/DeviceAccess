@@ -6,6 +6,8 @@
 #define MTCA4U_REGISTERACCESSOR_H
 
 #include "Device.h"
+#include "FixedPointConverter.h"
+#include "RegisterInfoMap.h"
 
 namespace mtca4u {
 
