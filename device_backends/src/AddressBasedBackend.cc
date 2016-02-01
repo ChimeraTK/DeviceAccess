@@ -83,6 +83,10 @@ namespace mtca4u {
     if(userType == typeid(int32_t)) {
       return AddressBasedBufferingRegisterAccessor<int32_t>( boost::static_pointer_cast<DeviceBackend>(shared_from_this()), registerInfo);
     }
+    else {
+      throw DeviceBackendException("Illegal user type defined in AddressBasedBackend::getBufferingRegisterAccessor()",
+                DeviceBackendException::EX_WRONG_PARAMETER);
+    }
   }
 
   /********************************************************************************************************************/

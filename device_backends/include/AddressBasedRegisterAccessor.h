@@ -2,9 +2,10 @@
  * RegisterAccessor.h - Non-buffering accessor for device registers
  */
 
-#ifndef MTCA4U_ADDRESSBASEDREGISTERACCESSOR_H
-#define MTCA4U_ADDRESSBASEDREGISTERACCESSOR_H
+#ifndef ADDRESSBASEDADDRESSBASEDREGISTERACCESSOR_H
+#define ADDRESSBASEDADDRESSBASEDREGISTERACCESSOR_H
 
+#include "RegisterAccessor.h"
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
 
@@ -17,13 +18,13 @@ namespace mtca4u {
    *  Allows reading and writing registers with user-provided buffer via plain pointers.
    *  Supports conversion of fixed-point data into standard C data types.
    */
-  class RegisterAccessor {
+  class AddressBasedRegisterAccessor : public RegisterAccessor {
     public:
 
       /** Constructer. @attention Do not normally use directly.
        *  Users should call Device::getRegisterAccessor() to obtain an instance instead.
        */
-    RegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
+      AddressBasedRegisterAccessor(const RegisterInfoMap::RegisterInfo &_registerInfo,
         boost::shared_ptr<DeviceBackend> deviceBackendPointer);
 
     /** Read one ore more words from the device. It calls DeviceBackend::readArea,
@@ -178,14 +179,14 @@ namespace mtca4u {
 
 
   template <typename ConvertedDataType>
-  ConvertedDataType RegisterAccessor::read() const {
+  ConvertedDataType AddressBasedRegisterAccessor::read() const {
     ConvertedDataType t;
     read(&t);
     return t;
   }
 
   template <typename ConvertedDataType>
-  void RegisterAccessor::read(ConvertedDataType * convertedData, size_t nWords,
+  void AddressBasedRegisterAccessor::read(ConvertedDataType * convertedData, size_t nWords,
       uint32_t wordOffsetInRegister) const {
     if (nWords==0){
       return;
@@ -201,7 +202,7 @@ namespace mtca4u {
 
 
   template <typename ConvertedDataType>
-  void RegisterAccessor::write(ConvertedDataType const *convertedData,
+  void AddressBasedRegisterAccessor::write(ConvertedDataType const *convertedData,
       size_t nWords,
       uint32_t wordOffsetInRegister) {
     // Check that nWords is not 0. The readRaw command would read the whole
@@ -221,7 +222,7 @@ namespace mtca4u {
 
 
   template <typename ConvertedDataType>
-  void RegisterAccessor::write(
+  void AddressBasedRegisterAccessor::write(
       ConvertedDataType const &convertedData) {
     write(&convertedData, 1);
   }
@@ -229,4 +230,4 @@ namespace mtca4u {
 
 } // namespace mtca4u
 
-#endif /* MTCA4U_ADDRESSBASEDREGISTERACCESSOR_H */
+#endif /* ADDRESSBASEDADDRESSBASEDREGISTERACCESSOR_H */

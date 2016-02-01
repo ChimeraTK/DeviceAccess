@@ -2,7 +2,10 @@
 #define _MTCA4U_DEVICE_BACKEND_H__
 
 #include "DeviceBackendException.h"
+#include "RegisterInfoMap.h"
+
 #include <string>
+#include <list>
 
 #include <stdint.h>
 #include <fcntl.h>
