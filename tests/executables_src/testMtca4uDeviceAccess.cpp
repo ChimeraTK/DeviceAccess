@@ -172,7 +172,7 @@ void MtcaDeviceTest::testThrowIfNeverOpened() {
   BOOST_CHECK_THROW(virginDevice->readDMA("irrelevant", &dataWord), DeviceException);
   BOOST_CHECK_THROW(virginDevice->writeDMA("irrelevant", &dataWord), DeviceException);
 
-  BOOST_CHECK_THROW(mtca4u::Device::regObject myRegObject = virginDevice->getRegObject("irrelevant"), DeviceException);
+  //BOOST_CHECK_THROW(mtca4u::Device::regObject myRegObject = virginDevice->getRegObject("irrelevant"), DeviceException);
   BOOST_CHECK_THROW(
       boost::shared_ptr<mtca4u::Device::RegisterAccessor> myRegisterAccessor = virginDevice->getRegisterAccessor("irrelevant"),
       DeviceException);
@@ -204,8 +204,8 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
   device->open(testBackend, registerMapping);
   // Sorry, this test is hard coded against the mtcadummy implementation.
   // PP: Is there a different way of testing it?
-  mtca4u::Device::regObject registerAccessor = device->getRegObject("AREA_DMAABLE");
-  RegisterInfoMap::RegisterInfo registerInfo = registerAccessor.getRegisterInfo();
+  boost::shared_ptr<mtca4u::RegisterAccessor> registerAccessor = device->getRegisterAccessor("AREA_DMAABLE");
+  RegisterInfoMap::RegisterInfo registerInfo = registerAccessor->getRegisterInfo();
   BOOST_CHECK(registerInfo.address == 0x0);
   BOOST_CHECK(registerInfo.nElements == 0x400);
   BOOST_CHECK(registerInfo.nBytes = 0x1000);
@@ -217,8 +217,8 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
   BOOST_CHECK(registerInfo.signedFlag == true);
   BOOST_CHECK(registerInfo.name == "AREA_DMAABLE");
 
-  registerAccessor = device->getRegObject("WORD_FIRMWARE");
-  registerInfo = registerAccessor.getRegisterInfo();
+  registerAccessor = device->getRegisterAccessor("WORD_FIRMWARE");
+  registerInfo = registerAccessor->getRegisterInfo();
   BOOST_CHECK(registerInfo.name == "WORD_FIRMWARE");
   BOOST_CHECK(registerInfo.address == 0x0);
   BOOST_CHECK(registerInfo.nElements == 0x1);
@@ -228,8 +228,8 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
   BOOST_CHECK(registerInfo.nFractionalBits == 0);
   BOOST_CHECK(registerInfo.signedFlag == false);
 
-  registerAccessor = device->getRegObject("WORD_INCOMPLETE_1");
-  registerInfo = registerAccessor.getRegisterInfo();
+  registerAccessor = device->getRegisterAccessor("WORD_INCOMPLETE_1");
+  registerInfo = registerAccessor->getRegisterInfo();
   BOOST_CHECK(registerInfo.name == "WORD_INCOMPLETE_1");
   BOOST_CHECK(registerInfo.address == 0x60);
   BOOST_CHECK(registerInfo.nElements == 0x1);
@@ -239,8 +239,8 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
   BOOST_CHECK(registerInfo.nFractionalBits == 0);
   BOOST_CHECK(registerInfo.signedFlag == true);
 
-  registerAccessor = device->getRegObject("WORD_INCOMPLETE_2");
-  registerInfo = registerAccessor.getRegisterInfo();
+  registerAccessor = device->getRegisterAccessor("WORD_INCOMPLETE_2");
+  registerInfo = registerAccessor->getRegisterInfo();
   BOOST_CHECK(registerInfo.name == "WORD_INCOMPLETE_2");
   BOOST_CHECK(registerInfo.address == 0x64);
   BOOST_CHECK(registerInfo.nElements == 0x1);
@@ -263,13 +263,13 @@ void MtcaDeviceTest::testRegObject_readBlock() {
   device->writeReg("WORD_ADC_ENA", &tempWord);
   tempWord = 1;
   device->writeReg("WORD_ADC_ENA", &tempWord);
-  mtca4u::Device::regObject registerAccessor = device->getRegObject("AREA_DMAABLE");
+  auto registerAccessor = device->getRegisterAccessor("AREA_DMAABLE");
   // there are 25 elements with value i*i. ignore the first 2
   static const size_t N_ELEMENTS = 23;
   static const size_t OFFSET_ELEMENTS = 2;
 
   std::vector<int32_t> int32Buffer(N_ELEMENTS, 0);
-  registerAccessor.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor->read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
   // pre-check: make sure we know what we get
   for (size_t i = 0; i < N_ELEMENTS; ++i) {
     BOOST_CHECK(int32Buffer[i] == static_cast<int>((i + OFFSET_ELEMENTS) * (i + OFFSET_ELEMENTS)));
@@ -279,30 +279,30 @@ void MtcaDeviceTest::testRegObject_readBlock() {
   // We use another accessor which accesses the same area with different
   // fractioanal
   // settings (1 fractional bit, 10 bits, signed)
-  mtca4u::Device::regObject registerAccessor10_1 = device->getRegObject("AREA_DMAABLE_FIXEDPOINT10_1");
+  auto registerAccessor10_1 = device->getRegisterAccessor("AREA_DMAABLE_FIXEDPOINT10_1");
 
-  registerAccessor10_1.read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor10_1->read(&int32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   std::vector<uint32_t> uint32Buffer(N_ELEMENTS, 0);
-  BOOST_CHECK_THROW( registerAccessor10_1.read(&uint32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::negative_overflow );
+  BOOST_CHECK_THROW( registerAccessor10_1->read(&uint32Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::negative_overflow );
 
   std::vector<int16_t> int16Buffer(N_ELEMENTS, 0);
-  registerAccessor10_1.read(&int16Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor10_1->read(&int16Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   std::vector<uint16_t> uint16Buffer(N_ELEMENTS, 0);
-  BOOST_CHECK_THROW( registerAccessor10_1.read(&uint16Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::negative_overflow );
+  BOOST_CHECK_THROW( registerAccessor10_1->read(&uint16Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::negative_overflow );
 
   std::vector<int8_t> int8Buffer(N_ELEMENTS, 0);
-  BOOST_CHECK_THROW( registerAccessor10_1.read(&int8Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::positive_overflow );;
+  BOOST_CHECK_THROW( registerAccessor10_1->read(&int8Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::positive_overflow );;
 
   std::vector<uint8_t> uint8Buffer(N_ELEMENTS, 0);
-  BOOST_CHECK_THROW( registerAccessor10_1.read(&uint8Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::negative_overflow );;
+  BOOST_CHECK_THROW( registerAccessor10_1->read(&uint8Buffer[0], N_ELEMENTS, OFFSET_ELEMENTS), boost::numeric::negative_overflow );;
 
   std::vector<float> floatBuffer(N_ELEMENTS, 0);
-  registerAccessor10_1.read(&floatBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor10_1->read(&floatBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   std::vector<double> doubleBuffer(N_ELEMENTS, 0);
-  registerAccessor10_1.read(&doubleBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
+  registerAccessor10_1->read(&doubleBuffer[0], N_ELEMENTS, OFFSET_ELEMENTS);
 
   // now test different template types:
   for (size_t i = 0; i < N_ELEMENTS; ++i) {
@@ -329,7 +329,7 @@ void MtcaDeviceTest::testRegObject_readBlock() {
     BOOST_CHECK(floatBuffer[i] == value);
     BOOST_CHECK(doubleBuffer[i] == value);
   }
-  FixedPointConverter fpc = registerAccessor10_1.getFixedPointConverter();
+  FixedPointConverter fpc = registerAccessor10_1->getFixedPointConverter();
   BOOST_CHECK(fpc.isSigned());
 }
 
@@ -340,8 +340,7 @@ void MtcaDeviceTest::testRegObject_readSimple() {
   boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(VALID_MAPPING_FILE_NAME);
   device->open(testBackend, registerMapping);
   //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-  registerAccessor = device->getRegisterAccessor("WORD_USER");
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor> registerAccessor = device->getRegisterAccessor("WORD_USER");
   // 3 fractional bits, 12 bits, signed (from the map file)
 
   static const int inputValue = 0xFA5;
