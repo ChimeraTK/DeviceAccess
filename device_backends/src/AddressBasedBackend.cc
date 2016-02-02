@@ -6,6 +6,7 @@
  */
 
 #include "AddressBasedBackend.h"
+#include "DeviceException.h"
 
 namespace mtca4u {
 
@@ -102,17 +103,14 @@ namespace mtca4u {
     RegisterInfoMap::RegisterInfo registerInfo;
     _registerMap->getRegisterInfo(regName, registerInfo, regModule);
     if (addRegOffset % 4) {
-      throw DeviceBackendException("Register offset must be divisible by 4",
-          DeviceBackendException::EX_WRONG_PARAMETER);
+      throw DeviceException("Register offset must be divisible by 4", DeviceException::EX_WRONG_PARAMETER);
     }
     if (dataSize) {
       if (dataSize % 4) {
-        throw DeviceBackendException("Data size must be divisible by 4",
-            DeviceBackendException::EX_WRONG_PARAMETER);
+        throw DeviceException("Data size must be divisible by 4", DeviceException::EX_WRONG_PARAMETER);
       }
       if (dataSize > registerInfo.nBytes - addRegOffset) {
-        throw DeviceBackendException("Data size exceed register size",
-            DeviceBackendException::EX_WRONG_PARAMETER);
+        throw DeviceException("Data size exceed register size", DeviceException::EX_WRONG_PARAMETER);
       }
       retDataSize = dataSize;
     } else {
