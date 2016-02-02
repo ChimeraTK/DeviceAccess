@@ -18,10 +18,8 @@ class DeviceTest {
     void testDeviceReadRegister();
     void testDeviceReadArea();
     void testDeviceReadDMA();
-    void testDeviceReadDMAErrors();
     void testDeviceWriteRegisterByName();
     void testDeviceWriteRegister();
-    void testDeviceWriteDMA();
     void testDeviceCheckRegister();
     void testRegAccsorReadDMA();
     void testRegAccsorCheckRegister();
@@ -58,17 +56,11 @@ class DeviceTestSuite : public test_suite {
       test_case* testDeviceReadDMA =
           BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadDMA, DeviceTestPtr);
 
-      test_case* testDeviceReadDMAErrors = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDeviceReadDMAErrors, DeviceTestPtr);
-
       test_case* testDeviceWriteRegisterByName = BOOST_CLASS_TEST_CASE(
           &DeviceTest::testDeviceWriteRegisterByName, DeviceTestPtr);
 
       test_case* testDeviceWriteRegister = BOOST_CLASS_TEST_CASE(
           &DeviceTest::testDeviceWriteRegister, DeviceTestPtr);
-
-      test_case* testDeviceWriteDMA =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceWriteDMA, DeviceTestPtr);
 
       test_case* testDeviceCheckRegister = BOOST_CLASS_TEST_CASE(
           &DeviceTest::testDeviceCheckRegister, DeviceTestPtr);
@@ -110,10 +102,8 @@ class DeviceTestSuite : public test_suite {
       add(testDeviceReadRegister);
       add(testDeviceReadArea);
       add(testDeviceReadDMA);
-      add(testDeviceReadDMAErrors);
       add(testDeviceWriteRegisterByName);
       add(testDeviceWriteRegister);
-      add(testDeviceWriteDMA);
       add(testDeviceCheckRegister);
       add(testRegAccsorReadDMA);
       add(testRegAccsorCheckRegister);
@@ -205,24 +195,6 @@ void DeviceTest::testDeviceReadDMA() {
   BOOST_CHECK(adcdata[5] == 25);
 }
 
-void DeviceTest::testDeviceReadDMAErrors() {
-  std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
-  device->open(testBackend);
-
-  int32_t data = 0;
-  size_t dataSizeInBytes = 1 * 4;
-  BOOST_CHECK_THROW(device->readDMA("WORD_USER", &data, dataSizeInBytes),
-      mtca4u::DeviceException);
-  try {
-    device->readDMA("WORD_USER", &data, dataSizeInBytes);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
-  }
-}
-
 void DeviceTest::testDeviceWriteRegisterByName() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
@@ -244,27 +216,6 @@ void DeviceTest::testDeviceWriteRegisterByName() {
   BOOST_CHECK(retreivedData[0] == 1);
   BOOST_CHECK(retreivedData[1] == 7);
   BOOST_CHECK(retreivedData[2] == 9);
-}
-
-void DeviceTest::testDeviceWriteDMA() {
-  std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
-  device->open(testBackend);
-
-  int32_t data = 0;
-  size_t dataSizeInBytes = 1 * 4;
-  BOOST_CHECK_THROW(device->writeDMA("WORD_USER", &data, dataSizeInBytes), mtca4u::DeviceException);
-  try {
-    device->writeDMA("WORD_USER", &data, dataSizeInBytes);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
-  }
-
-  int32_t adcdata[6] = { 0 };
-  dataSizeInBytes = 6 * 4;
-  BOOST_CHECK_THROW( device->writeDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes), mtca4u::PcieBackendException );
 }
 
 void DeviceTest::testDeviceCheckRegister() {
