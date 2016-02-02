@@ -2,7 +2,7 @@
  * AddressBasedBackend.cc
  *
  *  Created on: Feb 1, 2016
- *      Author: mhier
+ *      Author: Martin Hierholzer
  */
 
 #include "AddressBasedBackend.h"
@@ -10,8 +10,13 @@
 namespace mtca4u {
 
   AddressBasedBackend::AddressBasedBackend(std::string mapFileName) {
-    MapFileParser parser;
-    _registerMap = parser.parse(mapFileName);
+    if(mapFileName != "") {
+      MapFileParser parser;
+      _registerMap = parser.parse(mapFileName);
+    }
+    else {
+      _registerMap = boost::shared_ptr<RegisterInfoMap>();
+    }
   }
 
 /********************************************************************************************************************/
