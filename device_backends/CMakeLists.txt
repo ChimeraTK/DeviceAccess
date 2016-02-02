@@ -20,7 +20,6 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedBufferingRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/AddressBasedMuxedDataAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h

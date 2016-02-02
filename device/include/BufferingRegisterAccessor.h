@@ -30,9 +30,11 @@ namespace mtca4u {
       /** Constructer. @attention Do not normally use directly.
        *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
        */
-      BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev)
-      : _dev(dev)
-      {}
+      BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module, const std::string &registerName)
+      {
+        _accessor = dev->getRegisterAccessor(module, registerName);
+        cookedBuffer.resize(_accessor->getNumberOfElements());
+      }
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
        *  @attention Accessors created with this constructors will be dysfunctional!
@@ -46,11 +48,15 @@ namespace mtca4u {
 
       /** Read the data from the device, convert it and store in buffer.
        */
-      virtual void read() = 0;
+      virtual void read() {
+        _accessor->read(cookedBuffer.data(), getNumberOfElements());
+      }
 
       /** Convert data from the buffer and write to device.
        */
-      virtual void write() = 0;
+      virtual void write() {
+        _accessor->write(cookedBuffer.data(), getNumberOfElements());
+      }
 
       /** Get or set buffer content by [] operator.
        *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
@@ -97,8 +103,8 @@ namespace mtca4u {
 
     protected:
 
-      /// pointer to VirtualDevice
-      boost::shared_ptr<DeviceBackend> _dev;
+      /// pointer to non-buffering accessor
+      boost::shared_ptr< RegisterAccessor > _accessor;
 
       /// vector of converted data elements
       std::vector<T> cookedBuffer;

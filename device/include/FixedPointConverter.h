@@ -81,12 +81,6 @@ namespace mtca4u{
         return _isSigned;
       }
 
-    private:
-
-      unsigned int _nBits;
-      int _fractionalBits;
-      bool _isSigned;
-
       /// fusion::map of possible user types, to store coefficients etc. in dependence of the user type
       typedef boost::fusion::map< boost::fusion::pair<int8_t,int8_t>,
           boost::fusion::pair<uint8_t,uint8_t>,
@@ -98,6 +92,12 @@ namespace mtca4u{
           boost::fusion::pair<uint64_t,uint64_t>,
           boost::fusion::pair<float,float>,
           boost::fusion::pair<double,double> >    userTypeMap;
+
+    private:
+
+      unsigned int _nBits;
+      int _fractionalBits;
+      bool _isSigned;
 
       /// Coefficient containing the multiplication factor described by the
       /// fractional bits 2^fractionalBits

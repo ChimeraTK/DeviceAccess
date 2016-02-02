@@ -89,21 +89,6 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::any AddressBasedBackend::getBufferingRegisterAccessorImpl(const std::type_info &userType,
-      const std::string &module, const std::string &registerName) {
-    RegisterInfoMap::RegisterInfo registerInfo;
-    _registerMap->getRegisterInfo(registerName, registerInfo, module);
-    if(userType == typeid(int32_t)) {
-      return AddressBasedBufferingRegisterAccessor<int32_t>( boost::static_pointer_cast<DeviceBackend>(shared_from_this()), registerInfo);
-    }
-    else {
-      throw DeviceBackendException("Illegal user type defined in AddressBasedBackend::getBufferingRegisterAccessor()",
-                DeviceBackendException::EX_WRONG_PARAMETER);
-    }
-  }
-
-  /********************************************************************************************************************/
-
   void AddressBasedBackend::checkRegister(const std::string &regName,
       const std::string &regModule, size_t dataSize,
       uint32_t addRegOffset, uint32_t &retDataSize,

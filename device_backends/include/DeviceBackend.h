@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <vector>
-#include <typeinfo>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/any.hpp>
 
@@ -98,16 +97,6 @@ namespace mtca4u {
           const std::string &registerName,
           const std::string &module = std::string()) = 0;
 
-      /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
-       *  by using the accessor object like a variable of the type UserType. Conversion to and from the UserType
-       *  will be handled by the FixedPointConverter matching the register description in the map.
-       *  Note: This function returns an object, not a (shared) pointer to the object. This is necessary to use
-       *  operators (e.g. = or []) directly on the object.
-       */
-      template<typename UserType>
-      BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(
-          const std::string &module, const std::string &registerName);
-
       /**
        * returns an accssesor which is used for interpreting  data contained in a
        * memory region. Memory regions that require a custom interpretation would
@@ -141,12 +130,6 @@ namespace mtca4u {
       virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) = 0;
 
-    protected:
-
-      /// helper function for getBufferingRegisterAccessor, needs to be implemented by each backend implementation
-      virtual boost::any getBufferingRegisterAccessorImpl(const std::type_info &userType,
-          const std::string &module, const std::string &registerName) = 0;
-
   };
 
   template <typename customClass>
@@ -154,13 +137,6 @@ namespace mtca4u {
       const std::string &dataRegionName, const std::string &module) {
     return (
         customClass::createInstance(dataRegionName, module, shared_from_this()));
-  }
-
-  template<typename UserType>
-  BufferingRegisterAccessor<UserType> DeviceBackend::getBufferingRegisterAccessor(
-      const std::string &module, const std::string &registerName) {
-      boost::any acc = getBufferingRegisterAccessorImpl(typeid(UserType), module, registerName);
-      return boost::any_cast< BufferingRegisterAccessor<UserType> >( acc );
   }
 
 } // namespace mtca4u

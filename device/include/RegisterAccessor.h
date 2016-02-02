@@ -8,6 +8,8 @@
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
 
+#include <typeinfo>
+
 namespace mtca4u {
 
   /// forward declaration (only used as tempate arguments)
@@ -96,7 +98,9 @@ namespace mtca4u {
        */
       template <typename ConvertedDataType>
       void read(ConvertedDataType *convertedData, size_t nWords = 1,
-          uint32_t wordOffsetInRegister = 0) const;
+          uint32_t wordOffsetInRegister = 0) const {
+        readImpl(typeid(ConvertedDataType), (void*)convertedData, nWords, wordOffsetInRegister);
+      }
 
       /** Convenience function to read a single word. It allows shorter syntax
        *  as the read value is the return value and one does not have to pass a
@@ -116,7 +120,11 @@ namespace mtca4u {
        *  overloading is not supported in C++.
        */
       template <typename ConvertedDataType>
-      ConvertedDataType read() const;
+      ConvertedDataType read() const {
+        ConvertedDataType temp;
+        read(&temp);
+        return temp;
+      }
 
       /** Write (a block of) words with automatic data conversion. It works for
        *every data
@@ -138,7 +146,9 @@ namespace mtca4u {
        */
       template <typename ConvertedDataType>
       void write(ConvertedDataType const *convertedData, size_t nWords,
-          uint32_t wordOffsetInRegister = 0);
+          uint32_t wordOffsetInRegister = 0) {
+        writeImpl(typeid(ConvertedDataType), (const void*)convertedData, nWords, wordOffsetInRegister);
+      }
 
       /** Convenience function for single words. The value can be given
        * directly,
@@ -155,7 +165,13 @@ namespace mtca4u {
        *  \endcode
        */
       template <typename ConvertedDataType>
-      void write(ConvertedDataType const &convertedData);
+      void write(ConvertedDataType const &convertedData) {
+        write(&convertedData, 1);
+      }
+
+      /** Return number of elements
+       */
+      virtual unsigned int getNumberOfElements() const = 0;
 
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterInfo because RegisterInfo will be
@@ -170,6 +186,22 @@ namespace mtca4u {
 
     protected:
 
+      /** Implementation function for reading converted data
+       *  This function is required to achieve runtime polymorphism (virtual function) together with
+       *  compiletime polymorphism (templated function). The void* pointer has to be casted into the
+       *  proper type specified by the frist argument.
+       */
+      virtual void readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const = 0;
+
+      /** Implementation function for reading converted data
+       *  This function is required to achieve runtime polymorphism (virtual function) together with
+       *  compiletime polymorphism (templated function). The void* pointer has to be casted into the
+       *  proper type specified by the frist argument.
+       */
+      virtual void writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) = 0;
+
+      /** Pointer to the device backend used for reading and writing the data
+       */
       boost::shared_ptr<DeviceBackend> _deviceBackendPointer;
 
   };

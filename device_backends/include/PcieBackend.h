@@ -53,7 +53,7 @@ private:
   /** constructor called through createInstance to create device object */
 
 public:
-  PcieBackend(std::string deviceNodeName, std::string mapFileName);
+  PcieBackend(std::string deviceNodeName, std::string mapFileName="");
   virtual ~PcieBackend();
 
   virtual void open();

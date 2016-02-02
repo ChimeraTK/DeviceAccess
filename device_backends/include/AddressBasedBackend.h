@@ -3,7 +3,6 @@
 
 #include "DeviceBackendImpl.h"
 #include "AddressBasedRegisterAccessor.h"
-#include "AddressBasedBufferingRegisterAccessor.h"
 #include "AddressBasedMuxedDataAccessor.h"
 #include "MapFileParser.h"
 #include "Exception.h"
@@ -21,7 +20,7 @@ namespace mtca4u {
 
     public:
 
-      AddressBasedBackend(std::string mapFileName);
+      AddressBasedBackend(std::string mapFileName="");
 
       virtual ~AddressBasedBackend(){}
 
@@ -50,10 +49,6 @@ namespace mtca4u {
           const std::string &moduleName);
 
     protected:
-
-      /// helper function for getBufferingRegisterAccessor, needs to be implemented by each backend implementation
-      virtual boost::any getBufferingRegisterAccessorImpl(const std::type_info &userType,
-          const std::string &module, const std::string &registerName);
 
       /// resolve register name to address with error checks
       void checkRegister(const std::string &regName,
