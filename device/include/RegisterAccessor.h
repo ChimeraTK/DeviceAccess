@@ -99,6 +99,7 @@ namespace mtca4u {
       template <typename ConvertedDataType>
       void read(ConvertedDataType *convertedData, size_t nWords = 1,
           uint32_t wordOffsetInRegister = 0) const {
+        if(nWords == 0) return;
         readImpl(typeid(ConvertedDataType), (void*)convertedData, nWords, wordOffsetInRegister);
       }
 
@@ -147,6 +148,7 @@ namespace mtca4u {
       template <typename ConvertedDataType>
       void write(ConvertedDataType const *convertedData, size_t nWords,
           uint32_t wordOffsetInRegister = 0) {
+        if(nWords == 0) return;
         writeImpl(typeid(ConvertedDataType), (const void*)convertedData, nWords, wordOffsetInRegister);
       }
 
