@@ -190,13 +190,6 @@ namespace mtca4u{
     }
   }
 
-  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend,
-      boost::shared_ptr<RegisterInfoMap>)
-  {
-    _deviceBackendPointer = deviceBackend;
-    _deviceBackendPointer->open();
-  }
-
   void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend)
   {
     _deviceBackendPointer = deviceBackend;

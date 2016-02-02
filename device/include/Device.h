@@ -69,8 +69,6 @@ namespace mtca4u {
 
       virtual void open(std::string const & aliasName);
 
-      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
-
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
       virtual void close();
