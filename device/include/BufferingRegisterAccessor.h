@@ -32,7 +32,7 @@ namespace mtca4u {
        */
       BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module, const std::string &registerName)
       {
-        _accessor = dev->getRegisterAccessor(module, registerName);
+        _accessor = dev->getRegisterAccessor(registerName, module);
         cookedBuffer.resize(_accessor->getNumberOfElements());
       }
 
