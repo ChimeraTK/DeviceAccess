@@ -1,5 +1,6 @@
 set(SOURCE
    ${SOURCE}
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/AddressBasedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc

@@ -25,7 +25,16 @@ namespace mtca4u {
   class DeviceBackend : public boost::enable_shared_from_this<DeviceBackend> {
 
     public:
+
+      /** Every virtual class needs a virtual desctructor. */
+      virtual ~DeviceBackend();
+
+      /** TODO documentation missing
+       */
       virtual void open() = 0;
+
+      /** TODO documentation missing
+       */
       virtual void close() = 0;
 
       /** Read one or more words from the device.
@@ -45,13 +54,11 @@ namespace mtca4u {
           const std::string &regModule, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
 
-      /**
-       *
+      /** TODO documentation missing
        */
       virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
 
-      /**
-       *
+      /** TODO documentation missing
        */
       virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
 
@@ -84,15 +91,12 @@ namespace mtca4u {
        */
       virtual bool isConnected() = 0;
 
-      /** Every virtual class needs a virtual desctructor. */
-      virtual ~DeviceBackend(){}
-
       /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
        * buffers and plain pointers.
        */
-      boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
+      virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
           const std::string &registerName,
-          const std::string &module = std::string()) const;
+          const std::string &module = std::string()) = 0;
 
       /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
        *  by using the accessor object like a variable of the type UserType. Conversion to and from the UserType
@@ -102,7 +106,7 @@ namespace mtca4u {
        */
       template<typename UserType>
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(
-          const std::string &module, const std::string &registerName) const;
+          const std::string &module, const std::string &registerName);
 
       /**
        * returns an accssesor which is used for interpreting  data contained in a
@@ -117,7 +121,7 @@ namespace mtca4u {
       template<typename customClass>
       boost::shared_ptr<customClass> getCustomAccessor(
           const std::string &dataRegionName,
-          const std::string &module = std::string()) const;
+          const std::string &module = std::string());
 
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
@@ -134,27 +138,27 @@ namespace mtca4u {
       /** Get a complete list of RegisterAccessors for one module.
        *  The registers are in alphabetical order.
        */
-      virtual std::list<mtca4u::RegisterAccessor> getRegisterAccessorsInModule(
+      virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) = 0;
 
     protected:
 
       /// helper function for getBufferingRegisterAccessor, needs to be implemented by each backend implementation
       virtual boost::any getBufferingRegisterAccessorImpl(const std::type_info &userType,
-          const std::string &module, const std::string &registerName) const;
+          const std::string &module, const std::string &registerName);
 
   };
 
   template <typename customClass>
   boost::shared_ptr<customClass> DeviceBackend::getCustomAccessor(
-      const std::string &dataRegionName, const std::string &module) const {
+      const std::string &dataRegionName, const std::string &module) {
     return (
         customClass::createInstance(dataRegionName, module, shared_from_this()));
   }
 
   template<typename UserType>
   BufferingRegisterAccessor<UserType> DeviceBackend::getBufferingRegisterAccessor(
-      const std::string &module, const std::string &registerName) const {
+      const std::string &module, const std::string &registerName) {
       boost::any acc = getBufferingRegisterAccessorImpl(typeid(UserType), module, registerName);
       return boost::any_cast< BufferingRegisterAccessor<UserType> >( acc );
   }

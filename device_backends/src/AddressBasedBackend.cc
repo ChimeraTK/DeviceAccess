@@ -30,9 +30,8 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedBackend::write(const std::string &regName,
-      const std::string &regModule, int32_t const *data,
-      size_t dataSize, uint32_t addRegOffset) {
+  void AddressBasedBackend::write(const std::string &regModule, const std::string &regName,
+      int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
 
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -41,6 +40,18 @@ namespace mtca4u {
     checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
         retRegOff, retRegBar);
     DeviceBackend::write(retRegBar, retRegOff, data, retDataSize);
+  }
+
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<mtca4u::RegisterAccessor> AddressBasedBackend::getRegisterAccessor(
+      const std::string &registerName,
+      const std::string &module) {
+
+    RegisterInfoMap::RegisterInfo registerInfo;
+    _registerMap->getRegisterInfo(registerName, registerInfo, module);
+    return boost::shared_ptr<RegisterAccessor>(
+        new AddressBasedRegisterAccessor(registerInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) ));
   }
 
   /********************************************************************************************************************/
@@ -58,17 +69,19 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::list<mtca4u::RegisterAccessor> AddressBasedBackend::getRegisterAccessorsInModule(
+  std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > AddressBasedBackend::getRegisterAccessorsInModule(
       const std::string &moduleName) {
 
     std::list<RegisterInfoMap::RegisterInfo> registerInfoList =
         _registerMap->getRegistersInModule(moduleName);
 
-    std::list<RegisterAccessor> accessorList;
+    std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > accessorList;
     for (std::list<RegisterInfoMap::RegisterInfo>::const_iterator regInfo =
         registerInfoList.begin();
         regInfo != registerInfoList.end(); ++regInfo) {
-      accessorList.push_back(RegisterAccessor(*regInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) ));
+      accessorList.push_back( boost::shared_ptr<mtca4u::RegisterAccessor>(
+          new AddressBasedRegisterAccessor(*regInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) )
+      ) );
     }
 
     return accessorList;

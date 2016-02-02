@@ -23,44 +23,31 @@ namespace mtca4u {
 
       AddressBasedBackend(std::string mapFileName);
 
-      /** Every virtual class needs a virtual desctructor. */
       virtual ~AddressBasedBackend(){}
 
-      /** Read one or more words from the device.
-       *  @attention In case you leave data size at 0, the full size of the register is
-       *  read, not just one word as in DeviceBackend::readArea! Make sure your buffer
-       *  is large enough!
-       */
       virtual void read(const std::string &regModule, const std::string &regName,
           int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
-      /** Write one or more words from the device.
-       *  @attention In case you leave data size at 0, the full size of the register is
-       *  written, not just one word as in DeviceBackend::readArea! Make sure your buffer
-       *  is large enough!
-       */
-      virtual void write(const std::string &regName,
-          const std::string &regModule, int32_t const *data,
-          size_t dataSize = 0, uint32_t addRegOffset = 0);
+      virtual void write(const std::string &regModule, const std::string &regName,
+          int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
-      /** Returns the register information aka RegisterInfo.
-       *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
-       */
+      virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
+
+      virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
+
+      virtual std::string readDeviceInfo() = 0;
+
+      virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
+          const std::string &registerName,
+          const std::string &module = std::string());
+
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
-      /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
-       * module.
-       *  The registers are in alphabetical order.
-       */
       virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
-      /** Get a complete list of RegisterAccessors for one module.
-       *  The registers are in alphabetical order.
-       */
-      std::list<mtca4u::RegisterAccessor> getRegisterAccessorsInModule(
+      virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName);
-
 
     protected:
 

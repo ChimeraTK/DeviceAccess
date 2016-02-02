@@ -12,6 +12,7 @@
 
 #include "DeviceException.h"
 #include "BackendFactory.h"
+#include "DeviceBackend.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
 // Note: for backwards compatibility there is RegisterAccessor.h included at the end of this file.
@@ -52,8 +53,6 @@ namespace mtca4u {
   class Device {
     public:
 
-      typedef boost::shared_ptr<DeviceBackend> DeviceBackendPointer;
-
       /** A typedef for backward compatibility.
        *  @deprecated Don't use this in new code. It will be removed in a future
        * release.
@@ -66,11 +65,13 @@ namespace mtca4u {
        * release.
        *  Use RegisterAccessor instead.
        */
-      typedef RegisterAccessor regObject;
+      //typedef RegisterAccessor regObject;
 
       virtual void open(std::string const & aliasName);
 
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<RegisterInfoMap> registerInfoMap);
+
+      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
       virtual void close();
       virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
@@ -111,6 +112,7 @@ namespace mtca4u {
        */
       virtual void readReg(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+
       /** Read one or more words from the device. It calls DeviceBackend::readArea, not
        * DeviceBackend::readRaw.
        *  @attention In case you leave data size at 0, the full size of the
@@ -139,6 +141,7 @@ namespace mtca4u {
        */
       virtual void writeReg(const std::string &regName, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
+
       /** Write one or more words from the device. It calls DeviceBackend::writeArea,
        * not
        * DeviceBackend::writeRaw.
@@ -205,7 +208,7 @@ namespace mtca4u {
       /** Get a regObject from the register name.
        *  @deprecated Use getRegisterAccessor instead.
        */
-      regObject getRegObject(const std::string &regName) const;
+      //regObject getRegObject(const std::string &regName) const;
 
       /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
        * buffers and plain pointers.
@@ -249,7 +252,7 @@ namespace mtca4u {
       /** Get a complete list of RegisterAccessors for one module.
        *  The registers are in alphabetical order.
        */
-      std::list<mtca4u::RegisterAccessor> getRegisterAccessorsInModule(
+      std::list<  boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) const;
 
       /** Returns the register information aka RegisterInfo.
@@ -261,13 +264,7 @@ namespace mtca4u {
 
     private:
 
-      DeviceBackendPointer _deviceBackendPointer;
-      RegisterInfoMapPointer _registerMap;
-
-      void checkRegister(const std::string &regName,
-          const std::string &registerModule, size_t dataSize,
-          uint32_t addRegOffset, uint32_t &retDataSize,
-          uint32_t &retRegOff, uint8_t &retRegBar) const;
+      boost::shared_ptr<DeviceBackend> _deviceBackendPointer;
 
       void checkPointersAreNotNull() const;
   };
@@ -275,15 +272,13 @@ namespace mtca4u {
   template <typename customClass>
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
-    return (
-        customClass::createInstance(dataRegionName, module, _deviceBackendPointer, _registerMap));
+    return _deviceBackendPointer->template getCustomAccessor<customClass>(dataRegionName, module);
   }
-
 
   template<typename UserType>
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
-    return BufferingRegisterAccessor<UserType>::createInstance(registerName, module, _deviceBackendPointer, _registerMap);
+    return _deviceBackendPointer->template getBufferingRegisterAccessor<UserType>(module, registerName);
   }
 
 } // namespace mtca4u
