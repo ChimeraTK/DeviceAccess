@@ -250,8 +250,7 @@ void DeviceTest::testDeviceWriteRegisterByName() {
   uint32_t dataOffsetInBytes = 1 * 4;
 
   device->writeReg("AREA_DMAABLE", adcData, sizeInBytes, dataOffsetInBytes);
-  device->readReg("AREA_DMAABLE", retreivedData, sizeInBytes,
-      dataOffsetInBytes);
+  device->readReg("AREA_DMAABLE", retreivedData, sizeInBytes, dataOffsetInBytes);
   BOOST_CHECK(retreivedData[0] == 1);
   BOOST_CHECK(retreivedData[1] == 7);
   BOOST_CHECK(retreivedData[2] == 9);
@@ -267,8 +266,7 @@ void DeviceTest::testDeviceWriteDMA() {
 
   int32_t data = 0;
   size_t dataSizeInBytes = 1 * 4;
-  BOOST_CHECK_THROW(device->writeDMA("WORD_USER", &data, dataSizeInBytes),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW(device->writeDMA("WORD_USER", &data, dataSizeInBytes), mtca4u::DeviceException);
   try {
     device->writeDMA("WORD_USER", &data, dataSizeInBytes);
   }
@@ -278,9 +276,7 @@ void DeviceTest::testDeviceWriteDMA() {
 
   int32_t adcdata[6] = { 0 };
   dataSizeInBytes = 6 * 4;
-  BOOST_CHECK_THROW(
-      device->writeDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
-      mtca4u::PcieBackendException);
+  BOOST_CHECK_THROW( device->writeDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes), mtca4u::PcieBackendException );
 }
 
 void DeviceTest::testDeviceCheckRegister() {
@@ -294,9 +290,7 @@ void DeviceTest::testDeviceCheckRegister() {
   size_t dataSize = 4;
   uint32_t addRegOffset = 3;
   int32_t data = 1;
-  BOOST_CHECK_THROW(
-      device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW( device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), mtca4u::DeviceException );
   try {
     device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
@@ -306,9 +300,7 @@ void DeviceTest::testDeviceCheckRegister() {
 
   dataSize = 3;
   addRegOffset = 4;
-  BOOST_CHECK_THROW(
-      device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), mtca4u::DeviceException);
   try {
     device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
@@ -317,9 +309,7 @@ void DeviceTest::testDeviceCheckRegister() {
   }
 
   dataSize = 4;
-  BOOST_CHECK_THROW(
-      device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), mtca4u::DeviceException);
   try {
     device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
@@ -337,15 +327,13 @@ void DeviceTest::testRegAccsorReadDMA() {
   device->open(testBackend, registerMapping);
 
   int32_t data = 1;
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-  non_dma_accesible_reg = device->getRegisterAccessor("AREA_DMAABLE");
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor> non_dma_accesible_reg = device->getRegisterAccessor("AREA_DMAABLE");
   //BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::DeviceException); // there is no distinction any more...
 
   device->writeReg("WORD_ADC_ENA", &data);
   int32_t retreived_data[6];
   uint32_t size = 6 * 4;
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-  area_dma = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
+  boost::shared_ptr<mtca4u::Device::RegisterAccessor> area_dma = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
   area_dma->readDMA(retreived_data, size);
   BOOST_CHECK(retreived_data[0] == 0);
   BOOST_CHECK(retreived_data[1] == 1);
@@ -368,8 +356,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
   int32_t data = 1;
   boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   word_adc_ena = device->getRegisterAccessor("WORD_ADC_ENA");
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), mtca4u::DeviceException);
   try {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
@@ -379,8 +366,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
 
   dataSize = 3;
   addRegOffset = 4;
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), mtca4u::DeviceException);
   try {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
@@ -389,8 +375,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
   }
 
   dataSize = 4;
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
-      mtca4u::DeviceException);
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), mtca4u::DeviceException);
   try {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
@@ -581,12 +566,10 @@ void DeviceTest::testGetRegistersInModule() {
 
   boost::shared_ptr<mtca4u::Device> device( new mtca4u::Device());
   device->open("DUMMYD1");
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo> registerInfoList =
-      device->getRegistersInModule("APP0");
+  std::list<mtca4u::RegisterInfoMap::RegisterInfo> registerInfoList = device->getRegistersInModule("APP0");
 
   BOOST_CHECK(registerInfoList.size() == 4);
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo>::iterator registerInfo =
-      registerInfoList.begin();
+  std::list<mtca4u::RegisterInfoMap::RegisterInfo>::iterator registerInfo = registerInfoList.begin();
   BOOST_CHECK(registerInfo->name == "MODULE0");
   BOOST_CHECK(registerInfo->module == "APP0");
   ++registerInfo;
@@ -609,23 +592,21 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
   //std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
-  std::list<mtca4u::Device::RegisterAccessor>
-  accessorList = device->getRegisterAccessorsInModule("APP0");
+  std::list< boost::shared_ptr<mtca4u::Device::RegisterAccessor> > accessorList = device->getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
 
-  std::list<mtca4u::Device::RegisterAccessor>::iterator
-  accessor = accessorList.begin();
-  BOOST_CHECK(accessor->getRegisterInfo().name == "MODULE0");
-  BOOST_CHECK(accessor->getRegisterInfo().module == "APP0");
+  auto accessor = accessorList.begin();
+  BOOST_CHECK((*accessor)->getRegisterInfo().name == "MODULE0");
+  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
   ++accessor;
-  BOOST_CHECK(accessor->getRegisterInfo().name == "MODULE1");
-  BOOST_CHECK(accessor->getRegisterInfo().module == "APP0");
+  BOOST_CHECK((*accessor)->getRegisterInfo().name == "MODULE1");
+  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
   ++accessor;
-  BOOST_CHECK(accessor->getRegisterInfo().name == "WORD_SCRATCH");
-  BOOST_CHECK(accessor->getRegisterInfo().module == "APP0");
+  BOOST_CHECK((*accessor)->getRegisterInfo().name == "WORD_SCRATCH");
+  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
   ++accessor;
-  BOOST_CHECK(accessor->getRegisterInfo().name == "WORD_STATUS");
-  BOOST_CHECK(accessor->getRegisterInfo().module == "APP0");
+  BOOST_CHECK((*accessor)->getRegisterInfo().name == "WORD_STATUS");
+  BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
 }
 
 void DeviceTest::testDeviceCreation() {
