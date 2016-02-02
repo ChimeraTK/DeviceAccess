@@ -145,7 +145,7 @@ namespace mtca4u {
 
       /// helper function for getBufferingRegisterAccessor, needs to be implemented by each backend implementation
       virtual boost::any getBufferingRegisterAccessorImpl(const std::type_info &userType,
-          const std::string &module, const std::string &registerName);
+          const std::string &module, const std::string &registerName) = 0;
 
   };
 

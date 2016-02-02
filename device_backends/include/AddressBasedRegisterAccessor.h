@@ -25,11 +25,7 @@ namespace mtca4u {
        *  Users should call Device::getRegisterAccessor() to obtain an instance instead.
        */
       AddressBasedRegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
-        boost::shared_ptr<DeviceBackend> deviceBackendPointer)
-      : RegisterAccessor(deviceBackendPointer),
-        _registerInfo(registerInfo),
-        _fixedPointConverter(_registerInfo.width, _registerInfo.nFractionalBits, _registerInfo.signedFlag)
-      {}
+        boost::shared_ptr<DeviceBackend> deviceBackendPointer);
 
       /** Read one ore more words from the device. It calls DeviceBackend::readArea,
        * not

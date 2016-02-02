@@ -25,7 +25,7 @@ namespace mtca4u {
 
     checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
         retRegOff, retRegBar);
-    DeviceBackend::read(retRegBar, retRegOff, data, retDataSize);
+    read(retRegBar, retRegOff, data, retDataSize);
   }
 
   /********************************************************************************************************************/
@@ -39,7 +39,7 @@ namespace mtca4u {
 
     checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
         retRegOff, retRegBar);
-    DeviceBackend::write(retRegBar, retRegOff, data, retDataSize);
+    write(retRegBar, retRegOff, data, retDataSize);
   }
 
   /********************************************************************************************************************/

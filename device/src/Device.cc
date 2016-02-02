@@ -21,27 +21,27 @@ namespace mtca4u{
 //    std::cout << "Device::getRegObject(): NOT IMPLEMENTED. Use Device::getRegisterAccessor() instead!" << std::endl;
 //    exit(1);
 //  }
-
+/*
   boost::shared_ptr<Device::RegisterAccessor> Device::getRegisterAccessor(const std::string &regName,
       const std::string &module) const {
     checkPointersAreNotNull();
     return _deviceBackendPointer->getRegisterAccessor(regName, module);
   }
-
+*/
   std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(
       const std::string &moduleName) const {
     checkPointersAreNotNull();
 
     return _deviceBackendPointer->getRegistersInModule(moduleName);
   }
-
+/*
   std::list< boost::shared_ptr<mtca4u::RegisterAccessor> >
   Device::getRegisterAccessorsInModule(const std::string &moduleName) const {
     checkPointersAreNotNull();
 
     return _deviceBackendPointer->getRegisterAccessorsInModule(moduleName);
   }
-
+*/
   void Device::readReg(const std::string &regName, int32_t *data,
       size_t dataSize, uint32_t addRegOffset) const {
     readReg(regName, std::string(), data, dataSize, addRegOffset);
