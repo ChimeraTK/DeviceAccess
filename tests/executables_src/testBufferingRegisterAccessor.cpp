@@ -27,9 +27,6 @@ class BufferingRegisterTest {
     /// test the register accessor
     void testRegisterAccessor();
 
-    /// test the register accessor
-    void testMuxedRegisterAccessor();
-
   private:
     boost::shared_ptr<Device> device;
     friend class BufferingRegisterTestSuite;
