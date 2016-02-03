@@ -13,6 +13,7 @@
 #include "DeviceException.h"
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
+#include "RegisterAccessor2D.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
 // Note: for backwards compatibility there is RegisterAccessor.h included at the end of this file.
@@ -33,6 +34,7 @@ namespace mtca4u {
    *      @class  Device
    *      @brief  Class allows to read/write registers from device
    *
+   *      TODO update documentation
    *      Allows to read/write registers from device by passing the name of
    *      the register instead of offset from the beginning of address space.
    *      Type of the object used to control access to device must be passed
@@ -53,45 +55,36 @@ namespace mtca4u {
   class Device {
     public:
 
-      /** A typedef for backward compatibility.
-       *  @deprecated Don't use this in new code. It will be removed in a future
-       * release.
-       *  Use mtca4u::RegisterAccessor instead (which is not nested inside this class).
+      /** TODO add missing documentation
        */
-      typedef mtca4u::RegisterAccessor RegisterAccessor;
-
-      /** A typedef for backward compatibility.
-       *  @deprecated Don't use this in new code. It will be removed in a future
-       * release.
-       *  Use RegisterAccessor instead.
-       */
-      //typedef RegisterAccessor regObject;
-
       virtual void open(std::string const & aliasName);
 
+      /** TODO add missing documentation
+       */
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
+      /** TODO add missing documentation
+       */
       virtual void close();
+
+      /** TODO add missing documentation
+       */
       virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
+
+      /** TODO add missing documentation
+       */
       virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
-      virtual void readArea(uint32_t regOffset, int32_t *data, size_t size,
-          uint8_t bar) const;
-      virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size,
-          uint8_t bar);
 
-      /** \deprecated
-       *  This function is deprecated. Use readArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.2
+      /** TODO add missing documentation
        */
-      virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
-          uint8_t bar) const;
-      /** \deprecated
-       *  This function is deprecated. Use writeArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.2
-       */
-      virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
-          uint8_t bar);
+      virtual void readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const;
 
+      /** TODO add missing documentation
+       */
+      virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar);
+
+      /** TODO add missing documentation
+       */
       virtual std::string readDeviceInfo() const;
 
       /** Read one or more words from the device. It calls DeviceBackend::readArea, not
@@ -152,70 +145,13 @@ namespace mtca4u {
           const std::string &regModule, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
 
-      /** Read a block of data via DMA.
-       *  @attention In case you leave data size at 0, the full size of the
-       * register
-       * is read.
-       *  Make sure your buffer is large enough!
-       *  The original readDMA function without module name, kept for backward
-       * compatibility.
-       *  The signature was changed and not extendet to keep the functionality of
-       * the default parameters for
-       *  dataSize and addRegOffset, as the module name will always be needed in
-       * the
-       * future.
-       */
-      virtual void readDMA(const std::string &regName, int32_t *data,
-          size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-
-      /** Read a block of data via DMA.
-       *  @attention In case you leave data size at 0, the full size of the
-       * register
-       * is read.
-       *  Make sure your buffer is large enough!
-       */
-      virtual void readDMA(const std::string &regName, const std::string &regModule,
-          int32_t *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0) const;
-
-      /** Write a block of data via DMA.
-       *  @attention In case you leave data size at 0, the full size of the
-       * register
-       * is written.
-       *  Make sure your buffer is large enough!
-       *  The original writeDMA function without module name, kept for backward
-       * compatibility.
-       *  The signature was changed and not extendet to keep the functionality of
-       * the default parameters for
-       *  dataSize and addRegOffset, as the module name will always be needed in
-       * the
-       * future.
-       */
-      virtual void writeDMA(const std::string &regName, int32_t const *data,
-          size_t dataSize = 0, uint32_t addRegOffset = 0);
-      /** Write a block of data via DMA.
-       *  @attention In case you leave data size at 0, the full size of the
-       * register
-       * is written.
-       *  Make sure your buffer is large enough!
-       */
-      virtual void writeDMA(const std::string &regName,
-          const std::string &regModule, int32_t const *data,
-          size_t dataSize = 0, uint32_t addRegOffset = 0);
-
-      /** Get a regObject from the register name.
-       *  @deprecated Use getRegisterAccessor instead.
-       */
-      //regObject getRegObject(const std::string &regName) const;
-
       /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
        * buffers and plain pointers.
        */
-      boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
-          const std::string &registerName,
+      boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(const std::string &registerName,
           const std::string &module = std::string()) const;
 
-      /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
+      /** Get a BufferingRegisterAccessor object for the given register, to read and write registers transparently
        *  by using the accessor object like a variable of the type UserType. Conversion to and from the UserType
        *  will be handled by the FixedPointConverter matching the register description in the map.
        *  Note: This function returns an object, not a (shared) pointer to the object. This is necessary to use
@@ -225,20 +161,12 @@ namespace mtca4u {
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(
           const std::string &module, const std::string &registerName) const;
 
-      /**
-       * returns an accssesor which is used for interpreting  data contained in a
-       * memory region. Memory regions that require a custom interpretation would
-       * be indicated by specific keywords in the mapfile. For example, a memory
-       * region indicated by the keyword
-       * AREA_MULTIPLEXED_SEQUENCE_<dataRegionName> indicates that this memory
-       * region contains multiplexed data sequences. The intelligence for
-       * interpreting this multiplexed data is provided through the custom class -
-       * MultiplexedDataAccessor<userType>
+      /** Get a RegisterAccessor2D object for the given register. This allows to read and write transparently
+       *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
        */
-      template<typename customClass>
-      boost::shared_ptr<customClass> getCustomAccessor(
-          const std::string &dataRegionName,
-          const std::string &module = std::string()) const;
+      template<typename UserType>
+      RegisterAccessor2D<UserType> getRegisterAccessor2D(
+          const std::string &module, const std::string &registerName) const;
 
       /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
        * module.
@@ -258,7 +186,68 @@ namespace mtca4u {
        */
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
+      /** Destructor
+       */
       virtual ~Device();
+
+      /** \deprecated
+       *  This function is deprecated. Use getRegisterAccessor2D() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      template<typename customClass>
+      boost::shared_ptr<customClass> getCustomAccessor(
+          const std::string &dataRegionName,
+          const std::string &module = std::string()) const;
+
+      /** \deprecated
+       *  This function is deprecated. Use readArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
+          uint8_t bar) const;
+      /** \deprecated
+       *  This function is deprecated. Use writeArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
+          uint8_t bar);
+
+      /** \deprecated
+       *  This function is deprecated. Use readArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void readDMA(const std::string &regName, int32_t *data,
+          size_t dataSize = 0, uint32_t addRegOffset = 0) const;
+
+      /** \deprecated
+       *  This function is deprecated. Use readArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void readDMA(const std::string &regName, const std::string &regModule,
+          int32_t *data, size_t dataSize = 0,
+          uint32_t addRegOffset = 0) const;
+
+      /** \deprecated
+       *  This function is deprecated. Use writeArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void writeDMA(const std::string &regName, int32_t const *data,
+          size_t dataSize = 0, uint32_t addRegOffset = 0);
+
+      /** \deprecated
+       *  This function is deprecated. Use writeArea() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void writeDMA(const std::string &regName,
+          const std::string &regModule, int32_t const *data,
+          size_t dataSize = 0, uint32_t addRegOffset = 0);
+
+      /** A typedef for backward compatibility.
+       *  @deprecated Don't use this in new code. It will be removed in a future
+       * release.
+       *  Use mtca4u::RegisterAccessor instead (which is not nested inside this class).
+       */
+      typedef mtca4u::RegisterAccessor RegisterAccessor;
 
     private:
 
@@ -278,6 +267,12 @@ namespace mtca4u {
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
     return BufferingRegisterAccessor<UserType>(_deviceBackendPointer, module, registerName);
+  }
+
+  template<typename UserType>
+  RegisterAccessor2D<UserType> Device::getRegisterAccessor2D(
+      const std::string &module, const std::string &registerName) const {
+    return RegisterAccessor2D<UserType>(getCustomAccessor<UserType>(module, registerName));
   }
 
 } // namespace mtca4u
