@@ -25,7 +25,7 @@ private:
   boost::shared_ptr<TcpCtrl> _tcpObject;
 
 public:
-  RebotBackend(std::string boardAddr, int port, std::string mapFileName);
+  RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
   ~RebotBackend();
   /// The function opens the connection to the device
   virtual void open();
