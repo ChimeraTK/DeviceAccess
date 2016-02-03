@@ -41,7 +41,9 @@ namespace mtca4u{
       size_t getNumberOfDataSequences();
 
       /// TODO this function is not in the interface, can we remove it?
-      uint32_t getSizeOneBlock(){return _sizeOneBlock;}
+      uint32_t getSizeOneBlock() {
+        return bytesPerBlock/4;
+      }
 
     protected:
 
@@ -58,7 +60,7 @@ namespace mtca4u{
 
       std::vector<SequenceInfo> _sequenceInfos;
 
-      uint32_t _sizeOneBlock;
+      uint32_t bytesPerBlock;
 
       friend class MixedTypeTest<UserType>;
   };
@@ -71,7 +73,7 @@ namespace mtca4u{
     public:
       MixedTypeTest(MixedTypeMuxedDataAccessor < UserType > *mixedTypeInstance = NULL) : _mixedTypeInstance(mixedTypeInstance){};
       uint32_t getSizeOneBlock(){
-        return _mixedTypeInstance->_sizeOneBlock;
+        return _mixedTypeInstance->bytesPerBlock / 4;
       }
       size_t getNBlock(){
         return _mixedTypeInstance->_nBlocks;
@@ -138,23 +140,18 @@ namespace mtca4u{
       }
 
       // compute size of one block in bytes (one sample for all channels)
-      size_t indexTemp = 0;
-      size_t wordSize = 0;
-      _sizeOneBlock = 0;
-      while(indexTemp < _converters.size()) {
-        wordSize += _sequenceInfos[indexTemp].nBytes;
-        if (wordSize > 4) {
-          _sizeOneBlock++;
-          wordSize = _sequenceInfos[indexTemp].nBytes;
-        }
-        indexTemp++;
-        if(indexTemp == _converters.size()) {
-          _sizeOneBlock++;
+      bytesPerBlock = 0;
+      for(unsigned int i=0; i<_converters.size(); i++) {
+        uint32_t nbt = _sequenceInfos[i].nBytes;
+        bytesPerBlock += nbt;
+        if(nbt != 1 && nbt != 2 && nbt != 4) {
+          throw MultiplexedDataAccessorException( "Sequence word size must correspond to a primitive type",
+              MultiplexedDataAccessorException::INVALID_WORD_SIZE );
         }
       }
 
       // compute number of blocks (number of samples for each channel)
-      MultiplexedDataAccessor<UserType>::_nBlocks = _areaInfo.nBytes / 4 / _sizeOneBlock;
+      MultiplexedDataAccessor<UserType>::_nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
 
       // allocate the buffer for the converted data
       MultiplexedDataAccessor<UserType>::_sequences.resize(_converters.size());
@@ -179,8 +176,8 @@ namespace mtca4u{
   template <class UserType>
   void MixedTypeMuxedDataAccessor<UserType>::fillSequences() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex=0; blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks; ++blockIndex) {
-        for(size_t sequenceIndex=0; sequenceIndex < _converters.size(); ++sequenceIndex){
+      for(size_t blockIndex = 0; blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks; ++blockIndex) {
+        for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes) {
             case 1: //8 bit variables
               MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
@@ -219,8 +216,8 @@ namespace mtca4u{
   template<class UserType>
   void MixedTypeMuxedDataAccessor<UserType>::fillIO_Buffer() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex=0; blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks; ++blockIndex) {
-        for(size_t sequenceIndex=0; sequenceIndex < _converters.size(); ++sequenceIndex) {
+      for(size_t blockIndex = 0; blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks; ++blockIndex) {
+        for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes){
             case 1: //8 bit variables
               *(standOfMyioBuffer) = _converters[sequenceIndex].toRaw(
