@@ -3,6 +3,7 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include "RegisterAccessor2D.h"
 #include "MultiplexedDataAccessor.h"
 #include "AddressBasedMuxedDataAccessor.h"
 #include "DummyBackend.h"
@@ -140,31 +141,32 @@ void testWithConversion(std::string multiplexedSequenceName) {
 
     boost::shared_ptr< MultiplexedDataAccessor<float> > deMultiplexer =
         ioDevice->getRegisterAccessor2D<float>(multiplexedSequenceName,TEST_MODULE_NAME);
-    deMultiplexer->read();
+    RegisterAccessor2D<float> accessor(deMultiplexer);
+    accessor.read();
 
-    BOOST_CHECK( (*deMultiplexer)[0][0] == 0 );
-    BOOST_CHECK( (*deMultiplexer)[1][0] == 0.25 ); // 1 with 2 frac bits
-    BOOST_CHECK( (*deMultiplexer)[2][0] == 0.25 ); // 2 with 3 frac bits
-    BOOST_CHECK( (*deMultiplexer)[0][1] == 1.5 ); // 3 with 1 frac bits
-    BOOST_CHECK( (*deMultiplexer)[1][1] == 1 ); // 4 with 2 frac bits
-    BOOST_CHECK( (*deMultiplexer)[2][1] == 0.625 ); // 5 with 3 frac bits
-    BOOST_CHECK( (*deMultiplexer)[0][2] == 3. ); // 6 with 1 frac bits
-    BOOST_CHECK( (*deMultiplexer)[1][2] == 1.75 ); // 7 with 2 frac bits
-    BOOST_CHECK( (*deMultiplexer)[2][2] == 1. ); // 8 with 3 frac bits
-    BOOST_CHECK( (*deMultiplexer)[0][3] == 4.5 ); // 9 with 1 frac bits
-    BOOST_CHECK( (*deMultiplexer)[1][3] == 2.5 ); // 10 with 2 frac bits
-    BOOST_CHECK( (*deMultiplexer)[2][3] == 1.375 ); // 11 with 3 frac bits
-    BOOST_CHECK( (*deMultiplexer)[0][4] == 6. ); // 12 with 1 frac bits
-    BOOST_CHECK( (*deMultiplexer)[1][4] == 3.25 ); // 13 with 2 frac bits
-    BOOST_CHECK( (*deMultiplexer)[2][4] == 1.75 ); // 14 with 3 frac bits
+    BOOST_CHECK( accessor[0][0] == 0 );
+    BOOST_CHECK( accessor[1][0] == 0.25 ); // 1 with 2 frac bits
+    BOOST_CHECK( accessor[2][0] == 0.25 ); // 2 with 3 frac bits
+    BOOST_CHECK( accessor[0][1] == 1.5 ); // 3 with 1 frac bits
+    BOOST_CHECK( accessor[1][1] == 1 ); // 4 with 2 frac bits
+    BOOST_CHECK( accessor[2][1] == 0.625 ); // 5 with 3 frac bits
+    BOOST_CHECK( accessor[0][2] == 3. ); // 6 with 1 frac bits
+    BOOST_CHECK( accessor[1][2] == 1.75 ); // 7 with 2 frac bits
+    BOOST_CHECK( accessor[2][2] == 1. ); // 8 with 3 frac bits
+    BOOST_CHECK( accessor[0][3] == 4.5 ); // 9 with 1 frac bits
+    BOOST_CHECK( accessor[1][3] == 2.5 ); // 10 with 2 frac bits
+    BOOST_CHECK( accessor[2][3] == 1.375 ); // 11 with 3 frac bits
+    BOOST_CHECK( accessor[0][4] == 6. ); // 12 with 1 frac bits
+    BOOST_CHECK( accessor[1][4] == 3.25 ); // 13 with 2 frac bits
+    BOOST_CHECK( accessor[2][4] == 1.75 ); // 14 with 3 frac bits
 
     for(size_t sequenceIndex=0; sequenceIndex<3; ++sequenceIndex) {
       for(size_t i=0; i< 5; ++i) {
-        (*deMultiplexer)[sequenceIndex][i]+=1.;
+        accessor[sequenceIndex][i]+=1.;
       }
     }
 
-    deMultiplexer->write();
+    accessor.write();
     ioDevice->read(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes );
 
     for(size_t i=0; i < 15; ++i) {
