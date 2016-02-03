@@ -22,7 +22,7 @@ ExampleBackend::~ExampleBackend(){
 }
 
 boost::shared_ptr<mtca4u::DeviceBackend> ExampleBackend::createInstance(
-  std::string /*host*/, std::string /*instance*/, std::list<std::string> /*parameters*/) {
+  std::string /*host*/, std::string /*instance*/, std::list<std::string> /*parameters*/, std::string /*mapFileName*/) {
   return boost::shared_ptr<mtca4u::DeviceBackend> ( new ExampleBackend );
 }
 
