@@ -11,8 +11,6 @@ RebotBackend::RebotBackend(std::string boardAddr, int port, std::string mapFileN
       _port(port),
       _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port))
   {
-    MapFileParser parser;
-    _registerMap = parser.parse(mapFileName);
   }
 
 RebotBackend::~RebotBackend() {
