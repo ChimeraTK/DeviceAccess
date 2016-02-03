@@ -161,18 +161,16 @@ namespace mtca4u{
       for (size_t i=0; i<_converters.size(); ++i) {
         MultiplexedDataAccessor<UserType>::_sequences[i].resize(MultiplexedDataAccessor<UserType>::_nBlocks);
       }
+
+      // allocate the raw io buffer
+      _ioBuffer.resize(_areaInfo.nBytes);
   }
 
   /********************************************************************************************************************/
 
   template <class UserType>
   void MixedTypeMuxedDataAccessor<UserType>::read() {
-
-      MultiplexedDataAccessor<UserType>::_ioDevice->read(
-          _areaInfo.bar,
-          _areaInfo.address, &(_ioBuffer[0]),
-          _areaInfo.nBytes);
-
+      MultiplexedDataAccessor<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
       fillSequences();
   }
 
