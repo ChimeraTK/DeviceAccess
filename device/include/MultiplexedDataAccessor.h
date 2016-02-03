@@ -4,7 +4,6 @@
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "DeviceBackend.h"
-#include "Exception.h"
 #include "MapException.h"
 #include "NotImplementedException.h"
 #include <sstream>
@@ -12,12 +11,13 @@
 
 namespace mtca4u{
 
-  /** Exception class for MulxiplexedDataAccessor
+  /** Exception class for MultiplexedDataAccessor
    */
   class MultiplexedDataAccessorException : public Exception {
     public:
 
       enum { EMPTY_AREA, INVALID_WORD_SIZE, INVALID_N_ELEMENTS };
+
 
       MultiplexedDataAccessorException(const std::string &message, unsigned int ID)
       : Exception(message, ID){}
@@ -26,14 +26,11 @@ namespace mtca4u{
   /** Base class which does not depend on the SequenceWordType.
    */
   template<class UserType>
-  class MultiplexedDataAccessor {
-
+  class MultiplexedDataAccessor{
     public:
-
       /** Constructor to intialise the members.
        */
-      MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice,
-          std::vector< FixedPointConverter > const & converters );
+      MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice );
 
       /** Operator to access individual sequences.
        */
@@ -57,21 +54,41 @@ namespace mtca4u{
        */
       virtual size_t getNumberOfDataSequences() = 0;
 
-      /** A factory function which parses the register mapping and determines the
-       *  correct type of SequenceDeMultiplexer.
-       */
-      static boost::shared_ptr< MultiplexedDataAccessor<UserType> > createInstance(
-          std::string const & multiplexedSequenceName,
-          std::string const & moduleName,
-          boost::shared_ptr< DeviceBackend > const & ioDevice,
-          boost::shared_ptr< RegisterInfoMap > const & registerMapping );
-
       /**
        * Default destructor
        */
-      virtual ~MultiplexedDataAccessor() = 0;
+      virtual ~MultiplexedDataAccessor(){};
+
+    protected:
+
+      /** The converted data for the user space. */
+      std::vector< std::vector< UserType > > _sequences;
+
+      /** The device from (/to) which to perform the DMA transfer */
+      boost::shared_ptr<DeviceBackend> _ioDevice;
+
+      /** Redefine the user type, as we need it for the backwards-compatible factory Device::getCustomAccessor() */
+      typedef UserType userType;
+
+      /** number of data blocks / samples */
+      size_t _nBlocks;
 
   };
+
+  /********************************************************************************************************************/
+
+  template<class UserType>
+  std::vector<UserType> & MultiplexedDataAccessor<UserType>::operator[](
+      size_t sequenceIndex){
+      return _sequences[sequenceIndex];
+  }
+
+  /********************************************************************************************************************/
+
+  template<class UserType>
+  MultiplexedDataAccessor<UserType>::MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice )
+  : _ioDevice(ioDevice), _nBlocks(0)
+  {}
 
 }  //namespace mtca4u
 

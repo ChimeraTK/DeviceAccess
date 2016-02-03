@@ -18,6 +18,7 @@ namespace mtca4u {
   // some forward declarations
   class RegisterAccessor;
   template<typename T> class BufferingRegisterAccessor;
+  template<typename T> class MultiplexedDataAccessor;
 
   /** The base class of an IO device.
    */
@@ -94,23 +95,13 @@ namespace mtca4u {
        * buffers and plain pointers.
        */
       virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
-          const std::string &registerName,
-          const std::string &module = std::string()) = 0;
+          const std::string &registerName, const std::string &module = std::string()) = 0;
 
-      /**
-       * returns an accssesor which is used for interpreting  data contained in a
-       * memory region. Memory regions that require a custom interpretation would
-       * be indicated by specific keywords in the mapfile. For example, a memory
-       * region indicated by the keyword
-       * AREA_MULTIPLEXED_SEQUENCE_<dataRegionName> indicates that this memory
-       * region contains multiplexed data sequences. The intelligence for
-       * interpreting this multiplexed data is provided through the custom class -
-       * MultiplexedDataAccessor<userType>
+      /** Get register accessor for 2-dimensional registers.
        */
-      template<typename customClass>
-      boost::shared_ptr<customClass> getCustomAccessor(
-          const std::string &dataRegionName,
-          const std::string &module = std::string());
+      template<typename UserType>
+      boost::shared_ptr< MultiplexedDataAccessor<UserType> > getRegisterAccessor2D(
+          const std::string &dataRegionName, const std::string &module = std::string());
 
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
@@ -130,13 +121,25 @@ namespace mtca4u {
       virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) = 0;
 
+    protected:
+
+      /** Virtual implementation of the getRegisterAccessor2D() template function. The return value must
+       *  be of the type MultiplexedDataAccessor<UserType>*.
+       */
+      virtual void* getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
+          const std::string &module) = 0;
+
   };
 
-  template <typename customClass>
-  boost::shared_ptr<customClass> DeviceBackend::getCustomAccessor(
-      const std::string &dataRegionName, const std::string &module) {
-    return (
-        customClass::createInstance(dataRegionName, module, shared_from_this()));
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< MultiplexedDataAccessor<UserType> > DeviceBackend::getRegisterAccessor2D(
+      const std::string &dataRegionName, const std::string &module)
+  {
+    void *voidptr = getRegisterAccessor2Dimpl(typeid(UserType), dataRegionName, module);
+    MultiplexedDataAccessor<UserType> *ptr = static_cast<MultiplexedDataAccessor<UserType>*>(voidptr);
+    return boost::shared_ptr< MultiplexedDataAccessor<UserType> >(ptr);
   }
 
 } // namespace mtca4u
