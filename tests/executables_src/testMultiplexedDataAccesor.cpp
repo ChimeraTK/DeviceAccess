@@ -3,7 +3,8 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <MultiplexedDataAccessor.h>
+#include "MultiplexedDataAccessor.h"
+#include "AddressBasedMuxedDataAccessor.h"
 #include "DummyBackend.h"
 #include "MapFileParser.h"
 #include <iostream>
@@ -19,17 +20,16 @@ static const std::string INVALID_MODULE_NAME("INVALID");
 
 BOOST_AUTO_TEST_SUITE( SequenceDeMultiplexerTestSuite )
 
-BOOST_AUTO_TEST_CASE( testFixedTypeConstructor ){
-  boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
-  FixedTypeMuxedDataAccessor<double, int32_t>
-  deMultiplexer( ioDevice, RegisterInfoMap::RegisterInfo("test", 15, 0, 60, 0)
-  , std::vector< FixedPointConverter >(3) );
+BOOST_AUTO_TEST_CASE( testConstructor ){
+  boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend(MAP_FILE_NAME) );
+  MixedTypeMuxedDataAccessor<double> deMultiplexer("FRAC_INT",TEST_MODULE_NAME,ioDevice);
   BOOST_CHECK( deMultiplexer[0].size() == 5 );
 }
 
 // test the de-multiplexing itself, with 'identity' fixed point conversion
 template <class SequenceWordType>
-void testDeMultiplexing(std::string areaName){
+void testDeMultiplexing(std::string areaName) {
+
     // open a dummy device with the sequence map file
     boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
     ioDevice->open();
@@ -37,10 +37,9 @@ void testDeMultiplexing(std::string areaName){
     //get the sequence info from the map file
     boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
     SequenceInfo sequenceInfo;
-    registerMap->getRegisterInfo(areaName, sequenceInfo, TEST_MODULE_NAME);
+    registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_"+areaName, sequenceInfo, TEST_MODULE_NAME);
 
-    std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/
-        sizeof(SequenceWordType) );
+    std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/sizeof(SequenceWordType) );
     ioBuffer[0] = 'A';
     ioBuffer[1] = 'a';
     ioBuffer[2] = '0';
@@ -57,13 +56,9 @@ void testDeMultiplexing(std::string areaName){
     ioBuffer[13] = 'e';
     ioBuffer[14] = '4';
 
-    ioDevice->write( sequenceInfo.bar, sequenceInfo.address,
-        reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-        sequenceInfo.nBytes
-    );
+    ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
-    FixedTypeMuxedDataAccessor< SequenceWordType, SequenceWordType >
-    deMultiplexer( ioDevice, sequenceInfo , std::vector< FixedPointConverter >(3) );
+    MixedTypeMuxedDataAccessor< SequenceWordType > deMultiplexer(areaName, TEST_MODULE_NAME, ioDevice);
 
     deMultiplexer.read();
 
@@ -112,13 +107,13 @@ void testDeMultiplexing(std::string areaName){
 }
 
 BOOST_AUTO_TEST_CASE(testDeMultiplexing32) {
-  testDeMultiplexing<int32_t>("AREA_MULTIPLEXED_SEQUENCE_INT");
+  testDeMultiplexing<int32_t>("INT");
 }
 BOOST_AUTO_TEST_CASE(testDeMultiplexing16) {
-  testDeMultiplexing<int16_t>("AREA_MULTIPLEXED_SEQUENCE_SHORT");
+  testDeMultiplexing<int16_t>("SHORT");
 }
 BOOST_AUTO_TEST_CASE(testDeMultiplexing8) {
-  testDeMultiplexing<int8_t>("AREA_MULTIPLEXED_SEQUENCE_CHAR");
+  testDeMultiplexing<int8_t>("CHAR");
 }
 
 // test the de-multiplexing itself, with  fixed point conversion
@@ -143,8 +138,8 @@ void testWithConversion(std::string multiplexedSequenceName) {
 
     ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
-    boost::shared_ptr< MultiplexedDataAccessor< float > > deMultiplexer =
-        MultiplexedDataAccessor<float>::createInstance( multiplexedSequenceName, TEST_MODULE_NAME, ioDevice, registerMap );
+    boost::shared_ptr< MultiplexedDataAccessor<float> > deMultiplexer =
+        ioDevice->getRegisterAccessor2D<float>(multiplexedSequenceName,TEST_MODULE_NAME);
     deMultiplexer->read();
 
     BOOST_CHECK( (*deMultiplexer)[0][0] == 0 );
@@ -195,10 +190,10 @@ BOOST_AUTO_TEST_CASE(testWithConversion8) {
 
 BOOST_AUTO_TEST_CASE(testFactoryFunction) {
   boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse("invalidSequences.map");
-  boost::shared_ptr< DeviceBackend > ioDevice;
+  boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend("invalidSequences.map") );
 
   try {
-    MultiplexedDataAccessor<double>::createInstance( "NO_WORDS", INVALID_MODULE_NAME, ioDevice,registerMap );
+    ioDevice->getRegisterAccessor2D<double>("NO_WORDS",INVALID_MODULE_NAME);
     // in a sucessful test (which is required for the code coverage report)
     // the following line is not executed. Exclude it from the lcov report
     BOOST_ERROR( "createInstance did not throw for NO_WORDS" ); //LCOV_EXCL_LINE
@@ -208,7 +203,7 @@ BOOST_AUTO_TEST_CASE(testFactoryFunction) {
   }
 
   try {
-    MultiplexedDataAccessor<double>::createInstance( "WRONG_SIZE", INVALID_MODULE_NAME, ioDevice, registerMap );
+    ioDevice->getRegisterAccessor2D<double>("WRONG_SIZE",INVALID_MODULE_NAME);
     BOOST_ERROR( "createInstance did not throw for WRONG_SIZE" ); //LCOV_EXCL_LINE
   }
   catch(MultiplexedDataAccessorException &e) {
@@ -216,15 +211,14 @@ BOOST_AUTO_TEST_CASE(testFactoryFunction) {
   }
 
   try{
-    MultiplexedDataAccessor<double>::createInstance( "WRONG_NELEMENTS", INVALID_MODULE_NAME, ioDevice, registerMap );
+    ioDevice->getRegisterAccessor2D<double>("WRONG_NELEMENTS",INVALID_MODULE_NAME);
     BOOST_ERROR( "createInstance did not throw for WRONG_NELEMENTS" ); //LCOV_EXCL_LINE
   }
   catch(MultiplexedDataAccessorException &e) {
     BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
   }
 
-  BOOST_CHECK_THROW( MultiplexedDataAccessor<double>::createInstance( "DOES_NOT_EXIST", INVALID_MODULE_NAME,
-      ioDevice, registerMap ), MapFileException );
+  BOOST_CHECK_THROW( ioDevice->getRegisterAccessor2D<double>("DOES_NOT_EXIST",INVALID_MODULE_NAME), MapFileException );
 }
 
 BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
@@ -246,7 +240,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
   ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
   boost::shared_ptr< MultiplexedDataAccessor<double> > deMultiplexer =
-      MultiplexedDataAccessor<double>::createInstance( "DMA", TEST_MODULE_NAME, ioDevice, registerMap );
+      ioDevice->getRegisterAccessor2D<double>("DMA",TEST_MODULE_NAME);
   deMultiplexer->read();
 
   int j=0;
@@ -256,7 +250,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
     }
   }
 
-  BOOST_CHECK_THROW( deMultiplexer->write(), NotImplementedException );
+  //BOOST_CHECK_THROW( deMultiplexer->write(), NotImplementedException );
 
 
 }
@@ -274,33 +268,10 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
 }*/
 
 BOOST_AUTO_TEST_CASE(testMixed) {
-  boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(BAM_MAP_FILE);
   // open a dummy device with the sequence map file
   boost::shared_ptr<DeviceBackend> ioDevice( new DummyBackend(BAM_MAP_FILE) );
   ioDevice->open();
-  SequenceInfo multiplexedSequenceInfo;
-  std::vector< FixedPointConverter > converters;
-  std::vector<SequenceInfo> sequencesInfo;
-  std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+"DAQ0_BAM";
-
-  registerMap->getRegisterInfo( areaName, multiplexedSequenceInfo, "APP0");
-
-  size_t i = 0;
-  while(true) {
-    SequenceInfo sequenceInfo;
-    std::stringstream sequenceNameStream;
-    sequenceNameStream << SEQUENCE_PREFIX << "DAQ0_BAM" << "_" << i++;
-    try {
-      registerMap->getRegisterInfo( sequenceNameStream.str(), sequenceInfo, "APP0" );
-    }
-    catch(MapFileException & ) {
-      break;
-    }
-    sequencesInfo.push_back(sequenceInfo);
-    converters.push_back( FixedPointConverter(sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag) );
-  }
-
-  MixedTypeMuxedDataAccessor<double> myMixedData( ioDevice, multiplexedSequenceInfo, sequencesInfo, converters);
+  MixedTypeMuxedDataAccessor<double> myMixedData("DAQ0_BAM", "APP0", ioDevice);
 
   MixedTypeTest<double> myTest(&myMixedData);
   BOOST_CHECK(myTest.getSizeOneBlock() == 11);
@@ -351,7 +322,7 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
   ioDevice->open();
 
   boost::shared_ptr< MultiplexedDataAccessor<double> > deMuxedData =
-      MultiplexedDataAccessor<double>::createInstance( "FRAC_INT", TEST_MODULE_NAME, ioDevice, registerMap );
+      ioDevice->getRegisterAccessor2D<double>("FRAC_INT", TEST_MODULE_NAME);
 
   BOOST_CHECK(deMuxedData->getNumberOfDataSequences() == 3);
 
