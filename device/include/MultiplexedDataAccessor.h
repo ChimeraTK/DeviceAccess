@@ -59,6 +59,12 @@ namespace mtca4u{
        */
       virtual ~MultiplexedDataAccessor(){};
 
+      /** \deprecated
+       * Do not use, only for backwards compatibility.
+       * Redefine the user type, as we need it for the backwards-compatible factory Device::getCustomAccessor()
+       */
+      typedef UserType userType;
+
     protected:
 
       /** The converted data for the user space. */
@@ -66,9 +72,6 @@ namespace mtca4u{
 
       /** The device from (/to) which to perform the DMA transfer */
       boost::shared_ptr<DeviceBackend> _ioDevice;
-
-      /** Redefine the user type, as we need it for the backwards-compatible factory Device::getCustomAccessor() */
-      typedef UserType userType;
 
       /** number of data blocks / samples */
       size_t _nBlocks;
