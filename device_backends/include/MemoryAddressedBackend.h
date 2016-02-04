@@ -4,11 +4,11 @@
 #include <string>
 #include <stdint.h>
 #include <fcntl.h>
+#include <MemoryAddressedBackendTwoDRegisterAccessor.h>
 #include <vector>
 
 #include "DeviceBackendImpl.h"
 #include "MemoryAddressedBackendRegisterAccessor.h"
-#include "MemoryAddressedBackendRegisterAccessor2D.h"
 #include "MapFileParser.h"
 #include "Exception.h"
 

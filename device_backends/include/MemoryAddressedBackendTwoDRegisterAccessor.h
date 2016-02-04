@@ -1,5 +1,5 @@
-#ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_2D_H
-#define MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_2D_H
+#ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H
+#define MTCA4U_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
@@ -25,13 +25,12 @@ namespace mtca4u {
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
 
-  // TODO rename this class!
   template <class UserType>
-  class MixedTypeMuxedDataAccessor : public RegisterAccessor2Dimpl<UserType> {
+  class MemoryAddressedBackendTwoDRegisterAccessor : public RegisterAccessor2Dimpl<UserType> {
 
     public:
 
-      MixedTypeMuxedDataAccessor( const std::string &_dataRegionName, const std::string &_module,
+      MemoryAddressedBackendTwoDRegisterAccessor( const std::string &_dataRegionName, const std::string &_module,
           boost::shared_ptr<DeviceBackend> _backend );
 
       void read();
@@ -73,7 +72,7 @@ namespace mtca4u {
 
     public:
 
-      MixedTypeTest(MixedTypeMuxedDataAccessor < UserType > *mixedTypeInstance = NULL)
+      MixedTypeTest(MemoryAddressedBackendTwoDRegisterAccessor < UserType > *mixedTypeInstance = NULL)
       : _mixedTypeInstance(mixedTypeInstance)
       {};
 
@@ -92,13 +91,13 @@ namespace mtca4u {
 
     private:
 
-      MixedTypeMuxedDataAccessor<UserType> *_mixedTypeInstance;
+      MemoryAddressedBackendTwoDRegisterAccessor<UserType> *_mixedTypeInstance;
   };
 
   /********************************************************************************************************************/
 
   template <class UserType>
-  MixedTypeMuxedDataAccessor<UserType>::MixedTypeMuxedDataAccessor( const std::string &_dataRegionName,
+  MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor( const std::string &_dataRegionName,
       const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
   : RegisterAccessor2Dimpl<UserType>(_backend)
   {
@@ -172,7 +171,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void MixedTypeMuxedDataAccessor<UserType>::read() {
+  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::read() {
       RegisterAccessor2Dimpl<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
       fillSequences();
   }
@@ -180,7 +179,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void MixedTypeMuxedDataAccessor<UserType>::fillSequences() {
+  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillSequences() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < RegisterAccessor2Dimpl<UserType>::_nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
@@ -208,7 +207,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void MixedTypeMuxedDataAccessor<UserType>::write() {
+  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::write() {
       fillIO_Buffer();
 
       RegisterAccessor2Dimpl<UserType>::_ioDevice->write(
@@ -220,7 +219,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void MixedTypeMuxedDataAccessor<UserType>::fillIO_Buffer() {
+  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillIO_Buffer() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < RegisterAccessor2Dimpl<UserType>::_nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
@@ -248,10 +247,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  size_t MixedTypeMuxedDataAccessor<UserType>::getNumberOfDataSequences() {
+  size_t MemoryAddressedBackendTwoDRegisterAccessor<UserType>::getNumberOfDataSequences() {
       return (RegisterAccessor2Dimpl<UserType>::_sequences.size());
   }
 
 }  //namespace mtca4u
 
-#endif // MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_2D_H
+#endif // MTCA4U_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H

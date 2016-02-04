@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
 #include <sstream>
 
 #include "RegisterAccessor2D.h"
-#include "MemoryAddressedBackendRegisterAccessor2D.h"
+#include "MemoryAddressedBackendTwoDRegisterAccessor.h"
 #include "DummyBackend.h"
 #include "MapFileParser.h"
 
@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_SUITE( SequenceDeMultiplexerTestSuite )
 
 BOOST_AUTO_TEST_CASE( testConstructor ){
   boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend(MAP_FILE_NAME) );
-  MixedTypeMuxedDataAccessor<double> deMultiplexer("FRAC_INT",TEST_MODULE_NAME,ioDevice);
+  MemoryAddressedBackendTwoDRegisterAccessor<double> deMultiplexer("FRAC_INT",TEST_MODULE_NAME,ioDevice);
   BOOST_CHECK( deMultiplexer[0].size() == 5 );
 }
 
@@ -58,7 +58,7 @@ void testDeMultiplexing(std::string areaName) {
 
     ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
-    MixedTypeMuxedDataAccessor< SequenceWordType > deMultiplexer(areaName, TEST_MODULE_NAME, ioDevice);
+    MemoryAddressedBackendTwoDRegisterAccessor< SequenceWordType > deMultiplexer(areaName, TEST_MODULE_NAME, ioDevice);
 
     deMultiplexer.read();
 
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(testMixed) {
   // open a dummy device with the sequence map file
   boost::shared_ptr<DeviceBackend> ioDevice( new DummyBackend(BAM_MAP_FILE) );
   ioDevice->open();
-  MixedTypeMuxedDataAccessor<double> myMixedData("DAQ0_BAM", "APP0", ioDevice);
+  MemoryAddressedBackendTwoDRegisterAccessor<double> myMixedData("DAQ0_BAM", "APP0", ioDevice);
 
   MixedTypeTest<double> myTest(&myMixedData);
   BOOST_CHECK(myTest.getSizeOneBlock() == 11);

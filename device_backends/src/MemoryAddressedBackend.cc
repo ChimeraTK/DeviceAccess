@@ -141,8 +141,8 @@ namespace mtca4u {
 
         // check if UserType is the requested type
         if(typeid(ConvertedDataType) == type) {
-          MixedTypeMuxedDataAccessor<ConvertedDataType> *typedptr;
-          typedptr = new MixedTypeMuxedDataAccessor<ConvertedDataType>(dataRegionName,module,backend);
+          MemoryAddressedBackendTwoDRegisterAccessor<ConvertedDataType> *typedptr;
+          typedptr = new MemoryAddressedBackendTwoDRegisterAccessor<ConvertedDataType>(dataRegionName,module,backend);
           ptr = static_cast<void*>(typedptr);
         }
       }

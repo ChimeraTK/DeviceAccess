@@ -9,7 +9,7 @@
 #define MTCA4U_DUMMY_REGISTER_ACCESSOR_H
 
 #include "DummyBackend.h"
-#include "MemoryAddressedBackendRegisterAccessor2D.h"    // for the prefixes to the register names
+#include "MemoryAddressedBackendTwoDRegisterAccessor.h"    // for the prefixes to the register names
 
 namespace mtca4u {
 
