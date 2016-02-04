@@ -15,13 +15,13 @@
 namespace mtca4u {
 
   template<class UserType>
-  class RegisterAccessor2D {
+  class TwoDRegisterAccessor {
 
     public:
 
       /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D().
        */
-      RegisterAccessor2D( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
+      TwoDRegisterAccessor( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
       : accessor(_accessor)
       {}
 
@@ -58,7 +58,7 @@ namespace mtca4u {
       /**
        * Default destructor
        */
-      ~RegisterAccessor2D() {
+      ~TwoDRegisterAccessor() {
       }
 
     protected:

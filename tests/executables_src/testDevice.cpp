@@ -6,7 +6,6 @@
 #include "DeviceException.h"
 #include "PcieBackendException.h"
 #include "DeviceBackend.h"
-#include "RegisterAccessor2D.h"
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 

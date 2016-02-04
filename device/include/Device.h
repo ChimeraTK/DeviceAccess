@@ -15,7 +15,7 @@
 #include "DeviceException.h"
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
-#include "RegisterAccessor2D.h"
+#include "TwoDRegisterAccessor.h"
 
 // Note: for backwards compatibility there is RegisterAccessor.h included at the end of this file.
 
@@ -166,7 +166,7 @@ namespace mtca4u {
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
        */
       template<typename UserType>
-      RegisterAccessor2D<UserType> getRegisterAccessor2D(
+      TwoDRegisterAccessor<UserType> getRegisterAccessor2D(
           const std::string &module, const std::string &registerName) const;
 
       /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
@@ -271,9 +271,9 @@ namespace mtca4u {
   }
 
   template<typename UserType>
-  RegisterAccessor2D<UserType> Device::getRegisterAccessor2D(
+  TwoDRegisterAccessor<UserType> Device::getRegisterAccessor2D(
       const std::string &module, const std::string &registerName) const {
-    return RegisterAccessor2D<UserType>(_deviceBackendPointer->getRegisterAccessor2D<UserType>(registerName, module));
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor2D<UserType>(registerName, module));
   }
 
 } // namespace mtca4u

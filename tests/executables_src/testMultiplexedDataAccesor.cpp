@@ -6,7 +6,7 @@ using namespace boost::unit_test_framework;
 #include <iostream>
 #include <sstream>
 
-#include "RegisterAccessor2D.h"
+#include <TwoDRegisterAccessor.h>
 #include "MemoryAddressedBackendTwoDRegisterAccessor.h"
 #include "DummyBackend.h"
 #include "MapFileParser.h"
@@ -140,7 +140,7 @@ void testWithConversion(std::string multiplexedSequenceName) {
 
     boost::shared_ptr< TwoDRegisterAccessorImpl<float> > deMultiplexer =
         ioDevice->getRegisterAccessor2D<float>(multiplexedSequenceName,TEST_MODULE_NAME);
-    RegisterAccessor2D<float> accessor(deMultiplexer);
+    TwoDRegisterAccessor<float> accessor(deMultiplexer);
     accessor.read();
 
     BOOST_CHECK( accessor[0][0] == 0 );
