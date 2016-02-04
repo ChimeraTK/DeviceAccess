@@ -4,7 +4,7 @@
 #include <sstream>
 #include <boost/shared_ptr.hpp>
 
-#include "RegisterAccessor2D.h"
+#include "TwoDRegisterAccessorImpl.h"
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "DeviceBackend.h"
@@ -26,7 +26,7 @@ namespace mtca4u {
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
 
   template <class UserType>
-  class MemoryAddressedBackendTwoDRegisterAccessor : public RegisterAccessor2Dimpl<UserType> {
+  class MemoryAddressedBackendTwoDRegisterAccessor : public TwoDRegisterAccessorImpl<UserType> {
 
     public:
 
@@ -97,9 +97,9 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor( const std::string &_dataRegionName,
-      const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
-  : RegisterAccessor2Dimpl<UserType>(_backend)
+  MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor(
+      const std::string &_dataRegionName, const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
+  : TwoDRegisterAccessorImpl<UserType>(_backend)
   {
       // build name of area as written in the map file
       std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_dataRegionName;
@@ -156,12 +156,12 @@ namespace mtca4u {
       }
 
       // compute number of blocks (number of samples for each channel)
-      RegisterAccessor2Dimpl<UserType>::_nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
+      TwoDRegisterAccessorImpl<UserType>::_nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
 
       // allocate the buffer for the converted data
-      RegisterAccessor2Dimpl<UserType>::_sequences.resize(_converters.size());
+      TwoDRegisterAccessorImpl<UserType>::_sequences.resize(_converters.size());
       for (size_t i=0; i<_converters.size(); ++i) {
-        RegisterAccessor2Dimpl<UserType>::_sequences[i].resize(RegisterAccessor2Dimpl<UserType>::_nBlocks);
+        TwoDRegisterAccessorImpl<UserType>::_sequences[i].resize(TwoDRegisterAccessorImpl<UserType>::_nBlocks);
       }
 
       // allocate the raw io buffer
@@ -172,7 +172,7 @@ namespace mtca4u {
 
   template <class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::read() {
-      RegisterAccessor2Dimpl<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
+      TwoDRegisterAccessorImpl<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
       fillSequences();
   }
 
@@ -181,21 +181,21 @@ namespace mtca4u {
   template <class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillSequences() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < RegisterAccessor2Dimpl<UserType>::_nBlocks; ++blockIndex) {
+      for(size_t blockIndex = 0; blockIndex < TwoDRegisterAccessorImpl<UserType>::_nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes) {
             case 1: //8 bit variables
-              RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] =
+              TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
               standOfMyioBuffer++;
               break;
             case 2: //16 bit words
-              RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] =
+              TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
               standOfMyioBuffer = standOfMyioBuffer + 2;
               break;
             case 4: //32 bit words
-              RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] =
+              TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
               standOfMyioBuffer = standOfMyioBuffer + 4;
               break;
@@ -210,7 +210,7 @@ namespace mtca4u {
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::write() {
       fillIO_Buffer();
 
-      RegisterAccessor2Dimpl<UserType>::_ioDevice->write(
+      TwoDRegisterAccessorImpl<UserType>::_ioDevice->write(
           _areaInfo.bar,
           _areaInfo.address, &(_ioBuffer[0]),
           _areaInfo.nBytes);
@@ -221,22 +221,22 @@ namespace mtca4u {
   template<class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillIO_Buffer() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < RegisterAccessor2Dimpl<UserType>::_nBlocks; ++blockIndex) {
+      for(size_t blockIndex = 0; blockIndex < TwoDRegisterAccessorImpl<UserType>::_nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes){
             case 1: //8 bit variables
               *(standOfMyioBuffer) = _converters[sequenceIndex].toRaw(
-                  RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] );
               standOfMyioBuffer++;
               break;
             case 2: //16 bit variables
               *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] );
               standOfMyioBuffer = standOfMyioBuffer + 2;
               break;
             case 4: //32 bit variables
               *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] );
               standOfMyioBuffer = standOfMyioBuffer + 4;
               break;
           }
@@ -248,7 +248,7 @@ namespace mtca4u {
 
   template <class UserType>
   size_t MemoryAddressedBackendTwoDRegisterAccessor<UserType>::getNumberOfDataSequences() {
-      return (RegisterAccessor2Dimpl<UserType>::_sequences.size());
+      return (TwoDRegisterAccessorImpl<UserType>::_sequences.size());
   }
 
 }  //namespace mtca4u

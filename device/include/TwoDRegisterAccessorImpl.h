@@ -1,5 +1,5 @@
-#ifndef MTCA4U_REGISTER_ACCESSOR_2D_IMPL_H
-#define MTCA4U_REGISTER_ACCESSOR_2D_IMPL_H
+#ifndef MTCA4U_TWO_D_REGISTER_ACCESSOR_IMPL_H
+#define MTCA4U_TWO_D_REGISTER_ACCESSOR_IMPL_H
 
 #include <sstream>
 #include <boost/shared_ptr.hpp>
@@ -14,23 +14,25 @@ namespace mtca4u{
 
   /** Exception class for MultiplexedDataAccessor
    */
-  class MultiplexedDataAccessorException : public Exception {
+  class TwoDRegisterAccessorException : public Exception {
     public:
 
       enum { EMPTY_AREA, INVALID_WORD_SIZE, INVALID_N_ELEMENTS };
 
-      MultiplexedDataAccessorException(const std::string &message, unsigned int ID)
-      : Exception(message, ID){}
+      TwoDRegisterAccessorException(const std::string &message, unsigned int ID)
+      : Exception(message, ID)
+      {}
   };
+  typedef TwoDRegisterAccessorException MultiplexedDataAccessorException;
 
   /** Base class which does not depend on the SequenceWordType.
    */
   template<class UserType>
-  class RegisterAccessor2Dimpl{
+  class TwoDRegisterAccessorImpl {
     public:
       /** Constructor to intialise the members.
        */
-      RegisterAccessor2Dimpl( boost::shared_ptr< DeviceBackend > const & ioDevice );
+      TwoDRegisterAccessorImpl( boost::shared_ptr< DeviceBackend > const & ioDevice );
 
       /** Operator to access individual sequences.
        */
@@ -57,7 +59,7 @@ namespace mtca4u{
       /**
        * Default destructor
        */
-      virtual ~RegisterAccessor2Dimpl(){};
+      virtual ~TwoDRegisterAccessorImpl() {};
 
       /** \deprecated
        * Do not use, only for backwards compatibility.
@@ -81,7 +83,7 @@ namespace mtca4u{
   /********************************************************************************************************************/
 
   template<class UserType>
-  std::vector<UserType> & RegisterAccessor2Dimpl<UserType>::operator[](
+  std::vector<UserType> & TwoDRegisterAccessorImpl<UserType>::operator[](
       size_t sequenceIndex){
       return _sequences[sequenceIndex];
   }
@@ -89,10 +91,10 @@ namespace mtca4u{
   /********************************************************************************************************************/
 
   template<class UserType>
-  RegisterAccessor2Dimpl<UserType>::RegisterAccessor2Dimpl( boost::shared_ptr< DeviceBackend > const & ioDevice )
+  TwoDRegisterAccessorImpl<UserType>::TwoDRegisterAccessorImpl( boost::shared_ptr< DeviceBackend > const & ioDevice )
   : _ioDevice(ioDevice), _nBlocks(0)
   {}
 
 }  //namespace mtca4u
 
-#endif // MTCA4U_REGISTER_ACCESSOR_2D_IMPL_H
+#endif // MTCA4U_TWO_D_REGISTER_ACCESSOR_IMPL_H

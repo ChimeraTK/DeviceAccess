@@ -10,7 +10,7 @@
 
 #include <boost/smart_ptr.hpp>
 
-#include "RegisterAccessor2Dimpl.h"
+#include <TwoDRegisterAccessorImpl.h>
 
 namespace mtca4u {
 
@@ -21,7 +21,7 @@ namespace mtca4u {
 
       /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D().
        */
-      RegisterAccessor2D( boost::shared_ptr< RegisterAccessor2Dimpl<UserType> > _accessor )
+      RegisterAccessor2D( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
       : accessor(_accessor)
       {}
 
@@ -63,7 +63,7 @@ namespace mtca4u {
 
     protected:
 
-      boost::shared_ptr< RegisterAccessor2Dimpl<UserType> > accessor;
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
 
   };
 
