@@ -19,7 +19,7 @@
 class TcpCtrl;
 namespace mtca4u {
 
-  class RebotBackend : public AddressBasedBackend {
+  class RebotBackend : public MemoryAddressedBackend {
 
     private:
       std::string _boardAddr;

@@ -10,7 +10,7 @@
 
 namespace mtca4u {
 
-  AddressBasedBackend::AddressBasedBackend(std::string mapFileName) {
+  MemoryAddressedBackend::MemoryAddressedBackend(std::string mapFileName) {
     if(mapFileName != "") {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
@@ -22,7 +22,7 @@ namespace mtca4u {
 
 /********************************************************************************************************************/
 
-  void AddressBasedBackend::read(const std::string &regModule, const std::string &regName,
+  void MemoryAddressedBackend::read(const std::string &regModule, const std::string &regName,
       int32_t *data, size_t dataSize, uint32_t addRegOffset) {
 
     uint32_t retDataSize;
@@ -36,7 +36,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedBackend::write(const std::string &regModule, const std::string &regName,
+  void MemoryAddressedBackend::write(const std::string &regModule, const std::string &regName,
       int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
 
     uint32_t retDataSize;
@@ -50,7 +50,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<mtca4u::RegisterAccessor> AddressBasedBackend::getRegisterAccessor(
+  boost::shared_ptr<mtca4u::RegisterAccessor> MemoryAddressedBackend::getRegisterAccessor(
       const std::string &registerName,
       const std::string &module) {
 
@@ -62,20 +62,20 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<const RegisterInfoMap> AddressBasedBackend::getRegisterMap() const {
+  boost::shared_ptr<const RegisterInfoMap> MemoryAddressedBackend::getRegisterMap() const {
     return _registerMap;
   }
 
   /********************************************************************************************************************/
 
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo> AddressBasedBackend::getRegistersInModule(
+  std::list<mtca4u::RegisterInfoMap::RegisterInfo> MemoryAddressedBackend::getRegistersInModule(
       const std::string &moduleName) const {
     return _registerMap->getRegistersInModule(moduleName);
   }
 
   /********************************************************************************************************************/
 
-  std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > AddressBasedBackend::getRegisterAccessorsInModule(
+  std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > MemoryAddressedBackend::getRegisterAccessorsInModule(
       const std::string &moduleName) {
 
     std::list<RegisterInfoMap::RegisterInfo> registerInfoList =
@@ -95,7 +95,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedBackend::checkRegister(const std::string &regName,
+  void MemoryAddressedBackend::checkRegister(const std::string &regName,
       const std::string &regModule, size_t dataSize,
       uint32_t addRegOffset, uint32_t &retDataSize,
       uint32_t &retRegOff, uint8_t &retRegBar) const {
@@ -159,7 +159,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void* AddressBasedBackend::getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
+  void* MemoryAddressedBackend::getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
       const std::string &module) {
     FixedPointConverter::userTypeMap userTypes;
     getRegisterAccessor2DimplClass impl(UserType,dataRegionName,module, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) );

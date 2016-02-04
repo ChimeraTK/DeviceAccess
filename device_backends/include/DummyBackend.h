@@ -47,7 +47,7 @@ namespace mtca4u {
    *  case a write operation will just be ignored and no callback
    *  function is executed.
    */
-  class DummyBackend : public AddressBasedBackend
+  class DummyBackend : public MemoryAddressedBackend
   {
     private:
       /** _mapFile is first and only item of arugment parameters  */

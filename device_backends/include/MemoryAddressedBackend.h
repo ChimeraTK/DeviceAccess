@@ -16,13 +16,13 @@ namespace mtca4u {
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...)
    */
-  class AddressBasedBackend : public DeviceBackendImpl {
+  class MemoryAddressedBackend : public DeviceBackendImpl {
 
     public:
 
-      AddressBasedBackend(std::string mapFileName="");
+      MemoryAddressedBackend(std::string mapFileName="");
 
-      virtual ~AddressBasedBackend(){}
+      virtual ~MemoryAddressedBackend(){}
 
       virtual void read(const std::string &regModule, const std::string &regName,
           int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0);

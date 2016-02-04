@@ -12,7 +12,7 @@ namespace mtca4u {
   /** A class to provide the Pcie device functionality."
    *
    */
-  class PcieBackend : public AddressBasedBackend {
+  class PcieBackend : public MemoryAddressedBackend {
     private:
       int  _deviceID;
       unsigned long _ioctlPhysicalSlot;
