@@ -138,7 +138,7 @@ void testWithConversion(std::string multiplexedSequenceName) {
 
     ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
-    boost::shared_ptr< MultiplexedDataAccessor<float> > deMultiplexer =
+    boost::shared_ptr< RegisterAccessor2Dimpl<float> > deMultiplexer =
         ioDevice->getRegisterAccessor2D<float>(multiplexedSequenceName,TEST_MODULE_NAME);
     RegisterAccessor2D<float> accessor(deMultiplexer);
     accessor.read();
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
 
   ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
-  boost::shared_ptr< MultiplexedDataAccessor<double> > deMultiplexer =
+  boost::shared_ptr< RegisterAccessor2Dimpl<double> > deMultiplexer =
       ioDevice->getRegisterAccessor2D<double>("DMA",TEST_MODULE_NAME);
   deMultiplexer->read();
 
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
   boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
   ioDevice->open();
 
-  boost::shared_ptr< MultiplexedDataAccessor<double> > deMuxedData =
+  boost::shared_ptr< RegisterAccessor2Dimpl<double> > deMuxedData =
       ioDevice->getRegisterAccessor2D<double>("FRAC_INT", TEST_MODULE_NAME);
 
   BOOST_CHECK(deMuxedData->getNumberOfDataSequences() == 3);

@@ -21,7 +21,7 @@ namespace mtca4u {
 
       /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D().
        */
-      RegisterAccessor2D( boost::shared_ptr< MultiplexedDataAccessor<UserType> > _accessor )
+      RegisterAccessor2D( boost::shared_ptr< RegisterAccessor2Dimpl<UserType> > _accessor )
       : accessor(_accessor)
       {}
 
@@ -63,7 +63,7 @@ namespace mtca4u {
 
     protected:
 
-      boost::shared_ptr< MultiplexedDataAccessor<UserType> > accessor;
+      boost::shared_ptr< RegisterAccessor2Dimpl<UserType> > accessor;
 
   };
 

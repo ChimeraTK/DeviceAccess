@@ -26,11 +26,11 @@ namespace mtca4u{
   /** Base class which does not depend on the SequenceWordType.
    */
   template<class UserType>
-  class MultiplexedDataAccessor{
+  class RegisterAccessor2Dimpl{
     public:
       /** Constructor to intialise the members.
        */
-      MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice );
+      RegisterAccessor2Dimpl( boost::shared_ptr< DeviceBackend > const & ioDevice );
 
       /** Operator to access individual sequences.
        */
@@ -57,7 +57,7 @@ namespace mtca4u{
       /**
        * Default destructor
        */
-      virtual ~MultiplexedDataAccessor(){};
+      virtual ~RegisterAccessor2Dimpl(){};
 
       /** \deprecated
        * Do not use, only for backwards compatibility.
@@ -81,7 +81,7 @@ namespace mtca4u{
   /********************************************************************************************************************/
 
   template<class UserType>
-  std::vector<UserType> & MultiplexedDataAccessor<UserType>::operator[](
+  std::vector<UserType> & RegisterAccessor2Dimpl<UserType>::operator[](
       size_t sequenceIndex){
       return _sequences[sequenceIndex];
   }
@@ -89,7 +89,7 @@ namespace mtca4u{
   /********************************************************************************************************************/
 
   template<class UserType>
-  MultiplexedDataAccessor<UserType>::MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice )
+  RegisterAccessor2Dimpl<UserType>::RegisterAccessor2Dimpl( boost::shared_ptr< DeviceBackend > const & ioDevice )
   : _ioDevice(ioDevice), _nBlocks(0)
   {}
 

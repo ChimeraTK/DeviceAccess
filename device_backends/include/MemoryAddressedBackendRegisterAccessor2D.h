@@ -27,7 +27,7 @@ namespace mtca4u {
 
   // TODO rename this class!
   template <class UserType>
-  class MixedTypeMuxedDataAccessor : public MultiplexedDataAccessor<UserType>{
+  class MixedTypeMuxedDataAccessor : public RegisterAccessor2Dimpl<UserType> {
 
     public:
 
@@ -69,23 +69,29 @@ namespace mtca4u {
 
   // TODO move this class to the test .cc file
   template<class UserType>
-  class MixedTypeTest{
+  class MixedTypeTest {
+
     public:
-      MixedTypeTest(MixedTypeMuxedDataAccessor < UserType > *mixedTypeInstance = NULL) : _mixedTypeInstance(mixedTypeInstance){};
-      uint32_t getSizeOneBlock(){
+
+      MixedTypeTest(MixedTypeMuxedDataAccessor < UserType > *mixedTypeInstance = NULL)
+      : _mixedTypeInstance(mixedTypeInstance)
+      {};
+
+      uint32_t getSizeOneBlock() {
         return _mixedTypeInstance->bytesPerBlock / 4;
       }
-      size_t getNBlock(){
+      size_t getNBlock() {
         return _mixedTypeInstance->_nBlocks;
       }
-      size_t getConvertersSize(){
+      size_t getConvertersSize() {
         return (_mixedTypeInstance->_converters).size();
       }
-      int32_t getIOBUffer(uint index){
+      int32_t getIOBUffer(uint index) {
         return _mixedTypeInstance->_ioBuffer[index];
       }
 
     private:
+
       MixedTypeMuxedDataAccessor<UserType> *_mixedTypeInstance;
   };
 
@@ -94,7 +100,7 @@ namespace mtca4u {
   template <class UserType>
   MixedTypeMuxedDataAccessor<UserType>::MixedTypeMuxedDataAccessor( const std::string &_dataRegionName,
       const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
-  : MultiplexedDataAccessor<UserType>(_backend)
+  : RegisterAccessor2Dimpl<UserType>(_backend)
   {
       // build name of area as written in the map file
       std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_dataRegionName;
@@ -151,12 +157,12 @@ namespace mtca4u {
       }
 
       // compute number of blocks (number of samples for each channel)
-      MultiplexedDataAccessor<UserType>::_nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
+      RegisterAccessor2Dimpl<UserType>::_nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
 
       // allocate the buffer for the converted data
-      MultiplexedDataAccessor<UserType>::_sequences.resize(_converters.size());
+      RegisterAccessor2Dimpl<UserType>::_sequences.resize(_converters.size());
       for (size_t i=0; i<_converters.size(); ++i) {
-        MultiplexedDataAccessor<UserType>::_sequences[i].resize(MultiplexedDataAccessor<UserType>::_nBlocks);
+        RegisterAccessor2Dimpl<UserType>::_sequences[i].resize(RegisterAccessor2Dimpl<UserType>::_nBlocks);
       }
 
       // allocate the raw io buffer
@@ -167,7 +173,7 @@ namespace mtca4u {
 
   template <class UserType>
   void MixedTypeMuxedDataAccessor<UserType>::read() {
-      MultiplexedDataAccessor<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
+      RegisterAccessor2Dimpl<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
       fillSequences();
   }
 
@@ -176,21 +182,21 @@ namespace mtca4u {
   template <class UserType>
   void MixedTypeMuxedDataAccessor<UserType>::fillSequences() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks; ++blockIndex) {
+      for(size_t blockIndex = 0; blockIndex < RegisterAccessor2Dimpl<UserType>::_nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes) {
             case 1: //8 bit variables
-              MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
+              RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
               standOfMyioBuffer++;
               break;
             case 2: //16 bit words
-              MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
+              RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
               standOfMyioBuffer = standOfMyioBuffer + 2;
               break;
             case 4: //32 bit words
-              MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] =
+              RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
               standOfMyioBuffer = standOfMyioBuffer + 4;
               break;
@@ -205,7 +211,7 @@ namespace mtca4u {
   void MixedTypeMuxedDataAccessor<UserType>::write() {
       fillIO_Buffer();
 
-      MultiplexedDataAccessor<UserType>::_ioDevice->write(
+      RegisterAccessor2Dimpl<UserType>::_ioDevice->write(
           _areaInfo.bar,
           _areaInfo.address, &(_ioBuffer[0]),
           _areaInfo.nBytes);
@@ -216,22 +222,22 @@ namespace mtca4u {
   template<class UserType>
   void MixedTypeMuxedDataAccessor<UserType>::fillIO_Buffer() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < MultiplexedDataAccessor<UserType>::_nBlocks; ++blockIndex) {
+      for(size_t blockIndex = 0; blockIndex < RegisterAccessor2Dimpl<UserType>::_nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes){
             case 1: //8 bit variables
               *(standOfMyioBuffer) = _converters[sequenceIndex].toRaw(
-                  MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] );
               standOfMyioBuffer++;
               break;
             case 2: //16 bit variables
               *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] );
               standOfMyioBuffer = standOfMyioBuffer + 2;
               break;
             case 4: //32 bit variables
               *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  MultiplexedDataAccessor<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  RegisterAccessor2Dimpl<UserType>::_sequences[sequenceIndex][blockIndex] );
               standOfMyioBuffer = standOfMyioBuffer + 4;
               break;
           }
@@ -243,7 +249,7 @@ namespace mtca4u {
 
   template <class UserType>
   size_t MixedTypeMuxedDataAccessor<UserType>::getNumberOfDataSequences() {
-      return (MultiplexedDataAccessor<UserType>::_sequences.size());
+      return (RegisterAccessor2Dimpl<UserType>::_sequences.size());
   }
 
 }  //namespace mtca4u
