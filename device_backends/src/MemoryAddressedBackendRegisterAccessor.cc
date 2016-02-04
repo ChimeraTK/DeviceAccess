@@ -14,7 +14,7 @@
 namespace mtca4u {
 
   /********************************************************************************************************************/
-  AddressBasedRegisterAccessor::AddressBasedRegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
+  MemoryAddressedBackendRegisterAccessor::MemoryAddressedBackendRegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
         boost::shared_ptr<DeviceBackend> deviceBackendPointer)
   : RegisterAccessor(deviceBackendPointer),
     _registerInfo(registerInfo),
@@ -23,7 +23,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo,
+  void MemoryAddressedBackendRegisterAccessor::checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo,
       size_t dataSize,
       uint32_t addRegOffset,
       uint32_t &retDataSize,
@@ -50,7 +50,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::readRaw(int32_t *data, size_t dataSize,
+  void MemoryAddressedBackendRegisterAccessor::readRaw(int32_t *data, size_t dataSize,
       uint32_t addRegOffset) const {
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -60,7 +60,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
+  void MemoryAddressedBackendRegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
       uint32_t addRegOffset) {
     uint32_t retDataSize;
     uint32_t retRegOff;
@@ -70,33 +70,33 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::readDMA(int32_t *data, size_t dataSize,
+  void MemoryAddressedBackendRegisterAccessor::readDMA(int32_t *data, size_t dataSize,
       uint32_t addRegOffset) const {
     readRaw(data,dataSize,addRegOffset);
   }
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
+  void MemoryAddressedBackendRegisterAccessor::writeDMA(int32_t const *data, size_t dataSize,
       uint32_t addRegOffset) {
     writeRaw(data,dataSize,addRegOffset);
   }
 
   /********************************************************************************************************************/
 
-  RegisterInfoMap::RegisterInfo const &AddressBasedRegisterAccessor::getRegisterInfo() const {
+  RegisterInfoMap::RegisterInfo const &MemoryAddressedBackendRegisterAccessor::getRegisterInfo() const {
     return _registerInfo;
   }
 
   /********************************************************************************************************************/
 
-  FixedPointConverter const &AddressBasedRegisterAccessor::getFixedPointConverter() const {
+  FixedPointConverter const &MemoryAddressedBackendRegisterAccessor::getFixedPointConverter() const {
     return _fixedPointConverter;
   }
 
   /********************************************************************************************************************/
 
-  unsigned int AddressBasedRegisterAccessor::getNumberOfElements() const {
+  unsigned int MemoryAddressedBackendRegisterAccessor::getNumberOfElements() const {
     return _registerInfo.nElements;
   }
 
@@ -108,7 +108,7 @@ namespace mtca4u {
   {
     public:
       readImplClass(const std::type_info &_type, void *_convertedData, size_t _nWords, uint32_t _wordOffsetInRegister,
-                    const AddressBasedRegisterAccessor *_accessor)
+                    const MemoryAddressedBackendRegisterAccessor *_accessor)
       : type(_type), convertedData(_convertedData), nWords(_nWords), wordOffsetInRegister(_wordOffsetInRegister),
         accessor(_accessor), conversionDone(false)
       {}
@@ -137,7 +137,7 @@ namespace mtca4u {
       void *convertedData;
       size_t nWords;
       uint32_t wordOffsetInRegister;
-      const AddressBasedRegisterAccessor *accessor;
+      const MemoryAddressedBackendRegisterAccessor *accessor;
 
       /// Flag set after the conversion has been performed. This is used to catch invalid types passed to readImpl.
       /// It needs to be mutable since the operator() has to be defined const.
@@ -146,7 +146,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
+  void MemoryAddressedBackendRegisterAccessor::readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
     FixedPointConverter::userTypeMap userTypes;
     readImplClass impl(type,convertedData,nWords,wordOffsetInRegister,this);
     boost::fusion::for_each(userTypes, impl);
@@ -163,7 +163,7 @@ namespace mtca4u {
   {
     public:
       writeImplClass(const std::type_info &_type, const void *_convertedData, size_t _nWords, uint32_t _wordOffsetInRegister,
-                    AddressBasedRegisterAccessor *_accessor)
+                    MemoryAddressedBackendRegisterAccessor *_accessor)
       : type(_type), convertedData(_convertedData), nWords(_nWords), wordOffsetInRegister(_wordOffsetInRegister),
         accessor(_accessor), conversionDone(false)
       {}
@@ -193,7 +193,7 @@ namespace mtca4u {
       const void *convertedData;
       size_t nWords;
       uint32_t wordOffsetInRegister;
-      AddressBasedRegisterAccessor *accessor;
+      MemoryAddressedBackendRegisterAccessor *accessor;
 
       /// Flag set after the conversion has been performed. This is used to catch invalid types passed to readImpl.
       /// It needs to be mutable since the operator() has to be defined const.
@@ -202,7 +202,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void AddressBasedRegisterAccessor::writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
+  void MemoryAddressedBackendRegisterAccessor::writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
     FixedPointConverter::userTypeMap userTypes;
     writeImplClass impl(type,convertedData,nWords,wordOffsetInRegister,this);
     boost::fusion::for_each(userTypes, impl);

@@ -18,10 +18,10 @@ namespace mtca4u {
    *  Allows reading and writing registers with user-provided buffer via plain pointers.
    *  Supports conversion of fixed-point data into standard C data types.
    */
-  class AddressBasedRegisterAccessor : public RegisterAccessor {
+  class MemoryAddressedBackendRegisterAccessor : public RegisterAccessor {
     public:
 
-      AddressBasedRegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
+      MemoryAddressedBackendRegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
         boost::shared_ptr<DeviceBackend> deviceBackendPointer);
 
       void readRaw(int32_t *data, size_t dataSize = 0,

@@ -57,7 +57,7 @@ namespace mtca4u {
     RegisterInfoMap::RegisterInfo registerInfo;
     _registerMap->getRegisterInfo(registerName, registerInfo, module);
     return boost::shared_ptr<RegisterAccessor>(
-        new AddressBasedRegisterAccessor(registerInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) ));
+        new MemoryAddressedBackendRegisterAccessor(registerInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) ));
   }
 
   /********************************************************************************************************************/
@@ -86,7 +86,7 @@ namespace mtca4u {
         registerInfoList.begin();
         regInfo != registerInfoList.end(); ++regInfo) {
       accessorList.push_back( boost::shared_ptr<mtca4u::RegisterAccessor>(
-          new AddressBasedRegisterAccessor(*regInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) )
+          new MemoryAddressedBackendRegisterAccessor(*regInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) )
       ) );
     }
 
