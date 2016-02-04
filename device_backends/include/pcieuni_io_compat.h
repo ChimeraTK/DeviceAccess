@@ -4,17 +4,17 @@
 /** Information about the offsets of the bars in the address space of the character device.
  */
 static const loff_t PCIEUNI_BAR_OFFSETS[6] = { 0L,
-					       (1L) << 60,
-					       (2L) << 60,
-					       (3L) << 60,
-					       (4L) << 60,
-					       (5L) << 60 };
+    (1L) << 60,
+    (2L) << 60,
+    (3L) << 60,
+    (4L) << 60,
+    (5L) << 60 };
 
 /** Information about the bar sizes. It is retrieved via IOCTL.
  */
 typedef struct _pcieuni_ioctl_bar_sizes{
-  size_t barSizes[6]; /** Sizes of bar 0 to 5*/
-  size_t dmaAreaSize; /** Size of the address range which can transferred via DMA.*/
+    size_t barSizes[6]; /** Sizes of bar 0 to 5*/
+    size_t dmaAreaSize; /** Size of the address range which can transferred via DMA.*/
 } pcieuni_ioctl_bar_sizes;
 
 /* Use 'U' like pcieUni as magic number */

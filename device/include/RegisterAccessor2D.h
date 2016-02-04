@@ -5,15 +5,14 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef REGISTERACCESSOR2D_H_
-#define REGISTERACCESSOR2D_H_
+#ifndef MTCA4U_REGISTER_ACCESSOR_2D_H
+#define MTCA4U_REGISTER_ACCESSOR_2D_H
 
 #include <boost/smart_ptr.hpp>
 
-namespace mtca4u {
+#include "RegisterAccessor2Dimpl.h"
 
-  template<class UserType>
-  class MultiplexedDataAccessor;
+namespace mtca4u {
 
   template<class UserType>
   class RegisterAccessor2D {
@@ -70,4 +69,4 @@ namespace mtca4u {
 
 } // namespace mtca4u
 
-#endif /* REGISTERACCESSOR2D_H_ */
+#endif /* MTCA4U_REGISTER_ACCESSOR_2D_H */

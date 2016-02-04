@@ -1,5 +1,6 @@
 #ifndef MTCA4U_FIXED_POINT_CONVERTER_H
 #define MTCA4U_FIXED_POINT_CONVERTER_H
+
 #include <stdint.h>
 #include <cmath>
 #include <sstream>

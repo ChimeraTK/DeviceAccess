@@ -5,11 +5,11 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef SOURCE_DIRECTORY__INCLUDE_DUMMYREGISTER_H_
-#define SOURCE_DIRECTORY__INCLUDE_DUMMYREGISTER_H_
+#ifndef MTCA4U_DUMMY_REGISTER_ACCESSOR_H
+#define MTCA4U_DUMMY_REGISTER_ACCESSOR_H
 
 #include "DummyBackend.h"
-#include "MultiplexedDataAccessor.h"    // for the prefixes to the register names
+#include "MemoryAddressedBackendRegisterAccessor2D.h"    // for the prefixes to the register names
 
 namespace mtca4u {
 
@@ -314,4 +314,4 @@ namespace mtca4u {
 
 }// namespace mtca4u
 
-#endif /* SOURCE_DIRECTORY__INCLUDE_DUMMYREGISTER_H_ */
+#endif /* MTCA4U_DUMMY_REGISTER_ACCESSOR_H */

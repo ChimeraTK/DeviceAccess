@@ -7,8 +7,8 @@
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <DummyBackend.h>
-#include <DummyRegisterAccessor.h>
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 
 using namespace boost::unit_test_framework;
 

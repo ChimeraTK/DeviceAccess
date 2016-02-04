@@ -1,11 +1,11 @@
+#include <cmath>
 #include <boost/test/included/unit_test.hpp>
-using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "MapFileParser.h"
 #include "PcieBackend.h"
-#include <cmath>
 
+using namespace boost::unit_test_framework;
 using namespace mtca4u;
 
 #define VALID_MAPPING_FILE_NAME "mtcadummy_withoutModules.map"

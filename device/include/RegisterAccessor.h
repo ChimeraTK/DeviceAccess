@@ -2,13 +2,13 @@
  * RegisterAccessor.h - Non-buffering accessor for device registers
  */
 
-#ifndef MTCA4U_REGISTERACCESSOR_H
-#define MTCA4U_REGISTERACCESSOR_H
+#ifndef MTCA4U_REGISTER_ACCESSOR_H
+#define MTCA4U_REGISTER_ACCESSOR_H
+
+#include <typeinfo>
 
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
-
-#include <typeinfo>
 
 namespace mtca4u {
 
@@ -210,4 +210,4 @@ namespace mtca4u {
 
 } // namespace mtca4u
 
-#endif /* MTCA4U_REGISTERACCESSOR_H */
+#endif /* MTCA4U_REGISTER_ACCESSOR_H */

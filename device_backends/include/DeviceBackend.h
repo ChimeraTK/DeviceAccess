@@ -1,17 +1,16 @@
-#ifndef _MTCA4U_DEVICE_BACKEND_H__
-#define _MTCA4U_DEVICE_BACKEND_H__
-
-#include "DeviceBackendException.h"
-#include "RegisterInfoMap.h"
+#ifndef MTCA4U_DEVICE_BACKEND_H
+#define MTCA4U_DEVICE_BACKEND_H
 
 #include <string>
 #include <list>
-
 #include <stdint.h>
 #include <fcntl.h>
 #include <vector>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/any.hpp>
+
+#include "DeviceBackendException.h"
+#include "RegisterInfoMap.h"
 
 namespace mtca4u {
 
@@ -144,4 +143,4 @@ namespace mtca4u {
 
 } // namespace mtca4u
 
-#endif /*_MTCA4U_DEVICE_BACKEND_H__*/
+#endif /*MTCA4U_DEVICE_BACKEND_H*/

@@ -11,11 +11,12 @@
 
 // the io constants and struct for the driver
 // FIXME: they should come from the installed driver
-#include <pciedev_io.h>
-#include <pcieuni_io_compat.h>
-#include <llrfdrv_io_compat.h>
+#include "pciedev_io.h"
+#include "pcieuni_io_compat.h"
+#include "llrfdrv_io_compat.h"
 #include "PcieBackend.h"
 #include "PcieBackendException.h"
+
 namespace mtca4u {
 
   PcieBackend::PcieBackend(std::string deviceNodeName, std::string mapFileName)
@@ -28,7 +29,7 @@ namespace mtca4u {
   {
   }
 
-  PcieBackend::~PcieBackend(){
+  PcieBackend::~PcieBackend() {
     close();
   }
 

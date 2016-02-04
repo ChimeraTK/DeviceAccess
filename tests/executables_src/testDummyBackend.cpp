@@ -1,5 +1,4 @@
 #include <boost/test/included/unit_test.hpp>
-using namespace boost::unit_test_framework;
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -8,6 +7,8 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "NotImplementedException.h"
 #include "parserUtilities.h"
+
+using namespace boost::unit_test_framework;
 using namespace mtca4u;
 
 #define TEST_MAPPING_FILE "mtcadummy_withoutModules.map"

@@ -1,9 +1,10 @@
+#include <cmath>
+
 #include "Device.h"
 #include "RegisterAccessor.h"
 #include "DeviceBackend.h"
 #include "MapFileParser.h"
 #include "Utilities.h"
-#include <cmath>
 
 namespace mtca4u{
 

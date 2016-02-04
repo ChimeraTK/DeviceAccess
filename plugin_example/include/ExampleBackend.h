@@ -8,12 +8,12 @@
 #ifndef SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
 #define SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_
 
-#include <mtca4u/DeviceBackendImpl.h>
-
-#include <mtca4u/BackendFactory.h>
 #include <list>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+
+#include <mtca4u/DeviceBackendImpl.h>
+#include <mtca4u/BackendFactory.h>
 
 /** An Example to show how to write a backend device class and add it to the factory.
  *

@@ -5,10 +5,11 @@
  *      Author: Martin Hierholzer <martin.hierholzer@desy.de>
  */
 
-#ifndef BUFFERINGREGISTERACCESSOR_H_
-#define BUFFERINGREGISTERACCESSOR_H_
+#ifndef MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
+#define MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 
 #include <vector>
+
 #include "FixedPointConverter.h"
 
 namespace mtca4u {
@@ -113,4 +114,4 @@ namespace mtca4u {
 
 }    // namespace mtca4u
 
-#endif /* BUFFERINGREGISTERACCESSOR_H_ */
+#endif /* MTCA4U_BUFFERING_REGISTER_ACCESSOR_H */

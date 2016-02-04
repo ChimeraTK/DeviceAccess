@@ -3,14 +3,13 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+#include <iostream>
+#include <sstream>
+
 #include "RegisterAccessor2D.h"
-#include "MultiplexedDataAccessor.h"
-#include "AddressBasedMuxedDataAccessor.h"
+#include "MemoryAddressedBackendRegisterAccessor2D.h"
 #include "DummyBackend.h"
 #include "MapFileParser.h"
-#include <iostream>
-
-#include <sstream>
 
 using namespace mtca4u;
 

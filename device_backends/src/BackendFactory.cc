@@ -1,10 +1,11 @@
 /*
  * BackendFactory.cpp
-
  *
  *  Created on: Jul 9, 2015
  *      Author: nshehzad
  */
+
+#include <boost/algorithm/string.hpp>
 
 #include "Utilities.h"
 #include "BackendFactory.h"
@@ -13,7 +14,6 @@
 #include "DMapFilesParser.h"
 #include "DMapFileDefaults.h"
 #include "Exception.h"
-#include <boost/algorithm/string.hpp>
 
 namespace mtca4u {
 

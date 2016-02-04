@@ -9,13 +9,14 @@
  *                      This file support only map file parsing.
  *
  */
+#include <boost/algorithm/string.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "DeviceException.h"
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
 #include "RegisterAccessor2D.h"
-#include <boost/algorithm/string.hpp>
-#include <boost/shared_ptr.hpp>
+
 // Note: for backwards compatibility there is RegisterAccessor.h included at the end of this file.
 
 namespace mtca4u {

@@ -2,18 +2,17 @@
  * DeviceBackendException.h
  *
  *  Created on: Feb 1, 2016
- *      Author: mhier
+ *      Author: Martin Hierholzer
  */
 
-#ifndef DEVICEBACKENDEXCEPTION_H_
-#define DEVICEBACKENDEXCEPTION_H_
+#ifndef MTCA4U_DEVICE_BACKEND_EXCEPTION_H
+#define MTCA4U_DEVICE_BACKEND_EXCEPTION_H
 
 #include "Exception.h"
 
 namespace mtca4u {
 
   /** Exception class for all device backends to inherit.
-   *
    */
   class DeviceBackendException : public Exception {
     public:
@@ -26,4 +25,4 @@ namespace mtca4u {
 
 }
 
-#endif /* DEVICEBACKENDEXCEPTION_H_ */
+#endif /* MTCA4U_DEVICE_BACKEND_EXCEPTION_H */

@@ -1,5 +1,5 @@
-#ifndef _MTCA4U_DMAP_FILE_DEFAULTS_H__
-#define _MTCA4U_DMAP_FILE_DEFAULTS_H__
+#ifndef MTCA4U_DMAP_FILE_DEFAULTS_H
+#define MTCA4U_DMAP_FILE_DEFAULTS_H
 
 // This header should only be included in implementations because it contains
 // the DMAP_FILE_PREFIX constant which is defined as compile paramter by CMAKE. You don't
@@ -13,4 +13,4 @@ namespace mtca4u {
   
 }// namespace mtca4u
 
-#endif //_MTCA4U_DMAP_FILE_DEFAULTS_H__
+#endif //MTCA4U_DMAP_FILE_DEFAULTS_H

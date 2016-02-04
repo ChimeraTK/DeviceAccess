@@ -1,1 +1,1 @@
-// empty include for compatibility, content was moved to MultiplexDataAccessor.h
+#warning Including MultiplexDataAccessorException.h is deprecated, include RegisterAccessor2D.h instead.
