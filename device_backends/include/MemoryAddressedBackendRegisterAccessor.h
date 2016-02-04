@@ -1,9 +1,9 @@
 /*
- * RegisterAccessor.h - Non-buffering accessor for device registers
+ * MemoryAddressedBackendRegisterAccessor.h - Non-buffering accessor for device registers
  */
 
-#ifndef ADDRESSBASEDADDRESSBASEDREGISTERACCESSOR_H
-#define ADDRESSBASEDADDRESSBASEDREGISTERACCESSOR_H
+#ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
+#define MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
 
 #include "RegisterAccessor.h"
 #include "FixedPointConverter.h"
@@ -65,4 +65,4 @@ namespace mtca4u {
 
 } // namespace mtca4u
 
-#endif /* ADDRESSBASEDADDRESSBASEDREGISTERACCESSOR_H */
+#endif /* MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H */

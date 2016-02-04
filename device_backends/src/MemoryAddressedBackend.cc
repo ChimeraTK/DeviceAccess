@@ -5,8 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
-#include "AddressBasedBackend.h"
-#include "AddressBasedMuxedDataAccessor.h"
+#include "MemoryAddressedBackend.h"
 #include "DeviceException.h"
 
 namespace mtca4u {

@@ -2,13 +2,14 @@
  * AddressBasedRegisterAccessor.cc
  *
  *  Created on: Feb 2, 2016
- *      Author: mhier
+ *      Author: Martin Hierholzer
  */
 
-#include "AddressBasedRegisterAccessor.h"
-#include "AddressBasedBackend.h"
-#include "DeviceException.h"
 #include <boost/fusion/algorithm.hpp>
+
+#include "MemoryAddressedBackendRegisterAccessor.h"
+#include "MemoryAddressedBackend.h"
+#include "DeviceException.h"
 
 namespace mtca4u {
 

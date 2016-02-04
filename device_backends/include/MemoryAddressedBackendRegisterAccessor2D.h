@@ -1,17 +1,18 @@
-#ifndef ADDRESS_BASED_MUXED_DATA_ACCESSOR_H
-#define ADDRESS_BASED_MUXED_DATA_ACCESSOR_H
+#ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_2D_H
+#define MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_2D_H
 
-#include "MultiplexedDataAccessor.h"
+#include <sstream>
+#include <boost/shared_ptr.hpp>
+
+#include "RegisterAccessor2D.h"
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "DeviceBackend.h"
 #include "Exception.h"
 #include "MapException.h"
 #include "NotImplementedException.h"
-#include <sstream>
-#include <boost/shared_ptr.hpp>
 
-namespace mtca4u{
+namespace mtca4u {
 
   template<class UserType, class SequenceWordType>
   class SequenceDeMultiplexerTest;
@@ -20,7 +21,6 @@ namespace mtca4u{
   class MixedTypeTest;
 
   typedef RegisterInfoMap::RegisterInfo SequenceInfo;
-
 
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
@@ -248,4 +248,4 @@ namespace mtca4u{
 
 }  //namespace mtca4u
 
-#endif // ADDRESS_BASED_MUXED_DATA_ACCESSOR_H
+#endif // MTCA4U_MEMORY_ADDRESSED_BACKEND_REGISTER_ACCESSOR_2D_H
