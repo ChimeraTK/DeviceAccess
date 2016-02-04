@@ -50,14 +50,20 @@ namespace mtca4u{
       template<typename UserType>
       uint32_t toRaw(UserType cookedValue) const;
 
-      /** Compatibility function with old interface. DEPRECATED, DO NOT USE */
+      /** \deprecated
+       *  This function is deprecated. Use toCooked() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
       double toDouble(uint32_t rawValue) const {
         //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toDouble()." << std::endl;
         //std::cerr << "    Please use toCooked() instead." << std::endl;
         return toCooked<double>(rawValue);
       }
 
-      /** Compatibility function with old interface. DEPRECATED, DO NOT USE */
+      /** \deprecated
+       *  This function is deprecated. Use toRaw() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
       uint32_t toFixedPoint(double cookedValue) const {
         //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toFixedPoint()." << std::endl;
         //std::cerr << "    Please use toRaw() instead." << std::endl;

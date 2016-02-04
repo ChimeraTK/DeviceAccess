@@ -23,6 +23,8 @@ namespace mtca4u{
       : Exception(message, ID)
       {}
   };
+
+  /// @todo compatibility typedef, add printed warning after release of version 0.6
   typedef TwoDRegisterAccessorException MultiplexedDataAccessorException;
 
   /** Base class which does not depend on the SequenceWordType.
