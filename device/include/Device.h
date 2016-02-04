@@ -261,7 +261,7 @@ namespace mtca4u {
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
     typedef typename customClass::userType UserType;
-    return _deviceBackendPointer->template getRegisterAccessor2D<UserType>(dataRegionName, module);
+    return _deviceBackendPointer->getRegisterAccessor2D<UserType>(dataRegionName, module);
   }
 
   template<typename UserType>
@@ -273,7 +273,7 @@ namespace mtca4u {
   template<typename UserType>
   RegisterAccessor2D<UserType> Device::getRegisterAccessor2D(
       const std::string &module, const std::string &registerName) const {
-    return RegisterAccessor2D<UserType>(getCustomAccessor<UserType>(module, registerName));
+    return RegisterAccessor2D<UserType>(_deviceBackendPointer->getRegisterAccessor2D<UserType>(registerName, module));
   }
 
 } // namespace mtca4u
