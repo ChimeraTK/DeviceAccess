@@ -7,10 +7,10 @@
 #include <set>
 
 #include <boost/function.hpp>
-#include <MemoryAddressedBackend.h>
 
 #include "Exception.h"
 #include "RegisterInfoMap.h"
+#include "MemoryAddressedBackend.h"
 
 namespace mtca4u {
 
