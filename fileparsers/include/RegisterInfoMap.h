@@ -13,7 +13,7 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
-namespace mtca4u{
+namespace mtca4u {
 
   /**
    *      @brief  Provides container to store information about registers described in MAP file.

@@ -5,14 +5,16 @@
  *      Author: Martin Hierholzer <martin.hierholzer@desy.de>
  */
 
-#ifndef SOURCE_DIRECTORY__DEVICE_INCLUDE_BUFFERINGREGISTERACCESSOR_H_
-#define SOURCE_DIRECTORY__DEVICE_INCLUDE_BUFFERINGREGISTERACCESSOR_H_
+#ifndef MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
+#define MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 
 #include <vector>
-#include "Device.h"
+
 #include "FixedPointConverter.h"
 
 namespace mtca4u {
+
+  class DeviceBackend;
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
@@ -29,13 +31,10 @@ namespace mtca4u {
       /** Constructer. @attention Do not normally use directly.
        *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
        */
-      BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, RegisterInfoMap::RegisterInfo &registerInfo)
-          : _registerInfo(registerInfo),
-            _dev(dev) {
-        fixedPointConverter = FixedPointConverter(registerInfo.width, registerInfo.nFractionalBits,
-            registerInfo.signedFlag);
-        rawBuffer.resize(registerInfo.nElements);
-        cookedBuffer.resize(registerInfo.nElements);
+      BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module, const std::string &registerName)
+      {
+        _accessor = dev->getRegisterAccessor(registerName, module);
+        cookedBuffer.resize(_accessor->getNumberOfElements());
       }
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
@@ -43,24 +42,21 @@ namespace mtca4u {
        */
       BufferingRegisterAccessor() {}
 
+      /** destructor
+       */
+      virtual ~BufferingRegisterAccessor() {};
+
+
       /** Read the data from the device, convert it and store in buffer.
        */
-      void read() {
-        _dev->read(_registerInfo.bar, _registerInfo.address, rawBuffer.data(),
-            getNumberOfElements() * sizeof(uint32_t));
-        for(unsigned int i = 0; i < getNumberOfElements(); i++) {
-          cookedBuffer[i] = fixedPointConverter.template toCooked<T>(rawBuffer[i]);
-        }
+      virtual void read() {
+        _accessor->read(cookedBuffer.data(), getNumberOfElements());
       }
 
       /** Convert data from the buffer and write to device.
        */
-      void write() {
-        for(unsigned int i = 0; i < getNumberOfElements(); i++) {
-          rawBuffer[i] = fixedPointConverter.toRaw(cookedBuffer[i]);
-        }
-        _dev->write(_registerInfo.bar, _registerInfo.address, rawBuffer.data(),
-            getNumberOfElements() * sizeof(uint32_t));
+      virtual void write() {
+        _accessor->write(cookedBuffer.data(), getNumberOfElements());
       }
 
       /** Get or set buffer content by [] operator.
@@ -102,25 +98,14 @@ namespace mtca4u {
        */
       static BufferingRegisterAccessor<T> createInstance(
           std::string const &dataRegionName, std::string const &module, boost::shared_ptr<DeviceBackend> const &backend,
-          boost::shared_ptr<RegisterInfoMap> const &registerMapping) {
-        RegisterInfoMap::RegisterInfo registerInfo;
-        registerMapping->getRegisterInfo(dataRegionName, registerInfo, module);
-        return BufferingRegisterAccessor<T>(backend, registerInfo);
+          boost::shared_ptr<RegisterInfoMap> const &) {
+        return backend->template getBufferingRegisterAccessor<T>(module, dataRegionName);
       }
 
     protected:
 
-      /// register information from the map
-      RegisterInfoMap::RegisterInfo _registerInfo;
-
-      /// pointer to VirtualDevice
-      boost::shared_ptr<DeviceBackend> _dev;
-
-      /// fixed point converter
-      FixedPointConverter fixedPointConverter;
-
-      /// vector of unconverted data elements
-      std::vector<int32_t> rawBuffer;
+      /// pointer to non-buffering accessor
+      boost::shared_ptr< RegisterAccessor > _accessor;
 
       /// vector of converted data elements
       std::vector<T> cookedBuffer;
@@ -129,4 +114,4 @@ namespace mtca4u {
 
 }    // namespace mtca4u
 
-#endif /* SOURCE_DIRECTORY__DEVICE_INCLUDE_BUFFERINGREGISTERACCESSOR_H_ */
+#endif /* MTCA4U_BUFFERING_REGISTER_ACCESSOR_H */

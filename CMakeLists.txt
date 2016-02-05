@@ -3,8 +3,8 @@ cmake_minimum_required (VERSION 2.8.7)
 Project(mtca4u-deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 05)
-set(${PROJECT_NAME}_PATCH_VERSION 01)
+set(${PROJECT_NAME}_MINOR_VERSION 06)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -20,8 +20,12 @@ CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -std=c++11")
+    set(${PROJECT_NAME}_CMAKE_CXX_FLAGS "${${PROJECT_NAME}_CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -std=c++0x")
+    set(${PROJECT_NAME}_CMAKE_CXX_FLAGS "${${PROJECT_NAME}_CMAKE_CXX_FLAGS} -std=c++0x")
 else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
@@ -128,7 +132,7 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
 #All variables @VARIABLE@ are replaced with the current values
 
 #some variables we need for regular Makefiles, for which we also provide the config
-set(${PROJECT_NAME}_CPPFLAGS "-I${CMAKE_INSTALL_PREFIX}/include ")
+set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -I${CMAKE_INSTALL_PREFIX}/include ")
 set(${PROJECT_NAME}_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME} ")
 #MATLABs mex cannot deal with the rpath flags, so we provide special flags
 set(${PROJECT_NAME}_MEXFLAGS "${${PROJECT_NAME}_CPPFLAGS} ${${PROJECT_NAME}_LDFLAGS} ")

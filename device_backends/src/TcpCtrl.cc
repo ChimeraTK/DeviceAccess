@@ -1,11 +1,12 @@
 /*
- * TcpCtrl.cpp
+ * TcpCtrl.cc
  *
  *  Created on: May 27, 2015
  *      Author: adworz
  */
 
 #include "TcpCtrl.h"
+
 using namespace mtca4u;
 namespace boost_ip = boost::asio::ip;
 typedef boost::asio::ip::tcp::resolver  resolver_t;
@@ -13,7 +14,7 @@ typedef boost::asio::ip::tcp::resolver::query  query_t;
 typedef boost_ip::tcp::resolver::iterator  iterator_t;
 
 TcpCtrl::TcpCtrl(std::string address, int port)
-    : _serverAddress(address), _port(port) {
+: _serverAddress(address), _port(port) {
   _io_service = boost::make_shared<boost::asio::io_service>();
   _socket = boost::make_shared<boost_ip::tcp::socket>(*_io_service);
 }
@@ -45,12 +46,12 @@ void TcpCtrl::openConnection() {
     // we are unsuccessful after 30 retries
     if (ec) {
       throw RebotBackendException("Could not connect to server",
-                                  RebotBackendException::EX_CONNECTION_FAILED);
+          RebotBackendException::EX_CONNECTION_FAILED);
     }
   }
   catch (std::exception &exception) {
     throw RebotBackendException(exception.what(),
-                                RebotBackendException::EX_CONNECTION_FAILED);
+        RebotBackendException::EX_CONNECTION_FAILED);
   }
 }
 
@@ -59,7 +60,7 @@ void TcpCtrl::closeConnection() {
   _socket->close(ec);
   if (ec) {
     throw RebotBackendException("Error closing socket",
-                                RebotBackendException::EX_CLOSE_SOCKET_FAILED);
+        RebotBackendException::EX_CLOSE_SOCKET_FAILED);
   }
 }
 
@@ -69,7 +70,7 @@ std::vector<int32_t> TcpCtrl::receiveData(uint32_t const &numWordsToRead) {
   _socket->read_some(boost::asio::buffer(readData), ec);
   if (ec) {
     throw RebotBackendException("Error reading from socket",
-                                RebotBackendException::EX_SOCKET_READ_FAILED);
+        RebotBackendException::EX_SOCKET_READ_FAILED);
   } else {
     return readData;
   }
@@ -80,7 +81,7 @@ void TcpCtrl::sendData(const std::vector<char> &data) {
   _socket->write_some(boost::asio::buffer(&data[0], data.size()), ec);
   if (ec) {
     throw RebotBackendException("Error writing to socket",
-                                RebotBackendException::EX_SOCKET_WRITE_FAILED);
+        RebotBackendException::EX_SOCKET_WRITE_FAILED);
   }
 }
 
@@ -89,7 +90,7 @@ std::string TcpCtrl::getAddress() { return _serverAddress; }
 void TcpCtrl::setAddress(std::string ipaddr) {
   if (_socket->is_open()) {
     throw RebotBackendException("Error setting IP. The socket is open",
-                                RebotBackendException::EX_SET_IP_FAILED);
+        RebotBackendException::EX_SET_IP_FAILED);
   }
   _serverAddress = ipaddr;
 }
@@ -99,7 +100,7 @@ int TcpCtrl::getPort() { return _port; }
 void TcpCtrl::setPort(int port) {
   if (_socket->is_open()) {
     throw RebotBackendException("Error setting port. The socket is open",
-                                RebotBackendException::EX_SET_PORT_FAILED);
+        RebotBackendException::EX_SET_PORT_FAILED);
   }
   _port = port;
 }
@@ -111,7 +112,7 @@ boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
     _socket->close();
     _socket->connect(*endpointIterator, ec);
     if (ec == boost::system::errc::success) { // return if connection to server
-                                              // successful
+      // successful
       return ec;
     }
   }
@@ -127,6 +128,6 @@ void TcpCtrl::receiveData(boost::array<char, 4> &receivedArray) {
   _socket->read_some(boost::asio::buffer(receivedArray), ec);
   if (ec) {
     throw RebotBackendException("Error reading from socket",
-                                RebotBackendException::EX_SOCKET_READ_FAILED);
+        RebotBackendException::EX_SOCKET_READ_FAILED);
   }
 }

@@ -1,6 +1,6 @@
 #include <mtca4u/Device.h>
 #include <mtca4u/DeviceBackend.h>
-#include <mtca4u/MultiplexedDataAccessor.h>
+#include <mtca4u/TwoDRegisterAccessor.h>
 #include <mtca4u/BackendFactory.h>
 #include <string>
 #include <iostream>
@@ -91,28 +91,25 @@ int main() {
   // data types as the userType as well. For example using
   // MultiplexedDataAccessor<uint16> would convert the read in values from the
   // 'DMA' region to uint_16  (With the fixed point conversion applied)
-  boost::shared_ptr<mtca4u::MultiplexedDataAccessor<double> >
-  dataDemuxedAsDouble =
-      myDevice
-          ->getCustomAccessor<mtca4u::MultiplexedDataAccessor<double> >(
-               DATA_REGION_NAME,
-               MODULE_NAME); // The DATA_REGION_NAME -> 'DMA' is described in
+  mtca4u::TwoDRegisterAccessor<double> dataDemuxedAsDouble =
+      myDevice->getRegisterAccessor2D<double>(MODULE_NAME, DATA_REGION_NAME);
+                              // The DATA_REGION_NAME -> 'DMA' is described in
                              // the map file as AREA_MULTIPLEXED_SEQUENCE_DMA
                              // (where AREA_MULTIPLEXED_SEQUENCE_ is the keyword
   // representing the information that the memory region which is named 'DMA'
   // holds multiplexed data sequences)
 
   // read the memory region 'DMA' using the accessor
-  dataDemuxedAsDouble->read();
+  dataDemuxedAsDouble.read();
 
   // Return the number of sequences found: should be 16
-  uint numberOfDataSequences = dataDemuxedAsDouble->getNumberOfDataSequences();
+  uint numberOfDataSequences = dataDemuxedAsDouble.getNumberOfDataSequences();
   std::cout << "Number Of dataSequences extracted: " << numberOfDataSequences
             << std::endl;
 
   // The accessor expects that all sequences are of the same length, and that a
   // described region should have at least one sequence.
-  uint lengthOfaSequence = (*dataDemuxedAsDouble)[0].size();
+  uint lengthOfaSequence = dataDemuxedAsDouble[0].size();
   std::cout << "Length of each sequence: " << lengthOfaSequence << std::endl;
 
   // The demultiplexed sequences can be displayed:
@@ -120,7 +117,7 @@ int main() {
     std::cout << "Sequence: " << rowCount << std::endl;
     for (uint columnCount = 0; columnCount < lengthOfaSequence; ++columnCount) {
       // Here value returned is a double.
-      std::cout << (*dataDemuxedAsDouble)[rowCount][columnCount] << std::endl;
+      std::cout << dataDemuxedAsDouble[rowCount][columnCount] << std::endl;
     }
     std::cout << std::endl;
   }

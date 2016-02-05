@@ -3,15 +3,15 @@
 
 #include "Exception.h"
 
-namespace mtca4u{
+namespace mtca4u {
 
-class NotImplementedException: public Exception {
-public:
+  class NotImplementedException: public Exception {
+    public:
 
-	NotImplementedException(const std::string & message):
-		Exception(message, 0) {}
-	virtual ~NotImplementedException() throw(){}
-};
+      NotImplementedException(const std::string & message):
+        Exception(message, 0) {}
+      virtual ~NotImplementedException() throw(){}
+  };
 
 }// namespace mtca4u
 

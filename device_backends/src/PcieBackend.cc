@@ -11,22 +11,25 @@
 
 // the io constants and struct for the driver
 // FIXME: they should come from the installed driver
-#include <pciedev_io.h>
-#include <pcieuni_io_compat.h>
-#include <llrfdrv_io_compat.h>
+#include "pciedev_io.h"
+#include "pcieuni_io_compat.h"
+#include "llrfdrv_io_compat.h"
 #include "PcieBackend.h"
 #include "PcieBackendException.h"
+
 namespace mtca4u {
 
-  PcieBackend::PcieBackend(std::string deviceNodeName)
-  : _deviceID(0),
+  PcieBackend::PcieBackend(std::string deviceNodeName, std::string mapFileName)
+  : MemoryAddressedBackend(mapFileName),
+    _deviceID(0),
     _ioctlPhysicalSlot(0),
     _ioctlDriverVersion(0),
     _ioctlDMA(0),
-    _deviceNodeName(deviceNodeName){
+    _deviceNodeName(deviceNodeName)
+  {
   }
 
-  PcieBackend::~PcieBackend(){
+  PcieBackend::~PcieBackend() {
     close();
   }
 
@@ -320,8 +323,8 @@ namespace mtca4u {
 
   boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string /*host*/,
       std::string instance,
-      std::list<std::string> /*parameters*/){
-    return boost::shared_ptr<DeviceBackend> (new PcieBackend("/dev/"+instance));
+      std::list<std::string> /*parameters*/, std::string mapFileName){
+    return boost::shared_ptr<DeviceBackend> (new PcieBackend("/dev/"+instance, mapFileName));
   }
 
 } // namespace mtca4u

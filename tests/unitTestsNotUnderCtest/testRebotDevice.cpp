@@ -107,7 +107,7 @@ void RebotTestClass::testConnection() {
 
   // create connection with good ip and port see that there are no exceptions
   mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
-   mtca4u::RebotBackend secondConnectionToServer(_rebotServer.ip, _rebotServer.port);
+  mtca4u::RebotBackend secondConnectionToServer(_rebotServer.ip, _rebotServer.port);
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 

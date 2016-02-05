@@ -1,7 +1,8 @@
 #ifndef MTCA4U_DEVICE_EXCEPTION_H
 #define	MTCA4U_DEVICE_EXCEPTION_H
 
-#include "DeviceBackend.h"
+#include "DeviceBackendException.h"
+
 namespace mtca4u{
   /** A class to provide exception for class device.
    *

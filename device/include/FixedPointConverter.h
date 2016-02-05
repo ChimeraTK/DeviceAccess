@@ -1,5 +1,6 @@
 #ifndef MTCA4U_FIXED_POINT_CONVERTER_H
 #define MTCA4U_FIXED_POINT_CONVERTER_H
+
 #include <stdint.h>
 #include <cmath>
 #include <sstream>
@@ -49,14 +50,20 @@ namespace mtca4u{
       template<typename UserType>
       uint32_t toRaw(UserType cookedValue) const;
 
-      /** Compatibility function with old interface. DEPRECATED, DO NOT USE */
+      /** \deprecated
+       *  This function is deprecated. Use toCooked() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
       double toDouble(uint32_t rawValue) const {
         //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toDouble()." << std::endl;
         //std::cerr << "    Please use toCooked() instead." << std::endl;
         return toCooked<double>(rawValue);
       }
 
-      /** Compatibility function with old interface. DEPRECATED, DO NOT USE */
+      /** \deprecated
+       *  This function is deprecated. Use toRaw() instead!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
       uint32_t toFixedPoint(double cookedValue) const {
         //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toFixedPoint()." << std::endl;
         //std::cerr << "    Please use toRaw() instead." << std::endl;
@@ -81,12 +88,6 @@ namespace mtca4u{
         return _isSigned;
       }
 
-    private:
-
-      unsigned int _nBits;
-      int _fractionalBits;
-      bool _isSigned;
-
       /// fusion::map of possible user types, to store coefficients etc. in dependence of the user type
       typedef boost::fusion::map< boost::fusion::pair<int8_t,int8_t>,
           boost::fusion::pair<uint8_t,uint8_t>,
@@ -98,6 +99,12 @@ namespace mtca4u{
           boost::fusion::pair<uint64_t,uint64_t>,
           boost::fusion::pair<float,float>,
           boost::fusion::pair<double,double> >    userTypeMap;
+
+    private:
+
+      unsigned int _nBits;
+      int _fractionalBits;
+      bool _isSigned;
 
       /// Coefficient containing the multiplication factor described by the
       /// fractional bits 2^fractionalBits

@@ -1,6 +1,9 @@
 set(SOURCE
    ${SOURCE}
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackendRegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
@@ -15,6 +18,9 @@ set(HEADERS
    ${HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackend.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyBackend.h
