@@ -27,6 +27,10 @@ namespace mtca4u{
   /// @todo compatibility typedef, add printed warning after release of version 0.6
   typedef TwoDRegisterAccessorException MultiplexedDataAccessorException;
 
+  /// for compatibility only
+  template<typename UserType>
+  class MultiplexedDataAccessorCopied;
+
   /** Base class which does not depend on the SequenceWordType.
    */
   template<class UserType>
@@ -79,6 +83,9 @@ namespace mtca4u{
 
       /** number of data blocks / samples */
       size_t _nBlocks;
+
+      // for compatibility onlye
+      friend class MultiplexedDataAccessorCopied<UserType>;
 
   };
 
