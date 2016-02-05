@@ -1,6 +1,6 @@
 #include <mtca4u/Device.h>
 #include <mtca4u/DeviceBackend.h>
-#include <mtca4u/RegisterAccessor2D.h>
+#include <mtca4u/TwoDRegisterAccessor.h>
 #include <mtca4u/BackendFactory.h>
 #include <string>
 #include <iostream>
