@@ -20,6 +20,11 @@ namespace mtca4u {
       :TwoDRegisterAccessorImpl<UserType>(ioDevice)
       {}
 
+      MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice,
+          const std::vector<mtca4u::FixedPointConverter>& /*converters*/)
+      :TwoDRegisterAccessorImpl<UserType>(ioDevice)
+      {}
+
       /** \deprecated
        * Do not use, only for backwards compatibility.
        * A factory function which parses the register mapping and determines the
