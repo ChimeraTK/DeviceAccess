@@ -1,3 +1,5 @@
+#ifndef MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H
+#define MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H
 
 #warning Including MultiplexDataAccessor.h is deprecated, include RegisterAccessor2D.h instead.
 #include "TwoDRegisterAccessorImpl.h"
@@ -85,3 +87,5 @@ namespace mtca4u {
   };
 
 }
+
+#endif /* MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H */
