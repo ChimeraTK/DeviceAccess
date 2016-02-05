@@ -14,7 +14,9 @@ get_filename_component(@PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PAT
 # There only is one include path, search for it
 FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR mtca4u/DMapFilesParser.h 
           ${@PROJECT_NAME@_CMAKE_DIR}/include
-          /usr/include/mtca4u)
+          /usr/include
+          NO_DEFAULT_PATH
+          )
 
 # There only is one library, search for it
 # The "NO_DEFALUT" prevents the finding the library in /usr/lib first. We want to give the
