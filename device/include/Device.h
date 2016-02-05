@@ -192,6 +192,14 @@ namespace mtca4u {
       virtual ~Device();
 
       /** \deprecated
+       *  This function is deprecated. Second argument is redundant!
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &) {
+        open(deviceBackend);
+      }
+
+      /** \deprecated
        *  This function is deprecated. Use getRegisterAccessor2D() instead!
        *  @todo Add printed runtime warning after release of version 0.6
        */
