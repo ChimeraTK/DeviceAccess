@@ -17,7 +17,8 @@
 #include "DeviceBackend.h"
 #include "TwoDRegisterAccessor.h"
 
-// Note: for backwards compatibility there is RegisterAccessor.h included at the end of this file.
+// Note: for backwards compatibility there is RegisterAccessor.h and MultiplexedDataAccessor.h included at the end
+// of this file. @todo add warning when relying on these includes after relase of version 0.6
 
 namespace mtca4u {
 
@@ -295,3 +296,4 @@ namespace mtca4u {
 // This include must be at the end of this file as it uses the Device class.
 //
 #include "RegisterAccessor.h"
+#include "MultiplexedDataAccessor.h"
