@@ -62,10 +62,6 @@ namespace mtca4u {
 
       /** TODO add missing documentation
        */
-      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
-
-      /** TODO add missing documentation
-       */
       virtual void close();
 
       /** TODO add missing documentation
@@ -192,12 +188,19 @@ namespace mtca4u {
       virtual ~Device();
 
       /** \deprecated
-       *  This function is deprecated. Second argument is redundant!
+       *  This function is deprecated. Open by alias name instead.
        *  @todo Add printed runtime warning after release of version 0.6
        */
-      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &) {
+      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap) {
+        deviceBackend->setRegisterMap(registerMap);
         open(deviceBackend);
       }
+
+      /** \deprecated
+       *  This function is deprecated. Open by alias name instead.
+       *  @todo Add printed runtime warning after release of version 0.6
+       */
+      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
       /** \deprecated
        *  This function is deprecated. Use getRegisterAccessor2D() instead!
@@ -268,9 +271,7 @@ namespace mtca4u {
   template <typename customClass>
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
-    typedef typename customClass::userType UserType;
-    auto accessor = _deviceBackendPointer->getRegisterAccessor2D<UserType>(dataRegionName, module);
-    return boost::shared_ptr<customClass>( new MultiplexedDataAccessorCopied<UserType>(accessor) );
+    return customClass::createInstance(dataRegionName,module,_deviceBackendPointer,boost::shared_ptr<RegisterInfoMap>());
   }
 
   template<typename UserType>

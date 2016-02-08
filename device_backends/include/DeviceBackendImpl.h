@@ -13,11 +13,9 @@ namespace mtca4u {
    */
   class DeviceBackendImpl: public DeviceBackend
   {
-  protected:
-      bool        _opened;
-      bool        _connected;
 
   public:
+
       DeviceBackendImpl() : _opened(false), _connected(true) {}
       virtual ~DeviceBackendImpl(){}
 
@@ -46,6 +44,14 @@ namespace mtca4u {
       virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
         write(bar, address, data,  sizeInBytes);
       }
+
+  protected:
+
+      bool        _opened;
+      bool        _connected;
+
+      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {};
+
 
   };
 

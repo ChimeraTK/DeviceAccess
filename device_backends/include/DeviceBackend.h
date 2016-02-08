@@ -14,6 +14,9 @@
 
 namespace mtca4u {
 
+  // forward declaration to make friends
+  class Device;
+
   // some forward declarations
   class RegisterAccessor;
   template<typename T> class BufferingRegisterAccessor;
@@ -127,6 +130,11 @@ namespace mtca4u {
        */
       virtual void* getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
           const std::string &module) = 0;
+
+      /// for compatibility functions only: replace the current register map with a new one.
+      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) = 0;
+
+      friend class Device;
 
   };
 
