@@ -1,0 +1,1 @@
+<logicalNameMap><entry name="Test1"><type>register</type><device>BOARD0</device><register>REGISTER1</register></entry><entry name="Test2"><type>channel</type><device>BOARD0</device><register>AREA2</register><channel>42</channel></entry><entry name="Test3"><type>int_constant</type><value>12</value></entry></logicalNameMap>
