@@ -68,7 +68,10 @@ namespace mtca4u {
        */
       virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
 
-      /** TODO documentation missing
+      /** Return a device information string containing hardware details like the firmware version number or the
+       *  slot number used by the board. The format and contained information of this string is completely
+       *  backend implementation dependent, so the string may only be printed to the user as an informational
+       *  output. Do not try to parse this string or extract information from it programmatically.
        */
       virtual std::string readDeviceInfo() = 0;
 
