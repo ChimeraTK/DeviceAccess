@@ -4,6 +4,7 @@
 #include <list>
 
 #include "DeviceBackend.h"
+#include "DeviceException.h"
 
 namespace mtca4u {
 
@@ -19,13 +20,19 @@ namespace mtca4u {
       DeviceBackendImpl() : _opened(false), _connected(true) {}
       virtual ~DeviceBackendImpl(){}
 
-      /** Return whether a device has been opened or not.
-       *  This is the only function implemented here to avoid code duplication.
-       *  All other functions stay purely virtual.
-       */
       virtual bool isOpen(){ return _opened; }
+
       virtual bool isConnected(){ return _connected; }
 
+      virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/) {
+        // implementing this read function is not mandatory, so we throw a not-implemented exception by default
+        throw DeviceException("Reading by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+      }
+
+      virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/,  size_t /*sizeInBytes*/) {
+        // implementing this read function is not mandatory, so we throw a not-implemented exception by default
+        throw DeviceException("Writing by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+      }
 
       /** \deprecated {
        *  This function is deprecated. Use read() instead!
