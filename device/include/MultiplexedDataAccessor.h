@@ -1,7 +1,8 @@
 #ifndef MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H
 #define MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H
 
-#warning Including MultiplexDataAccessor.h is deprecated, include RegisterAccessor2D.h instead.
+// @todo enable warning after a depcrecation warning for MultiplexedDataAccessor etc. has been released.
+//#warning Including MultiplexDataAccessor.h is deprecated, include RegisterAccessor2D.h instead.
 #include "TwoDRegisterAccessorImpl.h"
 
 namespace mtca4u {
@@ -60,7 +61,7 @@ namespace mtca4u {
        */
       virtual void read() {
         accessor->read();
-        TwoDRegisterAccessorImpl<UserType>::_sequences = accessor->_sequences;
+        MultiplexedDataAccessor<UserType>::_sequences = accessor->_sequences;
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,
@@ -69,7 +70,7 @@ namespace mtca4u {
        * implemented yet
        */
       virtual void write() {
-        accessor->_sequences = TwoDRegisterAccessorImpl<UserType>::_sequences;
+        accessor->_sequences = MultiplexedDataAccessor<UserType>::_sequences;
         accessor->write();
       }
 
@@ -87,7 +88,7 @@ namespace mtca4u {
 
     private:
 
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > &accessor;
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
 
   };
 
