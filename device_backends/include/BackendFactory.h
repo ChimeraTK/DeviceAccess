@@ -41,6 +41,8 @@ namespace mtca4u {
 
     BackendFactory(BackendFactory const&);     /** To avoid making copies */
 
+    BackendFactory(BackendFactory const&&);     /** To avoid making copies */
+
     void operator=(BackendFactory const&); /** To avoid making copies */
 
     /** Holds  device type and function pointer to the createInstance function of
