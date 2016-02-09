@@ -51,7 +51,7 @@ void LMapFileTest::testErrorInDmapFile() {
 void LMapFileTest::testParseFile() {
   LogicalNameMap::RegisterInfo info;
 
-  LogicalNameMap lmap("test.xlmap");
+  LogicalNameMap lmap("valid.xlmap");
 
   info = lmap.getRegisterInfo("Test1");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
