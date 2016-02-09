@@ -12,6 +12,12 @@
 #include <map>
 #include <unordered_set>
 
+
+// forward declaration
+namespace xmlpp {
+  class Node;
+}
+
 namespace mtca4u {
 
   class LogicalNameMap {
@@ -84,6 +90,10 @@ namespace mtca4u {
 
       /** throw a parsing error with more information */
       void parsingError(const std::string &message);
+
+      /** extract a value from an XML subnode of the given node. This is a workaround for older libxml++ version
+       *  which do not yet have support for xmlpp::Node::eval_to_string(). */
+      std::string getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
 
   };
 

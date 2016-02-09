@@ -47,7 +47,9 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 
 FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
 
-FIND_PACKAGE(LibXml2 REQUIRED)
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_CHECK_MODULES(LibXML++ REQUIRED libxml++-2.6)
+PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 
 include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
@@ -59,7 +61,7 @@ get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIR
 
 # Now add other includes; headers added after this point will  not be copied as
 # part of the installation
-include_directories(${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS} ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 # FIXME: The reason this source directory is added to the include path is
 # because of fileparsers/parserUtilities.h. This header was intended to be
 # localized to the fileparser source directory; But unit tests need access to
@@ -80,7 +82,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSI
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} pthread) 
+target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread) 
 
 enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")

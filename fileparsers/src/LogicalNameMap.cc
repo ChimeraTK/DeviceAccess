@@ -6,132 +6,97 @@
  */
 
 #include <stdexcept>
-#include <libxml/xmlreader.h>
+#include <libxml++/libxml++.h>
 
 #include "LogicalNameMap.h"
 #include "DeviceException.h"
 
 namespace mtca4u {
 
+  std::string LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+    auto list = node->find(subnodeName);
+    if(list.size() != 1) {
+      parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
+    }
+    auto childList = list[0]->get_children();
+    if(childList.size() != 1) {
+      parsingError("Node '"+subnodeName+"' should contain only text.");
+    }
+
+    const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
+    if(!textNode) {
+      parsingError("Node '"+subnodeName+"' does not contain text.");
+    }
+
+    return textNode->get_content();
+
+  }
+
   LogicalNameMap::LogicalNameMap(const std::string &fileName)
   : _fileName(fileName)
   {
 
-    // name of the current logical register
-    std::string currentName;
+    // parse the file into a DOM structure
+    xmlpp::DomParser parser;
+    try {
+      parser.parse_file(fileName);
+    }
+    catch(xmlpp::exception &e) {
+      throw DeviceException("Error opening the xlmap file '"+fileName+"': "+e.what(), DeviceException::CANNOT_OPEN_MAP_FILE);
+    }
 
-    // name of the current tag
-    std::string currentTag;
-
-    // variables needed for the xml parser
-    xmlTextReaderPtr reader;
-    int ret;
-
-    // open the xmlReader for the given file
-    reader = xmlReaderForFile(fileName.c_str(), NULL, 0);
-    if(reader == NULL) {
-      throw DeviceException("Error opening the xlmap file '"+fileName+"'.", DeviceException::CANNOT_OPEN_MAP_FILE);
+    // get root element
+    const auto root = parser.get_document()->get_root_node();
+    if(root->get_name() != "logicalNameMap") {
+      parsingError("Expected 'logicalNameMap' tag instead of: "+root->get_name());
     }
 
     // parsing loop
-    ret = xmlTextReaderRead(reader);
-    while(ret == 1) {
+    for(const auto& child : root->get_children()) {
+      const xmlpp::Element *element = dynamic_cast<const xmlpp::Element*>(child);
+      if(!element) continue;    // comment etc.
 
-      // obtain tag name
-      std::string name((const char*)xmlTextReaderConstName(reader));
-
-      // 0th-level tag must be "logicalNameMap"
-      if(xmlTextReaderDepth(reader) == 0) {
-        if(name != "logicalNameMap") {
-          parsingError("Expected 'logicalNameMap' tag instead of: "+name);
-        }
-      }
-      // 1st-level tag must be "entry": create a new entry
-      else if(xmlTextReaderDepth(reader) == 1) {
-        if(name != "entry") {
-          parsingError("Expected 'entry' tag instead of: "+name);
-        }
-        // get name from attribute
-        xmlChar *entryName = xmlTextReaderGetAttribute(reader, (const xmlChar*) "name");
-        if(entryName == NULL) {
-          parsingError("Missing name attribute of 'entry' tag.");
-        }
-        currentName = (char*) entryName;
-        free(entryName);
-      }
-      // 2nd-level tags: fill entry with 3rd-level values
-      else if(xmlTextReaderDepth(reader) == 2) {
-        currentTag = name;
-      }
-      // 3rd level: values of 2nd-level tags
-      else if(xmlTextReaderDepth(reader) == 3) {
-        if(name != "#text") {
-          parsingError("Found tag on level 3: "+name);
-        }
-        std::string value((const char*)xmlTextReaderConstValue(reader));
-
-        // get target type
-        if(currentTag == "type") {
-          if(value == "register") {
-            _map[currentName].targetType = TargetType::REGISTER;
-          }
-          else if(value == "range") {
-            _map[currentName].targetType = TargetType::RANGE;
-          }
-          else if(value == "channel") {
-            _map[currentName].targetType = TargetType::CHANNEL;
-          }
-          else if(value == "int_constant") {
-            _map[currentName].targetType = TargetType::INT_CONSTANT;
-          }
-          else {
-            parsingError("Wrong target type: "+value);
-          }
-        }
-
-        // get device alias
-        else if(currentTag == "device") {
-          _map[currentName].deviceName = value;
-        }
-
-        // get register name
-        else if(currentTag == "register") {
-          _map[currentName].registerName = value;
-        }
-
-        // get first index of range
-        else if(currentTag == "index") {
-          _map[currentName].firstIndex = std::stoi(value);
-        }
-
-        // get length of range
-        else if(currentTag == "length") {
-          _map[currentName].length = std::stoi(value);
-        }
-
-        // get channel number
-        else if(currentTag == "channel") {
-          _map[currentName].channel = std::stoi(value);
-        }
-
-        // get value of constant
-        else if(currentTag == "value") {
-          _map[currentName].value = std::stoi(value);
-        }
-
-        // unknown tag
-        else {
-          parsingError("Wrong tag name at level 2: "+currentTag);
-        }
+      // check if entry tag found
+      if(element->get_name() != "entry") {
+        parsingError("Expected 'entry' tag instead of: "+root->get_name());
       }
 
-      // parse next token
-      ret = xmlTextReaderRead(reader);
+      // obtain name of entry
+      auto nameAttr = element->get_attribute("name");
+      if(!nameAttr) {
+        parsingError("Missing name attribute of 'entry' tag.");
+      }
+      std::string entryName = nameAttr->get_value();
+
+      // obtain the type
+      std::string type = getValueFromXmlSubnode(child, "type");
+      if(type == "register") {
+        _map[entryName].targetType = TargetType::REGISTER;
+        _map[entryName].deviceName = getValueFromXmlSubnode(child, "device");
+        _map[entryName].registerName = getValueFromXmlSubnode(child, "register");
+      }
+      else if(type == "range") {
+        _map[entryName].targetType = TargetType::RANGE;
+        _map[entryName].deviceName = getValueFromXmlSubnode(child, "device");
+        _map[entryName].registerName = getValueFromXmlSubnode(child, "register");
+        _map[entryName].firstIndex = std::stoi(getValueFromXmlSubnode(child, "index"));
+        _map[entryName].length = std::stoi(getValueFromXmlSubnode(child, "length"));
+      }
+      else if(type == "channel") {
+        _map[entryName].targetType = TargetType::CHANNEL;
+        _map[entryName].deviceName = getValueFromXmlSubnode(child, "device");
+        _map[entryName].registerName = getValueFromXmlSubnode(child, "register");
+        _map[entryName].channel = std::stoi(getValueFromXmlSubnode(child, "channel"));
+      }
+      else if(type == "int_constant") {
+        _map[entryName].targetType = TargetType::INT_CONSTANT;
+        _map[entryName].value = std::stoi(getValueFromXmlSubnode(child, "value"));
+      }
+      else {
+        parsingError("Wrong target type: "+type);
+      }
     }
-    xmlFreeTextReader(reader);
-    if(ret != 0) {
-      parsingError("XML syntax error.");
-    }
+
   }
 
   /********************************************************************************************************************/
