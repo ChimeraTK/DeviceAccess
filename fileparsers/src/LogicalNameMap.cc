@@ -5,6 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
+#include <stdexcept>
 #include <libxml/xmlreader.h>
 
 #include "LogicalNameMap.h"
@@ -51,11 +52,12 @@ namespace mtca4u {
           parsingError("Expected 'entry' tag instead of: "+name);
         }
         // get name from attribute
-        const xmlChar *entryName = xmlTextReaderGetAttribute(reader, (const xmlChar*) "name");
+        xmlChar *entryName = xmlTextReaderGetAttribute(reader, (const xmlChar*) "name");
         if(entryName == NULL) {
           parsingError("Missing name attribute of 'entry' tag.");
         }
-        currentName = (const char*) entryName;
+        currentName = (char*) entryName;
+        free(entryName);
       }
       // 2nd-level tags: fill entry with 3rd-level values
       else if(xmlTextReaderDepth(reader) == 2) {
@@ -135,7 +137,13 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   const LogicalNameMap::RegisterInfo& LogicalNameMap::getRegisterInfo(const std::string &name) const {
-    return _map.at(name);
+    try {
+      return _map.at(name);
+    }
+    catch(std::out_of_range &e) {
+      throw DeviceException("Register '"+name+"' was not found in logical name map ("+e.what()+").",
+          DeviceException::REGISTER_DOES_NOT_EXIST);
+    }
   }
 
   /********************************************************************************************************************/

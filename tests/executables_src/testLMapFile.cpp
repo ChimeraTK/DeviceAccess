@@ -147,4 +147,12 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK(targetDevices.count("PCIE2") == 1);
   BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
+  BOOST_CHECK_THROW( lmap.getRegisterInfo("NotExistingRegister"), DeviceException );
+  try {
+    lmap.getRegisterInfo("NotExistingRegister");
+  }
+  catch(DeviceException &ex) {
+    BOOST_CHECK( ex.getID() == DeviceException::REGISTER_DOES_NOT_EXIST );
+  }
+
 }
