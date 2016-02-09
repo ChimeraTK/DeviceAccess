@@ -76,6 +76,12 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
   BOOST_CHECK( info.deviceName == "DUMMYD1");
   BOOST_CHECK( info.registerName == "MODULE0.WORD_USER1");
+  BOOST_CHECK( info.hasDeviceName() == true );
+  BOOST_CHECK( info.hasRegisterName() == true );
+  BOOST_CHECK( info.hasFirstIndex() == false );
+  BOOST_CHECK( info.hasLength() == false );
+  BOOST_CHECK( info.hasChannel() == false );
+  BOOST_CHECK( info.hasValue() == false );
 
   info = lmap.getRegisterInfo("PartOfArea");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::RANGE );
@@ -83,25 +89,62 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info.registerName == "ADC.AREA_DMA_VIA_DMA");
   BOOST_CHECK( info.firstIndex == 10);
   BOOST_CHECK( info.length == 20);
+  BOOST_CHECK( info.hasDeviceName() == true );
+  BOOST_CHECK( info.hasRegisterName() == true );
+  BOOST_CHECK( info.hasFirstIndex() == true );
+  BOOST_CHECK( info.hasLength() == true );
+  BOOST_CHECK( info.hasChannel() == false );
+  BOOST_CHECK( info.hasValue() == false );
 
   info = lmap.getRegisterInfo("FullArea");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
   BOOST_CHECK( info.deviceName == "PCIE2");
   BOOST_CHECK( info.registerName == "ADC.AREA_DMA_VIA_DMA");
+  BOOST_CHECK( info.hasDeviceName() == true );
+  BOOST_CHECK( info.hasRegisterName() == true );
+  BOOST_CHECK( info.hasFirstIndex() == false );
+  BOOST_CHECK( info.hasLength() == false );
+  BOOST_CHECK( info.hasChannel() == false );
+  BOOST_CHECK( info.hasValue() == false );
 
   info = lmap.getRegisterInfo("Channel3");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::CHANNEL );
   BOOST_CHECK( info.deviceName == "PCIE3");
   BOOST_CHECK( info.registerName == "TEST.DMA");
   BOOST_CHECK( info.channel == 3);
+  BOOST_CHECK( info.hasDeviceName() == true );
+  BOOST_CHECK( info.hasRegisterName() == true );
+  BOOST_CHECK( info.hasFirstIndex() == false );
+  BOOST_CHECK( info.hasLength() == false );
+  BOOST_CHECK( info.hasChannel() == true );
+  BOOST_CHECK( info.hasValue() == false );
 
   info = lmap.getRegisterInfo("Channel4");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::CHANNEL );
   BOOST_CHECK( info.deviceName == "PCIE3");
   BOOST_CHECK( info.registerName == "TEST.DMA");
   BOOST_CHECK( info.channel == 4);
+  BOOST_CHECK( info.hasDeviceName() == true );
+  BOOST_CHECK( info.hasRegisterName() == true );
+  BOOST_CHECK( info.hasFirstIndex() == false );
+  BOOST_CHECK( info.hasLength() == false );
+  BOOST_CHECK( info.hasChannel() == true );
+  BOOST_CHECK( info.hasValue() == false );
 
   info = lmap.getRegisterInfo("Constant");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::INT_CONSTANT );
   BOOST_CHECK( info.value == 42);
+  BOOST_CHECK( info.hasDeviceName() == false );
+  BOOST_CHECK( info.hasRegisterName() == false );
+  BOOST_CHECK( info.hasFirstIndex() == false );
+  BOOST_CHECK( info.hasLength() == false );
+  BOOST_CHECK( info.hasChannel() == false );
+  BOOST_CHECK( info.hasValue() == true );
+
+  std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
+  BOOST_CHECK(targetDevices.size() == 3);
+  BOOST_CHECK(targetDevices.count("DUMMYD1") == 1);
+  BOOST_CHECK(targetDevices.count("PCIE2") == 1);
+  BOOST_CHECK(targetDevices.count("PCIE3") == 1);
+
 }

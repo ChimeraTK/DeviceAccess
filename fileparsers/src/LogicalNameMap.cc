@@ -134,8 +134,20 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  const LogicalNameMap::RegisterInfo& LogicalNameMap::getRegisterInfo(const std::string &name) {
-    return _map[name];
+  const LogicalNameMap::RegisterInfo& LogicalNameMap::getRegisterInfo(const std::string &name) const {
+    return _map.at(name);
+  }
+
+  /********************************************************************************************************************/
+
+  std::unordered_set<std::string> LogicalNameMap::getTargetDevices() const {
+    std::unordered_set<std::string> ret;
+    for(auto it = _map.begin(); it != _map.end(); ++it) {
+      if(it->second.hasDeviceName()) {
+        ret.insert(it->second.deviceName);
+      }
+    }
+    return ret;
   }
 
   /********************************************************************************************************************/
