@@ -62,7 +62,7 @@ MACRO( COPY_MAPPING_FILES )
   MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
   IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map badMapFile.map
   dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map invalidSequences.map muxedDataAcessor.map
-  testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap)
+  testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap)
     configure_file( ${MAPPING_FILE} ${PROJECT_BINARY_DIR}/tests/${MAPPING_FILE} copyonly)
   endforeach( MAPPING_FILE )
   # The valid dmap file has an absolute path which has to be configured by cmake

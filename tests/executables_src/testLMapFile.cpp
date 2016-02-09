@@ -42,10 +42,29 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
   return NULL;
 }
 
+void testErrorInDmapFileSingle(std::string fileName) {
+  BOOST_CHECK_THROW( LogicalNameMap lmap(fileName), DeviceException );
+  try {
+    LogicalNameMap lmap(fileName);
+  }
+  catch(DeviceException &ex) {
+    BOOST_CHECK(ex.getID() == DeviceException::CANNOT_OPEN_MAP_FILE);
+  }
+}
+
 void LMapFileTest::testFileNotFound() {
+  testErrorInDmapFileSingle("notExisting.xlmap");
 }
 
 void LMapFileTest::testErrorInDmapFile() {
+  testErrorInDmapFileSingle("invalid1.xlmap");
+  testErrorInDmapFileSingle("invalid2.xlmap");
+  testErrorInDmapFileSingle("invalid3.xlmap");
+  testErrorInDmapFileSingle("invalid4.xlmap");
+  testErrorInDmapFileSingle("invalid5.xlmap");
+  testErrorInDmapFileSingle("invalid6.xlmap");
+  testErrorInDmapFileSingle("invalid7.xlmap");
+  testErrorInDmapFileSingle("invalid8.xlmap");
 }
 
 void LMapFileTest::testParseFile() {
