@@ -53,18 +53,36 @@ void LMapFileTest::testParseFile() {
 
   LogicalNameMap lmap("valid.xlmap");
 
-  info = lmap.getRegisterInfo("Test1");
+  info = lmap.getRegisterInfo("SingleWord");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
-  BOOST_CHECK( info.deviceName == "BOARD0");
-  BOOST_CHECK( info.registerName == "REGISTER1");
+  BOOST_CHECK( info.deviceName == "DUMMYD1");
+  BOOST_CHECK( info.registerName == "MODULE0.WORD_USER1");
 
-  info = lmap.getRegisterInfo("Test2");
+  info = lmap.getRegisterInfo("PartOfArea");
+  BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::RANGE );
+  BOOST_CHECK( info.deviceName == "PCIE2");
+  BOOST_CHECK( info.registerName == "ADC.AREA_DMA_VIA_DMA");
+  BOOST_CHECK( info.firstIndex == 10);
+  BOOST_CHECK( info.length == 20);
+
+  info = lmap.getRegisterInfo("FullArea");
+  BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
+  BOOST_CHECK( info.deviceName == "PCIE2");
+  BOOST_CHECK( info.registerName == "ADC.AREA_DMA_VIA_DMA");
+
+  info = lmap.getRegisterInfo("Channel3");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::CHANNEL );
-  BOOST_CHECK( info.deviceName == "BOARD0");
-  BOOST_CHECK( info.registerName == "AREA2");
-  BOOST_CHECK( info.channel == 42);
+  BOOST_CHECK( info.deviceName == "PCIE3");
+  BOOST_CHECK( info.registerName == "TEST.DMA");
+  BOOST_CHECK( info.channel == 3);
 
-  info = lmap.getRegisterInfo("Test3");
+  info = lmap.getRegisterInfo("Channel4");
+  BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::CHANNEL );
+  BOOST_CHECK( info.deviceName == "PCIE3");
+  BOOST_CHECK( info.registerName == "TEST.DMA");
+  BOOST_CHECK( info.channel == 4);
+
+  info = lmap.getRegisterInfo("Constant");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::INT_CONSTANT );
-  BOOST_CHECK( info.value == 12);
+  BOOST_CHECK( info.value == 42);
 }
