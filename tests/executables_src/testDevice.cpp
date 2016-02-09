@@ -8,6 +8,7 @@
 #include "DeviceBackend.h"
 #include "BackendFactory.h"
 #include "MapFileParser.h"
+#include "MapException.h"
 
 using namespace boost::unit_test_framework;
 
@@ -153,6 +154,41 @@ void DeviceTest::testDeviceReadRegisterByName() {
   BOOST_CHECK(adcData[1] == 4);
   BOOST_CHECK(adcData[2] == 9);
   BOOST_CHECK(adcData[3] == 16);
+
+  // same with modules
+  device = boost::shared_ptr<mtca4u::Device>( new mtca4u::Device());
+  std::string validMappingFileWithModules = "mtcadummy.map";
+  boost::shared_ptr<mtca4u::DeviceBackend> testBackendWithModules( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFileWithModules));
+  device->open(testBackendWithModules);
+
+
+  data = 0;
+  device->readReg("WORD_CLK_DUMMY", "ADC", &data);
+  BOOST_CHECK(data == 0x444d4d59);
+
+  data = 0;
+  device->readReg("ADC.WORD_CLK_DUMMY", &data);
+  BOOST_CHECK(data == 0x444d4d59);
+
+  BOOST_CHECK_THROW( device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data), mtca4u::MapFileException );
+  try {
+    device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data);
+  }
+  catch(mtca4u::MapFileException &e) {
+    BOOST_CHECK(e.getID() == mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+  }
+
+  data = 1;
+  sizeInBytes = 4 * 4;
+  dataOffsetInBytes = 1 * 4;
+
+  device->writeReg("WORD_ADC_ENA", "ADC", &data);
+  device->readReg("AREA_DMAABLE", "ADC", adcData, sizeInBytes, dataOffsetInBytes);
+  BOOST_CHECK(adcData[0] == 1);
+  BOOST_CHECK(adcData[1] == 4);
+  BOOST_CHECK(adcData[2] == 9);
+  BOOST_CHECK(adcData[3] == 16);
+
 }
 
 void DeviceTest::testDeviceReadArea() {

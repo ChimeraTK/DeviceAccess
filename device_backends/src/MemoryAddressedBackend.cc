@@ -29,8 +29,7 @@ namespace mtca4u {
     uint32_t retRegOff;
     uint8_t retRegBar;
 
-    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
-        retRegOff, retRegBar);
+    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
     read(retRegBar, retRegOff, data, retDataSize);
   }
 
@@ -43,8 +42,7 @@ namespace mtca4u {
     uint32_t retRegOff;
     uint8_t retRegBar;
 
-    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize,
-        retRegOff, retRegBar);
+    checkRegister(regName, regModule, dataSize, addRegOffset, retDataSize, retRegOff, retRegBar);
     write(retRegBar, retRegOff, data, retDataSize);
   }
 
@@ -100,8 +98,13 @@ namespace mtca4u {
       uint32_t addRegOffset, uint32_t &retDataSize,
       uint32_t &retRegOff, uint8_t &retRegBar) const {
 
+
+    std::string mergedName = ( regModule.length() > 0 ? regModule + "." + regName : regName );
+    auto moduleAndRegister = MapFileParser::splitStringAtLastDot(mergedName);
+
+
     RegisterInfoMap::RegisterInfo registerInfo;
-    _registerMap->getRegisterInfo(regName, registerInfo, regModule);
+    _registerMap->getRegisterInfo(moduleAndRegister.second, registerInfo, moduleAndRegister.first);
     if (addRegOffset % 4) {
       throw DeviceException("Register offset must be divisible by 4", DeviceException::EX_WRONG_PARAMETER);
     }
