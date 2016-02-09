@@ -34,6 +34,11 @@ namespace mtca4u {
         throw DeviceException("Writing by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
       }
 
+      virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const  {
+        // implementing this read function is not mandatory, so we throw a not-implemented exception by default
+        throw DeviceException("Obtaining a register map is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+      }
+
       /** \deprecated {
        *  This function is deprecated. Use read() instead!
        *  @todo Add printed warning after release of version 0.2
