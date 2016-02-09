@@ -262,7 +262,7 @@ class MainWindow(QMainWindow):
             self.edAdd.setEnabled(False)
             self.edUpdate.setEnabled(False)
             self.edDelete.setEnabled(False)
-        elif self.theData.find("entry[@name='"+name+"']"):
+        elif self.theData.find("entry[@name='"+name+"']") is not None:
             self.edAdd.setEnabled(False)
             self.edUpdate.setEnabled(True)
             self.edDelete.setEnabled(True)
