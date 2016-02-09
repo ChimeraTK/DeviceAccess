@@ -141,36 +141,17 @@ namespace mtca4u {
     return sdmInfo;
   }
 
+
   DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
   {
+    DMapFileParser fileParser;
     DeviceInfoMap::DeviceInfo deviceInfo;
-    DMapFilesParser filesParser;
     try {
-      filesParser.parse_file(dmapFilePath);
+      auto deviceInfoPointer = fileParser.parse(dmapFilePath);
+      deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
     }
     catch (Exception& e) {
       std::cout << e.what() << std::endl;
-      return deviceInfo;
-    }
-#ifdef _DEBUG
-    for (DMapFilesParser::iterator deviceIter = filesParser.begin();
-        deviceIter != filesParser.end(); ++deviceIter) {
-      std::cout << (*deviceIter).first.dev_name << std::endl;
-      std::cout << (*deviceIter).first.uri << std::endl;
-      std::cout << (*deviceIter).first.map_file_name << std::endl;
-      std::cout << (*deviceIter).first.dmap_file_name << std::endl;
-      std::cout << (*deviceIter).first.dmap_file_line_nr << std::endl;
-    }
-#endif
-    for (DMapFilesParser::iterator deviceIter = filesParser.begin();
-        deviceIter != filesParser.end(); ++deviceIter) {
-      if (boost::iequals((*deviceIter).first.deviceName, aliasName)) {
-#ifdef _DEBUG
-        std::cout << "found:" << (*deviceIter).first.uri << std::endl;
-#endif
-        deviceInfo = deviceIter->first;
-        break;
-      }
     }
     return deviceInfo;
   }
