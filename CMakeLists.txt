@@ -47,6 +47,8 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 
 FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
 
+FIND_PACKAGE(LibXml2 REQUIRED)
+
 include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
@@ -57,7 +59,7 @@ get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIR
 
 # Now add other includes; headers added after this point will  not be copied as
 # part of the installation
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
 # FIXME: The reason this source directory is added to the include path is
 # because of fileparsers/parserUtilities.h. This header was intended to be
 # localized to the fileparser source directory; But unit tests need access to
@@ -71,13 +73,14 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} pthread) 
+target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} pthread) 
 
 enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
@@ -98,12 +101,12 @@ add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
 )
 
 foreach(dir ${inc_dirs} )
-file(GLOB headerFiles  "${dir}/*.h")
-foreach(headerFile ${headerFiles} )
-add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/mtca4u
-)
-endforeach(headerFile)
+    file(GLOB headerFiles  "${dir}/*.h")
+    foreach(headerFile ${headerFiles} )
+        add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/mtca4u
+        )
+    endforeach(headerFile)
 endforeach(dir)
 
 include_directories("${PROJECT_BINARY_DIR}/include")
