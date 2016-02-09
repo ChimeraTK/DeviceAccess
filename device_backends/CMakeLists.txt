@@ -5,6 +5,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackendRegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackend.cc
@@ -23,6 +24,7 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/LogicalNameMappingBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackendException.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/llrfdrv_io_compat.h

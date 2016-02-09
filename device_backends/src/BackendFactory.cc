@@ -11,6 +11,7 @@
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "RebotBackend.h"
+#include "LogicalNameMappingBackend.h"
 #include "DMapFilesParser.h"
 #include "DMapFileDefaults.h"
 #include "Exception.h"
@@ -41,6 +42,7 @@ namespace mtca4u {
     registerBackendType("pci","pcie",&PcieBackend::createInstance);
     registerBackendType("dummy","",&DummyBackend::createInstance);
     registerBackendType("rebot","",&RebotBackend::createInstance); // FIXME: Do we use protocol for tmcb?
+    registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance);
   }
 
   BackendFactory & BackendFactory::getInstance(){
