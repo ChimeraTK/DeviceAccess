@@ -10,7 +10,7 @@ namespace mtca4u{
   class DeviceException : public DeviceBackendException {
     public:
 
-      enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVICEBACKEND, NOT_IMPLEMENTED
+      enum { EX_WRONG_PARAMETER, EX_NOT_OPENED, EX_CANNOT_OPEN_DEVICEBACKEND, CANNOT_OPEN_MAP_FILE, NOT_IMPLEMENTED
       };
 
 
