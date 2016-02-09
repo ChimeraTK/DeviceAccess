@@ -63,10 +63,10 @@ namespace mtca4u {
       }
       // 3rd level: values of 2nd-level tags
       else if(xmlTextReaderDepth(reader) == 3) {
-        std::string value((const char*)xmlTextReaderConstValue(reader));
         if(name != "#text") {
           parsingError("Found tag on level 3: "+name);
         }
+        std::string value((const char*)xmlTextReaderConstValue(reader));
 
         // get target type
         if(currentTag == "type") {
@@ -122,10 +122,6 @@ namespace mtca4u {
           parsingError("Wrong tag name at level 2: "+currentTag);
         }
       }
-      else {
-        parsingError("Wrong depth.");
-      }
-
 
       // parse next token
       ret = xmlTextReaderRead(reader);
