@@ -74,8 +74,8 @@ void LMapFileTest::testParseFile() {
 
   info = lmap.getRegisterInfo("SingleWord");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
-  BOOST_CHECK( info.deviceName == "DUMMYD1");
-  BOOST_CHECK( info.registerName == "MODULE0.WORD_USER1");
+  BOOST_CHECK( info.deviceName == "PCIE2");
+  BOOST_CHECK( info.registerName == "BOARD.WORD_USER");
   BOOST_CHECK( info.hasDeviceName() == true );
   BOOST_CHECK( info.hasRegisterName() == true );
   BOOST_CHECK( info.hasFirstIndex() == false );
@@ -86,7 +86,7 @@ void LMapFileTest::testParseFile() {
   info = lmap.getRegisterInfo("PartOfArea");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::RANGE );
   BOOST_CHECK( info.deviceName == "PCIE2");
-  BOOST_CHECK( info.registerName == "ADC.AREA_DMA_VIA_DMA");
+  BOOST_CHECK( info.registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info.firstIndex == 10);
   BOOST_CHECK( info.length == 20);
   BOOST_CHECK( info.hasDeviceName() == true );
@@ -99,7 +99,7 @@ void LMapFileTest::testParseFile() {
   info = lmap.getRegisterInfo("FullArea");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::REGISTER );
   BOOST_CHECK( info.deviceName == "PCIE2");
-  BOOST_CHECK( info.registerName == "ADC.AREA_DMA_VIA_DMA");
+  BOOST_CHECK( info.registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info.hasDeviceName() == true );
   BOOST_CHECK( info.hasRegisterName() == true );
   BOOST_CHECK( info.hasFirstIndex() == false );
@@ -142,8 +142,7 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info.hasValue() == true );
 
   std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
-  BOOST_CHECK(targetDevices.size() == 3);
-  BOOST_CHECK(targetDevices.count("DUMMYD1") == 1);
+  BOOST_CHECK(targetDevices.size() == 2);
   BOOST_CHECK(targetDevices.count("PCIE2") == 1);
   BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
