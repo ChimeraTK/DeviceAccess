@@ -40,9 +40,7 @@ namespace mtca4u {
 
       virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
           const std::string &/*registerName*/,
-          const std::string &/*module*/ = std::string()) {
-        throw DeviceException("Not yet implemented.",DeviceException::NOT_IMPLEMENTED);
-      }
+          const std::string &/*module*/ = std::string());
 
       virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &/*moduleName*/) const {

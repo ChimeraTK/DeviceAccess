@@ -108,6 +108,29 @@ namespace mtca4u {
 
   }
 
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<mtca4u::RegisterAccessor> LogicalNameMappingBackend::getRegisterAccessor(
+      const std::string &registerName, const std::string &module) {
+
+    // obtain register info
+    std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
+    LogicalNameMap::RegisterInfo info;
+    info = _map.getRegisterInfo(name);
+
+    // implementation for each type
+    if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
+      boost::shared_ptr<Device> targetDevice = _devices[info.deviceName];
+      return targetDevice->getRegisterAccessor(info.registerName);
+    }
+    else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
+      throw DeviceException("Not yet implemented.", DeviceException::NOT_IMPLEMENTED);
+    }
+    else {
+      throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
+          name+").", DeviceException::NOT_IMPLEMENTED);
+    }
+
+  }
+
 } // namespace mtca4u
-
-
