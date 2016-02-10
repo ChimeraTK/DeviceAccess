@@ -136,15 +136,13 @@ namespace mtca4u {
        *  This function is deprecated. Use readRaw() instead!
        *  @todo Add printed runtime warning after release of version 0.6
        */
-      virtual void readDMA(int32_t *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0) const = 0;
+      virtual void readDMA(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
       /** \deprecated
        *  This function is deprecated. Use writeRaw() instead!
        *  @todo Add printed runtime warning after release of version 0.6
        */
-      virtual void writeDMA(int32_t const *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0) = 0;
+      virtual void writeDMA(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
     protected:
 

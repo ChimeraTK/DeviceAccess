@@ -12,4 +12,16 @@ namespace mtca4u {
 
   RegisterAccessor::~RegisterAccessor() {}
 
+  /********************************************************************************************************************/
+
+  void RegisterAccessor::readDMA(int32_t *data, size_t dataSize, uint32_t addRegOffset) const {
+    readRaw(data,dataSize,addRegOffset);
+  }
+
+  /********************************************************************************************************************/
+
+  void RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
+    writeRaw(data,dataSize,addRegOffset);
+  }
+
 }

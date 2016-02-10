@@ -24,17 +24,9 @@ namespace mtca4u {
       MemoryAddressedBackendRegisterAccessor(const RegisterInfoMap::RegisterInfo &registerInfo,
         boost::shared_ptr<DeviceBackend> deviceBackendPointer);
 
-      void readRaw(int32_t *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0) const;
+      void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
-      void writeRaw(int32_t const *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0);
-
-      void readDMA(int32_t *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0) const;
-
-      void writeDMA(int32_t const *data, size_t dataSize = 0,
-          uint32_t addRegOffset = 0);
+      void writeRaw(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
       RegisterInfoMap::RegisterInfo const &getRegisterInfo() const;
 
