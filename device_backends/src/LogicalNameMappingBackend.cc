@@ -66,7 +66,7 @@ namespace mtca4u {
       targetDevice->readReg(info.registerName,data,dataSize,addRegOffset);
     }
     else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      targetDevice->readReg(info.registerName,data,dataSize,addRegOffset + info.firstIndex);
+      targetDevice->readReg(info.registerName,data,dataSize,addRegOffset + sizeof(int32_t)*info.firstIndex);
     }
     else if(info.targetType == LogicalNameMap::TargetType::CHANNEL) {
       throw DeviceException("Reading a channel of a multiplexed register is only supported using register accessors.",
@@ -99,7 +99,7 @@ namespace mtca4u {
       targetDevice->writeReg(info.registerName,data,dataSize,addRegOffset);
     }
     else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      targetDevice->writeReg(info.registerName,data,dataSize,addRegOffset + info.firstIndex);
+      targetDevice->writeReg(info.registerName,data,dataSize,addRegOffset + sizeof(int32_t)*info.firstIndex);
     }
     else if(info.targetType == LogicalNameMap::TargetType::CHANNEL) {
       throw DeviceException("Writing a channel of a multiplexed register is only supported using register accessors.",
