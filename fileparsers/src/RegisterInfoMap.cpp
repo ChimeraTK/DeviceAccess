@@ -4,6 +4,7 @@
 #include "RegisterInfoMap.h"
 #include "predicates.h"
 #include "MapException.h"
+#include "MapFileParser.h"
 
 namespace mtca4u {
 
@@ -31,11 +32,14 @@ namespace mtca4u {
     _metadata.push_back(elem);
   }
 
-  void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfo &value,
-      const std::string& reg_module) const{
+  void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfo &value, const std::string& reg_module) const{
+
+    std::string mergedName = ( reg_module.length() > 0 ? reg_module + "." + reg_name : reg_name );
+    auto moduleAndRegister = MapFileParser::splitStringAtLastDot(mergedName);
+
     std::vector<RegisterInfo>::const_iterator iter;
     iter = std::find_if(_mapFileElements.begin(), _mapFileElements.end(),
-        findRegisterByName_pred(reg_name, reg_module));
+        findRegisterByName_pred(moduleAndRegister.second, moduleAndRegister.first));
     if (iter == _mapFileElements.end()) {
       throw MapFileException("Cannot find register " + reg_module + (reg_module.empty()?"":".") + reg_name +
           " in map file: " + _mapFileName, LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
