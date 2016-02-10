@@ -6,6 +6,7 @@
  */
 
 #include "LogicalNameMappingBackend.h"
+#include "LogicalNameMappingBackendRangeRegisterAccessor.h"
 #include "Device.h"
 
 namespace mtca4u {
@@ -118,13 +119,17 @@ namespace mtca4u {
     LogicalNameMap::RegisterInfo info;
     info = _map.getRegisterInfo(name);
 
+    // if applicable, obtain target device
+    boost::shared_ptr<Device> targetDevice;
+    if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
+
     // implementation for each type
     if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
-      boost::shared_ptr<Device> targetDevice = _devices[info.deviceName];
       return targetDevice->getRegisterAccessor(info.registerName);
     }
     else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      throw DeviceException("Not yet implemented.", DeviceException::NOT_IMPLEMENTED);
+      return boost::shared_ptr<mtca4u::RegisterAccessor>(new LogicalNameMappingBackendRangeRegisterAccessor(
+          targetDevice->getRegisterAccessor(info.registerName), info.firstIndex, info.length));
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+

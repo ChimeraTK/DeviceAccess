@@ -19,6 +19,7 @@ class LMapBackendTest {
     void testReadWriteRegister();
     void testReadWriteRange();
     void testRegisterAccessorForRegister();
+    void testRegisterAccessorForRange();
 };
 
 class LMapBackendTestSuite : public test_suite {
@@ -30,6 +31,7 @@ class LMapBackendTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRegister, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRange, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRegister, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRange, lMapBackendTest) );
     }
 };
 
@@ -215,6 +217,46 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   for(int i=0; i<1024; i++) area[i] = 0;
   target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
   for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+
+  device.close();
+  target1.close();
+
+}
+
+/********************************************************************************************************************/
+
+void LMapBackendTest::testRegisterAccessorForRange() {
+  std::vector<int> area(1024);
+
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  mtca4u::Device device, target1;
+
+  target1.open("PCIE2");
+  device.open("LMAP0");
+
+  mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+
+  for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
+  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  acc.read();
+  for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == 12345+3*i );
+
+  for(int i=0; i<20; i++) area[i+10] = -876543210+42*i;
+  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  acc.read();
+  for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
+
+  for(int i=0; i<20; i++) acc[i] = 12345+3*i;
+  acc.write();
+  for(int i=0; i<1024; i++) area[i] = 0;
+  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == 12345+3*i );
+
+  for(int i=0; i<20; i++) acc[i] = -876543210+42*i;
+  acc.write();
+  for(int i=0; i<1024; i++) area[i] = 0;
+  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == -876543210+42*i );
 
   device.close();
   target1.close();
