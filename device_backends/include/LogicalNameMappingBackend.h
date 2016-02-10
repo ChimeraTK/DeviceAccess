@@ -39,8 +39,8 @@ namespace mtca4u {
       }
 
       virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
-          const std::string &registerName,
-          const std::string &module = std::string()) {
+          const std::string &/*registerName*/,
+          const std::string &/*module*/ = std::string()) {
         throw DeviceException("Not yet implemented.",DeviceException::NOT_IMPLEMENTED);
       }
 
@@ -61,8 +61,7 @@ namespace mtca4u {
 
       virtual void* getRegisterAccessor2Dimpl(const std::type_info &/*UserType*/, const std::string &/*dataRegionName*/,
           const std::string &/*module*/) {
-        throw DeviceException("The LogicalNameMappingBackend does not support 2D register accessors.",
-            DeviceException::NOT_IMPLEMENTED);
+        throw DeviceException("Not yet implemented.",DeviceException::NOT_IMPLEMENTED);
       }
 
       /// name of the logical map file
