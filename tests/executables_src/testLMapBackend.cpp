@@ -14,7 +14,8 @@ using namespace mtca4u;
 
 class LMapBackendTest {
   public:
-    void testDirectReadWrite();
+    void testReadWriteConstant();
+    void testReadWriteRegister();
 };
 
 class LMapBackendTestSuite : public test_suite {
@@ -22,7 +23,8 @@ class LMapBackendTestSuite : public test_suite {
     LMapBackendTestSuite() : test_suite("LogicalNameMappingBackend test suite") {
       boost::shared_ptr<LMapBackendTest> lMapBackendTest(new LMapBackendTest);
 
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testDirectReadWrite, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteConstant, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRegister, lMapBackendTest) );
     }
 };
 
@@ -33,11 +35,93 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
   return NULL;
 }
 
-void LMapBackendTest::testDirectReadWrite() {
+/********************************************************************************************************************/
+
+void LMapBackendTest::testReadWriteConstant() {
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device;
 
   device.open("LMAP0");
+  int res = 0;
+  device.readReg("Constant",&res, 4);
+  BOOST_CHECK( res == 42 );
+
+  res = 0;
+  device.readReg("Constant",&res, 3);
+  BOOST_CHECK( res == 0 );
+
+  res = 0;
+  device.readReg("Constant",&res, 100); // this would be wrong with any other backend or register type...
+  BOOST_CHECK( res == 42 );
+
+  res = 10;
+  device.writeReg("Constant",&res);     // should have no effect
+
+  device.readReg("Constant",&res, 4);
+  BOOST_CHECK( res == 42 );
+
+  device.close();
+
+}
+
+/********************************************************************************************************************/
+
+void LMapBackendTest::testReadWriteRegister() {
+  int res;
+  std::vector<int> area(1024);
+
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  mtca4u::Device device, target1;
+
+  target1.open("PCIE2");
+  device.open("LMAP0");
+
+  // singla word
+  res = 120;
+  target1.writeReg("BOARD.WORD_USER", &res, 4);
+  res = 0;
+  device.readReg("SingleWord",&res, 4);
+  BOOST_CHECK( res == 120 );
+
+  res = 66;
+  target1.writeReg("BOARD.WORD_USER", &res, 4);
+  res = 0;
+  device.readReg("SingleWord",&res, 4);
+  BOOST_CHECK( res == 66 );
+
+  res = 42;
+  device.writeReg("SingleWord",&res, 4);
+  res = 0;
+  target1.readReg("BOARD.WORD_USER", &res, 4);
+  BOOST_CHECK( res == 42 );
+
+  res = 12;
+  device.writeReg("SingleWord",&res, 4);
+  res = 0;
+  target1.readReg("BOARD.WORD_USER", &res, 4);
+  BOOST_CHECK( res == 12 );
+
+  // area
+  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
+  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  device.readReg("FullArea",area.data(), 4*1024);
+  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+
+  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
+  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  device.readReg("FullArea",area.data(), 4*1024);
+  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+
+  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
+  device.writeReg("FullArea",area.data(), 4*1024);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+
+  device.close();
+  target1.close();
 
 }

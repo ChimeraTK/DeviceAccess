@@ -1,18 +1,18 @@
 <logicalNameMap>
     <entry name="SingleWord">
         <type>register</type>
-        <device>DUMMYD1</device>
-        <register>MODULE0.WORD_USER1</register>
+        <device>PCIE2</device>
+        <register>BOARD.WORD_USER</register>
     </entry>
     <entry name="FullArea">
         <type>register</type>
         <device>PCIE2</device>
-        <register>ADC.AREA_DMA_VIA_DMA</register>
+        <register>ADC.AREA_DMAABLE</register>
     </entry>
     <entry name="PartOfArea">
         <type>range</type>
         <device>PCIE2</device>
-        <register>ADC.AREA_DMA_VIA_DMA</register>
+        <register>ADC.AREA_DMAABLE</register>
         <index>10</index>
         <length>20</length>
     </entry>
