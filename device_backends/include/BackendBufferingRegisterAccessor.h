@@ -29,10 +29,11 @@ namespace mtca4u {
       {
         _accessor = dev->getRegisterAccessor(registerName, module);
         BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_accessor->getNumberOfElements());
+        _registerName = registerName;
+        _moduleName = module;
       }
 
       virtual ~BackendBufferingRegisterAccessor() {};
-
 
       virtual void read() {
         _accessor->read(BufferingRegisterAccessorImpl<T>::cookedBuffer.data(),
@@ -44,10 +45,21 @@ namespace mtca4u {
             BufferingRegisterAccessorImpl<T>::getNumberOfElements());
       }
 
+      virtual bool operator==(const TransferElement &rightHandSide) const {
+        auto rhsCasted = dynamic_cast<const BackendBufferingRegisterAccessor<T>*>(&rightHandSide);
+        if(!rhsCasted) return false;
+        if(_registerName != rhsCasted->_registerName) return false;
+        if(_moduleName != rhsCasted->_moduleName) return false;
+        return true;
+      }
+
     protected:
 
       /// pointer to non-buffering accessor
       boost::shared_ptr< RegisterAccessor > _accessor;
+
+      /// register and module name
+      std::string _registerName, _moduleName;
 
   };
 

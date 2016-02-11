@@ -9,6 +9,7 @@
 #define MTCA4U_BUFFERING_REGISTER_ACCESSOR_IMPL_H
 
 #include <vector>
+#include "TransferElement.h"
 
 namespace mtca4u {
 
@@ -22,7 +23,7 @@ namespace mtca4u {
    *  already exposed in the interface and this header-only implementation improves the performance.
    */
   template<typename T>
-  class BufferingRegisterAccessorImpl {
+  class BufferingRegisterAccessorImpl: public TransferElement {
     public:
 
       /** A virtual base class needs a virtual destructor */

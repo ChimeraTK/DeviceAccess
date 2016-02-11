@@ -33,6 +33,8 @@ namespace mtca4u {
       MemoryAddressedBackendTwoDRegisterAccessor( const std::string &_dataRegionName, const std::string &_module,
           boost::shared_ptr<DeviceBackend> _backend );
 
+      virtual ~MemoryAddressedBackendTwoDRegisterAccessor() {}
+
       void read();
 
       void write();
@@ -42,6 +44,14 @@ namespace mtca4u {
       /// TODO this function is not in the interface, can we remove it?
       uint32_t getSizeOneBlock() {
         return bytesPerBlock/4;
+      }
+
+      virtual bool operator==(const TransferElement &rightHandSide) const {
+        auto rhsCasted = dynamic_cast<const MemoryAddressedBackendTwoDRegisterAccessor<UserType>*>(&rightHandSide);
+        if(!rhsCasted) return false;
+        if(_registerName != rhsCasted->_registerName) return false;
+        if(_moduleName != rhsCasted->_moduleName) return false;
+        return true;
       }
 
     protected:
@@ -62,6 +72,10 @@ namespace mtca4u {
       uint32_t bytesPerBlock;
 
       friend class MixedTypeTest<UserType>;
+
+      /// register and module name
+      std::string _registerName, _moduleName;
+
   };
 
   /********************************************************************************************************************/
@@ -99,7 +113,7 @@ namespace mtca4u {
   template <class UserType>
   MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor(
       const std::string &_dataRegionName, const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
-  : TwoDRegisterAccessorImpl<UserType>(_backend)
+  : TwoDRegisterAccessorImpl<UserType>(_backend), _registerName(_dataRegionName), _moduleName(moduleName)
   {
       // build name of area as written in the map file
       std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_dataRegionName;

@@ -4,6 +4,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceException.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/FixedPointConverter.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferGroup.cc
    PARENT_SCOPE
 )
 
@@ -19,6 +20,8 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MultiplexedDataAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MultiplexedDataAccessorException.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/FixedPointConverter.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferGroup.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferElement.h
    PARENT_SCOPE
 )
 

@@ -9,6 +9,7 @@
 #include "DeviceBackend.h"
 #include "MapException.h"
 #include "NotImplementedException.h"
+#include "TransferElement.h"
 
 namespace mtca4u{
 
@@ -34,7 +35,7 @@ namespace mtca4u{
   /** TODO add documentation
    */
   template<class UserType>
-  class TwoDRegisterAccessorImpl {
+  class TwoDRegisterAccessorImpl : public TransferElement {
     public:
       /** Constructor to intialise the members.
        */

@@ -12,6 +12,9 @@
 
 namespace mtca4u {
 
+  // forward declaration to make a friend
+  class TransferGroup;
+
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
    *  type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
@@ -92,6 +95,9 @@ namespace mtca4u {
 
       /// pointer to the implementation
       boost::shared_ptr< BufferingRegisterAccessorImpl<T> > _impl;
+
+      // the TransferGroup must be a friend to access the actual accesor
+      friend class TransferGroup;
   };
 
 }    // namespace mtca4u

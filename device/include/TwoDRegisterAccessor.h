@@ -14,6 +14,9 @@
 
 namespace mtca4u {
 
+  // forward declaration to make a friend
+  class TransferGroup;
+
   /** TODO add documentation
    */
   template<class UserType>
@@ -24,13 +27,13 @@ namespace mtca4u {
       /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D().
        */
       TwoDRegisterAccessor( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
-      : accessor(_accessor)
+      : _impl(_accessor)
       {}
 
       /** Operator to access individual sequences.
        */
       std::vector<UserType> & operator[](size_t sequenceIndex) {
-        return accessor->operator[](sequenceIndex);
+        return _impl->operator[](sequenceIndex);
       }
 
       /** Read the data from the device, de-multiplex the hardware IO buffer and
@@ -38,7 +41,7 @@ namespace mtca4u {
        *  method will handle reads into the DMA regions as well
        */
       void read() {
-        accessor->read();
+        _impl->read();
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,
@@ -47,14 +50,14 @@ namespace mtca4u {
        * implemented yet
        */
       void write() {
-        accessor->write();
+        _impl->write();
       }
 
       /**
        * Return the number of sequences that have been Multiplexed
        */
       size_t getNumberOfDataSequences() {
-        return accessor->getNumberOfDataSequences();
+        return _impl->getNumberOfDataSequences();
       }
 
       /**
@@ -65,7 +68,11 @@ namespace mtca4u {
 
     protected:
 
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
+      /** Pointer to implementation */
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _impl;
+
+      // the TransferGroup must be a friend to access the actual accesor
+      friend class TransferGroup;
 
   };
 
