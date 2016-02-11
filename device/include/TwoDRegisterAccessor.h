@@ -14,6 +14,8 @@
 
 namespace mtca4u {
 
+  /** TODO add documentation
+   */
   template<class UserType>
   class TwoDRegisterAccessor {
 

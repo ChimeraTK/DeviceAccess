@@ -31,7 +31,7 @@ namespace mtca4u{
   template<typename UserType>
   class MultiplexedDataAccessorCopied;
 
-  /** Base class which does not depend on the SequenceWordType.
+  /** TODO add documentation
    */
   template<class UserType>
   class TwoDRegisterAccessorImpl {
