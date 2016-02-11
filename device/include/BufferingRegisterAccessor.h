@@ -8,13 +8,9 @@
 #ifndef MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 #define MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 
-#include <vector>
-
-#include "FixedPointConverter.h"
+#include "BufferingRegisterAccessorImpl.h"
 
 namespace mtca4u {
-
-  class DeviceBackend;
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
@@ -31,11 +27,9 @@ namespace mtca4u {
       /** Constructer. @attention Do not normally use directly.
        *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
        */
-      BufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module, const std::string &registerName)
-      {
-        _accessor = dev->getRegisterAccessor(registerName, module);
-        cookedBuffer.resize(_accessor->getNumberOfElements());
-      }
+      BufferingRegisterAccessor(boost::shared_ptr<BufferingRegisterAccessorImpl<T>> impl)
+      : _impl(impl)
+      {}
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
        *  @attention Accessors created with this constructors will be dysfunctional!
@@ -44,19 +38,19 @@ namespace mtca4u {
 
       /** destructor
        */
-      virtual ~BufferingRegisterAccessor() {};
+      ~BufferingRegisterAccessor() {};
 
 
       /** Read the data from the device, convert it and store in buffer.
        */
-      virtual void read() {
-        _accessor->read(cookedBuffer.data(), getNumberOfElements());
+      inline void read() {
+       _impl->read();
       }
 
       /** Convert data from the buffer and write to device.
        */
-      virtual void write() {
-        _accessor->write(cookedBuffer.data(), getNumberOfElements());
+      inline void write() {
+        _impl->write();
       }
 
       /** Get or set buffer content by [] operator.
@@ -64,13 +58,13 @@ namespace mtca4u {
        *  the register.
        */
       inline T& operator[](unsigned int index) {
-        return cookedBuffer[index];
+        return _impl->operator[](index);
       }
 
       /** Return number of elements
        */
       inline unsigned int getNumberOfElements() {
-        return cookedBuffer.size();
+        return _impl->getNumberOfElements();
       }
 
       /** Access data with std::vector-like iterators
@@ -79,37 +73,25 @@ namespace mtca4u {
       typedef typename std::vector<T>::const_iterator const_iterator;
       typedef typename std::vector<T>::reverse_iterator reverse_iterator;
       typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
-      inline iterator begin() { return cookedBuffer.begin(); }
-      inline const_iterator begin() const { return cookedBuffer.begin(); }
-      inline iterator end() { return cookedBuffer.end(); }
-      inline const_iterator end() const { return cookedBuffer.end(); }
-      inline reverse_iterator rbegin() { return cookedBuffer.rbegin(); }
-      inline const_reverse_iterator rbegin() const { return cookedBuffer.rbegin(); }
-      inline reverse_iterator rend() { return cookedBuffer.rend(); }
-      inline const_reverse_iterator rend() const { return cookedBuffer.rend(); }
+      inline iterator begin() { return _impl->begin(); }
+      inline const_iterator begin() const { return _impl->begin(); }
+      inline iterator end() { return _impl->end(); }
+      inline const_iterator end() const { return _impl->end(); }
+      inline reverse_iterator rbegin() { return _impl->rbegin(); }
+      inline const_reverse_iterator rbegin() const { return _impl->rbegin(); }
+      inline reverse_iterator rend() { return _impl->rend(); }
+      inline const_reverse_iterator rend() const { return _impl->rend(); }
 
       /* Swap content of (cooked) buffer with std::vector
        */
       inline void swap(std::vector<T> &x) {
-        cookedBuffer.swap(x);
-      }
-
-      /** Factory function as called by Device::getBufferingRegisterAccessor() and Device::getCustomAccessor()
-       */
-      static BufferingRegisterAccessor<T> createInstance(
-          std::string const &dataRegionName, std::string const &module, boost::shared_ptr<DeviceBackend> const &backend,
-          boost::shared_ptr<RegisterInfoMap> const &) {
-        return backend->template getBufferingRegisterAccessor<T>(module, dataRegionName);
+        _impl->swap(x);
       }
 
     protected:
 
-      /// pointer to non-buffering accessor
-      boost::shared_ptr< RegisterAccessor > _accessor;
-
-      /// vector of converted data elements
-      std::vector<T> cookedBuffer;
-
+      /// pointer to the implementation
+      boost::shared_ptr< BufferingRegisterAccessorImpl<T> > _impl;
   };
 
 }    // namespace mtca4u

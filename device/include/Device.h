@@ -278,7 +278,8 @@ namespace mtca4u {
   template<typename UserType>
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
-    return BufferingRegisterAccessor<UserType>(_deviceBackendPointer, module, registerName);
+    return BufferingRegisterAccessor<UserType>(
+        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(module, registerName) );
   }
 
   template<typename UserType>

@@ -11,6 +11,7 @@
 
 #include "DeviceBackendException.h"
 #include "RegisterInfoMap.h"
+#include "DeviceException.h"
 
 namespace mtca4u {
 
@@ -19,8 +20,8 @@ namespace mtca4u {
 
   // some forward declarations
   class RegisterAccessor;
-  template<typename T> class BufferingRegisterAccessor;
   template<typename T> class TwoDRegisterAccessorImpl;
+  template<typename T> class BufferingRegisterAccessorImpl;
 
   /** The base class of an IO device.
    */
@@ -86,8 +87,15 @@ namespace mtca4u {
       /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
        * buffers and plain pointers.
        */
-      virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
+      virtual boost::shared_ptr<RegisterAccessor> getRegisterAccessor(
           const std::string &registerName, const std::string &module = std::string()) = 0;
+
+      /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
+       *  using a std::vector-like interface
+       */
+      template<typename UserType>
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
+          const std::string &registerName, const std::string &module = std::string());
 
       /** Get register accessor for 2-dimensional registers.
        */
@@ -104,13 +112,13 @@ namespace mtca4u {
        * module.
        *  The registers are in alphabetical order.
        */
-      virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
+      virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const = 0;
 
       /** Get a complete list of RegisterAccessors for one module.
        *  The registers are in alphabetical order.
        */
-      virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
+      virtual std::list< boost::shared_ptr<RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) = 0;
 
       /** \deprecated {
@@ -130,10 +138,16 @@ namespace mtca4u {
     protected:
 
       /** Virtual implementation of the getRegisterAccessor2D() template function. The return value must
-       *  be of the type MultiplexedDataAccessor<UserType>*.
+       *  be of the type TwoDRegisterAccessorImpl<UserType>*.
        */
       virtual void* getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
           const std::string &module) = 0;
+
+      /** Virtual implementation of the getBufferingRegisterAccessor() template function. The return value must
+       *  be of the type BufferingRegisterAccessorImpl<UserType>*.
+       */
+      virtual void* getBufferingRegisterAccessorImpl(const std::type_info &UserType, const std::string &registerName,
+          const std::string &module);
 
       /// for compatibility functions only: replace the current register map with a new one.
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) = 0;
@@ -151,6 +165,17 @@ namespace mtca4u {
     void *voidptr = getRegisterAccessor2Dimpl(typeid(UserType), dataRegionName, module);
     TwoDRegisterAccessorImpl<UserType> *ptr = static_cast<TwoDRegisterAccessorImpl<UserType>*>(voidptr);
     return boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> >(ptr);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackend::getBufferingRegisterAccessor(
+      const std::string &registerName, const std::string &module)
+  {
+    void *voidptr = getBufferingRegisterAccessorImpl(typeid(UserType), registerName, module);
+    BufferingRegisterAccessorImpl<UserType> *ptr = static_cast<BufferingRegisterAccessorImpl<UserType>*>(voidptr);
+    return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
   }
 
 } // namespace mtca4u
