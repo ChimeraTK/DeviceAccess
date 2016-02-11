@@ -27,8 +27,7 @@ namespace mtca4u{
 
   /********************************************************************************************************************/
 
-  std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(
-      const std::string &moduleName) const {
+  std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(const std::string &moduleName) const {
     checkPointersAreNotNull();
 
     return _deviceBackendPointer->getRegistersInModule(moduleName);
@@ -68,8 +67,7 @@ namespace mtca4u{
 
   /********************************************************************************************************************/
 
-  void Device::writeReg(const std::string &regName,
-      const std::string &regModule, int32_t const *data,
+  void Device::writeReg(const std::string &regName, const std::string &regModule, int32_t const *data,
       size_t dataSize, uint32_t addRegOffset) {
     checkPointersAreNotNull();
     _deviceBackendPointer->write(regModule, regName, data, dataSize, addRegOffset);
@@ -77,30 +75,26 @@ namespace mtca4u{
 
   /********************************************************************************************************************/
 
-  void Device::readDMA(const std::string &regName, int32_t *data,
-      size_t dataSize, uint32_t addRegOffset) const {
+  void Device::readDMA(const std::string &regName, int32_t *data, size_t dataSize, uint32_t addRegOffset) const {
     readDMA(regName, std::string(), data, dataSize, addRegOffset);
   }
 
   /********************************************************************************************************************/
 
-  void Device::readDMA(const std::string &regName,
-      const std::string &regModule, int32_t *data,
+  void Device::readDMA(const std::string &regName, const std::string &regModule, int32_t *data,
       size_t dataSize, uint32_t addRegOffset) const {
     readReg(regName, regModule, data, dataSize, addRegOffset);
   }
 
   /********************************************************************************************************************/
 
-  void Device::writeDMA(const std::string &regName, int32_t const *data,
-      size_t dataSize, uint32_t addRegOffset) {
+  void Device::writeDMA(const std::string &regName, int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
     writeDMA(regName, std::string(), data, dataSize, addRegOffset);
   }
 
   /********************************************************************************************************************/
 
-  void Device::writeDMA(const std::string &regName,
-      const std::string &regModule, int32_t const *data,
+  void Device::writeDMA(const std::string &regName, const std::string &regModule, int32_t const *data,
       size_t dataSize, uint32_t addRegOffset) {
     writeReg(regName, regModule, data, dataSize, addRegOffset);
   }
@@ -128,32 +122,28 @@ namespace mtca4u{
 
   /********************************************************************************************************************/
 
-  void Device::readArea(uint32_t regOffset, int32_t *data, size_t size,
-      uint8_t bar) const {
+  void Device::readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const {
     checkPointersAreNotNull();
     _deviceBackendPointer->read(bar, regOffset, data, size);
   }
 
   /********************************************************************************************************************/
 
-  void Device::writeArea(uint32_t regOffset, int32_t const *data, size_t size,
-      uint8_t bar) {
+  void Device::writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
     checkPointersAreNotNull();
     _deviceBackendPointer->write(bar, regOffset, data, size);
   }
 
   /********************************************************************************************************************/
 
-  void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size,
-      uint8_t bar) const {
+  void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const {
     checkPointersAreNotNull();
     _deviceBackendPointer->read(bar, regOffset, data, size);
   }
 
   /********************************************************************************************************************/
 
-  void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
-      uint8_t bar) {
+  void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
     checkPointersAreNotNull();
     _deviceBackendPointer->write(bar, regOffset, data, size);
   }
