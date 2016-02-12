@@ -92,7 +92,7 @@ int main() {
   // MultiplexedDataAccessor<uint16> would convert the read in values from the
   // 'DMA' region to uint_16  (With the fixed point conversion applied)
   mtca4u::TwoDRegisterAccessor<double> dataDemuxedAsDouble =
-      myDevice->getRegisterAccessor2D<double>(MODULE_NAME, DATA_REGION_NAME);
+      myDevice->getTwoDRegisterAccessor<double>(MODULE_NAME, DATA_REGION_NAME);
                               // The DATA_REGION_NAME -> 'DMA' is described in
                              // the map file as AREA_MULTIPLEXED_SEQUENCE_DMA
                              // (where AREA_MULTIPLEXED_SEQUENCE_ is the keyword

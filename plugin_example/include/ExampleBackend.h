@@ -60,7 +60,7 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
 
   protected:
 
-    virtual void* getRegisterAccessor2Dimpl(const std::type_info &/*UserType*/, const std::string &/*dataRegionName*/,
+    virtual void* getTwoDRegisterAccessorImpl(const std::type_info &/*UserType*/, const std::string &/*dataRegionName*/,
         const std::string &/*module*/) {
       return NULL;
     }

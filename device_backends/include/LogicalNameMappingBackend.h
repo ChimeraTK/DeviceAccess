@@ -57,7 +57,7 @@ namespace mtca4u {
 
     protected:
 
-      virtual void* getRegisterAccessor2Dimpl(const std::type_info &/*UserType*/, const std::string &/*dataRegionName*/,
+      virtual void* getTwoDRegisterAccessorImpl(const std::type_info &/*UserType*/, const std::string &/*dataRegionName*/,
           const std::string &/*module*/) {
         throw DeviceException("Not yet implemented.",DeviceException::NOT_IMPLEMENTED);
       }

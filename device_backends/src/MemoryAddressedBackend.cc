@@ -161,7 +161,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void* MemoryAddressedBackend::getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
+  void* MemoryAddressedBackend::getTwoDRegisterAccessorImpl(const std::type_info &UserType, const std::string &dataRegionName,
       const std::string &module) {
     FixedPointConverter::userTypeMap userTypes;
     MemoryAddressedBackendHelper::getRegisterAccessor2DimplClass impl(UserType, dataRegionName, module,

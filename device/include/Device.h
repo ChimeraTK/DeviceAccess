@@ -163,7 +163,7 @@ namespace mtca4u {
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
        */
       template<typename UserType>
-      TwoDRegisterAccessor<UserType> getRegisterAccessor2D(
+      TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
           const std::string &module, const std::string &registerName) const;
 
       /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
@@ -283,9 +283,9 @@ namespace mtca4u {
   }
 
   template<typename UserType>
-  TwoDRegisterAccessor<UserType> Device::getRegisterAccessor2D(
+  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor2D<UserType>(registerName, module));
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(registerName, module));
   }
 
 } // namespace mtca4u

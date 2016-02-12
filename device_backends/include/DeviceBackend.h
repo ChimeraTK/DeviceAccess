@@ -100,7 +100,7 @@ namespace mtca4u {
       /** Get register accessor for 2-dimensional registers.
        */
       template<typename UserType>
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getRegisterAccessor2D(
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor(
           const std::string &dataRegionName, const std::string &module = std::string());
 
       /** Returns the register information aka RegisterInfo.
@@ -140,7 +140,7 @@ namespace mtca4u {
       /** Virtual implementation of the getRegisterAccessor2D() template function. The return value must
        *  be of the type TwoDRegisterAccessorImpl<UserType>*.
        */
-      virtual void* getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
+      virtual void* getTwoDRegisterAccessorImpl(const std::type_info &UserType, const std::string &dataRegionName,
           const std::string &module) = 0;
 
       /** Virtual implementation of the getBufferingRegisterAccessor() template function. The return value must
@@ -159,10 +159,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > DeviceBackend::getRegisterAccessor2D(
+  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > DeviceBackend::getTwoDRegisterAccessor(
       const std::string &dataRegionName, const std::string &module)
   {
-    void *voidptr = getRegisterAccessor2Dimpl(typeid(UserType), dataRegionName, module);
+    void *voidptr = getTwoDRegisterAccessorImpl(typeid(UserType), dataRegionName, module);
     TwoDRegisterAccessorImpl<UserType> *ptr = static_cast<TwoDRegisterAccessorImpl<UserType>*>(voidptr);
     return boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> >(ptr);
   }

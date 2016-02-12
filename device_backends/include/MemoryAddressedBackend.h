@@ -59,7 +59,7 @@ namespace mtca4u {
       /// map from register names to addresses
       boost::shared_ptr<RegisterInfoMap> _registerMap;
 
-      virtual void* getRegisterAccessor2Dimpl(const std::type_info &UserType, const std::string &dataRegionName,
+      virtual void* getTwoDRegisterAccessorImpl(const std::type_info &UserType, const std::string &dataRegionName,
           const std::string &module);
 
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap)

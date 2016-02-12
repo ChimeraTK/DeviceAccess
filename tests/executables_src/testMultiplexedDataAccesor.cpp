@@ -139,7 +139,7 @@ void testWithConversion(std::string multiplexedSequenceName) {
     ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
     boost::shared_ptr< TwoDRegisterAccessorImpl<float> > deMultiplexer =
-        ioDevice->getRegisterAccessor2D<float>(multiplexedSequenceName,TEST_MODULE_NAME);
+        ioDevice->getTwoDRegisterAccessor<float>(multiplexedSequenceName,TEST_MODULE_NAME);
     TwoDRegisterAccessor<float> accessor(deMultiplexer);
     accessor.read();
 
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(testFactoryFunction) {
   boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend("invalidSequences.map") );
 
   try {
-    ioDevice->getRegisterAccessor2D<double>("NO_WORDS",INVALID_MODULE_NAME);
+    ioDevice->getTwoDRegisterAccessor<double>("NO_WORDS",INVALID_MODULE_NAME);
     // in a sucessful test (which is required for the code coverage report)
     // the following line is not executed. Exclude it from the lcov report
     BOOST_ERROR( "createInstance did not throw for NO_WORDS" ); //LCOV_EXCL_LINE
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(testFactoryFunction) {
   }
 
   try {
-    ioDevice->getRegisterAccessor2D<double>("WRONG_SIZE",INVALID_MODULE_NAME);
+    ioDevice->getTwoDRegisterAccessor<double>("WRONG_SIZE",INVALID_MODULE_NAME);
     BOOST_ERROR( "createInstance did not throw for WRONG_SIZE" ); //LCOV_EXCL_LINE
   }
   catch(MultiplexedDataAccessorException &e) {
@@ -212,14 +212,14 @@ BOOST_AUTO_TEST_CASE(testFactoryFunction) {
   }
 
   try{
-    ioDevice->getRegisterAccessor2D<double>("WRONG_NELEMENTS",INVALID_MODULE_NAME);
+    ioDevice->getTwoDRegisterAccessor<double>("WRONG_NELEMENTS",INVALID_MODULE_NAME);
     BOOST_ERROR( "createInstance did not throw for WRONG_NELEMENTS" ); //LCOV_EXCL_LINE
   }
   catch(MultiplexedDataAccessorException &e) {
     BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
   }
 
-  BOOST_CHECK_THROW( ioDevice->getRegisterAccessor2D<double>("DOES_NOT_EXIST",INVALID_MODULE_NAME), MapFileException );
+  BOOST_CHECK_THROW( ioDevice->getTwoDRegisterAccessor<double>("DOES_NOT_EXIST",INVALID_MODULE_NAME), MapFileException );
 }
 
 BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
   ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
 
   boost::shared_ptr< TwoDRegisterAccessorImpl<double> > deMultiplexer =
-      ioDevice->getRegisterAccessor2D<double>("DMA",TEST_MODULE_NAME);
+      ioDevice->getTwoDRegisterAccessor<double>("DMA",TEST_MODULE_NAME);
   deMultiplexer->read();
 
   int j=0;
@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
   ioDevice->open();
 
   boost::shared_ptr< TwoDRegisterAccessorImpl<double> > deMuxedData =
-      ioDevice->getRegisterAccessor2D<double>("FRAC_INT", TEST_MODULE_NAME);
+      ioDevice->getTwoDRegisterAccessor<double>("FRAC_INT", TEST_MODULE_NAME);
 
   BOOST_CHECK(deMuxedData->getNumberOfDataSequences() == 3);
 
