@@ -86,11 +86,24 @@ namespace mtca4u {
        */
       virtual ~MultiplexedDataAccessorCopied() {};
 
-      virtual bool isSameRegister(const TransferElement &rightHandSide) const {
-        return accessor->isSameRegister(rightHandSide);
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) {
+        return accessor->isSameRegister(other);
       }
 
-    private:
+    protected:
+
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+        return accessor->getHardwareAccessingElements();
+      }
+
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        if(accessor->isSameRegister(newElement)) {
+          accessor = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);
+        }
+        else {
+          accessor->replaceTransferElement(newElement);
+        }
+      }
 
       boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
 
