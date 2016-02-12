@@ -86,8 +86,8 @@ namespace mtca4u {
        */
       virtual ~MultiplexedDataAccessorCopied() {};
 
-      virtual bool operator==(const TransferElement &rightHandSide) const {
-        return accessor->operator==(rightHandSide);
+      virtual bool sameRegister(const TransferElement &rightHandSide) const {
+        return accessor->sameRegister(rightHandSide);
       }
 
     private:

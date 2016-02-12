@@ -35,7 +35,7 @@ namespace mtca4u {
       // iterate over all elements already in the list and check if element is already in there
       bool foundDuplicate = false;
       for(unsigned int k=0; k<elements.size(); k++) {
-        if(*(*(newElements[i])) == *(elements[k])) {  // (pointer of shared pointer vs shared pointer...)
+        if( (*(newElements[i]))->sameRegister(*(elements[k])) ) {  // (pointer of shared pointer vs shared pointer...)
 
           // update the shared pointer in the newElements list to point to the found duplicate
           *(newElements[i]) = elements[k];

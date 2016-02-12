@@ -31,7 +31,7 @@ namespace mtca4u {
       virtual void write() = 0;
 
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register */
-      virtual bool operator==(const TransferElement &rightHandSide) const = 0;
+      virtual bool sameRegister(const TransferElement &rightHandSide) const = 0;
 
     protected:
 

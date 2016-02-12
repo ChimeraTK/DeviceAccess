@@ -46,11 +46,12 @@ namespace mtca4u {
         return bytesPerBlock/4;
       }
 
-      virtual bool operator==(const TransferElement &rightHandSide) const {
+      virtual bool sameRegister(const TransferElement &rightHandSide) const {
         auto rhsCasted = dynamic_cast<const MemoryAddressedBackendTwoDRegisterAccessor<UserType>*>(&rightHandSide);
         if(!rhsCasted) return false;
         if(_registerName != rhsCasted->_registerName) return false;
         if(_moduleName != rhsCasted->_moduleName) return false;
+        if(TwoDRegisterAccessorImpl<UserType>::_ioDevice != rhsCasted->TwoDRegisterAccessorImpl<UserType>::_ioDevice) return false;
         return true;
       }
 
