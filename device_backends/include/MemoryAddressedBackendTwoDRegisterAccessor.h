@@ -46,8 +46,8 @@ namespace mtca4u {
         return bytesPerBlock/4;
       }
 
-      virtual bool sameRegister(const TransferElement &rightHandSide) const {
-        auto rhsCasted = dynamic_cast<const MemoryAddressedBackendTwoDRegisterAccessor<UserType>*>(&rightHandSide);
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+        auto rhsCasted = boost::dynamic_pointer_cast< const MemoryAddressedBackendTwoDRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerName != rhsCasted->_registerName) return false;
         if(_moduleName != rhsCasted->_moduleName) return false;
@@ -76,6 +76,12 @@ namespace mtca4u {
 
       /// register and module name
       std::string _registerName, _moduleName;
+
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+        return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+      }
+
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}
 
   };
 

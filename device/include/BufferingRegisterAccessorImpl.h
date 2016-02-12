@@ -13,7 +13,11 @@
 
 namespace mtca4u {
 
+  // forward declarations
   class DeviceBackend;
+
+  template<typename T>
+  class BufferingRegisterAccessor;
 
   /*********************************************************************************************************************/
   /** Base class for implementations of the BufferingRegisterAccessor. The BufferingRegisterAccessor is merely a
@@ -71,6 +75,9 @@ namespace mtca4u {
 
       /// vector of converted data elements
       std::vector<T> cookedBuffer;
+
+      /// the public interface needs access to protected functions of the TransferElement etc.
+      friend class BufferingRegisterAccessor<T>;
 
   };
 

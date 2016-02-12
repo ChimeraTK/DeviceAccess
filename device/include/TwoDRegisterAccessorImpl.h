@@ -32,6 +32,10 @@ namespace mtca4u{
   template<typename UserType>
   class MultiplexedDataAccessorCopied;
 
+  /// forward declaration to make a friend
+  template<class UserType>
+  class TwoDRegisterAccessor;
+
   /** TODO add documentation
    */
   template<class UserType>
@@ -87,6 +91,9 @@ namespace mtca4u{
 
       // for compatibility onlye
       friend class MultiplexedDataAccessorCopied<UserType>;
+
+      /// the public interface needs access to protected functions of the TransferElement etc.
+      friend class TwoDRegisterAccessor<UserType>;
 
   };
 

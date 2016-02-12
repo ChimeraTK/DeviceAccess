@@ -27,7 +27,9 @@ namespace mtca4u {
 
   /*********************************************************************************************************************/
 
-  void TransferGroup::uniqueInsert(std::vector< boost::shared_ptr<TransferElement>* > &newElements) {
+  template<>
+  void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor) {
+    auto newElements = accessor.getHardwareAccessingElements();
 
     // iterate over all new elements
     for(unsigned int i=0; i<newElements.size(); i++) {
@@ -35,21 +37,18 @@ namespace mtca4u {
       // iterate over all elements already in the list and check if element is already in there
       bool foundDuplicate = false;
       for(unsigned int k=0; k<elements.size(); k++) {
-        if( (*(newElements[i]))->sameRegister(*(elements[k])) ) {  // (pointer of shared pointer vs shared pointer...)
-
-          // update the shared pointer in the newElements list to point to the found duplicate
-          *(newElements[i]) = elements[k];
-
+        if(newElements[i]->isSameRegister(elements[k])) {
+          // replace the TransferElement inside the accessor with the version already in the list
+          accessor.replaceTransferElement(elements[k]);
+          // set flag and stop the loop (the list is already unique, so no further match is possible)
           foundDuplicate = true;
           break;
         }
       }
 
       // if not a duplicate, add to the list
-      if(!foundDuplicate) elements.push_back(*(newElements[i]));
-
+      if(!foundDuplicate) elements.push_back(newElements[i]);
     }
-
   }
 
 } /* namespace mtca4u */

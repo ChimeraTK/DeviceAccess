@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace mtca4u {
 
@@ -17,7 +18,7 @@ namespace mtca4u {
   class TransferGroup;
 
   /** Base class for register accessors which can be part of a TransferGroup */
-  class TransferElement {
+  class TransferElement : public boost::enable_shared_from_this<TransferElement> {
 
     public:
 
@@ -31,22 +32,21 @@ namespace mtca4u {
       virtual void write() = 0;
 
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register */
-      virtual bool sameRegister(const TransferElement &rightHandSide) const = 0;
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
 
     protected:
 
       /** Obtain the underlying TransferElements with actual hardware access. If this transfer element
-       *  is directly reading from / writing to the hardware, it will return an empty list. In case of e.g. a
-       *  StructRegisterAccessor, a list of the actual transfer elements will be returned.
-       *
-       *  @attention: The list is returned as pointers to shared pointers, since the TransferGroup must be able
-       *  to replace the used TransferElements with others. Do not use this function outside the TransferGroup class!
-       *
-       *  @todo is there a better way to do this?
+       *  is directly reading from / writing to the hardware, it will return a list just containing
+       *  a shared pointer of itself.
        */
-      virtual std::vector< boost::shared_ptr<TransferElement>* > getHardwareAccessingElements() {
-        return std::vector< boost::shared_ptr<TransferElement>* >();
-      }
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() = 0;
+
+      /** Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
+       *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
+       *  element matches the new element, this function has no effect.
+       */
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
 
       friend class TransferGroup;
 

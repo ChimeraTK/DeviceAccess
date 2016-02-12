@@ -20,7 +20,7 @@ namespace mtca4u {
   /** TODO add documentation
    */
   template<class UserType>
-  class TwoDRegisterAccessor {
+  class TwoDRegisterAccessor : protected TransferElement {
 
     public:
 
@@ -73,6 +73,23 @@ namespace mtca4u {
 
       // the TransferGroup must be a friend to access the actual accesor
       friend class TransferGroup;
+
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+        return _impl->isSameRegister(other);
+      }
+
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+        return _impl->getHardwareAccessingElements();
+      }
+
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        if(_impl->isSameRegister(newElement)) {
+          _impl = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);
+        }
+        else {
+          _impl->replaceTransferElement(newElement);
+        }
+      }
 
   };
 

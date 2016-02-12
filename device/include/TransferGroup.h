@@ -14,13 +14,6 @@
 
 namespace mtca4u {
 
-  // forward declarations
-  template<typename UserType>
-  class BufferingRegisterAccessor;
-
-  template<typename UserType>
-  class TwoDRegisterAccessor;
-
   /** Group multiple data accessors to efficiently trigger data transfers on the whole group. In case of some backends
    *  like the LogicalNameMappingBackend, grouping data accessors can avoid unnecessary transfers of the same data.
    *  This happens in particular, if accessing the data of one accessor requires transfer of a bigger block of
@@ -28,8 +21,7 @@ namespace mtca4u {
    *
    *  Grouping accessors can only work with accessors that internally buffer the transferred data. Therefore the
    *  standard RegisterAccessor is not supported, as its read() and write() functions always directly read from/write to
-   *  the hardware. Only the BufferingRegisterAccessor, the TwoDRegisterAccessor and the StructRegisterAccessor
-   *  are supported. Note that read() and write() of the accessors put into the group should no longer be used, since
+   *  the hardware. Note that read() and write() of the accessors put into the group should no longer be used, since
    *  they would perform the hardware access directly. Instead, read() and write() of the TransferGroup should be
    *  called.
    */
@@ -40,19 +32,14 @@ namespace mtca4u {
       TransferGroup() {};
       ~TransferGroup() {};
 
-      /** Add a register accessor to the group. This function is overloaded for all supported types of accessors. */
-      template<typename UserType>
-      void addAccessor(BufferingRegisterAccessor<UserType> &accessor) {
-        auto newElements = accessor._impl->getHardwareAccessingElements();
-        if(newElements.empty()) newElements.push_back( (boost::shared_ptr<TransferElement>*) &accessor._impl);
-        uniqueInsert(newElements);
-      }
-
-      template<typename UserType>
-      void addAccessor(TwoDRegisterAccessor<UserType> &accessor) {
-        auto newElements = accessor._impl->getHardwareAccessingElements();
-        if(newElements.empty()) newElements.push_back( (boost::shared_ptr<TransferElement>*) &accessor._impl);
-        uniqueInsert(newElements);
+      /** Add a register accessor to the group. The register accessor might internally be altered so that accessors
+       *  accessing the same hardware register will share their buffers. Register accessors must not be placed into
+       *  multiple TransferGroups.
+       */
+      template<class AnyBufferingAccessorType>
+      void addAccessor(AnyBufferingAccessorType &accessor) {
+        // just call the template specialisation for TransferElement, which we actually implement
+        addAccessor<TransferElement>(accessor);
       }
 
       /** Trigger read transfer for all accessors in the group */
@@ -65,12 +52,14 @@ namespace mtca4u {
 
       /** List of TransferElements in this group */
       std::vector< boost::shared_ptr<TransferElement> > elements;
-
-      /** Insert elements to the list if no equal element is already in the list. Already present elements
-       *  will be replaced at their origin (i.e. inside the register accessor!) */
-      void uniqueInsert(std::vector< boost::shared_ptr<TransferElement>* > &newElements);
-
   };
+
+  /** Template specialisation for adding a TransferElement. TransferElement is a base class of the supported register
+   *  accessor classes but normally inaccessible due to protected inheritance. Thus the user could not call this
+   *  function without this template trick. The TransferGroup class need to be friend of the accessor classes!
+    */
+  template<>
+  void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor);
 
 } /* namespace mtca4u */
 

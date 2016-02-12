@@ -24,7 +24,7 @@ namespace mtca4u {
    *  functions before reading from resp. after writing to the buffer using the operators.
    */
   template<typename T>
-  class BufferingRegisterAccessor {
+  class BufferingRegisterAccessor : protected TransferElement {
     public:
 
       /** Constructer. @attention Do not normally use directly.
@@ -98,6 +98,24 @@ namespace mtca4u {
 
       // the TransferGroup must be a friend to access the actual accesor
       friend class TransferGroup;
+
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+        return _impl->isSameRegister(other);
+      }
+
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+        return _impl->getHardwareAccessingElements();
+      }
+
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        if(_impl->isSameRegister(newElement)) {
+          _impl = boost::dynamic_pointer_cast< BufferingRegisterAccessorImpl<T> >(newElement);
+        }
+        else {
+          _impl->replaceTransferElement(newElement);
+        }
+      }
+
   };
 
 }    // namespace mtca4u
