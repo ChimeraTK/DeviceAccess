@@ -86,6 +86,10 @@ namespace mtca4u {
        */
       virtual ~MultiplexedDataAccessorCopied() {};
 
+      virtual bool operator==(const TransferElement &rightHandSide) const {
+        return accessor->operator==(rightHandSide);
+      }
+
     private:
 
       boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
