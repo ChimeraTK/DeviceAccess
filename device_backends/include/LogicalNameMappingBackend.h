@@ -57,10 +57,17 @@ namespace mtca4u {
 
     protected:
 
-      virtual void* getTwoDRegisterAccessorImpl(const std::type_info &/*UserType*/, const std::string &/*dataRegionName*/,
-          const std::string &/*module*/) {
-        throw DeviceException("Not yet implemented.",DeviceException::NOT_IMPLEMENTED);
-      }
+      VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getTwoDRegisterAccessorImpl, const std::string &, const std::string &);
+
+      VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getBufferingRegisterAccessorImpl, const std::string &, const std::string &);
+
+      template<typename UserType>
+      TwoDRegisterAccessorImpl<UserType>* getTwoDRegisterAccessor(const std::string &module,
+          const std::string &registerName);
+
+      template<typename UserType>
+      BufferingRegisterAccessorImpl<UserType>* getBufferingRegisterAccessor(const std::string &module,
+          const std::string &registerName);
 
       /// name of the logical map file
       std::string _lmapFileName;
@@ -70,6 +77,9 @@ namespace mtca4u {
 
       /// map of target devices
       std::map< std::string, boost::shared_ptr<Device> > _devices;
+
+      template<typename T>
+      friend class LogicalNameMappingBackendBufferingRangeRegisterAccessor;
 
   };
 

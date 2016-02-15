@@ -1,0 +1,121 @@
+/*
+ * LogicalNameMappingBackendBufferingRangeRegisterAccessor.h
+ *
+ *  Created on: Feb 15, 2016
+ *      Author: Martin Hierholzer
+ */
+
+#ifndef MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_BUFFERING_RANGE_REGISTER_ACCESSOR_H
+#define MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_BUFFERING_RANGE_REGISTER_ACCESSOR_H
+
+#include <algorithm>
+
+#include "BufferingRegisterAccessor.h"
+#include "BufferingRegisterAccessorImpl.h"
+#include "FixedPointConverter.h"
+#include "Device.h"
+
+namespace mtca4u {
+
+  class DeviceBackend;
+
+  /*********************************************************************************************************************/
+
+  template<typename T>
+  class LogicalNameMappingBackendBufferingRangeRegisterAccessor : public BufferingRegisterAccessorImpl<T> {
+    public:
+
+      LogicalNameMappingBackendBufferingRangeRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
+          const std::string &registerName)
+      : _registerName(registerName),_moduleName(module)
+      {
+        _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+        std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
+        _info = _dev->_map.getRegisterInfo(name);
+        if( _info.targetType != LogicalNameMap::TargetType::RANGE &&
+            _info.targetType != LogicalNameMap::TargetType::REGISTER ) {
+          throw DeviceException("LogicalNameMappingBackendBufferingRangeRegisterAccessor used for wrong register type.",
+              DeviceException::EX_WRONG_PARAMETER);
+        }
+        _targetDevice = _dev->_devices[_info.deviceName];
+        _accessor = _targetDevice->getBufferingRegisterAccessor<T>("",_info.registerName);
+        if(_info.targetType == LogicalNameMap::TargetType::REGISTER) {
+          _info.firstIndex = 0;
+          _info.length = _accessor.getNumberOfElements();
+        }
+      }
+
+      virtual ~LogicalNameMappingBackendBufferingRangeRegisterAccessor() {};
+
+      virtual void read() {
+        _accessor.read();
+      }
+
+      virtual void write() {
+        _accessor.write();
+      }
+
+      virtual T& operator[](unsigned int index) {
+        return _accessor[index + _info.firstIndex];
+      }
+
+      virtual unsigned int getNumberOfElements() {
+        return _info.length;
+      }
+
+      typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
+      virtual iterator begin() { return _accessor.begin() + _info.firstIndex; }
+      virtual const_iterator begin() const { return _accessor.begin() + _info.firstIndex; }
+      virtual iterator end() { return _accessor.begin() + _info.firstIndex + _info.length; }
+      virtual const_iterator end() const { return _accessor.begin() + _info.firstIndex + _info.length; }
+      virtual reverse_iterator rbegin() { return _accessor.rend() - _info.firstIndex - _info.length; }
+      virtual const_reverse_iterator rbegin() const { return _accessor.rend() - _info.firstIndex - _info.length; }
+      virtual reverse_iterator rend() { return _accessor.rend() - _info.firstIndex; }
+      virtual const_reverse_iterator rend() const { return _accessor.rend() - _info.firstIndex; }
+
+      virtual void swap(std::vector<T> &x) {
+        std::swap_ranges( x.begin(), x.end(), begin() );
+      }
+
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+        auto rhsCasted = boost::dynamic_pointer_cast< const LogicalNameMappingBackendBufferingRangeRegisterAccessor<T> >(other);
+        if(!rhsCasted) return false;
+        if(_registerName != rhsCasted->_registerName) return false;
+        if(_moduleName != rhsCasted->_moduleName) return false;
+        if(_dev != rhsCasted->_dev) return false;
+        return true;
+      }
+
+    protected:
+
+      /// pointer to underlying accessor
+      BufferingRegisterAccessor<T> _accessor;
+
+      /// register and module name
+      std::string _registerName, _moduleName;
+
+      /// backend device
+      boost::shared_ptr<LogicalNameMappingBackend> _dev;
+
+      /// register information
+      LogicalNameMap::RegisterInfo _info;
+
+      /// target device
+      boost::shared_ptr<Device> _targetDevice;
+
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+        return _accessor.getHardwareAccessingElements();
+      }
+
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        _accessor.replaceTransferElement(newElement);
+      }
+
+  };
+
+}    // namespace mtca4u
+
+#endif /* MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_BUFFERING_RANGE_REGISTER_ACCESSOR_H */

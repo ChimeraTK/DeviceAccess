@@ -99,6 +99,8 @@ namespace mtca4u {
       // the TransferGroup must be a friend to access the actual accesor
       friend class TransferGroup;
 
+    public:
+
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         return _impl->isSameRegister(other);
       }

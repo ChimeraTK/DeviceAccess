@@ -7,6 +7,7 @@
 
 #include "LogicalNameMappingBackend.h"
 #include "LogicalNameMappingBackendRangeRegisterAccessor.h"
+#include "LogicalNameMappingBackendBufferingRangeRegisterAccessor.h"
 #include "Device.h"
 
 namespace mtca4u {
@@ -137,5 +138,50 @@ namespace mtca4u {
     }
 
   }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  TwoDRegisterAccessorImpl<UserType>* LogicalNameMappingBackend::getTwoDRegisterAccessor(
+      const std::string &module, const std::string &registerName) {
+    (void)module; (void)registerName; // avoid warning
+    throw DeviceException("2D register accessors not supported for LogicalNameMappingBackends.",
+        DeviceException::NOT_IMPLEMENTED);
+  }
+
+  VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER(LogicalNameMappingBackend, getTwoDRegisterAccessorImpl,
+      getTwoDRegisterAccessor, const std::string &, const std::string &)
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  BufferingRegisterAccessorImpl<UserType>* LogicalNameMappingBackend::getBufferingRegisterAccessor(
+      const std::string &module, const std::string &registerName) {
+
+    // obtain register info
+    std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
+    LogicalNameMap::RegisterInfo info;
+    info = _map.getRegisterInfo(name);
+
+    // if applicable, obtain target device
+    boost::shared_ptr<Device> targetDevice;
+    if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
+
+    // implementation for each type
+    if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
+      return new LogicalNameMappingBackendBufferingRangeRegisterAccessor<UserType>(shared_from_this(), module, registerName);
+    }
+    else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
+      return new LogicalNameMappingBackendBufferingRangeRegisterAccessor<UserType>(shared_from_this(), module, registerName);
+    }
+    else {
+      throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
+          name+").", DeviceException::NOT_IMPLEMENTED);
+    }
+  }
+
+  VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER(LogicalNameMappingBackend, getBufferingRegisterAccessorImpl,
+      getBufferingRegisterAccessor, const std::string &, const std::string &)
+
 
 } // namespace mtca4u
