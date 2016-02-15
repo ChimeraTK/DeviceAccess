@@ -4,7 +4,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackendRegisterAccessor.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackendRangeRegisterAccessor.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/LNMBackendRegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
@@ -24,7 +24,8 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/LogicalNameMappingBackendRangeRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendBufferingRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LogicalNameMappingBackend.h

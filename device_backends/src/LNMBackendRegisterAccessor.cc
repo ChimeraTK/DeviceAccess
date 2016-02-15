@@ -1,17 +1,17 @@
 /*
- * LogicalNameMappingBackendRangeRegisterAccessor.cc
+ * LNMBackendRegisterAccessor.cc
  *
  *  Created on: Feb 10, 2016
  *      Author: Martin Hierholzer
  */
 
-#include "LogicalNameMappingBackendRangeRegisterAccessor.h"
+#include "LNMBackendRegisterAccessor.h"
 #include "DeviceException.h"
 
 namespace mtca4u {
 
   /********************************************************************************************************************/
-  LogicalNameMappingBackendRangeRegisterAccessor::LogicalNameMappingBackendRangeRegisterAccessor(
+  LNMBackendRegisterAccessor::LNMBackendRegisterAccessor(
         boost::shared_ptr<RegisterAccessor> targetAccessor, unsigned int firstIndex, unsigned int length)
   : RegisterAccessor(boost::shared_ptr<mtca4u::DeviceBackend>()),
     _accessor(targetAccessor),
@@ -22,34 +22,34 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMappingBackendRangeRegisterAccessor::readRaw(int32_t *data, size_t dataSize,
+  void LNMBackendRegisterAccessor::readRaw(int32_t *data, size_t dataSize,
       uint32_t addRegOffset) const {
     _accessor->readRaw(data, dataSize, addRegOffset + sizeof(int32_t)*_firstIndex);
   }
 
   /********************************************************************************************************************/
 
-  void LogicalNameMappingBackendRangeRegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
+  void LNMBackendRegisterAccessor::writeRaw(int32_t const *data, size_t dataSize,
       uint32_t addRegOffset) {
     _accessor->writeRaw(data, dataSize, addRegOffset + sizeof(int32_t)*_firstIndex);
   }
 
   /********************************************************************************************************************/
 
-  RegisterInfoMap::RegisterInfo const &LogicalNameMappingBackendRangeRegisterAccessor::getRegisterInfo() const {
+  RegisterInfoMap::RegisterInfo const &LNMBackendRegisterAccessor::getRegisterInfo() const {
     throw DeviceException("getRegisterInfo() is not possible with logical name mapping backend accessors.",
         DeviceException::NOT_IMPLEMENTED);
   }
 
   /********************************************************************************************************************/
 
-  FixedPointConverter const &LogicalNameMappingBackendRangeRegisterAccessor::getFixedPointConverter() const {
+  FixedPointConverter const &LNMBackendRegisterAccessor::getFixedPointConverter() const {
     return _accessor->getFixedPointConverter();
   }
 
   /********************************************************************************************************************/
 
-  unsigned int LogicalNameMappingBackendRangeRegisterAccessor::getNumberOfElements() const {
+  unsigned int LNMBackendRegisterAccessor::getNumberOfElements() const {
     return _length;
   }
 
@@ -138,7 +138,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMappingBackendRangeRegisterAccessor::readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
+  void LNMBackendRegisterAccessor::readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
     FixedPointConverter::userTypeMap userTypes;
     LogicalNameMappingBackendRangeRegisterAccessorHelper::readImplClass impl(type,convertedData,nWords,wordOffsetInRegister+_firstIndex,_accessor);
     boost::fusion::for_each(userTypes, impl);
@@ -149,7 +149,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMappingBackendRangeRegisterAccessor::writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
+  void LNMBackendRegisterAccessor::writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
     FixedPointConverter::userTypeMap userTypes;
     LogicalNameMappingBackendRangeRegisterAccessorHelper::writeImplClass impl(type,convertedData,nWords,wordOffsetInRegister+_firstIndex,_accessor);
     boost::fusion::for_each(userTypes, impl);

@@ -79,7 +79,7 @@ namespace mtca4u {
       std::map< std::string, boost::shared_ptr<Device> > _devices;
 
       template<typename T>
-      friend class LogicalNameMappingBackendBufferingRangeRegisterAccessor;
+      friend class LNMBackendBufferingRegisterAccessor;
 
   };
 

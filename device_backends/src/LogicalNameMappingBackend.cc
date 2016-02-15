@@ -5,9 +5,9 @@
  *      Author: Martin Hierholzer
  */
 
+#include "LNMBackendRegisterAccessor.h"
+#include "LNMBackendBufferingRegisterAccessor.h"
 #include "LogicalNameMappingBackend.h"
-#include "LogicalNameMappingBackendRangeRegisterAccessor.h"
-#include "LogicalNameMappingBackendBufferingRangeRegisterAccessor.h"
 #include "Device.h"
 
 namespace mtca4u {
@@ -129,7 +129,7 @@ namespace mtca4u {
       return targetDevice->getRegisterAccessor(info.registerName);
     }
     else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      return boost::shared_ptr<mtca4u::RegisterAccessor>(new LogicalNameMappingBackendRangeRegisterAccessor(
+      return boost::shared_ptr<mtca4u::RegisterAccessor>(new LNMBackendRegisterAccessor(
           targetDevice->getRegisterAccessor(info.registerName), info.firstIndex, info.length));
     }
     else {
@@ -168,11 +168,9 @@ namespace mtca4u {
     if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
 
     // implementation for each type
-    if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
-      return new LogicalNameMappingBackendBufferingRangeRegisterAccessor<UserType>(shared_from_this(), module, registerName);
-    }
-    else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      return new LogicalNameMappingBackendBufferingRangeRegisterAccessor<UserType>(shared_from_this(), module, registerName);
+    if( info.targetType == LogicalNameMap::TargetType::REGISTER ||
+        info.targetType == LogicalNameMap::TargetType::RANGE       ) {
+      return new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), module, registerName);
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+

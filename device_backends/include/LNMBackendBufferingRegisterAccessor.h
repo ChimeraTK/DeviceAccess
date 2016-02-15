@@ -1,15 +1,16 @@
 /*
- * LogicalNameMappingBackendBufferingRangeRegisterAccessor.h
+ * LNMBackendBufferingRegisterAccessor.h
  *
  *  Created on: Feb 15, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_BUFFERING_RANGE_REGISTER_ACCESSOR_H
-#define MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_BUFFERING_RANGE_REGISTER_ACCESSOR_H
+#ifndef MTCA4U_LNM_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
+#define MTCA4U_LNM_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
 
 #include <algorithm>
 
+#include "LogicalNameMappingBackend.h"
 #include "BufferingRegisterAccessor.h"
 #include "BufferingRegisterAccessorImpl.h"
 #include "FixedPointConverter.h"
@@ -22,10 +23,10 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template<typename T>
-  class LogicalNameMappingBackendBufferingRangeRegisterAccessor : public BufferingRegisterAccessorImpl<T> {
+  class LNMBackendBufferingRegisterAccessor : public BufferingRegisterAccessorImpl<T> {
     public:
 
-      LogicalNameMappingBackendBufferingRangeRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
+      LNMBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
           const std::string &registerName)
       : _registerName(registerName),_moduleName(module)
       {
@@ -34,7 +35,7 @@ namespace mtca4u {
         _info = _dev->_map.getRegisterInfo(name);
         if( _info.targetType != LogicalNameMap::TargetType::RANGE &&
             _info.targetType != LogicalNameMap::TargetType::REGISTER ) {
-          throw DeviceException("LogicalNameMappingBackendBufferingRangeRegisterAccessor used for wrong register type.",
+          throw DeviceException("LNMBackendBufferingRegisterAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER);
         }
         _targetDevice = _dev->_devices[_info.deviceName];
@@ -45,7 +46,7 @@ namespace mtca4u {
         }
       }
 
-      virtual ~LogicalNameMappingBackendBufferingRangeRegisterAccessor() {};
+      virtual ~LNMBackendBufferingRegisterAccessor() {};
 
       virtual void read() {
         _accessor.read();
@@ -81,7 +82,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const LogicalNameMappingBackendBufferingRangeRegisterAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendBufferingRegisterAccessor<T> >(other);
         if(!rhsCasted) return false;
         if(_registerName != rhsCasted->_registerName) return false;
         if(_moduleName != rhsCasted->_moduleName) return false;
@@ -118,4 +119,4 @@ namespace mtca4u {
 
 }    // namespace mtca4u
 
-#endif /* MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_BUFFERING_RANGE_REGISTER_ACCESSOR_H */
+#endif /* MTCA4U_LNM_BACKEND_BUFFERING_REGISTER_ACCESSOR_H */
