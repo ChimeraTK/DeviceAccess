@@ -51,8 +51,8 @@ namespace mtca4u {
     public:
 
       MultiplexedDataAccessorCopied( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
-      : accessor(_accessor),
-        MultiplexedDataAccessor<UserType>(_accessor->_ioDevice)
+      : MultiplexedDataAccessor<UserType>(_accessor->_ioDevice),
+        accessor(_accessor)
       {}
 
       /** Read the data from the device, de-multiplex the hardware IO buffer and
@@ -86,7 +86,7 @@ namespace mtca4u {
        */
       virtual ~MultiplexedDataAccessorCopied() {};
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) {
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         return accessor->isSameRegister(other);
       }
 
