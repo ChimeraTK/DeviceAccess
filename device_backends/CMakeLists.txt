@@ -26,6 +26,7 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendBufferingRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendBufferingChannelAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LogicalNameMappingBackend.h

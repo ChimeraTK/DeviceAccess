@@ -30,9 +30,21 @@ namespace mtca4u {
       : _impl(_accessor)
       {}
 
+      /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
+       *  @attention Accessors created with this constructors will be dysfunctional!
+       */
+      TwoDRegisterAccessor()
+      {}
+
       /** Operator to access individual sequences.
        */
       std::vector<UserType> & operator[](size_t sequenceIndex) {
+        return _impl->operator[](sequenceIndex);
+      }
+
+      /** Const operator to access individual sequences.
+       */
+      const std::vector<UserType> & operator[](size_t sequenceIndex) const {
         return _impl->operator[](sequenceIndex);
       }
 
@@ -77,6 +89,8 @@ namespace mtca4u {
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         return _impl->isSameRegister(other);
       }
+
+    public:
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return _impl->getHardwareAccessingElements();

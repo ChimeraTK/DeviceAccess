@@ -7,6 +7,7 @@
 
 #include "LNMBackendRegisterAccessor.h"
 #include "LNMBackendBufferingRegisterAccessor.h"
+#include "LNMBackendBufferingChannelAccessor.h"
 #include "LogicalNameMappingBackend.h"
 #include "Device.h"
 
@@ -171,6 +172,9 @@ namespace mtca4u {
     if( info.targetType == LogicalNameMap::TargetType::REGISTER ||
         info.targetType == LogicalNameMap::TargetType::RANGE       ) {
       return new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), module, registerName);
+    }
+    else if( info.targetType == LogicalNameMap::TargetType::CHANNEL) {
+      return new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), module, registerName);
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
