@@ -44,6 +44,10 @@ namespace mtca4u {
           _info.firstIndex = 0;
           _info.length = _accessor.getNumberOfElements();
         }
+        index_begin = _info.firstIndex;
+        index_end = _info.firstIndex + _info.length;
+        index_rbegin = _accessor.getNumberOfElements() - index_end;
+        index_rend = _accessor.getNumberOfElements() - index_begin;
       }
 
       virtual ~LNMBackendBufferingRegisterAccessor() {};
@@ -72,14 +76,14 @@ namespace mtca4u {
       typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
-      virtual iterator begin() { return _accessor.begin() + _info.firstIndex; }
-      virtual const_iterator begin() const { return _accessor.begin() + _info.firstIndex; }
-      virtual iterator end() { return _accessor.begin() + _info.firstIndex + _info.length; }
+      virtual iterator begin() { return _accessor.begin() + index_begin; }
+      virtual const_iterator begin() const { return _accessor.begin() + index_begin; }
+      virtual iterator end() { return _accessor.begin() + index_end; }
       virtual const_iterator end() const { return _accessor.begin() + _info.firstIndex + _info.length; }
-      virtual reverse_iterator rbegin() { return _accessor.rend() - _info.firstIndex - _info.length; }
-      virtual const_reverse_iterator rbegin() const { return _accessor.rend() - _info.firstIndex - _info.length; }
-      virtual reverse_iterator rend() { return _accessor.rend() - _info.firstIndex; }
-      virtual const_reverse_iterator rend() const { return _accessor.rend() - _info.firstIndex; }
+      virtual reverse_iterator rbegin() { return _accessor.rbegin() + index_rbegin; }
+      virtual const_reverse_iterator rbegin() const { return _accessor.rbegin() + index_rbegin; }
+      virtual reverse_iterator rend() { return _accessor.rbegin() + index_rend; }
+      virtual const_reverse_iterator rend() const { return _accessor.rbegin() + index_rend; }
 
       virtual void swap(std::vector<T> &x) {
         std::swap_ranges( x.begin(), x.end(), begin() );
@@ -119,6 +123,9 @@ namespace mtca4u {
 
       /// target device
       boost::shared_ptr<Device> _targetDevice;
+
+      /// indices needed to perpare the iterators
+      int index_begin, index_end, index_rbegin, index_rend;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return _accessor.getHardwareAccessingElements();
