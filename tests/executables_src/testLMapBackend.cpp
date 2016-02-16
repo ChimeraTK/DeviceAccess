@@ -70,6 +70,20 @@ void LMapBackendTest::testReadWriteConstant() {
   device.readReg("Constant",&res, 4);
   BOOST_CHECK( res == 42 );
 
+  // test with buffering register accessor
+  mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Constant");
+  BOOST_CHECK( acc.getNumberOfElements() == 1 );
+  BOOST_CHECK( acc[0] == 42 );
+  acc.read();
+  BOOST_CHECK( acc[0] == 42 );
+  BOOST_CHECK_THROW( acc.write(), DeviceException );
+  try {
+    acc.write();
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
+  }
+
   device.close();
 
 }
