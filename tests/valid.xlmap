@@ -19,13 +19,13 @@
     <entry name="Channel3">
         <type>channel</type>
         <device>PCIE3</device>
-        <register>TEST.DMA</register>
+        <register>TEST.NODMA</register>
         <channel>3</channel>
     </entry>
     <entry name="Channel4">
         <type>channel</type>
         <device>PCIE3</device>
-        <register>TEST.DMA</register>
+        <register>TEST.NODMA</register>
         <channel>4</channel>
     </entry>
     <entry name="Constant">

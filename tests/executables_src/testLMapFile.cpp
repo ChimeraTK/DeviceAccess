@@ -110,7 +110,7 @@ void LMapFileTest::testParseFile() {
   info = lmap.getRegisterInfo("Channel3");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::CHANNEL );
   BOOST_CHECK( info.deviceName == "PCIE3");
-  BOOST_CHECK( info.registerName == "TEST.DMA");
+  BOOST_CHECK( info.registerName == "TEST.NODMA");
   BOOST_CHECK( info.channel == 3);
   BOOST_CHECK( info.hasDeviceName() == true );
   BOOST_CHECK( info.hasRegisterName() == true );
@@ -122,7 +122,7 @@ void LMapFileTest::testParseFile() {
   info = lmap.getRegisterInfo("Channel4");
   BOOST_CHECK( info.targetType == LogicalNameMap::TargetType::CHANNEL );
   BOOST_CHECK( info.deviceName == "PCIE3");
-  BOOST_CHECK( info.registerName == "TEST.DMA");
+  BOOST_CHECK( info.registerName == "TEST.NODMA");
   BOOST_CHECK( info.channel == 4);
   BOOST_CHECK( info.hasDeviceName() == true );
   BOOST_CHECK( info.hasRegisterName() == true );
