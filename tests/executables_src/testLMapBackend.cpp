@@ -20,6 +20,7 @@ class LMapBackendTest {
     void testReadWriteRange();
     void testRegisterAccessorForRegister();
     void testRegisterAccessorForRange();
+    void testRegisterAccessorForChannel();
 };
 
 class LMapBackendTestSuite : public test_suite {
@@ -32,6 +33,7 @@ class LMapBackendTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRange, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRegister, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRange, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForChannel, lMapBackendTest) );
     }
 };
 
@@ -195,6 +197,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   device.open("LMAP0");
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
+  BOOST_CHECK( !acc.isReadOnly() );
 
   for(int i=0; i<1024; i++) area[i] = 12345+3*i;
   target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
@@ -246,19 +249,85 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   acc.read();
   for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
 
-  for(int i=0; i<20; i++) acc[i] = 12345+3*i;
-  acc.write();
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == 12345+3*i );
-
-  for(int i=0; i<20; i++) acc[i] = -876543210+42*i;
-  acc.write();
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == -876543210+42*i );
+  // writing range registers fails
+  BOOST_CHECK( acc.isReadOnly() );
+  BOOST_CHECK_THROW( acc.write(), DeviceException );
+  try {
+    acc.write();
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
+  }
 
   device.close();
   target1.close();
+
+}
+
+  /********************************************************************************************************************/
+
+  void LMapBackendTest::testRegisterAccessorForChannel() {
+    std::vector<int> area(1024);
+
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    mtca4u::Device device, target1;
+
+    target1.open("PCIE3");
+    device.open("LMAP0");
+
+    mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
+    mtca4u::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
+
+    mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
+    unsigned int nSamples = accTarget[3].size();
+    BOOST_CHECK( accTarget[4].size() == nSamples );
+    BOOST_CHECK( acc3.getNumberOfElements() == nSamples );
+    BOOST_CHECK( acc4.getNumberOfElements() == nSamples );
+
+    // fill target register
+    for(unsigned int i=0; i<nSamples; i++) {
+      accTarget[3][i] = 3000+i;
+      accTarget[4][i] = 4000-i;
+    }
+    accTarget.write();
+
+    // clear channel accessor buffers
+    for(unsigned int i=0; i<nSamples; i++) {
+      acc3[i] = 0;
+      acc4[i] = 0;
+    }
+
+    // read channel accessors
+    acc3.read();
+    for(unsigned int i=0; i<nSamples; i++) {
+      BOOST_CHECK( acc3[i] == (signed) (3000+i) );
+      BOOST_CHECK( acc4[i] == 0 );
+    }
+    acc4.read();
+    for(unsigned int i=0; i<nSamples; i++) {
+      BOOST_CHECK( acc3[i] == (signed) (3000+i) );
+      BOOST_CHECK( acc4[i] == (signed) (4000-i) );
+    }
+
+    // write channel registers fails
+    BOOST_CHECK( acc3.isReadOnly() );
+    BOOST_CHECK( acc4.isReadOnly() );
+    BOOST_CHECK_THROW( acc3.write(), DeviceException );
+    try {
+      acc3.write();
+    }
+    catch(DeviceException &e) {
+      BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
+    }
+    BOOST_CHECK_THROW( acc4.write(), DeviceException );
+    try {
+      acc4.write();
+    }
+    catch(DeviceException &e) {
+      BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
+    }
+
+    device.close();
+    target1.close();
 
 }
