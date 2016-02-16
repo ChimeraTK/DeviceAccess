@@ -70,6 +70,43 @@ namespace mtca4u {
         return _impl->getNumberOfElements();
       }
 
+      /** Implicit type conversion to user type T to access the first element (often the only element).
+       * This covers already a lot of operations like arithmetics and comparison */
+      inline operator T() {
+        return _impl->operator[](0);
+      }
+
+      /** Assignment operator, assigns the first element. */
+      inline BufferingRegisterAccessor<T> operator=(T rightHandSide)
+      {
+        _impl->operator[](0) = rightHandSide;
+        return *this;
+      }
+
+      /** Pre-increment operator for the first element. */
+      inline BufferingRegisterAccessor<T> operator++() {
+        return operator=( _impl->operator[](0) + 1 );
+      }
+
+      /** Pre-decrement operator for the first element. */
+      inline BufferingRegisterAccessor<T> operator--() {
+        return operator=( _impl->operator[](0) - 1 );
+      }
+
+      /** Post-increment operator for the first element. */
+      inline T operator++(int) {
+        T v = _impl->operator[](0);
+        operator=( v + 1 );
+        return v;
+      }
+
+      /** Post-decrement operator for the first element. */
+      inline T operator--(int) {
+        T v = _impl->operator[](0);
+        operator=( v - 1 );
+        return v;
+      }
+
       /** Access data with std::vector-like iterators
        */
       typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;

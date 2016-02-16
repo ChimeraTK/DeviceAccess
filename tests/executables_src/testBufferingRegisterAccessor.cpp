@@ -152,4 +152,52 @@ void BufferingRegisterTest::testRegisterAccessor() {
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 42 );
 
+  // test implicit type conversion operator
+  compare = -77;
+  device->writeReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  floatRegister.read();
+  BOOST_CHECK( floatRegister+5. == -77./8. + 5. );
+
+  // test assignment operator
+  floatRegister = 22.;
+  BOOST_CHECK( floatRegister == 22. );
+  floatRegister.write();
+  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 22.*8. );
+
+  // test pre-increment operator
+  BufferingRegisterAccessor<double> copy = ++floatRegister;
+  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  BOOST_CHECK( floatRegister == 23. );
+  floatRegister.write();
+  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 23.*8. );
+
+  // test pre-decrement operator
+  copy = --floatRegister;
+  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  BOOST_CHECK( floatRegister == 22. );
+  floatRegister.write();
+  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 22.*8. );
+
+  // test post-increment operator
+  float oldValue = floatRegister++;
+  BOOST_CHECK( oldValue == 22. );
+  BOOST_CHECK( floatRegister == 23. );
+  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  floatRegister.write();
+  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 23.*8. );
+
+  // test post-decrement operator
+  oldValue = floatRegister--;
+  BOOST_CHECK( oldValue == 23. );
+  BOOST_CHECK( floatRegister == 22. );
+  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  floatRegister.write();
+  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  BOOST_CHECK( compare == 22.*8. );
+
+
 }
