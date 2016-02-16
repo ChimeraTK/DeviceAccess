@@ -189,6 +189,7 @@ void LMapBackendTest::testReadWriteRange() {
 
 void LMapBackendTest::testRegisterAccessorForRegister() {
   std::vector<int> area(1024);
+  int index;
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
@@ -199,6 +200,9 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
   BOOST_CHECK( !acc.isReadOnly() );
 
+  const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
+
+  // reading via [] operator
   for(int i=0; i<1024; i++) area[i] = 12345+3*i;
   target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
   acc.read();
@@ -209,6 +213,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   acc.read();
   for(int i=0; i<1024; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
 
+  // writing via [] operator
   for(int i=0; i<1024; i++) acc[i] = 12345+3*i;
   acc.write();
   for(int i=0; i<1024; i++) area[i] = 0;
@@ -221,6 +226,38 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
   for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
+  // reading via iterator
+  index = 0;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+    BOOST_CHECK( *it == -876543210+42*index );
+    ++index;
+  }
+  BOOST_CHECK( index == 1024 );
+
+  // reading via const_iterator
+  index = 0;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
+    BOOST_CHECK( *it == -876543210+42*index );
+    ++index;
+  }
+  BOOST_CHECK( index == 1024 );
+
+  // reading via reverse_iterator
+  index = 1024;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+    --index;
+    BOOST_CHECK( *it == -876543210+42*index );
+  }
+  BOOST_CHECK( index == 0 );
+
+  // reading via const_reverse_iterator
+  index = 1024;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
+    --index;
+    BOOST_CHECK( *it == -876543210+42*index );
+  }
+  BOOST_CHECK( index == 0 );
+
   device.close();
   target1.close();
 
@@ -230,6 +267,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
 void LMapBackendTest::testRegisterAccessorForRange() {
   std::vector<int> area(1024);
+  int index;
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
@@ -238,6 +276,8 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   device.open("LMAP0");
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+
+  const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
   for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
   target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
@@ -258,6 +298,38 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   catch(DeviceException &e) {
     BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
   }
+
+  // reading via iterator
+  index = 0;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+    BOOST_CHECK( *it == -876543210+42*index );
+    ++index;
+  }
+  BOOST_CHECK( index == 20 );
+
+  // reading via const_iterator
+  index = 0;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
+    BOOST_CHECK( *it == -876543210+42*index );
+    ++index;
+  }
+  BOOST_CHECK( index == 20 );
+
+  // reading via reverse_iterator
+  index = 20;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+    --index;
+    BOOST_CHECK( *it == -876543210+42*index );
+  }
+  BOOST_CHECK( index == 0 );
+
+  // reading via const_reverse_iterator
+  index = 20;
+  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
+    --index;
+    BOOST_CHECK( *it == -876543210+42*index );
+  }
+  BOOST_CHECK( index == 0 );
 
   device.close();
   target1.close();
