@@ -66,10 +66,16 @@ namespace mtca4u {
       }
 
       /**
-       * Return the number of sequences that have been Multiplexed
+       * Return the number of sequences (=channels)
        */
       size_t getNumberOfDataSequences() {
         return _impl->getNumberOfDataSequences();
+      }
+
+      /** Return number of samples per sequence (=channel)
+       */
+      inline unsigned int getNumberOfSamples() {
+        return _impl->getNumberOfSamples();
       }
 
       virtual bool isReadOnly() const {

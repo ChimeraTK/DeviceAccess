@@ -277,6 +277,8 @@ BOOST_AUTO_TEST_CASE(testMixed) {
   MixedTypeTest<double> myTest(&myMixedData);
   BOOST_CHECK(myTest.getSizeOneBlock() == 11);
   BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
+  BOOST_CHECK(myMixedData.getNumberOfSamples() == 372);
+  BOOST_CHECK(myMixedData[0].size() == 372);
   BOOST_CHECK(myTest.getConvertersSize() == 17);
   BOOST_CHECK(myTest.getNBlock() == 372);
 

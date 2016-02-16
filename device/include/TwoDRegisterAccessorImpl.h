@@ -67,6 +67,17 @@ namespace mtca4u{
        */
       virtual size_t getNumberOfDataSequences() = 0;
 
+      /** Return number of samples per sequence (=channel).
+       *  This function assumes that the number of samples is equal for all sequences. If an implementation supports
+       *  different number of samples for each sequence, it needs to override this function and throw an exception.
+       *
+       *  Implementation note: The default implementation will return the length of the sequence 0. If in future
+       *  implementations with different number of samples for each sequence are present, this function needs to be
+       *  extended with an optional argument of the channel number. Only if called without specifying the argument
+       *  should throw an exception then.
+       */
+      virtual unsigned int getNumberOfSamples();
+
       /**
        * Default destructor
        */
@@ -103,6 +114,13 @@ namespace mtca4u{
   std::vector<UserType> & TwoDRegisterAccessorImpl<UserType>::operator[](
       size_t sequenceIndex){
       return _sequences[sequenceIndex];
+  }
+
+  /********************************************************************************************************************/
+
+  template<class UserType>
+  unsigned int TwoDRegisterAccessorImpl<UserType>::getNumberOfSamples() {
+    return _sequences[0].size();
   }
 
   /********************************************************************************************************************/
