@@ -72,10 +72,10 @@ namespace mtca4u {
 
       /** Access data with std::vector-like iterators
        */
-      typedef typename std::vector<T>::iterator iterator;
-      typedef typename std::vector<T>::const_iterator const_iterator;
-      typedef typename std::vector<T>::reverse_iterator reverse_iterator;
-      typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
+      typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
       inline iterator begin() { return _impl->begin(); }
       inline const_iterator begin() const { return _impl->begin(); }
       inline iterator end() { return _impl->end(); }
