@@ -48,7 +48,8 @@ namespace mtca4u {
       }
 
       virtual void write() {
-        _accessor.write();
+        throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
+            DeviceException::REGISTER_IS_READ_ONLY);
       }
 
       virtual T& operator[](unsigned int index) {
@@ -82,6 +83,10 @@ namespace mtca4u {
         if(_registerName != rhsCasted->_registerName) return false;
         if(_moduleName != rhsCasted->_moduleName) return false;
         if(_dev != rhsCasted->_dev) return false;
+        return true;
+      }
+
+      virtual bool isReadOnly() const {
         return true;
       }
 

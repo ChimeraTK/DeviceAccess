@@ -34,6 +34,9 @@ namespace mtca4u {
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
 
+      /** Check if transfer element is read only */
+      virtual bool isReadOnly() const = 0;
+
     protected:
 
       /** Obtain the underlying TransferElements with actual hardware access. If this transfer element

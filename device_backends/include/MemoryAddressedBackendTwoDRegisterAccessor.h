@@ -56,6 +56,10 @@ namespace mtca4u {
         return true;
       }
 
+      virtual bool isReadOnly() const {
+        return false;
+      }
+
     protected:
 
       /** One fixed point converter for each sequence. */

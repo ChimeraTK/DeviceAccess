@@ -29,7 +29,9 @@ namespace mtca4u {
 
     public:
 
-      TransferGroup() {};
+      TransferGroup()
+      : readOnly(false)
+      {};
       ~TransferGroup() {};
 
       /** Add a register accessor to the group. The register accessor might internally be altered so that accessors
@@ -48,10 +50,17 @@ namespace mtca4u {
       /** Trigger write transfer for all accessors in the group */
       void write();
 
+      /** Check if transfer group is read-only. A transfer group is read-only, if at least one of its transfer
+       *  elements is read-only. */
+      bool isReadOnly();
+
     protected:
 
       /** List of TransferElements in this group */
       std::vector< boost::shared_ptr<TransferElement> > elements;
+
+      /** Flag if group is read-only */
+      bool readOnly;
   };
 
   /** Template specialisation for adding a TransferElement. TransferElement is a base class of the supported register

@@ -72,6 +72,10 @@ namespace mtca4u {
         return _impl->getNumberOfDataSequences();
       }
 
+      virtual bool isReadOnly() const {
+        return _impl->isReadOnly();
+      }
+
       /**
        * Default destructor
        */

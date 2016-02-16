@@ -20,9 +20,19 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   void TransferGroup::write() {
+    if(isReadOnly()) {
+      throw DeviceException("TransferGroup::write() called, but at least one TransferElement is read-only.",
+          DeviceException::REGISTER_IS_READ_ONLY);
+    }
     for(unsigned int i=0; i<elements.size(); i++) {
       elements[i]->write();
     }
+  }
+
+  /*********************************************************************************************************************/
+
+  bool TransferGroup::isReadOnly() {
+    return readOnly;
   }
 
   /*********************************************************************************************************************/
@@ -49,6 +59,9 @@ namespace mtca4u {
       // if not a duplicate, add to the list
       if(!foundDuplicate) elements.push_back(newElements[i]);
     }
+
+    // update read-only flag
+    if(accessor.isReadOnly()) readOnly = true;
   }
 
 } /* namespace mtca4u */

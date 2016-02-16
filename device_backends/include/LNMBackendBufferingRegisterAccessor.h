@@ -53,6 +53,10 @@ namespace mtca4u {
       }
 
       virtual void write() {
+        if(isReadOnly()) {
+          throw DeviceException("Writing to range-type registers of logical name mapping devices is not supported.",
+              DeviceException::REGISTER_IS_READ_ONLY);
+        }
         _accessor.write();
       }
 
@@ -88,6 +92,15 @@ namespace mtca4u {
         if(_moduleName != rhsCasted->_moduleName) return false;
         if(_dev != rhsCasted->_dev) return false;
         return true;
+      }
+
+      virtual bool isReadOnly() const {
+        if(_info.targetType == LogicalNameMap::TargetType::RANGE) {
+          return true;
+        }
+        else {
+          return false;
+        }
       }
 
     protected:

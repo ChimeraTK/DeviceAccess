@@ -91,6 +91,10 @@ namespace mtca4u {
         _impl->swap(x);
       }
 
+      virtual bool isReadOnly() const {
+        return _impl->isReadOnly();
+      }
+
     protected:
 
       /// pointer to the implementation

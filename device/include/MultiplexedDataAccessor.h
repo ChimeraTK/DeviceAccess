@@ -90,6 +90,10 @@ namespace mtca4u {
         return accessor->isSameRegister(other);
       }
 
+      virtual bool isReadOnly() const {
+        return accessor->isReadOnly();
+      }
+
     protected:
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {

@@ -53,6 +53,10 @@ namespace mtca4u {
         return true;
       }
 
+      virtual bool isReadOnly() const {
+        return false;
+      }
+
     protected:
 
       /// pointer to non-buffering accessor
