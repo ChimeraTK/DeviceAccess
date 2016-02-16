@@ -11,6 +11,7 @@
 #include "Exception.h"
 #include "MapException.h"
 #include "NotImplementedException.h"
+#include "MapFileParser.h"
 
 namespace mtca4u {
 
@@ -122,12 +123,18 @@ namespace mtca4u {
       const std::string &_dataRegionName, const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
   : TwoDRegisterAccessorImpl<UserType>(_backend), _registerName(_dataRegionName), _moduleName(moduleName)
   {
+      // re-split register and module after merging names by the last dot (to allow module.register in the register name)
+      std::string mergedName = ( _moduleName.length() > 0 ? moduleName + "." + _registerName : _registerName );
+      auto moduleAndRegister = MapFileParser::splitStringAtLastDot(mergedName);
+      _moduleName = moduleAndRegister.first;
+      _registerName = moduleAndRegister.second;
+
       // build name of area as written in the map file
-      std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_dataRegionName;
+      std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_registerName;
 
       // Obtain information about the area
       auto registerMapping = _backend->getRegisterMap();
-      registerMapping->getRegisterInfo(areaName, _areaInfo, moduleName);
+      registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
 
       // Obtain information for each sequence (= channel) in the area:
       // Create a fixed point converter for each sequence and store the sequence information in a vector
@@ -137,11 +144,11 @@ namespace mtca4u {
         // build name of the next sequence as written in the map file
         SequenceInfo sequenceInfo;
         std::stringstream sequenceNameStream;
-        sequenceNameStream << SEQUENCE_PREFIX << _dataRegionName << "_" << iSeq++;
+        sequenceNameStream << SEQUENCE_PREFIX << _registerName << "_" << iSeq++;
 
         // try to find sequence
         try {
-          registerMapping->getRegisterInfo(sequenceNameStream.str(), sequenceInfo, moduleName);
+          registerMapping->getRegisterInfo(sequenceNameStream.str(), sequenceInfo, _moduleName);
         }
         catch(MapFileException &) {
           // no sequence found: we are done
@@ -161,7 +168,7 @@ namespace mtca4u {
 
       // check if no sequences were found
       if(_converters.empty()){
-        throw MultiplexedDataAccessorException( "No sequences found for name \""+_dataRegionName+"\".",
+        throw MultiplexedDataAccessorException( "No sequences found for name \""+_registerName+"\".",
             MultiplexedDataAccessorException::EMPTY_AREA );
       }
 
