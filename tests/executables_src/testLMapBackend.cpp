@@ -81,6 +81,38 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
   }
 
+  BOOST_CHECK_THROW(device.getRegisterAccessor("Channel3"), mtca4u::DeviceException);
+  try {
+    device.getRegisterAccessor("Channel3");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
+  }
+
+  BOOST_CHECK_THROW(device.writeReg("Channel3", &data), mtca4u::DeviceException);
+  try {
+    device.writeReg("Channel3", &data);
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
+  }
+
+  BOOST_CHECK_THROW(device.readReg("Channel3", &data), mtca4u::DeviceException);
+  try {
+    device.readReg("Channel3", &data);
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
+  }
+
+  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<int>("","Channel3"), mtca4u::DeviceException);
+  try {
+    device.getTwoDRegisterAccessor<int>("","Channel3");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
+  }
+
 }
 
 /********************************************************************************************************************/
@@ -470,6 +502,7 @@ void LMapBackendTest::testNonBufferingAccessor() {
 
   boost::shared_ptr<mtca4u::RegisterAccessor> acc;
 
+  // full area (pass-through a standard BackendBufferingRegisterAccessor)
   acc = device.getRegisterAccessor("FullArea");
 
   for(int i=0; i<1024; i++) area[i] = 12345+3*i;
@@ -495,6 +528,33 @@ void LMapBackendTest::testNonBufferingAccessor() {
   for(int i=0; i<1024; i++) area[i] = 0;
   target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
   for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+
+  // range (special LNMBackendRegisterAccessor)
+  acc = device.getRegisterAccessor("PartOfArea");
+
+  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
+  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  acc->read(area.data(), 20);
+  for(int i=0; i<20; i++) BOOST_CHECK( area[i] == 12345+3*(i+10) );
+
+  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
+  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  acc->read(area.data(), 20);
+  for(int i=0; i<20; i++) BOOST_CHECK( area[i] == -876543210+42*(i+10) );
+
+  for(int i=0; i<20; i++) area[i] = 12345+3*(i+10);
+  acc->write(area.data(), 20);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=10; i<30; i++) BOOST_CHECK( area[i] == 12345+3*i );
+
+  for(int i=0; i<20; i++) area[i] = -876543210+42*(i+10);
+  acc->write(area.data(), 20);
+  for(int i=0; i<1024; i++) area[i] = 0;
+  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=10; i<30; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
   device.close();
   target1.close();
