@@ -308,11 +308,12 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   for(int i = 2; i < 65536/16; i++) {
     for(int k = 0; k<16; k++) {
       int expectedValue = i + k;
+      void *ptr = (void*) &expectedValue;
       if(k == 1 || k == 2 || k == 6) {  // 16 bit
-        expectedValue = *(reinterpret_cast<int16_t*>(&expectedValue));
+        expectedValue = *(reinterpret_cast<int16_t*>(ptr));
       }
       else if(k == 3) {  // 8 bit
-        expectedValue = *(reinterpret_cast<int8_t*>(&expectedValue));
+        expectedValue = *(reinterpret_cast<int8_t*>(ptr));
       }
       else if(k == 4) {  // 1 bit
         expectedValue = expectedValue & 0x1;
