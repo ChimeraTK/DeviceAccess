@@ -197,10 +197,7 @@ namespace mtca4u {
        *  This function is deprecated. Open by alias name instead.
        *  @todo Add printed runtime warning after release of version 0.6
        */
-      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap) {
-        deviceBackend->setRegisterMap(registerMap);
-        open(deviceBackend);
-      }
+      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap);
 
       /** \deprecated
        *  This function is deprecated. Open by alias name instead.
