@@ -484,6 +484,46 @@ void LMapBackendTest::testRegisterAccessorForRange() {
     BOOST_CHECK( acc4[i] == (signed) (4000-i) );
   }
 
+  // read via iterators
+  unsigned int idx=0;
+  for(BufferingRegisterAccessorImpl<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
+    BOOST_CHECK( *it == (signed) (3000+idx) );
+    ++idx;
+  }
+  BOOST_CHECK(idx == nSamples);
+
+  // read via const iterators
+  const mtca4u::BufferingRegisterAccessor<int32_t> acc3_const = acc3;
+  idx=0;
+  for(BufferingRegisterAccessorImpl<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
+    BOOST_CHECK( *it == (signed) (3000+idx) );
+    ++idx;
+  }
+  BOOST_CHECK(idx == nSamples);
+
+  // read via reverse iterators
+  idx=nSamples;
+  for(BufferingRegisterAccessorImpl<int>::reverse_iterator it = acc3.rbegin(); it != acc3.rend(); ++it) {
+    --idx;
+    BOOST_CHECK( *it == (signed) (3000+idx) );
+  }
+  BOOST_CHECK(idx == 0);
+
+  // read via reverse const iterators
+  idx=nSamples;
+  for(BufferingRegisterAccessorImpl<int>::const_reverse_iterator it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
+    --idx;
+    BOOST_CHECK( *it == (signed) (3000+idx) );
+  }
+  BOOST_CHECK(idx == 0);
+
+  // swap into other vector
+  std::vector<int> someVector(nSamples);
+  acc3.swap(someVector);
+  for(unsigned int i=0; i<nSamples; i++) {
+    BOOST_CHECK( someVector[i] == (signed) (3000+i) );
+  }
+
   // write channel registers fails
   BOOST_CHECK( acc3.isReadOnly() );
   BOOST_CHECK( acc4.isReadOnly() );
@@ -587,7 +627,6 @@ void LMapBackendTest::testOther() {
   mtca4u::Device device;
   device.open("LMAP0");
 
-  std::cout <<  device.readDeviceInfo() << std::endl;
   BOOST_CHECK( device.readDeviceInfo().find("Logical name mapping file:") == 0 );
 
 }
