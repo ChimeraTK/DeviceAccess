@@ -63,6 +63,8 @@ void testDeMultiplexing(std::string areaName) {
 
     MemoryAddressedBackendTwoDRegisterAccessor< SequenceWordType > deMultiplexer(areaName, TEST_MODULE_NAME, ioDevice);
 
+    BOOST_CHECK( deMultiplexer.isReadOnly() == false );
+
     deMultiplexer.read();
 
     BOOST_CHECK( deMultiplexer[0][0] == 'A' );
