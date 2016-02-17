@@ -35,7 +35,7 @@ namespace mtca4u {
         _info = _dev->_map.getRegisterInfo(name);
         if( _info.targetType != LogicalNameMap::TargetType::CHANNEL ) {
           throw DeviceException("LNMBackendBufferingChannelAccessor used for wrong register type.",
-              DeviceException::EX_WRONG_PARAMETER);
+              DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         _targetDevice = _dev->_devices[_info.deviceName];
         _accessor = _targetDevice->getTwoDRegisterAccessor<T>("",_info.registerName);
@@ -66,10 +66,10 @@ namespace mtca4u {
       typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
       virtual iterator begin() { return _accessor[_info.channel].begin(); }
       virtual const_iterator begin() const { return _accessor[_info.channel].begin(); }
-      virtual iterator end() { return _accessor[_info.channel].begin(); }
-      virtual const_iterator end() const { return _accessor[_info.channel].begin(); }
-      virtual reverse_iterator rbegin() { return _accessor[_info.channel].rend(); }
-      virtual const_reverse_iterator rbegin() const { return _accessor[_info.channel].rend(); }
+      virtual iterator end() { return _accessor[_info.channel].end(); }
+      virtual const_iterator end() const { return _accessor[_info.channel].end(); }
+      virtual reverse_iterator rbegin() { return _accessor[_info.channel].rbegin(); }
+      virtual const_reverse_iterator rbegin() const { return _accessor[_info.channel].rbegin(); }
       virtual reverse_iterator rend() { return _accessor[_info.channel].rend(); }
       virtual const_reverse_iterator rend() const { return _accessor[_info.channel].rend(); }
 
