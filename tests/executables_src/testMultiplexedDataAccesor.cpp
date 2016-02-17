@@ -368,6 +368,7 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
   }
 
   mtca4u::MultiplexedDataAccessorCopied<unsigned int> accCopied(acc);
+  accCopied.read();
 
   for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
     for(unsigned int k=0; k<(*acc)[i].size(); k++) {
