@@ -62,7 +62,7 @@ namespace mtca4u {
       bool        _opened;
       bool        _connected;
 
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE
+      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE only for compatibility!
 
 
   };
