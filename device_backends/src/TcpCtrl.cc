@@ -30,7 +30,6 @@ void TcpCtrl::openConnection() {
     iterator_t endPointIterator = dnsResolver.resolve(query);
 
     boost::system::error_code ec;
-    int connectionCounter = 0;
 
     // Try connecting to the first working endpoint in the list returned by
     // the resolver.
