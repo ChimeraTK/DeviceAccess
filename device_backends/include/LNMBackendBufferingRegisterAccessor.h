@@ -36,7 +36,7 @@ namespace mtca4u {
         if( _info.targetType != LogicalNameMap::TargetType::RANGE &&
             _info.targetType != LogicalNameMap::TargetType::REGISTER ) {
           throw DeviceException("LNMBackendBufferingRegisterAccessor used for wrong register type.",
-              DeviceException::EX_WRONG_PARAMETER);
+              DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         _targetDevice = _dev->_devices[_info.deviceName];
         _accessor = _targetDevice->getBufferingRegisterAccessor<T>("",_info.registerName);

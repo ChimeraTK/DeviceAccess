@@ -37,7 +37,7 @@ namespace mtca4u {
         _info = _dev->_map.getRegisterInfo(name);
         if( _info.targetType != LogicalNameMap::TargetType::INT_CONSTANT ) {
           throw DeviceException("LNMBackendBufferingConstantAccessor used for wrong register type.",
-              DeviceException::EX_WRONG_PARAMETER);
+              DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(1);
         BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info.value;
