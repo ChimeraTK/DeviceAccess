@@ -54,7 +54,7 @@ class TcpCtrl {
   private:
 
     /*!
-     * @brief connect to the first available endpoint from a list of endpoints.
+     * @brief connect to the first good endpoint from a list of endpoints.
      * The endpoint list is accessed through the provided Iterator
      *
      * The code in this method is based on  boost::asio::connect. This convenience

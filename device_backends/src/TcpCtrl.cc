@@ -32,26 +32,18 @@ void TcpCtrl::openConnection() {
     boost::system::error_code ec;
     int connectionCounter = 0;
 
-    while (1) {
-      // Try connecting to the first working endpoint in the list returned by
-      // the resolver and retry 30 times if all endpoints in the list
-      // fails to connect (FIXME: why 30? why retry anyway).
-      ec = connectToResolvedEndPoints(endPointIterator);
-      if (!ec || connectionCounter > 30) {
-        break;
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      connectionCounter++;
-    }
-    // we are unsuccessful after 30 retries
+    // Try connecting to the first working endpoint in the list returned by
+    // the resolver.
+    // TODO: let boost asio throw instead of handling error through 'ec'.
+    ec = connectToResolvedEndPoints(endPointIterator);
     if (ec) {
       throw RebotBackendException("Could not connect to server",
-          RebotBackendException::EX_CONNECTION_FAILED);
+                                  RebotBackendException::EX_CONNECTION_FAILED);
     }
   }
   catch (std::exception &exception) {
     throw RebotBackendException(exception.what(),
-        RebotBackendException::EX_CONNECTION_FAILED);
+                                RebotBackendException::EX_CONNECTION_FAILED);
   }
 }
 
