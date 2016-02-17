@@ -164,7 +164,7 @@ configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in
 install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
   "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
-  DESTINATION . COMPONENT dev)
+  DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules COMPONENT dev)
 
 install(PROGRAMS "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config"
   DESTINATION bin COMPONENT dev)
@@ -178,7 +178,9 @@ if(DOXYGEN_FOUND)
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc DESTINATION . COMPONENT dev)
+  #note the / after ${CMAKE_BINARY_DIR}/doc/. This causes the directory to be renamed to the destination, not copied into
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}
+          COMPONENT doc)
 else(DOXYGEN_FOUND)
   message("Doxygen not found, documentation cannot be build.")
 endif(DOXYGEN_FOUND) 

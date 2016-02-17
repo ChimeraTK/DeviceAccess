@@ -16,6 +16,6 @@ endforeach( TARGET )
   endforeach( FILE )
 
  #also install the example source code 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION . COMPONENT dev
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc
   FILES_MATCHING PATTERN "*.cpp"  PATTERN  Makefile PATTERN CMakeLists.txt PATTERN ".svn" EXCLUDE )
  
