@@ -23,6 +23,7 @@ class LMapBackendTest {
     void testRegisterAccessorForRange();
     void testRegisterAccessorForChannel();
     void testNonBufferingAccessor();
+    void testOther();
 };
 
 class LMapBackendTestSuite : public test_suite {
@@ -38,6 +39,7 @@ class LMapBackendTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRange, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForChannel, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testNonBufferingAccessor, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testOther, lMapBackendTest) );
     }
 };
 
@@ -108,6 +110,22 @@ void LMapBackendTest::testExceptions() {
   BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<int>("","Channel3"), mtca4u::DeviceException);
   try {
     device.getTwoDRegisterAccessor<int>("","Channel3");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
+  }
+
+  BOOST_CHECK_THROW(device.getRegistersInModule("MODULE"), mtca4u::DeviceException);
+  try {
+    device.getRegistersInModule("MODULE");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
+  }
+
+  BOOST_CHECK_THROW(device.getRegisterAccessorsInModule("MODULE"), mtca4u::DeviceException);
+  try {
+    device.getRegisterAccessorsInModule("MODULE");
   }
   catch(mtca4u::DeviceException &e) {
     BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
@@ -558,5 +576,18 @@ void LMapBackendTest::testNonBufferingAccessor() {
 
   device.close();
   target1.close();
+
+}
+
+/********************************************************************************************************************/
+
+void LMapBackendTest::testOther() {
+
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  mtca4u::Device device;
+  device.open("LMAP0");
+
+  std::cout <<  device.readDeviceInfo() << std::endl;
+  BOOST_CHECK( device.readDeviceInfo().find("Logical name mapping file:") == 0 );
 
 }
