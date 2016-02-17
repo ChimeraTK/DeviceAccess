@@ -65,10 +65,10 @@ namespace mtca4u {
       TwoDRegisterAccessorImpl<UserType>* getTwoDRegisterAccessor(const std::string &registerName,
           const std::string &module);
 
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap)
-      {
-        _registerMap = registerMap;
-      }
+      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
+      { // LCOV_EXCL_LINE only for compatibility!
+        _registerMap = registerMap; // LCOV_EXCL_LINE only for compatibility!
+      } // LCOV_EXCL_LINE only for compatibility!
 
   };
 

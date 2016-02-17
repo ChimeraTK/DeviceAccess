@@ -55,14 +55,14 @@ namespace mtca4u {
        */
       virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
         write(bar, address, data,  sizeInBytes);
-      }
+      }// LCOV_EXCL_LINE
 
   protected:
 
       bool        _opened;
       bool        _connected;
 
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {};
+      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE
 
 
   };

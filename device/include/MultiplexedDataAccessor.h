@@ -86,28 +86,28 @@ namespace mtca4u {
        */
       virtual ~MultiplexedDataAccessorCopied() {};
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        return accessor->isSameRegister(other);
-      }
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {// LCOV_EXCL_LINE
+        return accessor->isSameRegister(other);// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
 
-      virtual bool isReadOnly() const {
-        return accessor->isReadOnly();
-      }
+      virtual bool isReadOnly() const {// LCOV_EXCL_LINE
+        return accessor->isReadOnly();// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
 
     protected:
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return accessor->getHardwareAccessingElements();
-      }
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {// LCOV_EXCL_LINE
+        return accessor->getHardwareAccessingElements();// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        if(accessor->isSameRegister(newElement)) {
-          accessor = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);
-        }
-        else {
-          accessor->replaceTransferElement(newElement);
-        }
-      }
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {// LCOV_EXCL_LINE
+        if(accessor->isSameRegister(newElement)) {// LCOV_EXCL_LINE
+          accessor = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);// LCOV_EXCL_LINE
+        }// LCOV_EXCL_LINE
+        else {// LCOV_EXCL_LINE
+          accessor->replaceTransferElement(newElement);// LCOV_EXCL_LINE
+        }// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
 
       boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
 
