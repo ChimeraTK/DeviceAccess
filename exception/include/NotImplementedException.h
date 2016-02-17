@@ -10,7 +10,7 @@ namespace mtca4u {
 
       NotImplementedException(const std::string & message):
         Exception(message, 0) {}
-      virtual ~NotImplementedException() throw(){}
+      virtual ~NotImplementedException() throw(){}      // LCOV_EXCL_LINE
   };
 
 }// namespace mtca4u
