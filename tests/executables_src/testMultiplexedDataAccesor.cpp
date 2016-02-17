@@ -6,10 +6,13 @@ using namespace boost::unit_test_framework;
 #include <iostream>
 #include <sstream>
 
-#include <TwoDRegisterAccessor.h>
+#include "TwoDRegisterAccessor.h"
 #include "MemoryAddressedBackendTwoDRegisterAccessor.h"
 #include "DummyBackend.h"
 #include "MapFileParser.h"
+#include "BackendFactory.h"
+#include "MultiplexedDataAccessor.h"
+#include "Device.h"
 
 using namespace mtca4u;
 
@@ -330,5 +333,50 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
   BOOST_CHECK(deMuxedData->getNumberOfDataSequences() == 3);
 
 }
+
+
+
+BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  Device device;
+  device.open("PCIE3");
+
+  boost::shared_ptr< mtca4u::MultiplexedDataAccessor<unsigned int> > acc =
+      device.getCustomAccessor< mtca4u::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
+  acc->read();
+  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
+    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
+      (*acc)[i][k] = i+3*k;
+    }
+  }
+
+  acc->write();
+
+  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
+    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
+      (*acc)[i][k] = 0;
+    }
+  }
+
+  acc->read();
+
+  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
+    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
+      BOOST_CHECK( (*acc)[i][k] == i+3*k );
+    }
+  }
+
+  mtca4u::MultiplexedDataAccessorCopied<unsigned int> accCopied(acc);
+
+  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
+    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
+      BOOST_CHECK( accCopied[i][k] == i+3*k );
+    }
+  }
+
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
