@@ -222,4 +222,13 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
     BOOST_CHECK( a[4][i] == 4*10 + (signed)i );
   }
 
+  // check that writing to the group fails (has read-only elements)
+  BOOST_CHECK_THROW( group.write(), DeviceException );
+  try {
+    group.write();
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK( e.getID() == DeviceException::REGISTER_IS_READ_ONLY );
+  }
+
 }
