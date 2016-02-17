@@ -20,8 +20,8 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
-    writeRaw(data,dataSize,addRegOffset);
-  }
+  void RegisterAccessor::writeDMA(int32_t const *data, size_t dataSize, uint32_t addRegOffset) {   // LCOV_EXCL_LINE
+    writeRaw(data,dataSize,addRegOffset);   // LCOV_EXCL_LINE
+  }   // LCOV_EXCL_LINE
 
 }
