@@ -18,6 +18,7 @@
 /** An Example to show how to write a backend device class and add it to the factory.
  *
  */
+// LCOV_EXCL_START dont include this in the coverage report
 class ExampleBackend : public mtca4u::DeviceBackendImpl {
   public:
     ExampleBackend();
@@ -86,5 +87,5 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
      */
     static BackendRegisterer backendRegisterer;
 };
-
+//LCOV_EXCL_STOP
 #endif /* SOURCE_DIRECTORY__EXAMPLES_EXAMPLEBACKEND_H_ */
