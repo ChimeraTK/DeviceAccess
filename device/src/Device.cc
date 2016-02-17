@@ -95,14 +95,14 @@ namespace mtca4u {
 
   void Device::writeDMA(const std::string &regName, int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
     writeDMA(regName, std::string(), data, dataSize, addRegOffset);
-  }
+  }   // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 
   void Device::writeDMA(const std::string &regName, const std::string &regModule, int32_t const *data,
       size_t dataSize, uint32_t addRegOffset) {
     writeReg(regName, regModule, data, dataSize, addRegOffset);
-  }
+  }   // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 
@@ -195,5 +195,12 @@ namespace mtca4u {
     _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
     _deviceBackendPointer->open();
   }
+
+  /********************************************************************************************************************/
+
+  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap) {// LCOV_EXCL_LINE
+    deviceBackend->setRegisterMap(registerMap);// LCOV_EXCL_LINE
+    open(deviceBackend);// LCOV_EXCL_LINE
+  }// LCOV_EXCL_LINE
 
 }// namespace mtca4u
