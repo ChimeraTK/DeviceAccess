@@ -57,11 +57,16 @@ namespace mtca4u {
   class Device {
     public:
 
-      /** TODO add missing documentation
+      /** Open a device by the given alias name from the DMAP file.
        */
       virtual void open(std::string const & aliasName);
 
-      /** TODO add missing documentation
+      /** Re-open the device after previously closeing it by calling close().
+       */
+      virtual void open();
+
+      /** Close the device. The connection with the alias name is kept so the device can be re-opened using the
+       *  open() function without argument.
        */
       virtual void close();
 
@@ -262,7 +267,7 @@ namespace mtca4u {
        */
       typedef mtca4u::RegisterAccessor RegisterAccessor;
 
-    private:
+    protected:
 
       boost::shared_ptr<DeviceBackend> _deviceBackendPointer;
 

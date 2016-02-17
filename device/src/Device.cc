@@ -6,9 +6,14 @@
 #include "MapFileParser.h"
 #include "Utilities.h"
 
-namespace mtca4u{
+namespace mtca4u {
 
-  Device::~Device(){
+  Device::~Device() {
+    if(_deviceBackendPointer != false) {        // Some backend is assigned: close it if opened.
+      if(_deviceBackendPointer->isOpen()) {     // This prevents any existing register accessor of this device to be
+        _deviceBackendPointer->close();         // used after this device was assigned to a new backend.
+      }
+    }
   }
 
   /********************************************************************************************************************/
@@ -138,15 +143,15 @@ namespace mtca4u{
 
   void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const {
     checkPointersAreNotNull();
-    _deviceBackendPointer->read(bar, regOffset, data, size);
-  }
+    _deviceBackendPointer->read(bar, regOffset, data, size);    // LCOV_EXCL_LINE
+  }                                                             // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 
   void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
     checkPointersAreNotNull();
-    _deviceBackendPointer->write(bar, regOffset, data, size);
-  }
+    _deviceBackendPointer->write(bar, regOffset, data, size);   // LCOV_EXCL_LINE
+  }                                                             // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 
@@ -159,8 +164,7 @@ namespace mtca4u{
 
   void Device::checkPointersAreNotNull() const {
     if ((_deviceBackendPointer == false)) {
-      throw DeviceException("Device has not been opened correctly",
-          DeviceException::EX_NOT_OPENED);
+      throw DeviceException("Device has not been opened correctly", DeviceException::EX_NOT_OPENED);
     }
   }
 
@@ -174,17 +178,22 @@ namespace mtca4u{
 
   /********************************************************************************************************************/
 
+  void Device::open() {
+    checkPointersAreNotNull();
+    _deviceBackendPointer->open();
+  }
+
+  /********************************************************************************************************************/
+
   void Device::open(std::string const & aliasName) {
     BackendFactory &factoryInstance = BackendFactory::getInstance();
-    _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
-    try{
-      _deviceBackendPointer->open();
-    }catch(Exception &e){
-      // The backend has already been allocated and probably opened.
-      // Reset the pointer so the backend is closed and released.
-      _deviceBackendPointer.reset();
-      throw;
+    if(_deviceBackendPointer != false) {        // Some backend is already assigned: close it if opened.
+      if(_deviceBackendPointer->isOpen()) {     // This prevents any existing register accessor of this device to be
+        _deviceBackendPointer->close();         // used after this device was assigned to a new backend.
+      }
     }
+    _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
+    _deviceBackendPointer->open();
   }
 
 }// namespace mtca4u

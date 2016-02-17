@@ -12,6 +12,11 @@
 
 using namespace boost::unit_test_framework;
 
+class TestableDevice : public mtca4u::Device {
+  public:
+    boost::shared_ptr<mtca4u::DeviceBackend> getBackend() { return _deviceBackendPointer; };
+};
+
 class DeviceTest {
   public:
     void testDeviceReadRegisterByName();
@@ -574,6 +579,30 @@ void DeviceTest::testDeviceCreation() {
   BOOST_CHECK_NO_THROW(device3.open("DUMMYD0"));
   mtca4u::Device device4;
   BOOST_CHECK_NO_THROW(device4.open("DUMMYD1"));
+
+  // check if opening without alias name fails
+  TestableDevice device5;
+  BOOST_CHECK_THROW( device5.open(), mtca4u::DeviceException );
+  try {
+    device5.open();
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK(e.getID() == mtca4u::DeviceException::EX_NOT_OPENED);
+  }
+
+  // check if opening another device closes the old backend
+  BOOST_CHECK_NO_THROW(device5.open("DUMMYD0"));
+  auto backend5 = device5.getBackend();
+  BOOST_CHECK_NO_THROW(device5.open("DUMMYD1"));
+  BOOST_CHECK( ! backend5->isOpen() );
+
+  // check closing and opening again
+  backend5 = device5.getBackend();
+  BOOST_CHECK( backend5->isOpen() );
+  device5.close();
+  BOOST_CHECK( !backend5->isOpen() );
+  device5.open();
+  BOOST_CHECK( backend5->isOpen() );
 
   //Now that we are done with the tests, move the factory to the state it was in
   //before we started
