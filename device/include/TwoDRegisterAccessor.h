@@ -88,20 +88,6 @@ namespace mtca4u {
       ~TwoDRegisterAccessor() {
       }
 
-    protected:
-
-      /** Pointer to implementation */
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _impl;
-
-      // the TransferGroup must be a friend to access the actual accesor
-      friend class TransferGroup;
-
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        return _impl->isSameRegister(other);
-      }
-
-    public:
-
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return _impl->getHardwareAccessingElements();
       }
@@ -113,6 +99,23 @@ namespace mtca4u {
         else {
           _impl->replaceTransferElement(newElement);
         }
+      }
+
+      /** Return the shared pointer to the implementation object */
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getSharedPtr() {
+        return _impl;
+      }
+
+    protected:
+
+      /** Pointer to implementation */
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _impl;
+
+      // the TransferGroup must be a friend to access the actual accesor
+      friend class TransferGroup;
+
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+        return _impl->isSameRegister(other);
       }
 
   };

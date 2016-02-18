@@ -136,16 +136,6 @@ namespace mtca4u {
         return _impl->isReadOnly();
       }
 
-    protected:
-
-      /// pointer to the implementation
-      boost::shared_ptr< BufferingRegisterAccessorImpl<T> > _impl;
-
-      // the TransferGroup must be a friend to access the actual accesor
-      friend class TransferGroup;
-
-    public:
-
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         return _impl->isSameRegister(other);
       }
@@ -162,6 +152,19 @@ namespace mtca4u {
           _impl->replaceTransferElement(newElement);
         }
       }
+
+      /** Return the shared pointer to the implementation object */
+      boost::shared_ptr< BufferingRegisterAccessorImpl<T> > getSharedPtr() {
+        return _impl;
+      }
+
+    protected:
+
+      /// pointer to the implementation
+      boost::shared_ptr< BufferingRegisterAccessorImpl<T> > _impl;
+
+      // the TransferGroup must be a friend to access the actual accesor
+      friend class TransferGroup;
 
   };
 
