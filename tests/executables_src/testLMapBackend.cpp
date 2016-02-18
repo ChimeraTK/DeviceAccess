@@ -493,7 +493,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   BOOST_CHECK(idx == nSamples);
 
   // read via const iterators
-  const mtca4u::BufferingRegisterAccessor<int32_t> acc3_const = acc3;
+  const mtca4u::BufferingRegisterAccessor<int32_t> &acc3_const = acc3;
   idx=0;
   for(BufferingRegisterAccessorImpl<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
     BOOST_CHECK( *it == (signed) (3000+idx) );

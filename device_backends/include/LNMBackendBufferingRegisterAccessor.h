@@ -77,13 +77,13 @@ namespace mtca4u {
       typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
       virtual iterator begin() { return _accessor.begin() + index_begin; }
-      virtual const_iterator begin() const { return _accessor.begin() + index_begin; }
+      virtual const_iterator cbegin() const { return _accessor.cbegin() + index_begin; }
       virtual iterator end() { return _accessor.begin() + index_end; }
-      virtual const_iterator end() const { return _accessor.begin() + _info.firstIndex + _info.length; }
+      virtual const_iterator cend() const { return _accessor.cbegin() + _info.firstIndex + _info.length; }
       virtual reverse_iterator rbegin() { return _accessor.rbegin() + index_rbegin; }
-      virtual const_reverse_iterator rbegin() const { return _accessor.rbegin() + index_rbegin; }
+      virtual const_reverse_iterator crbegin() const { return _accessor.crbegin() + index_rbegin; }
       virtual reverse_iterator rend() { return _accessor.rbegin() + index_rend; }
-      virtual const_reverse_iterator rend() const { return _accessor.rbegin() + index_rend; }
+      virtual const_reverse_iterator crend() const { return _accessor.crbegin() + index_rend; }
 
       virtual void swap(std::vector<T> &x) {
         std::swap_ranges( x.begin(), x.end(), begin() );

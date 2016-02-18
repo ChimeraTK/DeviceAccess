@@ -114,13 +114,17 @@ namespace mtca4u {
       typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
       inline iterator begin() { return _impl->begin(); }
-      inline const_iterator begin() const { return _impl->begin(); }
+      inline const_iterator begin() const { return _impl->cbegin(); }
+      inline const_iterator cbegin() const { return _impl->cbegin(); }
       inline iterator end() { return _impl->end(); }
-      inline const_iterator end() const { return _impl->end(); }
+      inline const_iterator end() const { return _impl->cend(); }
+      inline const_iterator cend() const { return _impl->cend(); }
       inline reverse_iterator rbegin() { return _impl->rbegin(); }
-      inline const_reverse_iterator rbegin() const { return _impl->rbegin(); }
+      inline const_reverse_iterator rbegin() const { return _impl->crbegin(); }
+      inline const_reverse_iterator crbegin() const { return _impl->crbegin(); }
       inline reverse_iterator rend() { return _impl->rend(); }
-      inline const_reverse_iterator rend() const { return _impl->rend(); }
+      inline const_reverse_iterator rend() const { return _impl->crend(); }
+      inline const_reverse_iterator crend() const { return _impl->crend(); }
 
       /* Swap content of (cooked) buffer with std::vector
        */

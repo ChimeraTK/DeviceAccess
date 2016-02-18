@@ -58,13 +58,13 @@ namespace mtca4u {
       typedef typename std::vector<T>::reverse_iterator reverse_iterator;
       typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
       virtual iterator begin() { return cookedBuffer.begin(); }
-      virtual const_iterator begin() const { return cookedBuffer.begin(); }
+      virtual const_iterator cbegin() const { return cookedBuffer.cbegin(); }
       virtual iterator end() { return cookedBuffer.end(); }
-      virtual const_iterator end() const { return cookedBuffer.end(); }
+      virtual const_iterator cend() const { return cookedBuffer.cend(); }
       virtual reverse_iterator rbegin() { return cookedBuffer.rbegin(); }
-      virtual const_reverse_iterator rbegin() const { return cookedBuffer.rbegin(); }
+      virtual const_reverse_iterator crbegin() const { return cookedBuffer.crbegin(); }
       virtual reverse_iterator rend() { return cookedBuffer.rend(); }
-      virtual const_reverse_iterator rend() const { return cookedBuffer.rend(); }
+      virtual const_reverse_iterator crend() const { return cookedBuffer.crend(); }
 
       /* Swap content of (cooked) buffer with std::vector */
       virtual void swap(std::vector<T> &x) {
