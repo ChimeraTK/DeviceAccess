@@ -8,12 +8,9 @@
 # @PROJECT_NAME@  mtca4u-deviceaccess_CPPFLAGS     : compiler flags for regular Makefiles
 # @PROJECT_NAME@  mtca4u-deviceaccess_LDFLAGS      : linker flags for regular Makefiles
  
-# Compute paths
-get_filename_component(@PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
 # There only is one include path, search for it
-FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR mtca4u/DMapFilesParser.h 
-          ${@PROJECT_NAME@_CMAKE_DIR}/include
+FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR mtca4u/Device.h 
+          @CMAKE_INSTALL_PREFIX@/include
           /usr/include
           NO_DEFAULT_PATH
           )
@@ -22,7 +19,7 @@ FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR mtca4u/DMapFilesParser.h
 # The "NO_DEFALUT" prevents the finding the library in /usr/lib first. We want to give the
 # precedence to the project specific one.
 FIND_LIBRARY(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
-  ${@PROJECT_NAME@_CMAKE_DIR}/lib
+  @CMAKE_INSTALL_PREFIX@/lib
   /usr/lib
   NO_DEFAULT_PATH
   )
