@@ -13,6 +13,8 @@
 #include <unordered_set>
 #include <boost/shared_ptr.hpp>
 
+#include "BufferingRegisterAccessor.h"
+
 // forward declaration
 namespace xmlpp {
   class Node;
@@ -21,6 +23,57 @@ namespace xmlpp {
 namespace mtca4u {
 
   class LogicalNameMap {
+
+    public:
+      // forward declaration
+      class RegisterInfo;
+
+    protected:
+
+      /** Sub-class: value of a RegisterInfo field (with proper resolution of dynamic references) */
+      template<typename ValueType>
+      class Value {
+
+        public:
+
+          operator const ValueType&() const {
+            if(!hasActualValue) {
+              accessor->read();
+              return (*accessor)[0];
+            }
+            return value;
+          }
+
+          Value<ValueType>& operator=(const ValueType &rightHandSide) {
+            value = rightHandSide;
+            return *this;
+          }
+
+          // allows comparisons with char* if ValueType is std::string
+          bool operator==(const char *rightHandSide) {
+            return value == rightHandSide;
+          }
+
+        protected:
+
+          // default constructor: assume having an actual value
+          Value() : hasActualValue(true) {}
+
+          // flag if the actual value is already known and thus the member variable "value" is valid.
+          bool hasActualValue;
+
+          // field to store the actual value
+          ValueType value;
+
+          // name of the register to obtain the value from, if not yet known upon construction
+          std::string registerName;
+
+          // register accessor to obtain the value, if not yet known upon construction
+          boost::shared_ptr< BufferingRegisterAccessorImpl<ValueType> > accessor;
+
+          friend class LogicalNameMap;
+          friend class RegisterInfo;
+      };
 
     public:
 
@@ -35,22 +88,22 @@ namespace mtca4u {
           TargetType targetType;
 
           /** The target device alias */
-          std::string deviceName;
+          Value<std::string> deviceName;
 
           /** The target register name */
-          std::string registerName;
+          Value<std::string> registerName;
 
           /** The first index in the range */
-          unsigned int firstIndex;
+          Value<unsigned int> firstIndex;
 
           /** The length of the range (i.e. number of indices) */
-          unsigned int length;
+          Value<unsigned int> length;
 
           /** The channel of the target 2D register */
-          unsigned int channel;
+          Value<unsigned int> channel;
 
           /** The constant integer value */
-          int value;
+          Value<int> value;
 
           /** test if deviceName is set (depending on the targetType) */
           bool hasDeviceName() const {
@@ -82,6 +135,9 @@ namespace mtca4u {
             return targetType == TargetType::INT_CONSTANT || targetType == TargetType::INT_VARIABLE;
           }
 
+          // create the internal accessors to update dynamic data (if needed)
+          void initAccessors(boost::shared_ptr<DeviceBackend> &backend);
+
       };
 
       /** Constructor: parse map from XML file */
@@ -102,14 +158,14 @@ namespace mtca4u {
       std::string _fileName;
 
       /** actual register info map (register name to target information) */
-      std::map< std::string,  boost::shared_ptr<RegisterInfo> > _map;
+      std::map< std::string, boost::shared_ptr<RegisterInfo> > _map;
 
       /** throw a parsing error with more information */
       void parsingError(const std::string &message);
 
-      /** extract a value from an XML subnode of the given node. This is a workaround for older libxml++ version
-       *  which do not yet have support for xmlpp::Node::eval_to_string(). */
-      std::string getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
+      /** Build a Value object for a given subnode. */
+      template<typename ValueType>
+      Value<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
 
   };
 

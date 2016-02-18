@@ -40,4 +40,10 @@
         <type>int_variable</type>
         <value>2</value>
     </entry>
+    <entry name="ConfigurableChannel">
+        <type>channel</type>
+        <device>PCIE3</device>
+        <register>TEST.NODMA</register>
+        <channel><ref>Variable</ref></channel>
+    </entry>
 </logicalNameMap>

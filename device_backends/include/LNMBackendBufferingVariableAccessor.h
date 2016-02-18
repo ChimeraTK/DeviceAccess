@@ -34,6 +34,7 @@ namespace mtca4u {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
         _info = _dev->_map.getRegisterInfoShared(name);
+        _info->initAccessors(dev);
         if( _info->targetType != LogicalNameMap::TargetType::INT_CONSTANT &&
             _info->targetType != LogicalNameMap::TargetType::INT_VARIABLE    ) {
           throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
