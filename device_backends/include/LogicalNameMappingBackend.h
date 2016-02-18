@@ -85,7 +85,7 @@ namespace mtca4u {
       friend class LNMBackendBufferingChannelAccessor;
 
       template<typename T>
-      friend class LNMBackendBufferingConstantAccessor;
+      friend class LNMBackendBufferingVariableAccessor;
 
   };
 

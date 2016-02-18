@@ -1,14 +1,14 @@
 /*
- * LNMBackendBufferingConstantAccessor.h - Access a constant in a logical name mapping file with a buffering-type
- *                                         accessor. There is obviously no actual buffering required, though, yet we
- *                                         provide the same interface as for any other register.
+ * LNMBackendBufferingVariableAccessor.h - Access a variable or constant in a logical name mapping file with a
+ *                                         buffering-type accessor. There is obviously no actual buffering required,
+ *                                         though, yet we provide the same interface as for any other register.
  *
  *  Created on: Feb 16, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_LNM_BACKEND_BUFFERING_CONSTANT_ACCESSOR_H
-#define MTCA4U_LNM_BACKEND_BUFFERING_CONSTANT_ACCESSOR_H
+#ifndef MTCA4U_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H
+#define MTCA4U_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H
 
 #include <algorithm>
 
@@ -25,10 +25,10 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template<typename T>
-  class LNMBackendBufferingConstantAccessor : public BufferingRegisterAccessorImpl<T> {
+  class LNMBackendBufferingVariableAccessor : public BufferingRegisterAccessorImpl<T> {
     public:
 
-      LNMBackendBufferingConstantAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
+      LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
           const std::string &registerName)
       : _registerName(registerName),_moduleName(module)
       {
@@ -43,7 +43,7 @@ namespace mtca4u {
         BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info.value;
       }
 
-      virtual ~LNMBackendBufferingConstantAccessor() {};
+      virtual ~LNMBackendBufferingVariableAccessor() {};
 
       virtual void read() {
         // no need to read anything
@@ -63,7 +63,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendBufferingConstantAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendBufferingVariableAccessor<T> >(other);
         if(!rhsCasted) return false;
         if(_registerName != rhsCasted->_registerName) return false;
         if(_moduleName != rhsCasted->_moduleName) return false;
@@ -96,4 +96,4 @@ namespace mtca4u {
 
 }    // namespace mtca4u
 
-#endif /* MTCA4U_LNM_BACKEND_BUFFERING_CONSTANT_ACCESSOR_H */
+#endif /* MTCA4U_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H */
