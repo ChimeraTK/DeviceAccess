@@ -5,5 +5,5 @@ Abstract: Doxygen API documentation and user guide of the MTCA4U deviceaccess li
 Section: Programming/C++
 
 Format: HTML
-Index: /usr/share/doc/libmtca4u-deviceaccess/html/index.html
-Files: /usr/share/doc/libmtca4u-deviceaccess/html/*
+Index: /usr/share/doc/libmtca4u-deviceaccesss@mtca4u-deviceaccess_DEBVERSION@/html/index.html
+Files: /usr/share/doc/libmtca4u-deviceaccesss@mtca4u-deviceaccess_DEBVERSION@/html/*

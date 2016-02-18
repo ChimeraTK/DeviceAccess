@@ -7,8 +7,6 @@ set(mtca4u-deviceaccess_DEBVERSION ${mtca4u-deviceaccess_MAJOR_VERSION}-${mtca4u
 #Nothing to change, just copy
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/compat
            ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/rules
-	   ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/libmtca4u-deviceaccess-doc.install
-	   ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/libmtca4u-deviceaccess-doc.doc-base
      DESTINATION debian_from_template)
 
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/source/format
@@ -30,6 +28,11 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/libmtca4u-devi
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/libmtca4u-deviceaccess-dev.install.in
                debian_from_template/libmtca4u-deviceaccess-dev.install @ONLY)
+
+configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/libmtca4u-deviceaccess-doc.install.in
+               debian_from_template/libmtca4u-deviceaccess-doc.install @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/libmtca4u-deviceaccess-doc.doc-base.in
+               debian_from_template/libmtca4u-deviceaccess-doc.doc-base @ONLY)
 
 #Copy and configure the shell script which performs the actual 
 #building of the package
