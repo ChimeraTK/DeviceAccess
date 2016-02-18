@@ -8,8 +8,9 @@
 #ifndef MTCA4U_REBOT_BACKEND_EXCEPTION_H
 #define MTCA4U_REBOT_BACKEND_EXCEPTION_H
 
-#include <DeviceBackendException.h>
 #include <string>
+
+#include "DeviceBackendException.h"
 
 namespace mtca4u {
 

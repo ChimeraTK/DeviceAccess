@@ -539,7 +539,6 @@ void DeviceTest::testGetRegistersInModule() {
 
 }
 
-#include <DeviceBackend.h>
 void DeviceTest::testGetRegisterAccessorsInModule() {
   boost::shared_ptr<mtca4u::Device> device( new mtca4u::Device());
   device->open("DUMMYD1");
