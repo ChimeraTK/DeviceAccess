@@ -90,7 +90,7 @@ namespace mtca4u {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}  // LCOV_EXCL_LINE
 
   };
 
