@@ -21,6 +21,8 @@ SET(mtca4u-deviceaccess_FOUND 0)
 FIND_PATH(mtca4u-deviceaccess_DIR
     mtca4u-deviceaccessConfig.cmake
     ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_ROOT}
+    NO_DEFAULT_PATH
     )
 
 #Once we have found the config our job is done. Just load the config which provides the required 
