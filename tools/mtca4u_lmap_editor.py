@@ -410,7 +410,10 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
-    if sys.argv[1] != "":
-        window.openFile(sys.argv[1])
+    if len(sys.argv) > 1 and sys.argv[1] != "":
+        try:
+            window.openFile(sys.argv[1])
+        except IOError:
+            QMessageBox.warning(window, 'Cannot open file', 'Cannot open file: '+sys.argv[1]+'.')
     window.show()
     sys.exit(app.exec_())
