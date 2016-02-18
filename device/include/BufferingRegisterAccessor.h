@@ -71,25 +71,25 @@ namespace mtca4u {
       }
 
       /** Implicit type conversion to user type T to access the first element (often the only element).
-       * This covers already a lot of operations like arithmetics and comparison */
-      inline operator T() {
+       *  This covers already a lot of operations like arithmetics and comparison */
+      inline operator T&() {
         return _impl->operator[](0);
       }
 
       /** Assignment operator, assigns the first element. */
-      inline BufferingRegisterAccessor<T> operator=(T rightHandSide)
+      inline BufferingRegisterAccessor<T>& operator=(T rightHandSide)
       {
         _impl->operator[](0) = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator for the first element. */
-      inline BufferingRegisterAccessor<T> operator++() {
+      inline BufferingRegisterAccessor<T>& operator++() {
         return operator=( _impl->operator[](0) + 1 );
       }
 
       /** Pre-decrement operator for the first element. */
-      inline BufferingRegisterAccessor<T> operator--() {
+      inline BufferingRegisterAccessor<T>& operator--() {
         return operator=( _impl->operator[](0) - 1 );
       }
 
