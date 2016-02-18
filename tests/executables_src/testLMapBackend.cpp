@@ -173,6 +173,11 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
   }
 
+  mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
+  mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
+  BOOST_CHECK( acc.isSameRegister(acc2.getSharedPtr()) == true );
+  BOOST_CHECK( acc.isSameRegister(acc3.getSharedPtr()) == false );
+
   device.close();
 
 }
@@ -303,6 +308,10 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
   BOOST_CHECK( !acc.isReadOnly() );
 
+  mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+  BOOST_CHECK( acc.isSameRegister( acc.getSharedPtr() ) == true );
+  BOOST_CHECK( acc.isSameRegister( acc2.getSharedPtr() ) == false );
+
   const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
   // reading via [] operator
@@ -360,6 +369,13 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
     BOOST_CHECK( *it == -876543210+42*index );
   }
   BOOST_CHECK( index == 0 );
+
+  // swap with std::vector
+  std::vector<int32_t> vec(1024);
+  acc.swap(vec);
+  for(unsigned int i=0; i<vec.size(); i++) {
+    BOOST_CHECK( vec[i] == -876543210+42*(signed)i );
+  }
 
   device.close();
   target1.close();
@@ -452,6 +468,10 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
   mtca4u::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
+
+  mtca4u::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
+  BOOST_CHECK( acc3.isSameRegister( acc3_2.getSharedPtr() ) == true );
+  BOOST_CHECK( acc3.isSameRegister( acc4.getSharedPtr() ) == false );
 
   mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
   unsigned int nSamples = accTarget[3].size();

@@ -32,4 +32,8 @@
         <type>int_constant</type>
         <value>42</value>
     </entry>
+    <entry name="Constant2">
+        <type>int_constant</type>
+        <value>666</value>
+    </entry>
 </logicalNameMap>
