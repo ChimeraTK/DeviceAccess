@@ -22,7 +22,10 @@ class MainWindow(QMainWindow):
         self.listWidget = QListWidget()
         self.listWidget.currentItemChanged.connect(self.selectListItem)
         self.grid.addWidget(self.listWidget,1,1,1,5)
-        
+
+        # initialise current file name
+        self.fileName = ""
+
         #
         # editing fields
         #
@@ -388,7 +391,7 @@ class MainWindow(QMainWindow):
         tree._setroot(self.theData)
         tree.write(fileName)
         # show message of success
-        QMessageBox.information(self, 'Map saved', 'Logical name mapping has been saved to file "'+name+'".')
+        QMessageBox.information(self, 'Map saved', 'Logical name mapping has been saved to file "'+fileName+'".')
         
         # store file name and change window title
         self.fileName = os.path.abspath(fileName)
