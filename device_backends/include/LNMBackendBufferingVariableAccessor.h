@@ -1,7 +1,6 @@
 /*
  * LNMBackendBufferingVariableAccessor.h - Access a variable or constant in a logical name mapping file with a
- *                                         buffering-type accessor. There is obviously no actual buffering required,
- *                                         though, yet we provide the same interface as for any other register.
+ *                                         buffering-type accessor.
  *
  *  Created on: Feb 16, 2016
  *      Author: Martin Hierholzer
@@ -34,24 +33,28 @@ namespace mtca4u {
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-        _info = _dev->_map.getRegisterInfo(name);
-        if( _info.targetType != LogicalNameMap::TargetType::INT_CONSTANT ) {
-          throw DeviceException("LNMBackendBufferingConstantAccessor used for wrong register type.",
+        _info = _dev->_map.getRegisterInfoShared(name);
+        if( _info->targetType != LogicalNameMap::TargetType::INT_CONSTANT &&
+            _info->targetType != LogicalNameMap::TargetType::INT_VARIABLE    ) {
+          throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(1);
-        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info.value;
+        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info->value;
       }
 
       virtual ~LNMBackendBufferingVariableAccessor() {};
 
       virtual void read() {
-        // no need to read anything
+        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info->value;
       }
 
       virtual void write() {
-        throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
-            DeviceException::REGISTER_IS_READ_ONLY);
+        if(isReadOnly()) {
+          throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
+              DeviceException::REGISTER_IS_READ_ONLY);
+        }
+        _info->value = BufferingRegisterAccessorImpl<T>::cookedBuffer[0];
       }
 
       virtual T& operator[](unsigned int) {
@@ -72,7 +75,7 @@ namespace mtca4u {
       }
 
       virtual bool isReadOnly() const {
-        return true;
+        return _info->targetType == LogicalNameMap::TargetType::INT_CONSTANT;
       }
 
     protected:
@@ -84,7 +87,7 @@ namespace mtca4u {
       boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
       /// register information
-      LogicalNameMap::RegisterInfo _info;
+      boost::shared_ptr<LogicalNameMap::RegisterInfo> _info;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };

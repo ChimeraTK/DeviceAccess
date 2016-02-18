@@ -36,4 +36,8 @@
         <type>int_constant</type>
         <value>666</value>
     </entry>
+    <entry name="Variable">
+        <type>int_variable</type>
+        <value>2</value>
+    </entry>
 </logicalNameMap>

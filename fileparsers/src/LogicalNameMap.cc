@@ -68,29 +68,36 @@ namespace mtca4u {
       }
       std::string entryName = nameAttr->get_value();
 
+      // create new RegisterInfo object
+      _map[entryName].reset( new LogicalNameMap::RegisterInfo() );
+
       // obtain the type
       std::string type = getValueFromXmlSubnode(child, "type");
       if(type == "register") {
-        _map[entryName].targetType = TargetType::REGISTER;
-        _map[entryName].deviceName = getValueFromXmlSubnode(child, "device");
-        _map[entryName].registerName = getValueFromXmlSubnode(child, "register");
+        _map[entryName]->targetType = TargetType::REGISTER;
+        _map[entryName]->deviceName = getValueFromXmlSubnode(child, "device");
+        _map[entryName]->registerName = getValueFromXmlSubnode(child, "register");
       }
       else if(type == "range") {
-        _map[entryName].targetType = TargetType::RANGE;
-        _map[entryName].deviceName = getValueFromXmlSubnode(child, "device");
-        _map[entryName].registerName = getValueFromXmlSubnode(child, "register");
-        _map[entryName].firstIndex = std::stoi(getValueFromXmlSubnode(child, "index"));
-        _map[entryName].length = std::stoi(getValueFromXmlSubnode(child, "length"));
+        _map[entryName]->targetType = TargetType::RANGE;
+        _map[entryName]->deviceName = getValueFromXmlSubnode(child, "device");
+        _map[entryName]->registerName = getValueFromXmlSubnode(child, "register");
+        _map[entryName]->firstIndex = std::stoi(getValueFromXmlSubnode(child, "index"));
+        _map[entryName]->length = std::stoi(getValueFromXmlSubnode(child, "length"));
       }
       else if(type == "channel") {
-        _map[entryName].targetType = TargetType::CHANNEL;
-        _map[entryName].deviceName = getValueFromXmlSubnode(child, "device");
-        _map[entryName].registerName = getValueFromXmlSubnode(child, "register");
-        _map[entryName].channel = std::stoi(getValueFromXmlSubnode(child, "channel"));
+        _map[entryName]->targetType = TargetType::CHANNEL;
+        _map[entryName]->deviceName = getValueFromXmlSubnode(child, "device");
+        _map[entryName]->registerName = getValueFromXmlSubnode(child, "register");
+        _map[entryName]->channel = std::stoi(getValueFromXmlSubnode(child, "channel"));
       }
       else if(type == "int_constant") {
-        _map[entryName].targetType = TargetType::INT_CONSTANT;
-        _map[entryName].value = std::stoi(getValueFromXmlSubnode(child, "value"));
+        _map[entryName]->targetType = TargetType::INT_CONSTANT;
+        _map[entryName]->value = std::stoi(getValueFromXmlSubnode(child, "value"));
+      }
+      else if(type == "int_variable") {
+        _map[entryName]->targetType = TargetType::INT_VARIABLE;
+        _map[entryName]->value = std::stoi(getValueFromXmlSubnode(child, "value"));
       }
       else {
         parsingError("Wrong target type: "+type);
@@ -102,6 +109,18 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   const LogicalNameMap::RegisterInfo& LogicalNameMap::getRegisterInfo(const std::string &name) const {
+    try {
+      return *(_map.at(name));
+    }
+    catch(std::out_of_range &e) {
+      throw DeviceException("Register '"+name+"' was not found in logical name map ("+e.what()+").",
+          DeviceException::REGISTER_DOES_NOT_EXIST);
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<LogicalNameMap::RegisterInfo> LogicalNameMap::getRegisterInfoShared(const std::string &name) {
     try {
       return _map.at(name);
     }
@@ -116,8 +135,8 @@ namespace mtca4u {
   std::unordered_set<std::string> LogicalNameMap::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(auto it = _map.begin(); it != _map.end(); ++it) {
-      if(it->second.hasDeviceName()) {
-        ret.insert(it->second.deviceName);
+      if(it->second->hasDeviceName()) {
+        ret.insert(it->second->deviceName);
       }
     }
     return ret;

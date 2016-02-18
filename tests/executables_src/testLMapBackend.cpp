@@ -17,6 +17,7 @@ class LMapBackendTest {
   public:
     void testExceptions();
     void testReadWriteConstant();
+    void testReadWriteVariable();
     void testReadWriteRegister();
     void testReadWriteRange();
     void testRegisterAccessorForRegister();
@@ -33,6 +34,7 @@ class LMapBackendTestSuite : public test_suite {
 
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testExceptions, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteConstant, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteVariable, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRegister, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRange, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRegister, lMapBackendTest) );
@@ -181,6 +183,35 @@ void LMapBackendTest::testExceptions() {
   device.close();
 
 }
+
+  /********************************************************************************************************************/
+
+    void LMapBackendTest::testReadWriteVariable() {
+
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    mtca4u::Device device;
+
+    device.open("LMAP0");
+
+    // test with buffering register accessor
+    mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Variable");
+    mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Variable");
+    BOOST_CHECK( acc.getNumberOfElements() == 1 );
+    BOOST_CHECK( acc[0] == 2 );
+    BOOST_CHECK( acc2[0] == 2 );
+    acc.read();
+    BOOST_CHECK( acc[0] == 2 );
+    acc[0] = 3;
+    BOOST_CHECK( acc[0] == 3 );
+    BOOST_CHECK( acc2[0] == 2 );
+    acc.write();
+    acc2.read();
+    BOOST_CHECK( acc[0] == 3 );
+    BOOST_CHECK( acc2[0] == 3 );
+
+    device.close();
+
+  }
 
 /********************************************************************************************************************/
 

@@ -177,7 +177,8 @@ namespace mtca4u {
     else if( info.targetType == LogicalNameMap::TargetType::CHANNEL) {
       return new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), module, registerName);
     }
-    else if( info.targetType == LogicalNameMap::TargetType::INT_CONSTANT) {
+    else if( info.targetType == LogicalNameMap::TargetType::INT_CONSTANT ||
+             info.targetType == LogicalNameMap::TargetType::INT_VARIABLE    ) {
       return new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), module, registerName);
     }
     else {

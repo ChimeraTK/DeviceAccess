@@ -11,7 +11,7 @@
 #include <string>
 #include <map>
 #include <unordered_set>
-
+#include <boost/shared_ptr.hpp>
 
 // forward declaration
 namespace xmlpp {
@@ -25,7 +25,7 @@ namespace mtca4u {
     public:
 
       /** Potential target types */
-      enum TargetType { REGISTER, RANGE, CHANNEL, INT_CONSTANT };
+      enum TargetType { REGISTER, RANGE, CHANNEL, INT_CONSTANT, INT_VARIABLE };
 
       /** Sub-class: single entry of the logical name mapping */
       class RegisterInfo {
@@ -53,29 +53,45 @@ namespace mtca4u {
           int value;
 
           /** test if deviceName is set (depending on the targetType) */
-          bool hasDeviceName() const { return targetType != TargetType::INT_CONSTANT; }
+          bool hasDeviceName() const {
+            return targetType != TargetType::INT_CONSTANT && targetType != TargetType::INT_VARIABLE;
+          }
 
           /** test if registerName is set (depending on the targetType) */
-          bool hasRegisterName() const { return targetType != TargetType::INT_CONSTANT; }
+          bool hasRegisterName() const {
+            return targetType != TargetType::INT_CONSTANT && targetType != TargetType::INT_VARIABLE;
+          }
 
           /** test if firstIndex is set (depending on the targetType) */
-          bool hasFirstIndex() const { return targetType == TargetType::RANGE; }
+          bool hasFirstIndex() const {
+            return targetType == TargetType::RANGE;
+          }
 
           /** test if length is set (depending on the targetType) */
-          bool hasLength() const { return targetType == TargetType::RANGE; }
+          bool hasLength() const {
+            return targetType == TargetType::RANGE;
+          }
 
           /** test if channel is set (depending on the targetType) */
-          bool hasChannel() const { return targetType == TargetType::CHANNEL; }
+          bool hasChannel() const {
+            return targetType == TargetType::CHANNEL;
+          }
 
           /** test if value is set (depending on the targetType) */
-          bool hasValue() const { return targetType == TargetType::INT_CONSTANT; }
+          bool hasValue() const {
+            return targetType == TargetType::INT_CONSTANT || targetType == TargetType::INT_VARIABLE;
+          }
 
       };
 
       /** Constructor: parse map from XML file */
       LogicalNameMap(const std::string &fileName);
 
-      /** Obtain register information for the named register */
+      /** Obtain register information for the named register. The register information can be updated, which will
+       *  have effect on the logical map itself (and thus any other user of the same register info)! */
+      boost::shared_ptr<RegisterInfo> getRegisterInfoShared(const std::string &name);
+
+      /** Obtain register information for the named register (const version) */
       const RegisterInfo& getRegisterInfo(const std::string &name) const;
 
       /** Obtain list of all target devices referenced in the map */
@@ -86,7 +102,7 @@ namespace mtca4u {
       std::string _fileName;
 
       /** actual register info map (register name to target information) */
-      std::map<std::string, RegisterInfo> _map;
+      std::map< std::string,  boost::shared_ptr<RegisterInfo> > _map;
 
       /** throw a parsing error with more information */
       void parsingError(const std::string &message);
