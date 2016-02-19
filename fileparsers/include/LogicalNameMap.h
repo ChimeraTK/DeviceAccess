@@ -14,6 +14,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "BufferingRegisterAccessor.h"
+#include "DeviceBackend.h"
 
 // forward declaration
 namespace xmlpp {
@@ -28,24 +29,27 @@ namespace mtca4u {
       // forward declaration
       class RegisterInfo;
 
-    protected:
-
       /** Sub-class: value of a RegisterInfo field (with proper resolution of dynamic references) */
       template<typename ValueType>
       class Value {
 
         public:
 
+          // obtain value via implicit type conversion operator
           operator const ValueType&() const {
             if(!hasActualValue) {
+              if(!accessor) accessor = backend->getBufferingRegisterAccessor<ValueType>("",registerName);
               accessor->read();
               return (*accessor)[0];
             }
             return value;
           }
 
+          // assignment operator with a value of the type ValueType. This will make the Value having an "actual"
+          // value, i.e. no dynamic references are present.
           Value<ValueType>& operator=(const ValueType &rightHandSide) {
             value = rightHandSide;
+            hasActualValue = true;
             return *this;
           }
 
@@ -54,10 +58,34 @@ namespace mtca4u {
             return value == rightHandSide;
           }
 
+          // default constructor: no backend will be initialised, so no accessors can be created. It may not be
+          // possible to obtain the value like this!
+          Value()
+          : hasActualValue(true), backend()
+          {}
+
+          // assignment operator: allow assigment to Value without given backend, in which case we keep our backend
+          // and create the accessors
+          Value<ValueType>& operator=(const Value<ValueType> &rightHandSide) {
+            if(rightHandSide.hasActualValue) {
+              hasActualValue = true;
+              value = rightHandSide.value;
+            }
+            else {
+              // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
+              hasActualValue = false;
+              registerName = rightHandSide.registerName;
+              accessor.reset();
+            }
+            return *this;
+          }
+
         protected:
 
-          // default constructor: assume having an actual value
-          Value() : hasActualValue(true) {}
+          // constructor: assume having an actual value by default
+          Value(const boost::shared_ptr<DeviceBackend> &_backend)
+          : hasActualValue(true), backend(_backend)
+          {}
 
           // flag if the actual value is already known and thus the member variable "value" is valid.
           bool hasActualValue;
@@ -65,20 +93,21 @@ namespace mtca4u {
           // field to store the actual value
           ValueType value;
 
-          // name of the register to obtain the value from, if not yet known upon construction
+          // name of the register to obtain the value from
           std::string registerName;
 
+          // backend to obtain the register accessors from
+          boost::shared_ptr<DeviceBackend> backend;
+
           // register accessor to obtain the value, if not yet known upon construction
-          boost::shared_ptr< BufferingRegisterAccessorImpl<ValueType> > accessor;
+          mutable boost::shared_ptr< BufferingRegisterAccessorImpl<ValueType> > accessor;
 
           friend class LogicalNameMap;
-          friend class RegisterInfo;
+          friend class LogicalNameMap::RegisterInfo;
       };
 
-    public:
-
       /** Potential target types */
-      enum TargetType { REGISTER, RANGE, CHANNEL, INT_CONSTANT, INT_VARIABLE };
+      enum TargetType { INVALID, REGISTER, RANGE, CHANNEL, INT_CONSTANT, INT_VARIABLE };
 
       /** Sub-class: single entry of the logical name mapping */
       class RegisterInfo {
@@ -135,16 +164,38 @@ namespace mtca4u {
             return targetType == TargetType::INT_CONSTANT || targetType == TargetType::INT_VARIABLE;
           }
 
-          // create the internal accessors to update dynamic data (if needed)
-          void initAccessors(boost::shared_ptr<DeviceBackend> &backend);
+        protected:
 
+          // constuctor: initialise Values
+          RegisterInfo(const boost::shared_ptr<DeviceBackend> &backend)
+          : targetType(TargetType::INVALID),
+            deviceName(backend),
+            registerName(backend),
+            firstIndex(backend),
+            length(backend),
+            channel(backend),
+            value(backend)
+          {}
+
+          friend class LogicalNameMap;
       };
 
       /** Constructor: parse map from XML file */
-      LogicalNameMap(const std::string &fileName);
+      LogicalNameMap(const std::string &fileName, const boost::shared_ptr<DeviceBackend> &backend) {
+        parseFile(fileName, backend);
+      }
 
-      /** Obtain register information for the named register. The register information can be updated, which will
-       *  have effect on the logical map itself (and thus any other user of the same register info)! */
+      /** Constructor: parse map from XML file. No backend is specified, so internal references cannot be resolved. */
+      LogicalNameMap(const std::string &fileName) {
+        parseFile(fileName, boost::shared_ptr<DeviceBackend>());
+      }
+
+      /** Default constructor: Create empty map. */
+      LogicalNameMap() {
+      }
+
+      /** Obtain register information for the named register. The register information can be updated, which *will*
+       *  have an effect on the logical map itself (and thus any other user of the same register info)! */
       boost::shared_ptr<RegisterInfo> getRegisterInfoShared(const std::string &name);
 
       /** Obtain register information for the named register (const version) */
@@ -160,6 +211,9 @@ namespace mtca4u {
       /** actual register info map (register name to target information) */
       std::map< std::string, boost::shared_ptr<RegisterInfo> > _map;
 
+      /** parse the given XML file */
+      void parseFile(const std::string &fileName, const boost::shared_ptr<DeviceBackend> &backend);
+
       /** throw a parsing error with more information */
       void parsingError(const std::string &message);
 
@@ -170,7 +224,5 @@ namespace mtca4u {
   };
 
 } // namespace mtca4u
-
-
 
 #endif /* MTCA4U_LOGICAL_NAME_MAP_H */

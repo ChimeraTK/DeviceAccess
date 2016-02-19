@@ -15,8 +15,19 @@
 namespace mtca4u {
 
   LogicalNameMappingBackend::LogicalNameMappingBackend(std::string lmapFileName)
-  : _lmapFileName(lmapFileName), _map(lmapFileName)
-  {
+  : hasParsed(false), _lmapFileName(lmapFileName)
+  {}
+
+  /********************************************************************************************************************/
+
+  void LogicalNameMappingBackend::parse() {
+
+    // don't run, if already parsed
+    if(hasParsed) return;
+
+    // create map
+    _map = LogicalNameMap(_lmapFileName, shared_from_this() );
+
     // create all devices referenced in the map
     auto devNames = _map.getTargetDevices();
     for(auto devName = devNames.begin(); devName != devNames.end(); ++devName) {
@@ -28,6 +39,7 @@ namespace mtca4u {
 
   void LogicalNameMappingBackend::open()
   {
+    parse();
     // open all referenced devices
     for(auto device = _devices.begin(); device != _devices.end(); ++device) {
       device->second->open(device->first);
@@ -58,8 +70,7 @@ namespace mtca4u {
 
     // obtain register info
     std::string name = ( regModule.length() > 0 ? regModule + "." + regName : regName );
-    LogicalNameMap::RegisterInfo info;
-    info = _map.getRegisterInfo(name);
+    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
@@ -91,8 +102,7 @@ namespace mtca4u {
 
     // obtain register info
     std::string name = ( regModule.length() > 0 ? regModule + "." + regName : regName );
-    LogicalNameMap::RegisterInfo info;
-    info = _map.getRegisterInfo(name);
+    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
@@ -119,8 +129,7 @@ namespace mtca4u {
 
     // obtain register info
     std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-    LogicalNameMap::RegisterInfo info;
-    info = _map.getRegisterInfo(name);
+    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
@@ -162,8 +171,7 @@ namespace mtca4u {
 
     // obtain register info
     std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-    LogicalNameMap::RegisterInfo info;
-    info = _map.getRegisterInfo(name);
+    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;

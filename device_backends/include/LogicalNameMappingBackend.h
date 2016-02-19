@@ -69,6 +69,12 @@ namespace mtca4u {
       BufferingRegisterAccessorImpl<UserType>* getBufferingRegisterAccessor(const std::string &module,
           const std::string &registerName);
 
+      /// parse the logical map file, if not yet done
+      void parse();
+
+      /// flag if already parsed
+      bool hasParsed;
+
       /// name of the logical map file
       std::string _lmapFileName;
 

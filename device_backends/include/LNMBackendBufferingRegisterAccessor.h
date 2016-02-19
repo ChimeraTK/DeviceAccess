@@ -32,21 +32,20 @@ namespace mtca4u {
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-        _info = _dev->_map.getRegisterInfo(name);
-        _info.initAccessors(dev);
-        if( _info.targetType != LogicalNameMap::TargetType::RANGE &&
-            _info.targetType != LogicalNameMap::TargetType::REGISTER ) {
+        _info = _dev->_map.getRegisterInfoShared(name);
+        if( _info->targetType != LogicalNameMap::TargetType::RANGE &&
+            _info->targetType != LogicalNameMap::TargetType::REGISTER ) {
           throw DeviceException("LNMBackendBufferingRegisterAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
-        _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getBufferingRegisterAccessor<T>("",_info.registerName);
-        if(_info.targetType == LogicalNameMap::TargetType::REGISTER) {
-          _info.firstIndex = 0;
-          _info.length = _accessor.getNumberOfElements();
+        _targetDevice = _dev->_devices[_info->deviceName];
+        _accessor = _targetDevice->getBufferingRegisterAccessor<T>("",_info->registerName);
+        if(_info->targetType == LogicalNameMap::TargetType::REGISTER) {
+          _info->firstIndex = 0;
+          _info->length = _accessor.getNumberOfElements();
         }
-        index_begin = _info.firstIndex;
-        index_end = _info.firstIndex + _info.length;
+        index_begin = _info->firstIndex;
+        index_end = _info->firstIndex + _info->length;
         index_rbegin = _accessor.getNumberOfElements() - index_end;
         index_rend = _accessor.getNumberOfElements() - index_begin;
       }
@@ -66,11 +65,11 @@ namespace mtca4u {
       }
 
       virtual T& operator[](unsigned int index) {
-        return _accessor[index + _info.firstIndex];
+        return _accessor[index + _info->firstIndex];
       }
 
       virtual unsigned int getNumberOfElements() {
-        return _info.length;
+        return _info->length;
       }
 
       typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
@@ -80,7 +79,7 @@ namespace mtca4u {
       virtual iterator begin() { return _accessor.begin() + index_begin; }
       virtual const_iterator cbegin() const { return _accessor.cbegin() + index_begin; }
       virtual iterator end() { return _accessor.begin() + index_end; }
-      virtual const_iterator cend() const { return _accessor.cbegin() + _info.firstIndex + _info.length; }
+      virtual const_iterator cend() const { return _accessor.cbegin() + _info->firstIndex + _info->length; }
       virtual reverse_iterator rbegin() { return _accessor.rbegin() + index_rbegin; }
       virtual const_reverse_iterator crbegin() const { return _accessor.crbegin() + index_rbegin; }
       virtual reverse_iterator rend() { return _accessor.rbegin() + index_rend; }
@@ -100,7 +99,7 @@ namespace mtca4u {
       }
 
       virtual bool isReadOnly() const {
-        if(_info.targetType == LogicalNameMap::TargetType::RANGE) {
+        if(_info->targetType == LogicalNameMap::TargetType::RANGE) {
           return true;
         }
         else {
@@ -120,7 +119,7 @@ namespace mtca4u {
       boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
       /// register information
-      LogicalNameMap::RegisterInfo _info;
+      boost::shared_ptr<LogicalNameMap::RegisterInfo> _info;
 
       /// target device
       boost::shared_ptr<Device> _targetDevice;

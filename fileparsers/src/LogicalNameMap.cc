@@ -91,10 +91,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  LogicalNameMap::LogicalNameMap(const std::string &fileName)
-  : _fileName(fileName)
-  {
-
+  void LogicalNameMap::parseFile(const std::string &fileName, const boost::shared_ptr<DeviceBackend> &backend) {
     // parse the file into a DOM structure
     xmlpp::DomParser parser;
     try {
@@ -128,7 +125,7 @@ namespace mtca4u {
       std::string entryName = nameAttr->get_value();
 
       // create new RegisterInfo object
-      _map[entryName].reset( new LogicalNameMap::RegisterInfo() );
+      _map[entryName].reset( new LogicalNameMap::RegisterInfo(backend) );
 
       // obtain the type
       std::string type = getValueFromXmlSubnode<std::string>(child, "type");
@@ -205,29 +202,6 @@ namespace mtca4u {
 
   void LogicalNameMap::parsingError(const std::string &message) {
     throw DeviceException("Error parsing the xlmap file '"+_fileName+"': "+message, DeviceException::CANNOT_OPEN_MAP_FILE);
-  }
-
-  /********************************************************************************************************************/
-
-  void LogicalNameMap::RegisterInfo::initAccessors(boost::shared_ptr<DeviceBackend> &backend) {
-    if(!deviceName.hasActualValue && !deviceName.accessor) {
-      deviceName.accessor = backend->getBufferingRegisterAccessor<std::string>("",deviceName.registerName);
-    }
-    if(!registerName.hasActualValue && !registerName.accessor) {
-      registerName.accessor = backend->getBufferingRegisterAccessor<std::string>("",registerName.registerName);
-    }
-    if(!firstIndex.hasActualValue && !firstIndex.accessor) {
-      firstIndex.accessor = backend->getBufferingRegisterAccessor<unsigned int>("",firstIndex.registerName);
-    }
-    if(!length.hasActualValue && !length.accessor) {
-      length.accessor = backend->getBufferingRegisterAccessor<unsigned int>("",length.registerName);
-    }
-    if(!channel.hasActualValue && !channel.accessor) {
-      channel.accessor = backend->getBufferingRegisterAccessor<unsigned int>("",channel.registerName);
-    }
-    if(!value.hasActualValue && !value.accessor) {
-      value.accessor = backend->getBufferingRegisterAccessor<int>("",value.registerName);
-    }
   }
 
 } // namespace mtca4u
