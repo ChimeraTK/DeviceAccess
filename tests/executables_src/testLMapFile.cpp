@@ -18,6 +18,7 @@ class LMapFileTest {
     void testFileNotFound();
     void testErrorInDmapFile();
     void testParseFile();
+    void testRegisterPath();
 };
 
 class LMapFileTestSuite : public test_suite {
@@ -25,13 +26,10 @@ class LMapFileTestSuite : public test_suite {
     LMapFileTestSuite() : test_suite("LogicalNameMap class test suite") {
       boost::shared_ptr<LMapFileTest> lMapFileTest(new LMapFileTest);
 
-      test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(&LMapFileTest::testFileNotFound, lMapFileTest);
-      test_case* testErrorInDmapFile = BOOST_CLASS_TEST_CASE(&LMapFileTest::testErrorInDmapFile, lMapFileTest);
-      test_case* testParseFile = BOOST_CLASS_TEST_CASE(&LMapFileTest::testParseFile, lMapFileTest);
-
-      add(testFileNotFound);
-      add(testErrorInDmapFile);
-      add(testParseFile);
+      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testFileNotFound, lMapFileTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testErrorInDmapFile, lMapFileTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testParseFile, lMapFileTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testRegisterPath, lMapFileTest) );
     }
 };
 
@@ -141,6 +139,36 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == true );
 
+  info = lmap.getRegisterInfoShared("/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK( info->targetType == LogicalNameMap::TargetType::INT_VARIABLE );
+  BOOST_CHECK( info->value == 2);
+  BOOST_CHECK( info->hasDeviceName() == false );
+  BOOST_CHECK( info->hasRegisterName() == false );
+  BOOST_CHECK( info->hasFirstIndex() == false );
+  BOOST_CHECK( info->hasLength() == false );
+  BOOST_CHECK( info->hasChannel() == false );
+  BOOST_CHECK( info->hasValue() == true );
+
+  info = lmap.getRegisterInfoShared("MyModule/ConfigurableChannel");
+  BOOST_CHECK( info->targetType == LogicalNameMap::TargetType::CHANNEL );
+  BOOST_CHECK( info->deviceName == "PCIE3");
+  BOOST_CHECK( info->registerName == "TEST.NODMA");
+  int temp;
+  BOOST_CHECK_THROW( temp = info->channel, DeviceException );  // resolving the reference is not possible without a device
+  try {
+    temp = info->channel;
+    (void) temp; // avoid warning
+  }
+  catch( DeviceException &e ) {
+    BOOST_CHECK( e.getID() == DeviceException::EX_NOT_OPENED );
+  }
+  BOOST_CHECK( info->hasDeviceName() == true );
+  BOOST_CHECK( info->hasRegisterName() == true );
+  BOOST_CHECK( info->hasFirstIndex() == false );
+  BOOST_CHECK( info->hasLength() == false );
+  BOOST_CHECK( info->hasChannel() == true );
+  BOOST_CHECK( info->hasValue() == false );
+
   std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
   BOOST_CHECK(targetDevices.size() == 2);
   BOOST_CHECK(targetDevices.count("PCIE2") == 1);
@@ -154,4 +182,28 @@ void LMapFileTest::testParseFile() {
     BOOST_CHECK( ex.getID() == DeviceException::REGISTER_DOES_NOT_EXIST );
   }
 
+}
+
+void LMapFileTest::testRegisterPath() {
+  LogicalNameMap::RegisterPath path1;
+  LogicalNameMap::RegisterPath path2("module1");
+  LogicalNameMap::RegisterPath path3("//module//blah/");
+  BOOST_CHECK( path1 == "/" );
+  BOOST_CHECK( path2 == "/module1" );
+  BOOST_CHECK( path3 == "/module/blah" );
+  BOOST_CHECK( path3/"register" == "/module/blah/register");
+  BOOST_CHECK( "root"/path3/"register" == "/root/module/blah/register");
+  BOOST_CHECK( "root/"+path3+"register" == "root//module/blahregister");
+  BOOST_CHECK( path2/path3 == "/module1/module/blah" );
+
+  path3 /= "test";
+  BOOST_CHECK( path3 == "/module/blah/test" );
+  path3--;
+  BOOST_CHECK( path3 == "/module/blah" );
+  --path3;
+  BOOST_CHECK( path3 == "/blah" );
+  path3--;
+  BOOST_CHECK( path3 == "/" );
+  --path2;
+  BOOST_CHECK( path2 == "/" );
 }

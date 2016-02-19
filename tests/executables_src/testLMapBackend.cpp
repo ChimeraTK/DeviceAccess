@@ -196,8 +196,8 @@ void LMapBackendTest::testExceptions() {
     device.open("LMAP0");
 
     // test with buffering register accessor
-    mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Variable");
-    mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Variable");
+    mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
+    mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
     BOOST_CHECK( acc.getNumberOfElements() == 1 );
     BOOST_CHECK( acc[0] == 2 );
     BOOST_CHECK( acc2[0] == 2 );
@@ -682,8 +682,8 @@ void LMapBackendTest::testVariableChannelNumber() {
   target.open("PCIE3");
 
   mtca4u::TwoDRegisterAccessor<int32_t> acc2D = target.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
-  mtca4u::BufferingRegisterAccessor<int32_t> accVar = device.getBufferingRegisterAccessor<int32_t>("","ConfigurableChannel");
-  mtca4u::BufferingRegisterAccessor<int32_t> accChannel = device.getBufferingRegisterAccessor<int32_t>("","Variable");
+  mtca4u::BufferingRegisterAccessor<int32_t> accVar = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/ConfigurableChannel");
+  mtca4u::BufferingRegisterAccessor<int32_t> accChannel = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
 
   // fill channels
   for(unsigned int i=0; i<acc2D.getNumberOfDataSequences(); i++) {

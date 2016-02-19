@@ -1,49 +1,53 @@
 <logicalNameMap>
-    <entry name="SingleWord">
+    <register name="SingleWord">
         <type>register</type>
         <device>PCIE2</device>
         <register>BOARD.WORD_USER</register>
-    </entry>
-    <entry name="FullArea">
+    </register>
+    <register name="FullArea">
         <type>register</type>
         <device>PCIE2</device>
         <register>ADC.AREA_DMAABLE</register>
-    </entry>
-    <entry name="PartOfArea">
+    </register>
+    <register name="PartOfArea">
         <type>range</type>
         <device>PCIE2</device>
         <register>ADC.AREA_DMAABLE</register>
         <index>10</index>
         <length>20</length>
-    </entry>
-    <entry name="Channel3">
+    </register>
+    <register name="Channel3">
         <type>channel</type>
         <device>PCIE3</device>
         <register>TEST.NODMA</register>
         <channel>3</channel>
-    </entry>
-    <entry name="Channel4">
+    </register>
+    <register name="Channel4">
         <type>channel</type>
         <device>PCIE3</device>
         <register>TEST.NODMA</register>
         <channel>4</channel>
-    </entry>
-    <entry name="Constant">
+    </register>
+    <register name="Constant">
         <type>int_constant</type>
         <value>42</value>
-    </entry>
-    <entry name="Constant2">
+    </register>
+    <entry name="Constant2"> <!-- use "entry" tag, which is the deprecated alias for register -->
         <type>int_constant</type>
         <value>666</value>
     </entry>
-    <entry name="Variable">
-        <type>int_variable</type>
-        <value>2</value>
-    </entry>
-    <entry name="ConfigurableChannel">
+    <module name="MyModule">
+      <module name="SomeSubmodule"> 
+        <register name="Variable">
+          <type>int_variable</type>
+          <value>2</value>
+        </register>
+      </module>
+      <register name="ConfigurableChannel">
         <type>channel</type>
         <device>PCIE3</device>
         <register>TEST.NODMA</register>
-        <channel><ref>Variable</ref></channel>
-    </entry>
+        <channel><ref>/MyModule/SomeSubmodule/Variable</ref></channel>
+      </register>
+    </module>
 </logicalNameMap>
