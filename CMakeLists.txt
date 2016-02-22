@@ -48,9 +48,11 @@ endif(SUPPRESS_AUTO_DOC_BUILD)
 FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
-PKG_CHECK_MODULES(LibXML++ REQUIRED libxml++-2.6)
+set(LIBXML++_VERSION "libxml++-2.6")
+PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
-
+include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
+  
 include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
