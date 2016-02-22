@@ -193,7 +193,7 @@ namespace mtca4u {
           RegisterPath(const RegisterPath &_path) : path(_path.path) {removeExtraSeparators();}
 
           /** type conversion operators into std::string */
-          operator std::string() const { return path; }
+          operator const std::string&() const { return path; }
 
           /** / operator: add a new element to the path (without modifying this object) */
           RegisterPath operator/(const std::string &rightHandSide) const {
