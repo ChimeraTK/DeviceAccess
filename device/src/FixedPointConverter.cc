@@ -53,4 +53,33 @@ namespace mtca4u {
 
   }
 
+  /**********************************************************************************************************************/
+  template<>
+  std::string FixedPointConverter::toCooked<std::string>(uint32_t rawValue) const
+  {
+    if(_fractionalBits == 0) {  // use integer conversion
+      if(_isSigned) {
+        return std::to_string(toCooked<int32_t>(rawValue));
+      }
+      else {
+        return std::to_string(toCooked<uint32_t>(rawValue));
+      }
+    }
+    else {
+      return std::to_string(toCooked<double>(rawValue));
+    }
+  }
+
+  /**********************************************************************************************************************/
+  template<>
+  uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const
+  {
+    if(_fractionalBits == 0) {  // use integer conversion
+      return toRaw(std::stoi(cookedValue));
+    }
+    else {
+      return toRaw(std::stod(cookedValue));
+    }
+  }
+
 }

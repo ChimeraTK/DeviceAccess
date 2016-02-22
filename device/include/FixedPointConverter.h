@@ -1,12 +1,16 @@
 #ifndef MTCA4U_FIXED_POINT_CONVERTER_H
 #define MTCA4U_FIXED_POINT_CONVERTER_H
 
+#include <string>
 #include <stdint.h>
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
 #include <limits>
+
+#define FUSION_MAX_MAP_SIZE 20
+#define FUSION_MAX_VECTOR_SIZE 20
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/fusion/container.hpp>
 #include <boost/fusion/sequence.hpp>
@@ -98,7 +102,8 @@ namespace mtca4u{
           boost::fusion::pair<int64_t,int64_t>,
           boost::fusion::pair<uint64_t,uint64_t>,
           boost::fusion::pair<float,float>,
-          boost::fusion::pair<double,double> >    userTypeMap;
+          boost::fusion::pair<double,double>,
+          boost::fusion::pair<std::string,std::string> >    userTypeMap;
 
     private:
 
@@ -312,6 +317,13 @@ namespace mtca4u{
     }
   }
 
+  /**********************************************************************************************************************/
+  template<>
+  std::string FixedPointConverter::toCooked<std::string>(uint32_t rawValue) const;
+
+  /**********************************************************************************************************************/
+  template<>
+  uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
 
 }// namespace mtca4u
 
