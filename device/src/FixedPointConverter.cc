@@ -75,7 +75,12 @@ namespace mtca4u {
   uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const
   {
     if(_fractionalBits == 0) {  // use integer conversion
-      return toRaw(std::stoi(cookedValue));
+      if(_isSigned) {
+        return toRaw(std::stoi(cookedValue));
+      }
+      else {
+        return toRaw(std::stoul(cookedValue));
+      }
     }
     else {
       return toRaw(std::stod(cookedValue));
