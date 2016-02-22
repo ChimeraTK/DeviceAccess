@@ -5,8 +5,6 @@
  *      Author: Martin Hierholzer
  */
 
-#define FUSION_MAX_MAP_SIZE 20
-#define FUSION_MAX_VECTOR_SIZE 20
 #include <boost/fusion/algorithm.hpp>
 
 #include "MemoryAddressedBackendRegisterAccessor.h"
