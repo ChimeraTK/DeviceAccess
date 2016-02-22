@@ -52,6 +52,7 @@ DEF_TYPENAME(int64_t)
 DEF_TYPENAME(uint64_t)
 DEF_TYPENAME(float)
 DEF_TYPENAME(double)
+DEF_TYPENAME(std::string)
 
 
 
@@ -176,6 +177,10 @@ BOOST_AUTO_TEST_CASE( testInt32 ){
   checkToRaw( converter, (int64_t)0xFFFFFFFAAAAAAAAA, 0x80000000 ); // Smallest signed representation possible
   checkToRaw( converter, (int64_t)0xFFFFFFFFF, 0x7FFFFFFF );
   checkToRaw( converter, (uint64_t)0xFFFFFFFFF, 0x7FFFFFFF ); // max signed representation possible
+
+  checkToCooked( converter, 0x55555555, std::string("1431655765") );
+  checkToRaw( converter, std::string("1431655765"), 0x55555555 );
+
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32 ){
@@ -214,6 +219,12 @@ BOOST_AUTO_TEST_CASE( testUInt32 ){
   checkToRaw( converter, SIGNED_HEX_TO_INT64(0xAAAAAAAA), 0x0 ); // Lowest range of 32 bit wide unsigned register
   checkToRaw( converter, (int64_t)0x100000000, 0xFFFFFFFF );
   checkToRaw( converter, (uint64_t)0x100000000, 0xFFFFFFFF ); // max signed representation possible
+
+  checkToCooked( converter, 0x55555555, std::string("1431655765") );
+  checkToRaw( converter, std::string("1431655765"), 0x55555555 );
+
+  checkToCooked( converter, 0xAAAAAAAA, std::string("2863311530") );
+  checkToRaw( converter, std::string("2863311530"), 0xAAAAAAAA );
 }
 
 BOOST_AUTO_TEST_CASE( testInt16 ){
@@ -673,6 +684,9 @@ BOOST_AUTO_TEST_CASE( testInt32_fraction7 ){
   checkToRaw( converter, (short)0xAAAA, 0xFFD55500 );
   checkToRaw( converter, (unsigned short)0x5555, 0x002AAA80 );
   checkToRaw( converter, (unsigned short)0xAAAA, 0x00555500 );
+
+  checkToCooked( converter, 0x20, std::string("0.250000") );
+  checkToRaw( converter, std::string("0.25"), 0x20 );
 }
 
 BOOST_AUTO_TEST_CASE( testUInt32_fraction7 ){
