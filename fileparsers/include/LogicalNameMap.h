@@ -40,9 +40,8 @@ namespace mtca4u {
           operator const ValueType&() const {
             if(!hasActualValue) {
               if(!accessor) {
-                if(!backend) throw DeviceException("Cannot obtain this value without an associated device.",
+                throw DeviceException("Cannot obtain this value before LogicalNameMap::Value::createInternalAccessors() was called.",
                     DeviceException::EX_NOT_OPENED);
-                accessor = backend->getBufferingRegisterAccessor<ValueType>("",registerName);
               }
               accessor->read();
               return (*accessor)[0];
@@ -63,10 +62,10 @@ namespace mtca4u {
             return value == rightHandSide;
           }
 
-          // default constructor: no backend will be initialised, so no accessors can be created. It may not be
-          // possible to obtain the value like this!
+          // constructor: assume having an actual value by default. If it does not have an actual value, the
+          // function createInternalAccessors() must be called before obtaining the value.
           Value()
-          : hasActualValue(true), backend()
+          : hasActualValue(true)
           {}
 
           // assignment operator: allow assigment to Value without given backend, in which case we keep our backend
@@ -87,10 +86,12 @@ namespace mtca4u {
 
         protected:
 
-          // constructor: assume having an actual value by default
-          Value(const boost::shared_ptr<DeviceBackend> &_backend)
-          : hasActualValue(true), backend(_backend)
-          {}
+          // create the internal register accessor(s) to obtain the value, if needed
+          void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
+            if(!hasActualValue) {
+              accessor = backend->getBufferingRegisterAccessor<ValueType>("",registerName);
+            }
+          }
 
           // flag if the actual value is already known and thus the member variable "value" is valid.
           bool hasActualValue;
@@ -100,9 +101,6 @@ namespace mtca4u {
 
           // name of the register to obtain the value from
           std::string registerName;
-
-          // backend to obtain the register accessors from
-          boost::shared_ptr<DeviceBackend> backend;
 
           // register accessor to obtain the value, if not yet known upon construction
           mutable boost::shared_ptr< BufferingRegisterAccessorImpl<ValueType> > accessor;
@@ -169,18 +167,22 @@ namespace mtca4u {
             return targetType == TargetType::INT_CONSTANT || targetType == TargetType::INT_VARIABLE;
           }
 
-        protected:
+          /** create the internal register accessors */
+          void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
+            deviceName.createInternalAccessors(backend);
+            registerName.createInternalAccessors(backend);
+            firstIndex.createInternalAccessors(backend);
+            length.createInternalAccessors(backend);
+            channel.createInternalAccessors(backend);
+            value.createInternalAccessors(backend);
+          }
 
-          // constuctor: initialise Values
-          RegisterInfo(const boost::shared_ptr<DeviceBackend> &backend)
-          : targetType(TargetType::INVALID),
-            deviceName(backend),
-            registerName(backend),
-            firstIndex(backend),
-            length(backend),
-            channel(backend),
-            value(backend)
+          // constuctor: initialise values
+          RegisterInfo()
+          : targetType(TargetType::INVALID)
           {}
+
+        protected:
 
           friend class LogicalNameMap;
       };
@@ -276,13 +278,8 @@ namespace mtca4u {
       };
 
       /** Constructor: parse map from XML file */
-      LogicalNameMap(const std::string &fileName, const boost::shared_ptr<DeviceBackend> &backend) {
-        parseFile(fileName, backend);
-      }
-
-      /** Constructor: parse map from XML file. No backend is specified, so internal references cannot be resolved. */
       LogicalNameMap(const std::string &fileName) {
-        parseFile(fileName, boost::shared_ptr<DeviceBackend>());
+        parseFile(fileName);
       }
 
       /** Default constructor: Create empty map. */
@@ -311,10 +308,10 @@ namespace mtca4u {
       std::map< std::string, boost::shared_ptr<RegisterInfo> > _map;
 
       /** parse the given XML file */
-      void parseFile(const std::string &fileName, const boost::shared_ptr<DeviceBackend> &backend);
+      void parseFile(const std::string &fileName);
 
       /** called inside parseFile() to parse an XML element and its sub-elements recursivly */
-      void parseElement(RegisterPath currentPath, const xmlpp::Element *element, const boost::shared_ptr<DeviceBackend> &backend);
+      void parseElement(RegisterPath currentPath, const xmlpp::Element *element);
 
       /** throw a parsing error with more information */
       void parsingError(const std::string &message);

@@ -26,7 +26,7 @@ namespace mtca4u {
     if(hasParsed) return;
 
     // create map
-    _map = LogicalNameMap(_lmapFileName, shared_from_this() );
+    _map = LogicalNameMap(_lmapFileName);
 
     // create all devices referenced in the map
     auto devNames = _map.getTargetDevices();

@@ -92,7 +92,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMap::parseFile(const std::string &fileName, const boost::shared_ptr<DeviceBackend> &backend) {
+  void LogicalNameMap::parseFile(const std::string &fileName) {
     // parse the file into a DOM structure
     xmlpp::DomParser parser;
     try {
@@ -115,11 +115,11 @@ namespace mtca4u {
       if(!element) continue;
 
       // parse the element
-      parseElement(RegisterPath(),element,backend);
+      parseElement(RegisterPath(),element);
     }
   }
 
-  void LogicalNameMap::parseElement(RegisterPath currentPath, const xmlpp::Element *element, const boost::shared_ptr<DeviceBackend> &backend) {
+  void LogicalNameMap::parseElement(RegisterPath currentPath, const xmlpp::Element *element) {
     // module tag found: look for registers and sub-modules in module
     if(element->get_name() == "module") {
 
@@ -137,7 +137,7 @@ namespace mtca4u {
         if(!childElement) continue;
 
         // parse the element
-        parseElement(currentPath/moduleName, childElement,backend);
+        parseElement(currentPath/moduleName, childElement);
       }
     }
 
@@ -152,7 +152,7 @@ namespace mtca4u {
       std::string registerName = currentPath/nameAttr->get_value();
 
       // create new RegisterInfo object
-      _map[registerName].reset( new LogicalNameMap::RegisterInfo(backend) );
+      _map[registerName].reset( new LogicalNameMap::RegisterInfo() );
 
       // obtain the type
       std::string type = getValueFromXmlSubnode<std::string>(element, "type");

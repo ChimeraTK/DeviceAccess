@@ -32,13 +32,14 @@ namespace mtca4u {
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-        _info = _dev->_map.getRegisterInfoShared(name);
-        if( _info->targetType != LogicalNameMap::TargetType::CHANNEL ) {
+        _info = _dev->_map.getRegisterInfo(name);
+        _info.createInternalAccessors(dev);
+        if( _info.targetType != LogicalNameMap::TargetType::CHANNEL ) {
           throw DeviceException("LNMBackendBufferingChannelAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
-        _targetDevice = _dev->_devices[_info->deviceName];
-        _accessor = _targetDevice->getTwoDRegisterAccessor<T>("",_info->registerName);
+        _targetDevice = _dev->_devices[_info.deviceName];
+        _accessor = _targetDevice->getTwoDRegisterAccessor<T>("",_info.registerName);
       }
 
       virtual ~LNMBackendBufferingChannelAccessor() {};
@@ -53,28 +54,28 @@ namespace mtca4u {
       }
 
       virtual T& operator[](unsigned int index) {
-        return _accessor[_info->channel][index];
+        return _accessor[_info.channel][index];
       }
 
       virtual unsigned int getNumberOfElements() {
-        return _accessor[_info->channel].size();
+        return _accessor[_info.channel].size();
       }
 
       typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
       typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
-      virtual iterator begin() { return _accessor[_info->channel].begin(); }
-      virtual const_iterator cbegin() const { return _accessor[_info->channel].cbegin(); }
-      virtual iterator end() { return _accessor[_info->channel].end(); }
-      virtual const_iterator cend() const { return _accessor[_info->channel].cend(); }
-      virtual reverse_iterator rbegin() { return _accessor[_info->channel].rbegin(); }
-      virtual const_reverse_iterator crbegin() const { return _accessor[_info->channel].crbegin(); }
-      virtual reverse_iterator rend() { return _accessor[_info->channel].rend(); }
-      virtual const_reverse_iterator crend() const { return _accessor[_info->channel].crend(); }
+      virtual iterator begin() { return _accessor[_info.channel].begin(); }
+      virtual const_iterator cbegin() const { return _accessor[_info.channel].cbegin(); }
+      virtual iterator end() { return _accessor[_info.channel].end(); }
+      virtual const_iterator cend() const { return _accessor[_info.channel].cend(); }
+      virtual reverse_iterator rbegin() { return _accessor[_info.channel].rbegin(); }
+      virtual const_reverse_iterator crbegin() const { return _accessor[_info.channel].crbegin(); }
+      virtual reverse_iterator rend() { return _accessor[_info.channel].rend(); }
+      virtual const_reverse_iterator crend() const { return _accessor[_info.channel].crend(); }
 
       virtual void swap(std::vector<T> &x) {
-        _accessor[_info->channel].swap(x);
+        _accessor[_info.channel].swap(x);
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
@@ -102,7 +103,7 @@ namespace mtca4u {
       boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
       /// register information
-      boost::shared_ptr<LogicalNameMap::RegisterInfo> _info;
+      LogicalNameMap::RegisterInfo _info;
 
       /// target device
       boost::shared_ptr<Device> _targetDevice;

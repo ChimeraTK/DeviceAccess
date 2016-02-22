@@ -29,7 +29,9 @@ namespace mtca4u {
 
       LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
           const std::string &registerName)
-      : _registerName(registerName),_moduleName(module)
+      : _registerName(registerName),
+        _moduleName(module),
+        _fixedPointConverter(32, 0, 1)
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
@@ -40,13 +42,13 @@ namespace mtca4u {
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(1);
-        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info->value;
+        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _fixedPointConverter.toCooked<T>(_info->value);
       }
 
       virtual ~LNMBackendBufferingVariableAccessor() {};
 
       virtual void read() {
-        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _info->value;
+        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] =_fixedPointConverter.toCooked<T>(_info->value);
       }
 
       virtual void write() {
@@ -54,7 +56,7 @@ namespace mtca4u {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
               DeviceException::REGISTER_IS_READ_ONLY);
         }
-        _info->value = BufferingRegisterAccessorImpl<T>::cookedBuffer[0];
+        _info->value = _fixedPointConverter.toRaw(BufferingRegisterAccessorImpl<T>::cookedBuffer[0]);
       }
 
       virtual T& operator[](unsigned int) {
@@ -86,8 +88,13 @@ namespace mtca4u {
       /// backend device
       boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
-      /// register information
+      /// register information. We have a shared pointer to the original RegisterInfo inside the map, since
+      /// we need to modify the value in it (in case of a writeable variable register)
       boost::shared_ptr<LogicalNameMap::RegisterInfo> _info;
+
+      /// fixed point converter to handle type conversions from our "raw" type int to the requested user type.
+      /// Note: no actual fixed point conversion is done, it is just used for the type conversion!
+      FixedPointConverter _fixedPointConverter;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
