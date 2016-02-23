@@ -96,13 +96,17 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
   registerAddress = registerAddress * 4;
   uint32_t numberOfWordsToRead = buffer.at(2);
 
-  std::vector<int32_t> dataToSend(numberOfWordsToRead + 1); // +1 to accomodate
-                                                            // READ_SUCCESS_INDICATION
-  dataToSend.at(0) = READ_SUCCESS_INDICATION;
 
+  // send data in two packets instead of one; this is done for test coverage.
+  // Let READ_SUCCESS_INDICATION go in the first write and data in the second.
+  std::vector<int32_t> readSuccessIndication(1);
+  readSuccessIndication.at(0) = READ_SUCCESS_INDICATION;
+  boost::asio::write(*_currentClientConnection, boost::asio::buffer(readSuccessIndication));
+
+  std::vector<int32_t> dataToSend(numberOfWordsToRead);
   uint8_t bar = 0;
   // start putting in the read values from location dataToSend[1]:
-  int32_t* startAddressForReadInData = dataToSend.data() + 1;
+  int32_t* startAddressForReadInData = dataToSend.data();
   _registerSpace.read(bar, registerAddress, startAddressForReadInData,
                       numberOfWordsToRead * sizeof(int32_t));
 
@@ -130,6 +134,8 @@ RebotDummyServer::~RebotDummyServer() {
 
 void RebotDummyServer::handleAcceptedConnection(
      boost::shared_ptr<ip::tcp::socket>& incomingSocket) {
+  boost::asio::ip::tcp::no_delay option(true);
+  incomingSocket->set_option(option);
   _currentClientConnection = incomingSocket;
 
   while (sigterm_caught == false) { // This loop handles the accepted connection
