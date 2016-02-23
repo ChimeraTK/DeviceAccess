@@ -56,23 +56,28 @@ void TcpCtrl::closeConnection() {
 }
 
 std::vector<int32_t> TcpCtrl::receiveData(uint32_t const &numWordsToRead) {
-  boost::system::error_code ec;
-  std::vector<int32_t> readData(numWordsToRead);
-  _socket->read_some(boost::asio::buffer(readData), ec);
-  if (ec) {
-    throw RebotBackendException("Error reading from socket",
-        RebotBackendException::EX_SOCKET_READ_FAILED);
-  } else {
+  try {
+    std::vector<int32_t> readData(numWordsToRead);
+    boost::asio::read(*_socket, boost::asio::buffer(readData));
     return readData;
+  }
+  catch (...) {
+    // TODO: find out how to extract info from the boost excception and wrap it
+    // inside RebotBackendException
+    throw RebotBackendException("Error reading from socket",
+                                RebotBackendException::EX_SOCKET_READ_FAILED);
   }
 }
 
 void TcpCtrl::sendData(const std::vector<char> &data) {
-  boost::system::error_code ec;
-  _socket->write_some(boost::asio::buffer(&data[0], data.size()), ec);
-  if (ec) {
+  try {
+    boost::asio::write(*_socket, boost::asio::buffer(&data[0], data.size()));
+  }
+  catch (...) {
+    // TODO: find out how to extract info from the boost excception and wrap it
+    // inside RebotBackendException
     throw RebotBackendException("Error writing to socket",
-        RebotBackendException::EX_SOCKET_WRITE_FAILED);
+                                RebotBackendException::EX_SOCKET_WRITE_FAILED);
   }
 }
 
@@ -115,10 +120,13 @@ boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
 
 // FIXME: remove this later; Do not want to do a cleanup at this point
 void TcpCtrl::receiveData(boost::array<char, 4> &receivedArray) {
-  boost::system::error_code ec;
-  _socket->read_some(boost::asio::buffer(receivedArray), ec);
-  if (ec) {
+  try {
+    boost::asio::read(*_socket, boost::asio::buffer(receivedArray));
+  }
+  catch (...) {
+    // TODO: find out how to extract info from the boost excception and wrap it
+    // inside RebotBackendException
     throw RebotBackendException("Error reading from socket",
-        RebotBackendException::EX_SOCKET_READ_FAILED);
+                                RebotBackendException::EX_SOCKET_READ_FAILED);
   }
 }
