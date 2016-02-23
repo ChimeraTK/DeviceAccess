@@ -133,7 +133,7 @@ void RebotTestClass::testWrite() {
   uint32_t address = 0x04;
   int32_t readValue = 0;
   rebotBackend.read(0, address, &readValue, sizeof(readValue));
-  BOOST_CHECK_EQUAL(0xDEADDEAD, readValue);
+  BOOST_CHECK_EQUAL(0xDEADBEEF, readValue);
 
   /****************************************************************************/
   // Single word read -  Hardcoding addresses for now

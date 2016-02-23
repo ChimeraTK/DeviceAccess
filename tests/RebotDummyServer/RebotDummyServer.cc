@@ -25,7 +25,7 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
   // The first address of the register space is set to a reference value. This
   // would be used to test the rebot client.
   uint32_t registerAddress = 0x04;
-  int32_t wordToWrite = 0xDEADDEAD; // Change this to someting standardized later (eg FW version ..)
+  int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized later (eg FW version ..)
   uint8_t bar = 0;
     _registerSpace.write(bar, registerAddress, &wordToWrite,
                          sizeof(wordToWrite));
