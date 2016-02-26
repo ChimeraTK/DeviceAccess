@@ -37,4 +37,16 @@ namespace mtca4u {
     return boost::shared_ptr<RegisterPlugin>(new ScaleRegisterPlugin(parameters));
   }
 
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >* ScaleRegisterPlugin::getBufferingRegisterAccessorImpl(
+      void *accessor_ptr) {
+    auto accessor = static_cast<boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >*>(accessor_ptr);
+    return accessor;
+  }
+
+  VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER(ScaleRegisterPlugin, getBufferingRegisterAccessorImpl,
+      getBufferingRegisterAccessorImpl, void*)
+
 } /* namespace mtca4u */

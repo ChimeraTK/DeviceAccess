@@ -18,8 +18,7 @@ namespace mtca4u {
     public:
       
       template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessorImpl(
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor );
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >* getBufferingRegisterAccessorImpl(void *accessor_ptr);
 
       VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getBufferingRegisterAccessorImpl, void*);
 
@@ -34,19 +33,6 @@ namespace mtca4u {
       Value<double> scalingFactor;
   
   };
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ScaleRegisterPlugin::getBufferingRegisterAccessorImpl(
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor)
-  {
-    auto ptr = VIRTUAL_FUNCTION_TEMPLATE_CALL(getBufferingRegisterAccessorImpl, UserType,
-        boost::shared_ptr< BufferingRegisterAccessorImpl<UserType>* >, (void*)accessor );
-    auto temp = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
-    delete ptr;
-    return temp;
-  }
 
   /********************************************************************************************************************/
   
