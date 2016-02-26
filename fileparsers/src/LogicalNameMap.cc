@@ -11,12 +11,13 @@
 #include "LogicalNameMap.h"
 #include "DeviceException.h"
 #include "DeviceBackend.h"
+#include "RegisterPluginFactory.h"
 
 namespace mtca4u {
   const char LogicalNameMap::RegisterPath::separator[] = "/";
 
   template<>
-  LogicalNameMap::Value<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  Value<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -31,7 +32,7 @@ namespace mtca4u {
       parsingError("Node '"+subnodeName+"' does not contain text.");
     }
 
-    LogicalNameMap::Value<std::string> value;
+    Value<std::string> value;
     value = textNode->get_content();
     return value;
   }
@@ -39,7 +40,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  LogicalNameMap::Value<int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  Value<int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -49,7 +50,7 @@ namespace mtca4u {
       parsingError("Node '"+subnodeName+"' should contain only text or only one <ref></ref> sub-element.");
     }
 
-    LogicalNameMap::Value<int> value;
+    Value<int> value;
 
     const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
     if(textNode) {
@@ -66,7 +67,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  LogicalNameMap::Value<unsigned int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  Value<unsigned int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -76,7 +77,7 @@ namespace mtca4u {
       parsingError("Node '"+subnodeName+"' should contain only text.");
     }
 
-    LogicalNameMap::Value<unsigned int> value;
+    Value<unsigned int> value;
 
     const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
     if(textNode) {
@@ -185,6 +186,41 @@ namespace mtca4u {
       else {
         parsingError("Wrong target type: "+type);
       }
+
+      // iterate over childs of the register to find plugins
+      for(const auto& child : element->get_children()) {
+        // cast into element, ignore if not an element (e.g. comment)
+        const xmlpp::Element *childElement = dynamic_cast<const xmlpp::Element*>(child);
+        if(!childElement) continue;
+        if(childElement->get_name() != "plugin") continue;  // look only for plugins
+
+        // get name of plugin
+        auto pluginNameAttr = childElement->get_attribute("name");
+        if(!pluginNameAttr) {
+          parsingError("Missing name attribute of 'plugin' tag.");
+        }
+        std::string pluginName = pluginNameAttr->get_value();
+        
+        // collect parameters
+        std::map<std::string, Value<std::string> > parameters;
+        for(const auto& paramchild : childElement->get_children()) {
+          // cast into element, ignore if not an element (e.g. comment)
+          const xmlpp::Element *paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
+          if(!paramElement) continue;
+
+          // get name of parameter
+          std::string parameterName = paramElement->get_name();
+          
+          // get value of parameter and store in map
+          parameters[parameterName] = getValueFromXmlSubnode<std::string>(childElement,parameterName);
+          
+        }
+        
+        // create instance of plugin
+        boost::shared_ptr<RegisterPlugin> plugin = RegisterPluginFactory::getInstance().createPlugin(pluginName, parameters);
+
+      }
+
     }
     else {
       parsingError("Unknown tag found: "+element->get_name());
