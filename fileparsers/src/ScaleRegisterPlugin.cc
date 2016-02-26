@@ -43,10 +43,41 @@ namespace mtca4u {
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >* ScaleRegisterPlugin::getBufferingRegisterAccessorImpl(
       void *accessor_ptr) {
     auto accessor = static_cast<boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >*>(accessor_ptr);
-    return accessor;
+    boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > *newAccessor = new boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >();
+    newAccessor->reset(new ScaleRegisterPluginAccessor<UserType>(*accessor, scalingFactor) );
+    delete accessor; // just the shared pointer, which was already copied
+    return newAccessor;
   }
 
   VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER(ScaleRegisterPlugin, getBufferingRegisterAccessorImpl,
       getBufferingRegisterAccessorImpl, void*)
+
+  /********************************************************************************************************************/
+
+  template<>
+  void ScaleRegisterPluginAccessor<std::string>::read() {
+    // read from hardware
+    _accessor->read();
+    // apply scaling factor while copying buffer from underlying accessor to our buffer
+    auto itTarget = BufferingRegisterAccessorImpl<std::string>::cookedBuffer.begin();
+    for(auto itSource = _accessor->begin(); itSource != _accessor->end(); ++itSource) {
+      *itTarget = std::to_string(std::stod(*itSource) * _scalingFactor);
+      ++itTarget;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<>
+  void ScaleRegisterPluginAccessor<std::string>::write() {
+    // apply scaling factor while copying buffer from our buffer to underlying accessor
+    auto itSource = BufferingRegisterAccessorImpl<std::string>::cookedBuffer.begin();
+    for(auto itTarget = _accessor->begin(); itTarget != _accessor->end(); ++itTarget) {
+      *itTarget = std::to_string(std::stod(*itSource) / _scalingFactor);
+      ++itSource;
+    }
+    // write to hardware
+    _accessor->write();
+  }
 
 } /* namespace mtca4u */
