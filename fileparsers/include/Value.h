@@ -60,7 +60,7 @@ namespace mtca4u {
       {}
 
       /** assignment operator: allow assigment to Value without given backend, in which case we keep our backend
-       *  and create the accessors */
+       *  and create the accessors. This version of the operator accepts any arithmetic-typed Value. */
       template < class rhsValueType,
                  class = typename std::enable_if<std::is_arithmetic<rhsValueType>::value>::type>
       Value<ValueType>& operator=(const Value<rhsValueType> &rightHandSide) {
@@ -77,20 +77,9 @@ namespace mtca4u {
         return *this;
       }
 
-      /** assignment operator with type conversion from string */
-      Value<ValueType>& operator=(const Value<std::string> &rightHandSide) {
-        if(rightHandSide.hasActualValue) {
-          hasActualValue = true;
-          value = std::stoi(rightHandSide.value);
-        }
-        else {
-          // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
-          hasActualValue = false;
-          registerName = rightHandSide.registerName;
-          accessor.reset();
-        }
-        return *this;
-      }
+      /** assignment operator: allow assigment to Value without given backend, in which case we keep our backend
+       *  and create the accessors. This version of the operator accepts a string-typed Value. */
+      Value<ValueType>& operator=(const Value<std::string> &rightHandSide);
 
       /** create the internal register accessor(s) to obtain the value, if needed */
       void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
@@ -117,6 +106,29 @@ namespace mtca4u {
       template<typename T>
       friend class Value;
   };
+
+  /********************************************************************************************************************/
+
+  template<typename ValueType>
+  Value<ValueType>& Value<ValueType>::operator=(const Value<std::string> &rightHandSide) {
+    if(rightHandSide.hasActualValue) {
+      hasActualValue = true;
+      std::cout << "HIER : " << rightHandSide.value << std::endl;
+      value = std::stoi(rightHandSide.value);
+    }
+    else {
+      // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
+      hasActualValue = false;
+      registerName = rightHandSide.registerName;
+      accessor.reset();
+    }
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
+  template<>
+  Value<std::string>& Value<std::string>::operator=(const Value<std::string> &rightHandSide);
 
 } /* namespace mtca4u */
 
