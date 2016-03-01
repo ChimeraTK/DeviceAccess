@@ -33,9 +33,15 @@ namespace mtca4u {
           boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor ) {
         return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, accessor);
       }
-
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl,
           boost::shared_ptr< BufferingRegisterAccessorImpl<T> >(boost::shared_ptr< BufferingRegisterAccessorImpl<T> >) );
+
+      /** Called by the backend when obtaining a (non-buffering) register accessor. This allows the plugin to put some
+       *  intermediate accessor in between to change the accessor's behaviour. The default implementation just returns
+       *  the passed accessor. */
+      virtual boost::shared_ptr<RegisterAccessor> getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) {
+        return accessor;
+      }
 
     protected:
 

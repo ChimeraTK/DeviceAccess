@@ -139,17 +139,22 @@ namespace mtca4u {
     if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
 
     // implementation for each type
+    boost::shared_ptr<mtca4u::RegisterAccessor> accessor;
     if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
-      return targetDevice->getRegisterAccessor(info.registerName);
+      accessor = targetDevice->getRegisterAccessor(info.registerName);
     }
     else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      return boost::shared_ptr<mtca4u::RegisterAccessor>(new LNMBackendRegisterAccessor(
+      accessor = boost::shared_ptr<mtca4u::RegisterAccessor>(new LNMBackendRegisterAccessor(
           targetDevice->getRegisterAccessor(info.registerName), info.firstIndex, info.length));
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
           name+").", DeviceException::NOT_IMPLEMENTED);
     }
+
+    // allow plugins to replace the accessor with a modified version before returing it
+    accessor = info.getRegisterAccessor(accessor);
+    return accessor;
 
   }
 
@@ -194,6 +199,8 @@ namespace mtca4u {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
           name+").", DeviceException::NOT_IMPLEMENTED);
     }
+
+    // allow plugins to replace the accessor with a modified version before returing it
     auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
     accessor = info.getBufferingRegisterAccessor<UserType>(accessor);
     return accessor;
