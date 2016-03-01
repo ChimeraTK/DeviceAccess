@@ -194,7 +194,9 @@ namespace mtca4u {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
           name+").", DeviceException::NOT_IMPLEMENTED);
     }
-    return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
+    auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
+    accessor = info.getBufferingRegisterAccessor<UserType>(accessor);
+    return accessor;
   }
 
 
