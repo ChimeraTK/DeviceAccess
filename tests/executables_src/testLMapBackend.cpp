@@ -737,29 +737,57 @@ void LMapBackendTest::testPlugin() {
   BOOST_CHECK( accDirect == 22 );
 
   // scaled area
-  auto accDirect3 = device.getBufferingRegisterAccessor<int>("","FullArea");
-  auto accScaled3 = device.getBufferingRegisterAccessor<double>("","FullArea_Scaled");
+  auto accDirect2 = device.getBufferingRegisterAccessor<int>("","FullArea");
+  auto accScaled2 = device.getBufferingRegisterAccessor<double>("","FullArea_Scaled");
 
-  BOOST_CHECK( accDirect3.getNumberOfElements() == accScaled3.getNumberOfElements() );
+  BOOST_CHECK( accDirect2.getNumberOfElements() == accScaled2.getNumberOfElements() );
 
-  for(unsigned int i=0; i<accDirect3.getNumberOfElements(); i++) {
-    accDirect3[i] = (signed)i-10;
+  for(unsigned int i=0; i<accDirect2.getNumberOfElements(); i++) {
+    accDirect2[i] = (signed)i-10;
   }
-  accDirect3.write();
+  accDirect2.write();
 
-  accScaled3.read();
-  for(unsigned int i=0; i<accScaled3.getNumberOfElements(); i++) {
-    BOOST_CHECK( accScaled3[i] == ((signed)i-10)*11.5 );
+  accScaled2.read();
+  for(unsigned int i=0; i<accScaled2.getNumberOfElements(); i++) {
+    BOOST_CHECK( accScaled2[i] == ((signed)i-10)*11.5 );
   }
 
-  for(unsigned int i=0; i<accScaled3.getNumberOfElements(); i++) {
-    accScaled3[i] = ((signed)i+30)*11.5;
+  for(unsigned int i=0; i<accScaled2.getNumberOfElements(); i++) {
+    accScaled2[i] = ((signed)i+30)*11.5;
   }
-  accScaled3.write();
+  accScaled2.write();
 
-  accDirect3.read();
-  for(unsigned int i=0; i<accDirect3.getNumberOfElements(); i++) {
-    BOOST_CHECK( accDirect3[i] == (signed)i+30 );
+  accDirect2.read();
+  for(unsigned int i=0; i<accDirect2.getNumberOfElements(); i++) {
+    BOOST_CHECK( accDirect2[i] == (signed)i+30 );
+  }
+
+  // non-buffering accessor
+  auto accDirect3 = device.getRegisterAccessor("FullArea","");
+  auto accScaled3 = device.getRegisterAccessor("FullArea_Scaled","");
+
+  BOOST_CHECK( accDirect3->getNumberOfElements() == accScaled3->getNumberOfElements() );
+  std::vector<int> bufferDirect(accDirect3->getNumberOfElements());
+  std::vector<double> bufferScaled(accScaled3->getNumberOfElements());
+
+  for(unsigned int i=0; i<bufferDirect.size(); i++) {
+    bufferDirect[i] = (signed)i-10;
+  }
+  accDirect3->write(bufferDirect.data(), bufferDirect.size());
+
+  accScaled3->read(bufferScaled.data(), bufferScaled.size());
+  for(unsigned int i=0; i<bufferScaled.size(); i++) {
+    BOOST_CHECK( bufferScaled[i] == ((signed)i-10)*11.5 );
+  }
+
+  for(unsigned int i=0; i<bufferScaled.size(); i++) {
+    bufferScaled[i] = ((signed)i+30)*11.5;
+  }
+  accScaled3->write(bufferScaled.data(), bufferScaled.size());
+
+  accDirect3->read(bufferDirect.data(), bufferDirect.size());
+  for(unsigned int i=0; i<bufferDirect.size(); i++) {
+    BOOST_CHECK( bufferDirect[i] == (signed)i+30 );
   }
 
 }
