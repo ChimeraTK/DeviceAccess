@@ -18,16 +18,13 @@ namespace mtca4u {
   
     public:
 
-      template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >* getBufferingRegisterAccessorImpl(void *accessor_ptr);
-
       static boost::shared_ptr<RegisterPlugin> createInstance(const std::map<std::string, Value<std::string> > &parameters);
 
     protected:
 
       template<typename UserType>
       boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor);
+          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const;
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ScaleRegisterPlugin, getBufferingRegisterAccessor_impl, 1);
 
       /** constructor, only internally called from createInstance() */

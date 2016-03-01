@@ -42,7 +42,7 @@ namespace mtca4u {
       /** Default implementation of getBufferingRegisterAccessor(): just return the unmodified accessor */
       template<typename UserType>
       boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor);
+          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const;
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterPlugin, getBufferingRegisterAccessor_impl, 1);
   
   };

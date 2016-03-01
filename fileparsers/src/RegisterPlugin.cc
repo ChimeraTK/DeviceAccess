@@ -14,7 +14,7 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > RegisterPlugin::getBufferingRegisterAccessor_impl(
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) {
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
     return accessor;
   }
 

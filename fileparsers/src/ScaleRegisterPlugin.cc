@@ -21,7 +21,10 @@ namespace mtca4u {
       ScaleRegisterPluginAccessor(boost::shared_ptr< BufferingRegisterAccessorImpl<T> > accessor,
           Value<double> scalingFactor)
       : _accessor(accessor), _scalingFactor(scalingFactor)
-      {}
+      {
+        // reserve space for cooked buffer
+        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_accessor->getNumberOfElements());
+      }
 
       virtual ~ScaleRegisterPluginAccessor() {};
 
@@ -119,7 +122,7 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ScaleRegisterPlugin::getBufferingRegisterAccessor_impl(
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) {
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
     return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
         new ScaleRegisterPluginAccessor<UserType>(accessor, scalingFactor));
   }
