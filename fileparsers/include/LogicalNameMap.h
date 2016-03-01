@@ -98,12 +98,26 @@ namespace mtca4u {
             value.createInternalAccessors(backend);
           }
 
-          // constuctor: initialise values
+          /** constuctor: initialise values */
           RegisterInfo()
           : targetType(TargetType::INVALID)
           {}
 
+          /** Obtain a potentially modified register accessor from the given accessor. Any plugins specified in
+           *  the map for this register might modify the accessor. */
+          template<typename UserType>
+          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
+              boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
+            for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
+              accessor = (*i)->getBufferingRegisterAccessor<UserType>(accessor);
+            }
+            return accessor;
+          }
+
         protected:
+
+          /** list of plugins */
+          std::vector< boost::shared_ptr<RegisterPlugin> > pluginList;
 
           friend class LogicalNameMap;
       };
