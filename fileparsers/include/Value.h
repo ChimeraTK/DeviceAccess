@@ -113,7 +113,6 @@ namespace mtca4u {
   Value<ValueType>& Value<ValueType>::operator=(const Value<std::string> &rightHandSide) {
     if(rightHandSide.hasActualValue) {
       hasActualValue = true;
-      std::cout << "HIER : " << rightHandSide.value << std::endl;
       value = std::stoi(rightHandSide.value);
     }
     else {
