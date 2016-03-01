@@ -139,9 +139,8 @@ namespace mtca4u {
         std::vector<ConvertedDataType> buffer(nWords);
         _accessor->read(buffer.data(), nWords, wordOffsetInRegister);
         // apply scaling factor while copying buffer from underlying accessor to the target buffer
-        for(auto itSource = buffer.begin(); itSource != buffer.end(); ++itSource) {
-          *convertedData = (*itSource) * _scalingFactor;
-          convertedData += sizeof(ConvertedDataType);
+        for(unsigned int i=0; i<nWords; i++) {
+          convertedData[i] = buffer[i] * _scalingFactor;
         }
       }
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ScaleRegisterPluginAccessor, read_impl, 3);
@@ -151,9 +150,8 @@ namespace mtca4u {
         // create temporary buffer
         std::vector<ConvertedDataType> buffer(nWords);
         // apply scaling factor while copying buffer from source buffer to temporary buffer
-        for(auto itTarget = buffer.begin(); itTarget != buffer.end(); ++itTarget) {
-          *itTarget = (*convertedData) / _scalingFactor;
-          convertedData += sizeof(ConvertedDataType);
+        for(unsigned int i=0; i<nWords; i++) {
+          buffer[i] = convertedData[i] / _scalingFactor;
         }
         // write from temporary buffer to hardware
         _accessor->write(buffer.data(), nWords, wordOffsetInRegister);
@@ -243,9 +241,8 @@ namespace mtca4u {
     std::vector<std::string> buffer(nWords);
     _accessor->read(buffer.data(), nWords, wordOffsetInRegister);
     // apply scaling factor while copying buffer from underlying accessor to the target buffer
-    for(auto itSource = buffer.begin(); itSource != buffer.end(); ++itSource) {
-      *convertedData = std::to_string(std::stod(*itSource) * _scalingFactor);
-      convertedData += sizeof(std::string);
+    for(unsigned int i=0; i<nWords; i++) {
+      convertedData[i] = std::to_string(std::stod(buffer[i]) * _scalingFactor);
     }
   }
 
@@ -257,9 +254,8 @@ namespace mtca4u {
     // create temporary buffer
     std::vector<std::string> buffer(nWords);
     // apply scaling factor while copying buffer from source buffer to temporary buffer
-    for(auto itTarget = buffer.begin(); itTarget != buffer.end(); ++itTarget) {
-      *itTarget = std::to_string(std::stod(*convertedData) / _scalingFactor);
-      convertedData += sizeof(std::string);
+    for(unsigned int i=0; i<nWords; i++) {
+      buffer[i] = std::to_string(std::stod(convertedData[i]) / _scalingFactor);
     }
     // write from temporary buffer to hardware
     _accessor->write(buffer.data(), nWords, wordOffsetInRegister);
