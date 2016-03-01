@@ -15,6 +15,7 @@
 #include "BufferingRegisterAccessor.h"
 #include "DeviceBackend.h"
 #include "RegisterPlugin.h"
+#include "RegisterInfo.h"
 #include "RegisterPath.h"
 #include "Value.h"
 
@@ -26,6 +27,8 @@ namespace xmlpp {
 
 namespace mtca4u {
 
+  /** Logical name map: store information from xlmap file and provide it to the LogicalNameMappingBackend and
+   *  its register accessors. */
   class LogicalNameMap {
 
     public:
@@ -34,8 +37,20 @@ namespace mtca4u {
       enum TargetType { INVALID, REGISTER, RANGE, CHANNEL, INT_CONSTANT, INT_VARIABLE };
 
       /** Sub-class: single entry of the logical name mapping */
-      class RegisterInfo {
+      class RegisterInfo : public mtca4u::RegisterInfo {
         public:
+
+          virtual const RegisterPath& getRegisterName() {
+            return name;
+          }
+
+          /** Return number of elements in register */
+          virtual unsigned int getNumberOfElements() {
+            return length;
+          }
+
+          /** Name of the registrer */
+          RegisterPath name;
 
           /** Type of the target */
           TargetType targetType;
@@ -103,30 +118,7 @@ namespace mtca4u {
           : targetType(TargetType::INVALID)
           {}
 
-          /** Obtain a potentially modified buffering register accessor from the given accessor. Any plugins specified
-           *  in the map for this register might modify the accessor. */
-          template<typename UserType>
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
-              boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
-            for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
-              accessor = (*i)->getBufferingRegisterAccessor<UserType>(accessor);
-            }
-            return accessor;
-          }
-
-          /** Obtain a potentially modified (non-buffering) register accessor from the given accessor. Any plugins
-           *  specified in the map for this register might modify the accessor. */
-          boost::shared_ptr<RegisterAccessor> getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const {
-            for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
-              accessor = (*i)->getRegisterAccessor(accessor);
-            }
-            return accessor;
-          }
-
         protected:
-
-          /** list of plugins */
-          std::vector< boost::shared_ptr<RegisterPlugin> > pluginList;
 
           friend class LogicalNameMap;
       };
