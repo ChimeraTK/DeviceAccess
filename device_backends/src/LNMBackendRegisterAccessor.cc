@@ -60,7 +60,7 @@ namespace mtca4u {
   template <typename ConvertedDataType>
   void LNMBackendRegisterAccessor::read_impl(ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
     ConvertedDataType *data = reinterpret_cast<ConvertedDataType*>(convertedData);
-    read(data,nWords,wordOffsetInRegister);
+    _accessor->read(data,nWords,wordOffsetInRegister + _firstIndex);
   }
 
   /********************************************************************************************************************/
@@ -68,7 +68,7 @@ namespace mtca4u {
   template <typename ConvertedDataType>
   void LNMBackendRegisterAccessor::write_impl(const ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
     const ConvertedDataType *data = reinterpret_cast<const ConvertedDataType*>(convertedData);
-    write(data,nWords,wordOffsetInRegister);
+    _accessor->write(data,nWords,wordOffsetInRegister + _firstIndex);
   }
 
 } // namespace mtca4u
