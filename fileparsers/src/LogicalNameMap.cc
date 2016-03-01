@@ -14,7 +14,6 @@
 #include "RegisterPluginFactory.h"
 
 namespace mtca4u {
-  const char LogicalNameMap::RegisterPath::separator[] = "/";
 
   template<>
   Value<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
@@ -268,31 +267,6 @@ namespace mtca4u {
 
   void LogicalNameMap::parsingError(const std::string &message) {
     throw DeviceException("Error parsing the xlmap file '"+_fileName+"': "+message, DeviceException::CANNOT_OPEN_MAP_FILE);
-  }
-
-  /********************************************************************************************************************/
-
-  std::string operator+(const LogicalNameMap::RegisterPath &leftHandSide, const std::string &rightHandSide) {
-    return ((std::string)leftHandSide)+rightHandSide;
-  }
-
-  /********************************************************************************************************************/
-
-  std::string operator+(const std::string &leftHandSide, const LogicalNameMap::RegisterPath &rightHandSide) {
-    return leftHandSide+((std::string)rightHandSide);
-  }
-
-  /********************************************************************************************************************/
-
-  std::string operator+(const LogicalNameMap::RegisterPath &leftHandSide, const LogicalNameMap::RegisterPath &rightHandSide) {
-    return ((std::string)leftHandSide)+((std::string)rightHandSide);
-  }
-
-  /********************************************************************************************************************/
-
-  LogicalNameMap::RegisterPath operator/(const std::string &leftHandSide, const LogicalNameMap::RegisterPath &rightHandSide) {
-    LogicalNameMap::RegisterPath temp(leftHandSide);
-    return temp+rightHandSide;
   }
 
 } // namespace mtca4u
