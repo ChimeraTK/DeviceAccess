@@ -1,6 +1,5 @@
 /*
  * VirtualFunctionTemplate.h - Set of macros to approximate templated virtual functions
- * Important: These macros are for use inside DeviceBackends only!
  *
  *  Created on: Feb 15, 2016
  *      Author: Martin Hierholzer
@@ -9,111 +8,97 @@
 #ifndef MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H
 #define MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H
 
-#include <tuple>
-#include "FixedPointConverter.h"
+#include <boost/fusion/include/at_key.hpp>
+#include <boost/fusion/include/for_each.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
-/** Macro for creating an approximation of a virtual template member function. It works only for a pre-defined
- *  list of types (FixedPointConverter::userTypeMap - i.e. all types supported by the FixedPointConverter) and
- *  will implement a runtime comparison of the given type_info with each type of the list.
+#include <tuple>
+
+#include "SupportedUserTypes.h"
+
+
+/** Define a virtual function template with the given function name and signature in the base class. The signature
+ *  must contain the typename template argument called "T". So if you e.g. would want to define a function like this:
  *
- *  The class name in which the virtual function should be implemented must be given as the first argument and
- *  must inherit from DeviceBackend. The second argument must be the name of the virtual function inside the class.
+ *    template<typename UserType>
+ *    virtual BufferingRegisterAccessor<UserType> getRegisterAccessor(std::string name);
  *
- *  The third argument specifies the name of a non-member templated function to be called. This function must be
- *  declared before calling this macro and should contain the actual implementation. The return type of the
- *  function must be a plain pointer and its first argument must be a boost::shared_ptr<className> and will contain
- *  a pointer to the instance of the calling class.
+ *  you should call this macro in the base class like this:
  *
- *  A list of argument types to pass to the template function need to be passed as third and following arguments.
+ *    DEFINE_VIRTUAL_FUNCTION_TEMPLATE( getRegisterAccessor, T(std::string) );
  *
- *  This macro shall be called inside the implementation .cc file of the class. It will implement the virtual
- *  function declared by the VIRTUAL_TEMPLATE_FUNCTION_DECLARATION macro in the class header file. The call to the
- *  macro should not be terminated with a semicolon.
+ *  The virtual function can be called using the CALL_VIRTUAL_FUNCTION_TEMPLATE macro. It is recommended to define
+ *  the function template in the base class (without the virtual keyword of course) and implement it by using this
+ *  macro.
  *
- *  Important: These macros are for use inside DeviceBackends only!
+ *  In the derived class, the function template must be implemented with the same signature, and the vtable for this
+ *  virtual function template must be filled using the macros DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER and
+ *  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
  */
-#define VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER( className, virtualFunction, templateFunction, ... )              \
-    template<typename ...Args>                                                                                  \
-    class className::virtualFunction ## _implClass {                                                            \
+#define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName, signature )                                      \
+    template<typename T>                                                                                        \
+    class functionName ## _functionSignature : public boost::function< signature > {                            \
       public:                                                                                                   \
-        virtualFunction ## _implClass(const std::type_info &_type, className *_self,                            \
-                                 const std::tuple<Args...> &_args)                                              \
-        : type(_type), args(_args), returnValue(NULL), success(false), self(_self)                              \
-        {}                                                                                                      \
-                                                                                                                \
-        /* The type to call the template function for */                                                        \
-        const std::type_info &type;                                                                             \
-                                                                                                                \
-        /* Arguments passed */                                                                                  \
-        const std::tuple<Args...> &args;                                                                        \
-                                                                                                                \
-        /* pointer to the return value (if any) */                                                              \
-        mutable void *returnValue;                                                                              \
-                                                                                                                \
-        /* flag if the function was executed (remains false, if unsupported type was passed) */                 \
-        mutable bool success;                                                                                   \
-                                                                                                                \
-        /* instance of calling class */                                                                         \
-        className *self;                                                                                        \
-                                                                                                                \
-        /* These definitions are needed to unpack the tuple into arguments.  */                                 \
-        /* The int template argument is for the number of arguments. */                                         \
-        template<int ...> struct seq {};                                                                        \
-        template<int N, int ...S> struct gens : gens<N-1, N-1, S...> {};                                        \
-        template<int ...S> struct gens<0, S...>{ typedef seq<S...> type; };                                     \
-                                                                                                                \
-        /* This function will be called by for_each() for each type in FixedPointConverter::userTypeMap */      \
-        template <typename Pair>                                                                                \
-        void operator()(Pair) const                                                                             \
-        {                                                                                                       \
-          /* obtain UserType from given fusion::pair type */                                                    \
-          typedef typename Pair::first_type UserType;                                                           \
-                                                                                                                \
-          /* check if UserType is the requested type */                                                         \
-          if(typeid(UserType) == type) {                                                                        \
-            returnValue = callFunc<UserType>(typename gens<sizeof...(Args)>::type());                           \
-            success = true;                                                                                     \
-          }                                                                                                     \
-        }                                                                                                       \
-                                                                                                                \
-        /* unpack arguments and call the function */                                                            \
-        template<typename UserType, int ...S>                                                                   \
-        void* callFunc(seq<S...>) const {                                                                       \
-          return static_cast<void*>(self->templateFunction<UserType>(std::get<S>(args) ...));                   \
+        boost::function< signature >& operator=(const boost::function< signature > &rhs) {                      \
+          return boost::function< signature >::operator=(rhs);                                                  \
         }                                                                                                       \
     };                                                                                                          \
-  void* className::virtualFunction(const std::type_info &UserType, std::tuple<__VA_ARGS__> args) {              \
-    FixedPointConverter::userTypeMap userTypes;                                                                 \
-    className::virtualFunction ## _implClass<__VA_ARGS__> myimpl(UserType, this, args);                        \
-    boost::fusion::for_each(userTypes, myimpl);                                                                 \
-    if(!myimpl.success) {                                                                                       \
-      throw DeviceException("Unknown user type passed to " #className "::" #virtualFunction,                    \
-          DeviceException::EX_WRONG_PARAMETER);                                                                 \
-    }                                                                                                           \
-    return myimpl.returnValue;                                                                                  \
-  }
+    TemplateUserTypeMap<functionName ## _functionSignature> functionName ## _vtable
 
-/********************************************************************************************************************/
+/** Execute the virtual function template call using the vtable defined with the
+ *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro. It is recommended to put this macro into a function template
+ *  with the same name and signature, so the user of the class can call the virtual function template conveniently.
+ *
+ *  Implementation note: This function template could automatically be provided via the
+ *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro. This is not done, because it wouldn't allow to specify default
+ *  values for the parameters, and the proper signature would not be visible in Doxygen. */
+#define CALL_VIRTUAL_FUNCTION_TEMPLATE( functionName, templateArgument, ... )                                   \
+      boost::fusion::at_key<templateArgument>(functionName ## _vtable.table)( __VA_ARGS__ )
 
-/** Declare the virtual template function inside the class. It must be called inside the class definition in the
- *  header file. The call to this macro must be terminated with a semicolon. In the abstract base class the
- *  function can be marked as pure virtual by adding "= 0" before the semicolon. */
-#define VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(virtualFunction, ...)                                             \
-    template<typename ...Args>                                                                                  \
-    class virtualFunction ## _implClass;                                                                        \
-    template<typename ...Args>                                                                                  \
-    friend class virtualFunction ## _implClass;                                                                 \
-    virtual void* virtualFunction(const std::type_info &UserType, std::tuple<__VA_ARGS__> args)
 
-/********************************************************************************************************************/
+/** Helper macros, do not use! */
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_1                                                                  \
+    _1
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_2                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_1,_2
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_3                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_2,_3
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_4                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_3,_4
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_5                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_4,_5
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_6                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_5,_6
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_7                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_6,_7
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_8                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_7,_8
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_9                                                                  \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_8,_9
+#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_10                                                                 \
+    DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_9,_10
 
-/** Make the virtual template function call. Calls a virtual function named in the first argument and declared by
- * VIRTUAL_TEMPLATE_FUNCTION_DECLARATION and passes the template argument specified in the second argument. The
- * third argument specifies the return type, which must be a plain pointer type. The following arguments are the
- * parameters to pass to the function. This macro shall be called inside the implementation of a template function
- * in the base class. */
-#define VIRTUAL_FUNCTION_TEMPLATE_CALL(virtualFunction, UserType, ReturnType, ...)                              \
-    static_cast<ReturnType>( virtualFunction(typeid(UserType), std::make_tuple(__VA_ARGS__)) )
+/** Define the filler class used inside the FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro to fill the vtable of a
+ *  virtual function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the derived
+ *  class. */
+#define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( className, functionName, numberOfArguments )            \
+    class functionName ## _vtable_filler {                                                                      \
+      public:                                                                                                   \
+        functionName ## _vtable_filler(className *_object) : object(_object) {}                                 \
+        template<typename PAIR>                                                                                 \
+        void operator()(PAIR& pair) const {                                                                     \
+          pair.second = boost::bind(&className::functionName<typename PAIR::first_type>, object,                \
+              DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_ ## numberOfArguments);                                      \
+        }                                                                                                       \
+    private:                                                                                                    \
+        className *object;                                                                                      \
+    }
 
+
+/** Fill the vtable of a virtual function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro
+ *  inside the constructor of the derived class. */
+#define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName )                                                   \
+      boost::fusion::for_each(functionName ## _vtable.table, functionName ## _vtable_filler(this))
 
 #endif /* MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H */

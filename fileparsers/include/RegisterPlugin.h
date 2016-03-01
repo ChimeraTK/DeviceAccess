@@ -9,6 +9,7 @@
 #define MTCA4U_REGISTER_PLUGIN_H
 
 #include "Value.h"
+#include "SupportedUserTypes.h"
 
 namespace mtca4u {
 
@@ -16,6 +17,10 @@ namespace mtca4u {
   class RegisterPlugin {
   
     public:
+
+      RegisterPlugin() {
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
+      }
     
       /** Virtual destructor for a virtual base class */
       virtual ~RegisterPlugin();
@@ -25,29 +30,22 @@ namespace mtca4u {
        *  the passed accessor. */
       template<typename UserType>
       boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor );
+          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor ) {
+        return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, accessor);
+      }
 
-      VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getBufferingRegisterAccessorImpl, void*);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl,
+          boost::shared_ptr< BufferingRegisterAccessorImpl<T> >(boost::shared_ptr< BufferingRegisterAccessorImpl<T> >) );
 
     protected:
 
+      /** Default implementation of getBufferingRegisterAccessor(): just return the unmodified accessor */
       template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >* getBufferingRegisterAccessorImpl(void *accessor_ptr);
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
+          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterPlugin, getBufferingRegisterAccessor_impl, 1);
   
   };
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > RegisterPlugin::getBufferingRegisterAccessor(
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor)
-  {
-    auto ptr = VIRTUAL_FUNCTION_TEMPLATE_CALL(getBufferingRegisterAccessorImpl, UserType,
-        boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >*, (void*)accessor );
-    auto temp = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
-    delete ptr;
-    return temp;
-  }
 
 } /* namespace mtca4u */
 

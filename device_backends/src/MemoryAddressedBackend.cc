@@ -11,6 +11,7 @@
 namespace mtca4u {
 
   MemoryAddressedBackend::MemoryAddressedBackend(std::string mapFileName) {
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getTwoDRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
@@ -121,13 +122,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  TwoDRegisterAccessorImpl<UserType>* MemoryAddressedBackend::getTwoDRegisterAccessor(const std::string &registerName,
+  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > MemoryAddressedBackend::getTwoDRegisterAccessor_impl(const std::string &registerName,
       const std::string &module) {
-    return static_cast<TwoDRegisterAccessorImpl<UserType>*>(
+    return boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> >(
         new MemoryAddressedBackendTwoDRegisterAccessor<UserType>(registerName,module,shared_from_this()) );
   }
-
-  VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER(MemoryAddressedBackend, getTwoDRegisterAccessorImpl,
-      getTwoDRegisterAccessor, const std::string &, const std::string &)
 
 } // namespace mtca4u

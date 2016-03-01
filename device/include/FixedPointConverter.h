@@ -14,6 +14,7 @@
 #include <boost/fusion/sequence.hpp>
 #include <boost/fusion/algorithm.hpp>
 
+#include "SupportedUserTypes.h"
 #include "NotImplementedException.h"
 
 namespace mtca4u{
@@ -89,19 +90,6 @@ namespace mtca4u{
       {
         return _isSigned;
       }
-
-      /// fusion::map of possible user types, to store coefficients etc. in dependence of the user type
-      typedef boost::fusion::map< boost::fusion::pair<int8_t,int8_t>,
-          boost::fusion::pair<uint8_t,uint8_t>,
-          boost::fusion::pair<int16_t,int16_t>,
-          boost::fusion::pair<uint16_t,uint16_t>,
-          boost::fusion::pair<int32_t,int32_t>,
-          boost::fusion::pair<uint32_t,uint32_t>,
-          boost::fusion::pair<int64_t,int64_t>,
-          boost::fusion::pair<uint64_t,uint64_t>,
-          boost::fusion::pair<float,float>,
-          boost::fusion::pair<double,double>,
-          boost::fusion::pair<std::string,std::string> >    userTypeMap;
 
     private:
 

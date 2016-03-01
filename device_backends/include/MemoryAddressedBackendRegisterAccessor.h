@@ -49,9 +49,13 @@ namespace mtca4u {
       static void checkRegister(const RegisterInfoMap::RegisterInfo &registerInfo, size_t dataSize,
           uint32_t addRegOffset, uint32_t &retDataSize, uint32_t &retRegOff);
 
-      virtual void readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const;
+      template <typename ConvertedDataType>
+      void read_impl(ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const;
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( MemoryAddressedBackendRegisterAccessor, read_impl, 3);
 
-      virtual void writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister);
+      template <typename ConvertedDataType>
+      void write_impl(const ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( MemoryAddressedBackendRegisterAccessor, write_impl, 3);
 
   };
 

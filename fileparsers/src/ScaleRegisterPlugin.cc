@@ -99,6 +99,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, Value<std::string> > &parameters) {
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
     try {
       scalingFactor = parameters.at("factor");
     }
@@ -117,17 +118,11 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >* ScaleRegisterPlugin::getBufferingRegisterAccessorImpl(
-      void *accessor_ptr) {
-    auto accessor = static_cast<boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >*>(accessor_ptr);
-    boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > *newAccessor = new boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >();
-    newAccessor->reset(new ScaleRegisterPluginAccessor<UserType>(*accessor, scalingFactor) );
-    delete accessor; // just the shared pointer, which was already copied
-    return newAccessor;
+  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ScaleRegisterPlugin::getBufferingRegisterAccessor_impl(
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) {
+    return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
+        new ScaleRegisterPluginAccessor<UserType>(accessor, scalingFactor));
   }
-
-  VIRTUAL_FUNCTION_TEMPLATE_IMPLEMENTER(ScaleRegisterPlugin, getBufferingRegisterAccessorImpl,
-      getBufferingRegisterAccessorImpl, void*)
 
   /********************************************************************************************************************/
 

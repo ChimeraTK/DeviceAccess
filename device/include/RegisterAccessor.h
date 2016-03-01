@@ -7,6 +7,7 @@
 
 #include <typeinfo>
 
+#include "VirtualFunctionTemplate.h"
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
 
@@ -51,8 +52,9 @@ namespace mtca4u {
       template <typename ConvertedDataType>
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
-        readImpl(typeid(ConvertedDataType), (void*)convertedData, nWords, wordOffsetInRegister);
+        CALL_VIRTUAL_FUNCTION_TEMPLATE(read_impl, ConvertedDataType, convertedData, nWords, wordOffsetInRegister);
       }
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( read_impl, void(T*, size_t, uint32_t) );
 
       /** Convenience function to read a single word. It allows shorter syntax as the read value is the return value
        * and one does not have to pass a pointer.
@@ -86,8 +88,9 @@ namespace mtca4u {
       template <typename ConvertedDataType>
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
-        writeImpl(typeid(ConvertedDataType), (const void*)convertedData, nWords, wordOffsetInRegister);
+        CALL_VIRTUAL_FUNCTION_TEMPLATE(write_impl, ConvertedDataType, convertedData, nWords, wordOffsetInRegister);
       }
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( write_impl, void(const T*, size_t, uint32_t) );
 
       /** Convenience function for single words. The value can be given directly, no need to have a an instance and a
        *  pointer for it. This allows code like
@@ -145,20 +148,6 @@ namespace mtca4u {
       virtual void writeDMA(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
     protected:
-
-      /** Implementation function for reading converted data
-       *  This function is required to achieve runtime polymorphism (virtual function) together with
-       *  compiletime polymorphism (templated function). The void* pointer has to be casted into the
-       *  proper type specified by the frist argument.
-       */
-      virtual void readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const = 0;
-
-      /** Implementation function for reading converted data
-       *  This function is required to achieve runtime polymorphism (virtual function) together with
-       *  compiletime polymorphism (templated function). The void* pointer has to be casted into the
-       *  proper type specified by the frist argument.
-       */
-      virtual void writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) = 0;
 
       /** Pointer to the device backend used for reading and writing the data
        */

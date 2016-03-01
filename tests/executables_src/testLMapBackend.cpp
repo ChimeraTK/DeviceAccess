@@ -25,6 +25,7 @@ class LMapBackendTest {
     void testRegisterAccessorForChannel();
     void testNonBufferingAccessor();
     void testVariableChannelNumber();
+    void testPlugin();  // TODO @todo move this test to its own executable
     void testOther();
 };
 
@@ -43,6 +44,7 @@ class LMapBackendTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForChannel, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testNonBufferingAccessor, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testVariableChannelNumber, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testPlugin, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testOther, lMapBackendTest) );
     }
 };
@@ -708,6 +710,33 @@ void LMapBackendTest::testVariableChannelNumber() {
     }
 
   }
+
+}
+
+/********************************************************************************************************************/
+
+void LMapBackendTest::testPlugin() {
+
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  mtca4u::Device device;
+  device.open("LMAP0");
+
+  auto accDirect = device.getBufferingRegisterAccessor<double>("","SingleWord");
+  auto accScaled = device.getBufferingRegisterAccessor<double>("","SingleWord_Scaled");
+
+  accDirect = 11;
+  accDirect.write();
+
+  accScaled.read();
+  std::cout << accScaled[0] << std::endl;
+  BOOST_CHECK( accScaled == 33 );
+
+  accScaled = 66;
+  accScaled.write();
+
+  accDirect.read();
+  std::cout << accDirect[0] << std::endl;
+  BOOST_CHECK( accDirect == 22 );
 
 }
 
