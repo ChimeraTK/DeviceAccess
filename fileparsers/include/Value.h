@@ -113,7 +113,12 @@ namespace mtca4u {
   Value<ValueType>& Value<ValueType>::operator=(const Value<std::string> &rightHandSide) {
     if(rightHandSide.hasActualValue) {
       hasActualValue = true;
-      value = std::stoi(rightHandSide.value);
+      if(std::numeric_limits<ValueType>::is_integer) {
+        value = std::stoi(rightHandSide.value);
+      }
+      else {
+        value = std::stod(rightHandSide.value);
+      }
     }
     else {
       // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
