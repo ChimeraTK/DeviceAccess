@@ -721,9 +721,9 @@ void LMapBackendTest::testPlugin() {
   mtca4u::Device device;
   device.open("LMAP0");
 
+  // single word scaled
   auto accDirect = device.getBufferingRegisterAccessor<double>("","SingleWord");
   auto accScaled = device.getBufferingRegisterAccessor<double>("","SingleWord_Scaled");
-
   accDirect = 11;
   accDirect.write();
 
@@ -735,6 +735,32 @@ void LMapBackendTest::testPlugin() {
 
   accDirect.read();
   BOOST_CHECK( accDirect == 22 );
+
+  // scaled area
+  auto accDirect3 = device.getBufferingRegisterAccessor<int>("","FullArea");
+  auto accScaled3 = device.getBufferingRegisterAccessor<double>("","FullArea_Scaled");
+
+  BOOST_CHECK( accDirect3.getNumberOfElements() == accScaled3.getNumberOfElements() );
+
+  for(unsigned int i=0; i<accDirect3.getNumberOfElements(); i++) {
+    accDirect3[i] = (signed)i-10;
+  }
+  accDirect3.write();
+
+  accScaled3.read();
+  for(unsigned int i=0; i<accScaled3.getNumberOfElements(); i++) {
+    BOOST_CHECK( accScaled3[i] == ((signed)i-10)*11.5 );
+  }
+
+  for(unsigned int i=0; i<accScaled3.getNumberOfElements(); i++) {
+    accScaled3[i] = ((signed)i+30)*11.5;
+  }
+  accScaled3.write();
+
+  accDirect3.read();
+  for(unsigned int i=0; i<accDirect3.getNumberOfElements(); i++) {
+    BOOST_CHECK( accDirect3[i] == (signed)i+30 );
+  }
 
 }
 

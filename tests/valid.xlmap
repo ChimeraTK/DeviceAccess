@@ -44,6 +44,14 @@
           <factor>3</factor>
         </plugin>
     </register>
+    <register name="FullArea_Scaled">
+        <type>register</type>
+        <device>PCIE2</device>
+        <register>ADC.AREA_DMAABLE</register>
+        <plugin name="scale">
+          <factor>11.5</factor>
+        </plugin>
+    </register>
     <module name="MyModule">
       <module name="SomeSubmodule"> 
         <register name="Variable">
