@@ -728,14 +728,12 @@ void LMapBackendTest::testPlugin() {
   accDirect.write();
 
   accScaled.read();
-  std::cout << accScaled[0] << std::endl;
   BOOST_CHECK( accScaled == 33 );
 
   accScaled = 66;
   accScaled.write();
 
   accDirect.read();
-  std::cout << accDirect[0] << std::endl;
   BOOST_CHECK( accDirect == 22 );
 
 }
