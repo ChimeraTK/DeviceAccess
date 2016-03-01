@@ -99,9 +99,7 @@ namespace mtca4u {
        */
       template<typename UserType>
       boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
-          const std::string &registerName, const std::string &module = std::string()) {
-        return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerName, module);
-      }
+          const std::string &registerName, const std::string &module = std::string());
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getBufferingRegisterAccessor_impl,
           boost::shared_ptr< BufferingRegisterAccessorImpl<T> >(const std::string&, const std::string&) );
 
@@ -109,9 +107,7 @@ namespace mtca4u {
        */
       template<typename UserType>
       boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor(
-          const std::string &dataRegionName, const std::string &module = std::string()) {
-        return CALL_VIRTUAL_FUNCTION_TEMPLATE(getTwoDRegisterAccessor_impl, UserType, dataRegionName, module);
-      }
+          const std::string &dataRegionName, const std::string &module = std::string());
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getTwoDRegisterAccessor_impl,
           boost::shared_ptr< TwoDRegisterAccessorImpl<T> >(const std::string&, const std::string&) );
 
@@ -162,6 +158,21 @@ namespace mtca4u {
 
   };
 
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackend::getBufferingRegisterAccessor(
+      const std::string &registerName, const std::string &module) {
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerName, module);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > DeviceBackend::getTwoDRegisterAccessor(
+      const std::string &dataRegionName, const std::string &module) {
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getTwoDRegisterAccessor_impl, UserType, dataRegionName, module);
+  }
 
 } // namespace mtca4u
 
