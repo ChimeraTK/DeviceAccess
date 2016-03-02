@@ -59,6 +59,9 @@ namespace mtca4u {
       // DeviceInfoMap::DeviceInfo static findFirstOfAlias(std::string aliasName);
       std::string static findFirstOfAlias(std::string aliasName);
 
+      /// Returns the list of device aliases from the DMap file set using
+      /// @ref BackendFactory::setDMapFilePath
+      static std::vector<std::string> getAliasList();
 
   };
 
