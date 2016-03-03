@@ -53,7 +53,9 @@ namespace mtca4u {
       MultiplexedDataAccessorCopied( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
       : MultiplexedDataAccessor<UserType>(_accessor->_ioDevice),
         accessor(_accessor)
-      {}
+      {
+        MultiplexedDataAccessor<UserType>::_sequences = accessor->_sequences;
+      }
 
       /** Read the data from the device, de-multiplex the hardware IO buffer and
        *  fill the sequence buffers using the fixed point converters. The read

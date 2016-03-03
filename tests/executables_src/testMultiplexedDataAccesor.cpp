@@ -346,6 +346,10 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
 
   boost::shared_ptr< mtca4u::MultiplexedDataAccessor<unsigned int> > acc =
       device.getCustomAccessor< mtca4u::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
+
+  BOOST_CHECK(acc->getNumberOfDataSequences() == 16);
+  BOOST_CHECK((*acc)[0].size() == 4);
+
   acc->read();
   for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
     for(unsigned int k=0; k<(*acc)[i].size(); k++) {
