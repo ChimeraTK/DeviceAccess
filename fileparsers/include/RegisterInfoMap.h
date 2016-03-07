@@ -13,6 +13,8 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
+#include "RegisterInfo.h"
+
 namespace mtca4u {
 
   /**
@@ -49,8 +51,17 @@ namespace mtca4u {
        *
        * Stores detailed information about PCIe register and location of its description in MAP file.
        */
-      class RegisterInfo {
+      class RegisterInfo : public mtca4u::RegisterInfo {
         public:
+
+          virtual RegisterPath getRegisterName() const {
+            return RegisterPath(module)/name;
+          }
+
+          virtual unsigned int getNumberOfElements() const {
+            return nElements;
+          }
+
           std::string name; /**< Name of register */
           uint32_t nElements; /**< Number of elements in register */
           uint32_t address; /**< Relative address in bytes from beginning  of the bar(Base Address Range)*/

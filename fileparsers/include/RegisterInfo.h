@@ -9,8 +9,15 @@
 #define MTCA4U_REGISTER_INFO_H
 
 #include "RegisterPath.h"
+#include "RegisterPlugin.h"
 
 namespace mtca4u {
+
+  // forward declarations
+  template<typename UserType>
+  class BufferingRegisterAccessorImpl;
+
+  class RegisterAccessor;
 
   /** DeviceBackend-independent register description. */
   class RegisterInfo {
@@ -21,10 +28,10 @@ namespace mtca4u {
       virtual ~RegisterInfo() {}
 
       /** Return full path name of the register (including modules) */
-      virtual const RegisterPath& getRegisterName() = 0;
+      virtual RegisterPath getRegisterName() const = 0;
 
       /** Return number of elements in register */
-      virtual unsigned int getNumberOfElements() = 0;
+      virtual unsigned int getNumberOfElements() const = 0;
 
       /** Obtain a potentially modified buffering register accessor from the given accessor. Any plugins specified
        *  in the map for this register might modify the accessor. */

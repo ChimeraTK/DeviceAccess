@@ -40,12 +40,12 @@ namespace mtca4u {
       class RegisterInfo : public mtca4u::RegisterInfo {
         public:
 
-          virtual const RegisterPath& getRegisterName() {
+          virtual RegisterPath getRegisterName() const {
             return name;
           }
 
           /** Return number of elements in register */
-          virtual unsigned int getNumberOfElements() {
+          virtual unsigned int getNumberOfElements() const {
             return length;
           }
 
