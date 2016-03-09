@@ -12,7 +12,9 @@
 
 namespace mtca4u {
 
-  /** Class to store a register path name. */
+  /** Class to store a register path name. Elements of the path are separated by a "/" character, but a "."
+   *  separation character can be used as well. Different equivalent notations will be converted into a
+   *  standardised notation automatically. */
   class RegisterPath {
     public:
       RegisterPath() : path(separator) {}
@@ -21,6 +23,16 @@ namespace mtca4u {
 
       /** type conversion operators into std::string */
       operator const std::string&() const { return path; }
+      
+      /** obtain path with alternative separator character "." instead of "/". The leading separator will be omitted */
+      std::string getWithAltSeparator() {
+        std::size_t pos;
+        std::string path_alt = path.substr(1);
+        while( (pos = path_alt.find(std::string(separator))) != std::string::npos ) {
+          path_alt.replace(pos,1,separator_alt);
+        }
+        return path_alt;
+      }
 
       /** / operator: add a new element to the path (without modifying this object) */
       RegisterPath operator/(const std::string &rightHandSide) const {
@@ -69,18 +81,18 @@ namespace mtca4u {
         return *this;
       }
 
-      // comparison with other RegisterPath
+      /** comparison with other RegisterPath */
       bool operator==(const RegisterPath &rightHandSide) const {
         return *this == rightHandSide.path;
       }
 
-      // comparison with std::string
+      /** comparison with std::string */
       bool operator==(const std::string &rightHandSide) const {
         RegisterPath temp(rightHandSide);
         return path == temp.path;
       }
 
-      // comparison with char*
+      /** comparison with char* */
       bool operator==(const char *rightHandSide) const {
         RegisterPath temp(rightHandSide);
         return path == temp.path;
@@ -88,13 +100,22 @@ namespace mtca4u {
 
     protected:
 
+      /** path in standardised notation */
       std::string path;
+      
+      /** separator character to separate the elements in the path */
       static const char separator[];
+      
+      /** altenative separator character */
+      static const char separator_alt[];
 
       /** Search for duplicate separators (e.g. "//") and remove one of them. Also removes a trailing separator,
-       *  if present. */
+       *  if present. Occurrences of the alternative separator character are replaced with the primary separator. */
       void removeExtraSeparators() {
         std::size_t pos;
+        while( (pos = path.find(std::string(separator_alt))) != std::string::npos ) {
+          path.replace(pos,1,separator);
+        }
         while( (pos = path.find(std::string(separator)+separator)) != std::string::npos ) {
           path.erase(pos,1);
         }

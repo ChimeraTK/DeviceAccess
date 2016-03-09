@@ -10,6 +10,7 @@
 namespace mtca4u {
 
   const char RegisterPath::separator[] = "/";
+  const char RegisterPath::separator_alt[] = ".";
 
   /********************************************************************************************************************/
 
