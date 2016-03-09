@@ -1,7 +1,6 @@
 #include <mtca4u/Device.h>
-#include <mtca4u/DMapFilesParser.h>
+#include <mtca4u/BufferingRegisterAccessor.h>
 #include <mtca4u/BackendFactory.h>
-#include <mtca4u/DeviceBackendImpl.h>
 #include <string>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
@@ -20,20 +19,26 @@ int main(){
   // detail that it's the factory which has to know it.
   mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
 
-  /** Create a pcie device. Make sure a device alias is present
+  /** Create a device. Make sure a device alias is present
    * in dmap file. Look at BackendFactory for further explanation */
-  boost::shared_ptr<mtca4u::Device> myDevice( new mtca4u::Device());
-  myDevice->open("PCIE1");
+  mtca4u::Device myDevice;
+  myDevice.open("PCIE1");
   
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor> accessor =
-    myDevice->getRegisterAccessor(REGISTER_NAME, MODULE_NAME);
-  
-  // look on accessor.cpp for more examples what to do with the accessor
-  std::cout << "Data as float is " << accessor->read<float>() << std::endl;
-  
+  mtca4u::BufferingRegisterAccessor<float> accessor = myDevice.getBufferingRegisterAccessor<float>(MODULE_NAME, REGISTER_NAME);
+  // To get the value from the backend call read.
+  accessor.read();
+
+  // Now you can treat the accessor as if it was a float.
+  std::cout << "Data as float is " << accessor << std::endl;
+  accessor += 1.5;
+  std::cout << "Data now is  " << accessor << std::endl;
+
+  // After you are done manipulating the accessor write it to the hardware.
+  accessor.write();
+
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  myDevice->close();
+  myDevice.close();
   
   return 0;
 }
