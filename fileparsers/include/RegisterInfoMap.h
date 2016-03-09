@@ -52,6 +52,7 @@ namespace mtca4u {
        * Stores detailed information about PCIe register and location of its description in MAP file.
        */
       class RegisterInfo : public mtca4u::RegisterInfo {
+
         public:
 
           virtual RegisterPath getRegisterName() const {

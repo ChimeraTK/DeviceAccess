@@ -8,10 +8,16 @@
 #ifndef MTCA4U_REGISTER_PLUGIN_H
 #define MTCA4U_REGISTER_PLUGIN_H
 
-#include "Value.h"
+#include "VirtualFunctionTemplate.h"
 #include "SupportedUserTypes.h"
 
 namespace mtca4u {
+
+  // forward declaration
+  template<typename UserType>
+  class BufferingRegisterAccessorImpl;
+  
+  class RegisterAccessor;
 
   /** Base class for plugins providing modifications to registers and accessors. */
   class RegisterPlugin {
@@ -39,9 +45,7 @@ namespace mtca4u {
       /** Called by the backend when obtaining a (non-buffering) register accessor. This allows the plugin to put some
        *  intermediate accessor in between to change the accessor's behaviour. The default implementation just returns
        *  the passed accessor. */
-      virtual boost::shared_ptr<RegisterAccessor> getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) {
-        return accessor;
-      }
+      virtual boost::shared_ptr<RegisterAccessor> getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor);
 
     protected:
 
