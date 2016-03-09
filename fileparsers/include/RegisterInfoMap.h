@@ -235,7 +235,7 @@ namespace mtca4u {
       /** Get a complete list of RegisterInfo objects (RegisterInfo) for one module.
        *  The registers are in alphabetical order.
        */
-      std::list< RegisterInfo > getRegistersInModule( std::string const & moduleName);
+      std::list< RegisterInfoMap::RegisterInfo > getRegistersInModule( std::string const & moduleName);
 
     public:
       /**

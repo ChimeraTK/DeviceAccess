@@ -252,7 +252,7 @@ namespace mtca4u {
             std::not1( compareModuleName_pred(moduleName) ) );
 
     // fill the list
-    std::list<RegisterInfo> registerInfoList;
+    std::list<RegisterInfoMap::RegisterInfo> registerInfoList;
     for (std::vector<RegisterInfo>::iterator it = firstMatchingIterator;
         it != firstNotMatchingIterator; ++it){
       registerInfoList.push_back( *it );
