@@ -149,7 +149,7 @@ namespace mtca4u {
       if(!nameAttr) {
         parsingError("Missing name attribute of 'register' tag.");
       }
-      std::string registerName = currentPath/nameAttr->get_value();
+      std::string registerName = currentPath/std::string(nameAttr->get_value());
 
       // create new RegisterInfo object
       _map[registerName].reset( new LogicalNameMap::RegisterInfo() );

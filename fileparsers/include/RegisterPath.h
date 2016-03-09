@@ -20,6 +20,7 @@ namespace mtca4u {
       RegisterPath() : path(separator) {}
       RegisterPath(const std::string &_path) : path(separator+_path) {removeExtraSeparators();}
       RegisterPath(const RegisterPath &_path) : path(_path.path) {removeExtraSeparators();}
+      RegisterPath(const char *_path) : path(std::string(separator)+_path) {removeExtraSeparators();}
 
       /** type conversion operators into std::string */
       operator const std::string&() const { return path; }
@@ -34,14 +35,6 @@ namespace mtca4u {
         return path_alt;
       }
 
-      /** / operator: add a new element to the path (without modifying this object) */
-      RegisterPath operator/(const std::string &rightHandSide) const {
-        return RegisterPath(path+separator+rightHandSide);
-      }
-      RegisterPath operator/(const RegisterPath &rightHandSide) const {
-        return RegisterPath(path+separator+rightHandSide.path);
-      }
-
       /** /= operator: modify this object by adding a new element to this path */
       RegisterPath& operator/=(const std::string &rightHandSide) {
         path += separator+rightHandSide;
@@ -53,6 +46,11 @@ namespace mtca4u {
       RegisterPath& operator+=(const std::string &rightHandSide) {
         path += rightHandSide;
         return *this;
+      }
+
+      /** < operator: comparison used for sorting e.g. in std::map */
+      bool operator<(const RegisterPath &rightHandSide) const {
+        return path < rightHandSide.path;
       }
 
       /** Post-decrement operator, e.g.: registerPath--
@@ -123,13 +121,13 @@ namespace mtca4u {
       }
   };
 
-  /** non-member + operator for RegisterPath: just concatenate like normal strings */
-  std::string operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide);
-  std::string operator+(const std::string &leftHandSide, const RegisterPath &rightHandSide);
-  std::string operator+(const RegisterPath &leftHandSide, const RegisterPath &rightHandSide);
+  /** non-member / operator: add a new element to the path.
+   *  Must be a non-member operator to allow implicit type conversions also on the leftHandSide. */
+  RegisterPath operator/(const RegisterPath &leftHandSide, const RegisterPath &rightHandSide);
 
-  /** non-member / operator: add a new element to the path from the front */
-  RegisterPath operator/(const std::string &leftHandSide, const RegisterPath &rightHandSide);
+  /** non-member + operator for RegisterPath: concatenate with and like normal strings. */
+  std::string operator+(const std::string &leftHandSide, const RegisterPath &rightHandSide);
+  std::string operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide);
 
 } /* namespace mtca4u */
 

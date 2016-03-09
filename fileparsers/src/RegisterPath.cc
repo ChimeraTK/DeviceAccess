@@ -14,8 +14,8 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::string operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide) {
-    return ((std::string)leftHandSide)+rightHandSide;
+  RegisterPath operator/(const RegisterPath &leftHandSide, const RegisterPath &rightHandSide) {
+    return ((std::string)leftHandSide)+((std::string)rightHandSide);
   }
 
   /********************************************************************************************************************/
@@ -26,15 +26,8 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::string operator+(const RegisterPath &leftHandSide, const RegisterPath &rightHandSide) {
-    return ((std::string)leftHandSide)+((std::string)rightHandSide);
-  }
-
-  /********************************************************************************************************************/
-
-  RegisterPath operator/(const std::string &leftHandSide, const RegisterPath &rightHandSide) {
-    RegisterPath temp(leftHandSide);
-    return temp+rightHandSide;
+  std::string operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide) {
+    return ((std::string)leftHandSide)+rightHandSide;
   }
 
 } /* namespace mtca4u */
