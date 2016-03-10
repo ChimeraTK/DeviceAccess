@@ -28,11 +28,12 @@ namespace mtca4u {
     // don't run, if already parsed
     if(hasParsed) return;
 
-    // create map
-    _map = LogicalNameMap(_lmapFileName);
+    // parse the map fle
+    LogicalNameMap map = LogicalNameMap(_lmapFileName);
+    _catalogue = map._catalogue;
 
     // create all devices referenced in the map
-    auto devNames = _map.getTargetDevices();
+    auto devNames = map.getTargetDevices();
     for(auto devName = devNames.begin(); devName != devNames.end(); ++devName) {
       _devices[*devName] = boost::shared_ptr<Device>(new Device());
     }
@@ -72,27 +73,27 @@ namespace mtca4u {
       int32_t *data, size_t dataSize, uint32_t addRegOffset) {
 
     // obtain register info
-    std::string name = ( regModule.length() > 0 ? regModule + "." + regName : regName );
-    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
+    RegisterPath name = RegisterPath(regModule)/regName;
+    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(name));
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
-    if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
+    if(info->hasDeviceName()) targetDevice = _devices[info->deviceName];
 
     // implementation for each type
-    if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
-      targetDevice->readReg(info.registerName,data,dataSize,addRegOffset);
+    if(info->targetType == LogicalNameMap::TargetType::REGISTER) {
+      targetDevice->readReg(info->registerName,data,dataSize,addRegOffset);
     }
-    else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      targetDevice->readReg(info.registerName,data,dataSize,addRegOffset + sizeof(int32_t)*info.firstIndex);
+    else if(info->targetType == LogicalNameMap::TargetType::RANGE) {
+      targetDevice->readReg(info->registerName,data,dataSize,addRegOffset + sizeof(int32_t)*info->firstIndex);
     }
-    else if(info.targetType == LogicalNameMap::TargetType::CHANNEL) {
+    else if(info->targetType == LogicalNameMap::TargetType::CHANNEL) {
       throw DeviceException("Reading a channel of a multiplexed register is only supported using register accessors.",
           DeviceException::NOT_IMPLEMENTED);
     }
-    else if(info.targetType == LogicalNameMap::TargetType::INT_CONSTANT) {
+    else if(info->targetType == LogicalNameMap::TargetType::INT_CONSTANT) {
       if(dataSize >= 4 && addRegOffset == 0) {
-        data[0] = info.value;
+        data[0] = info->value;
       }
     }
 
@@ -104,21 +105,21 @@ namespace mtca4u {
       int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
 
     // obtain register info
-    std::string name = ( regModule.length() > 0 ? regModule + "." + regName : regName );
-    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
+    RegisterPath name = RegisterPath(regModule)/regName;
+    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(name));
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
-    if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
+    if(info->hasDeviceName()) targetDevice = _devices[info->deviceName];
 
     // implementation for each type
-    if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
-      targetDevice->writeReg(info.registerName,data,dataSize,addRegOffset);
+    if(info->targetType == LogicalNameMap::TargetType::REGISTER) {
+      targetDevice->writeReg(info->registerName,data,dataSize,addRegOffset);
     }
-    else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
-      targetDevice->writeReg(info.registerName,data,dataSize,addRegOffset + sizeof(int32_t)*info.firstIndex);
+    else if(info->targetType == LogicalNameMap::TargetType::RANGE) {
+      targetDevice->writeReg(info->registerName,data,dataSize,addRegOffset + sizeof(int32_t)*info->firstIndex);
     }
-    else if(info.targetType == LogicalNameMap::TargetType::CHANNEL) {
+    else if(info->targetType == LogicalNameMap::TargetType::CHANNEL) {
       throw DeviceException("Writing a channel of a multiplexed register is only supported using register accessors.",
           DeviceException::NOT_IMPLEMENTED);
     }
@@ -131,21 +132,21 @@ namespace mtca4u {
       const std::string &registerName, const std::string &module) {
 
     // obtain register info
-    std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
+    RegisterPath name = RegisterPath(module)/registerName;
+    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(name));
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
-    if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
+    if(info->hasDeviceName()) targetDevice = _devices[info->deviceName];
 
     // implementation for each type
     boost::shared_ptr<mtca4u::RegisterAccessor> accessor;
-    if(info.targetType == LogicalNameMap::TargetType::REGISTER) {
-      accessor = targetDevice->getRegisterAccessor(info.registerName);
+    if(info->targetType == LogicalNameMap::TargetType::REGISTER) {
+      accessor = targetDevice->getRegisterAccessor(info->registerName);
     }
-    else if(info.targetType == LogicalNameMap::TargetType::RANGE) {
+    else if(info->targetType == LogicalNameMap::TargetType::RANGE) {
       accessor = boost::shared_ptr<mtca4u::RegisterAccessor>(new LNMBackendRegisterAccessor(
-          targetDevice->getRegisterAccessor(info.registerName), info.firstIndex, info.length));
+          targetDevice->getRegisterAccessor(info->registerName), info->firstIndex, info->length));
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
@@ -153,7 +154,7 @@ namespace mtca4u {
     }
 
     // allow plugins to replace the accessor with a modified version before returing it
-    accessor = info.getRegisterAccessor(accessor);
+    accessor = info->getRegisterAccessor(accessor);
     return accessor;
 
   }
@@ -175,24 +176,24 @@ namespace mtca4u {
       const std::string &module, const std::string &registerName) {
 
     // obtain register info
-    std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-    const LogicalNameMap::RegisterInfo &info = _map.getRegisterInfo(name);
+    RegisterPath name = RegisterPath(module)/registerName;
+    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(name));
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
-    if(info.hasDeviceName()) targetDevice = _devices[info.deviceName];
+    if(info->hasDeviceName()) targetDevice = _devices[info->deviceName];
 
     // implementation for each type
     BufferingRegisterAccessorImpl<UserType> *ptr;
-    if( info.targetType == LogicalNameMap::TargetType::REGISTER ||
-        info.targetType == LogicalNameMap::TargetType::RANGE       ) {
+    if( info->targetType == LogicalNameMap::TargetType::REGISTER ||
+        info->targetType == LogicalNameMap::TargetType::RANGE       ) {
       ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), module, registerName);
     }
-    else if( info.targetType == LogicalNameMap::TargetType::CHANNEL) {
+    else if( info->targetType == LogicalNameMap::TargetType::CHANNEL) {
       ptr = new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), module, registerName);
     }
-    else if( info.targetType == LogicalNameMap::TargetType::INT_CONSTANT ||
-             info.targetType == LogicalNameMap::TargetType::INT_VARIABLE    ) {
+    else if( info->targetType == LogicalNameMap::TargetType::INT_CONSTANT ||
+             info->targetType == LogicalNameMap::TargetType::INT_VARIABLE    ) {
       ptr = new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), module, registerName);
     }
     else {
@@ -202,7 +203,7 @@ namespace mtca4u {
 
     // allow plugins to replace the accessor with a modified version before returing it
     auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
-    accessor = info.getBufferingRegisterAccessor<UserType>(accessor);
+    accessor = info->getBufferingRegisterAccessor<UserType>(accessor);
     return accessor;
   }
 

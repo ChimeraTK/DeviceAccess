@@ -31,9 +31,11 @@ namespace mtca4u {
       : _registerName(registerName),_moduleName(module)
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
-        std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-        _info = _dev->_map.getRegisterInfo(name);
+        // copy the register info and create the internal accessors, if needed
+        RegisterPath name = RegisterPath(module)/registerName;
+        _info = *( boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_dev->getRegisterCatalogue().getRegister(name)) );
         _info.createInternalAccessors(dev);
+        // check for incorrect usage of this accessor
         if( _info.targetType != LogicalNameMap::TargetType::CHANNEL ) {
           throw DeviceException("LNMBackendBufferingChannelAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
@@ -102,7 +104,8 @@ namespace mtca4u {
       /// backend device
       boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
-      /// register information
+      /// register information. We hold a copy of the RegisterInfo, since it might contain register accessors
+      /// which may not be owned by the backend
       LogicalNameMap::RegisterInfo _info;
 
       /// target device

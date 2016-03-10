@@ -13,6 +13,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "BufferingRegisterAccessor.h"
+#include "RegisterCatalogue.h"
 #include "DeviceBackend.h"
 #include "RegisterPlugin.h"
 #include "RegisterInfo.h"
@@ -26,6 +27,8 @@ namespace xmlpp {
 }
 
 namespace mtca4u {
+
+  class LogicalNameMappingBackend;
 
   /** Logical name map: store information from xlmap file and provide it to the LogicalNameMappingBackend and
    *  its register accessors. */
@@ -151,7 +154,8 @@ namespace mtca4u {
       RegisterPath currentModule;
 
       /** actual register info map (register name to target information) */
-      std::map< std::string, boost::shared_ptr<RegisterInfo> > _map;
+      //std::map< std::string, boost::shared_ptr<RegisterInfo> > _map;
+      RegisterCatalogue _catalogue;
 
       /** parse the given XML file */
       void parseFile(const std::string &fileName);
@@ -165,6 +169,8 @@ namespace mtca4u {
       /** Build a Value object for a given subnode. */
       template<typename ValueType>
       Value<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
+
+      friend class LogicalNameMappingBackend;
 
   };
 
