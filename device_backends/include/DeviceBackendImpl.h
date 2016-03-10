@@ -8,9 +8,9 @@
 
 namespace mtca4u {
 
-  /** DeviceBackend implements the "opened" functionality which before was in DeviceBackend.
-   *  It is to be a base class for all the other implementations. Like this debBase
-   *  becomes purely virtual, i.e. a real interface.
+  /**
+   *  DeviceBackendImpl implements some basic functionality which should be available for all backends. This is
+   *  required to allow proper decorator patterns which should not have this functionality in the decorator itself.
    */
   class DeviceBackendImpl: public DeviceBackend
   {
