@@ -34,6 +34,10 @@ namespace mtca4u {
         throw DeviceException("Writing by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
       }
 
+      virtual const RegisterCatalogue& getRegisterCatalogue() const {
+        return _catalogue;
+      }
+
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const  {
         // implementing this read function is not mandatory, so we throw a not-implemented exception by default
         throw DeviceException("Obtaining a register map is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
@@ -58,6 +62,9 @@ namespace mtca4u {
       }// LCOV_EXCL_LINE
 
   protected:
+      
+      /// the register catalogue containing describing the registers known by this backend
+      RegisterCatalogue _catalogue;
 
       bool        _opened;
       bool        _connected;

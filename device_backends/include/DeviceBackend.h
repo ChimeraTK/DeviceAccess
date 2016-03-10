@@ -11,6 +11,7 @@
 
 #include "DeviceBackendException.h"
 #include "RegisterInfoMap.h"
+#include "RegisterCatalogue.h"
 #include "DeviceException.h"
 #include "VirtualFunctionTemplate.h"
 
@@ -111,20 +112,32 @@ namespace mtca4u {
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getTwoDRegisterAccessor_impl,
           boost::shared_ptr< TwoDRegisterAccessorImpl<T> >(const std::string&, const std::string&) );
 
+      /** Return the register catalogue with detailed information on all registers. */
+      virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
+
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const = 0;
 
       /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
        * module.
        *  The registers are in alphabetical order.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const = 0;
 
       /** Get a complete list of RegisterAccessors for one module.
        *  The registers are in alphabetical order.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       virtual std::list< boost::shared_ptr<RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) = 0;
