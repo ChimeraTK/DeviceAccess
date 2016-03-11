@@ -31,9 +31,6 @@ namespace mtca4u {
 
     public:
 
-      /** Default constructor */
-      DeviceBackend();
-
       /** Every virtual class needs a virtual desctructor. */
       virtual ~DeviceBackend();
 
@@ -157,12 +154,6 @@ namespace mtca4u {
       virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
 
     protected:
-
-      /** Templated default implementation to obtain the BackendBufferingRegisterAccessor */
-      template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
-          const std::string &registerName, const std::string &module);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( DeviceBackend, getBufferingRegisterAccessor_impl, 2);
 
       /// for compatibility functions only: replace the current register map with a new one.
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) = 0;

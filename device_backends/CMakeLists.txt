@@ -1,6 +1,7 @@
 set(SOURCE
    ${SOURCE}
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackendImpl.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackendRegisterAccessor.cc
