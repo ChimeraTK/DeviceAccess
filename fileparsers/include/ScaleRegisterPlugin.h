@@ -20,7 +20,7 @@ namespace mtca4u {
 
       static boost::shared_ptr<RegisterPlugin> createInstance(const std::map<std::string, Value<std::string> > &parameters);
 
-      virtual boost::shared_ptr<RegisterAccessor> decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor);
+      virtual boost::shared_ptr<RegisterAccessor> decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const;
 
     protected:
 

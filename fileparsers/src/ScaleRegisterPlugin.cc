@@ -204,7 +204,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterAccessor> ScaleRegisterPlugin::decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) {
+  boost::shared_ptr<RegisterAccessor> ScaleRegisterPlugin::decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const {
     return boost::shared_ptr<RegisterAccessor>(new ScaleRegisterPluginAccessor(accessor, scalingFactor));
   }
 
