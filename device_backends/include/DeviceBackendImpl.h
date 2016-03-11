@@ -8,17 +8,17 @@
 
 namespace mtca4u {
 
-  /** DeviceBackend implements the "opened" functionality which before was in DeviceBackend.
-   *  It is to be a base class for all the other implementations. Like this debBase
-   *  becomes purely virtual, i.e. a real interface.
+  /**
+   *  DeviceBackendImpl implements some basic functionality which should be available for all backends. This is
+   *  required to allow proper decorator patterns which should not have this functionality in the decorator itself.
    */
   class DeviceBackendImpl: public DeviceBackend
   {
 
   public:
 
-      DeviceBackendImpl() : _opened(false), _connected(true) {}
-      virtual ~DeviceBackendImpl(){}
+      DeviceBackendImpl();
+      virtual ~DeviceBackendImpl();
 
       virtual bool isOpen(){ return _opened; }
 
@@ -32,6 +32,10 @@ namespace mtca4u {
       virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/,  size_t /*sizeInBytes*/) {
         // implementing this read function is not mandatory, so we throw a not-implemented exception by default
         throw DeviceException("Writing by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+      }
+
+      virtual const RegisterCatalogue& getRegisterCatalogue() const {
+        return _catalogue;
       }
 
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const  {
@@ -58,12 +62,44 @@ namespace mtca4u {
       }// LCOV_EXCL_LINE
 
   protected:
+      
+      /** the register catalogue containing describing the registers known by this backend */
+      RegisterCatalogue _catalogue;
 
+      /** flag if device is opened */
       bool        _opened;
+      
+      /** flag if device is connected. */
       bool        _connected;
 
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE only for compatibility!
+      /** Add plugin-provided decorators to a BufferingRegisterAccessor */
+      template<typename UserType>
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > decorateBufferingRegisterAccessor(
+          const RegisterPath &registerPathName, boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
+        auto info = _catalogue.getRegister(registerPathName);
+        for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
+          accessor = i->decorateBufferingRegisterAccessor<UserType>(accessor);
+        }
+        return accessor;
+      }
 
+      /** Add plugin-provided decorators to a (non-buffering) RegisterAccessor */
+      boost::shared_ptr<RegisterAccessor> decorateRegisterAccessor(const RegisterPath &registerPathName,
+        boost::shared_ptr<RegisterAccessor> accessor) const {
+        auto info = _catalogue.getRegister(registerPathName);
+        for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
+          accessor = i->decorateRegisterAccessor(accessor);
+        }
+        return accessor;
+      }
+
+      /** Templated default implementation to obtain the BackendBufferingRegisterAccessor */
+      template<typename UserType>
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
+          const std::string &registerName, const std::string &module);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( DeviceBackendImpl, getBufferingRegisterAccessor_impl, 2);
+
+      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE only for compatibility!
 
   };
 

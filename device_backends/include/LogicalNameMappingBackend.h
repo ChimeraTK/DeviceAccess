@@ -76,9 +76,6 @@ namespace mtca4u {
       /// name of the logical map file
       std::string _lmapFileName;
 
-      /// logical name map
-      LogicalNameMap _map;
-
       /// map of target devices
       std::map< std::string, boost::shared_ptr<Device> > _devices;
 

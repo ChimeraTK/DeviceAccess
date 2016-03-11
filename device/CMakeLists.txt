@@ -5,6 +5,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/FixedPointConverter.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferGroup.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterCatalogue.cc
    PARENT_SCOPE
 )
 
@@ -22,6 +23,7 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/FixedPointConverter.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferGroup.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferElement.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/RegisterCatalogue.h
    PARENT_SCOPE
 )
 

@@ -14,7 +14,6 @@
 #include "RegisterPluginFactory.h"
 
 namespace mtca4u {
-  const char LogicalNameMap::RegisterPath::separator[] = "/";
 
   template<>
   Value<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
@@ -150,42 +149,46 @@ namespace mtca4u {
       if(!nameAttr) {
         parsingError("Missing name attribute of 'register' tag.");
       }
-      std::string registerName = currentPath/nameAttr->get_value();
+      RegisterPath registerName = currentPath/std::string(nameAttr->get_value());
 
       // create new RegisterInfo object
-      _map[registerName].reset( new LogicalNameMap::RegisterInfo() );
+      auto info = boost::shared_ptr<RegisterInfo>( new LogicalNameMap::RegisterInfo() );
+      info->name = registerName;
 
       // obtain the type
       std::string type = getValueFromXmlSubnode<std::string>(element, "type");
       if(type == "register") {
-        _map[registerName]->targetType = TargetType::REGISTER;
-        _map[registerName]->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
-        _map[registerName]->registerName = getValueFromXmlSubnode<std::string>(element, "register");
+        info->targetType = TargetType::REGISTER;
+        info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
+        info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
       }
       else if(type == "range") {
-        _map[registerName]->targetType = TargetType::RANGE;
-        _map[registerName]->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
-        _map[registerName]->registerName = getValueFromXmlSubnode<std::string>(element, "register");
-        _map[registerName]->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "index");
-        _map[registerName]->length = getValueFromXmlSubnode<unsigned int>(element, "length");
+        info->targetType = TargetType::RANGE;
+        info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
+        info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
+        info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "index");
+        info->length = getValueFromXmlSubnode<unsigned int>(element, "length");
       }
       else if(type == "channel") {
-        _map[registerName]->targetType = TargetType::CHANNEL;
-        _map[registerName]->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
-        _map[registerName]->registerName = getValueFromXmlSubnode<std::string>(element, "register");
-        _map[registerName]->channel = getValueFromXmlSubnode<unsigned int>(element, "channel");
+        info->targetType = TargetType::CHANNEL;
+        info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
+        info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
+        info->channel = getValueFromXmlSubnode<unsigned int>(element, "channel");
       }
       else if(type == "int_constant") {
-        _map[registerName]->targetType = TargetType::INT_CONSTANT;
-        _map[registerName]->value = getValueFromXmlSubnode<int>(element, "value");
+        info->targetType = TargetType::INT_CONSTANT;
+        info->value = getValueFromXmlSubnode<int>(element, "value");
       }
       else if(type == "int_variable") {
-        _map[registerName]->targetType = TargetType::INT_VARIABLE;
-        _map[registerName]->value = getValueFromXmlSubnode<int>(element, "value");
+        info->targetType = TargetType::INT_VARIABLE;
+        info->value = getValueFromXmlSubnode<int>(element, "value");
       }
       else {
         parsingError("Wrong target type: "+type);
       }
+      
+      // add register to catalogue
+      _catalogue.addRegister(info);
 
       // iterate over childs of the register to find plugins
       for(const auto& child : element->get_children()) {
@@ -218,7 +221,7 @@ namespace mtca4u {
         
         // create instance of plugin and add to the list in the register info
         boost::shared_ptr<RegisterPlugin> plugin = RegisterPluginFactory::getInstance().createPlugin(pluginName, parameters);
-        _map[registerName]->pluginList.push_back(plugin);
+        info->pluginList.push_back(plugin);
 
       }
 
@@ -232,7 +235,9 @@ namespace mtca4u {
 
   const LogicalNameMap::RegisterInfo& LogicalNameMap::getRegisterInfo(const std::string &name) const {
     try {
-      return *(_map.at(currentModule/name));
+      // static cast the mtca4u::RegisterInfo into our LogicalNameMap::RegisterInfo is ok, since we control the
+      // catalogue and put only actual LogicalNameMap::RegisterInfo in there.
+      return *static_cast<LogicalNameMap::RegisterInfo*>(_catalogue.getRegister(currentModule/name).get());
     }
     catch(std::out_of_range &e) {
       throw DeviceException("Register '"+(currentModule/name)+"' was not found in logical name map ("+e.what()+").",
@@ -244,7 +249,9 @@ namespace mtca4u {
 
   boost::shared_ptr<LogicalNameMap::RegisterInfo> LogicalNameMap::getRegisterInfoShared(const std::string &name) {
     try {
-      return _map.at(currentModule/name);
+      // static cast the mtca4u::RegisterInfo into our LogicalNameMap::RegisterInfo is ok, since we control the
+      // catalogue and put only actual LogicalNameMap::RegisterInfo in there.
+      return boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(currentModule/name));
     }
     catch(std::out_of_range &e) {
       throw DeviceException("Register '"+(currentModule/name)+"' was not found in logical name map ("+e.what()+").",
@@ -256,9 +263,10 @@ namespace mtca4u {
 
   std::unordered_set<std::string> LogicalNameMap::getTargetDevices() const {
     std::unordered_set<std::string> ret;
-    for(auto it = _map.begin(); it != _map.end(); ++it) {
-      if(it->second->hasDeviceName()) {
-        ret.insert(it->second->deviceName);
+    for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
+      auto info = boost::static_pointer_cast<const LogicalNameMap::RegisterInfo>(it.get());
+      if(info->hasDeviceName()) {
+        ret.insert(info->deviceName);
       }
     }
     return ret;
@@ -268,31 +276,6 @@ namespace mtca4u {
 
   void LogicalNameMap::parsingError(const std::string &message) {
     throw DeviceException("Error parsing the xlmap file '"+_fileName+"': "+message, DeviceException::CANNOT_OPEN_MAP_FILE);
-  }
-
-  /********************************************************************************************************************/
-
-  std::string operator+(const LogicalNameMap::RegisterPath &leftHandSide, const std::string &rightHandSide) {
-    return ((std::string)leftHandSide)+rightHandSide;
-  }
-
-  /********************************************************************************************************************/
-
-  std::string operator+(const std::string &leftHandSide, const LogicalNameMap::RegisterPath &rightHandSide) {
-    return leftHandSide+((std::string)rightHandSide);
-  }
-
-  /********************************************************************************************************************/
-
-  std::string operator+(const LogicalNameMap::RegisterPath &leftHandSide, const LogicalNameMap::RegisterPath &rightHandSide) {
-    return ((std::string)leftHandSide)+((std::string)rightHandSide);
-  }
-
-  /********************************************************************************************************************/
-
-  LogicalNameMap::RegisterPath operator/(const std::string &leftHandSide, const LogicalNameMap::RegisterPath &rightHandSide) {
-    LogicalNameMap::RegisterPath temp(leftHandSide);
-    return temp+rightHandSide;
   }
 
 } // namespace mtca4u

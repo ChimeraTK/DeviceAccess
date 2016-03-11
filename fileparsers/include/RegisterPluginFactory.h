@@ -10,6 +10,7 @@
 
 #include <map>
 
+#include "Value.h"
 #include "RegisterPlugin.h"
 
 namespace mtca4u {

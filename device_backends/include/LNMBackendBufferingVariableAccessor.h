@@ -34,8 +34,10 @@ namespace mtca4u {
         _fixedPointConverter(32, 0, 1)
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
-        std::string name = ( module.length() > 0 ? module + "." + registerName : registerName );
-        _info = _dev->_map.getRegisterInfoShared(name);
+        // obtain the register info
+        RegisterPath name = RegisterPath(module)/registerName;
+        _info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_dev->getRegisterCatalogue().getRegister(name));
+        // check for incorrect usage of this accessor
         if( _info->targetType != LogicalNameMap::TargetType::INT_CONSTANT &&
             _info->targetType != LogicalNameMap::TargetType::INT_VARIABLE    ) {
           throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",

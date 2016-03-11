@@ -11,6 +11,7 @@
 
 #include "DeviceBackendException.h"
 #include "RegisterInfoMap.h"
+#include "RegisterCatalogue.h"
 #include "DeviceException.h"
 #include "VirtualFunctionTemplate.h"
 
@@ -29,9 +30,6 @@ namespace mtca4u {
   class DeviceBackend : public boost::enable_shared_from_this<DeviceBackend> {
 
     public:
-
-      /** Default constructor */
-      DeviceBackend();
 
       /** Every virtual class needs a virtual desctructor. */
       virtual ~DeviceBackend();
@@ -111,20 +109,32 @@ namespace mtca4u {
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getTwoDRegisterAccessor_impl,
           boost::shared_ptr< TwoDRegisterAccessorImpl<T> >(const std::string&, const std::string&) );
 
+      /** Return the register catalogue with detailed information on all registers. */
+      virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
+
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const = 0;
 
       /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
        * module.
        *  The registers are in alphabetical order.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const = 0;
 
       /** Get a complete list of RegisterAccessors for one module.
        *  The registers are in alphabetical order.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       virtual std::list< boost::shared_ptr<RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) = 0;
@@ -145,12 +155,6 @@ namespace mtca4u {
 
     protected:
 
-      /** Templated default implementation to obtain the BackendBufferingRegisterAccessor */
-      template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
-          const std::string &registerName, const std::string &module);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( DeviceBackend, getBufferingRegisterAccessor_impl, 2);
-
       /// for compatibility functions only: replace the current register map with a new one.
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) = 0;
 
@@ -162,8 +166,8 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackend::getBufferingRegisterAccessor(
-      const std::string &registerName, const std::string &module) {
-    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerName, module);
+      const std::string &module, const std::string &registerName) {
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, module, registerName);
   }
 
   /********************************************************************************************************************/

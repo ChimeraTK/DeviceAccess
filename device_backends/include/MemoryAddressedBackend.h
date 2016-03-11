@@ -67,6 +67,7 @@ namespace mtca4u {
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
       { // LCOV_EXCL_LINE only for compatibility!
         _registerMap = registerMap; // LCOV_EXCL_LINE only for compatibility!
+        _catalogue = _registerMap->getRegisterCatalogue(); // LCOV_EXCL_LINE only for compatibility!
       } // LCOV_EXCL_LINE only for compatibility!
 
   };

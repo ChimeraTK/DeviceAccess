@@ -171,21 +171,33 @@ namespace mtca4u {
       TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
           const std::string &module, const std::string &registerName) const;
 
+      /** Return the register catalogue with detailed information on all registers. */
+      const RegisterCatalogue& getRegisterCatalogue() const;
+
       /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
        * module.
        *  The registers are in alphabetical order.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
       /** Get a complete list of RegisterAccessors for one module.
        *  The registers are in alphabetical order.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       std::list<  boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) const;
 
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
+       *
+       *  \deprecated
+       *  This function is deprecated.
        */
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 

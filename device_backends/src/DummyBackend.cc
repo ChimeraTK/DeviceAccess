@@ -71,7 +71,7 @@ namespace mtca4u {
   std::map< uint8_t, size_t > DummyBackend::getBarSizesInBytesFromRegisterMapping() const{
     std::map< uint8_t, size_t > barSizesInBytes;
     for (RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-        mappingElementIter <  _registerMapping->end(); ++mappingElementIter ) {
+        mappingElementIter !=  _registerMapping->end(); ++mappingElementIter ) {
       barSizesInBytes[mappingElementIter->bar] =
           std::max( barSizesInBytes[mappingElementIter->bar],
               static_cast<size_t> (mappingElementIter->address +

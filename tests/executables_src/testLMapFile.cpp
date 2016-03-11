@@ -185,15 +185,21 @@ void LMapFileTest::testParseFile() {
 }
 
 void LMapFileTest::testRegisterPath() {
-  LogicalNameMap::RegisterPath path1;
-  LogicalNameMap::RegisterPath path2("module1");
-  LogicalNameMap::RegisterPath path3("//module//blah/");
+  RegisterPath path1;
+  RegisterPath path2("module1");
+  RegisterPath path3("//module//blah/");
+  RegisterPath path4("moduleX..Yblah/sub");
   BOOST_CHECK( path1 == "/" );
   BOOST_CHECK( path2 == "/module1" );
   BOOST_CHECK( path3 == "/module/blah" );
+  BOOST_CHECK( path3.getWithAltSeparator() == "module.blah" );
+  BOOST_CHECK( path4 == "/moduleX/Yblah/sub" );
+  BOOST_CHECK( (path4/"next.register").getWithAltSeparator() == "moduleX.Yblah.sub.next.register" );
   BOOST_CHECK( path3/"register" == "/module/blah/register");
   BOOST_CHECK( "root"/path3/"register" == "/root/module/blah/register");
   BOOST_CHECK( "root/"+path3+"register" == "root//module/blahregister");
+  BOOST_CHECK( "root"/path3+"register" == "/root/module/blahregister");
+  BOOST_CHECK( "root"+path3/"register" == "root/module/blah/register");
   BOOST_CHECK( path2/path3 == "/module1/module/blah" );
 
   path3 /= "test";
@@ -206,4 +212,6 @@ void LMapFileTest::testRegisterPath() {
   BOOST_CHECK( path3 == "/" );
   --path2;
   BOOST_CHECK( path2 == "/" );
+  
+  
 }

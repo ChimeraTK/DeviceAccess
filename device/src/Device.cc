@@ -18,7 +18,15 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
+  const RegisterCatalogue& Device::getRegisterCatalogue() const {
+    checkPointersAreNotNull();
+    return _deviceBackendPointer->getRegisterCatalogue();
+  }
+
+  /********************************************************************************************************************/
+
   boost::shared_ptr<const RegisterInfoMap> Device::getRegisterMap() const {
+    checkPointersAreNotNull();
     return _deviceBackendPointer->getRegisterMap();
   }
 

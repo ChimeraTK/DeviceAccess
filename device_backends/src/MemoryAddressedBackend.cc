@@ -15,6 +15,7 @@ namespace mtca4u {
     if(mapFileName != "") {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
+      _catalogue = _registerMap->getRegisterCatalogue();
     }
     else {
       _registerMap = boost::shared_ptr<RegisterInfoMap>();
