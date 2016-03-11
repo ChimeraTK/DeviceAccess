@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "DeviceException.h"
 #include "RegisterInfoMap.h"
 #include "predicates.h"
 #include "MapException.h"
@@ -9,60 +10,62 @@
 namespace mtca4u {
 
   std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& registerInfoMap) {
-    size_t size;
     os << "=======================================" << std::endl;
     os << "MAP FILE NAME: " << registerInfoMap._mapFileName << std::endl;
     os << "---------------------------------------" << std::endl;
-    for (size = 0; size < registerInfoMap._metadata.size(); size++) {
-      os << registerInfoMap._metadata[size];
+    for(auto it = registerInfoMap._catalogue.metadata_begin(); it != registerInfoMap._catalogue.metadata_end(); ++it) {
+      os << "METADATA-> NAME: \"" << it->first << "\" VALUE: " << it->second << std::endl;
     }
     os << "---------------------------------------" << std::endl;
-    for (size = 0; size < registerInfoMap._mapFileElements.size(); size++) {
-      os << registerInfoMap._mapFileElements[size] << std::endl;
+    for(auto it = registerInfoMap.begin(); it != registerInfoMap.end(); ++it) {
+      os << *(it) << std::endl;
     }
     os << "=======================================";
     return os;
   }
 
   void RegisterInfoMap::insert(RegisterInfo &elem) {
-    _mapFileElements.push_back(elem);
+    _catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new RegisterInfo(elem)) );
   }
 
   void RegisterInfoMap::insert(MetaData &elem) {
-    _metadata.push_back(elem);
+    _catalogue.addMetadata(elem.name, elem.value);
   }
 
-  void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfo &value, const std::string& reg_module) const{
-
-    std::string mergedName = ( reg_module.length() > 0 ? reg_module + "." + reg_name : reg_name );
-    auto moduleAndRegister = MapFileParser::splitStringAtLastDot(mergedName);
-
-    std::vector<RegisterInfo>::const_iterator iter;
-    iter = std::find_if(_mapFileElements.begin(), _mapFileElements.end(),
-        findRegisterByName_pred(moduleAndRegister.second, moduleAndRegister.first));
-    if (iter == _mapFileElements.end()) {
-      throw MapFileException("Cannot find register " + reg_module + (reg_module.empty()?"":".") + reg_name +
-          " in map file: " + _mapFileName, LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+  void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfoMap::RegisterInfo &value,
+      const std::string& reg_module) const {
+    try {
+      auto info = _catalogue.getRegister(RegisterPath(reg_module)/reg_name);
+      auto infoCast = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+      value = *infoCast;
     }
-    value = *iter;
+    catch(DeviceException &ex) {
+      if(ex.getID() != DeviceException::REGISTER_DOES_NOT_EXIST) throw;
+      throw MapFileException(ex.what(), LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+    }
   }
 
   void RegisterInfoMap::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
-    try {
-      value = _mapFileElements.at(reg_nr);
-    } catch (std::out_of_range &) {
-      throw MapFileException("Cannot find register in map file", LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+    int count = 0;
+    for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
+      if(count == reg_nr) {
+        auto infoCast = boost::static_pointer_cast<const RegisterInfoMap::RegisterInfo>(it.get());
+        value = *infoCast;
+        return;
+      }
+      count++;
     }
+    throw MapFileException("Cannot find register in map file", LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
   }
 
   void RegisterInfoMap::getMetaData(const std::string &metaDataName, std::string& metaDataValue) const{
-    std::vector<RegisterInfoMap::MetaData>::const_iterator iter;
-
-    iter = std::find_if(_metadata.begin(), _metadata.end(), findMetaDataByName_pred(metaDataName));
-    if (iter == _metadata.end()) {
-      throw MapFileException("Cannot find metadata " + metaDataName + " in map file: " + _mapFileName, LibMapException::EX_NO_METADATA_IN_MAP_FILE);
+    try {
+      metaDataValue = _catalogue.getMetadata(metaDataName);
     }
-    metaDataValue = (*iter).value;
+    catch(DeviceException &ex) {
+      if(ex.getID() != DeviceException::EX_WRONG_PARAMETER) throw;
+      throw MapFileException(ex.what(), LibMapException::EX_NO_METADATA_IN_MAP_FILE);
+    }
   }
 
   namespace {
@@ -80,12 +83,17 @@ namespace mtca4u {
     std::vector<addresses>::iterator v_iter;
     addresses address;
 
-    std::vector<RegisterInfo> map_file = _mapFileElements;
+    std::vector<RegisterInfo> map_file;
+    for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
+      auto infoCast = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(it.get());
+      map_file.push_back(*infoCast);
+    }
+
     std::vector<RegisterInfo>::iterator iter_p, iter_n;
     bool ret = true;
 
     err.clear();
-    if (_mapFileElements.size() < 2)
+    if (map_file.size() < 2)
       return true;
     std::sort(map_file.begin(), map_file.end(), compareRegisterInfosByName_functor());
     iter_p = map_file.begin();
@@ -217,29 +225,41 @@ namespace mtca4u {
   }
 
   size_t RegisterInfoMap::getMapFileSize() const {
-    return _mapFileElements.size();
+    return _catalogue.getNumberOfRegisters();
   }
 
   RegisterInfoMap::iterator RegisterInfoMap::begin() {
-    return _mapFileElements.begin();
+    RegisterInfoMap::iterator it;
+    it.theIterator = _catalogue.begin();
+    return it;
   }
 
-  RegisterInfoMap::const_iterator RegisterInfoMap::begin() const{
-    return _mapFileElements.begin();
-  }
-
-  RegisterInfoMap::const_iterator RegisterInfoMap::end() const{
-    return _mapFileElements.end();
+  RegisterInfoMap::const_iterator RegisterInfoMap::begin() const {
+    RegisterInfoMap::const_iterator it;
+    it.theIterator = _catalogue.begin();
+    return it;
   }
 
   RegisterInfoMap::iterator RegisterInfoMap::end(){
-    return _mapFileElements.end();
+    RegisterInfoMap::iterator it;
+    it.theIterator = _catalogue.end();
+    return it;
+  }
+
+  RegisterInfoMap::const_iterator RegisterInfoMap::end() const {
+    RegisterInfoMap::const_iterator it;
+    it.theIterator = _catalogue.end();
+    return it;
   }
 
   std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule( std::string const & moduleName){
     // first sort all elements accordind the names (module first, then register in module)
     // make a copy to keep the original order from the map file
-    std::vector<RegisterInfo> sortedRegisterInfos = _mapFileElements;
+    std::vector<RegisterInfo> sortedRegisterInfos;
+    for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
+      auto infoCast = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(it.get());
+      sortedRegisterInfos.push_back(*infoCast);
+    }
     std::sort(sortedRegisterInfos.begin(), sortedRegisterInfos.end(), compareRegisterInfosByName_functor());
 
     // The vector is sorted, first module, than register name.

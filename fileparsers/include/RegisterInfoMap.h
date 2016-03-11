@@ -13,6 +13,7 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
+#include "RegisterCatalogue.h"
 #include "RegisterInfo.h"
 
 namespace mtca4u {
@@ -88,8 +89,8 @@ namespace mtca4u {
               uint32_t lineNumber_ = 0,
               std::string const & module_ = std::string() );
       };
-      typedef std::vector<RegisterInfo>::iterator iterator;
-      typedef std::vector<RegisterInfo>::const_iterator const_iterator;
+
+
       /**
        * @brief  Stores information about errors and warnings
        *
@@ -215,6 +216,68 @@ namespace mtca4u {
        * @return number of registers in MAP file
        */
       size_t getMapFileSize() const;
+
+      class const_iterator {
+        public:
+          const_iterator& operator++() {    // ++it
+            ++theIterator;
+            return *this;
+          }
+          const_iterator operator++(int) { // it++
+            const_iterator temp(*this);
+            ++theIterator;
+            return temp;
+          }
+          const RegisterInfoMap::RegisterInfo& operator*() {
+            return *static_cast<const RegisterInfoMap::RegisterInfo*>(theIterator.get().get());
+          }
+          boost::shared_ptr<const RegisterInfoMap::RegisterInfo> operator->() {
+            return boost::static_pointer_cast<const RegisterInfoMap::RegisterInfo>(theIterator.get());
+          }
+          bool operator==(const const_iterator &rightHandSide) const {
+            return rightHandSide.theIterator == theIterator;
+          }
+          bool operator!=(const const_iterator &rightHandSide) const {
+            return rightHandSide.theIterator != theIterator;
+          }
+        protected:
+          RegisterCatalogue::const_iterator theIterator;
+          friend class RegisterInfoMap;
+      };
+
+      class iterator {
+        public:
+          iterator& operator++() {    // ++it
+            ++theIterator;
+            return *this;
+          }
+          iterator operator++(int) { // it++
+            iterator temp(*this);
+            ++theIterator;
+            return temp;
+          }
+          RegisterInfoMap::RegisterInfo& operator*() {
+            return *static_cast<RegisterInfoMap::RegisterInfo*>(theIterator.get().get());
+          }
+          boost::shared_ptr<RegisterInfoMap::RegisterInfo> operator->() {
+            return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(theIterator.get());
+          }
+          operator const_iterator() {
+            const_iterator it;
+            it.theIterator = theIterator;
+            return it;
+          }
+          bool operator==(const iterator &rightHandSide) const {
+            return rightHandSide.theIterator == theIterator;
+          }
+          bool operator!=(const iterator &rightHandSide) const {
+            return rightHandSide.theIterator != theIterator;
+          }
+        protected:
+          RegisterCatalogue::iterator theIterator;
+          friend class RegisterInfoMap;
+      };
+
       /**
        * @brief Return iterator to first register described in MAP file
        *
@@ -266,9 +329,12 @@ namespace mtca4u {
       void insert(MetaData &elem);
 
     private:
-      std::vector<RegisterInfo> _mapFileElements; /**< list of all registers described in MAP file*/
-      std::vector<MetaData> _metadata; /**< list of all metadata detected in MAP file*/
-      std::string _mapFileName; /**< name of MAP file*/
+
+      /** name of MAP file*/
+      std::string _mapFileName;
+
+      /** the catalogue storing the map file information */
+      RegisterCatalogue _catalogue;
   };
   /**
    * @typedef Introduce specialisation of shared_ptr template for pointers to RegisterInfoMap object as a RegisterInfoMapPointer
