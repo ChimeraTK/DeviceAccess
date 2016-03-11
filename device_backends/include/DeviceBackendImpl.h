@@ -43,24 +43,6 @@ namespace mtca4u {
         throw DeviceException("Obtaining a register map is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
       }
 
-      /** \deprecated {
-       *  This function is deprecated. Use read() instead!
-       *  @todo Add printed warning after release of version 0.2
-       *  }
-       */
-      virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) {
-        read(bar, address, data,  sizeInBytes);
-      }
-
-      /** \deprecated {
-       *  This function is deprecated. Use write() instead!
-       *  @todo Add printed warning after release of version 0.2
-       *  }
-       */
-      virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
-        write(bar, address, data,  sizeInBytes);
-      }// LCOV_EXCL_LINE
-
   protected:
       
       /** the register catalogue containing describing the registers known by this backend */

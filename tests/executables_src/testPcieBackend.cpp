@@ -221,14 +221,14 @@ void PcieBackendTest::testFailIfBackendClosed()
   //BOOST_CHECK_THROW(  _pcieBackendInstance->read(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
   BOOST_CHECK_THROW(  _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
       PcieBackendException );
-  BOOST_CHECK_THROW( _pcieBackendInstance->readDMA(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)),
+  BOOST_CHECK_THROW( _pcieBackendInstance->read(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)),
       PcieBackendException );
   //BOOST_CHECK_THROW(  _pcieBackendInstance->writeReg(/*bar*/ 0, WORD_USER_OFFSET, 0),
   BOOST_CHECK_THROW(  _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, 0, 4),
       PcieBackendException );
   BOOST_CHECK_THROW(  _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord) ),
       PcieBackendException );
-  BOOST_CHECK_THROW(  _pcieBackendInstance->writeDMA( /*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
+  BOOST_CHECK_THROW(  _pcieBackendInstance->write( /*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
       PcieBackendException );
 
   //std::string deviceInfo;
@@ -263,7 +263,7 @@ void PcieBackendTest::testReadDMA(){
 
   std::vector<int32_t> dmaUserBuffer(N_WORDS_DMA,-1);
 
-  _pcieBackendInstance->readDMA( /*the dma bar*/ 2, /*offset*/ 0, &dmaUserBuffer[0], N_WORDS_DMA*sizeof(int32_t) );
+  _pcieBackendInstance->read( /*the dma bar*/ 2, /*offset*/ 0, &dmaUserBuffer[0], N_WORDS_DMA*sizeof(int32_t) );
 
   std::string errorMessage = checkDmaValues( dmaUserBuffer );
   BOOST_CHECK_MESSAGE( errorMessage.empty(), errorMessage  );
@@ -272,7 +272,7 @@ void PcieBackendTest::testReadDMA(){
   // read 20 words from address 5
   std::vector<int32_t> smallBuffer(20, -1);
   static const unsigned int readOffset = 5;
-  _pcieBackendInstance->readDMA(  /*the dma bar*/ 2, /*offset*/ readOffset*sizeof(int32_t),
+  _pcieBackendInstance->read(  /*the dma bar*/ 2, /*offset*/ readOffset*sizeof(int32_t),
       &smallBuffer[0],
       smallBuffer.size()*sizeof(int32_t) );
 
@@ -314,7 +314,7 @@ void PcieBackendTest::testRead(){
   _pcieBackendInstance->write(/*bar*/ 0,WORD_ADC_ENA_OFFSET, &data, 4 );
   // use the same test as for DMA
   std::vector<int32_t> bar2Buffer(N_WORDS_DMA, -1);
-  _pcieBackendInstance->readDMA(  /*the dma bar*/ 2, /*offset*/ 0, &bar2Buffer[0], N_WORDS_DMA*sizeof(int32_t) );
+  _pcieBackendInstance->read(  /*the dma bar*/ 2, /*offset*/ 0, &bar2Buffer[0], N_WORDS_DMA*sizeof(int32_t) );
 
   std::string errorMessage = checkDmaValues( bar2Buffer );
   BOOST_CHECK_MESSAGE( errorMessage.empty(), errorMessage  );

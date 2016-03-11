@@ -141,17 +141,17 @@ namespace mtca4u {
 
       /** \deprecated {
        *  This function is deprecated. Use read() instead!
-       *  @todo Add printed warning after release of version 0.2
+       *  @todo Remove after release of version 0.8
        *  }
        */
-      virtual void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
+      void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
 
       /** \deprecated {
        *  This function is deprecated. Use write() instead!
-       *  @todo Add printed warning after release of version 0.2
+       *  @todo Remove after release of version 0.8
        *  }
        */
-      virtual void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
+      void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
 
     protected:
 
