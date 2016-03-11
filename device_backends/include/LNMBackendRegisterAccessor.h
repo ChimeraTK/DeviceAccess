@@ -46,9 +46,13 @@ namespace mtca4u {
       /** Length of our register */
       unsigned int _length;
 
-      virtual void readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const;
+      template <typename ConvertedDataType>
+      void read_impl(ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const;
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LNMBackendRegisterAccessor, read_impl, 3);
 
-      virtual void writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister);
+      template <typename ConvertedDataType>
+      void write_impl(const ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LNMBackendRegisterAccessor, write_impl, 3);
 
   };
 

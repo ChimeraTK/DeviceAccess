@@ -18,6 +18,8 @@ namespace mtca4u {
     _firstIndex(firstIndex),
     _length(length)
   {
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(read_impl);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(write_impl);
   }
 
   /********************************************************************************************************************/
@@ -55,107 +57,18 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  namespace LogicalNameMappingBackendRangeRegisterAccessorHelper {
-
-    /// Helper class to implement the templated read function with boost::fusion::for_each.
-    /// This allows to avoid writing an if-statement for each supported user type.
-    class readImplClass
-    {
-      public:
-        readImplClass(const std::type_info &_type, void *_convertedData, size_t _nWords, uint32_t _wordOffsetInRegister,
-            boost::shared_ptr<RegisterAccessor> _accessor)
-        : type(_type), convertedData(_convertedData), nWords(_nWords), wordOffsetInRegister(_wordOffsetInRegister),
-          accessor(_accessor), conversionDone(false)
-        {
-        }
-
-        /// This function will be called by for_each() for each type in FixedPointConverter::userTypeMap
-        template <typename Pair>
-        void operator()(Pair) const
-        {
-          // obtain UserType from given fusion::pair type
-          typedef typename Pair::first_type ConvertedDataType;
-
-          // check if UserType is the requested type
-          if(typeid(ConvertedDataType) == type) {
-            ConvertedDataType *data = reinterpret_cast<ConvertedDataType*>(convertedData);
-            accessor->read(data,nWords,wordOffsetInRegister);
-            conversionDone = true;
-          }
-        }
-
-        /// Arguments passed from readImpl
-        const std::type_info &type;
-        void *convertedData;
-        size_t nWords;
-        uint32_t wordOffsetInRegister;
-        boost::shared_ptr<RegisterAccessor> accessor;
-
-        /// Flag set after the conversion has been performed. This is used to catch invalid types passed to readImpl.
-        /// It needs to be mutable since the operator() has to be defined const.
-        mutable bool conversionDone;
-    };
-
-    /// Helper class to implement the templated write function with boost::fusion::for_each.
-    /// This allows to avoid writing an if-statement for each supported user type.
-    class writeImplClass
-    {
-      public:
-        writeImplClass(const std::type_info &_type, const void *_convertedData, size_t _nWords, uint32_t _wordOffsetInRegister,
-            boost::shared_ptr<RegisterAccessor> _accessor)
-        : type(_type), convertedData(_convertedData), nWords(_nWords), wordOffsetInRegister(_wordOffsetInRegister),
-          accessor(_accessor), conversionDone(false)
-        {}
-
-        /// This function will be called by for_each() for each type in FixedPointConverter::userTypeMap
-        template <typename Pair>
-        void operator()(Pair) const
-        {
-          // obtain UserType from given fusion::pair type
-          typedef typename Pair::first_type ConvertedDataType;
-
-          // check if UserType is the requested type
-          if(typeid(ConvertedDataType) == type) {
-            const ConvertedDataType *data = reinterpret_cast<const ConvertedDataType*>(convertedData);
-            accessor->write(data,nWords,wordOffsetInRegister);
-            conversionDone = true;
-          }
-        }
-
-        /// Arguments passed from readImpl
-        const std::type_info &type;
-        const void *convertedData;
-        size_t nWords;
-        uint32_t wordOffsetInRegister;
-        boost::shared_ptr<RegisterAccessor> accessor;
-
-        /// Flag set after the conversion has been performed. This is used to catch invalid types passed to readImpl.
-        /// It needs to be mutable since the operator() has to be defined const.
-        mutable bool conversionDone;
-    };
-
+  template <typename ConvertedDataType>
+  void LNMBackendRegisterAccessor::read_impl(ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
+    ConvertedDataType *data = reinterpret_cast<ConvertedDataType*>(convertedData);
+    _accessor->read(data,nWords,wordOffsetInRegister + _firstIndex);
   }
 
   /********************************************************************************************************************/
 
-  void LNMBackendRegisterAccessor::readImpl(const std::type_info &type, void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
-    FixedPointConverter::userTypeMap userTypes;
-    LogicalNameMappingBackendRangeRegisterAccessorHelper::readImplClass impl(type,convertedData,nWords,wordOffsetInRegister+_firstIndex,_accessor);
-    boost::fusion::for_each(userTypes, impl);
-    if(!impl.conversionDone) {
-      throw DeviceException("Unknown user type passed to RegisterAccessor::read()", DeviceException::EX_WRONG_PARAMETER);
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  void LNMBackendRegisterAccessor::writeImpl(const std::type_info &type, const void *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
-    FixedPointConverter::userTypeMap userTypes;
-    LogicalNameMappingBackendRangeRegisterAccessorHelper::writeImplClass impl(type,convertedData,nWords,wordOffsetInRegister+_firstIndex,_accessor);
-    boost::fusion::for_each(userTypes, impl);
-    if(!impl.conversionDone) {
-      throw DeviceException("Unknown user type passed to RegisterAccessor::write()", DeviceException::EX_WRONG_PARAMETER);
-    }
+  template <typename ConvertedDataType>
+  void LNMBackendRegisterAccessor::write_impl(const ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
+    const ConvertedDataType *data = reinterpret_cast<const ConvertedDataType*>(convertedData);
+    _accessor->write(data,nWords,wordOffsetInRegister + _firstIndex);
   }
 
 } // namespace mtca4u

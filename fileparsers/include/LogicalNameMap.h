@@ -15,6 +15,8 @@
 
 #include "BufferingRegisterAccessor.h"
 #include "DeviceBackend.h"
+#include "Value.h"
+#include "RegisterPlugin.h"
 
 // forward declaration
 namespace xmlpp {
@@ -27,87 +29,6 @@ namespace mtca4u {
   class LogicalNameMap {
 
     public:
-      // forward declaration
-      class RegisterInfo;
-
-      /** Sub-class: value of a RegisterInfo field (with proper resolution of dynamic references) */
-      template<typename ValueType>
-      class Value {
-
-        public:
-
-          // obtain value via implicit type conversion operator
-          operator const ValueType&() const {
-            if(!hasActualValue) {
-              if(!accessor) {
-                throw DeviceException("Cannot obtain this value before LogicalNameMap::Value::createInternalAccessors() was called.",
-                    DeviceException::EX_NOT_OPENED);
-              }
-              accessor->read();
-              return (*accessor)[0];
-            }
-            return value;
-          }
-
-          // assignment operator with a value of the type ValueType. This will make the Value having an "actual"
-          // value, i.e. no dynamic references are present.
-          Value<ValueType>& operator=(const ValueType &rightHandSide) {
-            value = rightHandSide;
-            hasActualValue = true;
-            return *this;
-          }
-
-          // allows comparisons with char* if ValueType is std::string
-          bool operator==(const char *rightHandSide) {
-            return value == rightHandSide;
-          }
-
-          // constructor: assume having an actual value by default. If it does not have an actual value, the
-          // function createInternalAccessors() must be called before obtaining the value.
-          Value()
-          : hasActualValue(true)
-          {}
-
-          // assignment operator: allow assigment to Value without given backend, in which case we keep our backend
-          // and create the accessors
-          Value<ValueType>& operator=(const Value<ValueType> &rightHandSide) {
-            if(rightHandSide.hasActualValue) {
-              hasActualValue = true;
-              value = rightHandSide.value;
-            }
-            else {
-              // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
-              hasActualValue = false;
-              registerName = rightHandSide.registerName;
-              accessor.reset();
-            }
-            return *this;
-          }
-
-        protected:
-
-          // create the internal register accessor(s) to obtain the value, if needed
-          void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
-            if(!hasActualValue) {
-              accessor = backend->getBufferingRegisterAccessor<ValueType>("",registerName);
-            }
-          }
-
-          // flag if the actual value is already known and thus the member variable "value" is valid.
-          bool hasActualValue;
-
-          // field to store the actual value
-          ValueType value;
-
-          // name of the register to obtain the value from
-          std::string registerName;
-
-          // register accessor to obtain the value, if not yet known upon construction
-          mutable boost::shared_ptr< BufferingRegisterAccessorImpl<ValueType> > accessor;
-
-          friend class LogicalNameMap;
-          friend class LogicalNameMap::RegisterInfo;
-      };
 
       /** Potential target types */
       enum TargetType { INVALID, REGISTER, RANGE, CHANNEL, INT_CONSTANT, INT_VARIABLE };
@@ -177,12 +98,35 @@ namespace mtca4u {
             value.createInternalAccessors(backend);
           }
 
-          // constuctor: initialise values
+          /** constuctor: initialise values */
           RegisterInfo()
           : targetType(TargetType::INVALID)
           {}
 
+          /** Obtain a potentially modified buffering register accessor from the given accessor. Any plugins specified
+           *  in the map for this register might modify the accessor. */
+          template<typename UserType>
+          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
+              boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
+            for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
+              accessor = (*i)->getBufferingRegisterAccessor<UserType>(accessor);
+            }
+            return accessor;
+          }
+
+          /** Obtain a potentially modified (non-buffering) register accessor from the given accessor. Any plugins
+           *  specified in the map for this register might modify the accessor. */
+          boost::shared_ptr<RegisterAccessor> getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const {
+            for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
+              accessor = (*i)->getRegisterAccessor(accessor);
+            }
+            return accessor;
+          }
+
         protected:
+
+          /** list of plugins */
+          std::vector< boost::shared_ptr<RegisterPlugin> > pluginList;
 
           friend class LogicalNameMap;
       };

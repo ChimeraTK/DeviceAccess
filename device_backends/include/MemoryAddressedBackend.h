@@ -59,11 +59,10 @@ namespace mtca4u {
       /// map from register names to addresses
       boost::shared_ptr<RegisterInfoMap> _registerMap;
 
-      VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getTwoDRegisterAccessorImpl, const std::string &, const std::string &);
-
       template<typename UserType>
-      TwoDRegisterAccessorImpl<UserType>* getTwoDRegisterAccessor(const std::string &registerName,
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const std::string &registerName,
           const std::string &module);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( MemoryAddressedBackend, getTwoDRegisterAccessor_impl, 2);
 
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
       { // LCOV_EXCL_LINE only for compatibility!

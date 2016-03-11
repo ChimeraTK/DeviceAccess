@@ -37,8 +37,6 @@ namespace mtca4u {
       /** Check if transfer element is read only */
       virtual bool isReadOnly() const = 0;
 
-    protected:
-
       /** Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing
        *  a shared pointer of itself.

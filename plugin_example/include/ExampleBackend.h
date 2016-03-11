@@ -42,7 +42,7 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
 
     virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
         const std::string &/*registerName*/, const std::string &/*module*/ = std::string()) {
-      return boost::shared_ptr<mtca4u::RegisterAccessor>();
+      return boost::shared_ptr<mtca4u::RegisterAccessor>(); // return some useful accessor here!
     }
 
     virtual boost::shared_ptr<const mtca4u::RegisterInfoMap> getRegisterMap() const {
@@ -61,11 +61,17 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
 
   protected:
 
-    VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getTwoDRegisterAccessorImpl, const std::string &, const std::string &) {
-      (void)UserType; (void) args;      // prevent warnings
-      throw mtca4u::DeviceException("2D register accessor not implemented in this example.",
-          mtca4u::DeviceException::NOT_IMPLEMENTED);
-    }
+    /** Implement the virtual function template to obtain the buffering register accessor */
+    template<typename UserType>
+    boost::shared_ptr< mtca4u::BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
+        const std::string &registerName, const std::string &module);
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getBufferingRegisterAccessor_impl, 2);
+
+    /** Implement the virtual function template to obtain the 2D register accessor */
+    template<typename UserType>
+    boost::shared_ptr< mtca4u::TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const std::string &registerName,
+        const std::string &module);
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getTwoDRegisterAccessor_impl, 2);
 
   public:
 

@@ -57,17 +57,15 @@ namespace mtca4u {
 
     protected:
 
-      VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getTwoDRegisterAccessorImpl, const std::string &, const std::string &);
-
-      VIRTUAL_FUNCTION_TEMPLATE_DECLARATION(getBufferingRegisterAccessorImpl, const std::string &, const std::string &);
+      template<typename UserType>
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
+          const std::string &registerName, const std::string &module);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LogicalNameMappingBackend, getBufferingRegisterAccessor_impl, 2);
 
       template<typename UserType>
-      TwoDRegisterAccessorImpl<UserType>* getTwoDRegisterAccessor(const std::string &module,
-          const std::string &registerName);
-
-      template<typename UserType>
-      BufferingRegisterAccessorImpl<UserType>* getBufferingRegisterAccessor(const std::string &module,
-          const std::string &registerName);
+      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const std::string &registerName,
+          const std::string &module);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LogicalNameMappingBackend, getTwoDRegisterAccessor_impl, 2);
 
       /// parse the logical map file, if not yet done
       void parse();
