@@ -177,7 +177,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, Value<std::string> > &parameters) {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateBufferingRegisterAccessor_impl);
     try {
       scalingFactor = parameters.at("factor");
     }
@@ -196,7 +196,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ScaleRegisterPlugin::getBufferingRegisterAccessor_impl(
+  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ScaleRegisterPlugin::decorateBufferingRegisterAccessor_impl(
       boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
     return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
         new ScaleRegisterPluginBufferingAccessor<UserType>(accessor, scalingFactor));
@@ -204,7 +204,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterAccessor> ScaleRegisterPlugin::getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) {
+  boost::shared_ptr<RegisterAccessor> ScaleRegisterPlugin::decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) {
     return boost::shared_ptr<RegisterAccessor>(new ScaleRegisterPluginAccessor(accessor, scalingFactor));
   }
 

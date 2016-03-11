@@ -66,8 +66,32 @@ namespace mtca4u {
       /** the register catalogue containing describing the registers known by this backend */
       RegisterCatalogue _catalogue;
 
+      /** flag if device is opened */
       bool        _opened;
+      
+      /** flag if device is connected. */
       bool        _connected;
+
+      /** Add plugin-provided decorators to a BufferingRegisterAccessor */
+      template<typename UserType>
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > decorateBufferingRegisterAccessor(
+          const RegisterPath &registerPathName, boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
+        auto info = _catalogue.getRegister(registerPathName);
+        for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
+          accessor = i->decorateBufferingRegisterAccessor<UserType>(accessor);
+        }
+        return accessor;
+      }
+
+      /** Add plugin-provided decorators to a (non-buffering) RegisterAccessor */
+      boost::shared_ptr<RegisterAccessor> decorateRegisterAccessor(const RegisterPath &registerPathName,
+        boost::shared_ptr<RegisterAccessor> accessor) const {
+        auto info = _catalogue.getRegister(registerPathName);
+        for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
+          accessor = i->decorateRegisterAccessor(accessor);
+        }
+        return accessor;
+      }
 
       /** Templated default implementation to obtain the BackendBufferingRegisterAccessor */
       template<typename UserType>

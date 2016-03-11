@@ -32,25 +32,46 @@ namespace mtca4u {
 
       /** Return number of elements in register */
       virtual unsigned int getNumberOfElements() const = 0;
-
-      /** Obtain a potentially modified buffering register accessor from the given accessor. Any plugins specified
-       *  in the map for this register might modify the accessor. */
-      template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
-        for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
-          accessor = (*i)->getBufferingRegisterAccessor<UserType>(accessor);
-        }
-        return accessor;
+      
+      /** Iterators for the list of plugins */
+      class plugin_iterator {
+        public:
+          plugin_iterator& operator++() {    // ++it
+            ++iterator;
+            return *this;
+          }
+          plugin_iterator operator++(int) { // it++
+            plugin_iterator temp(*this);
+            ++iterator;
+            return temp;
+          }
+          const RegisterPlugin& operator*() const {
+            return *(iterator->get());
+          }
+          const RegisterPlugin* operator->() const {
+            return iterator->get();
+          }
+          bool operator==(const plugin_iterator &rightHandSide) {
+            return rightHandSide.iterator == iterator;
+          }
+          bool operator!=(const plugin_iterator &rightHandSide) {
+            return rightHandSide.iterator != iterator;
+          }
+        protected:
+          std::vector< boost::shared_ptr<RegisterPlugin> >::const_iterator iterator;
+          friend class RegisterInfo;
+      };
+      
+      /** Return iterators for the list of plugins */
+      plugin_iterator plugins_begin() const {
+        plugin_iterator i;
+        i.iterator = pluginList.cbegin();
+        return i;
       }
-
-      /** Obtain a potentially modified (non-buffering) register accessor from the given accessor. Any plugins
-       *  specified in the map for this register might modify the accessor. */
-      boost::shared_ptr<RegisterAccessor> getRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const {
-        for(auto i = pluginList.begin(); i != pluginList.end(); ++i) {
-          accessor = (*i)->getRegisterAccessor(accessor);
-        }
-        return accessor;
+      plugin_iterator plugins_end() const {
+        plugin_iterator i;
+        i.iterator = pluginList.cend();
+        return i;
       }
 
     protected:

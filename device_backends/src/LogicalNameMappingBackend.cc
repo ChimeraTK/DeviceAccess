@@ -153,9 +153,8 @@ namespace mtca4u {
           name+").", DeviceException::NOT_IMPLEMENTED);
     }
 
-    // allow plugins to replace the accessor with a modified version before returing it
-    accessor = info->getRegisterAccessor(accessor);
-    return accessor;
+    // allow plugins to decorate the accessor and return it
+    return decorateRegisterAccessor(name,accessor);
 
   }
 
@@ -201,10 +200,9 @@ namespace mtca4u {
           name+").", DeviceException::NOT_IMPLEMENTED);
     }
 
-    // allow plugins to replace the accessor with a modified version before returing it
+    // allow plugins to decorate the accessor and return it
     auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
-    accessor = info->getBufferingRegisterAccessor<UserType>(accessor);
-    return accessor;
+    return decorateBufferingRegisterAccessor<UserType>(name,accessor);
   }
 
 
