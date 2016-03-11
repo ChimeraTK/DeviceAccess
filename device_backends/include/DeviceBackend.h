@@ -166,8 +166,8 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackend::getBufferingRegisterAccessor(
-      const std::string &registerName, const std::string &module) {
-    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerName, module);
+      const std::string &module, const std::string &registerName) {
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, module, registerName);
   }
 
   /********************************************************************************************************************/
