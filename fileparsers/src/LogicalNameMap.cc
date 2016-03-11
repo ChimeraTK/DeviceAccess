@@ -264,8 +264,7 @@ namespace mtca4u {
   std::unordered_set<std::string> LogicalNameMap::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
-      boost::shared_ptr<mtca4u::RegisterInfo> ptr = it;
-      auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(ptr);
+      auto info = boost::static_pointer_cast<const LogicalNameMap::RegisterInfo>(it.get());
       if(info->hasDeviceName()) {
         ret.insert(info->deviceName);
       }
