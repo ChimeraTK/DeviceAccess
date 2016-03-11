@@ -328,6 +328,9 @@ namespace mtca4u {
        */
       void insert(MetaData &elem);
 
+      /** Return the RegisterCatalogue storing the register information */
+      const RegisterCatalogue& getRegisterCatalogue();
+
     private:
 
       /** name of MAP file*/

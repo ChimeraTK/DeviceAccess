@@ -301,4 +301,8 @@ namespace mtca4u {
     signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
   {}
 
+  const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() {
+    return _catalogue;
+  }
+
 }//namespace mtca4u
