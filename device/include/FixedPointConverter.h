@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <limits>
+#include <type_traits>
 
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/fusion/container.hpp>
@@ -155,7 +156,7 @@ namespace mtca4u{
           FixedPointConverter *_fpc;
       };
 
-      // define round type for the boost::numeric::converter
+      /** define round type for the boost::numeric::converter */
       template<class S>
       struct Round {
           static S nearbyint ( S s )
@@ -165,6 +166,13 @@ namespace mtca4u{
 
           typedef boost::mpl::integral_c<std::float_round_style,std::round_to_nearest> round_style ;
       } ;
+
+      /** helper function to test if UserTyped value is negativ without triggering a compiler warning for unsigned
+       *  user types */
+      template<typename UserType, typename std::enable_if<std::is_signed<UserType>{}, int>::type = 0>
+      bool isNegativeUserType(UserType value) const;
+      template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type = 0>
+      bool isNegativeUserType(UserType value) const;
 
   };
 
@@ -252,7 +260,7 @@ namespace mtca4u{
     if(std::numeric_limits<UserType>::is_integer && _fractionalBits == 0) {
 
       // extract the sign and leave the positive number
-      bool isNegative = (cookedValue < static_cast<UserType>(zero));    // avoid warnings...
+      bool isNegative = isNegativeUserType(cookedValue);
       if(isNegative && !_isSigned) return _minRawValue;
       if(isNegative) cookedValue = -(cookedValue+1);            // bit inversion, ~ operator cannot be used as UserType might be double
 
@@ -301,6 +309,19 @@ namespace mtca4u{
       // apply bit mask
       return raw & _usedBitsMask;
     }
+  }
+
+  /**********************************************************************************************************************/
+
+  template<typename UserType, typename std::enable_if<std::is_signed<UserType>{}, int>::type>
+  bool FixedPointConverter::isNegativeUserType(UserType value) const {
+    if(value < 0) return true;
+    return false;
+  }
+
+  template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type>
+  bool FixedPointConverter::isNegativeUserType(UserType /*value*/) const {
+    return false;
   }
 
   /**********************************************************************************************************************/

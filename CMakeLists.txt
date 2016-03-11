@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8.7)
 Project(mtca4u-deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 07)
+set(${PROJECT_NAME}_MINOR_VERSION 08)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 
 set(${PROJECT_NAME}_VERSION
@@ -141,8 +141,8 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
 #some variables we need for regular Makefiles, for which we also provide the config
 set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -I${CMAKE_INSTALL_PREFIX}/include ")
 set(${PROJECT_NAME}_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME} ")
-#MATLABs mex cannot deal with the rpath flags, so we provide special flags
-set(${PROJECT_NAME}_MEXFLAGS "${${PROJECT_NAME}_CPPFLAGS} ${${PROJECT_NAME}_LDFLAGS} ")
+#MATLABs mex cannot deal with the rpath and C+=11 flags, so we provide special flags
+set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include ${${PROJECT_NAME}_LDFLAGS} ")
 #only now we extend the LDFLAGS to its final value, including the runpath
 set(${PROJECT_NAME}_LDFLAGS "${${PROJECT_NAME}_LDFLAGS} -Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags ")
 

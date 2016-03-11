@@ -30,6 +30,7 @@ public:
   static void testIsSdm();
   static void testAliasLookUp();
   static void testFindFirstOfAlias();
+  static void testgetAliasList();
 };
 
 class UtilitiesTestSuite : public test_suite {
@@ -43,6 +44,7 @@ class UtilitiesTestSuite : public test_suite {
       add(BOOST_TEST_CASE(UtilitiesTest::testIsSdm));
       add(BOOST_TEST_CASE(UtilitiesTest::testAliasLookUp));
       add(BOOST_TEST_CASE(UtilitiesTest::testFindFirstOfAlias));
+      add(BOOST_TEST_CASE(UtilitiesTest::testgetAliasList));
     }
 };
 
@@ -121,3 +123,27 @@ void UtilitiesTest::testFindFirstOfAlias() {
   BOOST_CHECK(!dmapfile.empty());
 }
 
+void UtilitiesTest::testgetAliasList() {
+  std::string initialDmapFile = BackendFactory::getInstance().getDMapFilePath();
+
+  BackendFactory::getInstance().setDMapFilePath("");
+  auto returnedListOfAliases = Utilities::getAliasList();
+  BOOST_CHECK(returnedListOfAliases.size() == 0);
+
+  // entries in dummies.dmap when this was written
+  std::vector<std::string> expectedListOfAliases{
+    "PCIE1",   "PCIE0",   "PCIE2",    "PCIE3",     "PCIE0",
+    "FAKE0",   "FAKE1",   "FAKE3",    "DUMMYD0",   "DUMMYD1",
+    "example", "DUMMYD9", "mskrebot", "mskrebot1", "OLD_PCIE"
+  };
+
+  BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
+  returnedListOfAliases = Utilities::getAliasList();
+  BackendFactory::getInstance().setDMapFilePath(initialDmapFile);
+
+  int index = 0;
+  BOOST_CHECK(returnedListOfAliases.size() == expectedListOfAliases.size());
+  for(auto alias: expectedListOfAliases){
+    BOOST_CHECK(alias == returnedListOfAliases.at(index++));
+  }
+}

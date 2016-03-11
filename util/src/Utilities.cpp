@@ -177,4 +177,28 @@ namespace mtca4u {
 
     return std::string(); // no alias found, return an empty string
   }
-} /* namespace mtca4u */
+
+  std::vector<std::string> Utilities::getAliasList() {
+    std::string dmapFilePath = BackendFactory::getInstance().getDMapFilePath();
+    DMapFileParser fileParser;
+
+    try {
+      auto deviceInfoMap = fileParser.parse(dmapFilePath);
+
+      std::vector<std::string> listOfDeviceAliases;
+      listOfDeviceAliases.reserve(deviceInfoMap->getSize());
+
+      for (auto&& deviceInfo : *deviceInfoMap) {
+        listOfDeviceAliases.push_back(deviceInfo.deviceName);
+      }
+
+      return listOfDeviceAliases;
+    }
+    catch (Exception& e) {
+      std::cout << e.what() << std::endl;
+      return std::vector<std::string>(); // empty list in case of failure
+    }
+  }
+
+  } /* namespace mtca4u */
+
