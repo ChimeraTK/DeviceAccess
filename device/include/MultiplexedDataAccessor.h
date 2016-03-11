@@ -11,7 +11,7 @@ namespace mtca4u {
   class MultiplexedDataAccessorCopied;
 
   // Class backwards compatibility only. DEPCRECATED, DO NOT USE
-  // @todo add printed warning after release of 0.6
+  // @todo change runtime warning into error after release of 0.8
   template<typename UserType>
   class MultiplexedDataAccessor : public TwoDRegisterAccessorImpl<UserType> {
 
@@ -19,12 +19,22 @@ namespace mtca4u {
 
       MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice )
       :TwoDRegisterAccessorImpl<UserType>(ioDevice)
-      {}
+      {
+        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+      }
 
       MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice,
           const std::vector<mtca4u::FixedPointConverter>& /*converters*/)
       :TwoDRegisterAccessorImpl<UserType>(ioDevice)
-      {}
+      {
+        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+      }
 
       /** \deprecated
        * Do not use, only for backwards compatibility.
@@ -54,6 +64,10 @@ namespace mtca4u {
       : MultiplexedDataAccessor<UserType>(_accessor->_ioDevice),
         accessor(_accessor)
       {
+        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
         MultiplexedDataAccessor<UserType>::_sequences = accessor->_sequences;
       }
 
