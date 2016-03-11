@@ -16,38 +16,26 @@ namespace mtca4u {
   /// forward declaration (only used as tempate arguments)
   class DeviceBackend;
 
-  /** Non-buffering RegisterAccessor class
-   *  Allows reading and writing registers with user-provided buffer via plain pointers.
-   *  Supports conversion of fixed-point data into standard C data types.
+  /** \deprecated
+   *  This class is deprecated. Use BufferingRegisterAccessor instead!
+   *  @todo Add printed runtime warning after release of version 0.8
    */
   class RegisterAccessor {
 
     public:
 
-      /** Constructer. @attention Do not normally use directly.
-       *  Users should call Device::getRegisterAccessor() to obtain an instance instead.
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer);
 
       /** Abstract base class needs virtual destructor */
       virtual ~RegisterAccessor();
 
-      /** Read (a block of) values with automatic data conversion. The first parameter is a pointer to the output
-       * buffer. It is templated to work with basic data types. Implementations exist for
-       *  \li int32_t
-       *  \li uint32_t
-       *  \li int16_t
-       *  \li uint16_t
-       *  \li int8_t
-       *  \li uint8_t
-       *  \li float
-       *  \li double
-       *
-       *  @attention Be aware of rounding errors and range overflows, depending on the data type.
-       *  \li Rounding to integers is done correctly, so a fixed point value of 3.75 would be converted to 4.
-       *  \li Coversion to double is guaranteed to be exact (32 bit fixed point with fractional bits -1024 to 1023 is
-       *      guaranteed by the FixedPointConverter).
-       *  \li Conversion to float is exact for fixed point values up to 24 bits and fractional bits from -128 to 127.
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       template <typename ConvertedDataType>
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
@@ -56,20 +44,9 @@ namespace mtca4u {
       }
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( read_impl, void(T*, size_t, uint32_t) );
 
-      /** Convenience function to read a single word. It allows shorter syntax as the read value is the return value
-       * and one does not have to pass a pointer.
-       *
-       *  Example: You can use
-       *  \code
-       *  uint16_t i = registerAccessor.read<uint16_t>();
-       *  \endcode
-       *  instead of
-       *  \code
-       *  uint16_t i;
-       *  registerAccessor.read(&i);
-       *  \endcode
-       *  Note that you have to specify the data type as template parameter because return type overloading is not
-       *  supported in C++.
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       template <typename ConvertedDataType>
       ConvertedDataType read() const {
@@ -78,12 +55,9 @@ namespace mtca4u {
         return temp;
       }
 
-      /** Write (a block of) words with automatic data conversion. It works for every data type which is supported by
-       *  the FixedPointConverter.
-       *  @attention Be aware that the conversion to fixed point might come with a loss of precision or range overflows!
-       *
-       *  The nWords option does not have a default value to keep the template signature different from the single word
-       *  convenience write function.
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       template <typename ConvertedDataType>
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
@@ -92,58 +66,54 @@ namespace mtca4u {
       }
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( write_impl, void(const T*, size_t, uint32_t) );
 
-      /** Convenience function for single words. The value can be given directly, no need to have a an instance and a
-       *  pointer for it. This allows code like
-       *  \code
-       *  registerAccessor.write(0x3F);
-       *  \endcode
-       *  instead of
-       *  \code
-       *  static const uint32_t tempValue = 0x3F;
-       *  registerAccessor.write(&tempValue); // defaulting nWords to 1 would be possible if this function did not exist
-       *  \endcode
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       template <typename ConvertedDataType>
       void write(ConvertedDataType const &convertedData) {
         write(&convertedData, 1);
       }
 
-      /** Return number of elements
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual unsigned int getNumberOfElements() const = 0;
 
-      /** Returns the register information aka RegisterInfo.
-       *  This function was named getRegisterInfo because RegisterInfo will be
-       * renamed.
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual RegisterInfoMap::RegisterInfo const &getRegisterInfo() const = 0;
 
-      /** Return's a reference to the correctly configured internal fixed point
-       *  converter for the register
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual FixedPointConverter const &getFixedPointConverter() const = 0;
 
-      /** Read one ore more words from the device. It calls DeviceBackend::readArea, not DeviceBackend::readReg.
-       *  @attention In case you leave data size at 0, the full size of the register is read, not just one
-       *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const = 0;
 
-      /** Write one ore more words to the device. It calls DeviceBackend::readArea, not DeviceBackend::writeReg.
-       *  @attention In case you leave data size at 0, the full size of the register is read, not just one
-       *  word as in DeviceBackend::readArea! Make sure your buffer is large enough!
+      /** \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void writeRaw(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
 
       /** \deprecated
-       *  This function is deprecated. Use readRaw() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void readDMA(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
       /** \deprecated
-       *  This function is deprecated. Use writeRaw() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void writeDMA(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
