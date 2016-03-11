@@ -96,6 +96,10 @@ namespace mtca4u {
 
   void Device::readDMA(const std::string &regName, const std::string &regModule, int32_t *data,
       size_t dataSize, uint32_t addRegOffset) const {
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function Device::readDMA() detected.                                    **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use register accessors or Device::read() instead!                                           **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     readReg(regName, regModule, data, dataSize, addRegOffset);
   }
 
@@ -109,6 +113,10 @@ namespace mtca4u {
 
   void Device::writeDMA(const std::string &regName, const std::string &regModule, int32_t const *data,
       size_t dataSize, uint32_t addRegOffset) {
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function Device::writeDMA() detected.                                   **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use register accessors or Device::write() instead!                                          **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     writeReg(regName, regModule, data, dataSize, addRegOffset);
   }   // LCOV_EXCL_LINE
 
@@ -150,14 +158,22 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const {
-    checkPointersAreNotNull();
+    checkPointersAreNotNull();// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function Device::readDMA() detected.                                    **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use register accessors or Device::read() instead!                                           **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     _deviceBackendPointer->read(bar, regOffset, data, size);    // LCOV_EXCL_LINE
   }                                                             // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 
   void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-    checkPointersAreNotNull();
+    checkPointersAreNotNull();// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function Device::writeDMA() detected.                                   **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use register accessors or Device::write() instead!                                          **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     _deviceBackendPointer->write(bar, regOffset, data, size);   // LCOV_EXCL_LINE
   }                                                             // LCOV_EXCL_LINE
 
@@ -180,6 +196,13 @@ namespace mtca4u {
 
   void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend)
   {
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function detected.                                                      **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Signature:                                                                                  **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>)                                              **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "**                                                                                             **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     _deviceBackendPointer = deviceBackend;
     _deviceBackendPointer->open();
   }
@@ -207,6 +230,13 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap) {// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function detected.                                                      **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Signature:                                                                                  **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>, boost::shared_ptr<mtca4u::RegisterInfoMap>&) **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "**                                                                                             **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     deviceBackend->setRegisterMap(registerMap);// LCOV_EXCL_LINE
     open(deviceBackend);// LCOV_EXCL_LINE
   }// LCOV_EXCL_LINE

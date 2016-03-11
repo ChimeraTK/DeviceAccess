@@ -207,19 +207,19 @@ namespace mtca4u {
 
       /** \deprecated
        *  This function is deprecated. Open by alias name instead.
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Change warning into runtime error after release of version 0.8
        */
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap);
 
       /** \deprecated
        *  This function is deprecated. Open by alias name instead.
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Change warning into runtime error after release of version 0.8
        */
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
       /** \deprecated
        *  This function is deprecated. Use getRegisterAccessor2D() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Change warning into runtime error after release of version 0.8
        */
       template<typename customClass>
       boost::shared_ptr<customClass> getCustomAccessor(
@@ -228,13 +228,13 @@ namespace mtca4u {
 
       /** \deprecated
        *  This function is deprecated. Use readArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Change warning into runtime error after release of version 0.8
        */
       virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
           uint8_t bar) const;
       /** \deprecated
        *  This function is deprecated. Use writeArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Change warning into runtime error after release of version 0.8
        */
       virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
@@ -270,8 +270,7 @@ namespace mtca4u {
           size_t dataSize = 0, uint32_t addRegOffset = 0);
 
       /** A typedef for backward compatibility.
-       *  @deprecated Don't use this in new code. It will be removed in a future
-       * release.
+       *  @deprecated Don't use this in new code. It will be removed in a future release.
        *  Use mtca4u::RegisterAccessor instead (which is not nested inside this class).
        */
       typedef mtca4u::RegisterAccessor RegisterAccessor;
@@ -286,6 +285,10 @@ namespace mtca4u {
   template <typename customClass>
   boost::shared_ptr<customClass> Device::getCustomAccessor(
       const std::string &dataRegionName, const std::string &module) const {
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of deprecated function Device::getCustomAccessor() detected.                          **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Use Device::getTwoDRegisterAccessor() instead!                                              **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     return customClass::createInstance(dataRegionName,module,_deviceBackendPointer,boost::shared_ptr<RegisterInfoMap>());
   }
 
