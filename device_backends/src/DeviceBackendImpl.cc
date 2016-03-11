@@ -25,7 +25,7 @@ namespace mtca4u {
     auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
         new BackendBufferingRegisterAccessor<UserType>(shared_from_this(),registerName,module) );
     // allow plugins to decorate the accessor and return it
-    return decorateBufferingRegisterAccessor(RegisterPath(registerName)/module, accessor);
+    return decorateBufferingRegisterAccessor(RegisterPath(module)/registerName, accessor);
   }
 
 } /* namespace mtca4u */
