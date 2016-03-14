@@ -228,6 +228,15 @@ namespace mtca4u {
             ++theIterator;
             return temp;
           }
+          const_iterator& operator--() {    // --it
+            --theIterator;
+            return *this;
+          }
+          const_iterator operator--(int) { // it--
+            const_iterator temp(*this);
+            --theIterator;
+            return temp;
+          }
           const RegisterInfoMap::RegisterInfo& operator*() {
             return *static_cast<const RegisterInfoMap::RegisterInfo*>(theIterator.get().get());
           }
@@ -254,6 +263,15 @@ namespace mtca4u {
           iterator operator++(int) { // it++
             iterator temp(*this);
             ++theIterator;
+            return temp;
+          }
+          iterator& operator--() {    // --it
+            --theIterator;
+            return *this;
+          }
+          iterator operator--(int) { // it--
+            iterator temp(*this);
+            --theIterator;
             return temp;
           }
           RegisterInfoMap::RegisterInfo& operator*() {

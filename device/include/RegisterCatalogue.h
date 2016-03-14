@@ -51,6 +51,15 @@ namespace mtca4u {
             ++theIterator;
             return temp;
           }
+          const_iterator& operator--() {    // --it
+            --theIterator;
+            return *this;
+          }
+          const_iterator operator--(int) { // it--
+            const_iterator temp(*this);
+            --theIterator;
+            return temp;
+          }
           const RegisterInfo& operator*() {
             return *(theIterator->get());
           }
@@ -93,6 +102,15 @@ namespace mtca4u {
           iterator operator++(int) { // it++
             iterator temp(*this);
             ++theIterator;
+            return temp;
+          }
+          iterator& operator--() {    // --it
+            --theIterator;
+            return *this;
+          }
+          iterator operator--(int) { // it--
+            iterator temp(*this);
+            --theIterator;
             return temp;
           }
           RegisterInfo& operator*() {
