@@ -172,7 +172,7 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > LogicalNameMappingBackend::getBufferingRegisterAccessor_impl(
-      const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
 
     // obtain register info
     auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
@@ -186,16 +186,16 @@ namespace mtca4u {
     if( info->targetType == LogicalNameMap::TargetType::REGISTER ||
         info->targetType == LogicalNameMap::TargetType::RANGE       ) {
       ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
-          wordOffsetInRegister, numberOfWords, enforceRawAccess);
+          numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
     else if( info->targetType == LogicalNameMap::TargetType::CHANNEL) {
       ptr = new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), registerPathName,
-          wordOffsetInRegister, numberOfWords, enforceRawAccess);
+          numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
     else if( info->targetType == LogicalNameMap::TargetType::INT_CONSTANT ||
              info->targetType == LogicalNameMap::TargetType::INT_VARIABLE    ) {
       ptr = new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), registerPathName,
-          wordOffsetInRegister, numberOfWords, enforceRawAccess);
+          numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+

@@ -28,12 +28,18 @@ namespace mtca4u {
     public:
 
       LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
       : _registerPathName(registerPathName), _fixedPointConverter(32, 0, 1)
       {
-        if(wordOffsetInRegister != 0 || numberOfWords != 0 || enforceRawAccess != false) {
-          throw DeviceException("LNMBackendBufferingVariableAccessor: raw access, offset and number of words not "
+        if(wordOffsetInRegister != 0 || numberOfWords > 1) {
+          throw DeviceException("LNMBackendBufferingVariableAccessor: offset and number of words not "
               "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
+        }
+        if(enforceRawAccess) {
+          if(typeid(T) != typeid(int32_t)) {
+            throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
+                " does not match the expected type. Use an int32_t instead!", DeviceException::EX_WRONG_PARAMETER);
+          }
         }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // obtain the register info

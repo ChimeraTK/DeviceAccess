@@ -27,10 +27,10 @@ namespace mtca4u {
     public:
 
       LNMBackendBufferingChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
       : _registerPathName(registerPathName)
       {
-        if(wordOffsetInRegister != 0 || numberOfWords != 0 || enforceRawAccess != false) {
+        if(wordOffsetInRegister != 0 || numberOfWords > 1 || enforceRawAccess != false) {
           throw DeviceException("LNMBackendBufferingChannelAccessor: raw access, offset and number of words not yet "
               "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
         }

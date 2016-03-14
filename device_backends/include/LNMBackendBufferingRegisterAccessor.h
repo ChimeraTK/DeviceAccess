@@ -27,7 +27,7 @@ namespace mtca4u {
     public:
 
       LNMBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
       : _registerPathName(registerPathName)
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
@@ -43,15 +43,20 @@ namespace mtca4u {
         }
         _targetDevice = _dev->_devices[_info.deviceName];
         _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName),
-            wordOffsetInRegister,numberOfWords,enforceRawAccess);
+            0,0,enforceRawAccess);
         if(_info.targetType == LogicalNameMap::TargetType::REGISTER) {
           _info.firstIndex = 0;
           _info.length = _accessor.getNumberOfElements();
         }
+        _info.firstIndex = _info.firstIndex + wordOffsetInRegister;
+        if(numberOfWords > 0) _info.length = numberOfWords;
         index_begin = _info.firstIndex;
         index_end = _info.firstIndex + _info.length;
         index_rbegin = _accessor.getNumberOfElements() - index_end;
         index_rend = _accessor.getNumberOfElements() - index_begin;
+
+        std::cout << "LNMBackendBufferingRegisterAccessor "+registerPathName << " " << int(_info.firstIndex) << " "
+            << int(_info.length) << std::endl;
       }
 
       virtual ~LNMBackendBufferingRegisterAccessor() {};
