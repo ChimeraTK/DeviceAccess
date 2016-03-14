@@ -97,9 +97,9 @@ namespace mtca4u {
        */
       template<typename UserType>
       boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
-          const std::string &registerName, const std::string &module = std::string());
+          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getBufferingRegisterAccessor_impl,
-          boost::shared_ptr< BufferingRegisterAccessorImpl<T> >(const std::string&, const std::string&) );
+          boost::shared_ptr< BufferingRegisterAccessorImpl<T> >(const RegisterPath&, size_t, size_t, bool) );
 
       /** Get register accessor for 2-dimensional registers.
        */
@@ -111,6 +111,17 @@ namespace mtca4u {
 
       /** Return the register catalogue with detailed information on all registers. */
       virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  This signature is deprecated, use the new signature with the RegisterPath argument instead!
+       */
+      template<typename UserType>
+      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
+          const std::string &registerName, const std::string &module) {
+        return getBufferingRegisterAccessor<UserType>(RegisterPath(module)/registerName, 0,0,false);
+      }
 
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
@@ -166,8 +177,9 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackend::getBufferingRegisterAccessor(
-      const std::string &module, const std::string &registerName) {
-    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, module, registerName);
+      const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
+        wordOffsetInRegister, enforceRawAccess);
   }
 
   /********************************************************************************************************************/

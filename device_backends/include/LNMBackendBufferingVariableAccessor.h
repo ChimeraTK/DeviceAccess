@@ -27,16 +27,18 @@ namespace mtca4u {
   class LNMBackendBufferingVariableAccessor : public BufferingRegisterAccessorImpl<T> {
     public:
 
-      LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
-          const std::string &registerName)
-      : _registerName(registerName),
-        _moduleName(module),
-        _fixedPointConverter(32, 0, 1)
+      LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
+          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+      : _registerPathName(registerPathName), _fixedPointConverter(32, 0, 1)
       {
+        if(wordOffsetInRegister != 0 || numberOfWords != 0 || enforceRawAccess != false) {
+          throw DeviceException("LNMBackendBufferingVariableAccessor: raw access, offset and number of words not "
+              "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
+        }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // obtain the register info
-        RegisterPath name = RegisterPath(module)/registerName;
-        _info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_dev->getRegisterCatalogue().getRegister(name));
+        _info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(
+            _dev->getRegisterCatalogue().getRegister(_registerPathName));
         // check for incorrect usage of this accessor
         if( _info->targetType != LogicalNameMap::TargetType::INT_CONSTANT &&
             _info->targetType != LogicalNameMap::TargetType::INT_VARIABLE    ) {
@@ -72,8 +74,7 @@ namespace mtca4u {
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendBufferingVariableAccessor<T> >(other);
         if(!rhsCasted) return false;
-        if(_registerName != rhsCasted->_registerName) return false;
-        if(_moduleName != rhsCasted->_moduleName) return false;
+        if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
         return true;
       }
@@ -85,7 +86,7 @@ namespace mtca4u {
     protected:
 
       /// register and module name
-      std::string _registerName, _moduleName;
+      RegisterPath _registerPathName;
 
       /// backend device
       boost::shared_ptr<LogicalNameMappingBackend> _dev;

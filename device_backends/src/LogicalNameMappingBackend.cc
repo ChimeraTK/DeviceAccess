@@ -172,11 +172,10 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > LogicalNameMappingBackend::getBufferingRegisterAccessor_impl(
-      const std::string &module, const std::string &registerName) {
+      const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
 
     // obtain register info
-    RegisterPath name = RegisterPath(module)/registerName;
-    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(name));
+    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
     // if applicable, obtain target device
     boost::shared_ptr<Device> targetDevice;
@@ -186,23 +185,26 @@ namespace mtca4u {
     BufferingRegisterAccessorImpl<UserType> *ptr;
     if( info->targetType == LogicalNameMap::TargetType::REGISTER ||
         info->targetType == LogicalNameMap::TargetType::RANGE       ) {
-      ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), module, registerName);
+      ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
+          wordOffsetInRegister, numberOfWords, enforceRawAccess);
     }
     else if( info->targetType == LogicalNameMap::TargetType::CHANNEL) {
-      ptr = new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), module, registerName);
+      ptr = new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), registerPathName,
+          wordOffsetInRegister, numberOfWords, enforceRawAccess);
     }
     else if( info->targetType == LogicalNameMap::TargetType::INT_CONSTANT ||
              info->targetType == LogicalNameMap::TargetType::INT_VARIABLE    ) {
-      ptr = new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), module, registerName);
+      ptr = new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), registerPathName,
+          wordOffsetInRegister, numberOfWords, enforceRawAccess);
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
-          name+").", DeviceException::NOT_IMPLEMENTED);
+          registerPathName+").", DeviceException::NOT_IMPLEMENTED);
     }
 
     // allow plugins to decorate the accessor and return it
     auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
-    return decorateBufferingRegisterAccessor<UserType>(name,accessor);
+    return decorateBufferingRegisterAccessor<UserType>(registerPathName,accessor);
   }
 
 

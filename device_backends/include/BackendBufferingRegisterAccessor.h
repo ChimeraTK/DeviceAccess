@@ -24,6 +24,33 @@ namespace mtca4u {
   class BackendBufferingRegisterAccessor : public BufferingRegisterAccessorImpl<T> {
     public:
 
+      BackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
+          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+      : _registerPathName(registerPathName),
+        _numberOfWords(numberOfWords),
+        _wordOffsetInRegister(wordOffsetInRegister),
+        _dev(dev)
+      {
+        // obtain register accessor
+        _accessor = dev->getRegisterAccessor(registerPathName, "");
+        // check number of words
+        if(_numberOfWords == 0) {
+          _numberOfWords = _accessor->getNumberOfElements();
+        }
+        if(_numberOfWords + wordOffsetInRegister > _accessor->getNumberOfElements()) {
+          _numberOfWords = _accessor->getNumberOfElements() - wordOffsetInRegister;
+        }
+        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_numberOfWords);
+        // switch to raw access if requested
+        if(enforceRawAccess) {
+          if(typeid(T) != typeid(int32_t)) {
+            throw DeviceException("Given UserType when obtaining the BufferingRegisterAccessor in raw mode does not "
+                "match the expected type. Use an int32_t instead!", DeviceException::EX_WRONG_PARAMETER);
+          }
+          _accessor->getFixedPointConverter().reconfigure(32,0,true);
+        }
+      }
+/*
       BackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
           const std::string &registerName)
       : _registerName(registerName),_moduleName(module),_dev(dev)
@@ -31,24 +58,21 @@ namespace mtca4u {
         _accessor = dev->getRegisterAccessor(registerName, module);
         BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_accessor->getNumberOfElements());
       }
-
+*/
       virtual ~BackendBufferingRegisterAccessor() {};
 
       virtual void read() {
-        _accessor->read(BufferingRegisterAccessorImpl<T>::cookedBuffer.data(),
-            BufferingRegisterAccessorImpl<T>::getNumberOfElements());
+        _accessor->read(BufferingRegisterAccessorImpl<T>::cookedBuffer.data(),_numberOfWords,_wordOffsetInRegister);
       }
 
       virtual void write() {
-        _accessor->write(BufferingRegisterAccessorImpl<T>::cookedBuffer.data(),
-            BufferingRegisterAccessorImpl<T>::getNumberOfElements());
+        _accessor->write(BufferingRegisterAccessorImpl<T>::cookedBuffer.data(),_numberOfWords,_wordOffsetInRegister);
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const BackendBufferingRegisterAccessor<T> >(other);
         if(!rhsCasted) return false;
-        if(_registerName != rhsCasted->_registerName) return false;
-        if(_moduleName != rhsCasted->_moduleName) return false;
+        if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
         return true;
       }
@@ -63,7 +87,13 @@ namespace mtca4u {
       boost::shared_ptr< RegisterAccessor > _accessor;
 
       /// register and module name
-      std::string _registerName, _moduleName;
+      RegisterPath _registerPathName;
+
+      /// number of words to access
+      size_t _numberOfWords;
+
+      /// offset in words into the register
+      size_t _wordOffsetInRegister;
 
       /// device
       boost::shared_ptr<DeviceBackend> _dev;

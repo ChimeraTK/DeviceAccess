@@ -42,9 +42,10 @@ void ExampleBackend::close(){
 // whenever we can rely on the (non-buffering) RegisterAccessor to perform the actual access.
 template<typename UserType>
 boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ExampleBackend::getBufferingRegisterAccessor_impl(
-    const std::string &registerName, const std::string &module) {
+    const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
   return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
-      new BackendBufferingRegisterAccessor<UserType>(shared_from_this(),registerName,module) );
+      new BackendBufferingRegisterAccessor<UserType>(shared_from_this(),registerPathName,wordOffsetInRegister,
+          numberOfWords,enforceRawAccess) );
 }
 
 // We do not have a suitable 2D register accessor, so we throw an exception.

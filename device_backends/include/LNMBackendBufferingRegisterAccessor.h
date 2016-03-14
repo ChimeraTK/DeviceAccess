@@ -26,14 +26,14 @@ namespace mtca4u {
   class LNMBackendBufferingRegisterAccessor : public BufferingRegisterAccessorImpl<T> {
     public:
 
-      LNMBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const std::string &module,
-          const std::string &registerName)
-      : _registerName(registerName),_moduleName(module)
+      LNMBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
+          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+      : _registerPathName(registerPathName)
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // copy the register info and create the internal accessors, if needed
-        RegisterPath name = RegisterPath(module)/registerName;
-        _info = *( boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_dev->getRegisterCatalogue().getRegister(name)) );
+        _info = *( boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(
+            _dev->getRegisterCatalogue().getRegister(registerPathName)) );
         _info.createInternalAccessors(dev);
         // check for incorrect usage of this accessor
         if( _info.targetType != LogicalNameMap::TargetType::RANGE &&
@@ -42,7 +42,8 @@ namespace mtca4u {
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getBufferingRegisterAccessor<T>("",_info.registerName);
+        _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName),
+            wordOffsetInRegister,numberOfWords,enforceRawAccess);
         if(_info.targetType == LogicalNameMap::TargetType::REGISTER) {
           _info.firstIndex = 0;
           _info.length = _accessor.getNumberOfElements();
@@ -95,8 +96,7 @@ namespace mtca4u {
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendBufferingRegisterAccessor<T> >(other);
         if(!rhsCasted) return false;
-        if(_registerName != rhsCasted->_registerName) return false;
-        if(_moduleName != rhsCasted->_moduleName) return false;
+        if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
         return true;
       }
@@ -116,7 +116,7 @@ namespace mtca4u {
       BufferingRegisterAccessor<T> _accessor;
 
       /// register and module name
-      std::string _registerName, _moduleName;
+      RegisterPath _registerPathName;
 
       /// backend device
       boost::shared_ptr<LogicalNameMappingBackend> _dev;

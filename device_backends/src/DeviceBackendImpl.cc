@@ -21,11 +21,12 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackendImpl::getBufferingRegisterAccessor_impl(
-      const std::string &module, const std::string &registerName) {
+      const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
     auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
-        new BackendBufferingRegisterAccessor<UserType>(shared_from_this(),module,registerName) );
+        new BackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName, wordOffsetInRegister,
+            numberOfWords, enforceRawAccess) );
     // allow plugins to decorate the accessor and return it
-    return decorateBufferingRegisterAccessor(RegisterPath(module)/registerName, accessor);
+    return decorateBufferingRegisterAccessor(registerPathName, accessor);
   }
 
 } /* namespace mtca4u */
