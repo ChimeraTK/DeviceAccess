@@ -152,15 +152,7 @@ void LMapBackendTest::testExceptions() {
   BOOST_CHECK( res == 42 );
 
   res = 0;
-  device.readReg("Constant",&res, 3);
-  BOOST_CHECK( res == 0 );
-
-  res = 0;
-  device.readReg("Constant",&res, 100); // this would be wrong with any other backend or register type...
-  BOOST_CHECK( res == 42 );
-
-  res = 10;
-  device.writeReg("Constant",&res);     // should have no effect
+  BOOST_CHECK_THROW( device.writeReg("Constant",&res), mtca4u::DeviceException );
 
   device.readReg("Constant",&res, 4);
   BOOST_CHECK( res == 42 );
