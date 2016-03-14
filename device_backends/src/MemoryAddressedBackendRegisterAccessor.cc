@@ -85,6 +85,12 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
+  FixedPointConverter &MemoryAddressedBackendRegisterAccessor::getFixedPointConverter() {
+    return _fixedPointConverter;
+  }
+
+  /********************************************************************************************************************/
+
   unsigned int MemoryAddressedBackendRegisterAccessor::getNumberOfElements() const {
     return _registerInfo.nElements;
   }
