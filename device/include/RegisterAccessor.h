@@ -16,7 +16,8 @@ namespace mtca4u {
   /// forward declaration (only used as tempate arguments)
   class DeviceBackend;
 
-  /** \deprecated
+  /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+   *  \deprecated
    *  This class is deprecated. Use BufferingRegisterAccessor instead!
    *  @todo Add printed runtime warning after release of version 0.8
    */
@@ -24,16 +25,22 @@ namespace mtca4u {
 
     public:
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer);
 
-      /** Abstract base class needs virtual destructor */
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
+       */
       virtual ~RegisterAccessor();
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
@@ -44,7 +51,8 @@ namespace mtca4u {
       }
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( read_impl, void(T*, size_t, uint32_t) );
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
@@ -55,7 +63,8 @@ namespace mtca4u {
         return temp;
       }
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
@@ -66,7 +75,8 @@ namespace mtca4u {
       }
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( write_impl, void(const T*, size_t, uint32_t) );
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
@@ -75,43 +85,57 @@ namespace mtca4u {
         write(&convertedData, 1);
       }
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual unsigned int getNumberOfElements() const = 0;
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual RegisterInfoMap::RegisterInfo const &getRegisterInfo() const = 0;
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual FixedPointConverter const &getFixedPointConverter() const = 0;
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use BufferingRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.8
+       */
+      virtual FixedPointConverter &getFixedPointConverter() = 0;
+
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const = 0;
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void writeRaw(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
       virtual void readDMA(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
-      /** \deprecated
+      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
+       *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
