@@ -51,6 +51,12 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
+  FixedPointConverter &LNMBackendRegisterAccessor::getFixedPointConverter() {
+    return _accessor->getFixedPointConverter();
+  }
+
+  /********************************************************************************************************************/
+
   unsigned int LNMBackendRegisterAccessor::getNumberOfElements() const {
     return _length;
   }
