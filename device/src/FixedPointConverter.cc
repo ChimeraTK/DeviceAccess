@@ -8,6 +8,15 @@ namespace mtca4u {
   : _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSignedFlag),
     _fractionalBitsCoefficient(pow(2.,-fractionalBits)), _inverseFractionalBitsCoefficient(pow(2.,fractionalBits))
   {
+    reconfigure(nBits,fractionalBits,isSignedFlag);
+  }
+
+  void FixedPointConverter::reconfigure(unsigned int nBits, int fractionalBits, bool isSignedFlag) {
+    _nBits = nBits;
+    _fractionalBits = fractionalBits;
+    _isSigned = isSignedFlag;
+    _fractionalBitsCoefficient = pow(2.,-fractionalBits);
+    _inverseFractionalBitsCoefficient = pow(2.,fractionalBits);
 
     _bitShiftMaskSigned = 0; //Fixme unused variable.
     // some sanity checks
@@ -54,6 +63,7 @@ namespace mtca4u {
   }
 
   /**********************************************************************************************************************/
+
   template<>
   std::string FixedPointConverter::toCooked<std::string>(uint32_t rawValue) const
   {
@@ -71,6 +81,7 @@ namespace mtca4u {
   }
 
   /**********************************************************************************************************************/
+
   template<>
   uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const
   {

@@ -35,7 +35,7 @@ namespace mtca4u{
        *    number of the respective number of bits
        *    (i.e. in signed 6 bit, 0 fractional bits 0x3F is -1)
        */
-      FixedPointConverter(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag =true);
+      FixedPointConverter(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
 
       /** Conversion function from fixed value to type T.
        *  In case the number of bits is less than 32, invalid leading bits are ignored.
@@ -91,6 +91,9 @@ namespace mtca4u{
       {
         return _isSigned;
       }
+
+      /** Reconfigure the fixed point converter with new type information */
+      void reconfigure(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
 
     private:
 
