@@ -54,9 +54,6 @@ namespace mtca4u {
         index_end = _info.firstIndex + _info.length;
         index_rbegin = _accessor.getNumberOfElements() - index_end;
         index_rend = _accessor.getNumberOfElements() - index_begin;
-
-        std::cout << "LNMBackendBufferingRegisterAccessor "+registerPathName << " " << int(_info.firstIndex) << " "
-            << int(_info.length) << std::endl;
       }
 
       virtual ~LNMBackendBufferingRegisterAccessor() {};
