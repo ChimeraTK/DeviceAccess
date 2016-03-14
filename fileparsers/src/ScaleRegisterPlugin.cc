@@ -127,6 +127,10 @@ namespace mtca4u {
         return _accessor->getFixedPointConverter();
       }
 
+      FixedPointConverter &getFixedPointConverter() {
+        return _accessor->getFixedPointConverter();
+      }
+
       virtual unsigned int getNumberOfElements() const {
         return _accessor->getNumberOfElements();
       }

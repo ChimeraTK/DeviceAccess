@@ -32,6 +32,8 @@ namespace mtca4u {
 
       FixedPointConverter const &getFixedPointConverter() const;
 
+      FixedPointConverter &getFixedPointConverter();
+
       virtual unsigned int getNumberOfElements() const;
 
     private:
