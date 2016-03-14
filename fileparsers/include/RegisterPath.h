@@ -96,6 +96,23 @@ namespace mtca4u {
         return path == temp.path;
       }
 
+      /** comparison with other RegisterPath */
+      bool operator!=(const RegisterPath &rightHandSide) const {
+        return *this != rightHandSide.path;
+      }
+
+      /** comparison with std::string */
+      bool operator!=(const std::string &rightHandSide) const {
+        RegisterPath temp(rightHandSide);
+        return path != temp.path;
+      }
+
+      /** comparison with char* */
+      bool operator!=(const char *rightHandSide) const {
+        RegisterPath temp(rightHandSide);
+        return path != temp.path;
+      }
+
     protected:
 
       /** path in standardised notation */
