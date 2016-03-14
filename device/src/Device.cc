@@ -1,3 +1,4 @@
+#include <string.h>
 #include <cmath>
 
 #include "Device.h"
@@ -67,8 +68,14 @@ namespace mtca4u {
   void Device::readReg(const std::string &regName,
       const std::string &regModule, int32_t *data,
       size_t dataSize, uint32_t addRegOffset) const {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->read(regModule, regName, data, dataSize, addRegOffset);
+    if(dataSize % sizeof(int32_t) != 0) {
+      throw DeviceException("Wrong data size - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+    }
+    if(addRegOffset % sizeof(int32_t) != 0) {
+      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+    }
+    auto vec = read<int32_t>(RegisterPath(regModule)/regName, dataSize/sizeof(int32_t), addRegOffset/sizeof(int32_t), true);
+    memcpy(data,vec.data(),vec.size()*sizeof(int32_t));
   }
 
   /********************************************************************************************************************/
@@ -82,8 +89,16 @@ namespace mtca4u {
 
   void Device::writeReg(const std::string &regName, const std::string &regModule, int32_t const *data,
       size_t dataSize, uint32_t addRegOffset) {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->write(regModule, regName, data, dataSize, addRegOffset);
+    if(dataSize == 0) dataSize = sizeof(int32_t);
+    if(dataSize % sizeof(int32_t) != 0) {
+      throw DeviceException("Wrong data size: - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+    }
+    if(addRegOffset % sizeof(int32_t) != 0) {
+      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+    }
+    std::vector<int32_t> vec(dataSize/sizeof(int32_t));
+    memcpy(vec.data(),data,dataSize);
+    write(RegisterPath(regModule)/regName, vec, addRegOffset/sizeof(int32_t), true);
   }
 
   /********************************************************************************************************************/

@@ -16,16 +16,12 @@
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
 #include "TwoDRegisterAccessor.h"
+#include "BufferingRegisterAccessor.h"
 
 // Note: for backwards compatibility there is RegisterAccessor.h and MultiplexedDataAccessor.h included at the end
-// of this file. @todo add warning when relying on these includes after relase of version 0.6
+// of this file.
 
 namespace mtca4u {
-
-  // Just declare the class, no need to include the header because
-  // it is template code and the header is included by the calling code.
-  template<typename UserType>
-  class BufferingRegisterAccessor;
 
   // Also just declare this class, since it is only used as template arguments within this header file.
   // The corresponding include defining the class is included where needed (and for comaptibility at the
@@ -93,7 +89,7 @@ namespace mtca4u {
        *  raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER.  */
       template<typename UserType>
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess=false) const;
+          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess=false) const;
 
       /** Get a RegisterAccessor2D object for the given register. This allows to read and write transparently
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
@@ -383,10 +379,11 @@ namespace mtca4u {
 
   template<typename UserType>
   BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const RegisterPath &registerPathName,
-      size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) const {
+      size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
+    checkPointersAreNotNull();
     return BufferingRegisterAccessor<UserType>(
-        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister,
-            numberOfWords, enforceRawAccess) );
+        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
+            wordOffsetInRegister, enforceRawAccess) );
   }
 
   /********************************************************************************************************************/
@@ -409,6 +406,7 @@ namespace mtca4u {
   template<typename UserType>
   TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
+    checkPointersAreNotNull();
     return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(registerName, module));
   }
 
@@ -448,7 +446,7 @@ namespace mtca4u {
   template<typename UserType>
   void Device::write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
       bool enforceRawAccess) {
-     auto acc = getBufferingRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister, enforceRawAccess);
+     auto acc = getBufferingRegisterAccessor<UserType>(registerPathName, vector.size(), wordOffsetInRegister, enforceRawAccess);
      acc.swap(vector);
      acc.write();
      acc.swap(vector);

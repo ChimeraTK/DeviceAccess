@@ -25,7 +25,7 @@ namespace mtca4u {
     public:
 
       BackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess)
+          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
       : _registerPathName(registerPathName),
         _numberOfWords(numberOfWords),
         _wordOffsetInRegister(wordOffsetInRegister),
@@ -38,7 +38,8 @@ namespace mtca4u {
           _numberOfWords = _accessor->getNumberOfElements();
         }
         if(_numberOfWords + wordOffsetInRegister > _accessor->getNumberOfElements()) {
-          _numberOfWords = _accessor->getNumberOfElements() - wordOffsetInRegister;
+          throw DeviceException("Requested number of words exceed the size of the register!",
+              DeviceException::EX_WRONG_PARAMETER);
         }
         BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_numberOfWords);
         // switch to raw access if requested
