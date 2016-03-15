@@ -18,7 +18,7 @@
 #include "RegisterPlugin.h"
 #include "RegisterInfo.h"
 #include "RegisterPath.h"
-#include "Value.h"
+#include "DynamicValue.h"
 
 // forward declaration
 namespace xmlpp {

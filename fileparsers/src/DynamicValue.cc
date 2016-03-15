@@ -1,11 +1,11 @@
 /*
- * Value.cc
+ * DynamicValue.cc
  *
  *  Created on: Feb 26, 2016
  *      Author: Martin Hierholzer
  */
 
-#include "Value.h"
+#include "DynamicValue.h"
 
 namespace mtca4u {
 

@@ -1,12 +1,12 @@
 /*
- * Value.h
+ * DynamicValue.h
  *
  *  Created on: Feb 26, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_VALUE_H
-#define MTCA4U_VALUE_H
+#ifndef MTCA4U_DYNAMIC_VALUE_H
+#define MTCA4U_DYNAMIC_VALUE_H
 
 #include <type_traits>
 #include <string>
@@ -136,4 +136,4 @@ namespace mtca4u {
 
 } /* namespace mtca4u */
 
-#endif /* MTCA4U_VALUE_H */
+#endif /* MTCA4U_DYNAMIC_VALUE_H */

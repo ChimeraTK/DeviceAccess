@@ -10,7 +10,7 @@
 
 #include <map>
 
-#include "Value.h"
+#include "DynamicValue.h"
 #include "RegisterPlugin.h"
 
 namespace mtca4u {
