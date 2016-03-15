@@ -18,7 +18,7 @@ namespace mtca4u {
   
     public:
 
-      static boost::shared_ptr<RegisterPlugin> createInstance(const std::map<std::string, Value<std::string> > &parameters);
+      static boost::shared_ptr<RegisterPlugin> createInstance(const std::map<std::string, DynamicValue<std::string> > &parameters);
 
       virtual boost::shared_ptr<RegisterAccessor> decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const;
 
@@ -30,10 +30,10 @@ namespace mtca4u {
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ScaleRegisterPlugin, decorateBufferingRegisterAccessor_impl, 1);
 
       /** constructor, only internally called from createInstance() */
-      ScaleRegisterPlugin(const std::map<std::string, Value<std::string> > &parameters);
+      ScaleRegisterPlugin(const std::map<std::string, DynamicValue<std::string> > &parameters);
 
       /** The scaling factor to multiply the data with */
-      Value<double> scalingFactor;
+      DynamicValue<double> scalingFactor;
   
   };
 

@@ -59,22 +59,22 @@ namespace mtca4u {
           TargetType targetType;
 
           /** The target device alias */
-          Value<std::string> deviceName;
+          DynamicValue<std::string> deviceName;
 
           /** The target register name */
-          Value<std::string> registerName;
+          DynamicValue<std::string> registerName;
 
           /** The first index in the range */
-          Value<unsigned int> firstIndex;
+          DynamicValue<unsigned int> firstIndex;
 
           /** The length of the range (i.e. number of indices) */
-          Value<unsigned int> length;
+          DynamicValue<unsigned int> length;
 
           /** The channel of the target 2D register */
-          Value<unsigned int> channel;
+          DynamicValue<unsigned int> channel;
 
           /** The constant integer value */
-          Value<int> value;
+          DynamicValue<int> value;
 
           /** test if deviceName is set (depending on the targetType) */
           bool hasDeviceName() const {
@@ -168,7 +168,7 @@ namespace mtca4u {
 
       /** Build a Value object for a given subnode. */
       template<typename ValueType>
-      Value<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
+      DynamicValue<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
 
       friend class LogicalNameMappingBackend;
 

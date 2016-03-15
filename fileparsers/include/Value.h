@@ -23,7 +23,7 @@ namespace mtca4u {
 
   /** Hold a value of a RegisterInfo field (with proper resolution of dynamic references to other registers) */
   template<typename ValueType>
-  class Value {
+  class DynamicValue {
 
     public:
 
@@ -42,7 +42,7 @@ namespace mtca4u {
 
       /** assignment operator with a value of the type ValueType. This will make the Value having an "actual"
        *  value, i.e. no dynamic references are present. */
-      Value<ValueType>& operator=(const ValueType &rightHandSide) {
+      DynamicValue<ValueType>& operator=(const ValueType &rightHandSide) {
         value = rightHandSide;
         hasActualValue = true;
         return *this;
@@ -55,7 +55,7 @@ namespace mtca4u {
 
       /** constructor: assume having an actual value by default. If it does not have an actual value, the
        *  function createInternalAccessors() must be called before obtaining the value. */
-      Value()
+      DynamicValue()
       : hasActualValue(true)
       {}
 
@@ -63,7 +63,7 @@ namespace mtca4u {
        *  and create the accessors. This version of the operator accepts any arithmetic-typed Value. */
       template < class rhsValueType,
                  class = typename std::enable_if<std::is_arithmetic<rhsValueType>::value>::type>
-      Value<ValueType>& operator=(const Value<rhsValueType> &rightHandSide) {
+      DynamicValue<ValueType>& operator=(const DynamicValue<rhsValueType> &rightHandSide) {
         if(rightHandSide.hasActualValue) {
           hasActualValue = true;
           value = rightHandSide.value;
@@ -79,7 +79,7 @@ namespace mtca4u {
 
       /** assignment operator: allow assigment to Value without given backend, in which case we keep our backend
        *  and create the accessors. This version of the operator accepts a string-typed Value. */
-      Value<ValueType>& operator=(const Value<std::string> &rightHandSide);
+      DynamicValue<ValueType>& operator=(const DynamicValue<std::string> &rightHandSide);
 
       /** create the internal register accessor(s) to obtain the value, if needed */
       void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
@@ -104,13 +104,13 @@ namespace mtca4u {
 
       /** all Values are friends */
       template<typename T>
-      friend class Value;
+      friend class DynamicValue;
   };
 
   /********************************************************************************************************************/
 
   template<typename ValueType>
-  Value<ValueType>& Value<ValueType>::operator=(const Value<std::string> &rightHandSide) {
+  DynamicValue<ValueType>& DynamicValue<ValueType>::operator=(const DynamicValue<std::string> &rightHandSide) {
     if(rightHandSide.hasActualValue) {
       hasActualValue = true;
       if(std::numeric_limits<ValueType>::is_integer) {
@@ -132,7 +132,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  Value<std::string>& Value<std::string>::operator=(const Value<std::string> &rightHandSide);
+  DynamicValue<std::string>& DynamicValue<std::string>::operator=(const DynamicValue<std::string> &rightHandSide);
 
 } /* namespace mtca4u */
 

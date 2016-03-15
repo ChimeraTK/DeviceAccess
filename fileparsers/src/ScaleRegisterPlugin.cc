@@ -31,7 +31,7 @@ namespace mtca4u {
 
       /** The constructor takes the original accessor and the scaling factor as arguments */
       ScaleRegisterPluginBufferingAccessor(boost::shared_ptr< BufferingRegisterAccessorImpl<T> > accessor,
-          Value<double> scalingFactor)
+          DynamicValue<double> scalingFactor)
       : _accessor(accessor), _scalingFactor(scalingFactor)
       {
         // reserve space for cooked buffer
@@ -76,7 +76,7 @@ namespace mtca4u {
       boost::shared_ptr< BufferingRegisterAccessorImpl<T> > _accessor;
 
       /** The scaling factor */
-      Value<double> _scalingFactor;
+      DynamicValue<double> _scalingFactor;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return _accessor->getHardwareAccessingElements();
@@ -104,7 +104,7 @@ namespace mtca4u {
 
       /** The constructor takes the original accessor and the scaling factor as arguments */
       ScaleRegisterPluginAccessor(boost::shared_ptr< RegisterAccessor > accessor,
-          Value<double> scalingFactor)
+          DynamicValue<double> scalingFactor)
       : RegisterAccessor(boost::shared_ptr<DeviceBackend>()), _accessor(accessor), _scalingFactor(scalingFactor)
       {
         FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(read_impl);
@@ -166,7 +166,7 @@ namespace mtca4u {
       boost::shared_ptr< RegisterAccessor > _accessor;
 
       /** The scaling factor */
-      Value<double> _scalingFactor;
+      DynamicValue<double> _scalingFactor;
 
   };
 
@@ -180,7 +180,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, Value<std::string> > &parameters) {
+  ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, DynamicValue<std::string> > &parameters) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateBufferingRegisterAccessor_impl);
     try {
       scalingFactor = parameters.at("factor");
@@ -193,7 +193,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   boost::shared_ptr<RegisterPlugin> ScaleRegisterPlugin::createInstance(
-      const std::map<std::string, Value<std::string> > &parameters) {
+      const std::map<std::string, DynamicValue<std::string> > &parameters) {
     return boost::shared_ptr<RegisterPlugin>(new ScaleRegisterPlugin(parameters));
   }
 

@@ -22,14 +22,14 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   void RegisterPluginFactory::registerPlugin(std::string name,
-      boost::shared_ptr<RegisterPlugin> (*creatorFunction)(const std::map<std::string, Value<std::string> > &parameters)) {
+      boost::shared_ptr<RegisterPlugin> (*creatorFunction)(const std::map<std::string, DynamicValue<std::string> > &parameters)) {
     creatorMap[name] = creatorFunction;
   }
 
   /********************************************************************************************************************/
 
   boost::shared_ptr<RegisterPlugin> RegisterPluginFactory::createPlugin(const std::string &name,
-      const std::map<std::string, Value<std::string> > &parameters) {
+      const std::map<std::string, DynamicValue<std::string> > &parameters) {
     try {
       return creatorMap.at(name)(parameters);
     }

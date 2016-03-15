@@ -10,7 +10,7 @@
 namespace mtca4u {
 
   template<>
-  Value<std::string>& Value<std::string>::operator=(const Value<std::string> &rightHandSide) {
+  DynamicValue<std::string>& DynamicValue<std::string>::operator=(const DynamicValue<std::string> &rightHandSide) {
     if(rightHandSide.hasActualValue) {
       hasActualValue = true;
       value = rightHandSide.value;

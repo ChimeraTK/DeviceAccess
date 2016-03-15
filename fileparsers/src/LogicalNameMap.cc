@@ -16,7 +16,7 @@
 namespace mtca4u {
 
   template<>
-  Value<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -31,7 +31,7 @@ namespace mtca4u {
       parsingError("Node '"+subnodeName+"' does not contain text.");
     }
 
-    Value<std::string> value;
+    DynamicValue<std::string> value;
     value = textNode->get_content();
     return value;
   }
@@ -39,7 +39,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  Value<int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -49,7 +49,7 @@ namespace mtca4u {
       parsingError("Node '"+subnodeName+"' should contain only text or only one <ref></ref> sub-element.");
     }
 
-    Value<int> value;
+    DynamicValue<int> value;
 
     const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
     if(textNode) {
@@ -66,7 +66,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  Value<unsigned int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<unsigned int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -76,7 +76,7 @@ namespace mtca4u {
       parsingError("Node '"+subnodeName+"' should contain only text.");
     }
 
-    Value<unsigned int> value;
+    DynamicValue<unsigned int> value;
 
     const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
     if(textNode) {
@@ -205,7 +205,7 @@ namespace mtca4u {
         std::string pluginName = pluginNameAttr->get_value();
         
         // collect parameters
-        std::map<std::string, Value<std::string> > parameters;
+        std::map<std::string, DynamicValue<std::string> > parameters;
         for(const auto& paramchild : childElement->get_children()) {
           // cast into element, ignore if not an element (e.g. comment)
           const xmlpp::Element *paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
