@@ -6,11 +6,13 @@
  */
 
 #include "MemoryAddressedBackend.h"
+#include "MemoryAddressedBackendBufferingRegisterAccessor.h"
 #include "DeviceException.h"
 
 namespace mtca4u {
 
   MemoryAddressedBackend::MemoryAddressedBackend(std::string mapFileName) {
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getTwoDRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
@@ -118,6 +120,18 @@ namespace mtca4u {
     }
     retRegBar = registerInfo.bar;
     retRegOff = registerInfo.address + addRegOffset;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > MemoryAddressedBackend::getBufferingRegisterAccessor_impl(
+      const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
+    auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
+        new MemoryAddressedBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
+            wordOffsetInRegister, numberOfWords, enforceRawAccess) );
+    // allow plugins to decorate the accessor and return it
+    return decorateBufferingRegisterAccessor(registerPathName, accessor);
   }
 
   /********************************************************************************************************************/

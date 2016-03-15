@@ -75,12 +75,6 @@ namespace mtca4u {
         return accessor;
       }
 
-      /** Templated default implementation to obtain the BackendBufferingRegisterAccessor */
-      template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
-          const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( DeviceBackendImpl, getBufferingRegisterAccessor_impl, 4 );
-
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE only for compatibility!
 
   };

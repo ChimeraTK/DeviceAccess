@@ -6,7 +6,6 @@
  */
 
 #include "ExampleBackend.h"
-#include "BackendBufferingRegisterAccessor.h"
 
 #include <iostream>
 using namespace mtca4u;
@@ -37,15 +36,11 @@ void ExampleBackend::close(){
   _opened = false;
 }
 
-// Return the standard BackendBufferingRegisterAccessor. The behaviour would be the same if we would not implement
-// this function, as it is already implemented like this in the base class! This default accessor is suitable
-// whenever we can rely on the (non-buffering) RegisterAccessor to perform the actual access.
+// We do not have a suitable buffering register accessor, so we throw an exception.
 template<typename UserType>
 boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ExampleBackend::getBufferingRegisterAccessor_impl(
     const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
-  return boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
-      new BackendBufferingRegisterAccessor<UserType>(shared_from_this(),registerPathName,wordOffsetInRegister,
-          numberOfWords,enforceRawAccess) );
+  throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
 }
 
 // We do not have a suitable 2D register accessor, so we throw an exception.

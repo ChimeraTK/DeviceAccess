@@ -74,8 +74,16 @@ namespace mtca4u {
     if(addRegOffset % sizeof(int32_t) != 0) {
       throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
     }
-    auto vec = read<int32_t>(RegisterPath(regModule)/regName, dataSize/sizeof(int32_t), addRegOffset/sizeof(int32_t), true);
-    memcpy(data,vec.data(),vec.size()*sizeof(int32_t));
+    try {
+      auto vec = read<int32_t>(RegisterPath(regModule)/regName, dataSize/sizeof(int32_t), addRegOffset/sizeof(int32_t), true);
+      memcpy(data,vec.data(),vec.size()*sizeof(int32_t));
+    }
+    catch(DeviceException &e) { // translate exception for compatibility
+      if(e.getID() == DeviceException::REGISTER_DOES_NOT_EXIST) {
+        throw mtca4u::MapFileException(e.what(), mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+      }
+      throw;
+    }
   }
 
   /********************************************************************************************************************/

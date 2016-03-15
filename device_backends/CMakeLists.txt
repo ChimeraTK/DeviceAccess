@@ -21,8 +21,8 @@ set(HEADERS
    ${HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendBufferingRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackend.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendBufferingRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendRegisterAccessor.h
