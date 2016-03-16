@@ -9,6 +9,17 @@ set(${PROJECT_NAME}_PATCH_VERSION 03)
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
+#This library depends on boost, which does not guarantee a binary stable interface when upgrading the version.
+#We add a build version to the version number to be able to install
+#the same software version of the library linked against different versions
+#of boost.
+set(${PROJECT_NAME}_BUILDVERSION $ENV{mtca4u_deviceaccess_BUILDVERSION})
+if( ${PROJECT_NAME}_BUILDVERSION )
+  set(${PROJECT_NAME}_SOVERSION "${${PROJECT_NAME}_SOVERSION}${${PROJECT_NAME}_BUILDVERSION}")
+endif( ${PROJECT_NAME}_BUILDVERSION )
+message("${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_SOVERSION}")
+#We need the build name to be part of the libraries full version name
+set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -80,7 +91,7 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
