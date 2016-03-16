@@ -2,7 +2,7 @@
 #Basically this is setting the correct version number in most of the files
 
 #The debian version string must not contain ".", so we use "-"
-set(mtca4u-deviceaccess_DEBVERSION ${mtca4u-deviceaccess_MAJOR_VERSION}-${mtca4u-deviceaccess_MINOR_VERSION})
+string(REPLACE "." "-" mtca4u-deviceaccess_DEBVERSION ${mtca4u-deviceaccess_SOVERSION})
 
 #Nothing to change, just copy
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/compat

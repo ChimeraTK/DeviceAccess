@@ -18,6 +18,8 @@ Package: libmtca4u-deviceaccess@mtca4u-deviceaccess_DEBVERSION@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+# Provides field for a virtual package to be installed by libmtca4u-dev
+Provides: libmtca4u-deviceaccess@mtca4u-deviceaccess_MAJOR_VERSION@-@mtca4u-deviceaccess_MINOR_VERSION@
 Description: mtca4u-deviceaccess provides a C++ API to access MTCA.4 devices.
  MTCA4U is a software package which provides divers, a C++ API and tools for
  hardware monitoring on MicroTCA.4 crates. mtca4u-deviceaccess is the
