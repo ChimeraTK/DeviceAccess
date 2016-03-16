@@ -35,13 +35,15 @@
  *  In the derived class, the function template must be implemented with the same signature, and the vtable for this
  *  virtual function template must be filled using the macros DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER and
  *  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE.
+ *
+ *  Note: the signature is passed through the __VA_ARGS__ variable macro arguments, as it may contain commas.
  */
-#define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName, signature )                                      \
+#define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName, ... )                                            \
     template<typename T>                                                                                        \
-    class functionName ## _functionSignature : public boost::function< signature > {                            \
+    class functionName ## _functionSignature : public boost::function< __VA_ARGS__ > {                          \
       public:                                                                                                   \
-        boost::function< signature >& operator=(const boost::function< signature > &rhs) {                      \
-          return boost::function< signature >::operator=(rhs);                                                  \
+        boost::function< __VA_ARGS__ >& operator=(const boost::function< __VA_ARGS__ > &rhs) {                  \
+          return boost::function< __VA_ARGS__ >::operator=(rhs);                                                \
         }                                                                                                       \
     };                                                                                                          \
     TemplateUserTypeMap<functionName ## _functionSignature> functionName ## _vtable
