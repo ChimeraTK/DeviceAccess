@@ -11,15 +11,10 @@
 #include <type_traits>
 #include <string>
 
+#include "ForwardDeclarations.h"
 #include "DeviceBackend.h"
 
 namespace mtca4u {
-
-  // some forward declarations
-  class DeviceBackend;
-
-  template<typename UserType>
-  class BufferingRegisterAccessorImpl;
 
   /** Hold a value of a RegisterInfo field (with proper resolution of dynamic references to other registers) */
   template<typename ValueType>

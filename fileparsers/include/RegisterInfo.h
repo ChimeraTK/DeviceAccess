@@ -10,14 +10,9 @@
 
 #include "RegisterPath.h"
 #include "RegisterPlugin.h"
+#include "ForwardDeclarations.h"
 
 namespace mtca4u {
-
-  // forward declarations
-  template<typename UserType>
-  class BufferingRegisterAccessorImpl;
-
-  class RegisterAccessor;
 
   /** DeviceBackend-independent register description. */
   class RegisterInfo {

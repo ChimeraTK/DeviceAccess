@@ -8,16 +8,11 @@
 #ifndef MTCA4U_REGISTER_PLUGIN_H
 #define MTCA4U_REGISTER_PLUGIN_H
 
+#include "ForwardDeclarations.h"
 #include "VirtualFunctionTemplate.h"
 #include "SupportedUserTypes.h"
 
 namespace mtca4u {
-
-  // forward declaration
-  template<typename UserType>
-  class BufferingRegisterAccessorImpl;
-  
-  class RegisterAccessor;
 
   /** Base class for plugins providing modifications to registers and accessors. */
   class RegisterPlugin {
