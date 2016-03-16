@@ -8,7 +8,6 @@
 
 #include "DeviceBackendImpl.h"
 #include "MemoryAddressedBackendTwoDRegisterAccessor.h"
-#include "MemoryAddressedBackendRegisterAccessor.h"
 #include "MapFileParser.h"
 #include "Exception.h"
 
@@ -36,17 +35,10 @@ namespace mtca4u {
 
       virtual std::string readDeviceInfo() = 0;
 
-      virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
-          const std::string &registerName,
-          const std::string &module = std::string());
-
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
       virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
-
-      virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
-          const std::string &moduleName);
 
     protected:
 

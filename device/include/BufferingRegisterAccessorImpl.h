@@ -9,15 +9,11 @@
 #define MTCA4U_BUFFERING_REGISTER_ACCESSOR_IMPL_H
 
 #include <vector>
+#include "ForwardDeclarations.h"
 #include "TransferElement.h"
+#include "FixedPointConverter.h"
 
 namespace mtca4u {
-
-  // forward declarations
-  class DeviceBackend;
-
-  template<typename T>
-  class BufferingRegisterAccessor;
 
   /*********************************************************************************************************************/
   /** Base class for implementations of the BufferingRegisterAccessor. The BufferingRegisterAccessor is merely a
@@ -70,6 +66,13 @@ namespace mtca4u {
       virtual void swap(std::vector<T> &x) {
         cookedBuffer.swap(x);
       }
+
+      /** DO NOT USE. FOR BACKWARDS COMPATIBILITY ONLY.
+       *
+       *  \deprecated This function is for backwards compatibility with the deprecated RegisterAccessor only.
+       *  Return the fixed point converter used to convert the raw data from the device to the type T. If no conversion
+       *  by the fixed point converter is required, this function will throw an exception. */
+      virtual FixedPointConverter getFixedPointConverter() const = 0;
 
     protected:
 

@@ -146,6 +146,11 @@ namespace mtca4u {
   std::string operator+(const std::string &leftHandSide, const RegisterPath &rightHandSide);
   std::string operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide);
 
+  /** operators used to build numeric addresses from integers */
+  RegisterPath operator/(const RegisterPath &leftHandSide, int rightHandSide);
+  RegisterPath operator+(const RegisterPath &leftHandSide, int rightHandSide);
+  RegisterPath operator*(const RegisterPath &leftHandSide, int rightHandSide);
+
 } /* namespace mtca4u */
 
 #endif /* MTCA4U_REGISTER_PATH_H */

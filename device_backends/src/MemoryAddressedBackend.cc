@@ -52,18 +52,6 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<mtca4u::RegisterAccessor> MemoryAddressedBackend::getRegisterAccessor(
-      const std::string &registerName,
-      const std::string &module) {
-
-    RegisterInfoMap::RegisterInfo registerInfo;
-    _registerMap->getRegisterInfo(registerName, registerInfo, module);
-    return boost::shared_ptr<RegisterAccessor>(
-        new MemoryAddressedBackendRegisterAccessor(registerInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) ));
-  }
-
-  /********************************************************************************************************************/
-
   boost::shared_ptr<const RegisterInfoMap> MemoryAddressedBackend::getRegisterMap() const {
     return _registerMap;
   }
@@ -73,26 +61,6 @@ namespace mtca4u {
   std::list<mtca4u::RegisterInfoMap::RegisterInfo> MemoryAddressedBackend::getRegistersInModule(
       const std::string &moduleName) const {
     return _registerMap->getRegistersInModule(moduleName);
-  }
-
-  /********************************************************************************************************************/
-
-  std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > MemoryAddressedBackend::getRegisterAccessorsInModule(
-      const std::string &moduleName) {
-
-    std::list<RegisterInfoMap::RegisterInfo> registerInfoList =
-        _registerMap->getRegistersInModule(moduleName);
-
-    std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > accessorList;
-    for (std::list<RegisterInfoMap::RegisterInfo>::const_iterator regInfo =
-        registerInfoList.begin();
-        regInfo != registerInfoList.end(); ++regInfo) {
-      accessorList.push_back( boost::shared_ptr<mtca4u::RegisterAccessor>(
-          new MemoryAddressedBackendRegisterAccessor(*regInfo, boost::static_pointer_cast<DeviceBackend>(shared_from_this()) )
-      ) );
-    }
-
-    return accessorList;
   }
 
   /********************************************************************************************************************/

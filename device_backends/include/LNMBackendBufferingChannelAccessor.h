@@ -22,7 +22,7 @@ namespace mtca4u {
 
   /*********************************************************************************************************************/
 
-  template<typename T>
+  template< typename T >
   class LNMBackendBufferingChannelAccessor : public BufferingRegisterAccessorImpl<T> {
     public:
 
@@ -94,6 +94,10 @@ namespace mtca4u {
 
       virtual bool isReadOnly() const {
         return true;
+      }
+
+      virtual FixedPointConverter getFixedPointConverter() const {
+        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
       }
 
     protected:

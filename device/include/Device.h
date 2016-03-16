@@ -12,6 +12,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "ForwardDeclarations.h"
 #include "DeviceException.h"
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
@@ -22,11 +23,6 @@
 // of this file.
 
 namespace mtca4u {
-
-  // Also just declare this class, since it is only used as template arguments within this header file.
-  // The corresponding include defining the class is included where needed (and for comaptibility at the
-  // end of this file).
-  class RegisterAccessor;
 
   /**
    *      @class  Device
@@ -75,21 +71,18 @@ namespace mtca4u {
        *  like a variable of the type UserType. If needed, the conversion to and from the UserType will be handled by
        *  the FixedPointConverter matching the register description in the map.
        *
-       *  Note: This function returns an object, not a (shared) pointer to the object. This is necessary to use
-       *  operators (e.g. = or []) directly on the object.
-       *  */
-      template<typename UserType>
-      BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName) const;
-
-      /** Get a BufferingRegisterAccessor object for the given register, limited to a given number of words of the
-       *  register and with an offset of words into the register.
+       *  The optional arguments numberOfWords and wordOffsetInRegister allow to limit the accessor to a part of the
+       *  register.
        *
-       *  The last optional argument allows to enforce the raw access by disabling any possible conversion from the
-       *  original hardware data type into the given UserType. Obtaining the accessor with a UserType unequal to the
-       *  raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER.  */
+       *  The last optional argument enforceRawAccess allows to enforce the raw access by disabling any possible
+       *  conversion from the original hardware data type into the given UserType. Obtaining the accessor with a
+       *  UserType unequal to the raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER.
+       *
+       *  Note: This function returns an object, not a (shared) pointer to the object. This is necessary to use
+       *  operators (e.g. = or []) directly on the object. */
       template<typename UserType>
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName,
-          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess=false) const;
+          size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
 
       /** Get a RegisterAccessor2D object for the given register. This allows to read and write transparently
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
@@ -384,13 +377,6 @@ namespace mtca4u {
     return BufferingRegisterAccessor<UserType>(
         _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
             wordOffsetInRegister, enforceRawAccess) );
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const RegisterPath &registerPathName) const {
-    return getBufferingRegisterAccessor<UserType>(registerPathName, 0,0, false);
   }
 
   /********************************************************************************************************************/

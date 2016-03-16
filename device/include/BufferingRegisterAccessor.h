@@ -8,12 +8,10 @@
 #ifndef MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 #define MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 
+#include "ForwardDeclarations.h"
 #include "BufferingRegisterAccessorImpl.h"
 
 namespace mtca4u {
-
-  // forward declaration to make a friend
-  class TransferGroup;
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
@@ -30,7 +28,7 @@ namespace mtca4u {
       /** Constructer. @attention Do not normally use directly.
        *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
        */
-      BufferingRegisterAccessor(boost::shared_ptr<BufferingRegisterAccessorImpl<T>> impl)
+      BufferingRegisterAccessor(boost::shared_ptr< BufferingRegisterAccessorImpl<T> > impl)
       : _impl(impl)
       {}
 

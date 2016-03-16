@@ -5,7 +5,6 @@
  *      Author: Martin Hierholzer
  */
 
-#include "LNMBackendRegisterAccessor.h"
 #include "LNMBackendBufferingRegisterAccessor.h"
 #include "LNMBackendBufferingChannelAccessor.h"
 #include "LNMBackendBufferingVariableAccessor.h"
@@ -123,38 +122,6 @@ namespace mtca4u {
       throw DeviceException("Writing a channel of a multiplexed register is only supported using register accessors.",
           DeviceException::NOT_IMPLEMENTED);
     }
-
-  }
-
-  /********************************************************************************************************************/
-
-  boost::shared_ptr<mtca4u::RegisterAccessor> LogicalNameMappingBackend::getRegisterAccessor(
-      const std::string &registerName, const std::string &module) {
-
-    // obtain register info
-    RegisterPath name = RegisterPath(module)/registerName;
-    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(name));
-
-    // if applicable, obtain target device
-    boost::shared_ptr<Device> targetDevice;
-    if(info->hasDeviceName()) targetDevice = _devices[info->deviceName];
-
-    // implementation for each type
-    boost::shared_ptr<mtca4u::RegisterAccessor> accessor;
-    if(info->targetType == LogicalNameMap::TargetType::REGISTER) {
-      accessor = targetDevice->getRegisterAccessor(info->registerName);
-    }
-    else if(info->targetType == LogicalNameMap::TargetType::RANGE) {
-      accessor = boost::shared_ptr<mtca4u::RegisterAccessor>(new LNMBackendRegisterAccessor(
-          targetDevice->getRegisterAccessor(info->registerName), info->firstIndex, info->length));
-    }
-    else {
-      throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
-          name+").", DeviceException::NOT_IMPLEMENTED);
-    }
-
-    // allow plugins to decorate the accessor and return it
-    return decorateRegisterAccessor(name,accessor);
 
   }
 

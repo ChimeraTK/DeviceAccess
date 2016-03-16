@@ -10,6 +10,8 @@
 #include "VirtualFunctionTemplate.h"
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
+#include "BufferingRegisterAccessorImpl.h"
+#include "DeviceBackend.h"
 
 namespace mtca4u {
 
@@ -30,14 +32,14 @@ namespace mtca4u {
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer);
+      RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer, const RegisterPath &registerPathName);
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual ~RegisterAccessor();
+      ~RegisterAccessor();
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
@@ -47,9 +49,16 @@ namespace mtca4u {
       template <typename ConvertedDataType>
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
-        CALL_VIRTUAL_FUNCTION_TEMPLATE(read_impl, ConvertedDataType, convertedData, nWords, wordOffsetInRegister);
+        // obtain accessor
+        auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+        // perform read
+        acc->read();
+        // swap buffer out (to get the pointer) and copy data to target buffer
+        std::vector<ConvertedDataType> temp;
+        acc->swap(temp);
+        memcpy(convertedData, temp.data(), nWords*sizeof(ConvertedDataType));
+        acc->swap(temp);
       }
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( read_impl, void(T*, size_t, uint32_t) );
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
@@ -71,9 +80,16 @@ namespace mtca4u {
       template <typename ConvertedDataType>
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
-        CALL_VIRTUAL_FUNCTION_TEMPLATE(write_impl, ConvertedDataType, convertedData, nWords, wordOffsetInRegister);
+        // obtain accessor
+        auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+        // swap buffer out (to get the pointer) and copy data from source buffer
+        std::vector<ConvertedDataType> temp;
+        acc->swap(temp);
+        memcpy(temp.data(), convertedData, nWords*sizeof(ConvertedDataType));
+        acc->swap(temp);
+        // perform write
+        acc->write();
       }
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( write_impl, void(const T*, size_t, uint32_t) );
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
@@ -90,62 +106,103 @@ namespace mtca4u {
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual unsigned int getNumberOfElements() const = 0;
+      unsigned int getNumberOfElements() const {
+        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
+        return acc->getNumberOfElements();
+      }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual RegisterInfoMap::RegisterInfo const &getRegisterInfo() const = 0;
+      RegisterInfoMap::RegisterInfo getRegisterInfo() const {
+        RegisterInfoMap::RegisterInfo info;
+        _dev->getRegisterMap()->getRegisterInfo(_registerPathName, info);
+        return info;
+      }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual FixedPointConverter const &getFixedPointConverter() const = 0;
+      FixedPointConverter getFixedPointConverter() const {
+        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
+        return acc->getFixedPointConverter();
+      }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual FixedPointConverter &getFixedPointConverter() = 0;
+      void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const {
+        // obtain bytes to copy
+        if(dataSize == 0) dataSize = getNumberOfElements() * sizeof(int32_t);
+        // check word alignment
+        if(dataSize % 4 != 0 || addRegOffset % 4 != 0) {
+          throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
+              "dividable by 4)",DeviceException::EX_WRONG_PARAMETER);
+        }
+        // obtain accessor
+        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
+            addRegOffset/sizeof(int32_t), true);
+        // perform read
+        acc->read();
+        // swap buffer out (to get the pointer) and copy to target buffer
+        std::vector<int32_t> temp;
+        acc->swap(temp);
+        memcpy(data, temp.data(), dataSize);
+        acc->swap(temp);
+      }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const = 0;
+      void writeRaw(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0) {
+        // obtain bytes to copy
+        if(dataSize == 0) dataSize = getNumberOfElements() * sizeof(int32_t);
+        // check word alignment
+        if(dataSize % 4 != 0 || addRegOffset % 4 != 0) {
+          throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
+              "dividable by 4)",DeviceException::EX_WRONG_PARAMETER);
+        }
+        // obtain accessor
+        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
+            addRegOffset/sizeof(int32_t), true);
+        // swap buffer out (to get the pointer) and copy data from source buffer
+        std::vector<int32_t> temp;
+        acc->swap(temp);
+        memcpy(temp.data(), data, dataSize);
+        acc->swap(temp);
+        // perform write
+        acc->write();
+      }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual void writeRaw(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
+      void readDMA(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
        *  \deprecated
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      virtual void readDMA(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const;
-
-      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
-       *  \deprecated
-       *  This class is deprecated. Use BufferingRegisterAccessor instead!
-       *  @todo Add printed runtime warning after release of version 0.8
-       */
-      virtual void writeDMA(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
+      void writeDMA(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
 
     protected:
 
-      /** Pointer to the device backend used for reading and writing the data
-       */
-      boost::shared_ptr<DeviceBackend> _deviceBackendPointer;
+      /** Path name of the register to access */
+      RegisterPath _registerPathName;
+
+      /** Pointer to the device backend used for reading and writing the data */
+      boost::shared_ptr<DeviceBackend> _dev;
 
   };
 

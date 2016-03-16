@@ -9,6 +9,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/any.hpp>
 
+#include "ForwardDeclarations.h"
 #include "DeviceBackendException.h"
 #include "RegisterInfoMap.h"
 #include "RegisterCatalogue.h"
@@ -16,14 +17,6 @@
 #include "VirtualFunctionTemplate.h"
 
 namespace mtca4u {
-
-  // forward declaration to make friends
-  class Device;
-
-  // some forward declarations
-  class RegisterAccessor;
-  template<typename T> class TwoDRegisterAccessorImpl;
-  template<typename T> class BufferingRegisterAccessorImpl;
 
   /** The base class of an IO device.
    */
@@ -89,8 +82,8 @@ namespace mtca4u {
       /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
        * buffers and plain pointers.
        */
-      virtual boost::shared_ptr<RegisterAccessor> getRegisterAccessor(
-          const std::string &registerName, const std::string &module = std::string()) = 0;
+      boost::shared_ptr<RegisterAccessor> getRegisterAccessor(
+          const std::string &registerName, const std::string &module = std::string());
 
       /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
        *  using a std::vector-like interface.
@@ -140,15 +133,6 @@ namespace mtca4u {
        */
       virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const = 0;
-
-      /** Get a complete list of RegisterAccessors for one module.
-       *  The registers are in alphabetical order.
-       *
-       *  \deprecated
-       *  This function is deprecated.
-       */
-      virtual std::list< boost::shared_ptr<RegisterAccessor> > getRegisterAccessorsInModule(
-          const std::string &moduleName) = 0;
 
       /** \deprecated {
        *  This function is deprecated. Use read() instead!

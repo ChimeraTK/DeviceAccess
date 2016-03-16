@@ -70,6 +70,10 @@ namespace mtca4u {
         return _accessor->isReadOnly();
       }
 
+      virtual FixedPointConverter getFixedPointConverter() const {
+        return _accessor->getFixedPointConverter();
+      }
+
     protected:
 
       /** The underlying register accessor */
@@ -95,88 +99,6 @@ namespace mtca4u {
 
   template<>
   void ScaleRegisterPluginBufferingAccessor<std::string>::write();
-
-  /********************************************************************************************************************/
-
-  /** The non-buffering register accessor used by the ScaleRegisterPlugin */
-  class ScaleRegisterPluginAccessor : public RegisterAccessor {
-    public:
-
-      /** The constructor takes the original accessor and the scaling factor as arguments */
-      ScaleRegisterPluginAccessor(boost::shared_ptr< RegisterAccessor > accessor,
-          DynamicValue<double> scalingFactor)
-      : RegisterAccessor(boost::shared_ptr<DeviceBackend>()), _accessor(accessor), _scalingFactor(scalingFactor)
-      {
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(read_impl);
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(write_impl);
-      }
-
-      void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const {
-        _accessor->readRaw(data,dataSize,addRegOffset);
-      }
-
-      void writeRaw(int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0) {
-        _accessor->writeRaw(data,dataSize,addRegOffset);
-      }
-
-      RegisterInfoMap::RegisterInfo const &getRegisterInfo() const {
-        return _accessor->getRegisterInfo();
-      }
-
-      FixedPointConverter const &getFixedPointConverter() const {
-        return _accessor->getFixedPointConverter();
-      }
-
-      FixedPointConverter &getFixedPointConverter() {
-        return _accessor->getFixedPointConverter();
-      }
-
-      virtual unsigned int getNumberOfElements() const {
-        return _accessor->getNumberOfElements();
-      }
-
-    private:
-
-      template <typename ConvertedDataType>
-      void read_impl(ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const {
-        // read from hardware into temporary buffer
-        std::vector<ConvertedDataType> buffer(nWords);
-        _accessor->read(buffer.data(), nWords, wordOffsetInRegister);
-        // apply scaling factor while copying buffer from underlying accessor to the target buffer
-        for(unsigned int i=0; i<nWords; i++) {
-          convertedData[i] = buffer[i] * _scalingFactor;
-        }
-      }
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ScaleRegisterPluginAccessor, read_impl, 3);
-
-      template <typename ConvertedDataType>
-      void write_impl(const ConvertedDataType *convertedData, size_t nWords, uint32_t wordOffsetInRegister) {
-        // create temporary buffer
-        std::vector<ConvertedDataType> buffer(nWords);
-        // apply scaling factor while copying buffer from source buffer to temporary buffer
-        for(unsigned int i=0; i<nWords; i++) {
-          buffer[i] = convertedData[i] / _scalingFactor;
-        }
-        // write from temporary buffer to hardware
-        _accessor->write(buffer.data(), nWords, wordOffsetInRegister);
-      }
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ScaleRegisterPluginAccessor, write_impl, 3);
-
-      /** The underlying register accessor */
-      boost::shared_ptr< RegisterAccessor > _accessor;
-
-      /** The scaling factor */
-      DynamicValue<double> _scalingFactor;
-
-  };
-
-  template<>
-  void ScaleRegisterPluginAccessor::read_impl<std::string>(std::string *convertedData, size_t nWords,
-      uint32_t wordOffsetInRegister) const;
-
-  template<>
-  void ScaleRegisterPluginAccessor::write_impl<std::string>(const std::string *convertedData, size_t nWords,
-      uint32_t wordOffsetInRegister);
 
   /********************************************************************************************************************/
 
@@ -208,12 +130,6 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterAccessor> ScaleRegisterPlugin::decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const {
-    return boost::shared_ptr<RegisterAccessor>(new ScaleRegisterPluginAccessor(accessor, scalingFactor));
-  }
-
-  /********************************************************************************************************************/
-
   template<>
   void ScaleRegisterPluginBufferingAccessor<std::string>::read() {
     // read from hardware
@@ -234,35 +150,6 @@ namespace mtca4u {
     }
     // write to hardware
     _accessor->write();
-  }
-
-  /********************************************************************************************************************/
-
-  template<>
-  void ScaleRegisterPluginAccessor::read_impl<std::string>(std::string *convertedData, size_t nWords,
-      uint32_t wordOffsetInRegister) const {
-    // read from hardware into temporary buffer
-    std::vector<std::string> buffer(nWords);
-    _accessor->read(buffer.data(), nWords, wordOffsetInRegister);
-    // apply scaling factor while copying buffer from underlying accessor to the target buffer
-    for(unsigned int i=0; i<nWords; i++) {
-      convertedData[i] = std::to_string(std::stod(buffer[i]) * _scalingFactor);
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  template<>
-  void ScaleRegisterPluginAccessor::write_impl<std::string>(const std::string *convertedData, size_t nWords,
-      uint32_t wordOffsetInRegister) {
-    // create temporary buffer
-    std::vector<std::string> buffer(nWords);
-    // apply scaling factor while copying buffer from source buffer to temporary buffer
-    for(unsigned int i=0; i<nWords; i++) {
-      buffer[i] = std::to_string(std::stod(convertedData[i]) / _scalingFactor);
-    }
-    // write from temporary buffer to hardware
-    _accessor->write(buffer.data(), nWords, wordOffsetInRegister);
   }
 
 } /* namespace mtca4u */

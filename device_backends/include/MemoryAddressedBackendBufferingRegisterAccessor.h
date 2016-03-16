@@ -101,6 +101,10 @@ namespace mtca4u {
         return false;
       }
 
+      virtual FixedPointConverter getFixedPointConverter() const {
+        return _fixedPointConverter;
+      }
+
     protected:
 
       /** Address, size and fixed-point representation information of the register from the map file */

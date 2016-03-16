@@ -113,6 +113,10 @@ namespace mtca4u {
         }
       }
 
+      virtual FixedPointConverter getFixedPointConverter() const {
+        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+      }
+
     protected:
 
       /// pointer to underlying accessor

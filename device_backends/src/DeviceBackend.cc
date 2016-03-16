@@ -2,6 +2,7 @@
  * DeviceBackend.cc
  */
 
+#include "RegisterAccessor.h"
 #include "DeviceBackend.h"
 
 namespace mtca4u {
@@ -21,6 +22,11 @@ namespace mtca4u {
     std::cerr << " The function DeviceBackend::readDMA() was removed after deprecation." << std::endl;
     std::cerr << "**********************************************************************************" << std::endl;
     exit(1);
+  }
+
+  boost::shared_ptr<RegisterAccessor> DeviceBackend::getRegisterAccessor(
+      const std::string &registerName, const std::string &module) {
+    return boost::shared_ptr<RegisterAccessor>( new RegisterAccessor(shared_from_this(), RegisterPath(module)/registerName) );
   }
 
 } /* namespace mtca4u */

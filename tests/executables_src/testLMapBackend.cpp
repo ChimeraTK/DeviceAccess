@@ -89,14 +89,6 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
   }
 
-  BOOST_CHECK_THROW(device.getRegisterAccessor("Channel3"), mtca4u::DeviceException);
-  try {
-    device.getRegisterAccessor("Channel3");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
-
   BOOST_CHECK_THROW(device.writeReg("Channel3", &data), mtca4u::DeviceException);
   try {
     device.writeReg("Channel3", &data);
@@ -649,6 +641,7 @@ void LMapBackendTest::testNonBufferingAccessor() {
   acc->read(area.data(), 20);
   for(int i=0; i<20; i++) BOOST_CHECK( area[i] == -876543210+42*(i+10) );
 
+  /* no longer supported
   for(int i=0; i<20; i++) area[i] = 12345+3*(i+10);
   acc->write(area.data(), 20);
   for(int i=0; i<1024; i++) area[i] = 0;
@@ -660,6 +653,7 @@ void LMapBackendTest::testNonBufferingAccessor() {
   for(int i=0; i<1024; i++) area[i] = 0;
   target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
   for(int i=10; i<30; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+  */
 
   device.close();
   target1.close();

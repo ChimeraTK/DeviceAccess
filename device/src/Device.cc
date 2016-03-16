@@ -33,10 +33,10 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<Device::RegisterAccessor> Device::getRegisterAccessor(const std::string &regName,
+  boost::shared_ptr<RegisterAccessor> Device::getRegisterAccessor(const std::string &regName,
       const std::string &module) const {
     checkPointersAreNotNull();
-    return _deviceBackendPointer->getRegisterAccessor(regName, module);
+    return boost::shared_ptr<RegisterAccessor>( new RegisterAccessor(_deviceBackendPointer, RegisterPath(module)/regName) );
   }
 
   /********************************************************************************************************************/
@@ -52,8 +52,12 @@ namespace mtca4u {
   std::list< boost::shared_ptr<mtca4u::RegisterAccessor> >
   Device::getRegisterAccessorsInModule(const std::string &moduleName) const {
     checkPointersAreNotNull();
-
-    return _deviceBackendPointer->getRegisterAccessorsInModule(moduleName);
+    auto reglist = getRegistersInModule(moduleName);
+    std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > acclist;
+    for(auto it = reglist.begin(); it != reglist.end(); ++it) {
+      acclist.push_back( getRegisterAccessor(it->getRegisterName(), "") );
+    }
+    return acclist;
   }
 
   /********************************************************************************************************************/

@@ -7,8 +7,9 @@
 
 namespace mtca4u {
 
-  RegisterAccessor::RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer)
-  : _deviceBackendPointer(deviceBackendPointer) {}
+  RegisterAccessor::RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer,
+      const RegisterPath &registerPathName)
+  : _registerPathName(registerPathName), _dev(deviceBackendPointer) {}
 
   RegisterAccessor::~RegisterAccessor() {}
 
