@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8.7)
 Project(mtca4u-deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 08)
+set(${PROJECT_NAME}_MINOR_VERSION 09)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 
 set(${PROJECT_NAME}_VERSION
