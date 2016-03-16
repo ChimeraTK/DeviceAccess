@@ -85,11 +85,9 @@ namespace mtca4u {
           size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
 
       /** Get a RegisterAccessor2D object for the given register. This allows to read and write transparently
-       *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
-       */
+       *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor. */
       template<typename UserType>
-      TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
-          const std::string &module, const std::string &registerName) const;
+      TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(const RegisterPath &registerPathName) const;
 
       /** Return the register catalogue with detailed information on all registers. */
       const RegisterCatalogue& getRegisterCatalogue() const;
@@ -288,6 +286,15 @@ namespace mtca4u {
       /** \brief <b>DEPRECATED</b>
        *
        *  \deprecated
+       *  This function is deprecated. Use Device::getTwoDRegisterAccessor(RegisterPath(module)/registerName) instead.
+       */
+      template<typename UserType>
+      TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
+          const std::string &module, const std::string &registerName) const;
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
        *  This function is deprecated. Use readArea() instead!
        *  @todo Change warning into runtime error after release of version 0.8
        */
@@ -391,9 +398,19 @@ namespace mtca4u {
 
   template<typename UserType>
   TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
+      const RegisterPath &registerPathName) const {
+    checkPointersAreNotNull();
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(registerPathName));
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
     checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(registerName, module));
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(
+        RegisterPath(module)/registerName));
   }
 
   /********************************************************************************************************************/

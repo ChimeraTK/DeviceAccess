@@ -69,9 +69,8 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
 
     /** Implement the virtual function template to obtain the 2D register accessor */
     template<typename UserType>
-    boost::shared_ptr< mtca4u::TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const std::string &registerName,
-        const std::string &module);
-    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getTwoDRegisterAccessor_impl, 2);
+    boost::shared_ptr< mtca4u::TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const mtca4u::RegisterPath &registerPathName);
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getTwoDRegisterAccessor_impl, 1);
 
   public:
 

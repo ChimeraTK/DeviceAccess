@@ -129,8 +129,7 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > LogicalNameMappingBackend::getTwoDRegisterAccessor_impl(
-      const std::string &module, const std::string &registerName) {
-    (void)module; (void)registerName; // avoid warning
+      const RegisterPath &) {
     throw DeviceException("2D register accessors not yet supported for LogicalNameMappingBackends.",
         DeviceException::NOT_IMPLEMENTED);
   }

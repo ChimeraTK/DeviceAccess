@@ -105,10 +105,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > MemoryAddressedBackend::getTwoDRegisterAccessor_impl(const std::string &registerName,
-      const std::string &module) {
+  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > MemoryAddressedBackend::getTwoDRegisterAccessor_impl(
+      const RegisterPath &registerPathName) {
     return boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> >(
-        new MemoryAddressedBackendTwoDRegisterAccessor<UserType>(registerName,module,shared_from_this()) );
+        new MemoryAddressedBackendTwoDRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
   }
 
 } // namespace mtca4u

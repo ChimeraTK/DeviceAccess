@@ -39,14 +39,14 @@ void ExampleBackend::close(){
 // We do not have a suitable buffering register accessor, so we throw an exception.
 template<typename UserType>
 boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > ExampleBackend::getBufferingRegisterAccessor_impl(
-    const RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, bool /*enforceRawAccess*/) {
+    const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, bool /*enforceRawAccess*/) {
   throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
 }
 
 // We do not have a suitable 2D register accessor, so we throw an exception.
 template<typename UserType>
 boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > ExampleBackend::getTwoDRegisterAccessor_impl(
-    const std::string & /*registerName*/, const std::string & /*module*/) {
+    const mtca4u::RegisterPath & /*registerPathName*/) {
   throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
 }
 

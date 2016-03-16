@@ -31,7 +31,7 @@ namespace mtca4u {
 
     public:
 
-      MemoryAddressedBackendTwoDRegisterAccessor( const std::string &_dataRegionName, const std::string &_module,
+      MemoryAddressedBackendTwoDRegisterAccessor(const RegisterPath &registerPathName,
           boost::shared_ptr<DeviceBackend> _backend );
 
       virtual ~MemoryAddressedBackendTwoDRegisterAccessor() {}
@@ -50,8 +50,7 @@ namespace mtca4u {
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const MemoryAddressedBackendTwoDRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
-        if(_registerName != rhsCasted->_registerName) return false;
-        if(_moduleName != rhsCasted->_moduleName) return false;
+        if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(TwoDRegisterAccessorImpl<UserType>::_ioDevice != rhsCasted->TwoDRegisterAccessorImpl<UserType>::_ioDevice) return false;
         return true;
       }
@@ -80,7 +79,8 @@ namespace mtca4u {
       friend class MixedTypeTest<UserType>;
 
       /// register and module name
-      std::string _registerName, _moduleName;
+      std::string _moduleName, _registerName;
+      RegisterPath _registerPathName;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
@@ -124,12 +124,11 @@ namespace mtca4u {
 
   template <class UserType>
   MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor(
-      const std::string &_dataRegionName, const std::string &moduleName, boost::shared_ptr<DeviceBackend> _backend )
-  : TwoDRegisterAccessorImpl<UserType>(_backend), _registerName(_dataRegionName), _moduleName(moduleName)
+      const RegisterPath &registerPathName, boost::shared_ptr<DeviceBackend> _backend )
+  : TwoDRegisterAccessorImpl<UserType>(_backend), _registerPathName(registerPathName)
   {
       // re-split register and module after merging names by the last dot (to allow module.register in the register name)
-      std::string mergedName = ( _moduleName.length() > 0 ? moduleName + "." + _registerName : _registerName );
-      auto moduleAndRegister = MapFileParser::splitStringAtLastDot(mergedName);
+      auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
       _moduleName = moduleAndRegister.first;
       _registerName = moduleAndRegister.second;
 
