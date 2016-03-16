@@ -9,7 +9,7 @@ Section: libs
 Package: libmtca4u-deviceaccess-dev
 Section: libdevel
 Architecture: any
-Depends: libmtca4u-deviceaccess@mtca4u-deviceaccess_DEBVERSION@, libboost-dev (>= 1.46)
+Depends: libmtca4u-deviceaccess@mtca4u-deviceaccess_DEBVERSION@, libboost@Boost_MAJOR_VERSION@.@Boost_MINOR_VERSION@-dev
 Recommends: libmtca4u-deviceaccess-doc
 Description: Header and cmake files for libmtca4u-deviceaccess.
  The files you need to compile against libmtca4u-deviceaccess.
