@@ -15,10 +15,10 @@ BOARD.WORD_CLOCK2             0x00000004    0x00000018    0x00000010    0x000000
 BOARD.WORD_CLOCK3             0x00000004    0x0000001C    0x00000010    0x00000000       18         0         0
 
 # The data area, of an ADC which multiplexes data of all channels
-ADC.AREA_DATA_RAW             0x00000400   0x00000000    0x00001000     0x00000002
+ADC.AREA_DATA_RAW             0x00000010   0x00000000    0x00000040     0x00000002
 # What you want in the user space is access to the individual channels (demultiplexed data)
-ADC.AREA_MULTIPLEXED_SEQUENCE_DATA 0x400   0x00000000    0x00001000     0x00000002       16         0         0
-ADC.SEQUENCE_DATA_0           0x00000001   0x00000000    0x00000002     0x00000002       16         0         0 
-ADC.SEQUENCE_DATA_1           0x00000001   0x00000002    0x00000002     0x00000002       16         0         0 
-ADC.SEQUENCE_DATA_2           0x00000001   0x00000004    0x00000002     0x00000002       16         0         0 
-ADC.SEQUENCE_DATA_3           0x00000001   0x0000000C    0x00000002     0x00000002       16         0         0 
+ADC.AREA_MULTIPLEXED_SEQUENCE_DATA  0x10   0x00000000    0x00000040     0x00000002       16         0         0
+ADC.SEQUENCE_DATA_0           0x00000001   0x00000000    0x00000004     0x00000002       16         0         0 
+ADC.SEQUENCE_DATA_1           0x00000001   0x00000004    0x00000004     0x00000002       16         0         0 
+ADC.SEQUENCE_DATA_2           0x00000001   0x00000008    0x00000004     0x00000002       16         0         0 
+ADC.SEQUENCE_DATA_3           0x00000001   0x0000000C    0x00000004     0x00000002       16         0         0 

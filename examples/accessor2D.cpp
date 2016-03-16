@@ -15,11 +15,11 @@ int main() {
   mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
 
   // open the device:
-  boost::shared_ptr< mtca4u::Device > device(new mtca4u::Device());
-  device->open("MY_DEVICE");
+  mtca4u::Device myDevice;
+  myDevice.open("MY_DEVICE");
 
   mtca4u::TwoDRegisterAccessor<double> twoDAccessor =
-    device->getTwoDRegisterAccessor<double>(MODULE_NAME, DATA_REGION_NAME);
+    myDevice.getTwoDRegisterAccessor<double>(MODULE_NAME, DATA_REGION_NAME);
 
   // read data for all channels from the hardware
   twoDAccessor.read();
@@ -48,7 +48,7 @@ int main() {
 
   // It is good style to close the device when you are done, although
   // this would happen automatically once the device goes out of scope.
-  device->close();
+  myDevice.close();
 
   return 0;
 }

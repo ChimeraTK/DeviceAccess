@@ -13,6 +13,7 @@ There are some tutorial examples available in the example directory. All example
 are complete and fully functional.
 
 \li \ref basic_example
+\li Multi word registers
 \li Logical name mapping
 \li 2D register accessors
 \li Firmware debugging without map/dmap file

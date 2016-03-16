@@ -1,5 +1,5 @@
 include_directories("${PROJECT_BINARY_DIR}/include")
-SET(TARGETS basic accessor2D)
+SET(TARGETS basic accessor2D accessor2D_multiplexed)
 foreach( TARGET ${TARGETS} )
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 add_executable(${TARGET} ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}.cpp)
