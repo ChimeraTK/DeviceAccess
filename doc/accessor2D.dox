@@ -1,0 +1,14 @@
+/**
+\page accessor2d 2D Register Accessors
+
+A TwoDRegisterAccessor behaves like a two-dimensional array, consisting of several
+sequences (or channels) which each have a number of samples. It is implemented as a
+buffering accessor, so you do read() and write() to access the hardware, and in between
+you can modify the data in the accessors buffer efficiently at will.
+
+The one-dimensional sequences/channels are implemeted as std::vector, so they are
+convenient to use. They are accessed via the [] operator of the accessor. This 
+also allows the "matrix" syntac \c accessor[][].
+
+\include accessor2D.cpp
+*/

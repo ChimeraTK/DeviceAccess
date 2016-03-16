@@ -1,0 +1,24 @@
+# name                    nr of elements       address          size           bar    width   fracbits    signed   
+
+# An example section with some board configuration registers
+BOARD.WORD_FIRMWARE           0x00000001    0x00000000    0x00000004    0x00000000       32         0         0
+BOARD.WORD_COMPILATION        0x00000001    0x00000004    0x00000004    0x00000000       32         0         0
+BOARD.WORD_STATUS             0x00000001    0x00000008    0x00000004    0x00000000       32         0         0
+BOARD.WORD_USER               0x00000001    0x0000000C    0x00000004    0x00000000       12         3         1
+
+# A register can have more than one data word, four clocks for instance
+BOARD.WORD_CLOCKS             0x00000004    0x00000010    0x00000010    0x00000000       18         0         0
+# Entries in the map file can overlap. In this case the individual clocks out of the CLOCKS register
+BOARD.WORD_CLOCK0             0x00000004    0x00000010    0x00000010    0x00000000       18         0         0
+BOARD.WORD_CLOCK1             0x00000004    0x00000014    0x00000010    0x00000000       18         0         0
+BOARD.WORD_CLOCK2             0x00000004    0x00000018    0x00000010    0x00000000       18         0         0
+BOARD.WORD_CLOCK3             0x00000004    0x0000001C    0x00000010    0x00000000       18         0         0
+
+# The data area, of an ADC which multiplexes data of all channels
+ADC.AREA_DATA_RAW             0x00000400   0x00000000    0x00001000     0x00000002
+# What you want in the user space is access to the individual channels (demultiplexed data)
+ADC.AREA_MULTIPLEXED_SEQUENCE_DATA 0x400   0x00000000    0x00001000     0x00000002       16         0         0
+ADC.SEQUENCE_DATA_0           0x00000001   0x00000000    0x00000002     0x00000002       16         0         0 
+ADC.SEQUENCE_DATA_1           0x00000001   0x00000002    0x00000002     0x00000002       16         0         0 
+ADC.SEQUENCE_DATA_2           0x00000001   0x00000004    0x00000002     0x00000002       16         0         0 
+ADC.SEQUENCE_DATA_3           0x00000001   0x0000000C    0x00000002     0x00000002       16         0         0 

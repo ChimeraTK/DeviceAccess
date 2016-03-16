@@ -1,0 +1,13 @@
+/**
+\page dmap The device map (DMAP) file
+
+\todo FIXME This is just a code snipped that has been pasted here.
+
+The device class is an abstract interface which uses backends to communicate with the
+hardware. These backends implement the protocol to communicate with the hardware.
+Some of these backends need an additional 'map file', which contains a list of registers
+and their description. The map file format depends on the backend type.
+\todo FIXME: Currently giving a map file name in the dmap file is mandatory.
+\li A 'map' file
+
+*/

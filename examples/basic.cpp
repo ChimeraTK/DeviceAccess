@@ -7,22 +7,21 @@
 
 // All information needed to access the device is 
 // the device alias and the register names 
-// (plus a .dmap file and .map files)
+// (plus a .dmap file)
 static const std::string REGISTER_NAME = "WORD_USER";
 static const std::string MODULE_NAME = "BOARD";
 
 int main(){
   // Before you use a device you have to tell the factory 
   // which dmap file to use.
-  // \todo Fixme: we use one from the unit tests. examples should have its own
   // \todo There should be a global function to do this. It is an implementation
   // detail that it's the factory which has to know it.
-  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
 
   /** Create a device. Make sure a device alias is present
-   * in dmap file. Look at BackendFactory for further explanation */
+   * in the dmap file. */
   mtca4u::Device myDevice;
-  myDevice.open("PCIE1");
+  myDevice.open("MY_DEVICE");
   
   mtca4u::BufferingRegisterAccessor<float> accessor = myDevice.getBufferingRegisterAccessor<float>(MODULE_NAME, REGISTER_NAME);
   // To get the value from the backend call read.
