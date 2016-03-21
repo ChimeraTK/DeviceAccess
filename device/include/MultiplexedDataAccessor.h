@@ -93,7 +93,7 @@ namespace mtca4u {
       /**
        * Return the number of sequences that have been Multiplexed
        */
-      virtual size_t getNumberOfDataSequences() {
+      virtual size_t getNumberOfDataSequences() const {
         return accessor->getNumberOfDataSequences();
       }
 

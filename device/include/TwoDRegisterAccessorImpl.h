@@ -65,7 +65,7 @@ namespace mtca4u{
       /**
        * Return the number of sequences that have been Multiplexed
        */
-      virtual size_t getNumberOfDataSequences() = 0;
+      virtual size_t getNumberOfDataSequences() const = 0;
 
       /** Return number of samples per sequence (=channel).
        *  This function assumes that the number of samples is equal for all sequences. If an implementation supports
@@ -76,7 +76,7 @@ namespace mtca4u{
        *  extended with an optional argument of the channel number. Only if called without specifying the argument
        *  should throw an exception then.
        */
-      virtual unsigned int getNumberOfSamples();
+      virtual unsigned int getNumberOfSamples() const;
 
       /**
        * Default destructor
@@ -119,7 +119,7 @@ namespace mtca4u{
   /********************************************************************************************************************/
 
   template<class UserType>
-  unsigned int TwoDRegisterAccessorImpl<UserType>::getNumberOfSamples() {
+  unsigned int TwoDRegisterAccessorImpl<UserType>::getNumberOfSamples() const {
     return _sequences[0].size();
   }
 

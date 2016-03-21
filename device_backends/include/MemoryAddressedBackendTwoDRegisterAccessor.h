@@ -40,7 +40,7 @@ namespace mtca4u {
 
       void write();
 
-      size_t getNumberOfDataSequences();
+      size_t getNumberOfDataSequences() const;
 
       /// TODO this function is not in the interface, can we remove it?
       uint32_t getSizeOneBlock() {
@@ -278,7 +278,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  size_t MemoryAddressedBackendTwoDRegisterAccessor<UserType>::getNumberOfDataSequences() {
+  size_t MemoryAddressedBackendTwoDRegisterAccessor<UserType>::getNumberOfDataSequences() const {
       return (TwoDRegisterAccessorImpl<UserType>::_sequences.size());
   }
 

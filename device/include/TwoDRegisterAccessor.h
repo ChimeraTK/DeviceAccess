@@ -68,13 +68,13 @@ namespace mtca4u {
       /**
        * Return the number of sequences (=channels)
        */
-      size_t getNumberOfDataSequences() {
+      size_t getNumberOfDataSequences() const {
         return _impl->getNumberOfDataSequences();
       }
 
       /** Return number of samples per sequence (=channel)
        */
-      inline unsigned int getNumberOfSamples() {
+      inline unsigned int getNumberOfSamples() const {
         return _impl->getNumberOfSamples();
       }
 
