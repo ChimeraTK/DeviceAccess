@@ -22,7 +22,7 @@ namespace mtca4u {
    *  functions before reading from resp. after writing to the buffer using the operators.
    */
   template<typename T>
-  class BufferingRegisterAccessor : protected TransferElement {
+  class BufferingRegisterAccessor : public TransferElement {
     public:
 
       /** Constructer. @attention Do not normally use directly.

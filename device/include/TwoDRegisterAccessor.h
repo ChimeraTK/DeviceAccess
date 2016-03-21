@@ -20,7 +20,7 @@ namespace mtca4u {
   /** TODO add documentation
    */
   template<class UserType>
-  class TwoDRegisterAccessor : protected TransferElement {
+  class TwoDRegisterAccessor : public TransferElement {
 
     public:
 
