@@ -15,6 +15,9 @@ namespace mtca4u {
     for(unsigned int i=0; i<elements.size(); i++) {
       elements[i]->read();
     }
+    for(unsigned int i=0; i<highLevelElements.size(); i++) {
+      highLevelElements[i]->postRead();
+    }
   }
 
   /*********************************************************************************************************************/
@@ -24,8 +27,14 @@ namespace mtca4u {
       throw DeviceException("TransferGroup::write() called, but at least one TransferElement is read-only.",
           DeviceException::REGISTER_IS_READ_ONLY);
     }
+    for(unsigned int i=0; i<highLevelElements.size(); i++) {
+      highLevelElements[i]->preWrite();
+    }
     for(unsigned int i=0; i<elements.size(); i++) {
       elements[i]->write();
+    }
+    for(unsigned int i=0; i<highLevelElements.size(); i++) {
+      highLevelElements[i]->postWrite();
     }
   }
 
@@ -62,6 +71,9 @@ namespace mtca4u {
 
     // update read-only flag
     if(accessor.isReadOnly()) readOnly = true;
+
+    // store the accessor itself in the high-level list
+    highLevelElements.push_back(accessor.getHighLevelImplElement());
   }
 
 } /* namespace mtca4u */

@@ -92,6 +92,10 @@ namespace mtca4u {
         return _impl->getHardwareAccessingElements();
       }
 
+      virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
+        return boost::static_pointer_cast<TransferElement>(_impl);
+      }
+
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         if(_impl->isSameRegister(newElement)) {
           _impl = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);
@@ -103,7 +107,7 @@ namespace mtca4u {
 
       /** DEPRECATED
        *
-       *  \depcrecated This function is deprecated. Just pass around copies of the TwoDRegisterAccessor itself instead
+       *  \deprecated This function is deprecated. Just pass around copies of the TwoDRegisterAccessor itself instead
        *  of shared pointers, which will create the exact same behaviour. */
       boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getSharedPtr() {
         std::cerr << "##################################################################################" << std::endl;

@@ -360,6 +360,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   // reading via iterator
   index = 0;
   for(mtca4u::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+    std::cout << *it << " == " << -876543210+42*index << std::endl;
     BOOST_CHECK( *it == -876543210+42*index );
     ++index;
   }
@@ -525,7 +526,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // read via iterators
   unsigned int idx=0;
-  for(BufferingRegisterAccessorImpl<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
+  for(BufferingRegisterAccessor<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
     BOOST_CHECK( *it == (signed) (3000+idx) );
     ++idx;
   }
@@ -534,7 +535,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   // read via const iterators
   const mtca4u::BufferingRegisterAccessor<int32_t> &acc3_const = acc3;
   idx=0;
-  for(BufferingRegisterAccessorImpl<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
+  for(BufferingRegisterAccessor<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
     BOOST_CHECK( *it == (signed) (3000+idx) );
     ++idx;
   }
@@ -542,7 +543,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // read via reverse iterators
   idx=nSamples;
-  for(BufferingRegisterAccessorImpl<int>::reverse_iterator it = acc3.rbegin(); it != acc3.rend(); ++it) {
+  for(BufferingRegisterAccessor<int>::reverse_iterator it = acc3.rbegin(); it != acc3.rend(); ++it) {
     --idx;
     BOOST_CHECK( *it == (signed) (3000+idx) );
   }
@@ -550,7 +551,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // read via reverse const iterators
   idx=nSamples;
-  for(BufferingRegisterAccessorImpl<int>::const_reverse_iterator it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
+  for(BufferingRegisterAccessor<int>::const_reverse_iterator it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
     --idx;
     BOOST_CHECK( *it == (signed) (3000+idx) );
   }

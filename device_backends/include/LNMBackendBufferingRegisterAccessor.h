@@ -41,25 +41,28 @@ namespace mtca4u {
           throw DeviceException("LNMBackendBufferingRegisterAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
+        // obtain target device pointer
         _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName),
-            0,0,enforceRawAccess);
+        // compute actual length and offset
         if(_info.targetType == LogicalNameMap::TargetType::REGISTER) {
           _info.firstIndex = 0;
-          _info.length = _accessor.getNumberOfElements();
+          _info.length = 0;
         }
-        _info.firstIndex = _info.firstIndex + wordOffsetInRegister;
-        if(numberOfWords > 0) _info.length = numberOfWords;
-        index_begin = _info.firstIndex;
-        index_end = _info.firstIndex + _info.length;
-        index_rbegin = _accessor.getNumberOfElements() - index_end;
-        index_rend = _accessor.getNumberOfElements() - index_begin;
+        actualOffset = _info.firstIndex + wordOffsetInRegister;
+        actualLength = ( numberOfWords > 0 ? numberOfWords : _info.length );
+        // obtain underlying register accessor
+        _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName),
+            actualLength,actualOffset,enforceRawAccess);
+        if(actualLength == 0) actualLength = _accessor.getNumberOfElements();
+        // create buffer
+        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(actualLength);
       }
 
       virtual ~LNMBackendBufferingRegisterAccessor() {};
 
       virtual void read() {
         _accessor.read();
+        postRead();
       }
 
       virtual void write() {
@@ -67,33 +70,9 @@ namespace mtca4u {
           throw DeviceException("Writing to range-type registers of logical name mapping devices is not supported.",
               DeviceException::REGISTER_IS_READ_ONLY);
         }
+        preWrite();
         _accessor.write();
-      }
-
-      virtual T& operator[](unsigned int index) {
-        return _accessor[index + _info.firstIndex];
-      }
-
-      virtual unsigned int getNumberOfElements() {
-        return _info.length;
-      }
-
-      typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
-      virtual iterator begin() { return _accessor.begin() + index_begin; }
-      virtual const_iterator cbegin() const { return _accessor.cbegin() + index_begin; }
-      virtual iterator end() { return _accessor.begin() + index_end; }
-      virtual const_iterator cend() const { return _accessor.cbegin() + index_end; }
-      virtual reverse_iterator rbegin() { return _accessor.rbegin() + index_rbegin; }
-      virtual const_reverse_iterator crbegin() const { return _accessor.crbegin() + index_rbegin; }
-      virtual reverse_iterator rend() { return _accessor.rbegin() + index_rend; }
-      virtual const_reverse_iterator crend() const { return _accessor.crbegin() + index_rend; }
-
-      virtual void swap(std::vector<T> &x) {
-        x.resize(_info.length);
-        std::swap_ranges( begin(), end(), x.begin() );
+        postWrite();
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
@@ -101,6 +80,8 @@ namespace mtca4u {
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
+        if(actualLength != rhsCasted->actualLength) return false;
+        if(actualOffset != rhsCasted->actualOffset) return false;
         return true;
       }
 
@@ -135,8 +116,8 @@ namespace mtca4u {
       /// target device
       boost::shared_ptr<Device> _targetDevice;
 
-      /// indices needed to perpare the iterators
-      int index_begin, index_end, index_rbegin, index_rend;
+      /// actual length and offset w.r.t. beginning of the underlying register
+      size_t actualLength, actualOffset;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return _accessor.getHardwareAccessingElements();
@@ -145,6 +126,21 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         _accessor.replaceTransferElement(newElement);
       }
+
+      virtual void postRead() {
+        _accessor.postRead();
+        _accessor.swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+      };
+
+      virtual void preWrite() {
+        _accessor.preWrite();
+        _accessor.swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+      };
+
+      virtual void postWrite() {
+        _accessor.postWrite();
+        _accessor.swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+      };
 
   };
 

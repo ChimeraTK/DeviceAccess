@@ -58,7 +58,7 @@ namespace mtca4u {
       virtual ~LNMBackendBufferingVariableAccessor() {};
 
       virtual void read() {
-        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] =_fixedPointConverter.toCooked<T>(_info->value);
+        postRead();
       }
 
       virtual void write() {
@@ -66,15 +66,7 @@ namespace mtca4u {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
               DeviceException::REGISTER_IS_READ_ONLY);
         }
-        _info->value = _fixedPointConverter.toRaw(BufferingRegisterAccessorImpl<T>::cookedBuffer[0]);
-      }
-
-      virtual T& operator[](unsigned int) {
-        return BufferingRegisterAccessorImpl<T>::cookedBuffer[0];
-      }
-
-      virtual unsigned int getNumberOfElements() {
-        return 1;
+        preWrite();
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
@@ -114,6 +106,15 @@ namespace mtca4u {
       }
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}  // LCOV_EXCL_LINE
+
+      virtual void postRead() {
+        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] =_fixedPointConverter.toCooked<T>(_info->value);
+      }
+
+      virtual void preWrite() {
+        _info->value = _fixedPointConverter.toRaw(BufferingRegisterAccessorImpl<T>::cookedBuffer[0]);
+      }
+
 
   };
 

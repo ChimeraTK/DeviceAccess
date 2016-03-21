@@ -59,75 +59,75 @@ namespace mtca4u {
        *  the register.
        */
       inline T& operator[](unsigned int index) {
-        return _impl->operator[](index);
+        return _impl->cookedBuffer[index];
       }
 
       /** Return number of elements
        */
       inline unsigned int getNumberOfElements() {
-        return _impl->getNumberOfElements();
+        return _impl->cookedBuffer.size();
       }
 
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
       inline operator T&() {
-        return _impl->operator[](0);
+        return _impl->cookedBuffer[0];
       }
 
       /** Assignment operator, assigns the first element. */
       inline BufferingRegisterAccessor<T>& operator=(T rightHandSide)
       {
-        _impl->operator[](0) = rightHandSide;
+        _impl->cookedBuffer[0] = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator for the first element. */
       inline BufferingRegisterAccessor<T>& operator++() {
-        return operator=( _impl->operator[](0) + 1 );
+        return operator=( _impl->cookedBuffer[0] + 1 );
       }
 
       /** Pre-decrement operator for the first element. */
       inline BufferingRegisterAccessor<T>& operator--() {
-        return operator=( _impl->operator[](0) - 1 );
+        return operator=(_impl->cookedBuffer[0] - 1 );
       }
 
       /** Post-increment operator for the first element. */
       inline T operator++(int) {
-        T v = _impl->operator[](0);
+        T v = _impl->cookedBuffer[0];
         operator=( v + 1 );
         return v;
       }
 
       /** Post-decrement operator for the first element. */
       inline T operator--(int) {
-        T v = _impl->operator[](0);
+        T v = _impl->cookedBuffer[0];
         operator=( v - 1 );
         return v;
       }
 
       /** Access data with std::vector-like iterators
        */
-      typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
-      inline iterator begin() { return _impl->begin(); }
-      inline const_iterator begin() const { return _impl->cbegin(); }
-      inline const_iterator cbegin() const { return _impl->cbegin(); }
-      inline iterator end() { return _impl->end(); }
-      inline const_iterator end() const { return _impl->cend(); }
-      inline const_iterator cend() const { return _impl->cend(); }
-      inline reverse_iterator rbegin() { return _impl->rbegin(); }
-      inline const_reverse_iterator rbegin() const { return _impl->crbegin(); }
-      inline const_reverse_iterator crbegin() const { return _impl->crbegin(); }
-      inline reverse_iterator rend() { return _impl->rend(); }
-      inline const_reverse_iterator rend() const { return _impl->crend(); }
-      inline const_reverse_iterator crend() const { return _impl->crend(); }
+      typedef typename std::vector<T>::iterator iterator;
+      typedef typename std::vector<T>::const_iterator const_iterator;
+      typedef typename std::vector<T>::reverse_iterator reverse_iterator;
+      typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
+      inline iterator begin() { return _impl->cookedBuffer.begin(); }
+      inline const_iterator begin() const { return _impl->cookedBuffer.cbegin(); }
+      inline const_iterator cbegin() const { return _impl->cookedBuffer.cbegin(); }
+      inline iterator end() { return _impl->cookedBuffer.end(); }
+      inline const_iterator end() const { return _impl->cookedBuffer.cend(); }
+      inline const_iterator cend() const { return _impl->cookedBuffer.cend(); }
+      inline reverse_iterator rbegin() { return _impl->cookedBuffer.rbegin(); }
+      inline const_reverse_iterator rbegin() const { return _impl->cookedBuffer.crbegin(); }
+      inline const_reverse_iterator crbegin() const { return _impl->cookedBuffer.crbegin(); }
+      inline reverse_iterator rend() { return _impl->cookedBuffer.rend(); }
+      inline const_reverse_iterator rend() const { return _impl->cookedBuffer.crend(); }
+      inline const_reverse_iterator crend() const { return _impl->cookedBuffer.crend(); }
 
       /* Swap content of (cooked) buffer with std::vector
        */
       inline void swap(std::vector<T> &x) {
-        _impl->swap(x);
+        _impl->cookedBuffer.swap(x);
       }
 
       virtual bool isReadOnly() const {
@@ -146,6 +146,10 @@ namespace mtca4u {
         return _impl->getHardwareAccessingElements();
       }
 
+      virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
+        return boost::static_pointer_cast<TransferElement>(_impl);
+      }
+
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         if(_impl->isSameRegister(newElement)) {
           _impl = boost::dynamic_pointer_cast< BufferingRegisterAccessorImpl<T> >(newElement);
@@ -157,7 +161,7 @@ namespace mtca4u {
 
       /** DEPRECATED
        *
-       *  \depcrecated This function is deprecated. Just pass around copies of the BufferingRegisterAccessor itself
+       *  \deprecated This function is deprecated. Just pass around copies of the BufferingRegisterAccessor itself
        *  instead of shared pointers, which will create the exact same behaviour. */
       boost::shared_ptr< BufferingRegisterAccessorImpl<T> > getSharedPtr() {
         std::cerr << "##################################################################################" << std::endl;

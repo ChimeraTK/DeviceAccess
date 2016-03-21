@@ -56,8 +56,11 @@ namespace mtca4u {
 
     protected:
 
-      /** List of TransferElements in this group */
+      /** List of low-level TransferElements in this group, which are directly responsible for the hardware access */
       std::vector< boost::shared_ptr<TransferElement> > elements;
+
+      /** List of high-level TransferElements in this group which are directly used by the user */
+      std::vector< boost::shared_ptr<TransferElement> > highLevelElements;
 
       /** Flag if group is read-only */
       bool readOnly;

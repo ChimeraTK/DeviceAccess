@@ -46,42 +46,19 @@ namespace mtca4u {
         }
         _targetDevice = _dev->_devices[_info.deviceName];
         _accessor = _targetDevice->getTwoDRegisterAccessor<T>("",_info.registerName);
+        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_accessor.getNumberOfSamples());
       }
 
       virtual ~LNMBackendBufferingChannelAccessor() {};
 
       virtual void read() {
         _accessor.read();
+        postRead();
       }
 
       virtual void write() {
         throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
             DeviceException::REGISTER_IS_READ_ONLY);
-      }
-
-      virtual T& operator[](unsigned int index) {
-        return _accessor[_info.channel][index];
-      }
-
-      virtual unsigned int getNumberOfElements() {
-        return _accessor[_info.channel].size();
-      }
-
-      typedef typename BufferingRegisterAccessorImpl<T>::iterator iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::const_iterator const_iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::reverse_iterator reverse_iterator;
-      typedef typename BufferingRegisterAccessorImpl<T>::const_reverse_iterator const_reverse_iterator;
-      virtual iterator begin() { return _accessor[_info.channel].begin(); }
-      virtual const_iterator cbegin() const { return _accessor[_info.channel].cbegin(); }
-      virtual iterator end() { return _accessor[_info.channel].end(); }
-      virtual const_iterator cend() const { return _accessor[_info.channel].cend(); }
-      virtual reverse_iterator rbegin() { return _accessor[_info.channel].rbegin(); }
-      virtual const_reverse_iterator crbegin() const { return _accessor[_info.channel].crbegin(); }
-      virtual reverse_iterator rend() { return _accessor[_info.channel].rend(); }
-      virtual const_reverse_iterator crend() const { return _accessor[_info.channel].crend(); }
-
-      virtual void swap(std::vector<T> &x) {
-        _accessor[_info.channel].swap(x);
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
@@ -125,6 +102,11 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         _accessor.replaceTransferElement(newElement);
       }
+
+      virtual void postRead() {
+        _accessor.postRead();
+        _accessor[_info.channel].swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+      };
 
   };
 

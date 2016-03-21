@@ -53,11 +53,8 @@ namespace mtca4u {
         auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
         // perform read
         acc->read();
-        // swap buffer out (to get the pointer) and copy data to target buffer
-        std::vector<ConvertedDataType> temp;
-        acc->swap(temp);
-        memcpy(convertedData, temp.data(), nWords*sizeof(ConvertedDataType));
-        acc->swap(temp);
+        // copy data to target buffer
+        memcpy(convertedData, acc->cookedBuffer.data(), nWords*sizeof(ConvertedDataType));
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -82,11 +79,8 @@ namespace mtca4u {
         if(nWords == 0) return;
         // obtain accessor
         auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
-        // swap buffer out (to get the pointer) and copy data from source buffer
-        std::vector<ConvertedDataType> temp;
-        acc->swap(temp);
-        memcpy(temp.data(), convertedData, nWords*sizeof(ConvertedDataType));
-        acc->swap(temp);
+        // copy data from source buffer
+        memcpy(acc->cookedBuffer.data(), convertedData, nWords*sizeof(ConvertedDataType));
         // perform write
         acc->write();
       }
@@ -108,7 +102,7 @@ namespace mtca4u {
        */
       unsigned int getNumberOfElements() const {
         auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->getNumberOfElements();
+        return acc->cookedBuffer.size();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -150,11 +144,8 @@ namespace mtca4u {
             addRegOffset/sizeof(int32_t), true);
         // perform read
         acc->read();
-        // swap buffer out (to get the pointer) and copy to target buffer
-        std::vector<int32_t> temp;
-        acc->swap(temp);
-        memcpy(data, temp.data(), dataSize);
-        acc->swap(temp);
+        // copy to target buffer
+        memcpy(data, acc->cookedBuffer.data(), dataSize);
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -173,11 +164,8 @@ namespace mtca4u {
         // obtain accessor
         auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
             addRegOffset/sizeof(int32_t), true);
-        // swap buffer out (to get the pointer) and copy data from source buffer
-        std::vector<int32_t> temp;
-        acc->swap(temp);
-        memcpy(temp.data(), data, dataSize);
-        acc->swap(temp);
+        // copy data from source buffer
+        memcpy(acc->cookedBuffer.data(), data, dataSize);
         // perform write
         acc->write();
       }

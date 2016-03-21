@@ -35,44 +35,24 @@ namespace mtca4u {
       /** Convert data from the buffer and write to device. */
       virtual void write() = 0;
 
-      /** Get or set buffer content by [] operator.
-       *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
-       *  the register.
-       */
-      virtual T& operator[](unsigned int index) {
-        return cookedBuffer[index];
-      }
-
-      /** Return number of elements */
-      virtual unsigned int getNumberOfElements() {
-        return cookedBuffer.size();
-      }
-
-      /** Access data with std::vector-like iterators */
-      typedef typename std::vector<T>::iterator iterator;
-      typedef typename std::vector<T>::const_iterator const_iterator;
-      typedef typename std::vector<T>::reverse_iterator reverse_iterator;
-      typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
-      virtual iterator begin() { return cookedBuffer.begin(); }
-      virtual const_iterator cbegin() const { return cookedBuffer.cbegin(); }
-      virtual iterator end() { return cookedBuffer.end(); }
-      virtual const_iterator cend() const { return cookedBuffer.cend(); }
-      virtual reverse_iterator rbegin() { return cookedBuffer.rbegin(); }
-      virtual const_reverse_iterator crbegin() const { return cookedBuffer.crbegin(); }
-      virtual reverse_iterator rend() { return cookedBuffer.rend(); }
-      virtual const_reverse_iterator crend() const { return cookedBuffer.crend(); }
-
-      /* Swap content of (cooked) buffer with std::vector */
-      virtual void swap(std::vector<T> &x) {
-        cookedBuffer.swap(x);
-      }
-
       /** DO NOT USE. FOR BACKWARDS COMPATIBILITY ONLY.
        *
        *  \deprecated This function is for backwards compatibility with the deprecated RegisterAccessor only.
        *  Return the fixed point converter used to convert the raw data from the device to the type T. If no conversion
        *  by the fixed point converter is required, this function will throw an exception. */
       virtual FixedPointConverter getFixedPointConverter() const = 0;
+
+      /** Get or set buffer content by [] operator.
+       *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
+       *  the register. */
+      inline T& operator[](unsigned int index) {
+        return cookedBuffer[index];
+      }
+
+      /** Return number of elements */
+      inline unsigned int getNumberOfElements() {
+        return cookedBuffer.size();
+      }
 
     protected:
 
@@ -81,6 +61,9 @@ namespace mtca4u {
 
       /// the public interface needs access to protected functions of the TransferElement etc.
       friend class BufferingRegisterAccessor<T>;
+
+      /// for compatibility only
+      friend class RegisterAccessor;
 
   };
 
