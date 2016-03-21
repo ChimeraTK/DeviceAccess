@@ -21,7 +21,10 @@ namespace mtca4u {
   class BufferingRegisterAccessor;
 
   template< typename UserType >
-  class BufferingRegisterAccessorImpl;
+  class NDRegisterAccessor;
+
+  template<typename UserType>
+  class TwoDRegisterAccessor;
 
   template<typename UserType>
   class TwoDRegisterAccessorImpl;

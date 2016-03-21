@@ -10,7 +10,7 @@
 #include "VirtualFunctionTemplate.h"
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
-#include "BufferingRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
 
 namespace mtca4u {
@@ -54,7 +54,7 @@ namespace mtca4u {
         // perform read
         acc->read();
         // copy data to target buffer
-        memcpy(convertedData, acc->cookedBuffer.data(), nWords*sizeof(ConvertedDataType));
+        memcpy(convertedData, acc->buffer_2D[0].data(), nWords*sizeof(ConvertedDataType));
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -80,7 +80,7 @@ namespace mtca4u {
         // obtain accessor
         auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
         // copy data from source buffer
-        memcpy(acc->cookedBuffer.data(), convertedData, nWords*sizeof(ConvertedDataType));
+        memcpy(acc->buffer_2D[0].data(), convertedData, nWords*sizeof(ConvertedDataType));
         // perform write
         acc->write();
       }
@@ -102,7 +102,7 @@ namespace mtca4u {
        */
       unsigned int getNumberOfElements() const {
         auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->cookedBuffer.size();
+        return acc->buffer_2D[0].size();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -145,7 +145,7 @@ namespace mtca4u {
         // perform read
         acc->read();
         // copy to target buffer
-        memcpy(data, acc->cookedBuffer.data(), dataSize);
+        memcpy(data, acc->buffer_2D[0].data(), dataSize);
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -165,7 +165,7 @@ namespace mtca4u {
         auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
             addRegOffset/sizeof(int32_t), true);
         // copy data from source buffer
-        memcpy(acc->cookedBuffer.data(), data, dataSize);
+        memcpy(acc->buffer_2D[0].data(), data, dataSize);
         // perform write
         acc->write();
       }

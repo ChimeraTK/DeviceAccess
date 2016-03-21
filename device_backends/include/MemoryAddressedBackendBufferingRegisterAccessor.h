@@ -8,7 +8,7 @@
 #ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
 #define MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
 
-#include "BufferingRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 #include "MemoryAddressedBackend.h"
 #include "FixedPointConverter.h"
 
@@ -21,7 +21,7 @@ namespace mtca4u {
    *  register accessor to aquire the data. It should be suitable for most backends.
    */
   template<typename UserType>
-  class MemoryAddressedBackendBufferingRegisterAccessor : public BufferingRegisterAccessorImpl<UserType> {
+  class MemoryAddressedBackendBufferingRegisterAccessor : public NDRegisterAccessor<UserType> {
     public:
 
       MemoryAddressedBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
@@ -53,7 +53,8 @@ namespace mtca4u {
         }
 
         // allocated the buffers
-        BufferingRegisterAccessorImpl<UserType>::cookedBuffer.resize(_numberOfWords);
+        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
         rawDataBuffer.resize(_numberOfWords);
 
         // compute number of bytes
@@ -78,13 +79,13 @@ namespace mtca4u {
       virtual void read() {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
         for(size_t i=0; i < _numberOfWords; ++i){
-          BufferingRegisterAccessorImpl<UserType>::cookedBuffer[i] = _fixedPointConverter.toCooked<UserType>(rawDataBuffer[i]);
+          NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(rawDataBuffer[i]);
         }
       }
 
       virtual void write() {
         for(size_t i=0; i < _numberOfWords; ++i){
-          rawDataBuffer[i] = _fixedPointConverter.toRaw(BufferingRegisterAccessorImpl<UserType>::cookedBuffer[i]);
+          rawDataBuffer[i] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
         }
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }

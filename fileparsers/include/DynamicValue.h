@@ -12,6 +12,7 @@
 #include <string>
 
 #include "ForwardDeclarations.h"
+#include "BufferingRegisterAccessor.h"
 #include "DeviceBackend.h"
 
 namespace mtca4u {
@@ -25,12 +26,12 @@ namespace mtca4u {
       /** obtain value via implicit type conversion operator */
       operator const ValueType&() const {
         if(!hasActualValue) {
-          if(!accessor) {
+          if(!accessor.getHighLevelImplElement()) {
             throw DeviceException("Cannot obtain this value before Value::createInternalAccessors() was called.",
                 DeviceException::EX_NOT_OPENED);
           }
-          accessor->read();
-          return (*accessor)[0];
+          accessor.read();
+          return accessor[0];
         }
         return value;
       }
@@ -67,7 +68,7 @@ namespace mtca4u {
           // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
           hasActualValue = false;
           registerName = rightHandSide.registerName;
-          accessor.reset();
+          accessor = BufferingRegisterAccessor<ValueType>();
         }
         return *this;
       }
@@ -79,7 +80,7 @@ namespace mtca4u {
       /** create the internal register accessor(s) to obtain the value, if needed */
       void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
         if(!hasActualValue) {
-          accessor = backend->getBufferingRegisterAccessor<ValueType>("",registerName);
+          accessor = BufferingRegisterAccessor<ValueType>( backend->getBufferingRegisterAccessor<ValueType>("",registerName) );
         }
       }
 
@@ -95,7 +96,7 @@ namespace mtca4u {
       ValueType value;
 
       /** register accessor to obtain the value, if not yet known upon construction */
-      mutable boost::shared_ptr< BufferingRegisterAccessorImpl<ValueType> > accessor;
+      mutable BufferingRegisterAccessor<ValueType> accessor;
 
       /** all Values are friends */
       template<typename T>
@@ -119,7 +120,7 @@ namespace mtca4u {
       // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
       hasActualValue = false;
       registerName = rightHandSide.registerName;
-      accessor.reset();
+      accessor = BufferingRegisterAccessor<ValueType>();
     }
     return *this;
   }

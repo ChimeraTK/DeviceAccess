@@ -89,10 +89,10 @@ namespace mtca4u {
        *  using a std::vector-like interface.
        */
       template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor(
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getBufferingRegisterAccessor_impl,
-          boost::shared_ptr< BufferingRegisterAccessorImpl<T> >(const RegisterPath&, size_t, size_t, bool) );
+          boost::shared_ptr< NDRegisterAccessor<T> >(const RegisterPath&, size_t, size_t, bool) );
 
       /** Get register accessor for 2-dimensional registers. */
       template<typename UserType>
@@ -110,7 +110,7 @@ namespace mtca4u {
        *  This signature is deprecated, use the new signature with the RegisterPath argument instead!
        */
       template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor(
           const std::string &registerName, const std::string &module) {
         return getBufferingRegisterAccessor<UserType>(RegisterPath(module)/registerName, 0,0,false);
       }
@@ -159,7 +159,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > DeviceBackend::getBufferingRegisterAccessor(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > DeviceBackend::getBufferingRegisterAccessor(
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
     return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
         wordOffsetInRegister, enforceRawAccess);

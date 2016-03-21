@@ -137,7 +137,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > LogicalNameMappingBackend::getBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > LogicalNameMappingBackend::getBufferingRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
 
     // obtain register info
@@ -148,7 +148,7 @@ namespace mtca4u {
     if(info->hasDeviceName()) targetDevice = _devices[info->deviceName];
 
     // implementation for each type
-    BufferingRegisterAccessorImpl<UserType> *ptr;
+    NDRegisterAccessor<UserType> *ptr;
     if( info->targetType == LogicalNameMap::TargetType::REGISTER ||
         info->targetType == LogicalNameMap::TargetType::RANGE       ) {
       ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
@@ -169,7 +169,7 @@ namespace mtca4u {
     }
 
     // allow plugins to decorate the accessor and return it
-    auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(ptr);
+    auto accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(ptr);
     return decorateBufferingRegisterAccessor<UserType>(registerPathName,accessor);
   }
 

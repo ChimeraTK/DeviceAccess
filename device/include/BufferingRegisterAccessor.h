@@ -9,7 +9,7 @@
 #define MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 
 #include "ForwardDeclarations.h"
-#include "BufferingRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 
 namespace mtca4u {
 
@@ -28,7 +28,7 @@ namespace mtca4u {
       /** Constructer. @attention Do not normally use directly.
        *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
        */
-      BufferingRegisterAccessor(boost::shared_ptr< BufferingRegisterAccessorImpl<T> > impl)
+      BufferingRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<T> > impl)
       : _impl(impl)
       {}
 
@@ -59,48 +59,48 @@ namespace mtca4u {
        *  the register.
        */
       inline T& operator[](unsigned int index) {
-        return _impl->cookedBuffer[index];
+        return _impl->buffer_2D[0][index];
       }
 
       /** Return number of elements
        */
       inline unsigned int getNumberOfElements() {
-        return _impl->cookedBuffer.size();
+        return _impl->buffer_2D[0].size();
       }
 
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
       inline operator T&() {
-        return _impl->cookedBuffer[0];
+        return _impl->buffer_2D[0][0];
       }
 
       /** Assignment operator, assigns the first element. */
       inline BufferingRegisterAccessor<T>& operator=(T rightHandSide)
       {
-        _impl->cookedBuffer[0] = rightHandSide;
+        _impl->buffer_2D[0][0] = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator for the first element. */
       inline BufferingRegisterAccessor<T>& operator++() {
-        return operator=( _impl->cookedBuffer[0] + 1 );
+        return operator=( _impl->buffer_2D[0][0] + 1 );
       }
 
       /** Pre-decrement operator for the first element. */
       inline BufferingRegisterAccessor<T>& operator--() {
-        return operator=(_impl->cookedBuffer[0] - 1 );
+        return operator=(_impl->buffer_2D[0][0] - 1 );
       }
 
       /** Post-increment operator for the first element. */
       inline T operator++(int) {
-        T v = _impl->cookedBuffer[0];
+        T v = _impl->buffer_2D[0][0];
         operator=( v + 1 );
         return v;
       }
 
       /** Post-decrement operator for the first element. */
       inline T operator--(int) {
-        T v = _impl->cookedBuffer[0];
+        T v = _impl->buffer_2D[0][0];
         operator=( v - 1 );
         return v;
       }
@@ -111,23 +111,23 @@ namespace mtca4u {
       typedef typename std::vector<T>::const_iterator const_iterator;
       typedef typename std::vector<T>::reverse_iterator reverse_iterator;
       typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
-      inline iterator begin() { return _impl->cookedBuffer.begin(); }
-      inline const_iterator begin() const { return _impl->cookedBuffer.cbegin(); }
-      inline const_iterator cbegin() const { return _impl->cookedBuffer.cbegin(); }
-      inline iterator end() { return _impl->cookedBuffer.end(); }
-      inline const_iterator end() const { return _impl->cookedBuffer.cend(); }
-      inline const_iterator cend() const { return _impl->cookedBuffer.cend(); }
-      inline reverse_iterator rbegin() { return _impl->cookedBuffer.rbegin(); }
-      inline const_reverse_iterator rbegin() const { return _impl->cookedBuffer.crbegin(); }
-      inline const_reverse_iterator crbegin() const { return _impl->cookedBuffer.crbegin(); }
-      inline reverse_iterator rend() { return _impl->cookedBuffer.rend(); }
-      inline const_reverse_iterator rend() const { return _impl->cookedBuffer.crend(); }
-      inline const_reverse_iterator crend() const { return _impl->cookedBuffer.crend(); }
+      inline iterator begin() { return _impl->buffer_2D[0].begin(); }
+      inline const_iterator begin() const { return _impl->buffer_2D[0].cbegin(); }
+      inline const_iterator cbegin() const { return _impl->buffer_2D[0].cbegin(); }
+      inline iterator end() { return _impl->buffer_2D[0].end(); }
+      inline const_iterator end() const { return _impl->buffer_2D[0].cend(); }
+      inline const_iterator cend() const { return _impl->buffer_2D[0].cend(); }
+      inline reverse_iterator rbegin() { return _impl->buffer_2D[0].rbegin(); }
+      inline const_reverse_iterator rbegin() const { return _impl->buffer_2D[0].crbegin(); }
+      inline const_reverse_iterator crbegin() const { return _impl->buffer_2D[0].crbegin(); }
+      inline reverse_iterator rend() { return _impl->buffer_2D[0].rend(); }
+      inline const_reverse_iterator rend() const { return _impl->buffer_2D[0].crend(); }
+      inline const_reverse_iterator crend() const { return _impl->buffer_2D[0].crend(); }
 
       /* Swap content of (cooked) buffer with std::vector
        */
       inline void swap(std::vector<T> &x) {
-        _impl->cookedBuffer.swap(x);
+        _impl->buffer_2D[0].swap(x);
       }
 
       virtual bool isReadOnly() const {
@@ -152,30 +152,17 @@ namespace mtca4u {
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         if(_impl->isSameRegister(newElement)) {
-          _impl = boost::dynamic_pointer_cast< BufferingRegisterAccessorImpl<T> >(newElement);
+          _impl = boost::dynamic_pointer_cast< NDRegisterAccessor<T> >(newElement);
         }
         else {
           _impl->replaceTransferElement(newElement);
         }
       }
 
-      /** DEPRECATED
-       *
-       *  \deprecated This function is deprecated. Just pass around copies of the BufferingRegisterAccessor itself
-       *  instead of shared pointers, which will create the exact same behaviour. */
-      boost::shared_ptr< BufferingRegisterAccessorImpl<T> > getSharedPtr() {
-        std::cerr << "##################################################################################" << std::endl;
-        std::cerr << "# The function BufferingRegisterAccessor::getSharedPtr() is depcreated." << std::endl;
-        std::cerr << "# Just pass around copies of the TwoDRegisterAccessor itself instead of shared" << std::endl;
-        std::cerr << "# pointers, which will create the exact same behaviour." << std::endl;
-        std::cerr << "##################################################################################" << std::endl;
-        return _impl;
-      }
-
     protected:
 
       /// pointer to the implementation
-      boost::shared_ptr< BufferingRegisterAccessorImpl<T> > _impl;
+      boost::shared_ptr< NDRegisterAccessor<T> > _impl;
 
       // the TransferGroup must be a friend to access the actual accesor
       friend class TransferGroup;

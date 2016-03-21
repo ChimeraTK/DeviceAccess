@@ -17,7 +17,6 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TwoDRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TwoDRegisterAccessorImpl.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BufferingRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/BufferingRegisterAccessorImpl.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MultiplexedDataAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MultiplexedDataAccessorException.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/FixedPointConverter.h

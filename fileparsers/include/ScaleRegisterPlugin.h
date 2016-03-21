@@ -9,7 +9,7 @@
 #define MTCA4U_SCALE_REGISTER_PLUGIN_H
 
 #include "RegisterPlugin.h"
-#include "BufferingRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 
 namespace mtca4u {
 
@@ -27,8 +27,8 @@ namespace mtca4u {
     protected:
 
       template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > decorateBufferingRegisterAccessor_impl(
-          boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const;
+      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateBufferingRegisterAccessor_impl(
+          boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const;
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ScaleRegisterPlugin, decorateBufferingRegisterAccessor_impl, 1);
 
       /** constructor, only internally called from createInstance() */

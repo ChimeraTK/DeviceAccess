@@ -93,9 +93,9 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > MemoryAddressedBackend::getBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > MemoryAddressedBackend::getBufferingRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
-    auto accessor = boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> >(
+    auto accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
         new MemoryAddressedBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
             wordOffsetInRegister, numberOfWords, enforceRawAccess) );
     // allow plugins to decorate the accessor and return it

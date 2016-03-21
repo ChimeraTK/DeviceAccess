@@ -23,7 +23,7 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template< typename T >
-  class LNMBackendBufferingChannelAccessor : public BufferingRegisterAccessorImpl<T> {
+  class LNMBackendBufferingChannelAccessor : public NDRegisterAccessor<T> {
     public:
 
       LNMBackendBufferingChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
@@ -44,9 +44,12 @@ namespace mtca4u {
           throw DeviceException("LNMBackendBufferingChannelAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
+        // get target device and accessor
         _targetDevice = _dev->_devices[_info.deviceName];
         _accessor = _targetDevice->getTwoDRegisterAccessor<T>("",_info.registerName);
-        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(_accessor.getNumberOfSamples());
+        // allocate the buffer
+        NDRegisterAccessor<T>::buffer_2D.resize(1);
+        NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor.getNumberOfSamples());
       }
 
       virtual ~LNMBackendBufferingChannelAccessor() {};
@@ -105,7 +108,7 @@ namespace mtca4u {
 
       virtual void postRead() {
         _accessor.postRead();
-        _accessor[_info.channel].swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+        _accessor[_info.channel].swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
   };

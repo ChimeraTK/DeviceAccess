@@ -5,7 +5,7 @@
 #include <boost/smart_ptr.hpp>
 
 #include "RegisterPlugin.h"
-#include "BufferingRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 
 namespace mtca4u {
 
@@ -16,8 +16,8 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > RegisterPlugin::decorateBufferingRegisterAccessor_impl(
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
+  boost::shared_ptr< NDRegisterAccessor<UserType> > RegisterPlugin::decorateBufferingRegisterAccessor_impl(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
     return accessor;
   }
  

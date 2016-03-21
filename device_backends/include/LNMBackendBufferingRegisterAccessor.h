@@ -12,7 +12,6 @@
 
 #include "LogicalNameMappingBackend.h"
 #include "BufferingRegisterAccessor.h"
-#include "BufferingRegisterAccessorImpl.h"
 #include "FixedPointConverter.h"
 #include "Device.h"
 
@@ -23,7 +22,7 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template<typename T>
-  class LNMBackendBufferingRegisterAccessor : public BufferingRegisterAccessorImpl<T> {
+  class LNMBackendBufferingRegisterAccessor : public NDRegisterAccessor<T> {
     public:
 
       LNMBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
@@ -55,7 +54,8 @@ namespace mtca4u {
             actualLength,actualOffset,enforceRawAccess);
         if(actualLength == 0) actualLength = _accessor.getNumberOfElements();
         // create buffer
-        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(actualLength);
+        NDRegisterAccessor<T>::buffer_2D.resize(1);
+        NDRegisterAccessor<T>::buffer_2D[0].resize(actualLength);
       }
 
       virtual ~LNMBackendBufferingRegisterAccessor() {};
@@ -129,17 +129,17 @@ namespace mtca4u {
 
       virtual void postRead() {
         _accessor.postRead();
-        _accessor.swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+        _accessor.swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
       virtual void preWrite() {
         _accessor.preWrite();
-        _accessor.swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+        _accessor.swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
       virtual void postWrite() {
         _accessor.postWrite();
-        _accessor.swap(BufferingRegisterAccessorImpl<T>::cookedBuffer);
+        _accessor.swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
   };

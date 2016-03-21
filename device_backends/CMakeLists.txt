@@ -19,6 +19,7 @@ set(HEADERS
    ${HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/NDRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendBufferingRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h

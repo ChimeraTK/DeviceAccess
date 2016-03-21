@@ -13,7 +13,6 @@
 
 #include "LogicalNameMappingBackend.h"
 #include "BufferingRegisterAccessor.h"
-#include "BufferingRegisterAccessorImpl.h"
 #include "FixedPointConverter.h"
 #include "Device.h"
 
@@ -24,7 +23,7 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template<typename T>
-  class LNMBackendBufferingVariableAccessor : public BufferingRegisterAccessorImpl<T> {
+  class LNMBackendBufferingVariableAccessor : public NDRegisterAccessor<T> {
     public:
 
       LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
@@ -51,8 +50,9 @@ namespace mtca4u {
           throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
-        BufferingRegisterAccessorImpl<T>::cookedBuffer.resize(1);
-        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] = _fixedPointConverter.toCooked<T>(_info->value);
+        NDRegisterAccessor<T>::buffer_2D.resize(1);
+        NDRegisterAccessor<T>::buffer_2D[0].resize(1);
+        NDRegisterAccessor<T>::buffer_2D[0][0] = _fixedPointConverter.toCooked<T>(_info->value);
       }
 
       virtual ~LNMBackendBufferingVariableAccessor() {};
@@ -108,11 +108,11 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}  // LCOV_EXCL_LINE
 
       virtual void postRead() {
-        BufferingRegisterAccessorImpl<T>::cookedBuffer[0] =_fixedPointConverter.toCooked<T>(_info->value);
+        NDRegisterAccessor<T>::buffer_2D[0][0] =_fixedPointConverter.toCooked<T>(_info->value);
       }
 
       virtual void preWrite() {
-        _info->value = _fixedPointConverter.toRaw(BufferingRegisterAccessorImpl<T>::cookedBuffer[0]);
+        _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<T>::buffer_2D[0][0]);
       }
 
 

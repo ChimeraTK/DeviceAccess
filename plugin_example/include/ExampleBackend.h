@@ -63,7 +63,7 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
 
     /** Implement the virtual function template to obtain the buffering register accessor */
     template<typename UserType>
-    boost::shared_ptr< mtca4u::BufferingRegisterAccessorImpl<UserType> > getBufferingRegisterAccessor_impl(
+    boost::shared_ptr< mtca4u::NDRegisterAccessor<UserType> > getBufferingRegisterAccessor_impl(
         const mtca4u::RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getBufferingRegisterAccessor_impl, 4 );
 

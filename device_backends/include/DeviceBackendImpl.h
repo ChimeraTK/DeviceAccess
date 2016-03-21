@@ -56,8 +56,8 @@ namespace mtca4u {
 
       /** Add plugin-provided decorators to a BufferingRegisterAccessor */
       template<typename UserType>
-      boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > decorateBufferingRegisterAccessor(
-          const RegisterPath &registerPathName, boost::shared_ptr< BufferingRegisterAccessorImpl<UserType> > accessor) const {
+      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateBufferingRegisterAccessor(
+          const RegisterPath &registerPathName, boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
         auto info = _catalogue.getRegister(registerPathName);
         for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
           accessor = i->decorateBufferingRegisterAccessor<UserType>(accessor);
