@@ -165,8 +165,8 @@ void LMapBackendTest::testExceptions() {
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
   mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
-  BOOST_CHECK( acc.isSameRegister(acc2.getSharedPtr()) == true );
-  BOOST_CHECK( acc.isSameRegister(acc3.getSharedPtr()) == false );
+  BOOST_CHECK( acc.isSameRegister(acc2) == true );
+  BOOST_CHECK( acc.isSameRegister(acc3) == false );
 
   device.close();
 
@@ -328,8 +328,8 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   BOOST_CHECK( !acc.isReadOnly() );
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
-  BOOST_CHECK( acc.isSameRegister( acc.getSharedPtr() ) == true );
-  BOOST_CHECK( acc.isSameRegister( acc2.getSharedPtr() ) == false );
+  BOOST_CHECK( acc.isSameRegister( acc ) == true );
+  BOOST_CHECK( acc.isSameRegister( acc2 ) == false );
 
   const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
@@ -489,8 +489,8 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   mtca4u::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
-  BOOST_CHECK( acc3.isSameRegister( acc3_2.getSharedPtr() ) == true );
-  BOOST_CHECK( acc3.isSameRegister( acc4.getSharedPtr() ) == false );
+  BOOST_CHECK( acc3.isSameRegister( acc3_2 ) == true );
+  BOOST_CHECK( acc3.isSameRegister( acc4 ) == false );
 
   mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
   unsigned int nSamples = accTarget[3].size();

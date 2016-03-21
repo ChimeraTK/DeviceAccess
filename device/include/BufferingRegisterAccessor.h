@@ -138,6 +138,10 @@ namespace mtca4u {
         return _impl->isSameRegister(other);
       }
 
+      virtual bool isSameRegister(const TransferElement &other) const {
+        return other.isSameRegister(_impl);
+      }
+
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return _impl->getHardwareAccessingElements();
       }
@@ -151,8 +155,16 @@ namespace mtca4u {
         }
       }
 
-      /** Return the shared pointer to the implementation object */
+      /** DEPRECATED
+       *
+       *  \depcrecated This function is deprecated. Just pass around copies of the BufferingRegisterAccessor itself
+       *  instead of shared pointers, which will create the exact same behaviour. */
       boost::shared_ptr< BufferingRegisterAccessorImpl<T> > getSharedPtr() {
+        std::cerr << "##################################################################################" << std::endl;
+        std::cerr << "# The function BufferingRegisterAccessor::getSharedPtr() is depcreated." << std::endl;
+        std::cerr << "# Just pass around copies of the TwoDRegisterAccessor itself instead of shared" << std::endl;
+        std::cerr << "# pointers, which will create the exact same behaviour." << std::endl;
+        std::cerr << "##################################################################################" << std::endl;
         return _impl;
       }
 
