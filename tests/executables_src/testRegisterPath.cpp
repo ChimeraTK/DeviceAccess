@@ -75,9 +75,6 @@ void RegisterPathTest::testNumericAddresses() {
 
   RegisterPath path2;
 
-  path2 = path1+3;
-  BOOST_CHECK( path2 == "/SomeModule/withSomeRegister3" );
-
   path2 = path1*3;
   BOOST_CHECK( path2 == "/SomeModule/withSomeRegister*3" );
 
