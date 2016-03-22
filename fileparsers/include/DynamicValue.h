@@ -80,7 +80,8 @@ namespace mtca4u {
       /** create the internal register accessor(s) to obtain the value, if needed */
       void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
         if(!hasActualValue) {
-          accessor = BufferingRegisterAccessor<ValueType>( backend->getBufferingRegisterAccessor<ValueType>("",registerName) );
+          accessor = BufferingRegisterAccessor<ValueType>(
+              backend->getBufferingRegisterAccessor<ValueType>(registerName,0,0,false) );
         }
       }
 
