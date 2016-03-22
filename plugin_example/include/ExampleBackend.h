@@ -40,11 +40,6 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
     virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
     virtual std::string readDeviceInfo() {return std::string("Example_Device");}
 
-    virtual boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(
-        const std::string &/*registerName*/, const std::string &/*module*/ = std::string()) {
-      return boost::shared_ptr<mtca4u::RegisterAccessor>(); // return some useful accessor here!
-    }
-
     virtual boost::shared_ptr<const mtca4u::RegisterInfoMap> getRegisterMap() const {
       return boost::shared_ptr<const mtca4u::RegisterInfoMap>();
     }
