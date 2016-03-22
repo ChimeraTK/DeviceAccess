@@ -148,7 +148,6 @@ namespace mtca4u {
 
   /** operators used to build numeric addresses from integers */
   RegisterPath operator/(const RegisterPath &leftHandSide, int rightHandSide);
-  RegisterPath operator+(const RegisterPath &leftHandSide, int rightHandSide);
   RegisterPath operator*(const RegisterPath &leftHandSide, int rightHandSide);
 
 } /* namespace mtca4u */

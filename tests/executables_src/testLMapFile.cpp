@@ -18,7 +18,6 @@ class LMapFileTest {
     void testFileNotFound();
     void testErrorInDmapFile();
     void testParseFile();
-    void testRegisterPath();
 };
 
 class LMapFileTestSuite : public test_suite {
@@ -29,7 +28,6 @@ class LMapFileTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testFileNotFound, lMapFileTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testErrorInDmapFile, lMapFileTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testParseFile, lMapFileTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testRegisterPath, lMapFileTest) );
     }
 };
 
@@ -182,36 +180,4 @@ void LMapFileTest::testParseFile() {
     BOOST_CHECK( ex.getID() == DeviceException::REGISTER_DOES_NOT_EXIST );
   }
 
-}
-
-void LMapFileTest::testRegisterPath() {
-  RegisterPath path1;
-  RegisterPath path2("module1");
-  RegisterPath path3("//module//blah/");
-  RegisterPath path4("moduleX..Yblah/sub");
-  BOOST_CHECK( path1 == "/" );
-  BOOST_CHECK( path2 == "/module1" );
-  BOOST_CHECK( path3 == "/module/blah" );
-  BOOST_CHECK( path3.getWithAltSeparator() == "module.blah" );
-  BOOST_CHECK( path4 == "/moduleX/Yblah/sub" );
-  BOOST_CHECK( (path4/"next.register").getWithAltSeparator() == "moduleX.Yblah.sub.next.register" );
-  BOOST_CHECK( path3/"register" == "/module/blah/register");
-  BOOST_CHECK( "root"/path3/"register" == "/root/module/blah/register");
-  BOOST_CHECK( "root/"+path3+"register" == "root//module/blahregister");
-  BOOST_CHECK( "root"/path3+"register" == "/root/module/blahregister");
-  BOOST_CHECK( "root"+path3/"register" == "root/module/blah/register");
-  BOOST_CHECK( path2/path3 == "/module1/module/blah" );
-
-  path3 /= "test";
-  BOOST_CHECK( path3 == "/module/blah/test" );
-  path3--;
-  BOOST_CHECK( path3 == "/module/blah" );
-  --path3;
-  BOOST_CHECK( path3 == "/blah" );
-  path3--;
-  BOOST_CHECK( path3 == "/" );
-  --path2;
-  BOOST_CHECK( path2 == "/" );
-  
-  
 }
