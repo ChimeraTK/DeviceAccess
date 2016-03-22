@@ -4,6 +4,7 @@
 // @todo enable warning after a depcrecation warning for MultiplexedDataAccessor etc. has been released.
 //#warning Including MultiplexDataAccessor.h is deprecated, include RegisterAccessor2D.h instead.
 #include "NDRegisterAccessor.h"
+#include "DeviceBackend.h"
 
 namespace mtca4u {
 
