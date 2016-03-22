@@ -18,6 +18,7 @@ class RegisterPathTest {
   public:
     void testRegisterPath();
     void testNumericAddresses();
+    void testComponents();
 };
 
 class RegisterPathTestSuite : public test_suite {
@@ -27,6 +28,7 @@ class RegisterPathTestSuite : public test_suite {
 
       add( BOOST_CLASS_TEST_CASE(&RegisterPathTest::testRegisterPath, registerPathTest) );
       add( BOOST_CLASS_TEST_CASE(&RegisterPathTest::testNumericAddresses, registerPathTest) );
+      add( BOOST_CLASS_TEST_CASE(&RegisterPathTest::testComponents, registerPathTest) );
     }
 };
 
@@ -44,8 +46,11 @@ void RegisterPathTest::testRegisterPath() {
   RegisterPath path3("//module//blah/");
   RegisterPath path4("moduleX..Yblah/sub");
   BOOST_CHECK( path1 == "/" );
+  BOOST_CHECK( path1.length() == 1 );
   BOOST_CHECK( path2 == "/module1" );
+  BOOST_CHECK( path2.length() == 8 );
   BOOST_CHECK( path3 == "/module/blah" );
+  BOOST_CHECK( path3.length() == 12 );
   BOOST_CHECK( path3.getWithAltSeparator() == "module.blah" );
   BOOST_CHECK( path4 == "/moduleX/Yblah/sub" );
   BOOST_CHECK( (path4/"next.register").getWithAltSeparator() == "moduleX.Yblah.sub.next.register" );
@@ -83,4 +88,25 @@ void RegisterPathTest::testNumericAddresses() {
 
   BOOST_CHECK( BAR == "/#" );
   BOOST_CHECK( BAR/0/32*8 == "/#/0/32*8" );
+}
+
+void RegisterPathTest::testComponents() {
+
+  RegisterPath path1("/SomeModule/withSubModules/and/withSomeRegister/");
+  std::vector<std::string> comps1 = path1.getComponents();
+  BOOST_CHECK(comps1.size() == 4);
+  BOOST_CHECK(comps1[0] == "SomeModule");
+  BOOST_CHECK(comps1[1] == "withSubModules");
+  BOOST_CHECK(comps1[2] == "and");
+  BOOST_CHECK(comps1[3] == "withSomeRegister");
+
+  RegisterPath path2("");
+  std::vector<std::string> comps2 = path2.getComponents();
+  BOOST_CHECK(comps2.size() == 0);
+
+  RegisterPath path3("singleComponent");
+  std::vector<std::string> comps3 = path3.getComponents();
+  BOOST_CHECK(comps3.size() == 1);
+  BOOST_CHECK(comps3[0] == "singleComponent");
+
 }

@@ -9,6 +9,7 @@
 #define MTCA4U_REGISTER_PATH_H
 
 #include <string>
+#include <vector>
 
 namespace mtca4u {
 
@@ -111,6 +112,29 @@ namespace mtca4u {
       bool operator!=(const char *rightHandSide) const {
         RegisterPath temp(rightHandSide);
         return path != temp.path;
+      }
+
+      /** return the length of the path (including leading slash) */
+      size_t length() const {
+        return path.length();
+      }
+
+      /** check if the register path starts with the given path */
+      bool startsWith(const RegisterPath &compare) const {
+        return path.substr(0, compare.length()) == std::string(compare);
+      }
+
+      /** split path into components. The components are separated by slashes */
+      std::vector<std::string> getComponents() const {
+        std::vector<std::string> components;
+        if(path.length() <= 1) return components;
+        size_t pos = 0;
+        while(pos != std::string::npos) {
+          size_t npos = path.find_first_of("/",pos+1);
+          components.push_back( path.substr(pos+1, npos-pos-1) );
+          pos = npos;
+        }
+        return components;
       }
 
     protected:
