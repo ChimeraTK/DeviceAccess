@@ -13,8 +13,7 @@
 
 namespace mtca4u {
 
-  /** Base class for address-based device backends (e.g. PICe, Rebot, ...)
-   */
+  /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class MemoryAddressedBackend : public DeviceBackendImpl {
 
     public:
@@ -40,6 +39,8 @@ namespace mtca4u {
       virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
+      boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath &registerPathName);
+
     protected:
 
       /// resolve register name to address with error checks
@@ -61,6 +62,7 @@ namespace mtca4u {
         _registerMap = registerMap; // LCOV_EXCL_LINE only for compatibility!
         _catalogue = _registerMap->getRegisterCatalogue(); // LCOV_EXCL_LINE only for compatibility!
       } // LCOV_EXCL_LINE only for compatibility!
+
 
   };
 

@@ -7,6 +7,10 @@
 #include "MapFileParser.h"
 #include "Utilities.h"
 
+// for compatibility only:
+#include "NumericAddress.h"
+using mtca4u::numeric_address::BAR;
+
 namespace mtca4u {
 
   Device::~Device() {
@@ -157,51 +161,45 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   void Device::readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->read(bar, regOffset, data , 4);
+    readReg(BAR/bar/regOffset*sizeof(int32_t), data, sizeof(int32_t), 0);
   }
 
   /********************************************************************************************************************/
 
   void Device::writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->write(bar, regOffset, &data, 4);
+    writeReg(BAR/bar/regOffset*sizeof(int32_t), &data, sizeof(int32_t), 0);
   }
 
   /********************************************************************************************************************/
 
   void Device::readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->read(bar, regOffset, data, size);
+    readReg(BAR/bar/regOffset*size, data, size, 0);
   }
 
   /********************************************************************************************************************/
 
   void Device::writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-    checkPointersAreNotNull();
-    _deviceBackendPointer->write(bar, regOffset, data, size);
+    writeReg(BAR/bar/regOffset*size, data, size, 0);
   }
 
   /********************************************************************************************************************/
 
   void Device::readDMA(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const {
-    checkPointersAreNotNull();// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Usage of deprecated function Device::readDMA() detected.                                    **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Use register accessors or Device::read() instead!                                           **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-    _deviceBackendPointer->read(bar, regOffset, data, size);    // LCOV_EXCL_LINE
+    readArea(regOffset, data, size, bar);    // LCOV_EXCL_LINE
   }                                                             // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
 
   void Device::writeDMA(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-    checkPointersAreNotNull();// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Usage of deprecated function Device::writeDMA() detected.                                   **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Use register accessors or Device::write() instead!                                          **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-    _deviceBackendPointer->write(bar, regOffset, data, size);   // LCOV_EXCL_LINE
+    writeArea(regOffset, data, size, bar);   // LCOV_EXCL_LINE
   }                                                             // LCOV_EXCL_LINE
 
   /********************************************************************************************************************/

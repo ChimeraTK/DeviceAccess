@@ -8,6 +8,7 @@
 #include "MemoryAddressedBackend.h"
 #include "MemoryAddressedBackendBufferingRegisterAccessor.h"
 #include "DeviceException.h"
+#include "NumericAddress.h"
 
 namespace mtca4u {
 
@@ -23,7 +24,37 @@ namespace mtca4u {
     }
   }
 
-/********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  boost::shared_ptr<RegisterInfoMap::RegisterInfo> MemoryAddressedBackend::getRegisterInfo(const RegisterPath &registerPathName) {
+    if(!registerPathName.startsWith(numeric_address::BAR)) {
+      boost::shared_ptr<RegisterInfo> info = _catalogue.getRegister(registerPathName);
+      return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+    }
+    else {
+      boost::shared_ptr<RegisterInfoMap::RegisterInfo> info(new RegisterInfoMap::RegisterInfo());
+      auto components = registerPathName.getComponents();
+      if(components.size() != 3) {
+        throw DeviceException("Illegal numeric address: '"+(registerPathName)+"'", DeviceException::REGISTER_DOES_NOT_EXIST);
+      }
+      info->bar = std::stoi(components[1]);
+      size_t pos = components[2].find_first_of("*");
+      info->address = std::stoi(components[2].substr(0,pos));
+      if(pos != std::string::npos) {
+        info->nBytes = std::stoi(components[2].substr(pos+1));
+      }
+      else {
+        info->nBytes = sizeof(int32_t);
+      }
+      info->nElements = info->nBytes/sizeof(int32_t);
+      if(info->nBytes == 0 || info->nBytes % sizeof(int32_t) != 0) {
+        throw DeviceException("Illegal numeric address: '"+(registerPathName)+"'", DeviceException::REGISTER_DOES_NOT_EXIST);
+      }
+      return info;
+    }
+  }
+
+  /********************************************************************************************************************/
 
   void MemoryAddressedBackend::read(const std::string &regModule, const std::string &regName,
       int32_t *data, size_t dataSize, uint32_t addRegOffset) {
@@ -96,7 +127,7 @@ namespace mtca4u {
       const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
     boost::shared_ptr< NDRegisterAccessor<UserType> >  accessor;
     // obtain register info
-    boost::shared_ptr<RegisterInfo> info = _registerMap->getRegisterCatalogue().getRegister(registerPathName);
+    boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
     // 1D or scalar register
     if(info->getNumberOfDimensions() <= 1) {
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(

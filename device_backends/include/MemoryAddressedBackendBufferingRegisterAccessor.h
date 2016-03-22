@@ -37,8 +37,7 @@ namespace mtca4u {
         }
 
         // obtain register information
-        const RegisterCatalogue& catalogue = dev->getRegisterCatalogue();
-        boost::shared_ptr<RegisterInfo> info = catalogue.getRegister(registerPathName);
+        boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
         _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
         _bar = _registerInfo->bar;
         _startAddress = _registerInfo->address + wordOffsetInRegister*sizeof(int32_t);
