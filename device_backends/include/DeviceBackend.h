@@ -18,8 +18,10 @@
 
 namespace mtca4u {
 
-  /** The base class of an IO device.
-   */
+  /** The base class for backends providing IO functionality for the Device class. Note that most backends should
+   *  actually be based on the DeviceBackendImpl class (unless it is a decorator backend).
+   *  The actual IO is always performed through register accessors, which is obtained through the
+   *  getBufferingRegisterAccessor() member function. */
   class DeviceBackend : public boost::enable_shared_from_this<DeviceBackend> {
 
     public:
@@ -27,101 +29,109 @@ namespace mtca4u {
       /** Every virtual class needs a virtual desctructor. */
       virtual ~DeviceBackend();
 
-      /** TODO documentation missing
-       */
+      /** Open the device */
       virtual void open() = 0;
 
-      /** TODO documentation missing
-       */
+      /** Close the device */
       virtual void close() = 0;
 
-      /** Read one or more words from the named register.
-       *  @attention In case you leave data size at 0, the full size of the register is
-       *  read! Make sure your buffer is large enough!
-       */
-      virtual void read(const std::string &regModule, const std::string &regName,
-          int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
-
-      /** Write one or more words to the name register.
-       *  @attention In case you leave data size at 0, the full size of the register is
-       *  written! Make sure your buffer is large enough!
-       */
-      virtual void write(const std::string &regName,
-          const std::string &regModule, int32_t const *data,
-          size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
-
-      /** Read one or more words from the given memory address. Not all backends might support
-       *  memory addresses, thus a not-implemented exception might be thrown.
-       *  @attention In case you leave data size at 0, the full size of the register is
-       *  read! Make sure your buffer is large enough!
-       */
-      virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
-
-      /** Write one or more words to the given memory address. Not all backends might support
-       *  memory addresses, thus a not-implemented exception might be thrown.
-       *  @attention In case you leave data size at 0, the full size of the register is
-       *  written! Make sure your buffer is large enough!
-       */
-      virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
-
-      /** Return a device information string containing hardware details like the firmware version number or the
-       *  slot number used by the board. The format and contained information of this string is completely
-       *  backend implementation dependent, so the string may only be printed to the user as an informational
-       *  output. Do not try to parse this string or extract information from it programmatically.
-       */
-      virtual std::string readDeviceInfo() = 0;
-
-      /** Return whether a device has been opened or not.
-       */
+      /** Return whether a device has been opened or not. */
       virtual bool isOpen() = 0;
 
-      /** Return whether a device has been connected or not. A device is considered connected when it is created.
-       */
+      /** Return whether a device has been connected or not. A device is considered connected when it is created. */
       virtual bool isConnected() = 0;
 
-      /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
-       *  using a std::vector-like interface.
-       */
+      /** Return the register catalogue with detailed information on all registers. */
+      virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
+
+      /** Get a NDRegisterAccessor object from the register name. */
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor(
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getBufferingRegisterAccessor_impl,
           boost::shared_ptr< NDRegisterAccessor<T> >(const RegisterPath&, size_t, size_t, bool) );
 
-      /** Return the register catalogue with detailed information on all registers. */
-      virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
+      /** Return a device information string containing hardware details like the firmware version number or the
+       *  slot number used by the board. The format and contained information of this string is completely
+       *  backend implementation dependent, so the string may only be printed to the user as an informational
+       *  output. Do not try to parse this string or extract information from it programmatically. */
+      virtual std::string readDeviceInfo() = 0;
 
-      /** Returns the register information aka RegisterInfo.
-       *  This function was named getRegisterMap because RegisterInfoMap will be renamed.
+      /** DEPRECATED
        *
-       *  \deprecated
-       *  This function is deprecated.
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtine warning after release of version 0.9
+       *  }
        */
-      virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const = 0;
+      virtual void read(const std::string &regModule, const std::string &regName,
+          int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
 
-      /** Get a complete list of RegisterInfo objects (mapfile::RegisterInfo) for one
-       * module.
-       *  The registers are in alphabetical order.
+      /** DEPRECATED
        *
-       *  \deprecated
-       *  This function is deprecated.
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtine warning after release of version 0.9
+       *  }
        */
-      virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
-          const std::string &moduleName) const = 0;
+      virtual void write(const std::string &regName,
+          const std::string &regModule, int32_t const *data,
+          size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
 
-      /** \deprecated {
-       *  This function is deprecated. Use read() instead!
-       *  @todo Remove after release of version 0.8
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtime warning after release of version 0.9
+       *  }
+       */
+      virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
+
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtime warning after release of version 0.9
+       *  }
+       */
+      virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
+
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Remove after release of version 0.9
        *  }
        */
       void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
 
-      /** \deprecated {
-       *  This function is deprecated. Use write() instead!
-       *  @todo Remove after release of version 0.8
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Remove after release of version 0.9
        *  }
        */
       void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
+
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtime warning after release of version 0.9
+       *  }
+       */
+      virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const = 0;
+
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtime warning after release of version 0.9
+       *  }
+       */
+      virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
+          const std::string &moduleName) const = 0;
 
     protected:
 
