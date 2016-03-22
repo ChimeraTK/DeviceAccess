@@ -24,9 +24,4 @@ namespace mtca4u {
     exit(1);
   }
 
-  boost::shared_ptr<RegisterAccessor> DeviceBackend::getRegisterAccessor(
-      const std::string &registerName, const std::string &module) {
-    return boost::shared_ptr<RegisterAccessor>( new RegisterAccessor(shared_from_this(), RegisterPath(module)/registerName) );
-  }
-
 } /* namespace mtca4u */

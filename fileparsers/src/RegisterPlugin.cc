@@ -20,11 +20,5 @@ namespace mtca4u {
       boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
     return accessor;
   }
- 
-  /********************************************************************************************************************/
-
-  boost::shared_ptr<RegisterAccessor> RegisterPlugin::decorateRegisterAccessor(boost::shared_ptr<RegisterAccessor> accessor) const {
-    return accessor;
-  }
 
 }

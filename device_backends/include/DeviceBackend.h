@@ -79,12 +79,6 @@ namespace mtca4u {
        */
       virtual bool isConnected() = 0;
 
-      /** Get a RegisterAccessor object from the register name, to read and write registers via user-provided
-       * buffers and plain pointers.
-       */
-      boost::shared_ptr<RegisterAccessor> getRegisterAccessor(
-          const std::string &registerName, const std::string &module = std::string());
-
       /** Get a BufferingRegisterAccessor object from the register name, to read and write registers transparently
        *  using a std::vector-like interface.
        */
@@ -96,17 +90,6 @@ namespace mtca4u {
 
       /** Return the register catalogue with detailed information on all registers. */
       virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
-
-      /** \brief <b>DEPRECATED</b>
-       *
-       *  \deprecated
-       *  This signature is deprecated, use the new signature with the RegisterPath argument instead!
-       */
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor(
-          const std::string &registerName, const std::string &module) {
-        return getBufferingRegisterAccessor<UserType>(RegisterPath(module)/registerName, 0,0,false);
-      }
 
       /** Returns the register information aka RegisterInfo.
        *  This function was named getRegisterMap because RegisterInfoMap will be renamed.

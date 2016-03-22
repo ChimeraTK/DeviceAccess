@@ -65,16 +65,6 @@ namespace mtca4u {
         return accessor;
       }
 
-      /** Add plugin-provided decorators to a (non-buffering) RegisterAccessor */
-      boost::shared_ptr<RegisterAccessor> decorateRegisterAccessor(const RegisterPath &registerPathName,
-        boost::shared_ptr<RegisterAccessor> accessor) const {
-        auto info = _catalogue.getRegister(registerPathName);
-        for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
-          accessor = i->decorateRegisterAccessor(accessor);
-        }
-        return accessor;
-      }
-
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE only for compatibility!
 
   };
