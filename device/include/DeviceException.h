@@ -4,19 +4,22 @@
 #include "DeviceBackendException.h"
 
 namespace mtca4u{
-  /** A class to provide exception for class device.
-   *
-   */
+
+  /** A class to provide exceptions for Device. */
   class DeviceException : public DeviceBackendException {
     public:
 
-      enum { EX_WRONG_PARAMETER,
+      enum { NOT_IMPLEMENTED = 0,
+             EX_WRONG_PARAMETER,
              EX_NOT_OPENED,
              EX_CANNOT_OPEN_DEVICEBACKEND,
              CANNOT_OPEN_MAP_FILE,
              REGISTER_DOES_NOT_EXIST,
              REGISTER_IS_READ_ONLY,
-             NOT_IMPLEMENTED
+             // for compatibility with MultiplexedDataAccessorException:
+             EMPTY_AREA = CANNOT_OPEN_MAP_FILE,
+             INVALID_WORD_SIZE = CANNOT_OPEN_MAP_FILE,
+             INVALID_N_ELEMENTS = CANNOT_OPEN_MAP_FILE
       };
 
 
@@ -26,6 +29,9 @@ namespace mtca4u{
     private:
 
   };
+
+  typedef DeviceException TwoDRegisterAccessorException;
+  typedef DeviceException MultiplexedDataAccessorException;
 
 }//namespace mtca4u
 

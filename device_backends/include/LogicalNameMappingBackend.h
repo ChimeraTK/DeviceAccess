@@ -53,10 +53,6 @@ namespace mtca4u {
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LogicalNameMappingBackend, getBufferingRegisterAccessor_impl, 4);
 
-      template<typename UserType>
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const RegisterPath &registerPathName);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LogicalNameMappingBackend, getTwoDRegisterAccessor_impl, 1);
-
       /// parse the logical map file, if not yet done
       void parse();
 

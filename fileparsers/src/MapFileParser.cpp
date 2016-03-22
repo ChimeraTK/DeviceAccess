@@ -4,6 +4,7 @@
 
 #include "MapFileParser.h"
 #include "MapException.h"
+#include "MemoryAddressedBackendTwoDRegisterAccessor.h"        // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
 namespace mtca4u {
 
@@ -114,6 +115,28 @@ namespace mtca4u {
       registerInfo.lineNumber = line_nr;
       pmap->insert(registerInfo);
     }
+
+    // search for 2D registers and add 2D entries
+    for(auto info : *pmap) {
+      // check if 2D register, otherwise ignore
+      if(info.name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
+      // create copy of the entry
+      RegisterInfoMap::RegisterInfo newEntry = info;
+      // name of the 2D register is the name without the sequence prefix
+      newEntry.name = info.name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
+      // count number of channels
+      size_t nChannels = 0;
+      auto cat = pmap->getRegisterCatalogue();
+      while(cat.hasRegister( RegisterPath(info.module)/(SEQUENCE_PREFIX+newEntry.name+std::to_string(nChannels)) )) {
+        nChannels++;
+      }
+      newEntry.nChannels = nChannels;
+      // mark it as 2D multiplexed
+      newEntry.is2DMultiplexed = true;
+      // add it to the map
+      pmap->insert(newEntry);
+    }
+
     return pmap;
   }
 

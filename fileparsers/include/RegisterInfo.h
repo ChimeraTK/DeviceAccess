@@ -25,8 +25,14 @@ namespace mtca4u {
       /** Return full path name of the register (including modules) */
       virtual RegisterPath getRegisterName() const = 0;
 
-      /** Return number of elements in register */
+      /** Return number of elements per channel */
       virtual unsigned int getNumberOfElements() const = 0;
+
+      /** Return number of channels in register */
+      virtual unsigned int getNumberOfChannels() const = 0;
+
+      /** Return number of dimensions of this register */
+      virtual unsigned int getNumberOfDimensions() const = 0;
       
       /** Iterators for the list of plugins */
       class plugin_iterator {

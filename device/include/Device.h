@@ -397,10 +397,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
-      const RegisterPath &registerPathName) const {
+  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(const RegisterPath &registerPathName) const {
     checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(registerPathName));
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
+        registerPathName, 0,0, false));
   }
 
   /********************************************************************************************************************/
@@ -409,8 +409,8 @@ namespace mtca4u {
   TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
     checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getTwoDRegisterAccessor<UserType>(
-        RegisterPath(module)/registerName));
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
+        RegisterPath(module)/registerName, 0,0, false));
   }
 
   /********************************************************************************************************************/

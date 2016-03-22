@@ -4,7 +4,7 @@
 #include <sstream>
 #include <boost/shared_ptr.hpp>
 
-#include "TwoDRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "DeviceBackend.h"
@@ -15,19 +15,13 @@
 
 namespace mtca4u {
 
-  template<class UserType, class SequenceWordType>
-  class SequenceDeMultiplexerTest;
-
-  template<class UserType>
-  class MixedTypeTest;
-
   typedef RegisterInfoMap::RegisterInfo SequenceInfo;
 
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
 
   template <class UserType>
-  class MemoryAddressedBackendTwoDRegisterAccessor : public TwoDRegisterAccessorImpl<UserType> {
+  class MemoryAddressedBackendTwoDRegisterAccessor : public NDRegisterAccessor<UserType> {
 
     public:
 
@@ -40,18 +34,11 @@ namespace mtca4u {
 
       void write();
 
-      size_t getNumberOfDataSequences() const;
-
-      /// TODO this function is not in the interface, can we remove it?
-      uint32_t getSizeOneBlock() {
-        return bytesPerBlock/4;
-      }
-
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const MemoryAddressedBackendTwoDRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
-        if(TwoDRegisterAccessorImpl<UserType>::_ioDevice != rhsCasted->TwoDRegisterAccessorImpl<UserType>::_ioDevice) return false;
+        if(_ioDevice != rhsCasted->_ioDevice) return false;
         return true;
       }
 
@@ -59,10 +46,21 @@ namespace mtca4u {
         return false;
       }
 
+      virtual FixedPointConverter getFixedPointConverter() const {
+        throw DeviceException("getFixedPointConverter is not implemented for 2D registers (and deprecated for all "
+            "registers).", DeviceException::NOT_IMPLEMENTED);
+      }
+
     protected:
 
       /** One fixed point converter for each sequence. */
       std::vector< FixedPointConverter > _converters;
+
+      /** The device from (/to) which to perform the DMA transfer */
+      boost::shared_ptr<DeviceBackend> _ioDevice;
+
+      /** number of data blocks / samples */
+      size_t _nBlocks;
 
       void fillSequences();
 
@@ -75,8 +73,6 @@ namespace mtca4u {
       std::vector<SequenceInfo> _sequenceInfos;
 
       uint32_t bytesPerBlock;
-
-      friend class MixedTypeTest<UserType>;
 
       /// register and module name
       std::string _moduleName, _registerName;
@@ -92,40 +88,10 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  // TODO move this class to the test .cc file
-  template<class UserType>
-  class MixedTypeTest {
-
-    public:
-
-      MixedTypeTest(MemoryAddressedBackendTwoDRegisterAccessor < UserType > *mixedTypeInstance = NULL)
-      : _mixedTypeInstance(mixedTypeInstance)
-      {};
-
-      uint32_t getSizeOneBlock() {
-        return _mixedTypeInstance->bytesPerBlock / 4;
-      }
-      size_t getNBlock() {
-        return _mixedTypeInstance->_nBlocks;
-      }
-      size_t getConvertersSize() {
-        return (_mixedTypeInstance->_converters).size();
-      }
-      int32_t getIOBUffer(uint index) {
-        return _mixedTypeInstance->_ioBuffer[index];
-      }
-
-    private:
-
-      MemoryAddressedBackendTwoDRegisterAccessor<UserType> *_mixedTypeInstance;
-  };
-
-  /********************************************************************************************************************/
-
   template <class UserType>
   MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor(
       const RegisterPath &registerPathName, boost::shared_ptr<DeviceBackend> _backend )
-  : TwoDRegisterAccessorImpl<UserType>(_backend), _registerPathName(registerPathName)
+  : _ioDevice(_backend), _registerPathName(registerPathName)
   {
       // re-split register and module after merging names by the last dot (to allow module.register in the register name)
       auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
@@ -136,7 +102,7 @@ namespace mtca4u {
       std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_registerName;
 
       // Obtain information about the area
-      auto registerMapping = _backend->getRegisterMap();
+      auto registerMapping = _ioDevice->getRegisterMap();
       registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
 
       // Obtain information for each sequence (= channel) in the area:
@@ -187,12 +153,12 @@ namespace mtca4u {
       }
 
       // compute number of blocks (number of samples for each channel)
-      TwoDRegisterAccessorImpl<UserType>::_nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
+      _nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
 
       // allocate the buffer for the converted data
-      TwoDRegisterAccessorImpl<UserType>::_sequences.resize(_converters.size());
-      for (size_t i=0; i<_converters.size(); ++i) {
-        TwoDRegisterAccessorImpl<UserType>::_sequences[i].resize(TwoDRegisterAccessorImpl<UserType>::_nBlocks);
+      NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
+      for(size_t i=0; i<_converters.size(); ++i) {
+        NDRegisterAccessor<UserType>::buffer_2D[i].resize(_nBlocks);
       }
 
       // allocate the raw io buffer
@@ -203,7 +169,7 @@ namespace mtca4u {
 
   template <class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::read() {
-      TwoDRegisterAccessorImpl<UserType>::_ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
+      _ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
       fillSequences();
   }
 
@@ -212,21 +178,21 @@ namespace mtca4u {
   template <class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillSequences() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < TwoDRegisterAccessorImpl<UserType>::_nBlocks; ++blockIndex) {
+      for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes) {
             case 1: //8 bit variables
-              TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] =
+              NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
               standOfMyioBuffer++;
               break;
             case 2: //16 bit words
-              TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] =
+              NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
               standOfMyioBuffer = standOfMyioBuffer + 2;
               break;
             case 4: //32 bit words
-              TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] =
+              NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
                   _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
               standOfMyioBuffer = standOfMyioBuffer + 4;
               break;
@@ -240,11 +206,7 @@ namespace mtca4u {
   template <class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::write() {
       fillIO_Buffer();
-
-      TwoDRegisterAccessorImpl<UserType>::_ioDevice->write(
-          _areaInfo.bar,
-          _areaInfo.address, &(_ioBuffer[0]),
-          _areaInfo.nBytes);
+      _ioDevice->write(_areaInfo.bar, _areaInfo.address, &(_ioBuffer[0]), _areaInfo.nBytes);
   }
 
   /********************************************************************************************************************/
@@ -252,34 +214,27 @@ namespace mtca4u {
   template<class UserType>
   void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillIO_Buffer() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < TwoDRegisterAccessorImpl<UserType>::_nBlocks; ++blockIndex) {
+      for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
           switch(_sequenceInfos[sequenceIndex].nBytes){
             case 1: //8 bit variables
               *(standOfMyioBuffer) = _converters[sequenceIndex].toRaw(
-                  TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] );
               standOfMyioBuffer++;
               break;
             case 2: //16 bit variables
               *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] );
               standOfMyioBuffer = standOfMyioBuffer + 2;
               break;
             case 4: //32 bit variables
               *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  TwoDRegisterAccessorImpl<UserType>::_sequences[sequenceIndex][blockIndex] );
+                  NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] );
               standOfMyioBuffer = standOfMyioBuffer + 4;
               break;
           }
         }
       }
-  }
-
-  /********************************************************************************************************************/
-
-  template <class UserType>
-  size_t MemoryAddressedBackendTwoDRegisterAccessor<UserType>::getNumberOfDataSequences() const {
-      return (TwoDRegisterAccessorImpl<UserType>::_sequences.size());
   }
 
 }  //namespace mtca4u

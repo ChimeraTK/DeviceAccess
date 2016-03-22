@@ -47,9 +47,16 @@ namespace mtca4u {
             return name;
           }
 
-          /** Return number of elements in register */
           virtual unsigned int getNumberOfElements() const {
             return length;
+          }
+
+          virtual unsigned int getNumberOfDimensions() const {
+            return 1;
+          }
+
+          virtual unsigned int getNumberOfChannels() const {
+            return 1;
           }
 
           /** Name of the registrer */

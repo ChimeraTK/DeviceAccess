@@ -64,8 +64,21 @@ namespace mtca4u {
             return nElements;
           }
 
+          virtual unsigned int getNumberOfChannels() const {
+            if(is2DMultiplexed) return nChannels;
+            return 1;
+          }
+
+          virtual unsigned int getNumberOfDimensions() const {
+            if(is2DMultiplexed) return 2;
+            if(nElements > 1) return 1;
+            return 0;
+          }
+
           std::string name; /**< Name of register */
           uint32_t nElements; /**< Number of elements in register */
+          uint32_t nChannels; /**< Number of channels/sequences */
+          bool     is2DMultiplexed; /**< Flag if register is a 2D multiplexed register (otherwise it is 1D or scalar) */
           uint32_t address; /**< Relative address in bytes from beginning  of the bar(Base Address Range)*/
           uint32_t nBytes; /**< Size of register expressed in bytes */
           uint32_t bar; /**< Number of bar with register */
@@ -74,6 +87,7 @@ namespace mtca4u {
           bool     signedFlag; /**< Signed/Unsigned flag */
           uint32_t lineNumber; /**< Number of line with description of register in MAP file */
           std::string module; /**< Name of the module this register is in*/
+
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
           /// Convenience constructor which sets all data members. They all have default values, so this
@@ -87,7 +101,9 @@ namespace mtca4u {
               int32_t  nFractionalBits_ = 0,
               bool     signedFlag_ = true,
               uint32_t lineNumber_ = 0,
-              std::string const & module_ = std::string() );
+              std::string const & module_ = std::string(),
+              uint32_t nChannels_ = 1,
+              bool is2DMultiplexed_ = false );
       };
 
 

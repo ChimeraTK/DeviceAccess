@@ -17,7 +17,6 @@ namespace mtca4u {
   : hasParsed(false), _lmapFileName(lmapFileName)
   {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getTwoDRegisterAccessor_impl);
   }
 
   /********************************************************************************************************************/
@@ -123,15 +122,6 @@ namespace mtca4u {
           DeviceException::NOT_IMPLEMENTED);
     }
 
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > LogicalNameMappingBackend::getTwoDRegisterAccessor_impl(
-      const RegisterPath &) {
-    throw DeviceException("2D register accessors not yet supported for LogicalNameMappingBackends.",
-        DeviceException::NOT_IMPLEMENTED);
   }
 
   /********************************************************************************************************************/

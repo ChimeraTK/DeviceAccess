@@ -26,31 +26,27 @@ namespace mtca4u {
     public:
 
       /** Constructer. @attention Do not normally use directly.
-       *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead.
-       */
+       *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead. */
       BufferingRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<T> > impl)
       : _impl(impl)
       {}
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
-       *  @attention Accessors created with this constructors will be dysfunctional!
-       */
+       *  @attention Accessors created with this constructors will be dysfunctional, calling any member function
+       *  will throw an exception (by the boost::shared_ptr)! */
       BufferingRegisterAccessor() {}
 
-      /** destructor
-       */
+      /** destructor */
       ~BufferingRegisterAccessor() {};
 
 
-      /** Read the data from the device, convert it and store in buffer.
-       */
-      inline void read() {
+      /** Read the data from the device, convert it and store in buffer. */
+      void read() {
        _impl->read();
       }
 
-      /** Convert data from the buffer and write to device.
-       */
-      inline void write() {
+      /** Convert data from the buffer and write to device. */
+      void write() {
         _impl->write();
       }
 
@@ -58,48 +54,48 @@ namespace mtca4u {
        *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
        *  the register.
        */
-      inline T& operator[](unsigned int index) {
+      T& operator[](unsigned int index) {
         return _impl->buffer_2D[0][index];
       }
 
       /** Return number of elements
        */
-      inline unsigned int getNumberOfElements() {
+      unsigned int getNumberOfElements() {
         return _impl->buffer_2D[0].size();
       }
 
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
-      inline operator T&() {
+      operator T&() {
         return _impl->buffer_2D[0][0];
       }
 
       /** Assignment operator, assigns the first element. */
-      inline BufferingRegisterAccessor<T>& operator=(T rightHandSide)
+      BufferingRegisterAccessor<T>& operator=(T rightHandSide)
       {
         _impl->buffer_2D[0][0] = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator for the first element. */
-      inline BufferingRegisterAccessor<T>& operator++() {
+      BufferingRegisterAccessor<T>& operator++() {
         return operator=( _impl->buffer_2D[0][0] + 1 );
       }
 
       /** Pre-decrement operator for the first element. */
-      inline BufferingRegisterAccessor<T>& operator--() {
+      BufferingRegisterAccessor<T>& operator--() {
         return operator=(_impl->buffer_2D[0][0] - 1 );
       }
 
       /** Post-increment operator for the first element. */
-      inline T operator++(int) {
+      T operator++(int) {
         T v = _impl->buffer_2D[0][0];
         operator=( v + 1 );
         return v;
       }
 
       /** Post-decrement operator for the first element. */
-      inline T operator--(int) {
+      T operator--(int) {
         T v = _impl->buffer_2D[0][0];
         operator=( v - 1 );
         return v;
@@ -111,22 +107,21 @@ namespace mtca4u {
       typedef typename std::vector<T>::const_iterator const_iterator;
       typedef typename std::vector<T>::reverse_iterator reverse_iterator;
       typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
-      inline iterator begin() { return _impl->buffer_2D[0].begin(); }
-      inline const_iterator begin() const { return _impl->buffer_2D[0].cbegin(); }
-      inline const_iterator cbegin() const { return _impl->buffer_2D[0].cbegin(); }
-      inline iterator end() { return _impl->buffer_2D[0].end(); }
-      inline const_iterator end() const { return _impl->buffer_2D[0].cend(); }
-      inline const_iterator cend() const { return _impl->buffer_2D[0].cend(); }
-      inline reverse_iterator rbegin() { return _impl->buffer_2D[0].rbegin(); }
-      inline const_reverse_iterator rbegin() const { return _impl->buffer_2D[0].crbegin(); }
-      inline const_reverse_iterator crbegin() const { return _impl->buffer_2D[0].crbegin(); }
-      inline reverse_iterator rend() { return _impl->buffer_2D[0].rend(); }
-      inline const_reverse_iterator rend() const { return _impl->buffer_2D[0].crend(); }
-      inline const_reverse_iterator crend() const { return _impl->buffer_2D[0].crend(); }
+      iterator begin() { return _impl->buffer_2D[0].begin(); }
+      const_iterator begin() const { return _impl->buffer_2D[0].cbegin(); }
+      const_iterator cbegin() const { return _impl->buffer_2D[0].cbegin(); }
+      iterator end() { return _impl->buffer_2D[0].end(); }
+      const_iterator end() const { return _impl->buffer_2D[0].cend(); }
+      const_iterator cend() const { return _impl->buffer_2D[0].cend(); }
+      reverse_iterator rbegin() { return _impl->buffer_2D[0].rbegin(); }
+      const_reverse_iterator rbegin() const { return _impl->buffer_2D[0].crbegin(); }
+      const_reverse_iterator crbegin() const { return _impl->buffer_2D[0].crbegin(); }
+      reverse_iterator rend() { return _impl->buffer_2D[0].rend(); }
+      const_reverse_iterator rend() const { return _impl->buffer_2D[0].crend(); }
+      const_reverse_iterator crend() const { return _impl->buffer_2D[0].crend(); }
 
-      /* Swap content of (cooked) buffer with std::vector
-       */
-      inline void swap(std::vector<T> &x) {
+      /* Swap content of (cooked) buffer with std::vector */
+      void swap(std::vector<T> &x) {
         _impl->buffer_2D[0].swap(x);
       }
 
@@ -161,11 +156,8 @@ namespace mtca4u {
 
     protected:
 
-      /// pointer to the implementation
+      /** pointer to the implementation */
       boost::shared_ptr< NDRegisterAccessor<T> > _impl;
-
-      // the TransferGroup must be a friend to access the actual accesor
-      friend class TransferGroup;
 
   };
 

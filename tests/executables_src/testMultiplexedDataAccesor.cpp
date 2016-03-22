@@ -16,6 +16,11 @@ using namespace boost::unit_test_framework;
 
 using namespace mtca4u;
 
+static const std::string DMAP_FILE_NAME("dummies.dmap");
+static const std::string DEVICE_ALIAS("SEQUENCES");
+static const std::string DEVICE_INVALID_SEQUENCES_ALIAS("INVALID_SEQUENCES");
+static const std::string DEVICE_MIXED_ALIAS("MIXED_SEQUENCES");
+
 static const std::string MAP_FILE_NAME("sequences.map");
 static const std::string BAM_MAP_FILE("bam_fmc25_r1225.mapp");
 static const std::string TEST_MODULE_NAME("TEST");
@@ -25,10 +30,52 @@ static const RegisterPath INVALID_MODULE_PATH(INVALID_MODULE_NAME);
 
 BOOST_AUTO_TEST_SUITE( SequenceDeMultiplexerTestSuite )
 
-BOOST_AUTO_TEST_CASE( testConstructor ){
-  boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend(MAP_FILE_NAME) );
-  MemoryAddressedBackendTwoDRegisterAccessor<double> deMultiplexer(TEST_MODULE_PATH/"FRAC_INT",ioDevice);
-  BOOST_CHECK( deMultiplexer[0].size() == 5 );
+BOOST_AUTO_TEST_CASE( testConstructor ) {
+
+    BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+    Device device;
+    device.open(DEVICE_ALIAS);
+    TwoDRegisterAccessor<double> deMultiplexer = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"FRAC_INT");
+    BOOST_CHECK( deMultiplexer[0].size() == 5 );
+
+    device.close();
+    device.open(DEVICE_INVALID_SEQUENCES_ALIAS);
+
+    try {
+      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"NO_WORDS");
+      // in a sucessful test (which is required for the code coverage report)
+      // the following line is not executed. Exclude it from the lcov report
+      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for NO_WORDS" ); //LCOV_EXCL_LINE
+    }
+    catch(MultiplexedDataAccessorException &e) {
+      BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::EMPTY_AREA );
+    }
+
+    try {
+      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_SIZE");
+      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for WRONG_SIZE" ); //LCOV_EXCL_LINE
+    }
+    catch(MultiplexedDataAccessorException &e) {
+      BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_WORD_SIZE );
+    }
+
+    try {
+      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_NELEMENTS");
+      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for WRONG_NELEMENTS" ); //LCOV_EXCL_LINE
+    }
+    catch(MultiplexedDataAccessorException &e) {
+      BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
+    }
+
+    try {
+      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"DOES_NOT_EXIST");
+      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for DOES_NOT_EXIST" ); //LCOV_EXCL_LINE
+    }
+    catch(DeviceException &e) {
+      BOOST_CHECK( e.getID() == DeviceException::REGISTER_DOES_NOT_EXIST );
+    }
+
+
 }
 
 // test the de-multiplexing itself, with 'identity' fixed point conversion
@@ -36,8 +83,9 @@ template <class SequenceWordType>
 void testDeMultiplexing(std::string areaName) {
 
     // open a dummy device with the sequence map file
-    boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
-    ioDevice->open();
+    BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+    Device device;
+    device.open(DEVICE_ALIAS);
 
     //get the sequence info from the map file
     boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
@@ -61,9 +109,9 @@ void testDeMultiplexing(std::string areaName) {
     ioBuffer[13] = 'e';
     ioBuffer[14] = '4';
 
-    ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
+    device.writeArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
 
-    MemoryAddressedBackendTwoDRegisterAccessor< SequenceWordType > deMultiplexer(TEST_MODULE_PATH/areaName, ioDevice);
+    TwoDRegisterAccessor<SequenceWordType> deMultiplexer = device.getTwoDRegisterAccessor<SequenceWordType>(TEST_MODULE_PATH/areaName);
 
     BOOST_CHECK( deMultiplexer.isReadOnly() == false );
 
@@ -92,8 +140,7 @@ void testDeMultiplexing(std::string areaName) {
     }
 
     deMultiplexer.write();
-    ioDevice->read( sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ),
-        sequenceInfo.nBytes );
+    device.readArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
 
     BOOST_CHECK( ioBuffer[0] == 'F' );
     BOOST_CHECK( ioBuffer[1] == 'f' );
@@ -128,9 +175,9 @@ BOOST_AUTO_TEST_CASE(testDeMultiplexing8) {
 template <class SequenceWordType>
 void testWithConversion(std::string multiplexedSequenceName) {
     // open a dummy device with the sequence map file
-    // open a dummy device with the sequence map file
-    boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
-    ioDevice->open();
+    BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+    Device device;
+    device.open(DEVICE_ALIAS);
 
     //get the sequence info from the map file
     boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
@@ -143,11 +190,9 @@ void testWithConversion(std::string multiplexedSequenceName) {
       ioBuffer[i] = i;
     }
 
-    ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
+    device.writeArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
 
-    boost::shared_ptr< TwoDRegisterAccessorImpl<float> > deMultiplexer =
-        ioDevice->getTwoDRegisterAccessor<float>(TEST_MODULE_PATH/multiplexedSequenceName);
-    TwoDRegisterAccessor<float> accessor(deMultiplexer);
+    TwoDRegisterAccessor<float> accessor = device.getTwoDRegisterAccessor<float>(TEST_MODULE_PATH/multiplexedSequenceName);
     accessor.read();
 
     BOOST_CHECK( accessor[0][0] == 0 );
@@ -173,7 +218,7 @@ void testWithConversion(std::string multiplexedSequenceName) {
     }
 
     accessor.write();
-    ioDevice->read(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes );
+    device.readArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
 
     for(size_t i=0; i < 15; ++i) {
       // with i%3+1 fractional bits the added floating point value of 1
@@ -196,44 +241,12 @@ BOOST_AUTO_TEST_CASE(testWithConversion8) {
   testWithConversion<int8_t>("FRAC_CHAR");
 }
 
-BOOST_AUTO_TEST_CASE(testFactoryFunction) {
-  boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse("invalidSequences.map");
-  boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend("invalidSequences.map") );
-
-  try {
-    ioDevice->getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"NO_WORDS");
-    // in a sucessful test (which is required for the code coverage report)
-    // the following line is not executed. Exclude it from the lcov report
-    BOOST_ERROR( "createInstance did not throw for NO_WORDS" ); //LCOV_EXCL_LINE
-  }
-  catch(MultiplexedDataAccessorException &e) {
-    BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::EMPTY_AREA );
-  }
-
-  try {
-    ioDevice->getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_SIZE");
-    BOOST_ERROR( "createInstance did not throw for WRONG_SIZE" ); //LCOV_EXCL_LINE
-  }
-  catch(MultiplexedDataAccessorException &e) {
-    BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_WORD_SIZE );
-  }
-
-  try{
-    ioDevice->getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_NELEMENTS");
-    BOOST_ERROR( "createInstance did not throw for WRONG_NELEMENTS" ); //LCOV_EXCL_LINE
-  }
-  catch(MultiplexedDataAccessorException &e) {
-    BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
-  }
-
-  BOOST_CHECK_THROW( ioDevice->getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"DOES_NOT_EXIST"), MapFileException );
-}
-
 BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
   boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
   // open a dummy device with the sequence map file
-  boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
-  ioDevice->open();
+  BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+  Device device;
+  device.open(DEVICE_ALIAS);
 
   SequenceInfo sequenceInfo;
   registerMap->getRegisterInfo( MULTIPLEXED_SEQUENCE_PREFIX + "DMA", sequenceInfo, TEST_MODULE_NAME);
@@ -245,49 +258,33 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
     ioBuffer[i]=i;
   }
 
-  ioDevice->write(sequenceInfo.bar, sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes);
+  device.writeArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
 
-  boost::shared_ptr< TwoDRegisterAccessorImpl<double> > deMultiplexer =
-      ioDevice->getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"DMA");
-  deMultiplexer->read();
+  TwoDRegisterAccessor<double> deMultiplexer = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"DMA");
+  deMultiplexer.read();
 
   int j=0;
   for(size_t i=0; i< 4; ++i) {
     for(size_t sequenceIndex=0; sequenceIndex<16; ++sequenceIndex) {
-      BOOST_CHECK( (*deMultiplexer)[sequenceIndex][i] == 4 * j++ );
+      BOOST_CHECK( deMultiplexer[sequenceIndex][i] == 4 * j++ );
     }
   }
 
-  //BOOST_CHECK_THROW( deMultiplexer->write(), NotImplementedException );
-
-
 }
 
-/*BOOST_AUTO_TEST_CASE( testMixed ){
-  boost::shared_ptr<RegisterInfoMap> registerMap = mapFileParser().parse(MAP_FILE_NAME);
-  boost::shared_ptr< DeviceBackend > ioDevice( new DummyBackend );
-  ioDevice->open( MAP_FILE_NAME );
-
-  BOOST_CHECK_THROW( MultiplexedDataAccessor<double>::createInstance( "MIXED",
-								    TEST_MODULE_NAME,
-								    ioDevice,
-								    registerMap ),
-		     NotImplementedException );
-}*/
-
 BOOST_AUTO_TEST_CASE(testMixed) {
-  // open a dummy device with the sequence map file
-  boost::shared_ptr<DeviceBackend> ioDevice( new DummyBackend(BAM_MAP_FILE) );
-  ioDevice->open();
-  MemoryAddressedBackendTwoDRegisterAccessor<double> myMixedData("APP0/DAQ0_BAM", ioDevice);
 
-  MixedTypeTest<double> myTest(&myMixedData);
-  BOOST_CHECK(myTest.getSizeOneBlock() == 11);
+  // open a dummy device with the sequence map file
+  BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+  Device device;
+  device.open(DEVICE_MIXED_ALIAS);
+
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM");
+  BufferingRegisterAccessor<int32_t> myRawData = device.getBufferingRegisterAccessor<int32_t>("APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,true);
+
   BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
   BOOST_CHECK(myMixedData.getNumberOfSamples() == 372);
   BOOST_CHECK(myMixedData[0].size() == 372);
-  BOOST_CHECK(myTest.getConvertersSize() == 17);
-  BOOST_CHECK(myTest.getNBlock() == 372);
 
   myMixedData[0][0] = -24673; //1001 1111 1001 1111
   myMixedData[1][0] = -13724; //1100 1010 0110 0100
@@ -303,11 +300,12 @@ BOOST_AUTO_TEST_CASE(testMixed) {
 
   myMixedData.write();
 
-  BOOST_CHECK(myTest.getIOBUffer(0) == -899375201);
-  BOOST_CHECK(myTest.getIOBUffer(1) ==  130495);
-  BOOST_CHECK(myTest.getIOBUffer(2) ==  67305985);
-  BOOST_CHECK(myTest.getIOBUffer(3) ==  5112008);
-  BOOST_CHECK(myTest.getIOBUffer(4) == -197269459);
+  myRawData.read();
+  BOOST_CHECK(myRawData[0] == -899375201);
+  BOOST_CHECK(myRawData[1] ==  130495);
+  BOOST_CHECK(myRawData[2] ==  67305985);
+  BOOST_CHECK(myRawData[3] ==  5112008);
+  BOOST_CHECK(myRawData[4] == -197269459);
 
   myMixedData.read();
 
@@ -328,13 +326,13 @@ BOOST_AUTO_TEST_CASE(testMixed) {
 BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
   boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
   // open a dummy device with the sequence map file
-  boost::shared_ptr< DeviceBackend >  ioDevice( new DummyBackend(MAP_FILE_NAME) );
-  ioDevice->open();
+    BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+  Device device;
+  device.open(DEVICE_ALIAS);
 
-  boost::shared_ptr< TwoDRegisterAccessorImpl<double> > deMuxedData =
-      ioDevice->getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"FRAC_INT");
+  TwoDRegisterAccessor<double> deMuxedData = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"FRAC_INT");
 
-  BOOST_CHECK(deMuxedData->getNumberOfDataSequences() == 3);
+  BOOST_CHECK(deMuxedData.getNumberOfDataSequences() == 3);
 
 }
 
@@ -372,15 +370,6 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
   for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
     for(unsigned int k=0; k<(*acc)[i].size(); k++) {
       BOOST_CHECK( (*acc)[i][k] == i+3*k );
-    }
-  }
-
-  mtca4u::MultiplexedDataAccessorCopied<unsigned int> accCopied(acc);
-  accCopied.read();
-
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      BOOST_CHECK( accCopied[i][k] == i+3*k );
     }
   }
 

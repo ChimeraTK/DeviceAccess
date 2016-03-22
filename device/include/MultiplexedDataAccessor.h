@@ -3,37 +3,25 @@
 
 // @todo enable warning after a depcrecation warning for MultiplexedDataAccessor etc. has been released.
 //#warning Including MultiplexDataAccessor.h is deprecated, include RegisterAccessor2D.h instead.
-#include "TwoDRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 
 namespace mtca4u {
 
-  template<typename UserType>
-  class MultiplexedDataAccessorCopied;
-
   // Class backwards compatibility only. DEPCRECATED, DO NOT USE
-  // @todo change runtime warning into error after release of 0.8
+  // @todo change runtime warning into error after release of 0.9
   template<typename UserType>
-  class MultiplexedDataAccessor : public TwoDRegisterAccessorImpl<UserType> {
+  class MultiplexedDataAccessor : public NDRegisterAccessor<UserType> {
 
     public:
 
-      MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice )
-      :TwoDRegisterAccessorImpl<UserType>(ioDevice)
+      MultiplexedDataAccessor( boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor )
+      : accessor(_accessor)
       {
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
         std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
         std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-      }
-
-      MultiplexedDataAccessor( boost::shared_ptr< DeviceBackend > const & ioDevice,
-          const std::vector<mtca4u::FixedPointConverter>& /*converters*/)
-      :TwoDRegisterAccessorImpl<UserType>(ioDevice)
-      {
-        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
+        MultiplexedDataAccessor<UserType>::buffer_2D = accessor->buffer_2D;
       }
 
       /** \deprecated
@@ -47,28 +35,29 @@ namespace mtca4u {
           boost::shared_ptr< DeviceBackend > const & ioDevice,
           boost::shared_ptr< RegisterInfoMap > const & /*registerMapping*/ )
       {
-        return boost::shared_ptr< MultiplexedDataAccessor<UserType> >(
-            new MultiplexedDataAccessorCopied<UserType>(ioDevice->getTwoDRegisterAccessor<UserType>(RegisterPath(moduleName)/multiplexedSequenceName) ));
+        return boost::shared_ptr< MultiplexedDataAccessor<UserType> >(new MultiplexedDataAccessor<UserType>(
+            ioDevice->getBufferingRegisterAccessor<UserType>(RegisterPath(moduleName)/multiplexedSequenceName,0,0,false)
+            ));
       }
 
-  };
+      /** \deprecated
+       * Do not use, only for backwards compatibility.
+       * Redefine the user type, as we need it for the backwards-compatible factory Device::getCustomAccessor()
+       */
+      typedef UserType userType;
 
-  // Class backwards compatibility only. DEPCRECATED, DO NOT USE
-  // @todo remove when MultiplexedDataAccessor is removed.
-  template<typename UserType>
-  class MultiplexedDataAccessorCopied : public MultiplexedDataAccessor<UserType> {
+      /** Operator to access individual sequences.
+       */
+      std::vector<UserType> & operator[](size_t sequenceIndex) {
+        return NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex];
+      }
 
-    public:
+      size_t getNumberOfDataSequences() const {
+        return NDRegisterAccessor<UserType>::getNumberOfChannels();
+      }
 
-      MultiplexedDataAccessorCopied( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
-      : MultiplexedDataAccessor<UserType>(_accessor->_ioDevice),
-        accessor(_accessor)
-      {
-        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-        MultiplexedDataAccessor<UserType>::_sequences = accessor->_sequences;
+      FixedPointConverter getFixedPointConverter() const {
+        throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
       }
 
       /** Read the data from the device, de-multiplex the hardware IO buffer and
@@ -77,7 +66,7 @@ namespace mtca4u {
        */
       virtual void read() {
         accessor->read();
-        MultiplexedDataAccessor<UserType>::_sequences = accessor->_sequences;
+        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,
@@ -86,21 +75,14 @@ namespace mtca4u {
        * implemented yet
        */
       virtual void write() {
-        accessor->_sequences = MultiplexedDataAccessor<UserType>::_sequences;
+        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
         accessor->write();
-      }
-
-      /**
-       * Return the number of sequences that have been Multiplexed
-       */
-      virtual size_t getNumberOfDataSequences() const {
-        return accessor->getNumberOfDataSequences();
       }
 
       /**
        * Default destructor
        */
-      virtual ~MultiplexedDataAccessorCopied() {};
+      virtual ~MultiplexedDataAccessor() {}
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {// LCOV_EXCL_LINE
         return accessor->isSameRegister(other);// LCOV_EXCL_LINE
@@ -118,16 +100,17 @@ namespace mtca4u {
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {// LCOV_EXCL_LINE
         if(accessor->isSameRegister(newElement)) {// LCOV_EXCL_LINE
-          accessor = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);// LCOV_EXCL_LINE
+          accessor = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);// LCOV_EXCL_LINE
         }// LCOV_EXCL_LINE
         else {// LCOV_EXCL_LINE
           accessor->replaceTransferElement(newElement);// LCOV_EXCL_LINE
         }// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > accessor;
+      boost::shared_ptr< NDRegisterAccessor<UserType> > accessor;
 
   };
+
 
 }
 

@@ -15,6 +15,17 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
+  bool RegisterCatalogue::hasRegister(const RegisterPath &registerPathName) const {
+    auto it = std::find_if(catalogue.begin(),catalogue.end(),
+        [registerPathName](boost::shared_ptr<RegisterInfo> info) { return info->getRegisterName() == registerPathName; });
+    if(it == catalogue.end()) {
+      return false;
+    }
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
   void RegisterCatalogue::addRegister(boost::shared_ptr<RegisterInfo> registerInfo) {
     catalogue.push_back(registerInfo);
   }

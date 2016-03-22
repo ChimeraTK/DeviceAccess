@@ -134,7 +134,8 @@ void UtilitiesTest::testgetAliasList() {
   std::vector<std::string> expectedListOfAliases{
     "PCIE1",   "PCIE0",   "PCIE2",    "PCIE3",     "PCIE0",
     "FAKE0",   "FAKE1",   "FAKE3",    "DUMMYD0",   "DUMMYD1",
-    "example", "DUMMYD9", "mskrebot", "mskrebot1", "OLD_PCIE"
+    "example", "DUMMYD9", "mskrebot", "mskrebot1", "OLD_PCIE",
+    "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES"
   };
 
   BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");

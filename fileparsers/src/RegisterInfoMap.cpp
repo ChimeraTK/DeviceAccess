@@ -295,9 +295,11 @@ namespace mtca4u {
       int32_t  nFractionalBits_,
       bool     signedFlag_,
       uint32_t lineNumber_,
-      std::string const & module_)
-  : name( name_ ),  nElements(nElements_), address(address_),
-    nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
+      std::string const & module_,
+      uint32_t nChannels_,
+      bool is2DMultiplexed_ )
+  : name( name_ ),  nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_),
+    address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
     signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
   {}
 

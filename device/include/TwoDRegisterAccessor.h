@@ -10,12 +10,9 @@
 
 #include <boost/smart_ptr.hpp>
 
-#include "TwoDRegisterAccessorImpl.h"
+#include "NDRegisterAccessor.h"
 
 namespace mtca4u {
-
-  // forward declaration to make a friend
-  class TransferGroup;
 
   /** TODO add documentation
    */
@@ -24,68 +21,57 @@ namespace mtca4u {
 
     public:
 
-      /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D().
-       */
-      TwoDRegisterAccessor( boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _accessor )
+      /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D(). */
+      TwoDRegisterAccessor( boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor )
       : _impl(_accessor)
       {}
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
-       *  @attention Accessors created with this constructors will be dysfunctional!
-       */
+       *  @attention Accessors created with this constructors will be dysfunctional, calling any member function
+       *  will throw an exception (by the boost::shared_ptr)! */
       TwoDRegisterAccessor()
       {}
 
-      /** Operator to access individual sequences.
-       */
-      std::vector<UserType> & operator[](size_t sequenceIndex) {
-        return _impl->operator[](sequenceIndex);
+      /** Default destructor */
+      ~TwoDRegisterAccessor() {}
+
+      /** Operator to access individual sequences/channels. */
+      std::vector<UserType> & operator[](size_t channel) {
+        return _impl->buffer_2D[channel];
       }
 
-      /** Const operator to access individual sequences.
-       */
-      const std::vector<UserType> & operator[](size_t sequenceIndex) const {
-        return _impl->operator[](sequenceIndex);
+      /** Const operator to access individual sequences/channels. */
+      const std::vector<UserType> & operator[](size_t channel) const {
+        return _impl->buffer_2D[channel];
       }
 
-      /** Read the data from the device, de-multiplex the hardware IO buffer and
-       *  fill the sequence buffers using the fixed point converters. The read
-       *  method will handle reads into the DMA regions as well
-       */
+      /** Read the data from the device, convert it and store in buffer. */
       void read() {
         _impl->read();
       }
 
-      /** Multiplex the data from the sequence buffer into the hardware IO buffer,
-       * using the fixed point converters, and write it to the device. Can be used
-       * to write to DMA memory Areas, but this functionality has not been
-       * implemented yet
-       */
+      /** Convert data from the buffer and write to device. */
       void write() {
         _impl->write();
       }
 
-      /**
-       * Return the number of sequences (=channels)
-       */
+      /** Return the number of sequences (=channels) */
       size_t getNumberOfDataSequences() const {
-        return _impl->getNumberOfDataSequences();
+        return _impl->getNumberOfChannels();
       }
 
-      /** Return number of samples per sequence (=channel)
-       */
-      inline unsigned int getNumberOfSamples() const {
+      /** Return the number of sequences (=channels) */
+      size_t getNumberOfChannels() const {
+        return _impl->getNumberOfChannels();
+      }
+
+      /** Return number of samples per sequence (=channel) */
+      size_t getNumberOfSamples() const {
         return _impl->getNumberOfSamples();
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const {
         return _impl->isReadOnly();
-      }
-
-      /**
-       * Default destructor
-       */
-      ~TwoDRegisterAccessor() {
       }
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
@@ -98,33 +84,17 @@ namespace mtca4u {
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         if(_impl->isSameRegister(newElement)) {
-          _impl = boost::dynamic_pointer_cast< TwoDRegisterAccessorImpl<UserType> >(newElement);
+          _impl = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
         }
         else {
           _impl->replaceTransferElement(newElement);
         }
       }
 
-      /** DEPRECATED
-       *
-       *  \deprecated This function is deprecated. Just pass around copies of the TwoDRegisterAccessor itself instead
-       *  of shared pointers, which will create the exact same behaviour. */
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getSharedPtr() {
-        std::cerr << "##################################################################################" << std::endl;
-        std::cerr << "# The function TwoDRegisterAccessor::getSharedPtr() is depcreated." << std::endl;
-        std::cerr << "# Just pass around copies of the TwoDRegisterAccessor itself instead of shared" << std::endl;
-        std::cerr << "# pointers, which will create the exact same behaviour." << std::endl;
-        std::cerr << "##################################################################################" << std::endl;
-        return _impl;
-      }
-
     protected:
 
-      /** Pointer to implementation */
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > _impl;
-
-      // the TransferGroup must be a friend to access the actual accesor
-      friend class TransferGroup;
+      /** pointer to the implementation */
+      boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         return _impl->isSameRegister(other);

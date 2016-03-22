@@ -19,9 +19,12 @@ namespace mtca4u {
   class RegisterCatalogue {
   
     public:
-    
+
       /** Get register information for a given full path name. */
       boost::shared_ptr<RegisterInfo> getRegister(const RegisterPath &registerPathName) const;
+
+      /** Check if register with the given path name exists. */
+      bool hasRegister(const RegisterPath &registerPathName) const;
 
       /** Get metadata information for the given key. */
       const std::string& getMetadata(const std::string &key) const;

@@ -13,7 +13,6 @@ namespace mtca4u {
 
   MemoryAddressedBackend::MemoryAddressedBackend(std::string mapFileName) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getTwoDRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
@@ -95,20 +94,26 @@ namespace mtca4u {
   template<typename UserType>
   boost::shared_ptr< NDRegisterAccessor<UserType> > MemoryAddressedBackend::getBufferingRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
-    auto accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-        new MemoryAddressedBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
-            wordOffsetInRegister, numberOfWords, enforceRawAccess) );
+    boost::shared_ptr< NDRegisterAccessor<UserType> >  accessor;
+    // obtain register info
+    boost::shared_ptr<RegisterInfo> info = _registerMap->getRegisterCatalogue().getRegister(registerPathName);
+    // 1D or scalar register
+    if(info->getNumberOfDimensions() <= 1) {
+      accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
+          new MemoryAddressedBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
+              wordOffsetInRegister, numberOfWords, enforceRawAccess) );
+    }
+    // 2D multiplexed register
+    else {
+      if( wordOffsetInRegister != 0 || ( numberOfWords != 0 && numberOfWords != info->getNumberOfElements() ) ) {
+        throw DeviceException("Creating accessors for parts of a multiplexed register is not supported by the "
+            "MemoryAddressedBackend.",DeviceException::NOT_IMPLEMENTED);
+      }
+      accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
+          new MemoryAddressedBackendTwoDRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
+    }
     // allow plugins to decorate the accessor and return it
     return decorateBufferingRegisterAccessor(registerPathName, accessor);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > MemoryAddressedBackend::getTwoDRegisterAccessor_impl(
-      const RegisterPath &registerPathName) {
-    return boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> >(
-        new MemoryAddressedBackendTwoDRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
   }
 
 } // namespace mtca4u

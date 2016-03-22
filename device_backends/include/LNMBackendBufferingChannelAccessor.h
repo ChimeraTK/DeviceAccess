@@ -10,9 +10,9 @@
 
 #include <algorithm>
 
+#include "NDRegisterAccessor.h"
 #include "LogicalNameMappingBackend.h"
 #include "TwoDRegisterAccessor.h"
-#include "TwoDRegisterAccessorImpl.h"
 #include "FixedPointConverter.h"
 #include "Device.h"
 

@@ -105,14 +105,6 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
   }
 
-  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<int>("","Channel3"), mtca4u::DeviceException);
-  try {
-    device.getTwoDRegisterAccessor<int>("","Channel3");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
-
   BOOST_CHECK_THROW(device.getRegistersInModule("MODULE"), mtca4u::DeviceException);
   try {
     device.getRegistersInModule("MODULE");
@@ -360,7 +352,6 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   // reading via iterator
   index = 0;
   for(mtca4u::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
-    std::cout << *it << " == " << -876543210+42*index << std::endl;
     BOOST_CHECK( *it == -876543210+42*index );
     ++index;
   }

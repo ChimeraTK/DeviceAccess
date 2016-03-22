@@ -67,11 +67,6 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
         const mtca4u::RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getBufferingRegisterAccessor_impl, 4 );
 
-    /** Implement the virtual function template to obtain the 2D register accessor */
-    template<typename UserType>
-    boost::shared_ptr< mtca4u::TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor_impl(const mtca4u::RegisterPath &registerPathName);
-    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getTwoDRegisterAccessor_impl, 1);
-
   public:
 
     /** The registerer is announcing the new type to the registerer in its constructor.

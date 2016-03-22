@@ -16,7 +16,6 @@ ExampleBackend::BackendRegisterer ExampleBackend::backendRegisterer;
 
 ExampleBackend::ExampleBackend(){
   FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
-  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getTwoDRegisterAccessor_impl);
 }
 
 ExampleBackend::~ExampleBackend(){
@@ -42,13 +41,3 @@ boost::shared_ptr< NDRegisterAccessor<UserType> > ExampleBackend::getBufferingRe
     const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, bool /*enforceRawAccess*/) {
   throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
 }
-
-// We do not have a suitable 2D register accessor, so we throw an exception.
-template<typename UserType>
-boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > ExampleBackend::getTwoDRegisterAccessor_impl(
-    const mtca4u::RegisterPath & /*registerPathName*/) {
-  throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
-}
-
-
-

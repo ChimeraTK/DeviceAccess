@@ -14,3 +14,6 @@ mskrebot  sdm://./rebot=127.0.0.1,5001 mtcadummy_rebot.map
 mskrebot1  sdm://./rebot=localhost,5001 mtcadummy_rebot.map
 #an entry with the old /dev/ syntax for compatibility tests
 OLD_PCIE  /dev/mtcadummys0 mtcadummy.map
+SEQUENCES   sdm://./dummy=sequences.map sequences.map
+MIXED_SEQUENCES   sdm://./dummy=sequences.map bam_fmc25_r1225.mapp
+INVALID_SEQUENCES   sdm://./dummy=sequences.map invalidSequences.map

@@ -46,12 +46,12 @@ namespace mtca4u {
       }
 
       /** Return number of elements per channel */
-      unsigned int getNumberOfSamples() {
+      unsigned int getNumberOfSamples() const {
         return buffer_2D[0].size();
       }
 
       /** Return number of channels */
-      unsigned int getNumberOfChannels() {
+      unsigned int getNumberOfChannels() const {
         return buffer_2D.size();
       }
 
@@ -75,6 +75,7 @@ namespace mtca4u {
       /// the public interfaces needs access to protected functions of the TransferElement etc.
       friend class BufferingRegisterAccessor<UserType>;
       friend class TwoDRegisterAccessor<UserType>;
+      friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
 
   };

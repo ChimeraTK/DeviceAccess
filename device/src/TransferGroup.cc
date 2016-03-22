@@ -6,6 +6,7 @@
  */
 
 #include "TransferGroup.h"
+#include "DeviceException.h"
 #include "BufferingRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
 

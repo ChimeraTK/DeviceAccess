@@ -27,7 +27,7 @@ namespace mtca4u {
   class TwoDRegisterAccessor;
 
   template<typename UserType>
-  class TwoDRegisterAccessorImpl;
+  class MultiplexedDataAccessor;
 
   template<typename T>
   class ExternalBufferAllocator;

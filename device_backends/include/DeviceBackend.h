@@ -94,13 +94,6 @@ namespace mtca4u {
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getBufferingRegisterAccessor_impl,
           boost::shared_ptr< NDRegisterAccessor<T> >(const RegisterPath&, size_t, size_t, bool) );
 
-      /** Get register accessor for 2-dimensional registers. */
-      template<typename UserType>
-      boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > getTwoDRegisterAccessor(
-          const RegisterPath &registerPathName);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getTwoDRegisterAccessor_impl,
-          boost::shared_ptr< TwoDRegisterAccessorImpl<T> >(const RegisterPath&) );
-
       /** Return the register catalogue with detailed information on all registers. */
       virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;
 
@@ -163,14 +156,6 @@ namespace mtca4u {
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
     return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
         wordOffsetInRegister, enforceRawAccess);
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  boost::shared_ptr< TwoDRegisterAccessorImpl<UserType> > DeviceBackend::getTwoDRegisterAccessor(
-      const RegisterPath &registerPathName) {
-    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getTwoDRegisterAccessor_impl, UserType, registerPathName);
   }
 
 } // namespace mtca4u
