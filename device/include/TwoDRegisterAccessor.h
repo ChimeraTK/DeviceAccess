@@ -1,12 +1,12 @@
 /*
- * RegisterAccessor2D.h
+ * TwoDRegisterAccessor.h
  *
  *  Created on: Feb 3, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_REGISTER_ACCESSOR_2D_H
-#define MTCA4U_REGISTER_ACCESSOR_2D_H
+#ifndef MTCA4U_TWO_DREGISTER_ACCESSOR_H
+#define MTCA4U_TWO_DREGISTER_ACCESSOR_H
 
 #include <boost/smart_ptr.hpp>
 
@@ -21,7 +21,7 @@ namespace mtca4u {
 
     public:
 
-      /** Do not use this constructor directly. Instead call Device::getRegisterAccessor2D(). */
+      /** Do not use this constructor directly. Instead call Device::getTwoDRegisterAccessor(). */
       TwoDRegisterAccessor( boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor )
       : _impl(_accessor)
       {}
@@ -104,4 +104,4 @@ namespace mtca4u {
 
 } // namespace mtca4u
 
-#endif /* MTCA4U_REGISTER_ACCESSOR_2D_H */
+#endif /* MTCA4U_TWO_DREGISTER_ACCESSOR_H */

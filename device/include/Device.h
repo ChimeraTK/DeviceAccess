@@ -84,7 +84,7 @@ namespace mtca4u {
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
 
-      /** Get a RegisterAccessor2D object for the given register. This allows to read and write transparently
+      /** Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor. */
       template<typename UserType>
       TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(const RegisterPath &registerPathName) const;
@@ -265,7 +265,7 @@ namespace mtca4u {
       /** \brief <b>DEPRECATED</b>
        *
        *  \deprecated
-       *  This function is deprecated. Use getRegisterAccessor2D() instead!
+       *  This function is deprecated. Use getTwoDRegisterAccessor() instead!
        *  @todo Change warning into runtime error after release of version 0.8
        */
       template<typename customClass>
@@ -352,7 +352,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  A typedef for backward compatibility. Don't use this in new code. It will be removed in a future release.
-       *  Use mtca4u::RegisterAccessor instead (which is not nested inside this class).
+       *  Use mtca4u::BufferingRegisterAccessor instead
        */
       typedef mtca4u::RegisterAccessor RegisterAccessor;
 

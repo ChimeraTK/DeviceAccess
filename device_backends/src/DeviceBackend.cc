@@ -2,7 +2,6 @@
  * DeviceBackend.cc
  */
 
-#include "RegisterAccessor.h"
 #include "DeviceBackend.h"
 
 namespace mtca4u {
