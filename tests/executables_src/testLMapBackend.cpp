@@ -65,22 +65,6 @@ void LMapBackendTest::testExceptions() {
   device.open("LMAP0");
   int data = 0;
 
-  BOOST_CHECK_THROW(device.readReg(0, &data, 0), mtca4u::DeviceException);
-  try {
-    device.readReg(0, &data, 0);
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
-
-  BOOST_CHECK_THROW(device.writeReg(0, data, 0), mtca4u::DeviceException);
-  try {
-    device.writeReg(0, data, 0);
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
-
   BOOST_CHECK_THROW(device.getRegisterMap(), mtca4u::DeviceException);
   try {
     device.getRegisterMap();
