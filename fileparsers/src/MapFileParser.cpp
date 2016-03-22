@@ -117,7 +117,8 @@ namespace mtca4u {
     }
 
     // search for 2D registers and add 2D entries
-    for(auto info : *pmap) {
+    std::vector<RegisterInfoMap::RegisterInfo> newInfos;
+    for(auto &info: *pmap) {
       // check if 2D register, otherwise ignore
       if(info.name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
       // create copy of the entry
@@ -134,7 +135,11 @@ namespace mtca4u {
       // mark it as 2D multiplexed
       newEntry.is2DMultiplexed = true;
       // add it to the map
-      pmap->insert(newEntry);
+      newInfos.push_back(newEntry);
+    }
+    // insert the new entries to the catalogue
+    for(auto &entry: newInfos) {
+      pmap->insert(entry);
     }
 
     return pmap;
