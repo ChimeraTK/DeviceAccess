@@ -28,12 +28,6 @@ namespace mtca4u {
 
       virtual void close();
 
-      virtual void read(const std::string &regModule, const std::string &regName,
-          int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-
-      virtual void write(const std::string &regModule, const std::string &regName,
-          int32_t const *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
-
       virtual std::string readDeviceInfo() {
         return std::string("Logical name mapping file: ") + _lmapFileName;
       }
@@ -45,6 +39,17 @@ namespace mtca4u {
 
       static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
+
+      virtual void read(const std::string &, const std::string &,
+          int32_t *, size_t  = 0, uint32_t  = 0) {
+        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+      }
+
+      virtual void write(const std::string &,
+          const std::string &, int32_t const *,
+          size_t  = 0, uint32_t  = 0)  {
+        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+      }
 
     protected:
 
@@ -63,7 +68,7 @@ namespace mtca4u {
       std::string _lmapFileName;
 
       /// map of target devices
-      std::map< std::string, boost::shared_ptr<Device> > _devices;
+      std::map< std::string, boost::shared_ptr<DeviceBackend> > _devices;
 
       template<typename T>
       friend class LNMBackendBufferingRegisterAccessor;

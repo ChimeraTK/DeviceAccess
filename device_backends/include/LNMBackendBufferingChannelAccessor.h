@@ -46,16 +46,16 @@ namespace mtca4u {
         }
         // get target device and accessor
         _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getTwoDRegisterAccessor<T>("",_info.registerName);
+        _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName), 0,0, false);
         // allocate the buffer
         NDRegisterAccessor<T>::buffer_2D.resize(1);
-        NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor.getNumberOfSamples());
+        NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
       virtual ~LNMBackendBufferingChannelAccessor() {};
 
       virtual void read() {
-        _accessor.read();
+        _accessor->read();
         postRead();
       }
 
@@ -83,7 +83,7 @@ namespace mtca4u {
     protected:
 
       /// pointer to underlying accessor
-      TwoDRegisterAccessor<T> _accessor;
+      boost::shared_ptr< NDRegisterAccessor<T> > _accessor;
 
       /// register and module name
       RegisterPath _registerPathName;
@@ -96,19 +96,25 @@ namespace mtca4u {
       LogicalNameMap::RegisterInfo _info;
 
       /// target device
-      boost::shared_ptr<Device> _targetDevice;
+      boost::shared_ptr<DeviceBackend> _targetDevice;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return _accessor.getHardwareAccessingElements();
+        return _accessor->getHardwareAccessingElements();
       }
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        _accessor.replaceTransferElement(newElement);
+        auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<T> >(newElement);
+        if(newElement->isSameRegister(_accessor) && casted) {
+          _accessor = casted;
+        }
+        else {
+          _accessor->replaceTransferElement(newElement);
+        }
       }
 
       virtual void postRead() {
-        _accessor.postRead();
-        _accessor[_info.channel].swap(NDRegisterAccessor<T>::buffer_2D[0]);
+        _accessor->postRead();
+        _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
   };

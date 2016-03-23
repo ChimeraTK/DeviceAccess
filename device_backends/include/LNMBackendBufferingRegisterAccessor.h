@@ -52,7 +52,7 @@ namespace mtca4u {
         // obtain underlying register accessor
         _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName),
             actualLength,actualOffset,enforceRawAccess);
-        if(actualLength == 0) actualLength = _accessor.getNumberOfElements();
+        if(actualLength == 0) actualLength = _accessor->getNumberOfSamples();
         // create buffer
         NDRegisterAccessor<T>::buffer_2D.resize(1);
         NDRegisterAccessor<T>::buffer_2D[0].resize(actualLength);
@@ -61,7 +61,7 @@ namespace mtca4u {
       virtual ~LNMBackendBufferingRegisterAccessor() {};
 
       virtual void read() {
-        _accessor.read();
+        _accessor->read();
         postRead();
       }
 
@@ -71,7 +71,7 @@ namespace mtca4u {
               DeviceException::REGISTER_IS_READ_ONLY);
         }
         preWrite();
-        _accessor.write();
+        _accessor->write();
         postWrite();
       }
 
@@ -101,7 +101,7 @@ namespace mtca4u {
     protected:
 
       /// pointer to underlying accessor
-      BufferingRegisterAccessor<T> _accessor;
+      boost::shared_ptr< NDRegisterAccessor<T> > _accessor;
 
       /// register and module name
       RegisterPath _registerPathName;
@@ -114,32 +114,38 @@ namespace mtca4u {
       LogicalNameMap::RegisterInfo _info;
 
       /// target device
-      boost::shared_ptr<Device> _targetDevice;
+      boost::shared_ptr<DeviceBackend> _targetDevice;
 
       /// actual length and offset w.r.t. beginning of the underlying register
       size_t actualLength, actualOffset;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return _accessor.getHardwareAccessingElements();
+        return _accessor->getHardwareAccessingElements();
       }
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        _accessor.replaceTransferElement(newElement);
+        auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<T> >(newElement);
+        if(newElement->isSameRegister(_accessor) && casted) {
+          _accessor = casted;
+        }
+        else {
+          _accessor->replaceTransferElement(newElement);
+        }
       }
 
       virtual void postRead() {
-        _accessor.postRead();
-        _accessor.swap(NDRegisterAccessor<T>::buffer_2D[0]);
+        _accessor->postRead();
+        _accessor->accessChannel(0).swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
       virtual void preWrite() {
-        _accessor.preWrite();
-        _accessor.swap(NDRegisterAccessor<T>::buffer_2D[0]);
+        _accessor->preWrite();
+        _accessor->accessChannel(0).swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
       virtual void postWrite() {
-        _accessor.postWrite();
-        _accessor.swap(NDRegisterAccessor<T>::buffer_2D[0]);
+        _accessor->postWrite();
+        _accessor->accessChannel(0).swap(NDRegisterAccessor<T>::buffer_2D[0]);
       };
 
   };
