@@ -41,7 +41,7 @@ namespace mtca4u {
       template<class AnyBufferingAccessorType>
       void addAccessor(AnyBufferingAccessorType &accessor) {
         // just call the template specialisation for TransferElement, which we actually implement
-        addAccessor<TransferElement>(accessor);
+        addAccessor<TransferElement>(*(accessor.getHighLevelImplElement()));
       }
 
       /** Trigger read transfer for all accessors in the group */

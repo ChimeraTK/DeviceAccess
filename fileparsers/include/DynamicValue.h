@@ -26,7 +26,7 @@ namespace mtca4u {
       /** obtain value via implicit type conversion operator */
       operator const ValueType&() const {
         if(!hasActualValue) {
-          if(!accessor.getHighLevelImplElement()) {
+          if(!accessor.isInitialised()) {
             throw DeviceException("Cannot obtain this value before Value::createInternalAccessors() was called.",
                 DeviceException::EX_NOT_OPENED);
           }

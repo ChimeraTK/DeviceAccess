@@ -22,7 +22,7 @@ namespace mtca4u {
    *  functions before reading from resp. after writing to the buffer using the operators.
    */
   template<typename T>
-  class BufferingRegisterAccessor : public TransferElement {
+  class BufferingRegisterAccessor {
     public:
 
       /** Constructer. @attention Do not normally use directly.
@@ -35,9 +35,6 @@ namespace mtca4u {
        *  @attention Accessors created with this constructors will be dysfunctional, calling any member function
        *  will throw an exception (by the boost::shared_ptr)! */
       BufferingRegisterAccessor() {}
-
-      /** destructor */
-      ~BufferingRegisterAccessor() {};
 
 
       /** Read the data from the device, convert it and store in buffer. */
@@ -125,33 +122,16 @@ namespace mtca4u {
         _impl->buffer_2D[0].swap(x);
       }
 
-      virtual bool isReadOnly() const {
+      /** Return if the register accessor allows only reading */
+      bool isReadOnly() const {
         return _impl->isReadOnly();
       }
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        return _impl->isSameRegister(other);
-      }
-
-      virtual bool isSameRegister(const TransferElement &other) const {
-        return other.isSameRegister(_impl);
-      }
-
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return _impl->getHardwareAccessingElements();
-      }
-
-      virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
-        return boost::static_pointer_cast<TransferElement>(_impl);
-      }
-
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        if(_impl->isSameRegister(newElement)) {
-          _impl = boost::dynamic_pointer_cast< NDRegisterAccessor<T> >(newElement);
-        }
-        else {
-          _impl->replaceTransferElement(newElement);
-        }
+      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
+       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
+       *  placeholder constructor without arguments. */
+      bool isInitialised() const {
+        return _impl != NULL;
       }
 
     protected:
@@ -159,6 +139,12 @@ namespace mtca4u {
       /** pointer to the implementation */
       boost::shared_ptr< NDRegisterAccessor<T> > _impl;
 
+      /** return the implementation, used for adding the accessor to a TransferGroup */
+      boost::shared_ptr<TransferElement> getHighLevelImplElement() {
+        return boost::static_pointer_cast<TransferElement>(_impl);
+      }
+
+      friend class TransferGroup;
   };
 
 }    // namespace mtca4u

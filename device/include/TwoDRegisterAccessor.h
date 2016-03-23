@@ -10,6 +10,7 @@
 
 #include <boost/smart_ptr.hpp>
 
+#include "ForwardDeclarations.h"
 #include "NDRegisterAccessor.h"
 
 namespace mtca4u {
@@ -17,7 +18,7 @@ namespace mtca4u {
   /** TODO add documentation
    */
   template<class UserType>
-  class TwoDRegisterAccessor : public TransferElement {
+  class TwoDRegisterAccessor {
 
     public:
 
@@ -31,9 +32,6 @@ namespace mtca4u {
        *  will throw an exception (by the boost::shared_ptr)! */
       TwoDRegisterAccessor()
       {}
-
-      /** Default destructor */
-      ~TwoDRegisterAccessor() {}
 
       /** Operator to access individual sequences/channels. */
       std::vector<UserType> & operator[](size_t channel) {
@@ -70,25 +68,16 @@ namespace mtca4u {
         return _impl->getNumberOfSamples();
       }
 
+      /** Return if the register accessor allows only reading */
       bool isReadOnly() const {
         return _impl->isReadOnly();
       }
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return _impl->getHardwareAccessingElements();
-      }
-
-      virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
-        return boost::static_pointer_cast<TransferElement>(_impl);
-      }
-
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        if(_impl->isSameRegister(newElement)) {
-          _impl = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
-        }
-        else {
-          _impl->replaceTransferElement(newElement);
-        }
+      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
+       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
+       *  placeholder constructor without arguments. */
+      bool isInitialised() const {
+        return _impl != NULL;
       }
 
     protected:
@@ -96,9 +85,13 @@ namespace mtca4u {
       /** pointer to the implementation */
       boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        return _impl->isSameRegister(other);
+
+      /** return the implementation, used for adding the accessor to a TransferGroup */
+      boost::shared_ptr<TransferElement> getHighLevelImplElement() {
+        return boost::static_pointer_cast<TransferElement>(_impl);
       }
+
+      friend class TransferGroup;
 
   };
 
