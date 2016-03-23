@@ -36,12 +36,11 @@ namespace mtca4u {
 
       /** Add a register accessor to the group. The register accessor might internally be altered so that accessors
        *  accessing the same hardware register will share their buffers. Register accessors must not be placed into
-       *  multiple TransferGroups.
-       */
+       *  multiple TransferGroups. */
       template<class AnyBufferingAccessorType>
       void addAccessor(AnyBufferingAccessorType &accessor) {
         // just call the template specialisation for TransferElement, which we actually implement
-        addAccessor<TransferElement>(*(accessor.getHighLevelImplElement()));
+        addAccessor<TransferElement>(accessor);
       }
 
       /** Trigger read transfer for all accessors in the group */

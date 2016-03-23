@@ -18,9 +18,9 @@ using namespace mtca4u;
 
 // we need to access the private implementation of the accessor (see accessPrivateData.h)
 struct BufferingRegisterAccessor_int_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int> >(BufferingRegisterAccessor<int>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<int> >(NDRegisterAccessorBridge<int>::*type);
 };
-template class accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::BufferingRegisterAccessor<int>::_impl>;
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorBridge<int>::_impl>;
 
 class TransferGroupTest {
   public:
