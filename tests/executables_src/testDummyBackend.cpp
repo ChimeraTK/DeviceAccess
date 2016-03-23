@@ -603,4 +603,19 @@ void DummyBackendTest::testCreateBackend() {
   BOOST_CHECK(_backendInstance->isConnected() == true);
   /** backend should not be in open state */
   BOOST_CHECK(_backendInstance->isOpen() == false);
+
+  /** check if instance name is working properly */
+  auto inst1 = DummyBackend::createInstance("","",pararmeters,TEST_MAPPING_FILE);
+  auto inst2 = DummyBackend::createInstance("","",pararmeters,TEST_MAPPING_FILE);
+  auto inst3 = DummyBackend::createInstance("","FOO",pararmeters,TEST_MAPPING_FILE);
+  auto inst4 = DummyBackend::createInstance("","FOO",pararmeters,TEST_MAPPING_FILE);
+  auto inst5 = DummyBackend::createInstance("","BAR",pararmeters,TEST_MAPPING_FILE);
+  BOOST_CHECK( inst1.get() != inst2.get() );
+  BOOST_CHECK( inst1.get() != inst3.get() );
+  BOOST_CHECK( inst1.get() != inst4.get() );
+  BOOST_CHECK( inst1.get() != inst5.get() );
+
+  BOOST_CHECK( inst3.get() == inst4.get() );
+  BOOST_CHECK( inst3.get() != inst5.get() );
+
 }

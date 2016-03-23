@@ -49,14 +49,6 @@ namespace mtca4u {
    */
   class DummyBackend : public MemoryAddressedBackend
   {
-    private:
-      /** _mapFile is first and only item of arugment parameters  */
-      std::string _mapFile;
-    protected:
-
-      /** The file name has to be a mapping file, not a device file.
-       *  Permissons and config are ignored.
-       */
     public:
       DummyBackend(std::string mapFileName);
       virtual ~DummyBackend();
@@ -84,6 +76,7 @@ namespace mtca4u {
       static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName);
 
     protected:
+
       struct AddressRange{
         const uint32_t offset;
         const uint32_t sizeInBytes;
@@ -94,6 +87,9 @@ namespace mtca4u {
           return ( bar == right.bar ? ( offset < right.offset ) : bar < right.bar );
         }
       };
+
+      /** name of the map file */
+      std::string _mapFile;
 
       std::map< uint8_t, std::vector<int32_t> > _barContents;
       std::set< uint64_t > _readOnlyAddresses;
@@ -117,6 +113,12 @@ namespace mtca4u {
       /// the callback function so it can be used inside a callback function for
       /// resynchronisation.
       void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
+
+      /** map of instance names and pointers to allow re-connecting to the same instance with multiple Devices */
+      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {
+        static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;
+        return instanceMap;
+      }
 
       /// register accessors must be friends to access the map and the registers
       template<typename T>

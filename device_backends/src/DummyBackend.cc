@@ -210,20 +210,35 @@ namespace mtca4u {
   }
 
   boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string /*host*/,
-      std::string /*instance*/,
+      std::string instance,
       std::list<std::string> parameters,
       std::string mapFileName) {
-    // the dummy is ignoring the instance and takes the first parameter as map file name
-    if (parameters.empty()) {
-      throw DummyBackendException("No map file name given in the parameter list.",
-          DummyBackendException::INVALID_PARAMETER);
+
+    if(mapFileName == "" && parameters.size() > 0) mapFileName = parameters.front(); // compatibility
+    if(mapFileName == "") {
+      throw mtca4u::DummyBackendException("No map file name given in the dmap file.",
+                                  mtca4u::DummyBackendException::INVALID_PARAMETER);
     }
+
     // when the factory is used to create the dummy device, mapfile path is
     // relative to the dmapfile location. To make sure file path is correct we
     // Convert to absolute path before using it
     std::string absPathToMapfile = convertPathRelativeToDmapToAbs(mapFileName);
 
-    return boost::shared_ptr<DeviceBackend>(new DummyBackend(absPathToMapfile));
+    // for compatibility, always create a new instance if no instance name is given
+    if(instance == "") {
+      return boost::shared_ptr<DeviceBackend>(new DummyBackend(absPathToMapfile));
+    }
+
+    // search instance map and create new instance, if bot found under the name
+    if(getInstanceMap().find(instance) == getInstanceMap().end()) {
+      boost::shared_ptr<mtca4u::DeviceBackend> ptr( new DummyBackend(absPathToMapfile) );
+      getInstanceMap().insert( std::make_pair(instance,ptr) );
+      return ptr;
+    }
+
+    // return existing instance from the map
+    return boost::shared_ptr<mtca4u::DeviceBackend>(getInstanceMap()[instance]);
   }
 
   std::string convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
