@@ -32,17 +32,24 @@ namespace mtca4u {
       virtual void write() = 0;
 
       /** Get or set register accessor's buffer content (1D version).
-       *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
+       *  @attention No bounds checking is performed, use getNumberOfSamples() to obtain the number of elements in
        *  the register. */
-      UserType& accessData(unsigned int index) {
-        return buffer_2D[0][index];
+      UserType& accessData(unsigned int sample) {
+        return buffer_2D[0][sample];
       }
 
       /** Get or set register accessor's buffer content (2D version).
-       *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
+       *  @attention No bounds checking is performed, use getNumberOfChannels() and getNumberOfSamples() to obtain the
+       *   number of channels and samples in the register. */
+      UserType& accessData(unsigned int channel, unsigned int sample) {
+        return buffer_2D[channel][sample];
+      }
+
+      /** Get or set register accessor's channel vector.
+       *  @attention No bounds checking is performed, use getNumberOfChannels() to obtain the number of elements in
        *  the register. */
-      UserType& accessData(unsigned int channel, unsigned int index) {
-        return buffer_2D[channel][index];
+      std::vector<UserType>& accessChannel(unsigned int channel) {
+        return buffer_2D[channel];
       }
 
       /** Return number of elements per channel */
