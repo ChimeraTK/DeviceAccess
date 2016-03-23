@@ -9,17 +9,39 @@ namespace mtca4u{
   class DeviceException : public DeviceBackendException {
     public:
 
-      enum { NOT_IMPLEMENTED = 0,
-             EX_WRONG_PARAMETER,
-             EX_NOT_OPENED,
-             EX_CANNOT_OPEN_DEVICEBACKEND,
-             CANNOT_OPEN_MAP_FILE,
-             REGISTER_DOES_NOT_EXIST,
-             REGISTER_IS_READ_ONLY,
-             // for compatibility with MultiplexedDataAccessorException:
-             EMPTY_AREA = CANNOT_OPEN_MAP_FILE,
-             INVALID_WORD_SIZE = CANNOT_OPEN_MAP_FILE,
-             INVALID_N_ELEMENTS = CANNOT_OPEN_MAP_FILE
+      enum {
+        /** The function called is not implemented in this context, e.g.\ for the used backend */
+        NOT_IMPLEMENTED = 0,
+
+        /** A parameter (function argument, value in a map file etc.) is not valid */
+        EX_WRONG_PARAMETER,
+
+        /** The called operation requires an opened device but it is closed */
+        EX_NOT_OPENED,
+
+        /** The backend refused to open, e.g.\ due to a connection error with the hardware */
+        EX_CANNOT_OPEN_DEVICEBACKEND,
+
+        /** The map file could not be openend or contains errors */
+        CANNOT_OPEN_MAP_FILE,
+
+        /** The register specified in the operation does not exist */
+        REGISTER_DOES_NOT_EXIST,
+
+        /** A write request was sent to a read-only register */
+        REGISTER_IS_READ_ONLY,
+
+        /** The requested accessor is not suitable for the given register (e.g.\ accessor has too low dimension) */
+        WRONG_ACCESSOR,
+
+        /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
+        EMPTY_AREA = CANNOT_OPEN_MAP_FILE,
+
+        /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
+        INVALID_WORD_SIZE = CANNOT_OPEN_MAP_FILE,
+
+        /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
+        INVALID_N_ELEMENTS = CANNOT_OPEN_MAP_FILE
       };
 
 
