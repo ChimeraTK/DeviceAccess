@@ -79,9 +79,7 @@ namespace mtca4u {
        *  Implementation note: The buffer must be created with the right number of elements in the constructor! */
       std::vector< std::vector<UserType> > buffer_2D;
 
-      /// the public interfaces needs access to protected functions of the TransferElement etc.
-      friend class BufferingRegisterAccessor<UserType>;
-      friend class TwoDRegisterAccessor<UserType>;
+      /// the compatibility layers need access to the buffer_2D
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
 

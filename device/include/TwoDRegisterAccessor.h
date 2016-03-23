@@ -34,12 +34,12 @@ namespace mtca4u {
 
       /** Operator to access individual sequences/channels. */
       std::vector<UserType> & operator[](size_t channel) {
-        return NDRegisterAccessorBridge<UserType>::_impl->buffer_2D[channel];
+        return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(channel);
       }
 
       /** Const operator to access individual sequences/channels. */
       const std::vector<UserType> & operator[](size_t channel) const {
-        return NDRegisterAccessorBridge<UserType>::_impl->buffer_2D[channel];
+        return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(channel);
       }
 
       /** Read the data from the device, convert it and store in buffer. */
