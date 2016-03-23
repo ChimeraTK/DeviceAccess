@@ -25,7 +25,7 @@ namespace mtca4u {
 
   void TransferGroup::write() {
     if(isReadOnly()) {
-      throw DeviceException("TransferGroup::write() called, but at least one TransferElement is read-only.",
+      throw DeviceException("TransferGroup::write() called, but the TransferGroup is read-only.",
           DeviceException::REGISTER_IS_READ_ONLY);
     }
     for(unsigned int i=0; i<highLevelElements.size(); i++) {
