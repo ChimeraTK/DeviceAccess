@@ -12,9 +12,16 @@
 #include "DMapFileDefaults.h"
 #include "BackendFactory.h"
 
-using namespace boost::unit_test_framework;
+#include "accessPrivateData.h"
 
+using namespace boost::unit_test_framework;
 using namespace mtca4u;
+
+// we need to access the private implementation of the accessor (see accessPrivateData.h)
+struct BufferingRegisterAccessor_double_impl {
+    typedef boost::shared_ptr< NDRegisterAccessor<double> >(BufferingRegisterAccessor<double>::*type);
+};
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_double_impl, &mtca4u::BufferingRegisterAccessor<double>::_impl>;
 
 /**********************************************************************************************************************/
 class BufferingRegisterTest {
@@ -167,7 +174,11 @@ void BufferingRegisterTest::testRegisterAccessor() {
 
   // test pre-increment operator
   BufferingRegisterAccessor<double> copy = ++floatRegister;
-  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  boost::shared_ptr< NDRegisterAccessor<double> > impl, implCopy;
+  impl = floatRegister.*accessPrivateData::stowed< BufferingRegisterAccessor_double_impl >::value;
+  implCopy = copy.*accessPrivateData::stowed< BufferingRegisterAccessor_double_impl >::value;
+
+  BOOST_CHECK( implCopy->isSameRegister(impl->getHardwareAccessingElements()[0]) );
   BOOST_CHECK( floatRegister == 23. );
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
@@ -175,7 +186,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
 
   // test pre-decrement operator
   copy = --floatRegister;
-  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  BOOST_CHECK( implCopy->isSameRegister(impl->getHardwareAccessingElements()[0]) );
   BOOST_CHECK( floatRegister == 22. );
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
@@ -185,7 +196,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
   float oldValue = floatRegister++;
   BOOST_CHECK( oldValue == 22. );
   BOOST_CHECK( floatRegister == 23. );
-  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  BOOST_CHECK( implCopy->isSameRegister(impl->getHardwareAccessingElements()[0]) );
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 23.*8. );
@@ -194,10 +205,9 @@ void BufferingRegisterTest::testRegisterAccessor() {
   oldValue = floatRegister--;
   BOOST_CHECK( oldValue == 23. );
   BOOST_CHECK( floatRegister == 22. );
-  BOOST_CHECK( copy.isSameRegister(floatRegister.getHardwareAccessingElements()[0]) );
+  BOOST_CHECK( implCopy->isSameRegister(impl->getHardwareAccessingElements()[0]) );
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 22.*8. );
-
 
 }

@@ -11,8 +11,16 @@
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
 
+#include "accessPrivateData.h"
+
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
+
+// we need to access the private implementation of the accessor (see accessPrivateData.h)
+struct BufferingRegisterAccessor_int_impl {
+    typedef boost::shared_ptr< NDRegisterAccessor<int> >(BufferingRegisterAccessor<int>::*type);
+};
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::BufferingRegisterAccessor<int>::_impl>;
 
 class TransferGroupTest {
   public:
@@ -142,11 +150,17 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   a[4] = device.getBufferingRegisterAccessor<int>("","Channel4");
   a[5] = device.getBufferingRegisterAccessor<int>("","Constant");
 
+  // obtain the private pointers to the implementation of the accessor
+  boost::shared_ptr< NDRegisterAccessor<int> > impl[6];
+  for(int i=0; i<6; i++) {
+    impl[i] = a[i].*accessPrivateData::stowed<BufferingRegisterAccessor_int_impl>::value;
+  }
+
   // somewhat redundant check: underlying hardware accessors are different for all accessors
   for(int i=0; i<6; i++) {
-    BOOST_CHECK( a[i].getHardwareAccessingElements().size() == 1 );
+    BOOST_CHECK( impl[i]->getHardwareAccessingElements().size() == 1 );
     for(int k=i+1; k<6; k++) {
-      BOOST_CHECK( a[i].getHardwareAccessingElements()[0] != a[k].getHardwareAccessingElements()[0] );
+      BOOST_CHECK( impl[i]->getHardwareAccessingElements()[0] != impl[k]->getHardwareAccessingElements()[0] );
     }
   }
 
@@ -157,16 +171,16 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   }
 
   // now some accessors share the same underlying accessor
-  BOOST_CHECK( a[3].getHardwareAccessingElements()[0] == a[4].getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[3]->getHardwareAccessingElements()[0] == impl[4]->getHardwareAccessingElements()[0] );
 
   // the others are still different
-  BOOST_CHECK( a[0].getHardwareAccessingElements()[0] != a[1].getHardwareAccessingElements()[0] );
-  BOOST_CHECK( a[0].getHardwareAccessingElements()[0] != a[3].getHardwareAccessingElements()[0] );
-  BOOST_CHECK( a[0].getHardwareAccessingElements()[0] != a[5].getHardwareAccessingElements()[0] );
-  BOOST_CHECK( a[1].getHardwareAccessingElements()[0] != a[2].getHardwareAccessingElements()[0] );
-  BOOST_CHECK( a[1].getHardwareAccessingElements()[0] != a[3].getHardwareAccessingElements()[0] );
-  BOOST_CHECK( a[1].getHardwareAccessingElements()[0] != a[5].getHardwareAccessingElements()[0] );
-  BOOST_CHECK( a[3].getHardwareAccessingElements()[0] != a[5].getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[0]->getHardwareAccessingElements()[0] != impl[1]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[0]->getHardwareAccessingElements()[0] != impl[3]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[0]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] != impl[2]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] != impl[3]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[3]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0] );
 
   // write some stuff to the registers via the target device
   // Note: there is only one DMA area in the PCIE dummy which are shared by the registers accessed by t2 and t3. We

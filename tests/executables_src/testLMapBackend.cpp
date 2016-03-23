@@ -10,8 +10,17 @@
 #include "Device.h"
 #include "BufferingRegisterAccessor.h"
 
+#include "accessPrivateData.h"
+
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
+
+// we need to access the private implementation of the accessor (see accessPrivateData.h)
+struct BufferingRegisterAccessor_int32t_impl {
+    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(BufferingRegisterAccessor<int32_t>::*type);
+};
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_impl, &mtca4u::BufferingRegisterAccessor<int32_t>::_impl>;
+
 
 class LMapBackendTest {
   public:
@@ -141,8 +150,14 @@ void LMapBackendTest::testExceptions() {
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
   mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
-  BOOST_CHECK( acc.isSameRegister(acc2) == true );
-  BOOST_CHECK( acc.isSameRegister(acc3) == false );
+
+  boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2, impl3;
+  impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+
+  BOOST_CHECK( impl->isSameRegister(impl2) == true );
+  BOOST_CHECK( impl->isSameRegister(impl3) == false );
 
   device.close();
 
@@ -304,8 +319,14 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   BOOST_CHECK( !acc.isReadOnly() );
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
-  BOOST_CHECK( acc.isSameRegister( acc ) == true );
-  BOOST_CHECK( acc.isSameRegister( acc2 ) == false );
+
+  boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2;
+  impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+
+  BOOST_CHECK( impl->isSameRegister( impl ) == true );
+  BOOST_CHECK( impl2->isSameRegister( impl ) == false );
+  BOOST_CHECK( impl->isSameRegister( impl2 ) == false );
 
   const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
@@ -465,8 +486,13 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   mtca4u::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
-  BOOST_CHECK( acc3.isSameRegister( acc3_2 ) == true );
-  BOOST_CHECK( acc3.isSameRegister( acc4 ) == false );
+
+  boost::shared_ptr< NDRegisterAccessor<int32_t> > impl3,impl4,impl3_2;
+  impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl4 = acc4.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl3_2 = acc3_2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  BOOST_CHECK( impl3->isSameRegister( impl3_2 ) == true );
+  BOOST_CHECK( impl3->isSameRegister( impl4 ) == false );
 
   mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
   unsigned int nSamples = accTarget[3].size();
