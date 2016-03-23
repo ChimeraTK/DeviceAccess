@@ -16,6 +16,8 @@
 #include "DeviceException.h"
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
+#include "ScalarRegisterAccessor.h"
+#include "OneDRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
 #include "BufferingRegisterAccessor.h"
 
@@ -65,10 +67,25 @@ namespace mtca4u {
        */
       virtual void close();
 
-      /** Get a BufferingRegisterAccessor object for the given register.
+      /** Get a ScalarRegisterObject object for the given register.
        *
-       *  The BufferingRegisterAccessor allows to read and write registers transparently by using the accessor object
+       *  The ScalarRegisterObject allows to read and write registers transparently by using the accessor object
        *  like a variable of the type UserType. If needed, the conversion to and from the UserType will be handled by
+       *  the FixedPointConverter matching the register description in the map.
+       *
+       *  The optional argument wordOffsetInRegister allows to access another but the first word of a larger register.
+       *
+       *  The last optional argument enforceRawAccess allows to enforce the raw access by disabling any possible
+       *  conversion from the original hardware data type into the given UserType. Obtaining the accessor with a
+       *  UserType unequal to the raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER. */
+      template<typename UserType>
+      ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(const RegisterPath &registerPathName,
+          size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
+
+      /** Get a OneDRegisterAccessor object for the given register.
+       *
+       *  The OneDRegisterAccessor allows to read and write registers transparently by using the accessor object
+       *  like a vector of the type UserType. If needed, the conversion to and from the UserType will be handled by
        *  the FixedPointConverter matching the register description in the map.
        *
        *  The optional arguments numberOfWords and wordOffsetInRegister allow to limit the accessor to a part of the
@@ -76,12 +93,9 @@ namespace mtca4u {
        *
        *  The last optional argument enforceRawAccess allows to enforce the raw access by disabling any possible
        *  conversion from the original hardware data type into the given UserType. Obtaining the accessor with a
-       *  UserType unequal to the raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER.
-       *
-       *  Note: This function returns an object, not a (shared) pointer to the object. This is necessary to use
-       *  operators (e.g. = or []) directly on the object. */
+       *  UserType unequal to the raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER. */
       template<typename UserType>
-      BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName,
+      OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
 
       /** Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
@@ -98,7 +112,7 @@ namespace mtca4u {
       /** \brief <b>Inefficient convenience function</b> to read a single-word register without obtaining an accessor.
        *
        *  \warning This function is inefficient as it creates and discards a register accessor in each call of the
-       *  function. For a better performance, use register accessors instead (see Device::getBufferingRegisterAccessor).
+       *  function. For a better performance, use register accessors instead (see Device::getScalarRegisterAccessor).
        *
        *  If a multi-word register is read, only the first element is returned. This function only works for 1D
        *  registers. */
@@ -108,7 +122,7 @@ namespace mtca4u {
       /** \brief <b>Inefficient convenience function</b> to read a multi-word register without obtaining an accessor.
        *
        *  \warning This function is inefficient as it creates and discards a register accessor in each call of the
-       *  function. For a better performance, use register accessors instead.
+       *  function. For a better performance, use register accessors instead (see Device::getOneDRegisterAccessor).
        *
        *  The function only works for 1D registers. For 2D registers, see Device::getTwoDRegisterAccessor. The argument
        *  numberOfWords specifies how many elements are read. The returned vector will have a length of numberOfWords or
@@ -121,7 +135,7 @@ namespace mtca4u {
       /** \brief <b>Inefficient convenience function</b> to write a single-word register without obtaining an accessor.
        *
        *  \warning This function is inefficient as it creates and discards a register accessor in each call of the
-       *  function. For a better performance, use register accessors instead.
+       *  function. For a better performance, use register accessors instead (see Device::getScalarRegisterAccessor).
        *
        *  If a multi-word register is read, only the first element is written. This function only works for 1D
        *  registers.*/
@@ -131,7 +145,7 @@ namespace mtca4u {
       /** \brief <b>Inefficient convenience function</b> to write a multi-word register without obtaining an accessor.
        *
        *  \warning This function is inefficient as it creates and discards a register accessor in each call of the
-       *  function. For a better performance, use register accessors instead.
+       *  function. For a better performance, use register accessors instead (see Device::getOneDRegisterAccessor).
        *
        *  The function only works for 1D registers. For 2D registers, see Device::getTwoDRegisterAccessor. The optional
        *  argument wordOffsetInRegister allows to skip the first wordOffsetInRegister elements of the register. */
@@ -139,12 +153,21 @@ namespace mtca4u {
       void write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister=0,
           bool enforceRawAccess=false);
 
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  This function is deprecated. Use Device::write() instead.
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
+      template<typename UserType>
+      BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName,
+          size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
 
       /** \brief <b>DEPRECATED</b>
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
 
@@ -152,7 +175,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
 
@@ -168,7 +191,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar);
 
@@ -176,7 +199,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void readReg(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
@@ -185,7 +208,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void readReg(const std::string &regName, const std::string &regModule,
           int32_t *data, size_t dataSize = 0,
@@ -195,7 +218,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void writeReg(const std::string &regName, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
@@ -204,7 +227,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::write() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void writeReg(const std::string &regName,
           const std::string &regModule, int32_t const *data,
@@ -214,7 +237,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use the getBufferingRegisterAccessor instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(const std::string &registerName,
           const std::string &module = std::string()) const;
@@ -223,7 +246,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use the RegisterCatalogue (see getRegisterCatalogue()) instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
@@ -233,7 +256,7 @@ namespace mtca4u {
        *  \deprecated
        *  This function is deprecated. Use the RegisterCatalogue (see getRegisterCatalogue()) to obtain a list of
        *  registers and create accessors using getBufferingRegisterAccessor instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       std::list<  boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) const;
@@ -242,7 +265,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use getRegisterCatalogue() instead.
-       *  @todo Add printed runtime warning after release of version 0.8
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
@@ -250,7 +273,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Open by alias name instead.
-       *  @todo Change warning into runtime error after release of version 0.8
+       *  @todo Change warning into runtime error after release of version 0.9
        */
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap);
 
@@ -258,7 +281,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Open by alias name instead.
-       *  @todo Change warning into runtime error after release of version 0.8
+       *  @todo Change warning into runtime error after release of version 0.9
        */
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
@@ -266,7 +289,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use getTwoDRegisterAccessor() instead!
-       *  @todo Change warning into runtime error after release of version 0.8
+       *  @todo Change warning into runtime error after release of version 0.9
        */
       template<typename customClass>
       boost::shared_ptr<customClass> getCustomAccessor(
@@ -278,6 +301,7 @@ namespace mtca4u {
        *  \deprecated
        *  This function is deprecated. Use Device::getBufferingRegisterAccessor(RegisterPath(module)/registerName)
        *  instead.
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       template<typename UserType>
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(
@@ -287,6 +311,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use Device::getTwoDRegisterAccessor(RegisterPath(module)/registerName) instead.
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       template<typename UserType>
       TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
@@ -296,7 +321,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use readArea() instead!
-       *  @todo Change warning into runtime error after release of version 0.8
+       *  @todo Change warning into runtime error after release of version 0.9
        */
       virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
           uint8_t bar) const;
@@ -305,7 +330,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use writeArea() instead!
-       *  @todo Change warning into runtime error after release of version 0.8
+       *  @todo Change warning into runtime error after release of version 0.9
        */
       virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
@@ -314,7 +339,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use readArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void readDMA(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
@@ -323,7 +348,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use readArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void readDMA(const std::string &regName, const std::string &regModule,
           int32_t *data, size_t dataSize = 0,
@@ -333,7 +358,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use writeArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void writeDMA(const std::string &regName, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
@@ -342,7 +367,7 @@ namespace mtca4u {
        *
        *  \deprecated
        *  This function is deprecated. Use writeArea() instead!
-       *  @todo Add printed runtime warning after release of version 0.6
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       virtual void writeDMA(const std::string &regName,
           const std::string &regModule, int32_t const *data,
@@ -378,20 +403,23 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const RegisterPath &registerPathName,
-      size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
+  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(const RegisterPath &registerPathName,
+      size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
-    return BufferingRegisterAccessor<UserType>(
-        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
-            wordOffsetInRegister, enforceRawAccess) );
+    return ScalarRegisterAccessor<UserType>(
+        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, 0, wordOffsetInRegister,
+            enforceRawAccess) );
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
-      const std::string &module, const std::string &registerName) const {
-    return getBufferingRegisterAccessor<UserType>(RegisterPath(module)/registerName);
+  OneDRegisterAccessor<UserType> Device::getOneDRegisterAccessor(const RegisterPath &registerPathName,
+      size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
+    checkPointersAreNotNull();
+    return OneDRegisterAccessor<UserType>(
+        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
+            wordOffsetInRegister, enforceRawAccess) );
   }
 
   /********************************************************************************************************************/
@@ -401,16 +429,6 @@ namespace mtca4u {
     checkPointersAreNotNull();
     return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
         registerPathName, 0,0, false));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
-      const std::string &module, const std::string &registerName) const {
-    checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
-        RegisterPath(module)/registerName, 0,0, false));
   }
 
   /********************************************************************************************************************/
@@ -454,6 +472,35 @@ namespace mtca4u {
      acc.write();
      acc.swap(vector);
    }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const RegisterPath &registerPathName,
+      size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
+    checkPointersAreNotNull();
+    return BufferingRegisterAccessor<UserType>(
+        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
+            wordOffsetInRegister, enforceRawAccess) );
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
+      const std::string &module, const std::string &registerName) const {
+    return getBufferingRegisterAccessor<UserType>(RegisterPath(module)/registerName);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
+      const std::string &module, const std::string &registerName) const {
+    checkPointersAreNotNull();
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
+        RegisterPath(module)/registerName, 0,0, false));
+  }
 
 } // namespace mtca4u
 
