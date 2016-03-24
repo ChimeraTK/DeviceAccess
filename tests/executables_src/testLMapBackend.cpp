@@ -411,6 +411,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   device.open("LMAP0");
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+  BOOST_CHECK( acc.isReadOnly() == false );
 
   const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
@@ -423,16 +424,6 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
   acc.read();
   for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
-
-  // writing range registers fails
-  BOOST_CHECK( acc.isReadOnly() );
-  BOOST_CHECK_THROW( acc.write(), DeviceException );
-  try {
-    acc.write();
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
-  }
 
   // reading via iterator
   index = 0;
@@ -465,6 +456,12 @@ void LMapBackendTest::testRegisterAccessorForRange() {
     BOOST_CHECK( *it == -876543210+42*index );
   }
   BOOST_CHECK( index == 0 );
+
+  // writing
+  for(int i=0; i<20; i++) acc[i] = 24507+33*i;
+  acc.write();
+  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
+  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] ==  24507+33*i );
 
   device.close();
   target1.close();
