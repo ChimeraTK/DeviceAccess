@@ -1,9 +1,7 @@
 #include <mtca4u/Device.h>
 #include <mtca4u/TwoDRegisterAccessor.h>
 #include <mtca4u/BackendFactory.h>
-#include <string>
 #include <iostream>
-#include <boost/shared_ptr.hpp>
 
 int main() {
   mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");

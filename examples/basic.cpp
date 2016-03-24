@@ -1,9 +1,6 @@
 #include <mtca4u/Device.h>
-#include <mtca4u/BufferingRegisterAccessor.h>
 #include <mtca4u/BackendFactory.h>
-#include <string>
 #include <iostream>
-#include <boost/shared_ptr.hpp>
 
 /* All information needed to access the device is
  * the device alias and the register names
