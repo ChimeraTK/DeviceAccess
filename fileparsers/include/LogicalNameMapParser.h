@@ -12,7 +12,6 @@
 #include <unordered_set>
 #include <boost/shared_ptr.hpp>
 
-#include "BufferingRegisterAccessor.h"
 #include "RegisterCatalogue.h"
 #include "DeviceBackend.h"
 #include "RegisterPlugin.h"
@@ -32,7 +31,7 @@ namespace mtca4u {
 
   /** Logical name map: store information from xlmap file and provide it to the LogicalNameMappingBackend and
    *  its register accessors. */
-  class LogicalNameMap {
+  class LogicalNameMapParser {
 
     public:
 
@@ -130,16 +129,16 @@ namespace mtca4u {
 
         protected:
 
-          friend class LogicalNameMap;
+          friend class LogicalNameMapParser;
       };
 
       /** Constructor: parse map from XML file */
-      LogicalNameMap(const std::string &fileName) {
+      LogicalNameMapParser(const std::string &fileName) {
         parseFile(fileName);
       }
 
       /** Default constructor: Create empty map. */
-      LogicalNameMap() {
+      LogicalNameMapParser() {
       }
 
       /** Obtain register information for the named register. The register information can be updated, which *will*

@@ -9,7 +9,7 @@
 #include "LNMBackendBufferingChannelAccessor.h"
 #include "LNMBackendBufferingVariableAccessor.h"
 #include "LogicalNameMappingBackend.h"
-#include "Device.h"
+#include "LogicalNameMapParser.h"
 
 namespace mtca4u {
 
@@ -27,7 +27,7 @@ namespace mtca4u {
     if(hasParsed) return;
 
     // parse the map fle
-    LogicalNameMap map = LogicalNameMap(_lmapFileName);
+    LogicalNameMapParser map = LogicalNameMapParser(_lmapFileName);
     _catalogue = map._catalogue;
 
     // create all devices referenced in the map
@@ -72,21 +72,21 @@ namespace mtca4u {
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
 
     // obtain register info
-    auto info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
+    auto info = boost::static_pointer_cast<LogicalNameMapParser::RegisterInfo>(_catalogue.getRegister(registerPathName));
 
     // implementation for each type
     NDRegisterAccessor<UserType> *ptr;
-    if( info->targetType == LogicalNameMap::TargetType::REGISTER ||
-        info->targetType == LogicalNameMap::TargetType::RANGE       ) {
+    if( info->targetType == LogicalNameMapParser::TargetType::REGISTER ||
+        info->targetType == LogicalNameMapParser::TargetType::RANGE       ) {
       ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
           numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
-    else if( info->targetType == LogicalNameMap::TargetType::CHANNEL) {
+    else if( info->targetType == LogicalNameMapParser::TargetType::CHANNEL) {
       ptr = new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), registerPathName,
           numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
-    else if( info->targetType == LogicalNameMap::TargetType::INT_CONSTANT ||
-             info->targetType == LogicalNameMap::TargetType::INT_VARIABLE    ) {
+    else if( info->targetType == LogicalNameMapParser::TargetType::INT_CONSTANT ||
+             info->targetType == LogicalNameMapParser::TargetType::INT_VARIABLE    ) {
       ptr = new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), registerPathName,
           numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }

@@ -42,11 +42,11 @@ namespace mtca4u {
         }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // obtain the register info
-        _info = boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(
+        _info = boost::static_pointer_cast<LogicalNameMapParser::RegisterInfo>(
             _dev->getRegisterCatalogue().getRegister(_registerPathName));
         // check for incorrect usage of this accessor
-        if( _info->targetType != LogicalNameMap::TargetType::INT_CONSTANT &&
-            _info->targetType != LogicalNameMap::TargetType::INT_VARIABLE    ) {
+        if( _info->targetType != LogicalNameMapParser::TargetType::INT_CONSTANT &&
+            _info->targetType != LogicalNameMapParser::TargetType::INT_VARIABLE    ) {
           throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
@@ -78,7 +78,7 @@ namespace mtca4u {
       }
 
       virtual bool isReadOnly() const {
-        return _info->targetType == LogicalNameMap::TargetType::INT_CONSTANT;
+        return _info->targetType == LogicalNameMapParser::TargetType::INT_CONSTANT;
       }
 
       virtual FixedPointConverter getFixedPointConverter() const {
@@ -95,7 +95,7 @@ namespace mtca4u {
 
       /// register information. We have a shared pointer to the original RegisterInfo inside the map, since
       /// we need to modify the value in it (in case of a writeable variable register)
-      boost::shared_ptr<LogicalNameMap::RegisterInfo> _info;
+      boost::shared_ptr<LogicalNameMapParser::RegisterInfo> _info;
 
       /// fixed point converter to handle type conversions from our "raw" type int to the requested user type.
       /// Note: no actual fixed point conversion is done, it is just used for the type conversion!

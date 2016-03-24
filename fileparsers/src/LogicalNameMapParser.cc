@@ -7,8 +7,8 @@
 
 #include <stdexcept>
 #include <libxml++/libxml++.h>
+#include <LogicalNameMapParser.h>
 
-#include "LogicalNameMap.h"
 #include "DeviceException.h"
 #include "DeviceBackend.h"
 #include "RegisterPluginFactory.h"
@@ -16,7 +16,7 @@
 namespace mtca4u {
 
   template<>
-  DynamicValue<std::string> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<std::string> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -39,7 +39,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  DynamicValue<int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -66,7 +66,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  DynamicValue<unsigned int> LogicalNameMap::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<unsigned int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
@@ -92,7 +92,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMap::parseFile(const std::string &fileName) {
+  void LogicalNameMapParser::parseFile(const std::string &fileName) {
     // parse the file into a DOM structure
     xmlpp::DomParser parser;
     try {
@@ -119,7 +119,7 @@ namespace mtca4u {
     }
   }
 
-  void LogicalNameMap::parseElement(RegisterPath currentPath, const xmlpp::Element *element) {
+  void LogicalNameMapParser::parseElement(RegisterPath currentPath, const xmlpp::Element *element) {
     // module tag found: look for registers and sub-modules in module
     if(element->get_name() == "module") {
 
@@ -152,7 +152,7 @@ namespace mtca4u {
       RegisterPath registerName = currentPath/std::string(nameAttr->get_value());
 
       // create new RegisterInfo object
-      auto info = boost::shared_ptr<RegisterInfo>( new LogicalNameMap::RegisterInfo() );
+      auto info = boost::shared_ptr<RegisterInfo>( new LogicalNameMapParser::RegisterInfo() );
       info->name = registerName;
 
       // obtain the type
@@ -233,11 +233,11 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  const LogicalNameMap::RegisterInfo& LogicalNameMap::getRegisterInfo(const std::string &name) const {
+  const LogicalNameMapParser::RegisterInfo& LogicalNameMapParser::getRegisterInfo(const std::string &name) const {
     try {
       // static cast the mtca4u::RegisterInfo into our LogicalNameMap::RegisterInfo is ok, since we control the
       // catalogue and put only actual LogicalNameMap::RegisterInfo in there.
-      return *static_cast<LogicalNameMap::RegisterInfo*>(_catalogue.getRegister(currentModule/name).get());
+      return *static_cast<LogicalNameMapParser::RegisterInfo*>(_catalogue.getRegister(currentModule/name).get());
     }
     catch(std::out_of_range &e) {
       throw DeviceException("Register '"+(currentModule/name)+"' was not found in logical name map ("+e.what()+").",
@@ -247,11 +247,11 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<LogicalNameMap::RegisterInfo> LogicalNameMap::getRegisterInfoShared(const std::string &name) {
+  boost::shared_ptr<LogicalNameMapParser::RegisterInfo> LogicalNameMapParser::getRegisterInfoShared(const std::string &name) {
     try {
       // static cast the mtca4u::RegisterInfo into our LogicalNameMap::RegisterInfo is ok, since we control the
       // catalogue and put only actual LogicalNameMap::RegisterInfo in there.
-      return boost::static_pointer_cast<LogicalNameMap::RegisterInfo>(_catalogue.getRegister(currentModule/name));
+      return boost::static_pointer_cast<LogicalNameMapParser::RegisterInfo>(_catalogue.getRegister(currentModule/name));
     }
     catch(std::out_of_range &e) {
       throw DeviceException("Register '"+(currentModule/name)+"' was not found in logical name map ("+e.what()+").",
@@ -261,10 +261,10 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::unordered_set<std::string> LogicalNameMap::getTargetDevices() const {
+  std::unordered_set<std::string> LogicalNameMapParser::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
-      auto info = boost::static_pointer_cast<const LogicalNameMap::RegisterInfo>(it.get());
+      auto info = boost::static_pointer_cast<const LogicalNameMapParser::RegisterInfo>(it.get());
       if(info->hasDeviceName()) {
         ret.insert(info->deviceName);
       }
@@ -274,7 +274,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMap::parsingError(const std::string &message) {
+  void LogicalNameMapParser::parsingError(const std::string &message) {
     throw DeviceException("Error parsing the xlmap file '"+_fileName+"': "+message, DeviceException::CANNOT_OPEN_MAP_FILE);
   }
 
