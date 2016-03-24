@@ -57,17 +57,16 @@ ADD_SCRIPTS_AS_TESTS( "${location_of_script_files}" )
 
 
 MACRO( COPY_MAPPING_FILES )
-  foreach( MAPPING_FILE mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
-  mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp
-  MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
-  IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map badMapFile.map
-  dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map invalidSequences.map muxedDataAcessor.map
-  testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
-  invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap logicalnamemap.dmap )
-    configure_file( ${MAPPING_FILE} ${PROJECT_BINARY_DIR}/tests/${MAPPING_FILE} copyonly)
-  endforeach( MAPPING_FILE )
+  FILE( COPY mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
+    mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp
+    MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
+    IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map badMapFile.map
+    dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map invalidSequences.map muxedDataAcessor.map
+    testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
+    invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap logicalnamemap.dmap 
+    DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
-  # So this is not "copyonly"
+  # They cannot just be copied.
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/valid.dmap)
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/dMapDir/valid.dmap)
   
