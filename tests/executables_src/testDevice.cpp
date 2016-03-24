@@ -9,6 +9,7 @@
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "MapException.h"
+#include "DummyRegisterAccessor.h"
 
 using namespace boost::unit_test_framework;
 
@@ -20,6 +21,7 @@ class TestableDevice : public mtca4u::Device {
 class DeviceTest {
   public:
     void testDeviceReadRegisterByName();
+    void testCompatDeviceReadRegisterByName();
     void testDeviceReadRegister();
     void testDeviceReadArea();
     void testDeviceReadDMA();
@@ -49,85 +51,26 @@ class DeviceTestSuite : public test_suite {
       mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
       boost::shared_ptr<DeviceTest> DeviceTestPtr(new DeviceTest());
 
-      test_case* testDeviceReadRegisterByName = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDeviceReadRegisterByName, DeviceTestPtr);
-
-      test_case* testDeviceReadRegister = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDeviceReadRegister, DeviceTestPtr);
-
-      test_case* testDeviceReadArea =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadArea, DeviceTestPtr);
-
-      test_case* testDeviceReadDMA =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadDMA, DeviceTestPtr);
-
-      test_case* testDeviceWriteRegisterByName = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDeviceWriteRegisterByName, DeviceTestPtr);
-
-      test_case* testDeviceWriteRegister = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDeviceWriteRegister, DeviceTestPtr);
-
-      test_case* testDeviceCheckRegister = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDeviceCheckRegister, DeviceTestPtr);
-
-      test_case* testRegAccsorReadDMA =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorReadDMA, DeviceTestPtr);
-
-      test_case* testRegAccsorCheckRegister = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testRegAccsorCheckRegister, DeviceTestPtr);
-
-      /*test_case* testRegAccsorWriteDMA = BOOST_CLASS_TEST_CASE(
-				&DeviceTest::testRegAccsorWriteDMA, DeviceTestPtr);*/
-
-      test_case* testRegAccsorReadReg =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorReadReg, DeviceTestPtr);
-
-      test_case* testRegAccsorWriteReg = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testRegAccsorWriteReg, DeviceTestPtr);
-
-      test_case* testDeviceInfo =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceInfo, DeviceTestPtr);
-
-      test_case* testReadBadReg =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testReadBadReg, DeviceTestPtr);
-
-      test_case* testWriteBadReg =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testWriteBadReg, DeviceTestPtr);
-
-      test_case* testDMAReadSizeTooSmall = BOOST_CLASS_TEST_CASE(
-          &DeviceTest::testDMAReadSizeTooSmall, DeviceTestPtr);
-
-      test_case* testDMAReadViaStruct =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testDMAReadViaStruct, DeviceTestPtr);
-
-      test_case* testDeviceCreation =
-          BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceCreation, DeviceTestPtr);
-
-      add(testDeviceReadRegisterByName);
-      add(testDeviceReadRegister);
-      add(testDeviceReadArea);
-      add(testDeviceReadDMA);
-      add(testDeviceWriteRegisterByName);
-      add(testDeviceWriteRegister);
-      add(testDeviceCheckRegister);
-      add(testRegAccsorReadDMA);
-      add(testRegAccsorCheckRegister);
-      //add(testRegAccsorWriteDMA);
-      add(testRegAccsorReadReg);
-      add(testRegAccsorWriteReg);
-      add(testDeviceInfo);
-      add(testReadBadReg);
-      add(testWriteBadReg);
-      add(testDMAReadSizeTooSmall);
-      add(testDMAReadViaStruct);
-      add(testDeviceCreation);
-
-      add(BOOST_CLASS_TEST_CASE(&DeviceTest::testGetRegistersInModule,
-          DeviceTestPtr));
-      add(BOOST_CLASS_TEST_CASE(&DeviceTest::testGetRegisterAccessorsInModule,
-          DeviceTestPtr));
-      //add(BOOST_CLASS_TEST_CASE(&DeviceTest::testAccessorForMuxedData,
-      //                          DeviceTestPtr));
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadRegisterByName, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testCompatDeviceReadRegisterByName, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadRegister, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadArea, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadDMA, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceWriteRegisterByName, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceWriteRegister, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceCheckRegister, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorReadDMA, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorCheckRegister, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorReadReg, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testRegAccsorWriteReg, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceInfo, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testReadBadReg, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testWriteBadReg, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDMAReadSizeTooSmall, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDMAReadViaStruct, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceCreation, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testGetRegistersInModule, DeviceTestPtr) );
+      add( BOOST_CLASS_TEST_CASE(&DeviceTest::testGetRegisterAccessorsInModule, DeviceTestPtr) );
     }
 };
 test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
@@ -138,6 +81,68 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 }
 
 void DeviceTest::testDeviceReadRegisterByName() {
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  mtca4u::Device device;
+  device.open("DUMMYD2");
+  boost::shared_ptr< mtca4u::DummyBackend > backend = boost::dynamic_pointer_cast<mtca4u::DummyBackend>(
+      mtca4u::BackendFactory::getInstance().createBackend("DUMMYD2") );
+
+  mtca4u::DummyRegisterAccessor<int32_t> wordStatus(backend.get(),"APP0","WORD_STATUS");
+  mtca4u::DummyRegisterAccessor<int32_t> module0(backend.get(),"APP0","MODULE0");
+
+  int32_t data;
+  std::vector<int32_t> dataVector;
+
+  wordStatus = 0x444d4d59;
+  data = device.read<int32_t>("APP0.WORD_STATUS");
+  BOOST_CHECK(data == 0x444d4d59);
+
+  wordStatus = -42;
+  data = device.read<int32_t>("APP0.WORD_STATUS");
+  BOOST_CHECK(data == -42);
+
+  module0[0] = 120;
+  module0[1] = 0xDEADBEEF;
+
+  data = device.read<int32_t>("APP0/MODULE0");
+  BOOST_CHECK(data == 120);
+
+  dataVector = device.read<int32_t>("APP0/MODULE0",2,0);
+  BOOST_CHECK(dataVector.size() == 2);
+  BOOST_CHECK(dataVector[0] == 120);
+  BOOST_CHECK(dataVector[1] == (signed)0xDEADBEEF);
+
+  module0[0] = 66;
+  module0[1] = -33333;
+
+  dataVector = device.read<int32_t>("APP0/MODULE0",1,0);
+  BOOST_CHECK(dataVector.size() == 1);
+  BOOST_CHECK(dataVector[0] == 66);
+
+  dataVector = device.read<int32_t>("APP0/MODULE0",1,1);
+  BOOST_CHECK(dataVector.size() == 1);
+  BOOST_CHECK(dataVector[0] == -33333);
+
+  try {
+    device.read<int32_t>("APP0/DOESNT_EXIST");
+    BOOST_ERROR("Exception expected");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
+  }
+
+  try {
+    device.read<int32_t>("DOESNT_EXIST/AT_ALL",1,0);
+    BOOST_ERROR("Exception expected");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
+  }
+
+
+}
+
+void DeviceTest::testCompatDeviceReadRegisterByName() {
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
@@ -356,35 +361,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
     BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 }
-/*
-void DeviceTest::testRegAccsorWriteDMA() {
-	std::string validMappingFile = "mtcadummy_withoutModules.map";
-	boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-	boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0"));
-	mtca4u::MapFileParser fileParser;
-	boost::shared_ptr<mtca4u::RegisterInfoMap> registerMapping = fileParser.parse(validMappingFile);
-	device->open(testBackend, registerMapping);
 
-	int32_t data = 0;
-	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-	non_dma_accesible_reg = device->getRegisterAccessor("WORD_USER");
-	size_t dataSizeInBytes = 1 * 4;
-	BOOST_CHECK_THROW(non_dma_accesible_reg->writeDMA(&data, dataSizeInBytes),
-			mtca4u::DeviceException);
-	try {
-		device->writeDMA("WORD_USER", &data, dataSizeInBytes);
-	}
-	catch (mtca4u::DeviceException& exception) {
-		BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-	}
-	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
-	dma_accesible_reg = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
-	int32_t adcdata[6] = { 0 };
-	dataSizeInBytes = 6 * 4;
-	BOOST_CHECK_THROW(dma_accesible_reg->writeDMA(adcdata, dataSizeInBytes),
-			mtca4u::PcieBackendException);
-}
- */
 void DeviceTest::testRegAccsorReadReg() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
