@@ -7,10 +7,7 @@ LDFLAGS +=  $(shell mtca4u-deviceaccess-config --ldflags)
 SOURCES = $(shell ls *.cpp)
 TARGETS = $(basename $(SOURCES))
 
-#all: $(TARGETS)
-#@todo FIXME Currently not all targets can be build. DeviceClient currently fails
-# because the plugin library is missing. Move this to the plugin example
-all: readWrite mapped accessor dmap MuxedAccessor #DeviceClient
+all: $(TARGETS)
 
 print:
 	echo SOURCES = $(SOURCES)

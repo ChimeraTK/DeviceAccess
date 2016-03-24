@@ -32,6 +32,21 @@ application. More information can be found on the page about \ref dmap.
 For the beinning all you need is the alias which identifies the device. In the 
 \c example.dmap file there is just one entry: MY_DEVICE
 
+Registers are accessed by so called \c accessors. The accessors contain a buffer
+which stores the data which is read from or written to the hardware using
+\c read() and \write() functions. When not reading or writing you can 
+efficiently access or modify the content at will, because it is modifying the
+internal buffer and not talking to the hardware.
+  
+In this basic example are using a register which holds one value.
+A single value is a scalar, so we are using the ScalarRegisterAccessor.
+Like all accessors, it is templated to a simple (user) data type and automatically
+does a data conversion to this type, if needed.
+The ScalarRegisterAccessor behaves just like the simple data type it represents,
+so you can just assign to it, add, subtact, multiply or divide it, print it, ... 
+Usually you don't allocate a variable and copy the accessor content to it (which
+would be really inefficient in case of large data arrays), but just use the accessor.
+
 \include basic.cpp
 
 Next topic: \ref accessor1d
