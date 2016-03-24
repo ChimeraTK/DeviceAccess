@@ -13,20 +13,20 @@
 
 namespace mtca4u {
 
-  /*********************************************************************************************************************/
-  /** Accessor class to read and write registers transparently by using the accessor object like a variable of the
-   *  type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
-   *  register description in the map. Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
-   *
-   *  Note: Transfers between the device and the internal buffer need to be triggered using the read() and write()
-   *  functions before reading from resp. after writing to the buffer using the operators.
+  /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+   *  \deprecated
+   *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+   *  @todo Add printed runtime warning after release of version 0.9
    */
   template<typename UserType>
   class BufferingRegisterAccessor : public  NDRegisterAccessorBridge<UserType> {
     public:
 
-      /** Constructer. @attention Do not normally use directly.
-       *  Users should call Device::getBufferingRegisterAccessor() to obtain an instance instead. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       BufferingRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : NDRegisterAccessorBridge<UserType>(impl)
       {
@@ -36,74 +36,114 @@ namespace mtca4u {
         }
       }
 
-      /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
-       *  @attention Accessors created with this constructors will be dysfunctional, calling any member function
-       *  will throw an exception (by the boost::shared_ptr)! */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       BufferingRegisterAccessor() {}
 
-
-      /** Read the data from the device, convert it and store in buffer. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       void read() {
         NDRegisterAccessorBridge<UserType>::_impl->read();
       }
 
-      /** Convert data from the buffer and write to device. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       void write() {
         NDRegisterAccessorBridge<UserType>::_impl->write();
       }
 
-      /** Get or set buffer content by [] operator.
-       *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
-       *  the register.
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType& operator[](unsigned int index) {
         return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,index);
       }
 
-      /** Return number of elements
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
        */
       unsigned int getNumberOfElements() {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
       }
 
-      /** Implicit type conversion to user type T to access the first element (often the only element).
-       *  This covers already a lot of operations like arithmetics and comparison */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       operator UserType&() {
         return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
       }
 
-      /** Assignment operator, assigns the first element. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       BufferingRegisterAccessor<UserType>& operator=(UserType rightHandSide)
       {
         NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) = rightHandSide;
         return *this;
       }
 
-      /** Pre-increment operator for the first element. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       BufferingRegisterAccessor<UserType>& operator++() {
         return operator=( NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) + 1 );
       }
 
-      /** Pre-decrement operator for the first element. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       BufferingRegisterAccessor<UserType>& operator--() {
         return operator=( NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) - 1 );
       }
 
-      /** Post-increment operator for the first element. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       UserType operator++(int) {
         UserType v = NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
         operator=( v + 1 );
         return v;
       }
 
-      /** Post-decrement operator for the first element. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       UserType operator--(int) {
         UserType v = NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
         operator=( v - 1 );
         return v;
       }
 
-      /** Access data with std::vector-like iterators */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       typedef typename std::vector<UserType>::iterator iterator;
       typedef typename std::vector<UserType>::const_iterator const_iterator;
       typedef typename std::vector<UserType>::reverse_iterator reverse_iterator;
@@ -121,19 +161,29 @@ namespace mtca4u {
       const_reverse_iterator rend() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).crend(); }
       const_reverse_iterator crend() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).crend(); }
 
-      /* Swap content of (cooked) buffer with std::vector */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       void swap(std::vector<UserType> &x) {
         NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).swap(x);
       }
 
-      /** Return if the register accessor allows only reading */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       bool isReadOnly() const {
         return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
       }
 
-      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
-       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
-       *  placeholder constructor without arguments. */
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       bool isInitialised() const {
         return NDRegisterAccessorBridge<UserType>::_impl != NULL;
       }
