@@ -7,20 +7,17 @@
 #include <vector>
 
 #include "DeviceBackendImpl.h"
-#include "MemoryAddressedBackendTwoDRegisterAccessor.h"
-#include "MapFileParser.h"
-#include "Exception.h"
 
 namespace mtca4u {
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
-  class MemoryAddressedBackend : public DeviceBackendImpl {
+  class NumericAddressedBackend : public DeviceBackendImpl {
 
     public:
 
-      MemoryAddressedBackend(std::string mapFileName="");
+      NumericAddressedBackend(std::string mapFileName="");
 
-      virtual ~MemoryAddressedBackend(){}
+      virtual ~NumericAddressedBackend(){}
 
       virtual void read(const std::string &regModule, const std::string &regName,
           int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0);
@@ -55,7 +52,7 @@ namespace mtca4u {
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor_impl(
           const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( MemoryAddressedBackend, getBufferingRegisterAccessor_impl, 4 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackend, getBufferingRegisterAccessor_impl, 4 );
 
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
       { // LCOV_EXCL_LINE only for compatibility!

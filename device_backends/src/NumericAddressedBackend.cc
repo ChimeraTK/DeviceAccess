@@ -5,14 +5,16 @@
  *      Author: Martin Hierholzer
  */
 
-#include "MemoryAddressedBackend.h"
-#include "MemoryAddressedBackendBufferingRegisterAccessor.h"
+#include "NumericAddressedBackend.h"
+#include "NumericAddressedBackendRegisterAccessor.h"
+#include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "DeviceException.h"
 #include "NumericAddress.h"
+#include "MapFileParser.h"
 
 namespace mtca4u {
 
-  MemoryAddressedBackend::MemoryAddressedBackend(std::string mapFileName) {
+  NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
@@ -26,7 +28,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterInfoMap::RegisterInfo> MemoryAddressedBackend::getRegisterInfo(const RegisterPath &registerPathName) {
+  boost::shared_ptr<RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegisterInfo(const RegisterPath &registerPathName) {
     if(!registerPathName.startsWith(numeric_address::BAR)) {
       boost::shared_ptr<RegisterInfo> info = _catalogue.getRegister(registerPathName);
       return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
@@ -56,7 +58,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void MemoryAddressedBackend::read(const std::string &regModule, const std::string &regName,
+  void NumericAddressedBackend::read(const std::string &regModule, const std::string &regName,
       int32_t *data, size_t dataSize, uint32_t addRegOffset) {
 
     uint32_t retDataSize;
@@ -69,7 +71,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void MemoryAddressedBackend::write(const std::string &regModule, const std::string &regName,
+  void NumericAddressedBackend::write(const std::string &regModule, const std::string &regName,
       int32_t const *data, size_t dataSize, uint32_t addRegOffset) {
 
     uint32_t retDataSize;
@@ -82,20 +84,20 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<const RegisterInfoMap> MemoryAddressedBackend::getRegisterMap() const {
+  boost::shared_ptr<const RegisterInfoMap> NumericAddressedBackend::getRegisterMap() const {
     return _registerMap;
   }
 
   /********************************************************************************************************************/
 
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo> MemoryAddressedBackend::getRegistersInModule(
+  std::list<mtca4u::RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegistersInModule(
       const std::string &moduleName) const {
     return _registerMap->getRegistersInModule(moduleName);
   }
 
   /********************************************************************************************************************/
 
-  void MemoryAddressedBackend::checkRegister(const std::string &regName,
+  void NumericAddressedBackend::checkRegister(const std::string &regName,
       const std::string &regModule, size_t dataSize,
       uint32_t addRegOffset, uint32_t &retDataSize,
       uint32_t &retRegOff, uint8_t &retRegBar) const {
@@ -123,7 +125,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< NDRegisterAccessor<UserType> > MemoryAddressedBackend::getBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > NumericAddressedBackend::getBufferingRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
     boost::shared_ptr< NDRegisterAccessor<UserType> >  accessor;
     // obtain register info
@@ -131,7 +133,7 @@ namespace mtca4u {
     // 1D or scalar register
     if(info->getNumberOfDimensions() <= 1) {
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-          new MemoryAddressedBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
+          new NumericAddressedBackendRegisterAccessor<UserType>(shared_from_this(), registerPathName,
               wordOffsetInRegister, numberOfWords, enforceRawAccess) );
     }
     // 2D multiplexed register
@@ -141,7 +143,7 @@ namespace mtca4u {
             "MemoryAddressedBackend.",DeviceException::NOT_IMPLEMENTED);
       }
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-          new MemoryAddressedBackendTwoDRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
+          new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
     }
     // allow plugins to decorate the accessor and return it
     return decorateBufferingRegisterAccessor(registerPathName, accessor);

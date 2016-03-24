@@ -6,7 +6,7 @@ namespace mtca4u {
   static const int READ_BLOCK_SIZE = 361;
 
   RebotBackend::RebotBackend(std::string boardAddr, int port, std::string mapFileName)
-  : MemoryAddressedBackend(mapFileName),
+  : NumericAddressedBackend(mapFileName),
     _boardAddr(boardAddr),
     _port(port),
     _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port))

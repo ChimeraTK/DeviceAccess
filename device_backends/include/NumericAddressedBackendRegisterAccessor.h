@@ -9,7 +9,7 @@
 #define MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessor.h"
-#include "MemoryAddressedBackend.h"
+#include "NumericAddressedBackend.h"
 #include "FixedPointConverter.h"
 
 namespace mtca4u {
@@ -17,20 +17,19 @@ namespace mtca4u {
   class DeviceBackend;
 
   /*********************************************************************************************************************/
-  /** Standard implementation of the BufferingRegisterAccessor. This implementation uses internally a non-buffering
-   *  register accessor to aquire the data. It should be suitable for most backends.
+  /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
    */
   template<typename UserType>
-  class MemoryAddressedBackendBufferingRegisterAccessor : public NDRegisterAccessor<UserType> {
+  class NumericAddressedBackendRegisterAccessor : public NDRegisterAccessor<UserType> {
     public:
 
-      MemoryAddressedBackendBufferingRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
+      NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
       : _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
       {
         // check device backend
-        _dev = boost::dynamic_pointer_cast<MemoryAddressedBackend>(dev);
+        _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
         if(!_dev) {
           throw DeviceException("MemoryAddressedBackendBufferingRegisterAccessor is used with a backend which is not "
               "a MemoryAddressedBackend.", DeviceException::EX_WRONG_PARAMETER);
@@ -73,7 +72,7 @@ namespace mtca4u {
         }
       }
 
-      virtual ~MemoryAddressedBackendBufferingRegisterAccessor() {};
+      virtual ~NumericAddressedBackendRegisterAccessor() {};
 
       virtual void read() {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
@@ -90,7 +89,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const MemoryAddressedBackendBufferingRegisterAccessor<UserType> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
@@ -135,7 +134,7 @@ namespace mtca4u {
       std::vector<int32_t> rawDataBuffer;
 
       /** the backend to use for the actual hardware access */
-      boost::shared_ptr<MemoryAddressedBackend> _dev;
+      boost::shared_ptr<NumericAddressedBackend> _dev;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };

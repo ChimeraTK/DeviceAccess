@@ -20,22 +20,25 @@ namespace mtca4u {
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
 
+  /*********************************************************************************************************************/
+  /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for multiplexd 2D registers
+   */
   template <class UserType>
-  class MemoryAddressedBackendTwoDRegisterAccessor : public NDRegisterAccessor<UserType> {
+  class NumericAddressedBackendMuxedRegisterAccessor : public NDRegisterAccessor<UserType> {
 
     public:
 
-      MemoryAddressedBackendTwoDRegisterAccessor(const RegisterPath &registerPathName,
+      NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath &registerPathName,
           boost::shared_ptr<DeviceBackend> _backend );
 
-      virtual ~MemoryAddressedBackendTwoDRegisterAccessor() {}
+      virtual ~NumericAddressedBackendMuxedRegisterAccessor() {}
 
       void read();
 
       void write();
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const MemoryAddressedBackendTwoDRegisterAccessor<UserType> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendMuxedRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_ioDevice != rhsCasted->_ioDevice) return false;
@@ -89,7 +92,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  MemoryAddressedBackendTwoDRegisterAccessor<UserType>::MemoryAddressedBackendTwoDRegisterAccessor(
+  NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath &registerPathName, boost::shared_ptr<DeviceBackend> _backend )
   : _ioDevice(_backend), _registerPathName(registerPathName)
   {
@@ -168,7 +171,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::read() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::read() {
       _ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
       fillSequences();
   }
@@ -176,7 +179,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillSequences() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::fillSequences() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
@@ -204,7 +207,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::write() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::write() {
       fillIO_Buffer();
       _ioDevice->write(_areaInfo.bar, _areaInfo.address, &(_ioBuffer[0]), _areaInfo.nBytes);
   }
@@ -212,7 +215,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void MemoryAddressedBackendTwoDRegisterAccessor<UserType>::fillIO_Buffer() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::fillIO_Buffer() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {

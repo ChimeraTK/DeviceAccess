@@ -4,7 +4,7 @@
 
 #include "MapFileParser.h"
 #include "MapException.h"
-#include "MemoryAddressedBackendTwoDRegisterAccessor.h"        // for the MULTIPLEXED_SEQUENCE_PREFIX constant
+#include "NumericAddressedBackendMuxedRegisterAccessor.h"        // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
 namespace mtca4u {
 

@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
 #include <sstream>
 
 #include "TwoDRegisterAccessor.h"
-#include "MemoryAddressedBackendTwoDRegisterAccessor.h"
+#include "NumericAddressedBackendMuxedRegisterAccessor.h"
 #include "DummyBackend.h"
 #include "MapFileParser.h"
 #include "BackendFactory.h"

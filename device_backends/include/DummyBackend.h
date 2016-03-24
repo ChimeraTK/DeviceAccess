@@ -10,7 +10,7 @@
 
 #include "Exception.h"
 #include "RegisterInfoMap.h"
-#include "MemoryAddressedBackend.h"
+#include "NumericAddressedBackend.h"
 
 namespace mtca4u {
 
@@ -47,7 +47,7 @@ namespace mtca4u {
    *  case a write operation will just be ignored and no callback
    *  function is executed.
    */
-  class DummyBackend : public MemoryAddressedBackend
+  class DummyBackend : public NumericAddressedBackend
   {
     public:
       DummyBackend(std::string mapFileName);

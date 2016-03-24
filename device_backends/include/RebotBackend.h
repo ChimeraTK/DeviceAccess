@@ -15,13 +15,13 @@
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "MemoryAddressedBackend.h"
+#include "NumericAddressedBackend.h"
 
 class TcpCtrl;
 
 namespace mtca4u {
 
-  class RebotBackend : public MemoryAddressedBackend {
+  class RebotBackend : public NumericAddressedBackend {
 
     private:
       std::string _boardAddr;

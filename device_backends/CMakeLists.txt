@@ -3,7 +3,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackendImpl.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/MemoryAddressedBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
@@ -20,9 +20,9 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/NDRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackend.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendBufferingRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/MemoryAddressedBackendTwoDRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/NumericAddressedBackend.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/NumericAddressedBackendRegisterAccessor.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/NumericAddressedBackendMuxedRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendBufferingRegisterAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendBufferingChannelAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendBufferingVariableAccessor.h

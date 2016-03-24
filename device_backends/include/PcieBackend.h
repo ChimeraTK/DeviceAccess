@@ -5,14 +5,14 @@
 #include <stdlib.h>
 #include <boost/function.hpp>
 
-#include "MemoryAddressedBackend.h"
+#include "NumericAddressedBackend.h"
 
 namespace mtca4u {
 
   /** A class to provide the Pcie device functionality."
    *
    */
-  class PcieBackend : public MemoryAddressedBackend {
+  class PcieBackend : public NumericAddressedBackend {
     private:
       int  _deviceID;
       unsigned long _ioctlPhysicalSlot;

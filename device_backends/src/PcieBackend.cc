@@ -20,7 +20,7 @@
 namespace mtca4u {
 
   PcieBackend::PcieBackend(std::string deviceNodeName, std::string mapFileName)
-  : MemoryAddressedBackend(mapFileName),
+  : NumericAddressedBackend(mapFileName),
     _deviceID(0),
     _ioctlPhysicalSlot(0),
     _ioctlDriverVersion(0),

@@ -33,7 +33,7 @@ namespace mtca4u {
   static std::string convertPathRelativeToDmapToAbs(std::string const & mapfileName);
 
   DummyBackend::DummyBackend(std::string mapFileName)
-  : MemoryAddressedBackend(mapFileName),
+  : NumericAddressedBackend(mapFileName),
     _mapFile(mapFileName)
   {
     _registerMap = MapFileParser().parse(_mapFile);
