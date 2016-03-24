@@ -10,13 +10,13 @@
 namespace mtca4u {
 
   RegisterPlugin::~RegisterPlugin() {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateBufferingRegisterAccessor_impl);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl);
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< NDRegisterAccessor<UserType> > RegisterPlugin::decorateBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > RegisterPlugin::decorateRegisterAccessor_impl(
       boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
     return accessor;
   }

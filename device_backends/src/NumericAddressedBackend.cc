@@ -15,7 +15,7 @@
 namespace mtca4u {
 
   NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);
@@ -125,7 +125,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< NDRegisterAccessor<UserType> > NumericAddressedBackend::getBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > NumericAddressedBackend::getRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess) {
     boost::shared_ptr< NDRegisterAccessor<UserType> >  accessor;
     // obtain register info
@@ -146,7 +146,7 @@ namespace mtca4u {
           new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
     }
     // allow plugins to decorate the accessor and return it
-    return decorateBufferingRegisterAccessor(registerPathName, accessor);
+    return decorateRegisterAccessor(registerPathName, accessor);
   }
 
 } // namespace mtca4u

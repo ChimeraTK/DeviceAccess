@@ -407,7 +407,7 @@ namespace mtca4u {
       size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
     return ScalarRegisterAccessor<UserType>(
-        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, 0, wordOffsetInRegister,
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, 0, wordOffsetInRegister,
             enforceRawAccess) );
   }
 
@@ -418,7 +418,7 @@ namespace mtca4u {
       size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
     return OneDRegisterAccessor<UserType>(
-        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
             wordOffsetInRegister, enforceRawAccess) );
   }
 
@@ -427,7 +427,7 @@ namespace mtca4u {
   template<typename UserType>
   TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(const RegisterPath &registerPathName) const {
     checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
         registerPathName, 0,0, false));
   }
 
@@ -480,7 +480,7 @@ namespace mtca4u {
       size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
     return BufferingRegisterAccessor<UserType>(
-        _deviceBackendPointer->getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords,
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
             wordOffsetInRegister, enforceRawAccess) );
   }
 
@@ -498,7 +498,7 @@ namespace mtca4u {
   TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
       const std::string &module, const std::string &registerName) const {
     checkPointersAreNotNull();
-    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getBufferingRegisterAccessor<UserType>(
+    return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
         RegisterPath(module)/registerName, 0,0, false));
   }
 

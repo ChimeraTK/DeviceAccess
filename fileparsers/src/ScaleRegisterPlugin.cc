@@ -26,11 +26,11 @@ namespace mtca4u {
 
   /** The register accessor used by the ScaleRegisterPlugin */
   template<typename T>
-  class ScaleRegisterPluginBufferingAccessor : public NDRegisterAccessor<T> {
+  class ScaleRegisterPluginRegisterAccessor : public NDRegisterAccessor<T> {
     public:
 
       /** The constructor takes the original accessor and the scaling factor as arguments */
-      ScaleRegisterPluginBufferingAccessor(boost::shared_ptr< NDRegisterAccessor<T> > accessor,
+      ScaleRegisterPluginRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<T> > accessor,
           DynamicValue<double> scalingFactor)
       : _accessor(accessor), _scalingFactor(scalingFactor)
       {
@@ -39,7 +39,7 @@ namespace mtca4u {
         NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
-      virtual ~ScaleRegisterPluginBufferingAccessor() {};
+      virtual ~ScaleRegisterPluginRegisterAccessor() {};
 
       virtual void read() {
         // read from hardware
@@ -64,7 +64,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const ScaleRegisterPluginBufferingAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const ScaleRegisterPluginRegisterAccessor<T> >(other);
         if(!rhsCasted) return false;
         if(_accessor != rhsCasted->_accessor) return false;
         if(_scalingFactor != rhsCasted->_scalingFactor) return false;
@@ -100,15 +100,15 @@ namespace mtca4u {
   };
 
   template<>
-  void ScaleRegisterPluginBufferingAccessor<std::string>::read();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::read();
 
   template<>
-  void ScaleRegisterPluginBufferingAccessor<std::string>::write();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::write();
 
   /********************************************************************************************************************/
 
   ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, DynamicValue<std::string> > &parameters) {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateBufferingRegisterAccessor_impl);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl);
     try {
       scalingFactor = parameters.at("factor");
     }
@@ -127,16 +127,16 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< NDRegisterAccessor<UserType> > ScaleRegisterPlugin::decorateBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > ScaleRegisterPlugin::decorateRegisterAccessor_impl(
       boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
     return boost::shared_ptr< NDRegisterAccessor<UserType> >(
-        new ScaleRegisterPluginBufferingAccessor<UserType>(accessor, scalingFactor));
+        new ScaleRegisterPluginRegisterAccessor<UserType>(accessor, scalingFactor));
   }
 
   /********************************************************************************************************************/
 
   template<>
-  void ScaleRegisterPluginBufferingAccessor<std::string>::read() {
+  void ScaleRegisterPluginRegisterAccessor<std::string>::read() {
     // read from hardware
     _accessor->read();
     // apply scaling factor while copying buffer from underlying accessor to our buffer
@@ -151,7 +151,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  void ScaleRegisterPluginBufferingAccessor<std::string>::write() {
+  void ScaleRegisterPluginRegisterAccessor<std::string>::write() {
     // apply scaling factor while copying buffer from our buffer to underlying accessor
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {

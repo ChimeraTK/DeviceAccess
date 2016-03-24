@@ -50,7 +50,7 @@ namespace mtca4u {
         actualOffset = _info.firstIndex + wordOffsetInRegister;
         actualLength = ( numberOfWords > 0 ? numberOfWords : _info.length );
         // obtain underlying register accessor
-        _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName),
+        _accessor = _targetDevice->getRegisterAccessor<T>(RegisterPath(_info.registerName),
             actualLength,actualOffset,enforceRawAccess);
         if(actualLength == 0) actualLength = _accessor->getNumberOfSamples();
         // create buffer

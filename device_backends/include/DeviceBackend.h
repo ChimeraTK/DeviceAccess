@@ -46,9 +46,9 @@ namespace mtca4u {
 
       /** Get a NDRegisterAccessor object from the register name. */
       template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor(
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getBufferingRegisterAccessor_impl,
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getRegisterAccessor_impl,
           boost::shared_ptr< NDRegisterAccessor<T> >(const RegisterPath&, size_t, size_t, bool) );
 
       /** Return a device information string containing hardware details like the firmware version number or the
@@ -145,9 +145,9 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< NDRegisterAccessor<UserType> > DeviceBackend::getBufferingRegisterAccessor(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > DeviceBackend::getRegisterAccessor(
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
-    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getBufferingRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
         wordOffsetInRegister, enforceRawAccess);
   }
 

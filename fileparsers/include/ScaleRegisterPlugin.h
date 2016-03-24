@@ -23,9 +23,9 @@ namespace mtca4u {
     protected:
 
       template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateBufferingRegisterAccessor_impl(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor_impl(
           boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const;
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ScaleRegisterPlugin, decorateBufferingRegisterAccessor_impl, 1);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ScaleRegisterPlugin, decorateRegisterAccessor_impl, 1);
 
       /** constructor, only internally called from createInstance() */
       ScaleRegisterPlugin(const std::map<std::string, DynamicValue<std::string> > &parameters);

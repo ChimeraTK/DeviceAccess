@@ -37,7 +37,7 @@ namespace mtca4u {
           boost::shared_ptr< RegisterInfoMap > const & /*registerMapping*/ )
       {
         return boost::shared_ptr< MultiplexedDataAccessor<UserType> >(new MultiplexedDataAccessor<UserType>(
-            ioDevice->getBufferingRegisterAccessor<UserType>(RegisterPath(moduleName)/multiplexedSequenceName,0,0,false)
+            ioDevice->getRegisterAccessor<UserType>(RegisterPath(moduleName)/multiplexedSequenceName,0,0,false)
             ));
       }
 

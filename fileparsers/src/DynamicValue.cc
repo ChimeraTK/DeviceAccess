@@ -19,7 +19,7 @@ namespace mtca4u {
       // we obtain the register accessor later, in case the map file was not yet parsed up to its definition
       hasActualValue = false;
       registerName = rightHandSide.registerName;
-      accessor = BufferingRegisterAccessor<std::string>();
+      accessor.reset();
     }
     return *this;
   }

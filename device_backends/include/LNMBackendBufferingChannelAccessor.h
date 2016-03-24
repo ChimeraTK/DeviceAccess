@@ -46,7 +46,7 @@ namespace mtca4u {
         }
         // get target device and accessor
         _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getBufferingRegisterAccessor<T>(RegisterPath(_info.registerName), 0,0, false);
+        _accessor = _targetDevice->getRegisterAccessor<T>(RegisterPath(_info.registerName), 0,0, false);
         // allocate the buffer
         NDRegisterAccessor<T>::buffer_2D.resize(1);
         NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor->getNumberOfSamples());

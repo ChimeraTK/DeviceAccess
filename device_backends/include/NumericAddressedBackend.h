@@ -50,9 +50,9 @@ namespace mtca4u {
       boost::shared_ptr<RegisterInfoMap> _registerMap;
 
       template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getBufferingRegisterAccessor_impl(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
           const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackend, getBufferingRegisterAccessor_impl, 4 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackend, getRegisterAccessor_impl, 4 );
 
       virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
       { // LCOV_EXCL_LINE only for compatibility!

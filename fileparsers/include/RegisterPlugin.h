@@ -20,7 +20,7 @@ namespace mtca4u {
     public:
 
       RegisterPlugin() {
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateBufferingRegisterAccessor_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl);
       }
     
       /** Virtual destructor for a virtual base class */
@@ -29,20 +29,20 @@ namespace mtca4u {
       /** Called by the backend when obtaining a buffering register accessor. This allows the plugin to decorate the
        *  accessor to change the its behaviour. The default implementation just returns the passed accessor. */
       template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateBufferingRegisterAccessor(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor(
           boost::shared_ptr< NDRegisterAccessor<UserType> > accessor ) const {
-        return CALL_VIRTUAL_FUNCTION_TEMPLATE(decorateBufferingRegisterAccessor_impl, UserType, accessor);
+        return CALL_VIRTUAL_FUNCTION_TEMPLATE(decorateRegisterAccessor_impl, UserType, accessor);
       }
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateBufferingRegisterAccessor_impl,
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl,
           boost::shared_ptr< NDRegisterAccessor<T> >(boost::shared_ptr< NDRegisterAccessor<T> >) );
 
     protected:
 
       /** Default implementation of getBufferingRegisterAccessor(): just return the unmodified accessor */
       template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateBufferingRegisterAccessor_impl(
+      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor_impl(
           boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const;
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterPlugin, decorateBufferingRegisterAccessor_impl, 1);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterPlugin, decorateRegisterAccessor_impl, 1);
   
   };
 

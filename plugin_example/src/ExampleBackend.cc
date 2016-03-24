@@ -15,7 +15,7 @@ using namespace mtca4u;
 ExampleBackend::BackendRegisterer ExampleBackend::backendRegisterer;
 
 ExampleBackend::ExampleBackend(){
-  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
+  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
 }
 
 ExampleBackend::~ExampleBackend(){
@@ -37,7 +37,7 @@ void ExampleBackend::close(){
 
 // We do not have a suitable buffering register accessor, so we throw an exception.
 template<typename UserType>
-boost::shared_ptr< NDRegisterAccessor<UserType> > ExampleBackend::getBufferingRegisterAccessor_impl(
+boost::shared_ptr< NDRegisterAccessor<UserType> > ExampleBackend::getRegisterAccessor_impl(
     const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, bool /*enforceRawAccess*/) {
   throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
 }

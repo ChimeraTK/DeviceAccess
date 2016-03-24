@@ -50,11 +50,11 @@ namespace mtca4u {
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
         // obtain accessor
-        auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+        auto acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
         // perform read
         acc->read();
         // copy data to target buffer
-        memcpy(convertedData, acc->buffer_2D[0].data(), nWords*sizeof(ConvertedDataType));
+        memcpy(convertedData, acc->accessChannel(0).data(), nWords*sizeof(ConvertedDataType));
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -78,9 +78,9 @@ namespace mtca4u {
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
         // obtain accessor
-        auto acc = _dev->getBufferingRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+        auto acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
         // copy data from source buffer
-        memcpy(acc->buffer_2D[0].data(), convertedData, nWords*sizeof(ConvertedDataType));
+        memcpy(acc->accessChannel(0).data(), convertedData, nWords*sizeof(ConvertedDataType));
         // perform write
         acc->write();
       }
@@ -101,8 +101,8 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       unsigned int getNumberOfElements() const {
-        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->buffer_2D[0].size();
+        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
+        return acc->accessChannel(0).size();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -122,7 +122,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       FixedPointConverter getFixedPointConverter() const {
-        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
+        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
         return acc->getFixedPointConverter();
       }
 
@@ -140,12 +140,12 @@ namespace mtca4u {
               "dividable by 4)",DeviceException::EX_WRONG_PARAMETER);
         }
         // obtain accessor
-        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
+        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
             addRegOffset/sizeof(int32_t), true);
         // perform read
         acc->read();
         // copy to target buffer
-        memcpy(data, acc->buffer_2D[0].data(), dataSize);
+        memcpy(data, acc->accessChannel(0).data(), dataSize);
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -162,10 +162,10 @@ namespace mtca4u {
               "dividable by 4)",DeviceException::EX_WRONG_PARAMETER);
         }
         // obtain accessor
-        auto acc = _dev->getBufferingRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
+        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
             addRegOffset/sizeof(int32_t), true);
         // copy data from source buffer
-        memcpy(acc->buffer_2D[0].data(), data, dataSize);
+        memcpy(acc->accessChannel(0).data(), data, dataSize);
         // perform write
         acc->write();
       }

@@ -16,7 +16,7 @@ namespace mtca4u {
   LogicalNameMappingBackend::LogicalNameMappingBackend(std::string lmapFileName)
   : hasParsed(false), _lmapFileName(lmapFileName)
   {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getBufferingRegisterAccessor_impl);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
   }
 
   /********************************************************************************************************************/
@@ -68,7 +68,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr< NDRegisterAccessor<UserType> > LogicalNameMappingBackend::getBufferingRegisterAccessor_impl(
+  boost::shared_ptr< NDRegisterAccessor<UserType> > LogicalNameMappingBackend::getRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
 
     // obtain register info
@@ -97,7 +97,7 @@ namespace mtca4u {
 
     // allow plugins to decorate the accessor and return it
     auto accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(ptr);
-    return decorateBufferingRegisterAccessor<UserType>(registerPathName,accessor);
+    return decorateRegisterAccessor<UserType>(registerPathName,accessor);
   }
 
 
