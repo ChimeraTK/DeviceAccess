@@ -23,10 +23,10 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template<typename T>
-  class LNMBackendBufferingVariableAccessor : public NDRegisterAccessor<T> {
+  class LNMBackendVariableAccessor : public NDRegisterAccessor<T> {
     public:
 
-      LNMBackendBufferingVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
+      LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
       : _registerPathName(registerPathName), _fixedPointConverter(32, 0, 1)
       {
@@ -55,7 +55,7 @@ namespace mtca4u {
         NDRegisterAccessor<T>::buffer_2D[0][0] = _fixedPointConverter.toCooked<T>(_info->value);
       }
 
-      virtual ~LNMBackendBufferingVariableAccessor() {};
+      virtual ~LNMBackendVariableAccessor() {};
 
       virtual void read() {
         postRead();
@@ -70,7 +70,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendBufferingVariableAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendVariableAccessor<T> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;

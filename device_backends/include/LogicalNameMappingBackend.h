@@ -66,13 +66,13 @@ namespace mtca4u {
       std::map< std::string, boost::shared_ptr<DeviceBackend> > _devices;
 
       template<typename T>
-      friend class LNMBackendBufferingRegisterAccessor;
+      friend class LNMBackendRegisterAccessor;
 
       template<typename T>
-      friend class LNMBackendBufferingChannelAccessor;
+      friend class LNMBackendChannelAccessor;
 
       template<typename T>
-      friend class LNMBackendBufferingVariableAccessor;
+      friend class LNMBackendVariableAccessor;
 
   };
 

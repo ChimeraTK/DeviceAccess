@@ -5,9 +5,9 @@
  *      Author: Martin Hierholzer
  */
 
-#include "LNMBackendBufferingRegisterAccessor.h"
-#include "LNMBackendBufferingChannelAccessor.h"
-#include "LNMBackendBufferingVariableAccessor.h"
+#include "LNMBackendChannelAccessor.h"
+#include "LNMBackendRegisterAccessor.h"
+#include "LNMBackendVariableAccessor.h"
 #include "LogicalNameMappingBackend.h"
 #include "LogicalNameMapParser.h"
 
@@ -78,16 +78,16 @@ namespace mtca4u {
     NDRegisterAccessor<UserType> *ptr;
     if( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER ||
         info->targetType == LNMBackendRegisterInfo::TargetType::RANGE       ) {
-      ptr = new LNMBackendBufferingRegisterAccessor<UserType>(shared_from_this(), registerPathName,
+      ptr = new LNMBackendRegisterAccessor<UserType>(shared_from_this(), registerPathName,
           numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
     else if( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
-      ptr = new LNMBackendBufferingChannelAccessor<UserType>(shared_from_this(), registerPathName,
+      ptr = new LNMBackendChannelAccessor<UserType>(shared_from_this(), registerPathName,
           numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
     else if( info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT ||
              info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
-      ptr = new LNMBackendBufferingVariableAccessor<UserType>(shared_from_this(), registerPathName,
+      ptr = new LNMBackendVariableAccessor<UserType>(shared_from_this(), registerPathName,
           numberOfWords, wordOffsetInRegister, enforceRawAccess);
     }
     else {
