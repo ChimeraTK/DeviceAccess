@@ -52,13 +52,13 @@ namespace mtca4u {
         NDRegisterAccessorBridge<UserType>::_impl->write();
       }
 
-      /** Return the number of sequences (=channels) */
-      size_t getNumberOfChannels() const {
+      /** Return the number of channels (formerly called sequences) */
+      size_t getNChannels() const {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
       }
 
-      /** Return number of samples per sequence (=channel) */
-      size_t getNumberOfSamples() const {
+      /** Return number of elements/samples per channel */
+      size_t getNElementsPerChannel() const {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
       }
 
@@ -77,9 +77,25 @@ namespace mtca4u {
       /** DEPRECATED DO NOT USE
        *
        *  \deprecated
-       *  This function is deprecated. Use getNumberOfChannels() instead! */
+       *  This function is deprecated. Use getNChannels() instead! */
       size_t getNumberOfDataSequences() const {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
+      }
+
+      /** DEPRECATED DO NOT USE
+       *
+       *  \deprecated
+       *  This function is deprecated. Use getNChannels() instead! */
+      size_t getNumberOfChannels() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
+      }
+
+      /** DEPRECATED DO NOT USE
+       *
+       *  \deprecated
+       *  This function is deprecated. Use getNElementsPerChannel() instead! */
+      size_t getNumberOfSamples() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
       }
 
       friend class TransferGroup;

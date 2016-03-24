@@ -60,8 +60,8 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,sample);
       }
 
-      /** Return number of elements / samples in the register */
-      unsigned int getNumberOfSamples() {
+      /** Return number of elements/samples in the register */
+      unsigned int getNElements() {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
       }
 

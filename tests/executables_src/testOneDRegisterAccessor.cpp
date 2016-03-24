@@ -72,7 +72,7 @@ void OneDRegisterTest::testRegisterAccessor() {
   int compare;
 
   // check number of elements getter
-  BOOST_CHECK( intRegister.getNumberOfSamples() == 2 );
+  BOOST_CHECK( intRegister.getNElements() == 2 );
 
   // test operator[] on r.h.s.
   compare = 5;
