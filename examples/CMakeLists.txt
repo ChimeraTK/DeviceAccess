@@ -16,6 +16,5 @@ FILE(COPY example.dmap my_device.map DESTINATION ${PROJECT_BINARY_DIR}/examples)
 
  #also install the example source code 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc
-  FILES_MATCHING PATTERN "*.cpp"  PATTERN  Makefile PATTERN CMakeLists.txt 
+  FILES_MATCHING PATTERN "*.cpp"  PATTERN  Makefile.example PATTERN CMakeLists.txt 
   PATTERN *map PATTERN ".svn" EXCLUDE )
- 
