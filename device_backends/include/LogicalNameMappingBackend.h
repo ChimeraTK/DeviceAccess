@@ -9,6 +9,7 @@
 #define MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_H
 
 #include "DeviceBackendImpl.h"
+#include "LNMBackendRegisterInfo.h"
 
 namespace mtca4u {
 

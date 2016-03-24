@@ -7,8 +7,9 @@
 
 #include <stdexcept>
 #include <libxml++/libxml++.h>
-#include <LogicalNameMapParser.h>
 
+#include "LogicalNameMapParser.h"
+#include "LNMBackendRegisterInfo.h"
 #include "DeviceException.h"
 #include "DeviceBackend.h"
 #include "RegisterPluginFactory.h"
@@ -152,35 +153,35 @@ namespace mtca4u {
       RegisterPath registerName = currentPath/std::string(nameAttr->get_value());
 
       // create new RegisterInfo object
-      auto info = boost::shared_ptr<RegisterInfo>( new LogicalNameMapParser::RegisterInfo() );
+      auto info = boost::shared_ptr<LNMBackendRegisterInfo>( new LNMBackendRegisterInfo() );
       info->name = registerName;
 
       // obtain the type
       std::string type = getValueFromXmlSubnode<std::string>(element, "type");
       if(type == "register") {
-        info->targetType = TargetType::REGISTER;
+        info->targetType = LNMBackendRegisterInfo::TargetType::REGISTER;
         info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
         info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
       }
       else if(type == "range") {
-        info->targetType = TargetType::RANGE;
+        info->targetType = LNMBackendRegisterInfo::TargetType::RANGE;
         info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
         info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
         info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "index");
         info->length = getValueFromXmlSubnode<unsigned int>(element, "length");
       }
       else if(type == "channel") {
-        info->targetType = TargetType::CHANNEL;
+        info->targetType = LNMBackendRegisterInfo::TargetType::CHANNEL;
         info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
         info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
         info->channel = getValueFromXmlSubnode<unsigned int>(element, "channel");
       }
       else if(type == "int_constant") {
-        info->targetType = TargetType::INT_CONSTANT;
+        info->targetType = LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
         info->value = getValueFromXmlSubnode<int>(element, "value");
       }
       else if(type == "int_variable") {
-        info->targetType = TargetType::INT_VARIABLE;
+        info->targetType = LNMBackendRegisterInfo::TargetType::INT_VARIABLE;
         info->value = getValueFromXmlSubnode<int>(element, "value");
       }
       else {
@@ -233,38 +234,10 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  const LogicalNameMapParser::RegisterInfo& LogicalNameMapParser::getRegisterInfo(const std::string &name) const {
-    try {
-      // static cast the mtca4u::RegisterInfo into our LogicalNameMap::RegisterInfo is ok, since we control the
-      // catalogue and put only actual LogicalNameMap::RegisterInfo in there.
-      return *static_cast<LogicalNameMapParser::RegisterInfo*>(_catalogue.getRegister(currentModule/name).get());
-    }
-    catch(std::out_of_range &e) {
-      throw DeviceException("Register '"+(currentModule/name)+"' was not found in logical name map ("+e.what()+").",
-          DeviceException::REGISTER_DOES_NOT_EXIST);
-    }
-  }
-
-  /********************************************************************************************************************/
-
-  boost::shared_ptr<LogicalNameMapParser::RegisterInfo> LogicalNameMapParser::getRegisterInfoShared(const std::string &name) {
-    try {
-      // static cast the mtca4u::RegisterInfo into our LogicalNameMap::RegisterInfo is ok, since we control the
-      // catalogue and put only actual LogicalNameMap::RegisterInfo in there.
-      return boost::static_pointer_cast<LogicalNameMapParser::RegisterInfo>(_catalogue.getRegister(currentModule/name));
-    }
-    catch(std::out_of_range &e) {
-      throw DeviceException("Register '"+(currentModule/name)+"' was not found in logical name map ("+e.what()+").",
-          DeviceException::REGISTER_DOES_NOT_EXIST);
-    }
-  }
-
-  /********************************************************************************************************************/
-
   std::unordered_set<std::string> LogicalNameMapParser::getTargetDevices() const {
     std::unordered_set<std::string> ret;
     for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
-      auto info = boost::static_pointer_cast<const LogicalNameMapParser::RegisterInfo>(it.get());
+      auto info = boost::static_pointer_cast<const LNMBackendRegisterInfo>(it.get());
       if(info->hasDeviceName()) {
         ret.insert(info->deviceName);
       }

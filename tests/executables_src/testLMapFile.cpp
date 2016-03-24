@@ -6,8 +6,9 @@
  */
 
 #include <boost/test/included/unit_test.hpp>
-#include <LogicalNameMapParser.h>
 
+#include "LogicalNameMapParser.h"
+#include "LNMBackendRegisterInfo.h"
 #include "DeviceException.h"
 
 using namespace boost::unit_test_framework;
@@ -64,12 +65,13 @@ void LMapFileTest::testErrorInDmapFile() {
 }
 
 void LMapFileTest::testParseFile() {
-  boost::shared_ptr<LogicalNameMapParser::RegisterInfo> info;
+  boost::shared_ptr<LNMBackendRegisterInfo> info;
 
   LogicalNameMapParser lmap("valid.xlmap");
+  RegisterCatalogue catalogue = lmap.getCatalogue();
 
-  info = lmap.getRegisterInfoShared("SingleWord");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::REGISTER );
+  info =  boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWord"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
   BOOST_CHECK( info->deviceName == "PCIE2");
   BOOST_CHECK( info->registerName == "BOARD.WORD_USER");
   BOOST_CHECK( info->hasDeviceName() == true );
@@ -79,8 +81,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == false );
 
-  info = lmap.getRegisterInfoShared("PartOfArea");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::RANGE );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("PartOfArea"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::RANGE );
   BOOST_CHECK( info->deviceName == "PCIE2");
   BOOST_CHECK( info->registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info->firstIndex == 10);
@@ -92,8 +94,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == false );
 
-  info = lmap.getRegisterInfoShared("FullArea");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::REGISTER );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("FullArea"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
   BOOST_CHECK( info->deviceName == "PCIE2");
   BOOST_CHECK( info->registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info->hasDeviceName() == true );
@@ -103,8 +105,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == false );
 
-  info = lmap.getRegisterInfoShared("Channel3");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::CHANNEL );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Channel3"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
   BOOST_CHECK( info->channel == 3);
@@ -115,8 +117,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == true );
   BOOST_CHECK( info->hasValue() == false );
 
-  info = lmap.getRegisterInfoShared("Channel4");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::CHANNEL );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Channel4"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
   BOOST_CHECK( info->channel == 4);
@@ -127,8 +129,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == true );
   BOOST_CHECK( info->hasValue() == false );
 
-  info = lmap.getRegisterInfoShared("Constant");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::INT_CONSTANT );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Constant"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT );
   BOOST_CHECK( info->value == 42);
   BOOST_CHECK( info->hasDeviceName() == false );
   BOOST_CHECK( info->hasRegisterName() == false );
@@ -137,8 +139,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == true );
 
-  info = lmap.getRegisterInfoShared("/MyModule/SomeSubmodule/Variable");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::INT_VARIABLE );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("/MyModule/SomeSubmodule/Variable"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE );
   BOOST_CHECK( info->value == 2);
   BOOST_CHECK( info->hasDeviceName() == false );
   BOOST_CHECK( info->hasRegisterName() == false );
@@ -147,8 +149,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == true );
 
-  info = lmap.getRegisterInfoShared("MyModule/ConfigurableChannel");
-  BOOST_CHECK( info->targetType == LogicalNameMapParser::TargetType::CHANNEL );
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("MyModule/ConfigurableChannel"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
   int temp;
@@ -172,12 +174,5 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK(targetDevices.count("PCIE2") == 1);
   BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
-  BOOST_CHECK_THROW( lmap.getRegisterInfo("NotExistingRegister"), DeviceException );
-  try {
-    lmap.getRegisterInfo("NotExistingRegister");
-  }
-  catch(DeviceException &ex) {
-    BOOST_CHECK( ex.getID() == DeviceException::REGISTER_DOES_NOT_EXIST );
-  }
 
 }

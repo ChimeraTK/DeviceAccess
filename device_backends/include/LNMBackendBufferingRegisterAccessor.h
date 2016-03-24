@@ -31,19 +31,19 @@ namespace mtca4u {
       {
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // copy the register info and create the internal accessors, if needed
-        _info = *( boost::static_pointer_cast<LogicalNameMapParser::RegisterInfo>(
+        _info = *( boost::static_pointer_cast<LNMBackendRegisterInfo>(
             _dev->getRegisterCatalogue().getRegister(registerPathName)) );
         _info.createInternalAccessors(dev);
         // check for incorrect usage of this accessor
-        if( _info.targetType != LogicalNameMapParser::TargetType::RANGE &&
-            _info.targetType != LogicalNameMapParser::TargetType::REGISTER ) {
+        if( _info.targetType != LNMBackendRegisterInfo::TargetType::RANGE &&
+            _info.targetType != LNMBackendRegisterInfo::TargetType::REGISTER ) {
           throw DeviceException("LNMBackendBufferingRegisterAccessor used for wrong register type.",
               DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         // obtain target device pointer
         _targetDevice = _dev->_devices[_info.deviceName];
         // compute actual length and offset
-        if(_info.targetType == LogicalNameMapParser::TargetType::REGISTER) {
+        if(_info.targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
           _info.firstIndex = 0;
           _info.length = 0;
         }
@@ -86,7 +86,7 @@ namespace mtca4u {
       }
 
       virtual bool isReadOnly() const {
-        if(_info.targetType == LogicalNameMapParser::TargetType::RANGE) {
+        if(_info.targetType == LNMBackendRegisterInfo::TargetType::RANGE) {
           return true;
         }
         else {
@@ -111,7 +111,7 @@ namespace mtca4u {
 
       /// register information. We hold a copy of the RegisterInfo, since it might contain register accessors
       /// which may not be owned by the backend
-      LogicalNameMapParser::RegisterInfo _info;
+      LNMBackendRegisterInfo _info;
 
       /// target device
       boost::shared_ptr<DeviceBackend> _targetDevice;
