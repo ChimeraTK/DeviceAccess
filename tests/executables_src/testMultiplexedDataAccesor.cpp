@@ -22,7 +22,6 @@ static const std::string DEVICE_INVALID_SEQUENCES_ALIAS("INVALID_SEQUENCES");
 static const std::string DEVICE_MIXED_ALIAS("MIXED_SEQUENCES");
 
 static const std::string MAP_FILE_NAME("sequences.map");
-static const std::string BAM_MAP_FILE("bam_fmc25_r1225.mapp");
 static const std::string TEST_MODULE_NAME("TEST");
 static const std::string INVALID_MODULE_NAME("INVALID");
 static const RegisterPath TEST_MODULE_PATH(TEST_MODULE_NAME);
