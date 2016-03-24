@@ -22,8 +22,8 @@ namespace mtca4u {
 
   /*********************************************************************************************************************/
 
-  template<typename T>
-  class LNMBackendVariableAccessor : public NDRegisterAccessor<T> {
+  template<typename UserType>
+  class LNMBackendVariableAccessor : public NDRegisterAccessor<UserType> {
     public:
 
       LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
@@ -35,7 +35,7 @@ namespace mtca4u {
               "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
         }
         if(enforceRawAccess) {
-          if(typeid(T) != typeid(int32_t)) {
+          if(typeid(UserType) != typeid(int32_t)) {
             throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
                 " does not match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
           }
@@ -50,9 +50,9 @@ namespace mtca4u {
           throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
               DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
-        NDRegisterAccessor<T>::buffer_2D.resize(1);
-        NDRegisterAccessor<T>::buffer_2D[0].resize(1);
-        NDRegisterAccessor<T>::buffer_2D[0][0] = _fixedPointConverter.toCooked<T>(_info->value);
+        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+        NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(_info->value);
       }
 
       virtual ~LNMBackendVariableAccessor() {};
@@ -70,7 +70,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendVariableAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendVariableAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
@@ -108,11 +108,11 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}  // LCOV_EXCL_LINE
 
       virtual void postRead() {
-        NDRegisterAccessor<T>::buffer_2D[0][0] =_fixedPointConverter.toCooked<T>(_info->value);
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
       }
 
       virtual void preWrite() {
-        _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<T>::buffer_2D[0][0]);
+        _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
       }
 
 

@@ -25,18 +25,18 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   /** The register accessor used by the ScaleRegisterPlugin */
-  template<typename T>
-  class ScaleRegisterPluginRegisterAccessor : public NDRegisterAccessor<T> {
+  template<typename UserType>
+  class ScaleRegisterPluginRegisterAccessor : public NDRegisterAccessor<UserType> {
     public:
 
       /** The constructor takes the original accessor and the scaling factor as arguments */
-      ScaleRegisterPluginRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<T> > accessor,
+      ScaleRegisterPluginRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > accessor,
           DynamicValue<double> scalingFactor)
       : _accessor(accessor), _scalingFactor(scalingFactor)
       {
         // reserve space for cooked buffer
-        NDRegisterAccessor<T>::buffer_2D.resize(_accessor->getNumberOfChannels());
-        NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
+        NDRegisterAccessor<UserType>::buffer_2D.resize(_accessor->getNumberOfChannels());
+        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
       virtual ~ScaleRegisterPluginRegisterAccessor() {};
@@ -45,18 +45,18 @@ namespace mtca4u {
         // read from hardware
         _accessor->read();
         // apply scaling factor while copying buffer from underlying accessor to our buffer
-        for(unsigned int i=0; i<NDRegisterAccessor<T>::buffer_2D.size(); i++) {
-          for(unsigned int k=0; k<NDRegisterAccessor<T>::buffer_2D[i].size(); k++) {
-            NDRegisterAccessor<T>::buffer_2D[i][k] = _accessor->accessData(i,k) * _scalingFactor;
+        for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
+          for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
+            NDRegisterAccessor<UserType>::buffer_2D[i][k] = _accessor->accessData(i,k) * _scalingFactor;
           }
         }
       }
 
       virtual void write() {
         // apply scaling factor while copying buffer from our buffer to underlying accessor
-        for(unsigned int i=0; i<NDRegisterAccessor<T>::buffer_2D.size(); i++) {
-          for(unsigned int k=0; k<NDRegisterAccessor<T>::buffer_2D[i].size(); k++) {
-            _accessor->accessData(i,k) = NDRegisterAccessor<T>::buffer_2D[i][k] / _scalingFactor;
+        for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
+          for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
+            _accessor->accessData(i,k) = NDRegisterAccessor<UserType>::buffer_2D[i][k] / _scalingFactor;
           }
         }
         // write to hardware
@@ -64,7 +64,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const ScaleRegisterPluginRegisterAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const ScaleRegisterPluginRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_accessor != rhsCasted->_accessor) return false;
         if(_scalingFactor != rhsCasted->_scalingFactor) return false;
@@ -82,7 +82,7 @@ namespace mtca4u {
     protected:
 
       /** The underlying register accessor */
-      boost::shared_ptr< NDRegisterAccessor<T> > _accessor;
+      boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor;
 
       /** The scaling factor */
       DynamicValue<double> _scalingFactor;
@@ -93,7 +93,7 @@ namespace mtca4u {
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         if(_accessor->isSameRegister(newElement)) {
-          _accessor = boost::static_pointer_cast< NDRegisterAccessor<T> >(newElement);
+          _accessor = boost::static_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
         }
       }
 

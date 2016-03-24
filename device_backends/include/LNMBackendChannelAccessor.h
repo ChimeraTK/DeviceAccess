@@ -22,8 +22,8 @@ namespace mtca4u {
 
   /*********************************************************************************************************************/
 
-  template< typename T >
-  class LNMBackendChannelAccessor : public NDRegisterAccessor<T> {
+  template<typename UserType>
+  class LNMBackendChannelAccessor : public NDRegisterAccessor<UserType> {
     public:
 
       LNMBackendChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
@@ -46,10 +46,10 @@ namespace mtca4u {
         }
         // get target device and accessor
         _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getRegisterAccessor<T>(RegisterPath(_info.registerName), 0,0, false);
+        _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), 0,0, false);
         // allocate the buffer
-        NDRegisterAccessor<T>::buffer_2D.resize(1);
-        NDRegisterAccessor<T>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
+        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
       virtual ~LNMBackendChannelAccessor() {};
@@ -65,7 +65,7 @@ namespace mtca4u {
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
-        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendChannelAccessor<T> >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendChannelAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
@@ -83,7 +83,7 @@ namespace mtca4u {
     protected:
 
       /// pointer to underlying accessor
-      boost::shared_ptr< NDRegisterAccessor<T> > _accessor;
+      boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor;
 
       /// register and module name
       RegisterPath _registerPathName;
@@ -103,7 +103,7 @@ namespace mtca4u {
       }
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<T> >(newElement);
+        auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
         if(newElement->isSameRegister(_accessor) && casted) {
           _accessor = casted;
         }
@@ -114,7 +114,7 @@ namespace mtca4u {
 
       virtual void postRead() {
         _accessor->postRead();
-        _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<T>::buffer_2D[0]);
+        _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
       };
 
   };
