@@ -5,27 +5,24 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
-static const std::string MODULE_NAME = "ADC";
-static const std::string DATA_REGION_NAME = "DATA";
-
 int main() {
-  // Before you use a device you have to tell the factory which dmap file to use.
-  // \todo There should be a global function to do this. It is an implementation
-  // detail that it's the factory which has to know it.
   mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
-
-  // open the device:
   mtca4u::Device myDevice;
   myDevice.open("MY_DEVICE");
 
+  /* In this example there is a data region called "DATA" in
+   * a module called "ADC".
+   */
   mtca4u::TwoDRegisterAccessor<double> twoDAccessor =
-    myDevice.getTwoDRegisterAccessor<double>(MODULE_NAME, DATA_REGION_NAME);
+    myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
 
-  // read data for all channels from the hardware
+  /* Read data for all channels from the hardware
+   */
   twoDAccessor.read();
   
-  // You can access each sequence/channel individually. They are std::vectors.
-  // You get a reference to the vector inside the accessor. No data copying.
+  /* You can access each sequence/channel individually. They are std::vectors.
+   * You get a reference to the vector inside the accessor. No data copying.
+   */
   for (size_t i = 0; i < twoDAccessor.getNumberOfDataSequences(); ++i){
     std::cout << "Channel " << i << ":";
     std::vector<double> & channel = twoDAccessor[i];
@@ -35,19 +32,19 @@ int main() {
     std::cout << std::endl;
   }
 
-  // Or you can just use it like a 2D array and modify the stuff at will in the
-  // accessors internal buffer
+  /* You can modify the stuff at will in the accessors internal buffer.
+   * In this example we use two [] operators like a 2D array.
+   */
   for (size_t i = 0; i < twoDAccessor.getNumberOfDataSequences(); ++i){
     for (size_t j = 0; j < twoDAccessor.getNumberOfSamples(); ++j){
       twoDAccessor[i][j] = i*100 + j;
     }
   }
 
-  // Finally write to the hardware
+  /* Finally write to the hardware.
+   */
   twoDAccessor.write();
 
-  // It is good style to close the device when you are done, although
-  // this would happen automatically once the device goes out of scope.
   myDevice.close();
 
   return 0;

@@ -5,17 +5,12 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
-static const std::string MODULE_NAME = "ADC";
-static const std::string DATA_REGION_NAME = "DATA";
-// This register allows direct access to the multiplexed data
-static const std::string REGISTER_TO_SETUP_DATA_REGION = "AREA_DATA_RAW";
-
 int main() {
   mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
   mtca4u::Device myDevice;
   myDevice.open("MY_DEVICE");
 
-  /* We populate the memory region with multiple multiplexec sequences
+  /* We populate the memory region with multiple multiplexed sequences
    * so that we can use this for demonstrating the demultiplexing of the
    * TwoDRegisterAccessor (for some implementations depeding on the backend).
    * 
@@ -25,21 +20,22 @@ int main() {
    * sequence 1:  1   5   9   13
    * sequence 2:  2   6   10  14
    * sequence 3:  3   7   11  15
+   *
+   * We use a register named AREA_DATA_RAW which provides plain access to the data region.
    */
-
   auto dataRegion 
-    = myDevice.getBufferingRegisterAccessor<double>(MODULE_NAME,
-						  REGISTER_TO_SETUP_DATA_REGION);
+    = myDevice.getBufferingRegisterAccessor<double>("ADC/AREA_DATA_RAW");
   int counter = 0;
   for (auto & dataWord : dataRegion){
     dataWord=counter++;
   }
   dataRegion.write();
   
-  // Now check how it looks using the TwoDRegisterAccessor. We just copy it from
-  // the accessor2D.cpp example. 
-   mtca4u::TwoDRegisterAccessor<double> twoDAccessor =
-    myDevice.getTwoDRegisterAccessor<double>(MODULE_NAME, DATA_REGION_NAME);
+  /* Now check how it looks using the TwoDRegisterAccessor. We just copy it from
+   * the accessor2D.cpp example.
+   */
+  mtca4u::TwoDRegisterAccessor<double> twoDAccessor =
+    myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
   twoDAccessor.read();
 
   for (size_t i = 0; i < twoDAccessor.getNumberOfDataSequences(); ++i){
