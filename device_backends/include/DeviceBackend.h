@@ -123,23 +123,6 @@ namespace mtca4u {
        */
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const = 0;
 
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Add runtime warning after release of version 0.9
-       *  }
-       */
-      virtual std::list<RegisterInfoMap::RegisterInfo> getRegistersInModule(
-          const std::string &moduleName) const = 0;
-
-    protected:
-
-      /// for compatibility functions only: replace the current register map with a new one.
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) = 0;
-
-      friend class Device;
-
   };
 
   /********************************************************************************************************************/

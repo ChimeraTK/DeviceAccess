@@ -12,6 +12,7 @@
 #include "RegisterInfoMap.h"
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
+#include "NumericAddressedBackend.h"
 
 namespace mtca4u {
 
@@ -112,7 +113,12 @@ namespace mtca4u {
        */
       RegisterInfoMap::RegisterInfo getRegisterInfo() const {
         RegisterInfoMap::RegisterInfo info;
-        _dev->getRegisterMap()->getRegisterInfo(_registerPathName, info);
+        auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_dev);
+        if(!castedBackend) {
+          throw DeviceException("RegisterAccessor::getRegisterInfo() called for a non-NumericAddressedBackend.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
+        castedBackend->getRegisterMap()->getRegisterInfo(_registerPathName, info);
         return info;
       }
 

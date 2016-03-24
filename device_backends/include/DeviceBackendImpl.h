@@ -66,8 +66,6 @@ namespace mtca4u {
         return accessor;
       }
 
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> /*registerMap*/) {}; // LCOV_EXCL_LINE only for compatibility!
-
   };
 
 }//namespace mtca4u

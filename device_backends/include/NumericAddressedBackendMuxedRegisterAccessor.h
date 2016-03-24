@@ -7,7 +7,7 @@
 #include "NDRegisterAccessor.h"
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
-#include "DeviceBackend.h"
+#include "NumericAddressedBackend.h"
 #include "Exception.h"
 #include "MapException.h"
 #include "NotImplementedException.h"
@@ -60,7 +60,7 @@ namespace mtca4u {
       std::vector< FixedPointConverter > _converters;
 
       /** The device from (/to) which to perform the DMA transfer */
-      boost::shared_ptr<DeviceBackend> _ioDevice;
+      boost::shared_ptr<NumericAddressedBackend> _ioDevice;
 
       /** number of data blocks / samples */
       size_t _nBlocks;
@@ -94,7 +94,7 @@ namespace mtca4u {
   template <class UserType>
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
       const RegisterPath &registerPathName, boost::shared_ptr<DeviceBackend> _backend )
-  : _ioDevice(_backend), _registerPathName(registerPathName)
+  : _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName)
   {
       // re-split register and module after merging names by the last dot (to allow module.register in the register name)
       auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());

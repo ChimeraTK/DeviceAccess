@@ -32,11 +32,6 @@ namespace mtca4u {
         return std::string("Logical name mapping file: ") + _lmapFileName;
       }
 
-      virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
-          const std::string &/*moduleName*/) const {
-        throw DeviceException("Not yet implemented.",DeviceException::NOT_IMPLEMENTED);
-      }
-
       static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
 

@@ -32,7 +32,12 @@ namespace mtca4u {
 
   boost::shared_ptr<const RegisterInfoMap> Device::getRegisterMap() const {
     checkPointersAreNotNull();
-    return _deviceBackendPointer->getRegisterMap();
+    auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_deviceBackendPointer);
+    if(!castedBackend) {
+      throw DeviceException("Device::getRegisterMap() called for a non-NumericAddressedBackend. Use "
+          "Device::getRegisterCatalogue() instead!",DeviceException::NOT_IMPLEMENTED);
+    }
+    return castedBackend->getRegisterMap();
   }
 
   /********************************************************************************************************************/
@@ -47,8 +52,12 @@ namespace mtca4u {
 
   std::list<RegisterInfoMap::RegisterInfo> Device::getRegistersInModule(const std::string &moduleName) const {
     checkPointersAreNotNull();
-
-    return _deviceBackendPointer->getRegistersInModule(moduleName);
+    auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_deviceBackendPointer);
+    if(!castedBackend) {
+      throw DeviceException("Device::getRegistersInModule() called for a non-NumericAddressedBackend. Use "
+          "Device::getRegisterCatalogue() instead!",DeviceException::NOT_IMPLEMENTED);
+    }
+    return castedBackend->getRegistersInModule(moduleName);
   }
 
   /********************************************************************************************************************/
@@ -262,7 +271,12 @@ namespace mtca4u {
     std::cerr << "**                                                                                             **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-    deviceBackend->setRegisterMap(registerMap);// LCOV_EXCL_LINE
+    auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(deviceBackend);
+    if(!castedBackend) {
+      throw DeviceException("Device::open() with a RegisterInfoMap called for a non-NumericAddressedBackend. Use "
+          "open() by alias name instead!",DeviceException::NOT_IMPLEMENTED);
+    }
+    castedBackend->setRegisterMap(registerMap);// LCOV_EXCL_LINE
     open(deviceBackend);// LCOV_EXCL_LINE
   }// LCOV_EXCL_LINE
 

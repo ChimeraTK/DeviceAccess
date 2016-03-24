@@ -31,12 +31,18 @@ namespace mtca4u {
 
       virtual std::string readDeviceInfo() = 0;
 
-      virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
+      boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
-      virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
+      std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath &registerPathName);
+
+      void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
+      { // LCOV_EXCL_LINE only for compatibility!
+        _registerMap = registerMap; // LCOV_EXCL_LINE only for compatibility!
+        _catalogue = _registerMap->getRegisterCatalogue(); // LCOV_EXCL_LINE only for compatibility!
+      } // LCOV_EXCL_LINE only for compatibility!
 
     protected:
 
@@ -53,13 +59,6 @@ namespace mtca4u {
       boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
           const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackend, getRegisterAccessor_impl, 4 );
-
-      virtual void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
-      { // LCOV_EXCL_LINE only for compatibility!
-        _registerMap = registerMap; // LCOV_EXCL_LINE only for compatibility!
-        _catalogue = _registerMap->getRegisterCatalogue(); // LCOV_EXCL_LINE only for compatibility!
-      } // LCOV_EXCL_LINE only for compatibility!
-
 
   };
 
