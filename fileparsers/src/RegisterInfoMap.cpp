@@ -63,7 +63,7 @@ namespace mtca4u {
       metaDataValue = _catalogue.getMetadata(metaDataName);
     }
     catch(DeviceException &ex) {
-      if(ex.getID() != DeviceException::EX_WRONG_PARAMETER) throw;
+      if(ex.getID() != DeviceException::WRONG_PARAMETER) throw;
       throw MapFileException(ex.what(), LibMapException::EX_NO_METADATA_IN_MAP_FILE);
     }
   }

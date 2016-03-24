@@ -35,7 +35,7 @@ namespace mtca4u {
     }
     catch(std::out_of_range &e) {
       throw DeviceException("RegisterPluginFactory::createPlugin(): unknown RegisterPlugin '"+name+"'.",
-          DeviceException::EX_WRONG_PARAMETER);
+          DeviceException::WRONG_PARAMETER);
     }
   }
 

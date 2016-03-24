@@ -105,14 +105,14 @@ namespace mtca4u {
     RegisterInfoMap::RegisterInfo registerInfo;
     _registerMap->getRegisterInfo(regName, registerInfo, regModule);
     if (addRegOffset % 4) {
-      throw DeviceException("Register offset must be divisible by 4", DeviceException::EX_WRONG_PARAMETER);
+      throw DeviceException("Register offset must be divisible by 4", DeviceException::WRONG_PARAMETER);
     }
     if (dataSize) {
       if (dataSize % 4) {
-        throw DeviceException("Data size must be divisible by 4", DeviceException::EX_WRONG_PARAMETER);
+        throw DeviceException("Data size must be divisible by 4", DeviceException::WRONG_PARAMETER);
       }
       if (dataSize > registerInfo.nBytes - addRegOffset) {
-        throw DeviceException("Data size exceed register size", DeviceException::EX_WRONG_PARAMETER);
+        throw DeviceException("Data size exceed register size", DeviceException::WRONG_PARAMETER);
       }
       retDataSize = dataSize;
     } else {

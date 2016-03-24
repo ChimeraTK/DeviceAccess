@@ -160,7 +160,7 @@ void LMapFileTest::testParseFile() {
     (void) temp; // avoid warning
   }
   catch( DeviceException &e ) {
-    BOOST_CHECK( e.getID() == DeviceException::EX_NOT_OPENED );
+    BOOST_CHECK( e.getID() == DeviceException::NOT_OPENED );
   }
   BOOST_CHECK( info->hasDeviceName() == true );
   BOOST_CHECK( info->hasRegisterName() == true );

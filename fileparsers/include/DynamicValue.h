@@ -28,7 +28,7 @@ namespace mtca4u {
         if(!hasActualValue) {
           if(!accessor) {
             throw DeviceException("Cannot obtain this value before Value::createInternalAccessors() was called.",
-                DeviceException::EX_NOT_OPENED);
+                DeviceException::NOT_OPENED);
           }
           accessor->read();
           return accessor->accessData(0,0);

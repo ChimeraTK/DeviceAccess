@@ -86,10 +86,10 @@ namespace mtca4u {
       const std::string &regModule, int32_t *data,
       size_t dataSize, uint32_t addRegOffset) const {
     if(dataSize % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong data size - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+      throw DeviceException("Wrong data size - must be dividable by 4", DeviceException::WRONG_PARAMETER);
     }
     if(addRegOffset % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::WRONG_PARAMETER);
     }
     try {
       auto vec = read<int32_t>(RegisterPath(regModule)/regName, dataSize/sizeof(int32_t), addRegOffset/sizeof(int32_t), true);
@@ -116,10 +116,10 @@ namespace mtca4u {
       size_t dataSize, uint32_t addRegOffset) {
     if(dataSize == 0) dataSize = sizeof(int32_t);
     if(dataSize % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong data size: - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+      throw DeviceException("Wrong data size: - must be dividable by 4", DeviceException::WRONG_PARAMETER);
     }
     if(addRegOffset % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::EX_WRONG_PARAMETER);
+      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::WRONG_PARAMETER);
     }
     std::vector<int32_t> vec(dataSize/sizeof(int32_t));
     memcpy(vec.data(),data,dataSize);
@@ -222,7 +222,7 @@ namespace mtca4u {
 
   void Device::checkPointersAreNotNull() const {
     if ((_deviceBackendPointer == false)) {
-      throw DeviceException("Device has not been opened correctly", DeviceException::EX_NOT_OPENED);
+      throw DeviceException("Device has not been opened correctly", DeviceException::NOT_OPENED);
     }
   }
 

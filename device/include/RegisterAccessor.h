@@ -143,7 +143,7 @@ namespace mtca4u {
         // check word alignment
         if(dataSize % 4 != 0 || addRegOffset % 4 != 0) {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
-              "dividable by 4)",DeviceException::EX_WRONG_PARAMETER);
+              "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
         // obtain accessor
         auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
@@ -165,7 +165,7 @@ namespace mtca4u {
         // check word alignment
         if(dataSize % 4 != 0 || addRegOffset % 4 != 0) {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
-              "dividable by 4)",DeviceException::EX_WRONG_PARAMETER);
+              "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
         // obtain accessor
         auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),

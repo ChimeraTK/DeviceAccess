@@ -14,13 +14,13 @@ namespace mtca4u{
         NOT_IMPLEMENTED = 0,
 
         /** A parameter (function argument, value in a map file etc.) is not valid */
-        EX_WRONG_PARAMETER,
+        WRONG_PARAMETER,
 
         /** The called operation requires an opened device but it is closed */
-        EX_NOT_OPENED,
+        NOT_OPENED,
 
         /** The backend refused to open, e.g.\ due to a connection error with the hardware */
-        EX_CANNOT_OPEN_DEVICEBACKEND,
+        CANNOT_OPEN_DEVICEBACKEND,
 
         /** The map file could not be openend or contains errors */
         CANNOT_OPEN_MAP_FILE,
@@ -41,7 +41,12 @@ namespace mtca4u{
         INVALID_WORD_SIZE = CANNOT_OPEN_MAP_FILE,
 
         /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
-        INVALID_N_ELEMENTS = CANNOT_OPEN_MAP_FILE
+        INVALID_N_ELEMENTS = CANNOT_OPEN_MAP_FILE,
+
+        /** Deprecated, for compatibility only */
+        EX_WRONG_PARAMETER = WRONG_PARAMETER,
+        EX_NOT_OPENED = NOT_OPENED,
+        EX_CANNOT_OPEN_DEVICEBACKEND = CANNOT_OPEN_DEVICEBACKEND
       };
 
 

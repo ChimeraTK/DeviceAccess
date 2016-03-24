@@ -272,7 +272,7 @@ void DeviceTest::testDeviceCheckRegister() {
     device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
   catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 
   dataSize = 3;
@@ -282,7 +282,7 @@ void DeviceTest::testDeviceCheckRegister() {
     device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
   catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 
   dataSize = 4;
@@ -291,7 +291,7 @@ void DeviceTest::testDeviceCheckRegister() {
     device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
   }
   catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 }
 
@@ -334,7 +334,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
   catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 
   dataSize = 3;
@@ -344,7 +344,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
   catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 
   dataSize = 4;
@@ -353,7 +353,7 @@ void DeviceTest::testRegAccsorCheckRegister() {
     word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
   }
   catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
   }
 }
 /*
@@ -375,7 +375,7 @@ void DeviceTest::testRegAccsorWriteDMA() {
 		device->writeDMA("WORD_USER", &data, dataSizeInBytes);
 	}
 	catch (mtca4u::DeviceException& exception) {
-		BOOST_CHECK(exception.getID() == mtca4u::DeviceException::EX_WRONG_PARAMETER);
+		BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
 	}
 	boost::shared_ptr<mtca4u::Device::RegisterAccessor>
 	dma_accesible_reg = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
@@ -586,7 +586,7 @@ void DeviceTest::testDeviceCreation() {
     device5.open();
   }
   catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::DeviceException::EX_NOT_OPENED);
+    BOOST_CHECK(e.getID() == mtca4u::DeviceException::NOT_OPENED);
   }
 
   // check if opening another device closes the old backend

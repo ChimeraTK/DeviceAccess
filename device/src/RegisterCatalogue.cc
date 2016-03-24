@@ -38,7 +38,7 @@ namespace mtca4u {
     }
     catch(std::out_of_range &e) {
       throw DeviceException("Metadata '"+(key)+"' was not found in the catalogue ("+e.what()+").",
-          DeviceException::EX_WRONG_PARAMETER);
+          DeviceException::WRONG_PARAMETER);
     }
   }
 

@@ -32,7 +32,7 @@ namespace mtca4u {
         _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
         if(!_dev) {
           throw DeviceException("MemoryAddressedBackendBufferingRegisterAccessor is used with a backend which is not "
-              "a MemoryAddressedBackend.", DeviceException::EX_WRONG_PARAMETER);
+              "a MemoryAddressedBackend.", DeviceException::WRONG_PARAMETER);
         }
 
         // obtain register information
@@ -47,7 +47,7 @@ namespace mtca4u {
         }
         if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
           throw DeviceException("Requested number of words exceed the size of the register!",
-              DeviceException::EX_WRONG_PARAMETER);
+              DeviceException::WRONG_PARAMETER);
         }
 
         // allocated the buffers
@@ -66,7 +66,7 @@ namespace mtca4u {
         else {
           if(typeid(UserType) != typeid(int32_t)) {
             throw DeviceException("Given UserType when obtaining the BufferingRegisterAccessor in raw mode does not "
-                "match the expected type. Use an int32_t instead!", DeviceException::EX_WRONG_PARAMETER);
+                "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
           }
           _fixedPointConverter = FixedPointConverter(32, 0, true);
         }

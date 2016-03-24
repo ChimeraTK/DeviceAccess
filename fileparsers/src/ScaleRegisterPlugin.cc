@@ -113,7 +113,7 @@ namespace mtca4u {
       scalingFactor = parameters.at("factor");
     }
     catch(std::out_of_range &e) {
-      throw DeviceException("ScaleRegisterPlugin: Missing parameter 'factor'.", DeviceException::EX_WRONG_PARAMETER);
+      throw DeviceException("ScaleRegisterPlugin: Missing parameter 'factor'.", DeviceException::WRONG_PARAMETER);
     }
   }
 

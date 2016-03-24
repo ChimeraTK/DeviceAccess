@@ -42,7 +42,7 @@ namespace mtca4u {
         // check for incorrect usage of this accessor
         if( _info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL ) {
           throw DeviceException("LNMBackendBufferingChannelAccessor used for wrong register type.",
-              DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+              DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         // get target device and accessor
         _targetDevice = _dev->_devices[_info.deviceName];

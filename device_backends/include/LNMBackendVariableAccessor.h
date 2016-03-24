@@ -37,7 +37,7 @@ namespace mtca4u {
         if(enforceRawAccess) {
           if(typeid(T) != typeid(int32_t)) {
             throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
-                " does not match the expected type. Use an int32_t instead!", DeviceException::EX_WRONG_PARAMETER);
+                " does not match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
           }
         }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
@@ -48,7 +48,7 @@ namespace mtca4u {
         if( _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT &&
             _info->targetType != LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
           throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
-              DeviceException::EX_WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+              DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         NDRegisterAccessor<T>::buffer_2D.resize(1);
         NDRegisterAccessor<T>::buffer_2D[0].resize(1);
