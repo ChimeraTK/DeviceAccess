@@ -76,13 +76,13 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->registerName == "BOARD.WORD_USER");
   BOOST_CHECK( info->hasDeviceName() == true );
   BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
+  BOOST_CHECK( info->hasFirstIndex() == true );
+  BOOST_CHECK( info->hasLength() == true );
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == false );
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("PartOfArea"));
-  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::RANGE );
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
   BOOST_CHECK( info->deviceName == "PCIE2");
   BOOST_CHECK( info->registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info->firstIndex == 10);
@@ -100,8 +100,8 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info->hasDeviceName() == true );
   BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
+  BOOST_CHECK( info->hasFirstIndex() == true );
+  BOOST_CHECK( info->hasLength() == true );
   BOOST_CHECK( info->hasChannel() == false );
   BOOST_CHECK( info->hasValue() == false );
 

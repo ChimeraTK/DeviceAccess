@@ -75,18 +75,11 @@ namespace mtca4u {
 
     // implementation for each type
     boost::shared_ptr< NDRegisterAccessor<UserType> > ptr;
-    if( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER ||
-        info->targetType == LNMBackendRegisterInfo::TargetType::RANGE       ) {
+    if( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
       auto _targetDevice = _devices[info->deviceName];
       // determine the offset and length
-      size_t firstIndex = info->firstIndex;
-      size_t length = info->length;
-      if(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
-        firstIndex = 0;
-        length = 0;
-      }
-      size_t actualOffset = firstIndex + wordOffsetInRegister;
-      size_t actualLength = ( numberOfWords > 0 ? numberOfWords : length );
+      size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
+      size_t actualLength = ( numberOfWords > 0 ? numberOfWords : size_t(info->length) );
       // obtain underlying register accessor
       ptr = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(info->registerName),actualLength,actualOffset,
           enforceRawAccess);

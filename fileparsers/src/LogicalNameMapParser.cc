@@ -17,9 +17,11 @@
 namespace mtca4u {
 
   template<>
-  DynamicValue<std::string> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<std::string> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
+      const std::string &subnodeName, bool hasDefault, std::string defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
+      if(hasDefault) return defaultValue;
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
     }
     auto childList = list[0]->get_children();
@@ -40,9 +42,11 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  DynamicValue<int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
+      const std::string &subnodeName, bool hasDefault, int defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
+      if(hasDefault) return defaultValue;
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
     }
     auto childList = list[0]->get_children();
@@ -67,9 +71,11 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  DynamicValue<unsigned int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName) {
+  DynamicValue<unsigned int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
+      const std::string &subnodeName, bool hasDefault, unsigned int defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
+      if(hasDefault) return defaultValue;
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
     }
     auto childList = list[0]->get_children();
@@ -143,51 +149,55 @@ namespace mtca4u {
     }
 
     // register tag found: create new entry in map
-    else if(element->get_name() == "register" || element->get_name() == "entry") {
+    else {
 
-      // obtain name of register
-      auto nameAttr = element->get_attribute("name");
-      if(!nameAttr) {
-        parsingError("Missing name attribute of 'register' tag.");
-      }
-      RegisterPath registerName = currentPath/std::string(nameAttr->get_value());
+      // obtain the type
+      std::string type = element->get_name();
 
       // create new RegisterInfo object
       auto info = boost::shared_ptr<LNMBackendRegisterInfo>( new LNMBackendRegisterInfo() );
-      info->name = registerName;
 
-      // obtain the type
-      std::string type = getValueFromXmlSubnode<std::string>(element, "type");
-      if(type == "register") {
+      if(type == "redirectedRegister") {
         info->targetType = LNMBackendRegisterInfo::TargetType::REGISTER;
-        info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
-        info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
+        info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
+        info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
+        info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex",true,0);
+        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements",true,0);
       }
-      else if(type == "range") {
-        info->targetType = LNMBackendRegisterInfo::TargetType::RANGE;
-        info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
-        info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
-        info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "index");
-        info->length = getValueFromXmlSubnode<unsigned int>(element, "length");
-      }
-      else if(type == "channel") {
+      else if(type == "redirectedChannel") {
         info->targetType = LNMBackendRegisterInfo::TargetType::CHANNEL;
-        info->deviceName = getValueFromXmlSubnode<std::string>(element, "device");
-        info->registerName = getValueFromXmlSubnode<std::string>(element, "register");
-        info->channel = getValueFromXmlSubnode<unsigned int>(element, "channel");
+        info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
+        info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
+        info->channel = getValueFromXmlSubnode<unsigned int>(element, "targetChannel");
       }
-      else if(type == "int_constant") {
+      else if(type == "constant") {
+        std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
+        if(constantType != "integer") {
+          parsingError("Type '"+constantType+"' is not valid for a constant");
+        }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
         info->value = getValueFromXmlSubnode<int>(element, "value");
       }
-      else if(type == "int_variable") {
+      else if(type == "variable") {
+        std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
+        if(constantType != "integer") {
+          parsingError("Type '"+constantType+"' is not valid for a variable");
+        }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_VARIABLE;
         info->value = getValueFromXmlSubnode<int>(element, "value");
       }
       else {
-        parsingError("Wrong target type: "+type);
+        parsingError("Wrong logical register type: "+type);
       }
-      
+
+      // obtain name of logical register
+      auto nameAttr = element->get_attribute("name");
+      if(!nameAttr) {
+        parsingError("Missing name attribute of '"+type+"' tag.");
+      }
+      RegisterPath registerName = currentPath/std::string(nameAttr->get_value());
+      info->name = registerName;
+
       // add register to catalogue
       _catalogue.addRegister(info);
 
@@ -226,9 +236,6 @@ namespace mtca4u {
 
       }
 
-    }
-    else {
-      parsingError("Unknown tag found: "+element->get_name());
     }
   }
 

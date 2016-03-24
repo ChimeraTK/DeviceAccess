@@ -19,7 +19,7 @@ namespace mtca4u {
     public:
 
       /** Potential target types */
-      enum TargetType { INVALID, REGISTER, RANGE, CHANNEL, INT_CONSTANT, INT_VARIABLE };
+      enum TargetType { INVALID, REGISTER, CHANNEL, INT_CONSTANT, INT_VARIABLE };
 
       /** constuctor: initialise values */
       LNMBackendRegisterInfo()
@@ -78,12 +78,12 @@ namespace mtca4u {
 
       /** test if firstIndex is set (depending on the targetType) */
       bool hasFirstIndex() const {
-        return targetType == TargetType::RANGE;
+        return targetType == TargetType::REGISTER;
       }
 
       /** test if length is set (depending on the targetType) */
       bool hasLength() const {
-        return targetType == TargetType::RANGE;
+        return targetType == TargetType::REGISTER;
       }
 
       /** test if channel is set (depending on the targetType) */

@@ -55,6 +55,11 @@ namespace mtca4u {
       : hasActualValue(true)
       {}
 
+      /** constructor with conversion from ValueType. */
+      DynamicValue(const ValueType& value_)
+      : hasActualValue(true), value(value_)
+      {}
+
       /** assignment operator: allow assigment to Value without given backend, in which case we keep our backend
        *  and create the accessors. This version of the operator accepts any arithmetic-typed Value. */
       template < class rhsValueType,

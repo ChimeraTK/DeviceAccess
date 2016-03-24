@@ -60,7 +60,8 @@ namespace mtca4u {
 
       /** Build a Value object for a given subnode. */
       template<typename ValueType>
-      DynamicValue<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
+      DynamicValue<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName,
+          bool hasDefault=false, ValueType defaultValue=ValueType());
 
       /** file name of the logical map */
       std::string _fileName;

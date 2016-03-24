@@ -1,69 +1,61 @@
 <logicalNameMap>
-    <register name="SingleWord">
-        <type>register</type>
-        <device>PCIE2</device>
-        <register>BOARD.WORD_USER</register>
-    </register>
-    <register name="FullArea">
-        <type>register</type>
-        <device>PCIE2</device>
-        <register>ADC.AREA_DMAABLE</register>
-    </register>
-    <register name="PartOfArea">
-        <type>range</type>
-        <device>PCIE2</device>
-        <register>ADC.AREA_DMAABLE</register>
-        <index>10</index>
-        <length>20</length>
-    </register>
-    <register name="Channel3">
-        <type>channel</type>
-        <device>PCIE3</device>
-        <register>TEST.NODMA</register>
-        <channel>3</channel>
-    </register>
-    <register name="Channel4">
-        <type>channel</type>
-        <device>PCIE3</device>
-        <register>TEST.NODMA</register>
-        <channel>4</channel>
-    </register>
-    <register name="Constant">
-        <type>int_constant</type>
+    <redirectedRegister name="SingleWord">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="FullArea">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="PartOfArea">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <targetStartIndex>10</targetStartIndex>
+        <numberOfElements>20</numberOfElements>
+    </redirectedRegister>
+    <redirectedChannel name="Channel3">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>3</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="Channel4">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>4</targetChannel>
+    </redirectedChannel>
+    <constant name="Constant">
+        <type>integer</type>
         <value>42</value>
-    </register>
-    <entry name="Constant2"> <!-- use "entry" tag, which is the deprecated alias for register -->
-        <type>int_constant</type>
+    </constant>
+    <constant name="Constant2">
+        <type>integer</type>
         <value>666</value>
-    </entry>
-    <register name="SingleWord_Scaled">
-        <type>register</type>
-        <device>PCIE2</device>
-        <register>BOARD.WORD_USER</register>
+    </constant>
+    <redirectedRegister name="SingleWord_Scaled">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
         <plugin name="scale">
           <factor>3</factor>
         </plugin>
-    </register>
-    <register name="FullArea_Scaled">
-        <type>register</type>
-        <device>PCIE2</device>
-        <register>ADC.AREA_DMAABLE</register>
+    </redirectedRegister>
+    <redirectedRegister name="FullArea_Scaled">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
         <plugin name="scale">
           <factor>11.5</factor>
         </plugin>
-    </register>
+    </redirectedRegister>
     <module name="MyModule">
       <module name="SomeSubmodule"> 
-        <register name="Variable">
-          <type>int_variable</type>
+        <variable name="Variable">
+          <type>integer</type>
           <value>2</value>
-        </register>
+        </variable>
       </module>
-      <register name="ConfigurableChannel">
-        <type>channel</type>
-        <device>PCIE3</device>
-        <register>TEST.NODMA</register>
-        <channel><ref>/MyModule/SomeSubmodule/Variable</ref></channel>
-      </register>
+      <redirectedChannel name="ConfigurableChannel">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel><ref>/MyModule/SomeSubmodule/Variable</ref></targetChannel>
+      </redirectedChannel>
     </module>
 </logicalNameMap>
