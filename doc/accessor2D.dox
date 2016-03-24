@@ -8,7 +8,9 @@ you can modify the data in the accessors buffer efficiently at will.
 
 The one-dimensional sequences/channels are implemeted as std::vector, so they are
 convenient to use. They are accessed via the [] operator of the accessor. This 
-also allows the "matrix" syntac \c accessor[][].
+also allows the "matrix" syntax \c accessor[][].
+\note As with all std::vectors, iterators are slightly more efficient because the repeated
+calculation of the address and indirections are not necessary for each element. 
 
 \include accessor2D.cpp
 */

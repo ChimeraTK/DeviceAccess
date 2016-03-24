@@ -1,6 +1,10 @@
 /**
 \page mapping Using the register name mapping
 
+\todo FIXME: This page is deprecated. Needs to be updated to describe the mapping,
+and that it's for certain Backends only. 
+\deprecated
+
 To use the register name mapping you need a mapping file with
 the register names and properties (comes with the firmware).
 Each register is identified by a register name and a module name. In the mapping file the first column

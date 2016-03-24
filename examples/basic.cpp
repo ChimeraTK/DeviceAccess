@@ -22,10 +22,11 @@ int main(){
   
   /* Registers are defined by a path, which consists of a hierarchy of
    *  names separated by '/'. In this is example it is Module/Register.
+   *  In this basic example we use a register which contains a single word
+   *  (a scalar).
    */
-  // \todo FIXME: Use ScalarRegisterAccessor here.
-  mtca4u::BufferingRegisterAccessor<float> accessor
-    = myDevice.getBufferingRegisterAccessor<float>("BOARD/WORD_USER");
+    mtca4u::ScalarRegisterAccessor<float> accessor
+    = myDevice.getScalarRegisterAccessor<float>("BOARD/WORD_USER");
 
   /* To get the value from the device call read.
    */

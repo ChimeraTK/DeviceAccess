@@ -7,12 +7,12 @@ BOARD.WORD_STATUS             0x00000001    0x00000008    0x00000004    0x000000
 BOARD.WORD_USER               0x00000001    0x0000000C    0x00000004    0x00000000       12         3         1
 
 # A register can have more than one data word, four clocks for instance
-BOARD.WORD_CLOCKS             0x00000004    0x00000010    0x00000010    0x00000000       18         0         0
+BOARD.CLOCKS                  0x00000004    0x00000010    0x00000010    0x00000000       18         0         0
 # Entries in the map file can overlap. In this case the individual clocks out of the CLOCKS register
-BOARD.WORD_CLOCK0             0x00000004    0x00000010    0x00000010    0x00000000       18         0         0
-BOARD.WORD_CLOCK1             0x00000004    0x00000014    0x00000010    0x00000000       18         0         0
-BOARD.WORD_CLOCK2             0x00000004    0x00000018    0x00000010    0x00000000       18         0         0
-BOARD.WORD_CLOCK3             0x00000004    0x0000001C    0x00000010    0x00000000       18         0         0
+BOARD.CLOCK0                  0x00000004    0x00000010    0x00000010    0x00000000       18         0         0
+BOARD.CLOCK1                  0x00000004    0x00000014    0x00000010    0x00000000       18         0         0
+BOARD.CLOCK2                  0x00000004    0x00000018    0x00000010    0x00000000       18         0         0
+BOARD.CLOCK3                  0x00000004    0x0000001C    0x00000010    0x00000000       18         0         0
 
 # The data area, of an ADC which multiplexes data of all channels
 ADC.AREA_DATA_RAW             0x00000010   0x00000000    0x00000040     0x00000002

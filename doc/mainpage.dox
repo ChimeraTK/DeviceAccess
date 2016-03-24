@@ -13,11 +13,15 @@ There are some tutorial examples available in the example directory. All example
 are complete and fully functional.
 
 \li \ref basic_example
-\li Multi word registers
+\li \ref accessor1d
+\li \ref accessor2d
 \li Logical name mapping
-\li 2D register accessors
+\li Transfer groups
 \li Firmware debugging without map/dmap file
+\li Automatic data conversion and raw data access
 \li Implementing your own backend
+\li \ref dmap
+\li \ref mapping 
 
 \page basic_example Basic Example
 
@@ -30,7 +34,7 @@ For the beinning all you need is the alias which identifies the device. In the
 
 \include basic.cpp
 
-\ref mapping
+Next topic: \ref accessor1d
 */
 
 /**

@@ -1,11 +1,14 @@
 include_directories("${PROJECT_BINARY_DIR}/include")
-SET(TARGETS basic accessor2D accessor2D_multiplexed)
-foreach( TARGET ${TARGETS} )
-link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-add_executable(${TARGET} ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET}.cpp)
-target_link_libraries( ${TARGET} ${libexample} ${PROJECT_NAME}) 
-add_test(${TARGET} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET})
-endforeach( TARGET )
+
+FILE(GLOB SOURCE_FILES *.cpp)
+
+foreach( SOURCE_FILE ${SOURCE_FILES} )
+	get_filename_component(TARGET ${SOURCE_FILE} NAME_WE)
+    link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+    add_executable(${TARGET} ${SOURCE_FILE})
+    target_link_libraries( ${TARGET} ${libexample} ${PROJECT_NAME}) 
+    add_test(${TARGET} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET})
+endforeach( SOURCE_FILE )
 
 # mapping and test script for the examples
 # They go into a the examples test directory
