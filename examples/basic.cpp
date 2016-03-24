@@ -16,13 +16,14 @@ int main(){
   mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
 
   /* Create a device. Make sure a device alias is present
-   * in the dmap file. */
+   * in the dmap file.
+   */
   mtca4u::Device myDevice;
   myDevice.open("MY_DEVICE");
   
   /* Registers are defined by a path, which consists of a hierarchy of
    *  names separated by '/'. In this is example it is Module/Register.
-   *  In this basic example we use a register which contains a single word
+   *  In this basic example we use a register which contains a single value
    *  (a scalar).
    */
     mtca4u::ScalarRegisterAccessor<float> accessor

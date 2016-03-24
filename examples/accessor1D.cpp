@@ -8,7 +8,7 @@ int main() {
   myDevice.open("MY_DEVICE");
 
   /* The device contains a register called CLOCKS in the BOARD section.
-   * It contains 4 words for 4 different clocks.
+   * It contains 4 values for 4 different clocks.
    */
   mtca4u::OneDRegisterAccessor<double> clocks =
     myDevice.getOneDRegisterAccessor<double>("BOARD/CLOCKS");
