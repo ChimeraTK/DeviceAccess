@@ -8,6 +8,19 @@
 #ifndef MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H
 #define MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H
 
+/* We need special compiler flags for boost fusion.
+ * Make sure they are set before the functions are included.
+ *
+ * Note: We cannot just set them here because the boost fusion headers might have been included before, without the flags,
+ * so the follwing includes have no effect and the files are already included with the wrong parameters.
+ */
+#if FUSION_MAX_MAP_SIZE!=30  || FUSION_MAX_VECTOR_SIZE!=30
+ #error The sizes for boost::fusion are not set correctly as compiler flags.
+ #error Include the compiler flags provided by mtca4u-deviceaccess:
+ #error * In cmake: set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${mtca4u-deviceaccess_CXX_FLAGS}")
+ #error * in standard Makefiles: CPPFLAGS += $(shell mtca4u-deviceaccess-config --cppflags)
+#endif
+
 #include <boost/fusion/include/at_key.hpp>
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/function.hpp>
@@ -16,7 +29,6 @@
 #include <tuple>
 
 #include "SupportedUserTypes.h"
-
 
 /** Define a virtual function template with the given function name and signature in the base class. The signature
  *  must contain the typename template argument called "T". So if you e.g. would want to define a function like this:
