@@ -25,6 +25,7 @@ template class accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_
 class LMapBackendTest {
   public:
     void testExceptions();
+    void testCatalogue();
     void testReadWriteConstant();
     void testReadWriteVariable();
     void testReadWriteRegister();
@@ -44,6 +45,7 @@ class LMapBackendTestSuite : public test_suite {
       boost::shared_ptr<LMapBackendTest> lMapBackendTest(new LMapBackendTest);
 
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testExceptions, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testCatalogue, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteConstant, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteVariable, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRegister, lMapBackendTest) );
@@ -115,6 +117,62 @@ void LMapBackendTest::testExceptions() {
   }
 
 }
+
+/********************************************************************************************************************/
+
+  void LMapBackendTest::testCatalogue() {
+
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    mtca4u::Device device;
+
+    device.open("LMAP0");
+
+    const RegisterCatalogue &catalogue = device.getRegisterCatalogue();
+
+    boost::shared_ptr<RegisterInfo> info = catalogue.getRegister("SingleWord");
+    BOOST_CHECK( info->getRegisterName() == "/SingleWord" );
+    BOOST_CHECK( info->getNumberOfElements() == 1 );
+    BOOST_CHECK( info->getNumberOfChannels() == 1 );
+    BOOST_CHECK( info->getNumberOfDimensions() == 0 );
+
+    info = catalogue.getRegister("FullArea");
+    BOOST_CHECK( info->getRegisterName() == "/FullArea" );
+    BOOST_CHECK( info->getNumberOfElements() == 0x400 );
+    BOOST_CHECK( info->getNumberOfChannels() == 1 );
+    BOOST_CHECK( info->getNumberOfDimensions() == 1 );
+
+    info = catalogue.getRegister("PartOfArea");
+    BOOST_CHECK( info->getRegisterName() == "/PartOfArea" );
+    BOOST_CHECK( info->getNumberOfElements() == 20 );
+    BOOST_CHECK( info->getNumberOfChannels() == 1 );
+    BOOST_CHECK( info->getNumberOfDimensions() == 1 );
+
+    mtca4u::Device target1;
+    target1.open("PCIE3");
+    mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
+    unsigned int nSamples = accTarget[3].size();
+
+    info = catalogue.getRegister("Channel3");
+    BOOST_CHECK( info->getRegisterName() == "/Channel3" );
+    BOOST_CHECK( info->getNumberOfElements() == nSamples );
+    BOOST_CHECK( info->getNumberOfChannels() == 1 );
+    BOOST_CHECK( info->getNumberOfDimensions() == 1 );
+
+    info = catalogue.getRegister("Constant2");
+    BOOST_CHECK( info->getRegisterName() == "/Constant2" );
+    BOOST_CHECK( info->getNumberOfElements() == 1 );
+    BOOST_CHECK( info->getNumberOfChannels() == 1 );
+    BOOST_CHECK( info->getNumberOfDimensions() == 0 );
+
+    info = catalogue.getRegister("/MyModule/SomeSubmodule/Variable");
+    BOOST_CHECK( info->getRegisterName() == "/MyModule/SomeSubmodule/Variable" );
+    BOOST_CHECK( info->getNumberOfElements() == 1 );
+    BOOST_CHECK( info->getNumberOfChannels() == 1 );
+    BOOST_CHECK( info->getNumberOfDimensions() == 0 );
+
+    device.close();
+
+  }
 
 /********************************************************************************************************************/
 
