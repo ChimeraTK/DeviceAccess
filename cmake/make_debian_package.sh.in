@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#Check that the @PROJECT_NAME@_BUILDVERSION variable is set, otherwise reject creating a package
+if [ -z "$@PROJECT_NAME@_BUILDVERSION" ]; then
+    echo Environment variable '@PROJECT_NAME@_BUILDVERSION' not set or empty. You need it to make a debian package!
+    exit 1
+fi
+
+#Create a working directory in order not to merge with the rest in the build directory
+mkdir debian_package
+cd debian_package
+
+#Check out the correct tag from the svn repository.
+#The local directory name has to follow the debian convention
+# lowecasepackagenname_package.ver.sion
+#As we have to make a tar-file, and tags don't change anyway, we use export
+#instead of checkout.
+svn export https://svnsrv.desy.de/public/mtca4u/InstaCoSADev/tags/@mtca4uInstaCoSADev_VERSION@ libmtca4u-instacosadev_@mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@
+#Debian convention: file has to end on .orig.tar.gz
+tar -czf libmtca4u-instacosadev_@mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@.orig.tar.gz  libmtca4u-instacosadev_@mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@
+
+#Copy the prepared debian packaging config files to the source code 
+#directroy
+cp -r ../debian_from_template  libmtca4u-instacosadev_@mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@/debian
+cd libmtca4u-instacosadev_@mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@
+
+#The package versions for doocs / Ubuntu contain the codename of the distribution. Get it from the system.
+CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
+
+#Before building the package we will update the changelog. This is easier from a shell script
+#because debchange does the right format and the current date, user name and email automatically for us.
+#Use the NAME and EMAIL environment variables to get correct values if needed (usually the email is
+# user@host instead of first.last@institute, for instance killenb@mskpcx18571.desy.de instead of martin.killenberg@desy.de).
+debchange --create --package libmtca4u-instacosadev -v @mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@ --distribution ${CODENAME} Debian package for MTCA4U InstaCoSADev @mtca4uInstaCoSADev_FULL_LIBRARY_VERSION@
+
+#Now everything is prepared and we can actually build the package.
+#If you have a gpg signature you can remove the -us and -uc flags and sign the package.
+dpkg-buildpackage -rfakeroot -us -uc

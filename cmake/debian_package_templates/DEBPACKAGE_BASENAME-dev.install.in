@@ -1,0 +1,7 @@
+usr/include/*
+usr/lib/lib*.so
+#the ./ in front of the CMAKE_ROOT is needed because CMAKE_ROOT is absolute,
+#but the path here has to be relative
+usr/share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules ./${CMAKE_ROOT}
+#debian requires the doc directory to follow the debian package naming convention
+usr/share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}/* usr/share/doc/${${PROJECT_NAME}_DEBPACKAGE_BASENAME}${${PROJECT_NAME}_DEBVERSION}

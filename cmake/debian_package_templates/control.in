@@ -1,0 +1,22 @@
+Source: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@
+Priority: extra
+Maintainer: Martin Killenberg <martin.killenberg@desy.de>
+Build-Depends: debhelper (>= 7), cmake (>= 2.8), libboost-dev (>= 1.46), libboost-test-dev (>= 1.46), , libboost-system-dev (>= 1.46), libmtca4u-deviceaccess-dev (>= @mtca4u-deviceaccess_MIN_VERSION@)
+Standards-Version: 3.8.3
+Section: libs
+#Homepage: <insert the upstream URL, if relevant>
+
+Package: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@-dev
+Section: libdevel
+Architecture: any
+Depends: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@@mtca4uVirtualLab_DEBVERSION@,  libmtca4u-deviceaccess-dev (>= @mtca4u-deviceaccess_SOVERSION@),  libmtca4u-deviceaccess-dev (<= @mtca4u-deviceaccess_SOVERSION@.99-zz), libboost@Boost_MAJOR_VERSION@.@Boost_MINOR_VERSION@-dev
+Description: Header and cmake files for MTCA4U VirtualLab.
+ The files you need to compile against the virtual lab.
+
+Package: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@@mtca4uVirtualLab_DEBVERSION@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+# The 'Provides' field provides a virtual package to be installed by libmtca4u-dev. The debversion also contains the build number, which is irrelevant for dependencies
+Provides: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@@mtca4uVirtualLab_MAJOR_VERSION@-@mtca4uVirtualLab_MINOR_VERSION@
+Description: The MTCA4U VirtualLab provides C++ classes to facilitate the simulation of control applications, based on the MTCA4U deviceaccess library.
