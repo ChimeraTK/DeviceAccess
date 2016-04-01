@@ -51,19 +51,17 @@ namespace mtca4u {
       mtca4u::RegisterPath regName = reg.getRegisterName();
       if(!regName.startsWith(std::string(module)+"/")) continue;  // wrong module
       std::string baseName = std::string(regName).substr(module.length());
-      std::string pvName = mtca4u::RegisterPath(pvBaseName) / baseName;
+      std::string pvName = std::string(mtca4u::RegisterPath(pvBaseName) / baseName).substr(1);
       if(reg.getNumberOfDimensions() == 0) {
         ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>(reg.getRegisterName());
         boost::shared_ptr< ProcessScalar<int> > pv = impl->processVariableManager->createProcessScalar<int>(mtca4u::deviceToControlSystem, pvName);
         impl->scalarIntMap[baseName] = std::make_pair(accessor,pv);
       }
       else if(reg.getNumberOfDimensions() == 1) {
-        std::cout << "HIER 1" << std::endl;
-        //throw std::string("not yet implemented.");
+        throw std::string("not yet implemented.");
       }
       else {
-        std::cout << "HIER >1" << std::endl;
-        //throw std::string("2D register found in module "+module+" but not supported by InstaCoSADev."); // TODO @todo replace by proper exception
+        throw std::string("2D register found in module "+module+" but not supported by InstaCoSADev."); // TODO @todo replace by proper exception
       }
     }
   }
