@@ -35,11 +35,11 @@ namespace mtca4u {
       }
 
       virtual unsigned int getNumberOfDimensions() const {
-        return 1;
+        return nDimensions;
       }
 
       virtual unsigned int getNumberOfChannels() const {
-        return 1;
+        return nChannels;
       }
 
       /** Name of the registrer */
@@ -62,6 +62,12 @@ namespace mtca4u {
 
       /** The channel of the target 2D register */
       DynamicValue<unsigned int> channel;
+
+      /** The number of dimensions of the logical register */
+      DynamicValue<unsigned int> nDimensions;
+
+      /** The number of channels of the logical register */
+      DynamicValue<unsigned int> nChannels;
 
       /** The constant integer value */
       DynamicValue<int> value;

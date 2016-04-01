@@ -34,6 +34,21 @@ namespace mtca4u {
     for(auto devName = devNames.begin(); devName != devNames.end(); ++devName) {
       _devices[*devName] = BackendFactory::getInstance().createBackend(*devName);
     }
+
+    // fill in information to the catalogue from the target devices
+    for(auto &info : _catalogue) {
+      LNMBackendRegisterInfo &info_cast = static_cast<LNMBackendRegisterInfo&>(info);
+      if(info_cast.targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
+        auto target_info = _devices[info_cast.deviceName]->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+        info_cast.nDimensions = target_info->getNumberOfDimensions();
+        info_cast.nChannels = target_info->getNumberOfChannels();
+        if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
+      }
+      else if(info_cast.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
+        auto target_info = _devices[info_cast.deviceName]->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+        if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
+      }
+    }
   }
 
   /********************************************************************************************************************/

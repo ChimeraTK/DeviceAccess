@@ -163,12 +163,18 @@ namespace mtca4u {
         info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
         info->firstIndex = getValueFromXmlSubnode<unsigned int>(element, "targetStartIndex",true,0);
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements",true,0);
+        info->nDimensions = 0;
+        info->nChannels = 0;
       }
       else if(type == "redirectedChannel") {
         info->targetType = LNMBackendRegisterInfo::TargetType::CHANNEL;
         info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
         info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
         info->channel = getValueFromXmlSubnode<unsigned int>(element, "targetChannel");
+        info->firstIndex = 0;
+        info->length = 0;
+        info->nDimensions = 1;
+        info->nChannels = 1;
       }
       else if(type == "constant") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
@@ -177,6 +183,10 @@ namespace mtca4u {
         }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
         info->value = getValueFromXmlSubnode<int>(element, "value");
+        info->firstIndex = 0;
+        info->length = 1;
+        info->nDimensions = 0;
+        info->nChannels = 1;
       }
       else if(type == "variable") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
@@ -185,6 +195,10 @@ namespace mtca4u {
         }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_VARIABLE;
         info->value = getValueFromXmlSubnode<int>(element, "value");
+        info->firstIndex = 0;
+        info->length = 1;
+        info->nDimensions = 0;
+        info->nChannels = 1;
       }
       else {
         parsingError("Wrong logical register type: "+type);
