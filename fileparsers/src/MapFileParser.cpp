@@ -125,13 +125,18 @@ namespace mtca4u {
       RegisterInfoMap::RegisterInfo newEntry = info;
       // name of the 2D register is the name without the sequence prefix
       newEntry.name = info.name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
-      // count number of channels
+      // count number of channels and number of entries per channel
       size_t nChannels = 0;
+      size_t nBytesPerEntry = 0;        // nb. of bytes per entry for all channels together
       auto cat = pmap->getRegisterCatalogue();
-      while(cat.hasRegister( RegisterPath(info.module)/(SEQUENCE_PREFIX+newEntry.name+std::to_string(nChannels)) )) {
+      while(cat.hasRegister( RegisterPath(info.module)/(SEQUENCE_PREFIX+newEntry.name+"_"+std::to_string(nChannels)) )) {
+        RegisterInfoMap::RegisterInfo subInfo;
+        pmap->getRegisterInfo(RegisterPath(info.module)/(SEQUENCE_PREFIX+newEntry.name+"_"+std::to_string(nChannels)), subInfo);
+        nBytesPerEntry += subInfo.nBytes;
         nChannels++;
       }
       newEntry.nChannels = nChannels;
+      if(nChannels > 0) newEntry.nElements = newEntry.nBytes / nBytesPerEntry;
       // mark it as 2D multiplexed
       newEntry.is2DMultiplexed = true;
       // add it to the map
