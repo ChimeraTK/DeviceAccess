@@ -137,6 +137,8 @@ namespace mtca4u {
         return components;
       }
 
+      friend std::ostream& operator<<(std::ostream &os, const RegisterPath& me);
+
     protected:
 
       /** path in standardised notation */
@@ -173,6 +175,9 @@ namespace mtca4u {
   /** operators used to build numeric addresses from integers */
   RegisterPath operator/(const RegisterPath &leftHandSide, int rightHandSide);
   RegisterPath operator*(const RegisterPath &leftHandSide, int rightHandSide);
+
+  /** streaming operator */
+  std::ostream& operator<<(std::ostream &os, const RegisterPath& me);
 
 } /* namespace mtca4u */
 

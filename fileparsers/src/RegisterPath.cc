@@ -42,4 +42,10 @@ namespace mtca4u {
     return std::string(leftHandSide) + std::string("*") + std::to_string(rightHandSide);
   }
 
+  /********************************************************************************************************************/
+
+  std::ostream& operator<<(std::ostream &os, const RegisterPath& me) {
+    return os << std::string(me);
+  }
+
 } /* namespace mtca4u */
