@@ -1,0 +1,16 @@
+<logicalNameMap>
+    <module name="MyModule">
+      <constant name="Constant">
+        <type>integer</type>
+        <value>42</value>
+      </constant>
+      <constant name="Constant2">
+        <type>integer</type>
+        <value>666</value>
+      </constant>
+      <variable name="Variable">
+        <type>integer</type>
+        <value>2</value>
+      </variable>
+    </module>
+</logicalNameMap>
