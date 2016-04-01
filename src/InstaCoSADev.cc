@@ -69,6 +69,18 @@ namespace mtca4u {
   /*******************************************************************************************************************/
 
   void InstaCoSADev::transferData(mtca4u::SynchronizationDirection direction) {
+    for(auto &entry : impl->scalarIntMap) {
+      auto &accessor = entry.second.first;
+      auto &pv = entry.second.second;
+      if(direction == mtca4u::deviceToControlSystem && pv->isSender()) {        // on the device side, a sender variable is device -> control system
+        accessor.read();
+        *pv = int(accessor);
+      }
+      else if(direction == mtca4u::controlSystemToDevice && pv->isReceiver()) {
+        accessor = int(*pv);
+        accessor.write();
+      }
+    }
   }
 
 } /* namespace mtca4u */
