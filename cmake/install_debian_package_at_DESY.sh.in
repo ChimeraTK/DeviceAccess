@@ -15,6 +15,13 @@ DEBIAN_CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 
 cd debian_package
 
+# Check that there are debian packages and return an error if not
+ls *.deb > /dev/null
+if [ $? -ne 0 ]; then
+    echo No debian packages found. Run \'make debian_package\' first.
+    exit 1
+fi
+
 # Step 1: Remove an older version of the package
 # -- from the nfs archive
 (cd /home/debian/${DEBIAN_CODENAME}/stable; mv @PACKAGE_FILES_WILDCARDS@ ../old)
@@ -34,7 +41,7 @@ sg flash -c "umask 002; cp @PACKAGE_FILES_WILDCARDS@ /home/debian/${DEBIAN_CODEN
 
 # Step 3: Install to the repository
 for REPO in intern pub; do
-    for FILE in *.deb; do
+    for FILE in @PACKAGE_NAME@_*.deb @PACKAGE_DEV_NAME@_*.deb  @PACKAGE_DOC_NAME@_*.deb; do
 	ssh doocspkgs sudo -H reprepro --waitforlock 2 -Vb \
 	    /export/reprepro/${REPO}/doocs includedeb ${DEBIAN_CODENAME} \
 	    /home/debian/${DEBIAN_CODENAME}/stable/${FILE}
