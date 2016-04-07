@@ -52,6 +52,9 @@ namespace mtca4u {
           const RegisterInfoPlugin* operator->() const {
             return iterator->get();
           }
+          const boost::shared_ptr<RegisterInfoPlugin>& getPointer() const {
+            return *(iterator);
+          }
           bool operator==(const plugin_iterator &rightHandSide) {
             return rightHandSide.iterator == iterator;
           }

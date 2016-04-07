@@ -30,7 +30,7 @@ namespace mtca4u {
   class MultiplexedDataAccessor;
 
   template<typename T>
-  class ExternalBufferAllocator;
+  class DynamicValue;
 
 }
 

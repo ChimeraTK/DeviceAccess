@@ -5,6 +5,7 @@
 
 #include "DeviceBackend.h"
 #include "DeviceException.h"
+#include "DataModifierPlugin.h"
 
 namespace mtca4u {
 
@@ -61,7 +62,9 @@ namespace mtca4u {
         if(!_catalogue.hasRegister(registerPathName)) return accessor;
         auto info = _catalogue.getRegister(registerPathName);
         for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
-          accessor = i->decorateRegisterAccessor<UserType>(accessor);
+          boost::shared_ptr<DataModifierPlugin> plugin = boost::dynamic_pointer_cast<DataModifierPlugin>(i.getPointer());
+          if(!plugin) continue;
+          accessor = plugin->decorateRegisterAccessor<UserType>(accessor);
         }
         return accessor;
       }

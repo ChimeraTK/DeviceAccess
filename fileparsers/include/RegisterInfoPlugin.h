@@ -5,47 +5,33 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_REGISTER_PLUGIN_H
-#define MTCA4U_REGISTER_PLUGIN_H
+#ifndef MTCA4U_REGISTER_INFO_PLUGIN_H
+#define MTCA4U_REGISTER_INFO_PLUGIN_H
+
+#include <boost/smart_ptr/shared_ptr.hpp>
 
 #include "ForwardDeclarations.h"
-#include "VirtualFunctionTemplate.h"
-#include "SupportedUserTypes.h"
 
 namespace mtca4u {
 
-  /** Base class for plugins providing modifications to registers and accessors. */
+  /** Base class for plugins providing additional information in a RegisterInfo, e.g. coming from the map file. This
+   *  base class is essentially empty, the derived plugin classes should contain public data members and implement the
+   *  createInstance() function which is passed to RegisterPluginFactory::registerPlugin(). The data members should be
+   *  filled by the createInstance() implementation. */
   class RegisterInfoPlugin {
   
     public:
 
-      RegisterInfoPlugin() {
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl);
-      }
-    
-      /** Virtual destructor for a virtual base class */
-      virtual ~RegisterInfoPlugin();
-      
-      /** Called by the backend when obtaining a buffering register accessor. This allows the plugin to decorate the
-       *  accessor to change the its behaviour. The default implementation just returns the passed accessor. */
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor(
-          boost::shared_ptr< NDRegisterAccessor<UserType> > accessor ) const {
-        return CALL_VIRTUAL_FUNCTION_TEMPLATE(decorateRegisterAccessor_impl, UserType, accessor);
-      }
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl,
-          boost::shared_ptr< NDRegisterAccessor<T> >(boost::shared_ptr< NDRegisterAccessor<T> >) );
+      /** Virtual destructor needed to make the class polymorphic */
+      virtual ~RegisterInfoPlugin() {}
 
-    protected:
-
-      /** Default implementation of getBufferingRegisterAccessor(): just return the unmodified accessor */
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor_impl(
-          boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const;
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterInfoPlugin, decorateRegisterAccessor_impl, 1);
+      /** Derived classes need to implement this function to fill the data members from the parameter map. The pointer
+       *  to this function needs to be passed to RegisterPluginFactory::registerPlugin(). */
+      static boost::shared_ptr<RegisterInfoPlugin> createInstance(
+          const std::map<std::string, DynamicValue<std::string> > &parameters);
   
   };
 
 } /* namespace mtca4u */
 
-#endif /* MTCA4U_REGISTER_PLUGIN_H */
+#endif /* MTCA4U_REGISTER_INFO_PLUGIN_H */
