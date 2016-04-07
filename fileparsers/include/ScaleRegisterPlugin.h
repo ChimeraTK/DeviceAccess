@@ -8,17 +8,17 @@
 #ifndef MTCA4U_SCALE_REGISTER_PLUGIN_H
 #define MTCA4U_SCALE_REGISTER_PLUGIN_H
 
-#include "RegisterPlugin.h"
+#include "RegisterInfoPlugin.h"
 #include "NDRegisterAccessor.h"
 
 namespace mtca4u {
 
   /** RegisterPlugin to scale the register content with a given factor. */
-  class ScaleRegisterPlugin : public RegisterPlugin {
+  class ScaleRegisterPlugin : public RegisterInfoPlugin {
   
     public:
 
-      static boost::shared_ptr<RegisterPlugin> createInstance(const std::map<std::string, DynamicValue<std::string> > &parameters);
+      static boost::shared_ptr<RegisterInfoPlugin> createInstance(const std::map<std::string, DynamicValue<std::string> > &parameters);
 
     protected:
 

@@ -119,9 +119,9 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterPlugin> ScaleRegisterPlugin::createInstance(
+  boost::shared_ptr<RegisterInfoPlugin> ScaleRegisterPlugin::createInstance(
       const std::map<std::string, DynamicValue<std::string> > &parameters) {
-    return boost::shared_ptr<RegisterPlugin>(new ScaleRegisterPlugin(parameters));
+    return boost::shared_ptr<RegisterInfoPlugin>(new ScaleRegisterPlugin(parameters));
   }
 
   /********************************************************************************************************************/

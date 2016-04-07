@@ -8,8 +8,8 @@
 #ifndef MTCA4U_REGISTER_INFO_H
 #define MTCA4U_REGISTER_INFO_H
 
+#include "RegisterInfoPlugin.h"
 #include "RegisterPath.h"
-#include "RegisterPlugin.h"
 #include "ForwardDeclarations.h"
 
 namespace mtca4u {
@@ -46,10 +46,10 @@ namespace mtca4u {
             ++iterator;
             return temp;
           }
-          const RegisterPlugin& operator*() const {
+          const RegisterInfoPlugin& operator*() const {
             return *(iterator->get());
           }
-          const RegisterPlugin* operator->() const {
+          const RegisterInfoPlugin* operator->() const {
             return iterator->get();
           }
           bool operator==(const plugin_iterator &rightHandSide) {
@@ -59,7 +59,7 @@ namespace mtca4u {
             return rightHandSide.iterator != iterator;
           }
         protected:
-          std::vector< boost::shared_ptr<RegisterPlugin> >::const_iterator iterator;
+          std::vector< boost::shared_ptr<RegisterInfoPlugin> >::const_iterator iterator;
           friend class RegisterInfo;
       };
       
@@ -78,7 +78,7 @@ namespace mtca4u {
     protected:
 
       /** list of plugins */
-      std::vector< boost::shared_ptr<RegisterPlugin> > pluginList;
+      std::vector< boost::shared_ptr<RegisterInfoPlugin> > pluginList;
 
   };
 

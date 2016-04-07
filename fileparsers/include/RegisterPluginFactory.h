@@ -10,8 +10,8 @@
 
 #include <map>
 
+#include "RegisterInfoPlugin.h"
 #include "DynamicValue.h"
-#include "RegisterPlugin.h"
 
 namespace mtca4u {
 
@@ -24,12 +24,12 @@ namespace mtca4u {
       static RegisterPluginFactory& getInstance();
 
       /** Function to create a plugin instance */
-      boost::shared_ptr<RegisterPlugin> createPlugin(const std::string &name,
+      boost::shared_ptr<RegisterInfoPlugin> createPlugin(const std::string &name,
           const std::map<std::string, DynamicValue<std::string> > &parameters);
 
       /** Function to register a plugin */
       void registerPlugin(std::string name,
-          boost::shared_ptr<RegisterPlugin> (*creatorFunction)(const std::map<std::string, DynamicValue<std::string> > &parameters));
+          boost::shared_ptr<RegisterInfoPlugin> (*creatorFunction)(const std::map<std::string, DynamicValue<std::string> > &parameters));
 
     private:
 
@@ -43,7 +43,7 @@ namespace mtca4u {
       
       /** Map holding pointers to the creator functions for each plugin */
       std::map<std::string,
-          boost::shared_ptr<RegisterPlugin> (*)(const std::map<std::string, DynamicValue<std::string> > &parameters)> creatorMap;
+          boost::shared_ptr<RegisterInfoPlugin> (*)(const std::map<std::string, DynamicValue<std::string> > &parameters)> creatorMap;
   
   };
 

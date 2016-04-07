@@ -245,7 +245,7 @@ namespace mtca4u {
         }
         
         // create instance of plugin and add to the list in the register info
-        boost::shared_ptr<RegisterPlugin> plugin = RegisterPluginFactory::getInstance().createPlugin(pluginName, parameters);
+        boost::shared_ptr<RegisterInfoPlugin> plugin = RegisterPluginFactory::getInstance().createPlugin(pluginName, parameters);
         info->pluginList.push_back(plugin);
 
       }

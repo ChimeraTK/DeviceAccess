@@ -15,16 +15,16 @@
 namespace mtca4u {
 
   /** Base class for plugins providing modifications to registers and accessors. */
-  class RegisterPlugin {
+  class RegisterInfoPlugin {
   
     public:
 
-      RegisterPlugin() {
+      RegisterInfoPlugin() {
         FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl);
       }
     
       /** Virtual destructor for a virtual base class */
-      virtual ~RegisterPlugin();
+      virtual ~RegisterInfoPlugin();
       
       /** Called by the backend when obtaining a buffering register accessor. This allows the plugin to decorate the
        *  accessor to change the its behaviour. The default implementation just returns the passed accessor. */
@@ -42,7 +42,7 @@ namespace mtca4u {
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor_impl(
           boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const;
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterPlugin, decorateRegisterAccessor_impl, 1);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(RegisterInfoPlugin, decorateRegisterAccessor_impl, 1);
   
   };
 
