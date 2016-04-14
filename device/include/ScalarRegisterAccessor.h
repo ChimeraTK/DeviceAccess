@@ -26,19 +26,13 @@ namespace mtca4u {
   class ScalarRegisterAccessor : public NDRegisterAccessorBridge<UserType> {
     public:
 
-      /** Constructer. @attention Do not normally use directly.
+      /** Constructor. @attention Do not normally use directly.
        *  Users should call Device::getScalarRegisterAccessor() to obtain an instance instead. */
       ScalarRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : NDRegisterAccessorBridge<UserType>(impl)
-      {
-        if(NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels() != 1
-            || NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples() != 1) {
-          throw DeviceException("The ScalarRegisterAccessor has a too low dimension to access this register.",
-              DeviceException::WRONG_ACCESSOR);
-        }
-      }
+      {}
 
-      /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
+      /** Placeholder constructor, to allow late initialisation of the accessor, e.g. in the open function.
        *  @attention Accessors created with this constructors will be dysfunctional, calling any member function
        *  will throw an exception (by the boost::shared_ptr)! */
       ScalarRegisterAccessor() {}

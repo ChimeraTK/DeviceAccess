@@ -29,6 +29,9 @@ class ScalarRegisterTest {
     /// test the register accessor with float type and fixed point conversion
     void testFloatRegisterAccessor();
 
+    /// test the scalar accessor as one value in a larger register
+    void testWordOffset();
+
 };
 
 /**********************************************************************************************************************/
@@ -41,6 +44,7 @@ class  ScalarRegisterTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testCreation, scalarRegisterTest ) );
       add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testIntRegisterAccessor, scalarRegisterTest ) );
       add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testFloatRegisterAccessor, scalarRegisterTest ) );
+      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testWordOffset, scalarRegisterTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -70,26 +74,6 @@ void ScalarRegisterTest::testCreation() {
   // obtain register accessor with integral type
   ScalarRegisterAccessor<int> intRegister = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
   BOOST_CHECK( intRegister.isInitialised() == true );
-
-  // check if using the scalar accessor for a non-scalar register fails
-  try {
-    device.getScalarRegisterAccessor<int>("APP0/MODULE0");
-    BOOST_ERROR("Expected exception was not thrown.");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK( e.getID() == DeviceException::WRONG_ACCESSOR );
-  }
-
-  // check with 2D register
-  device.close();
-  device.open("SEQUENCES");
-  try {
-    device.getScalarRegisterAccessor<int>("TEST/DMA");
-    BOOST_ERROR("Expected exception was not thrown.");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK( e.getID() == DeviceException::WRONG_ACCESSOR );
-  }
 
   device.close();
 
@@ -223,4 +207,29 @@ void ScalarRegisterTest::testFloatRegisterAccessor() {
 
   device.close();
 
+}
+/// test the scalar accessor as one value in a larger register
+void ScalarRegisterTest::testWordOffset(){
+  std::cout << "testWordOffset" << std::endl;
+
+  Device device;
+  device.open("DUMMYD2");
+  boost::shared_ptr< DummyBackend > backend = boost::dynamic_pointer_cast<DummyBackend>( BackendFactory::getInstance().createBackend("DUMMYD2") );
+  BOOST_CHECK( backend != NULL );
+
+  // The second entry in module 1 is WORD_USER2
+  DummyRegisterAccessor<float> dummy(backend.get(),"MODULE1","WORD_USER2");
+  dummy=3.5;
+
+  // obtain register accessor with integral type. We use and offset of 1 (second word in module1), and raw  mode to check that argument passing works
+  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, true);
+  accessor.read();
+  BOOST_CHECK(accessor==static_cast<int>(3.5 * (1<<5)) ); // 5 fractional bits, float value 3.5
+
+  // Just to be safe that we don't accidentally have another register with content 112: modify it
+  ++accessor;
+  accessor.write();
+  BOOST_CHECK(dummy == 3.53125);
+
+  device.close();
 }

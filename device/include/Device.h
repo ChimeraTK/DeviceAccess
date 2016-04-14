@@ -407,7 +407,7 @@ namespace mtca4u {
       size_t wordOffsetInRegister, bool enforceRawAccess) const {
     checkPointersAreNotNull();
     return ScalarRegisterAccessor<UserType>(
-        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, 0, wordOffsetInRegister,
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, 1, wordOffsetInRegister,
             enforceRawAccess) );
   }
 
