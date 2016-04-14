@@ -14,6 +14,21 @@
 #include "DeviceInfoMap.h"
 
 namespace mtca4u {
+
+///
+/// @brief Returns the dmap file name which the library currently uses for
+/// looking up device(alias) names.
+///
+std::string getDMapFilePath();
+
+///
+/// @brief Set the location of the dmap file. The library will parse this dmap
+/// file for the device(alias) lookup.
+/// @param dmapFileName Relative or absolute path to the dmap file containg the
+///                     device names and their descriptions.
+///
+void setDMapFilePath(std::string dmapFilePath);
+
   /**This structure holds the information of an SDM.
    *
    */

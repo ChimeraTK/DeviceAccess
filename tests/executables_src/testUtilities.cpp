@@ -124,11 +124,10 @@ void UtilitiesTest::testFindFirstOfAlias() {
 }
 
 void UtilitiesTest::testgetAliasList() {
-  std::string initialDmapFile = BackendFactory::getInstance().getDMapFilePath();
+  auto initialDmapFile = mtca4u::getDMapFilePath();
 
-  BackendFactory::getInstance().setDMapFilePath("");
-  auto returnedListOfAliases = Utilities::getAliasList();
-  BOOST_CHECK(returnedListOfAliases.size() == 0);
+  mtca4u::setDMapFilePath("");
+  BOOST_CHECK_THROW(Utilities::getAliasList(), DeviceException);
 
   // entries in dummies.dmap when this was written
   std::vector<std::string> expectedListOfAliases{
@@ -138,9 +137,9 @@ void UtilitiesTest::testgetAliasList() {
     "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES"
   };
 
-  BackendFactory::getInstance().setDMapFilePath("./dummies.dmap");
-  returnedListOfAliases = Utilities::getAliasList();
-  BackendFactory::getInstance().setDMapFilePath(initialDmapFile);
+  mtca4u::setDMapFilePath("./dummies.dmap");
+  auto returnedListOfAliases = Utilities::getAliasList();
+  mtca4u::setDMapFilePath(initialDmapFile);
 
   int index = 0;
   BOOST_CHECK(returnedListOfAliases.size() == expectedListOfAliases.size());

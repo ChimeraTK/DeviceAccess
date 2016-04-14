@@ -53,34 +53,19 @@ namespace mtca4u {
     return factoryInstance;
   }
 
-  boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasName) {
-    DeviceInfoMap::DeviceInfo deviceInfo;
-
-    // check if an alias was found, if not try the environment variable
-    char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
-    if ( dmapFileFromEnvironment != NULL ) {
-      std::cout << "creating backend from " << dmapFileFromEnvironment << " for alias " << aliasName << std::endl;
-      deviceInfo = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment);
+  boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(
+      std::string aliasName) {
+    if (_dMapFile.empty()) {
+      throw DeviceException("DMap file not set.",
+                            DeviceException::NO_DMAP_FILE);
     }
-
-    // try to get an alias of the DMap file set at run time by setDMapFilePath()
-    if (deviceInfo.uri.empty()){
-      //std::cout << "creating backend from " << _dMapFile << " for alias " << aliasName << std::endl;
-      deviceInfo = Utilities::aliasLookUp(aliasName, _dMapFile);
+    auto deviceInfo = Utilities::aliasLookUp(aliasName, _dMapFile);
+    if (deviceInfo.uri.empty()) { // did not find alias in this dmap file
+      std::stringstream errorMessage;
+      errorMessage << "Could not find '" << aliasName << "' in dmapFile: " << _dMapFile;
+      throw BackendFactoryException(errorMessage.str(),
+                                    BackendFactoryException::UNKNOWN_ALIAS);
     }
-
-    // finally try the system/compile time default
-    if (deviceInfo.uri.empty()){
-      //std::cout << "creating backend from " << DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME
-      //<< " for alias " << aliasName << std::endl;
-      deviceInfo = Utilities::aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY+  DMAP_FILE_DEFAULT_NAME);
-    }
-
-    // if there still is no alias we are out of options and have to give up.
-    if (deviceInfo.uri.empty()){
-      throw BackendFactoryException("Unknown device alias.", BackendFactoryException::UNKNOWN_ALIAS);
-    }
-
     return createBackendInternal(deviceInfo);
   }
 

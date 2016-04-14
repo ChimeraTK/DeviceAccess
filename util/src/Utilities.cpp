@@ -179,11 +179,16 @@ namespace mtca4u {
   }
 
   std::vector<std::string> Utilities::getAliasList() {
-    std::string dmapFilePath = BackendFactory::getInstance().getDMapFilePath();
+
+    std::string dmapFileName = getDMapFilePath();
+    if(dmapFileName.empty()){
+      throw DeviceException("Dmap file not set", DeviceException::NO_DMAP_FILE);
+    }
+
     DMapFileParser fileParser;
 
     try {
-      auto deviceInfoMap = fileParser.parse(dmapFilePath);
+      auto deviceInfoMap = fileParser.parse(dmapFileName);
 
       std::vector<std::string> listOfDeviceAliases;
       listOfDeviceAliases.reserve(deviceInfoMap->getSize());
@@ -199,6 +204,16 @@ namespace mtca4u {
       return std::vector<std::string>(); // empty list in case of failure
     }
   }
+
+  std::string getDMapFilePath() {
+    return (BackendFactory::getInstance().getDMapFilePath());
+  }
+
+  void setDMapFilePath(std::string dmapFilePath) {
+    BackendFactory::getInstance().setDMapFilePath(dmapFilePath);
+  }
+
+
 
   } /* namespace mtca4u */
 

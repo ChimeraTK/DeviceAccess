@@ -34,6 +34,9 @@ namespace mtca4u{
         /** The requested accessor is not suitable for the given register (e.g.\ accessor has too low dimension) */
         WRONG_ACCESSOR,
 
+        /** The dmap file path has not been set */
+        NO_DMAP_FILE,
+
         /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
         EMPTY_AREA = CANNOT_OPEN_MAP_FILE,
 
