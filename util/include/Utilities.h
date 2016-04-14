@@ -24,8 +24,8 @@ std::string getDMapFilePath();
 ///
 /// @brief Set the location of the dmap file. The library will parse this dmap
 /// file for the device(alias) lookup.
-/// @param dmapFileName Relative or absolute path to the dmap file containg the
-///                     device names and their descriptions.
+/// @param dmapFilePath Relative or absolute path of the dmap file (directory and file name).
+///                     
 ///
 void setDMapFilePath(std::string dmapFilePath);
 
