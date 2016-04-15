@@ -198,6 +198,8 @@ namespace mtca4u {
       /** Pointer to the device backend used for reading and writing the data */
       boost::shared_ptr<DeviceBackend> _dev;
 
+      boost::shared_ptr<NDRegisterAccessor<int> > _intAccessor;
+
   };
 
 } // namespace mtca4u
