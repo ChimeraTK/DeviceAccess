@@ -58,6 +58,7 @@ namespace mtca4u {
 	if (! acc){
 	  std::cout << "converting accessor for type " <<
 	    typeid(ConvertedDataType).name() << " not initalised yet" << std::endl;
+	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
 	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
 	}
@@ -98,13 +99,14 @@ namespace mtca4u {
 	if (! acc){
 	  std::cout << "converting accessor for type " <<
 	    typeid(ConvertedDataType).name() << " not initalised yet" << std::endl;
+	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
 	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
 	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
-	  throw DeviceException("RegisterAccessor::write Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	  throw DeviceException("RegisterAccessor::write Error: writing over the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // copy data from source buffer
         memcpy(acc->accessChannel(0).data() + wordOffsetInRegister, convertedData, nWords*sizeof(ConvertedDataType));
@@ -177,13 +179,24 @@ namespace mtca4u {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
               "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
-        // obtain accessor
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
-            addRegOffset/sizeof(int32_t), true);
+	size_t nWords = dataSize/sizeof(int32_t);
+	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
+	// check accessor and initialise it the first time it is used
+	if (! _rawAccessor){
+	  std::cout << "raw accessor not initalised yet" << std::endl;
+	  // The accessor is for reuse. Get the full register size.
+	  _rawAccessor = _dev->getRegisterAccessor<int32_t>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, true); // 0 offset, raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
+	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
+	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // perform read
-        acc->read();
+        _rawAccessor->read();
         // copy to target buffer
-        memcpy(data, acc->accessChannel(0).data(), dataSize);
+        memcpy(data, _rawAccessor->accessChannel(0).data()+wordOffsetInRegister, dataSize);
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -245,6 +258,8 @@ namespace mtca4u {
       */
       mutable TemplateUserTypeMap<NDAccessorPtr> _convertingAccessors;
             
+      /** There only is one possible raw accessor: int32_t */
+      mutable NDAccessorPtr<int32_t> _rawAccessor;
   };
 
 } // namespace mtca4u
