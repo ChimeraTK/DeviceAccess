@@ -102,8 +102,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       unsigned int getNumberOfElements() const {
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->accessChannel(0).size();
+	return _registerInfo->getNumberOfElements();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -198,6 +197,10 @@ namespace mtca4u {
       /** Pointer to the device backend used for reading and writing the data */
       boost::shared_ptr<DeviceBackend> _dev;
 
+      /** The RegisterInfo for this register */
+      boost::shared_ptr< RegisterInfo > _registerInfo;
+
+      /// only temporary while developing. will be a map with all types
       boost::shared_ptr<NDRegisterAccessor<int> > _intAccessor;
 
   };
