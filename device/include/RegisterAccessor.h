@@ -247,9 +247,6 @@ namespace mtca4u {
             
   };
 
-  template <>
-  void RegisterAccessor::read<int>(int *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const;
-
 } // namespace mtca4u
 
 #endif /* MTCA4U_REGISTER_ACCESSOR_H */
