@@ -71,6 +71,12 @@ class MtcaDeviceTest {
     void getRegisterAccerrossInModule();
     template <typename DataType>
     void testRegisterAccessor_typedWriteBlock(DataType offsetValue);
+
+    /** Check access boundaries of read and write for all data types (incl. raw)
+     */
+    void testRegisterAccessor_checkBlockBoundaries();
+    template <typename DataType>
+    void testRegisterAccessor_typedCheckBlockBoundaries();
 };
 
 class MtcaDeviceTestSuite : public test_suite {
@@ -96,6 +102,8 @@ class MtcaDeviceTestSuite : public test_suite {
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_writeBlock,
           mtcaDeviceTest));
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_writeSimple,
+          mtcaDeviceTest));
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries,
           mtcaDeviceTest));
 
       add(BOOST_TEST_CASE(&MtcaDeviceTest::testMapFileParser_parse));
@@ -214,6 +222,10 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   BOOST_CHECK(registerInfo.signedFlag == true);
   BOOST_CHECK(registerInfo.name == "AREA_DMAABLE");
 
+  // also kind of register information, so I sweezed this line in here. 
+  // did not want to write a new function...
+  BOOST_CHECK(registerAccessor->getNumberOfElements() == 1024);
+
   registerAccessor = device->getRegisterAccessor("WORD_FIRMWARE");
   registerInfo = registerAccessor->getRegisterInfo();
   BOOST_CHECK(registerInfo.name == "WORD_FIRMWARE");
@@ -326,6 +338,39 @@ void MtcaDeviceTest::testRegisterAccessor_readBlock() {
   }
   FixedPointConverter fpc = registerAccessor10_1->getFixedPointConverter();
   BOOST_CHECK(fpc.isSigned());
+}
+
+void MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries(){
+  testRegisterAccessor_typedCheckBlockBoundaries<int8_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint8_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<int16_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint16_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<int32_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint32_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<int64_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint64_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<float>();
+  testRegisterAccessor_typedCheckBlockBoundaries<double>();
+  //  testRegisterAccessor_typedCheckBlockBoundaries<std::string>();
+}
+
+template<typename DataType>
+void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
+  mtca4u::Device device;
+  device.open("DUMMYD2");
+  auto registerAccessor = device.getRegisterAccessor("MODULE0","APP0");
+  std::vector<DataType> buffer(registerAccessor->getNumberOfElements());
+
+  // add an offset of 1 and read the full size of the register: should fail
+  try{
+    registerAccessor->read(buffer.data(), registerAccessor->getNumberOfElements(), 1);
+    BOOST_ERROR( "Reading over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  
 }
 
 void MtcaDeviceTest::testRegisterAccessor_readSimple() {
