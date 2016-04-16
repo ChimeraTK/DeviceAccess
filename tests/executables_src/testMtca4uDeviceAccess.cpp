@@ -42,6 +42,7 @@ class MtcaDeviceTest {
     static void testMapFileParser_parse();
 
     void testRegisterAccessor_getRegisterInfo();
+    void testRegisterAccessor_getFixedPointConverter();
     /** Read reading more than one word and working with offset. Check with all
      * different data types.
      */
@@ -94,6 +95,9 @@ class MtcaDeviceTestSuite : public test_suite {
           mtcaDeviceTest));
       add(BOOST_CLASS_TEST_CASE(
           &MtcaDeviceTest::testRegisterAccessor_getRegisterInfo,
+          mtcaDeviceTest));
+      add(BOOST_CLASS_TEST_CASE(
+          &MtcaDeviceTest::testRegisterAccessor_getFixedPointConverter,
           mtcaDeviceTest));
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_readBlock,
           mtcaDeviceTest));
@@ -258,6 +262,18 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   BOOST_CHECK(registerInfo.width == 13);
   BOOST_CHECK(registerInfo.nFractionalBits == 8);
   BOOST_CHECK(registerInfo.signedFlag == true);
+}
+
+void MtcaDeviceTest::testRegisterAccessor_getFixedPointConverter(){
+    mtca4u::Device device;
+  device.open("DUMMYD2");
+  // check with a fresh converter to see if creation succeeds
+  auto registerAccessor = device.getRegisterAccessor("WORD_USER2","MODULE0");
+  auto fixedPointConverter =  registerAccessor->getFixedPointConverter();
+  BOOST_CHECK( fixedPointConverter.getNBits() == 18 );
+  // check again, should still work but cover the second branch
+  auto fixedPointConverter2 =  registerAccessor->getFixedPointConverter();
+  BOOST_CHECK( fixedPointConverter2.getNBits() == 18 );  
 }
 
 void MtcaDeviceTest::testRegisterAccessor_readBlock() {
