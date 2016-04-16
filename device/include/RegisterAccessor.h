@@ -190,7 +190,7 @@ namespace mtca4u {
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
-	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
+	  std::cout << "raw read trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
 	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // perform read
@@ -212,13 +212,24 @@ namespace mtca4u {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
               "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
-        // obtain accessor
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
-            addRegOffset/sizeof(int32_t), true);
+	size_t nWords = dataSize/sizeof(int32_t);
+	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
+	// check accessor and initialise it the first time it is used
+	if (! _rawAccessor){
+	  std::cout << "raw accessor not initalised yet" << std::endl;
+	  // The accessor is for reuse. Get the full register size.
+	  _rawAccessor = _dev->getRegisterAccessor<int32_t>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, true); // 0 offset, raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
+	  std::cout << "raw write trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
+	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // copy data from source buffer
-        memcpy(acc->accessChannel(0).data(), data, dataSize);
+        memcpy(_rawAccessor->accessChannel(0).data() + wordOffsetInRegister, data, dataSize);
         // perform write
-        acc->write();
+        _rawAccessor->write();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
