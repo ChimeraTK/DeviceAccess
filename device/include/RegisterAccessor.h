@@ -127,8 +127,8 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       FixedPointConverter getFixedPointConverter() const {
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->getFixedPointConverter();
+	// it is the converter to int32_t which is meant
+        return _intAccessor->getFixedPointConverter();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!

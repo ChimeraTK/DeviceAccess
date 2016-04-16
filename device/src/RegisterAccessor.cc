@@ -31,8 +31,12 @@ namespace mtca4u {
   template <>
   void RegisterAccessor::read<int>(int *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const{
     // if (! _intAccessor) create it
-    if ( (nWords == 0)||(nWords+wordOffsetInRegister > _intAccessor->accessChannel(0).size()) ){
+    if (nWords == 0){
 	return;
+    }
+    if (nWords+wordOffsetInRegister > _intAccessor->accessChannel(0).size() ){
+      //      return; //keep this to check what is executed
+      throw DeviceException("RegisterAccessor::read Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
     }
     _intAccessor->read();
     // copy data to target buffer
