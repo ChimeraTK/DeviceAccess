@@ -385,7 +385,7 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
   std::vector<int32_t> rawBuffer(registerAccessor->getNumberOfElements());
   // add an offset of 1 and read the full size of the register: should fail
   try{
-    registerAccessor->readRaw(rawBuffer.data(), registerAccessor->getNumberOfElements(), 1);
+    registerAccessor->readRaw(rawBuffer.data(), registerAccessor->getNumberOfElements()*sizeof(int32_t), 4);
     BOOST_ERROR( "Reading over the end of the register did not throw" );
   }catch(DeviceException &e){
     BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
@@ -394,7 +394,7 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
   }
   // and write...
   try{
-    registerAccessor->writeRaw(rawBuffer.data(), registerAccessor->getNumberOfElements(), 1);
+    registerAccessor->writeRaw(rawBuffer.data(), registerAccessor->getNumberOfElements() *sizeof(int32_t), 4);
     BOOST_ERROR( "Writing over the end of the register did not throw" );
   }catch(DeviceException &e){
     BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
