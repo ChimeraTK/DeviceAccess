@@ -14,6 +14,8 @@
 #include "DeviceBackend.h"
 #include "NumericAddressedBackend.h"
 
+#include <boost/fusion/include/at_key.hpp>
+
 namespace mtca4u {
 
   /// forward declaration (only used as tempate arguments)
@@ -51,11 +53,23 @@ namespace mtca4u {
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
         // obtain accessor
-        auto acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+	NDAccessorPtr<ConvertedDataType> & acc =
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
+	if (! acc){
+	  std::cout << "converting accessor for type " <<
+	    typeid(ConvertedDataType).name() << " not initalised yet" << std::endl;
+	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
+	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
+	  throw DeviceException("RegisterAccessor::read Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // perform read
         acc->read();
         // copy data to target buffer
-        memcpy(convertedData, acc->accessChannel(0).data(), nWords*sizeof(ConvertedDataType));
+        memcpy(convertedData, acc->accessChannel(0).data() + wordOffsetInRegister, nWords*sizeof(ConvertedDataType));
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -79,9 +93,21 @@ namespace mtca4u {
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
         // obtain accessor
-        auto acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+	NDAccessorPtr<ConvertedDataType> & acc = 
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
+	if (! acc){
+	  std::cout << "converting accessor for type " <<
+	    typeid(ConvertedDataType).name() << " not initalised yet" << std::endl;
+	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
+	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
+	  throw DeviceException("RegisterAccessor::write Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // copy data from source buffer
-        memcpy(acc->accessChannel(0).data(), convertedData, nWords*sizeof(ConvertedDataType));
+        memcpy(acc->accessChannel(0).data() + wordOffsetInRegister, convertedData, nWords*sizeof(ConvertedDataType));
         // perform write
         acc->write();
       }
@@ -127,8 +153,15 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       FixedPointConverter getFixedPointConverter() const {
-	// it is the converter to int32_t which is meant
-        return _intAccessor->getFixedPointConverter();
+ 	// it is the converter to int32_t which is meant
+	NDAccessorPtr<int> & accessor = 
+	  boost::fusion::at_key<int32_t>(_convertingAccessors.table);
+	if (! accessor){
+	  accessor = _dev->getRegisterAccessor<int>(_registerPathName,
+						    _registerInfo->getNumberOfElements(),
+						    0, false); // 0 offset, not raw
+	}
+        return accessor->getFixedPointConverter();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -200,9 +233,18 @@ namespace mtca4u {
       /** The RegisterInfo for this register */
       boost::shared_ptr< RegisterInfo > _registerInfo;
 
-      /// only temporary while developing. will be a map with all types
-      boost::shared_ptr<NDRegisterAccessor<int> > _intAccessor;
+      /** a "typedef" to be able to use shared_ptr<NDRegisterAccessor> with the TemplateUserTypeMap */
+      template<class UserType>
+      using NDAccessorPtr = boost::shared_ptr<NDRegisterAccessor<UserType> >;
 
+      /** The converting accessors used under the hood. 
+	  They are not initialised in the constructor but only when first used
+	  to safe memory. Usually you will not use read or write of all user
+	  data types. Thus the variable is mutable to allow initialisation 
+	  in the const read and write function.
+      */
+      mutable TemplateUserTypeMap<NDAccessorPtr> _convertingAccessors;
+            
   };
 
   template <>

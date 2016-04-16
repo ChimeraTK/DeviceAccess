@@ -5,13 +5,14 @@
 #include "RegisterAccessor.h"
 #include "Device.h"
 
+#include <typeinfo>
+
 namespace mtca4u {
 
   RegisterAccessor::RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer,
       const RegisterPath &registerPathName)
     : _registerPathName(registerPathName), _dev(deviceBackendPointer),
     _registerInfo(_dev->getRegisterCatalogue().getRegister(registerPathName)){
-    _intAccessor = _dev->getRegisterAccessor<int>(registerPathName, _registerInfo->getNumberOfElements(), 0, false);
   }
 
   RegisterAccessor::~RegisterAccessor() {}
@@ -30,17 +31,24 @@ namespace mtca4u {
 
   template <>
   void RegisterAccessor::read<int>(int *convertedData, size_t nWords, uint32_t wordOffsetInRegister) const{
-    // if (! _intAccessor) create it
+    NDAccessorPtr<int> & accessor = boost::fusion::at_key<int>(_convertingAccessors.table);
+    if (! accessor){
+      std::cout << "converting accessor for type " <<
+	typeid(int).name() << " not initalised yet" << std::endl;
+      accessor = _dev->getRegisterAccessor<int>(_registerPathName,
+						_registerInfo->getNumberOfElements(),
+						0, false); // 0 offset, not raw
+    }
     if (nWords == 0){
 	return;
     }
-    if (nWords+wordOffsetInRegister > _intAccessor->accessChannel(0).size() ){
-      //      return; //keep this to check what is executed
+    if (nWords+wordOffsetInRegister > accessor->accessChannel(0).size() ){
+      std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
       throw DeviceException("RegisterAccessor::read Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
     }
-    _intAccessor->read();
+    accessor->read();
     // copy data to target buffer
-    memcpy(convertedData, _intAccessor->accessChannel(0).data() + wordOffsetInRegister, nWords*sizeof(int));
+    memcpy(convertedData, accessor->accessChannel(0).data() + wordOffsetInRegister, nWords*sizeof(int));
   }
 
 

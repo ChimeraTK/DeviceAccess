@@ -351,7 +351,7 @@ void MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries(){
   testRegisterAccessor_typedCheckBlockBoundaries<uint64_t>();
   testRegisterAccessor_typedCheckBlockBoundaries<float>();
   testRegisterAccessor_typedCheckBlockBoundaries<double>();
-  //  testRegisterAccessor_typedCheckBlockBoundaries<std::string>();
+  testRegisterAccessor_typedCheckBlockBoundaries<std::string>();
 }
 
 template<typename DataType>
@@ -371,6 +371,38 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
 			 + e.what());
   }
   
+ // same for write
+  try{
+    registerAccessor->write(buffer.data(), registerAccessor->getNumberOfElements(), 1);
+    BOOST_ERROR( "Writing over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  
+  // OK, and the same drill for raw access
+  std::vector<int32_t> rawBuffer(registerAccessor->getNumberOfElements());
+  // add an offset of 1 and read the full size of the register: should fail
+  try{
+    registerAccessor->readRaw(rawBuffer.data(), registerAccessor->getNumberOfElements(), 1);
+    BOOST_ERROR( "Reading over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  // and write...
+  try{
+    registerAccessor->writeRaw(rawBuffer.data(), registerAccessor->getNumberOfElements(), 1);
+    BOOST_ERROR( "Writing over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  
+
 }
 
 void MtcaDeviceTest::testRegisterAccessor_readSimple() {
