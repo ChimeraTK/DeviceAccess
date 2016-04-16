@@ -5,8 +5,6 @@
 #ifndef MTCA4U_REGISTER_ACCESSOR_H
 #define MTCA4U_REGISTER_ACCESSOR_H
 
-#include <typeinfo>
-
 #include "VirtualFunctionTemplate.h"
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
@@ -14,6 +12,7 @@
 #include "DeviceBackend.h"
 #include "NumericAddressedBackend.h"
 
+#include <typeinfo>
 #include <boost/fusion/include/at_key.hpp>
 
 namespace mtca4u {
@@ -56,15 +55,12 @@ namespace mtca4u {
 	NDAccessorPtr<ConvertedDataType> & acc =
 	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
 	if (! acc){
-	  std::cout << "converting accessor for type " <<
-	    typeid(ConvertedDataType).name() << " not initalised yet" << std::endl;
 	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
 	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
-	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
 	  throw DeviceException("RegisterAccessor::read Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // perform read
@@ -97,15 +93,12 @@ namespace mtca4u {
 	NDAccessorPtr<ConvertedDataType> & acc = 
 	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
 	if (! acc){
-	  std::cout << "converting accessor for type " <<
-	    typeid(ConvertedDataType).name() << " not initalised yet" << std::endl;
 	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
 	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
-	  std::cout << "trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
 	  throw DeviceException("RegisterAccessor::write Error: writing over the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // copy data from source buffer
@@ -183,14 +176,12 @@ namespace mtca4u {
 	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
 	// check accessor and initialise it the first time it is used
 	if (! _rawAccessor){
-	  std::cout << "raw accessor not initalised yet" << std::endl;
 	  // The accessor is for reuse. Get the full register size.
 	  _rawAccessor = _dev->getRegisterAccessor<int32_t>(_registerPathName,
 	    _registerInfo->getNumberOfElements(), 0, true); // 0 offset, raw
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
-	  std::cout << "raw read trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
 	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // perform read
@@ -216,14 +207,12 @@ namespace mtca4u {
 	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
 	// check accessor and initialise it the first time it is used
 	if (! _rawAccessor){
-	  std::cout << "raw accessor not initalised yet" << std::endl;
 	  // The accessor is for reuse. Get the full register size.
 	  _rawAccessor = _dev->getRegisterAccessor<int32_t>(_registerPathName,
 	    _registerInfo->getNumberOfElements(), 0, true); // 0 offset, raw
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
-	  std::cout << "raw write trying to access too large register. new impl" << std::endl; //keep this to check what is executed when debugging 
 	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // copy data from source buffer
