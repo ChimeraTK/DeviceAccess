@@ -52,8 +52,8 @@ namespace mtca4u {
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
         // obtain accessor
-	NDAccessorPtr<ConvertedDataType> & acc =
-	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors);
+	auto & acc =
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table).instance;
 	if (! acc){
 	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
@@ -90,8 +90,8 @@ namespace mtca4u {
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
         // obtain accessor
-	NDAccessorPtr<ConvertedDataType> & acc = 
-	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors);
+	auto & acc = 
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table).instance;
 	if (! acc){
 	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
@@ -149,8 +149,8 @@ namespace mtca4u {
        */
       FixedPointConverter getFixedPointConverter() const {
  	// it is the converter to int32_t which is meant
-	NDAccessorPtr<int> & accessor = 
-	  boost::fusion::at_key<int32_t>(_convertingAccessors);
+        auto & accessor = 
+	  boost::fusion::at_key<int32_t>(_convertingAccessors.table).instance;
 	if (! accessor){
 	  accessor = _dev->getRegisterAccessor<int>(_registerPathName,
 						    _registerInfo->getNumberOfElements(),
@@ -247,8 +247,15 @@ namespace mtca4u {
       boost::shared_ptr< RegisterInfo > _registerInfo;
 
       /** a "typedef" to be able to use shared_ptr<NDRegisterAccessor> with the TemplateUserTypeMap */
-      template<class UserType>
-      using NDAccessorPtr = boost::shared_ptr<NDRegisterAccessor<UserType> >;
+      //template<class UserType>
+      //using NDAccessorPtr = boost::shared_ptr<NDRegisterAccessor<UserType> >;
+      //
+      //sorry, the above code does not work with gcc4.6 (Ubuntu12.4)
+      template<class UserType>                                                                                                                                                                               
+      class NDAccessorPtr{
+      public:
+	boost::shared_ptr<NDRegisterAccessor<UserType> > instance;
+      };
 
       /** The converting accessors used under the hood. 
 	  They are not initialised in the constructor but only when first used
@@ -259,7 +266,7 @@ namespace mtca4u {
       mutable TemplateUserTypeMap<NDAccessorPtr> _convertingAccessors;
             
       /** There only is one possible raw accessor: int32_t */
-      mutable NDAccessorPtr<int32_t> _rawAccessor;
+      mutable boost::shared_ptr<NDRegisterAccessor<int32_t> > _rawAccessor;
   };
 
 } // namespace mtca4u

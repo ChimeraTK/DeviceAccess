@@ -31,7 +31,8 @@ namespace mtca4u {
   /** Map of UserType to a class template with the UserType as template argument. Used e.g. by the
    *  VirtualFunctionTemplate macros to implement the vtable. */
   template< template<typename> class TemplateClass >
-  using TemplateUserTypeMap = 
+  class TemplateUserTypeMap {
+    public:
       boost::fusion::map<
           boost::fusion::pair<int8_t, TemplateClass<int8_t> >,
           boost::fusion::pair<uint8_t, TemplateClass<uint8_t> >,
@@ -44,7 +45,8 @@ namespace mtca4u {
           boost::fusion::pair<float, TemplateClass<float> >,
           boost::fusion::pair<double, TemplateClass<double> >,
           boost::fusion::pair<std::string, TemplateClass<std::string> >
-       >;
+       > table;
+  };
 
 } /* namespace mtca4u */
 
