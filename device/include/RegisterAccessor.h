@@ -53,7 +53,7 @@ namespace mtca4u {
         if(nWords == 0) return;
         // obtain accessor
 	NDAccessorPtr<ConvertedDataType> & acc =
-	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors);
 	if (! acc){
 	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
@@ -91,7 +91,7 @@ namespace mtca4u {
         if(nWords == 0) return;
         // obtain accessor
 	NDAccessorPtr<ConvertedDataType> & acc = 
-	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors);
 	if (! acc){
 	  // The accessor is for reuse. Get the full register size.
 	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
@@ -150,7 +150,7 @@ namespace mtca4u {
       FixedPointConverter getFixedPointConverter() const {
  	// it is the converter to int32_t which is meant
 	NDAccessorPtr<int> & accessor = 
-	  boost::fusion::at_key<int32_t>(_convertingAccessors.table);
+	  boost::fusion::at_key<int32_t>(_convertingAccessors);
 	if (! accessor){
 	  accessor = _dev->getRegisterAccessor<int>(_registerPathName,
 						    _registerInfo->getNumberOfElements(),

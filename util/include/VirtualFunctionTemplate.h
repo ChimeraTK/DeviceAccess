@@ -68,7 +68,7 @@
  *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro. This is not done, because it wouldn't allow to specify default
  *  values for the parameters, and the proper signature would not be visible in Doxygen. */
 #define CALL_VIRTUAL_FUNCTION_TEMPLATE( functionName, templateArgument, ... )                                   \
-      boost::fusion::at_key<templateArgument>(functionName ## _vtable.table)( __VA_ARGS__ )
+      boost::fusion::at_key<templateArgument>(functionName ## _vtable)( __VA_ARGS__ )
 
 
 /** Helper macros, do not use! */
@@ -113,6 +113,6 @@
 /** Fill the vtable of a virtual function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro
  *  inside the constructor of the derived class. */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName )                                                   \
-      boost::fusion::for_each(functionName ## _vtable.table, functionName ## _vtable_filler(this))
+      boost::fusion::for_each(functionName ## _vtable, functionName ## _vtable_filler(this))
 
 #endif /* MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H */
