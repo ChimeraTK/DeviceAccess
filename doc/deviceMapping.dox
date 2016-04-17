@@ -1,6 +1,8 @@
 /**
 \page dmap Device Mapping
 
+\todo FIXME: This information is outdated. adapt it to the URI scheme
+
 A device map file (dmap file) gives an alias for each device file and defines which
 map file to use with it. Like this it is sort of a crate population file, showing
 which board is in which slot.
@@ -37,9 +39,4 @@ It allows to get the device information (called dmapElem) for a specific alias.
 \note This multi-step approach will change, probably using a device factory.
 \note The correlation to the map file will be automated in future.
 \note The whole dmap mechanism might change in favour of the PICMG standard device model approach, or become part of it.
-*/
-
-/**
-\example dmap.cpp
-Example how to use device mapping
 */

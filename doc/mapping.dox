@@ -1,6 +1,7 @@
 /**
 \page mapping Using the register name mapping
 
+\deprecated
 \todo FIXME: This page is deprecated. Needs to be updated to describe the mapping,
 and that it's for certain Backends only. 
 \deprecated
@@ -60,9 +61,3 @@ Complete example:
  \ref dmap
 */
 
-/**
-\example mapped.cpp
-Example how to use register name mapping
-\example accessor.cpp
-Example how to use accessors 
-*/

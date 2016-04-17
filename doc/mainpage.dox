@@ -53,11 +53,5 @@ Next topic: \ref accessor1d
 */
 
 /**
-\example readWrite.cpp
-Example how to read and write with DeviceBackend
-*/
-
-/**
-\example MuxedAccessor.cpp
-Example on how to use the MultiplexedDataAccessor.
+\example basic.cpp Example how to read and write a single register.
 */

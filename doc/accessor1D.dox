@@ -1,10 +1,20 @@
 /**
 \page accessor1d Multi Value Registers (1D Register Accessors)
 
-Registers can have more than one value, so the are a one-dimensional "array" of data.
+Registers can have more than one value, so they are a one-dimensional "array" of data.
 
-FIXE: write more text and and example
+Like the ScalarRegisterAccessor, the OneDRegisterAccessor is a buffering accessor
+which is synchronised via \c read() and \c write() with the hardware.
+Access to data member works like a std::vector, incl. [] operator
+and iterators.
+
+\include accessor1D.cpp
 
 Next topic: \ref accessor2d
 
+*/
+
+/**
+\example accessor1D.cpp
+Example how to read a one-dimensional array.
 */

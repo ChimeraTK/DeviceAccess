@@ -14,3 +14,11 @@ calculation of the address and indirections are not necessary for each element.
 
 \include accessor2D.cpp
 */
+
+/**
+\example accessor2D.cpp
+An example how to use the TwoDRegisterAccessor
+\example accessor2D_multiplexed.cpp
+A special case: The 2D register might have multiplexed data on the backend
+side (backend specific implementation of the TwoDRegisterAccessor).
+*/
