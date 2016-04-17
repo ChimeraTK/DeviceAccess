@@ -41,11 +41,12 @@ class MtcaDeviceTest {
 
     static void testMapFileParser_parse();
 
-    void testRegObject_getRegisterInfo();
+    void testRegisterAccessor_getRegisterInfo();
+    void testRegisterAccessor_getFixedPointConverter();
     /** Read reading more than one word and working with offset. Check with all
      * different data types.
      */
-    void testRegObject_readBlock();
+    void testRegisterAccessor_readBlock();
 
     /** Check that the default arguments work, which means reading of one word,
      * and check the corner case
@@ -53,11 +54,11 @@ class MtcaDeviceTest {
      *  This is only checked for int and double, not all types.
      *  Also checks the read convenience function.
      */
-    void testRegObject_readSimple();
+    void testRegisterAccessor_readSimple();
 
     /** Testing the write function with a multiple registers.
      */
-    void testRegObject_writeBlock();
+    void testRegisterAccessor_writeBlock();
 
     /** Check that the default arguments work, which means writing of one word,
      * and check the corner case
@@ -65,12 +66,18 @@ class MtcaDeviceTest {
      *  This is only checked for int and doubel, not all types.
      *  Also checks the write convenience function.
      */
-    void testRegObject_writeSimple();
+    void testRegisterAccessor_writeSimple();
 
     void getRegistersInModule();
     void getRegisterAccerrossInModule();
     template <typename DataType>
-    void testRegObject_typedWriteBlock(DataType offsetValue);
+    void testRegisterAccessor_typedWriteBlock(DataType offsetValue);
+
+    /** Check access boundaries of read and write for all data types (incl. raw)
+     */
+    void testRegisterAccessor_checkBlockBoundaries();
+    template <typename DataType>
+    void testRegisterAccessor_typedCheckBlockBoundaries();
 };
 
 class MtcaDeviceTestSuite : public test_suite {
@@ -87,15 +94,20 @@ class MtcaDeviceTestSuite : public test_suite {
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testOpenClose,
           mtcaDeviceTest));
       add(BOOST_CLASS_TEST_CASE(
-          &MtcaDeviceTest::testRegObject_getRegisterInfo,
+          &MtcaDeviceTest::testRegisterAccessor_getRegisterInfo,
           mtcaDeviceTest));
-      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegObject_readBlock,
+      add(BOOST_CLASS_TEST_CASE(
+          &MtcaDeviceTest::testRegisterAccessor_getFixedPointConverter,
           mtcaDeviceTest));
-      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegObject_readSimple,
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_readBlock,
           mtcaDeviceTest));
-      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegObject_writeBlock,
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_readSimple,
           mtcaDeviceTest));
-      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegObject_writeSimple,
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_writeBlock,
+          mtcaDeviceTest));
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_writeSimple,
+          mtcaDeviceTest));
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries,
           mtcaDeviceTest));
 
       add(BOOST_TEST_CASE(&MtcaDeviceTest::testMapFileParser_parse));
@@ -195,7 +207,7 @@ void MtcaDeviceTest::testMapFileParser_parse() {
 
 }
 
-void MtcaDeviceTest::testRegObject_getRegisterInfo() {
+void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME));
   device->open(testBackend);
@@ -213,6 +225,10 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
   BOOST_CHECK(registerInfo.nFractionalBits == 0);
   BOOST_CHECK(registerInfo.signedFlag == true);
   BOOST_CHECK(registerInfo.name == "AREA_DMAABLE");
+
+  // also kind of register information, so I sweezed this line in here. 
+  // did not want to write a new function...
+  BOOST_CHECK(registerAccessor->getNumberOfElements() == 1024);
 
   registerAccessor = device->getRegisterAccessor("WORD_FIRMWARE");
   registerInfo = registerAccessor->getRegisterInfo();
@@ -248,7 +264,19 @@ void MtcaDeviceTest::testRegObject_getRegisterInfo() {
   BOOST_CHECK(registerInfo.signedFlag == true);
 }
 
-void MtcaDeviceTest::testRegObject_readBlock() {
+void MtcaDeviceTest::testRegisterAccessor_getFixedPointConverter(){
+    mtca4u::Device device;
+  device.open("DUMMYD2");
+  // check with a fresh converter to see if creation succeeds
+  auto registerAccessor = device.getRegisterAccessor("WORD_USER2","MODULE0");
+  auto fixedPointConverter =  registerAccessor->getFixedPointConverter();
+  BOOST_CHECK( fixedPointConverter.getNBits() == 18 );
+  // check again, should still work but cover the second branch
+  auto fixedPointConverter2 =  registerAccessor->getFixedPointConverter();
+  BOOST_CHECK( fixedPointConverter2.getNBits() == 18 );  
+}
+
+void MtcaDeviceTest::testRegisterAccessor_readBlock() {
   // trigger the "DAQ" sequence which writes i*i into the first 25 registers, so
   // we know what we have
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
@@ -328,7 +356,72 @@ void MtcaDeviceTest::testRegObject_readBlock() {
   BOOST_CHECK(fpc.isSigned());
 }
 
-void MtcaDeviceTest::testRegObject_readSimple() {
+void MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries(){
+  testRegisterAccessor_typedCheckBlockBoundaries<int8_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint8_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<int16_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint16_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<int32_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint32_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<int64_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<uint64_t>();
+  testRegisterAccessor_typedCheckBlockBoundaries<float>();
+  testRegisterAccessor_typedCheckBlockBoundaries<double>();
+  testRegisterAccessor_typedCheckBlockBoundaries<std::string>();
+}
+
+template<typename DataType>
+void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
+  mtca4u::Device device;
+  device.open("DUMMYD2");
+  auto registerAccessor = device.getRegisterAccessor("MODULE0","APP0");
+  std::vector<DataType> buffer(registerAccessor->getNumberOfElements());
+
+  // add an offset of 1 and read the full size of the register: should fail
+  try{
+    registerAccessor->read(buffer.data(), registerAccessor->getNumberOfElements(), 1);
+    BOOST_ERROR( "Reading over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  
+ // same for write
+  try{
+    registerAccessor->write(buffer.data(), registerAccessor->getNumberOfElements(), 1);
+    BOOST_ERROR( "Writing over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  
+  // OK, and the same drill for raw access
+  std::vector<int32_t> rawBuffer(registerAccessor->getNumberOfElements());
+  // add an offset of 1 and read the full size of the register: should fail
+  try{
+    registerAccessor->readRaw(rawBuffer.data(), registerAccessor->getNumberOfElements()*sizeof(int32_t), 4);
+    BOOST_ERROR( "Reading over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  // and write...
+  try{
+    registerAccessor->writeRaw(rawBuffer.data(), registerAccessor->getNumberOfElements() *sizeof(int32_t), 4);
+    BOOST_ERROR( "Writing over the end of the register did not throw" );
+  }catch(DeviceException &e){
+    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
+			 std::string("ID is not WRONG_PARAMETER, Message is: " )
+			 + e.what());
+  }
+  
+
+}
+
+void MtcaDeviceTest::testRegisterAccessor_readSimple() {
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME,VALID_MAPPING_FILE_NAME));
   device->open(testBackend);
@@ -363,7 +456,7 @@ void MtcaDeviceTest::testRegObject_readSimple() {
 }
 
 template <typename DataType>
-void MtcaDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue) {
+void MtcaDeviceTest::testRegisterAccessor_typedWriteBlock(DataType offsetValue) {
   // there are 25 elements. ignore the first 2
   static const size_t N_ELEMENTS = 23;
   static const size_t N_BYTES = N_ELEMENTS * sizeof(int32_t);
@@ -397,21 +490,21 @@ void MtcaDeviceTest::testRegObject_typedWriteBlock(DataType offsetValue) {
   }
 }
 
-void MtcaDeviceTest::testRegObject_writeBlock() {
+void MtcaDeviceTest::testRegisterAccessor_writeBlock() {
   // the tested values run from startValue to startValue+23, so small negative
   // numbers test positive and
   // negative values
-  testRegObject_typedWriteBlock(static_cast<uint32_t>(14));
-  testRegObject_typedWriteBlock(static_cast<int32_t>(-14)); // also test negative values with signed ints
-  testRegObject_typedWriteBlock(static_cast<uint16_t>(14));
-  testRegObject_typedWriteBlock(static_cast<int16_t>(-14)); // also test negative values with signed ints
-  testRegObject_typedWriteBlock(static_cast<uint8_t>(14));
-  testRegObject_typedWriteBlock(static_cast<int8_t>(-14)); // also test negative values with signed ints
-  testRegObject_typedWriteBlock(static_cast<double>(-13.75));
-  testRegObject_typedWriteBlock(static_cast<float>(-13.75));
+  testRegisterAccessor_typedWriteBlock(static_cast<uint32_t>(14));
+  testRegisterAccessor_typedWriteBlock(static_cast<int32_t>(-14)); // also test negative values with signed ints
+  testRegisterAccessor_typedWriteBlock(static_cast<uint16_t>(14));
+  testRegisterAccessor_typedWriteBlock(static_cast<int16_t>(-14)); // also test negative values with signed ints
+  testRegisterAccessor_typedWriteBlock(static_cast<uint8_t>(14));
+  testRegisterAccessor_typedWriteBlock(static_cast<int8_t>(-14)); // also test negative values with signed ints
+  testRegisterAccessor_typedWriteBlock(static_cast<double>(-13.75));
+  testRegisterAccessor_typedWriteBlock(static_cast<float>(-13.75));
 }
 
-void MtcaDeviceTest::testRegObject_writeSimple() {
+void MtcaDeviceTest::testRegisterAccessor_writeSimple() {
   //boost::shared_ptr<mtca4u::Device<mtca4u::PcieBackend>::RegisterAccessor>
   boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME,VALID_MAPPING_FILE_NAME));

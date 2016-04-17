@@ -5,14 +5,15 @@
 #ifndef MTCA4U_REGISTER_ACCESSOR_H
 #define MTCA4U_REGISTER_ACCESSOR_H
 
-#include <typeinfo>
-
 #include "VirtualFunctionTemplate.h"
 #include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
 #include "NumericAddressedBackend.h"
+
+#include <typeinfo>
+#include <boost/fusion/include/at_key.hpp>
 
 namespace mtca4u {
 
@@ -51,11 +52,21 @@ namespace mtca4u {
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
         // obtain accessor
-        auto acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+	NDAccessorPtr<ConvertedDataType> & acc =
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
+	if (! acc){
+	  // The accessor is for reuse. Get the full register size.
+	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
+	  throw DeviceException("RegisterAccessor::read Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // perform read
         acc->read();
         // copy data to target buffer
-        memcpy(convertedData, acc->accessChannel(0).data(), nWords*sizeof(ConvertedDataType));
+        memcpy(convertedData, acc->accessChannel(0).data() + wordOffsetInRegister, nWords*sizeof(ConvertedDataType));
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -79,9 +90,19 @@ namespace mtca4u {
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
         // obtain accessor
-        auto acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName, nWords, wordOffsetInRegister, false);
+	NDAccessorPtr<ConvertedDataType> & acc = 
+	  boost::fusion::at_key<ConvertedDataType>(_convertingAccessors.table);
+	if (! acc){
+	  // The accessor is for reuse. Get the full register size.
+	  acc = _dev->getRegisterAccessor<ConvertedDataType>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, false); // 0 offset, not raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
+	  throw DeviceException("RegisterAccessor::write Error: writing over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // copy data from source buffer
-        memcpy(acc->accessChannel(0).data(), convertedData, nWords*sizeof(ConvertedDataType));
+        memcpy(acc->accessChannel(0).data() + wordOffsetInRegister, convertedData, nWords*sizeof(ConvertedDataType));
         // perform write
         acc->write();
       }
@@ -102,8 +123,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       unsigned int getNumberOfElements() const {
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->accessChannel(0).size();
+	return _registerInfo->getNumberOfElements();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -128,8 +148,15 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       FixedPointConverter getFixedPointConverter() const {
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, 1, 0, false);
-        return acc->getFixedPointConverter();
+ 	// it is the converter to int32_t which is meant
+	NDAccessorPtr<int> & accessor = 
+	  boost::fusion::at_key<int32_t>(_convertingAccessors.table);
+	if (! accessor){
+	  accessor = _dev->getRegisterAccessor<int>(_registerPathName,
+						    _registerInfo->getNumberOfElements(),
+						    0, false); // 0 offset, not raw
+	}
+        return accessor->getFixedPointConverter();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -145,13 +172,22 @@ namespace mtca4u {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
               "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
-        // obtain accessor
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
-            addRegOffset/sizeof(int32_t), true);
+	size_t nWords = dataSize/sizeof(int32_t);
+	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
+	// check accessor and initialise it the first time it is used
+	if (! _rawAccessor){
+	  // The accessor is for reuse. Get the full register size.
+	  _rawAccessor = _dev->getRegisterAccessor<int32_t>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, true); // 0 offset, raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
+	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // perform read
-        acc->read();
+        _rawAccessor->read();
         // copy to target buffer
-        memcpy(data, acc->accessChannel(0).data(), dataSize);
+        memcpy(data, _rawAccessor->accessChannel(0).data()+wordOffsetInRegister, dataSize);
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -167,13 +203,22 @@ namespace mtca4u {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
               "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
-        // obtain accessor
-        auto acc = _dev->getRegisterAccessor<int32_t>(_registerPathName, dataSize/sizeof(int32_t),
-            addRegOffset/sizeof(int32_t), true);
+	size_t nWords = dataSize/sizeof(int32_t);
+	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
+	// check accessor and initialise it the first time it is used
+	if (! _rawAccessor){
+	  // The accessor is for reuse. Get the full register size.
+	  _rawAccessor = _dev->getRegisterAccessor<int32_t>(_registerPathName,
+	    _registerInfo->getNumberOfElements(), 0, true); // 0 offset, raw
+	}
+	// we have to check the size to protect the following memcpy
+	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
+	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	}
         // copy data from source buffer
-        memcpy(acc->accessChannel(0).data(), data, dataSize);
+        memcpy(_rawAccessor->accessChannel(0).data() + wordOffsetInRegister, data, dataSize);
         // perform write
-        acc->write();
+        _rawAccessor->write();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -198,6 +243,23 @@ namespace mtca4u {
       /** Pointer to the device backend used for reading and writing the data */
       boost::shared_ptr<DeviceBackend> _dev;
 
+      /** The RegisterInfo for this register */
+      boost::shared_ptr< RegisterInfo > _registerInfo;
+
+      /** a "typedef" to be able to use shared_ptr<NDRegisterAccessor> with the TemplateUserTypeMap */
+      template<class UserType>
+      using NDAccessorPtr = boost::shared_ptr<NDRegisterAccessor<UserType> >;
+
+      /** The converting accessors used under the hood. 
+	  They are not initialised in the constructor but only when first used
+	  to safe memory. Usually you will not use read or write of all user
+	  data types. Thus the variable is mutable to allow initialisation 
+	  in the const read and write function.
+      */
+      mutable TemplateUserTypeMap<NDAccessorPtr> _convertingAccessors;
+            
+      /** There only is one possible raw accessor: int32_t */
+      mutable NDAccessorPtr<int32_t> _rawAccessor;
   };
 
 } // namespace mtca4u
