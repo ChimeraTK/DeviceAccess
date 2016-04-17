@@ -61,7 +61,7 @@ namespace mtca4u {
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
-	  throw DeviceException("RegisterAccessor::read Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	  throw DeviceException("RegisterAccessor::read Error: reading exceeds the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // perform read
         acc->read();
@@ -99,7 +99,7 @@ namespace mtca4u {
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > acc->accessChannel(0).size() ){
-	  throw DeviceException("RegisterAccessor::write Error: writing over the end of register",DeviceException::WRONG_PARAMETER);
+	  throw DeviceException("RegisterAccessor::write Error: writing exceeds the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // copy data from source buffer
         memcpy(acc->accessChannel(0).data() + wordOffsetInRegister, convertedData, nWords*sizeof(ConvertedDataType));
@@ -182,7 +182,7 @@ namespace mtca4u {
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
-	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	  throw DeviceException("RegisterAccessor::readRaw Error: reading exceeds the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // perform read
         _rawAccessor->read();
@@ -213,7 +213,7 @@ namespace mtca4u {
 	}
 	// we have to check the size to protect the following memcpy
 	if (nWords+wordOffsetInRegister > _rawAccessor->accessChannel(0).size() ){
-	  throw DeviceException("RegisterAccessor::readRaw Error: reading over the end of register",DeviceException::WRONG_PARAMETER);
+	  throw DeviceException("RegisterAccessor::writeRaw Error: writing exceeds the end of register",DeviceException::WRONG_PARAMETER);
 	}
         // copy data from source buffer
         memcpy(_rawAccessor->accessChannel(0).data() + wordOffsetInRegister, data, dataSize);
