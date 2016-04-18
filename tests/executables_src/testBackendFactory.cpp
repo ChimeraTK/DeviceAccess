@@ -1,3 +1,4 @@
+#define BOOST_TEST_MODULE BackendFactoryTest
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
@@ -5,36 +6,22 @@ using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
 #include "MapException.h"
+using namespace mtca4u;
 
 //#undef TEST_DMAP_FILE_PATH
 //#define TEST_DMAP_FILE_PATH "/testDummies.dmap"
 
-using namespace mtca4u;
+BOOST_AUTO_TEST_SUITE(BackendFactoryTestSuite)
 
-class BackendFactoryTest
-{
-public:
-  static void testCreateBackend();
-};
+BOOST_AUTO_TEST_CASE( testCreateBackend ){
+  BackendFactory::getInstance().setDMapFilePath("");
+  try{
+      BackendFactory::getInstance().createBackend("test");
+      BOOST_ERROR("BackendFactory::getInstance() with empty dmap file did not throw."); //LCOV_EXCL_LINE
+  }catch(DeviceException & e){
+      BOOST_CHECK(e.getID() == DeviceException::NO_DMAP_FILE);
+  }
 
-class BackendFactoryTestSuite : public test_suite {
-  public:
-    BackendFactoryTestSuite() : test_suite("Utilities test suite") {
-      BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
-      boost::shared_ptr<BackendFactoryTest> backendFactoryTest(new BackendFactoryTest);
-      add(BOOST_TEST_CASE(BackendFactoryTest::testCreateBackend));
-    }
-};
-
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
-  framework::master_test_suite().p_name.value = "Utilities test suite";
-  framework::master_test_suite().add(new BackendFactoryTestSuite);
-  return NULL;
-}
-
-
-void BackendFactoryTest::testCreateBackend() {
-  setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
   std::string testFilePath = TEST_DMAP_FILE_PATH;
   std::string oldtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "Old";
   std::string invalidtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "disabled";
@@ -53,3 +40,15 @@ void BackendFactoryTest::testCreateBackend() {
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("FAKE1"),BackendFactoryException); //entry in dummies.dmap for unregistered device
 }
 
+BOOST_AUTO_TEST_CASE( testCreateFromUri ){
+  // this has to work without dmap file
+  BackendFactory::getInstance().setDMapFilePath("");
+
+  boost::shared_ptr<DeviceBackend> testPtr;
+  testPtr = BackendFactory::getInstance().createBackend("sdm://./dummy=mtcadummy.map"); //get some dummy
+  // just check that something has been created. That it's the correct thing is another test.
+  BOOST_CHECK(testPtr);
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()

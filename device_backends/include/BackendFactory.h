@@ -72,11 +72,11 @@ namespace mtca4u {
     void registerBackendType(std::string interface, std::string protocol,
         boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters, std::string));
 
-    /** Create a new device by calling the constructor and returning a pointer to
-     * the
-     * device */
-
-    boost::shared_ptr<DeviceBackend> createBackend(std::string aliasName);
+    /** Create a new backend and return the instance as a shared pointer.
+     *  The input argument can either be an alias name from a dmap file, or
+     *  an sdm::/ URI.
+     */
+    boost::shared_ptr<DeviceBackend> createBackend(std::string aliasOrUri);
 
     /**Static function to get an instance of factory */
     static BackendFactory& getInstance();

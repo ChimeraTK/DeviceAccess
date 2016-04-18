@@ -54,12 +54,20 @@ namespace mtca4u {
   }
 
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(
-      std::string aliasName) {
+      std::string aliasOrUri) {
+    if(aliasOrUri.substr(0, 6) == "sdm://"){
+      // it is a URI, directly create a deviceinfo and call the internal creator function
+      DeviceInfoMap::DeviceInfo deviceInfo;
+      deviceInfo.uri = aliasOrUri;
+      return createBackendInternal(deviceInfo);
+    }
+
+    // it's not a URI. Try finding the alias in the dmap file.
     if (_dMapFile.empty()) {
       throw DeviceException("DMap file not set.",
                             DeviceException::NO_DMAP_FILE);
     }
-    auto deviceInfo = Utilities::aliasLookUp(aliasName, _dMapFile);
+    auto deviceInfo = Utilities::aliasLookUp(aliasOrUri, _dMapFile);
     return createBackendInternal(deviceInfo);
   }
 
