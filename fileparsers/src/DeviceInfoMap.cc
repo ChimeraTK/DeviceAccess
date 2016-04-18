@@ -34,7 +34,9 @@ namespace mtca4u {
     std::vector<DeviceInfo>::iterator iter;
     iter = find_if(_deviceInfoElements.begin(), _deviceInfoElements.end(), findDevByName_pred(deviceName));
     if (iter == _deviceInfoElements.end()) {
-      throw DMapFileException("Cannot find device \"" + deviceName + "\"in DMAP file", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw DMapFileException("Cannot find device \"" + deviceName +
+                                  "\" in DMAP file:" + _dmapFileName,
+                              LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
     }
     value = *iter;
   }

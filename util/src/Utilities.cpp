@@ -146,13 +146,8 @@ namespace mtca4u {
   {
     DMapFileParser fileParser;
     DeviceInfoMap::DeviceInfo deviceInfo;
-    try {
-      auto deviceInfoPointer = fileParser.parse(dmapFilePath);
-      deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
-    }
-    catch (Exception& e) {
-      std::cout << e.what() << std::endl;
-    }
+    auto deviceInfoPointer = fileParser.parse(dmapFilePath);
+    deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
     return deviceInfo;
   }
 

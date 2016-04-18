@@ -8,6 +8,7 @@ using namespace boost::unit_test_framework;
 #include "PcieBackend.h"
 #include "PcieBackendException.h"
 #include "BackendFactory.h"
+#include "MapException.h"
 
 using namespace mtca4u;
 
@@ -414,7 +415,7 @@ void PcieBackendTest::testOpen(){
 
 void PcieBackendTest::testCreateBackend(){
   /** Try creating a non existing device */
-  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE),BackendFactoryException);
+  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
   /** Try creating an existing device */
   std::cout<<"DeviceName"<<_deviceFileName<<std::endl;
   _pcieBackendInstance = FactoryInstance.createBackend(_deviceFileName);

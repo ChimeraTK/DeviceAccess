@@ -7,6 +7,7 @@
 #include "DummyBackend.h"
 #include "NotImplementedException.h"
 #include "parserUtilities.h"
+#include "MapException.h"
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
@@ -595,7 +596,7 @@ void DummyBackendTest::testCreateBackend() {
   std::list <std::string> pararmeters;
   BOOST_CHECK_THROW(DummyBackend::createInstance("","",pararmeters,""),DummyBackendException);
   /** Try creating a non existing backend */
-  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE),BackendFactoryException);
+  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
   /** Try creating an existing backend */
   _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
   BOOST_CHECK(_backendInstance);

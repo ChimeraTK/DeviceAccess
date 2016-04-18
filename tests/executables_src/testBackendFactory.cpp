@@ -4,6 +4,7 @@ using namespace boost::unit_test_framework;
 #include <cstdio>
 
 #include "BackendFactory.h"
+#include "MapException.h"
 
 //#undef TEST_DMAP_FILE_PATH
 //#define TEST_DMAP_FILE_PATH "/testDummies.dmap"
@@ -38,9 +39,9 @@ void BackendFactoryTest::testCreateBackend() {
   std::string oldtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "Old";
   std::string invalidtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "disabled";
   BackendFactory::getInstance().setDMapFilePath(invalidtestFilePath);
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),BackendFactoryException);//file does not exist. alias cannot be found in any other file.
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"), LibMapException);//dmap file not found exception .
   BackendFactory::getInstance().setDMapFilePath(oldtestFilePath);
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"),BackendFactoryException); //file found but not an existing alias.
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"), LibMapException); //file found but not an existing alias.
   boost::shared_ptr<DeviceBackend> testPtr;
   BOOST_CHECK_NO_THROW(testPtr = BackendFactory::getInstance().createBackend("DUMMYD0")); //entry in old dummies.dmap
   BOOST_CHECK(testPtr);

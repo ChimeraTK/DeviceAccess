@@ -4,6 +4,7 @@ using namespace boost::unit_test_framework;
 #include "Utilities.h"
 #include "BackendFactory.h"
 #include "DeviceInfoMap.h"
+#include "MapException.h"
 
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
@@ -106,10 +107,8 @@ void UtilitiesTest::testIsSdm() {
 
 void UtilitiesTest::testAliasLookUp() {
   std::string testFilePath = TEST_DMAP_FILE_PATH;
-
-  DeviceInfoMap::DeviceInfo deviceInfo = Utilities::aliasLookUp("test",testFilePath);
-  BOOST_CHECK( deviceInfo.deviceName.empty() );
-  deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
+  BOOST_CHECK_THROW(Utilities::aliasLookUp("test",testFilePath), LibMapException);
+  auto deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
   BOOST_CHECK(deviceInfo.deviceName =="DUMMYD0");
 }
 
@@ -117,9 +116,8 @@ void UtilitiesTest::testFindFirstOfAlias() {
   setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
   std::string testFilePath = TEST_DMAP_FILE_PATH;
   BackendFactory::getInstance().setDMapFilePath(testFilePath);
-  std::string dmapfile = Utilities::findFirstOfAlias("test");
-  BOOST_CHECK(dmapfile.empty());
-  dmapfile = Utilities::findFirstOfAlias("DUMMYD0");
+  BOOST_CHECK_THROW(Utilities::findFirstOfAlias("test"), LibMapException);
+  auto dmapfile = Utilities::findFirstOfAlias("DUMMYD0");
   BOOST_CHECK(!dmapfile.empty());
 }
 

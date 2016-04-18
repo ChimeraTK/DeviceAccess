@@ -60,12 +60,6 @@ namespace mtca4u {
                             DeviceException::NO_DMAP_FILE);
     }
     auto deviceInfo = Utilities::aliasLookUp(aliasName, _dMapFile);
-    if (deviceInfo.uri.empty()) { // did not find alias in this dmap file
-      std::stringstream errorMessage;
-      errorMessage << "Could not find '" << aliasName << "' in dmapFile: " << _dMapFile;
-      throw BackendFactoryException(errorMessage.str(),
-                                    BackendFactoryException::UNKNOWN_ALIAS);
-    }
     return createBackendInternal(deviceInfo);
   }
 
