@@ -11,8 +11,8 @@ namespace mtca4u {
 
   RegisterAccessor::RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer,
       const RegisterPath &registerPathName)
-    : _registerPathName(registerPathName), _dev(deviceBackendPointer),
-    _registerInfo(_dev->getRegisterCatalogue().getRegister(registerPathName)){
+    : _registerPathName(registerPathName), _backend(deviceBackendPointer),
+    _registerInfo(_backend->getRegisterCatalogue().getRegister(registerPathName)){
   }
 
   RegisterAccessor::~RegisterAccessor() {}
