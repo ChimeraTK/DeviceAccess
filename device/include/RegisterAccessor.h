@@ -138,12 +138,11 @@ namespace mtca4u {
       FixedPointConverter getFixedPointConverter() const {
  	// We use the double accessor, which is the most likely to exist
 	auto & accessorHandler = boost::fusion::at_key<double>(_convertingAccessorHandlers.table);
-	if (! accessorHandler.accessor){
-            //allocate the smallest possible accessor to be memory and transfer efficient.
-            //(about the offset we can just guess that 0 is fine.)
-            accessorHandler.accessor = _backend->getRegisterAccessor<double>(_registerPathName, 1, 0, false /*not raw*/);
-        }
-        return accessorHandler.accessor->getFixedPointConverter();
+	//In case we have to allocate, use the smallest possible accessor to be memory and transfer efficient.
+	//(about the offset we can just guess that 0 is fine.)
+	accessorHandler.checkAndResize(1, 0, false /*not raw*/, _backend, _registerPathName);
+
+	return accessorHandler.accessor->getFixedPointConverter();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -218,17 +217,6 @@ namespace mtca4u {
 
       /** The RegisterInfo for this register */
       boost::shared_ptr< RegisterInfo > _registerInfo;
-
-      /** a "typedef" to be able to use shared_ptr<NDRegisterAccessor> with the TemplateUserTypeMap */
-      //template<class UserType>
-      //using NDAccessorPtr = boost::shared_ptr<NDRegisterAccessor<UserType> >;
-      //
-      //sorry, the above code does not work with gcc4.6 (Ubuntu12.4)
-      template<class UserType>                                                                                                                                                                               
-      class NDAccessorPtr{
-      public:
-	boost::shared_ptr<NDRegisterAccessor<UserType> > instance;
-      };
 
       template<class UserType>
       class AccessorHandler{
