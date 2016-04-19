@@ -59,6 +59,8 @@ class MtcaDeviceTest {
     /** Testing the write function with a multiple registers.
      */
     void testRegisterAccessor_writeBlock();
+    /** An implementation detail, but reqired for performance reasons... */
+    void testRegisterAccessor_readWriteResize();
 
     /** Check that the default arguments work, which means writing of one word,
      * and check the corner case
@@ -109,7 +111,8 @@ class MtcaDeviceTestSuite : public test_suite {
           mtcaDeviceTest));
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries,
           mtcaDeviceTest));
-
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_readWriteResize,
+	  mtcaDeviceTest));
       add(BOOST_TEST_CASE(&MtcaDeviceTest::testMapFileParser_parse));
       add(BOOST_TEST_CASE(&MtcaDeviceTest::testThrowIfNeverOpened));
       //        test_case* writeTestCase = BOOST_CLASS_TEST_CASE(
@@ -144,7 +147,7 @@ void MtcaDeviceTest::testOpenClose() {
   BOOST_CHECK_NO_THROW(device->open(DEVICE_ALIAS));
   int32_t readValue;
   // read one known register to check that the device is open and the mapping is working
-  BOOST_CHECK_NO_THROW(device->getRegisterAccessor("WORD_CLK_DUMMY","ADC")->read(&readValue));
+  device->getRegisterAccessor("WORD_CLK_DUMMY","ADC")->read(&readValue);
   BOOST_CHECK(readValue==0x444D4D59);
   BOOST_CHECK_NO_THROW(device->close());
 
@@ -544,4 +547,106 @@ void MtcaDeviceTest::testRegisterAccessor_writeSimple() {
 
   registerAccessor->write(-17.25);
   BOOST_CHECK(registerAccessor->read<double>() == -17.25);
+}
+
+// a helper class exposes the internal AccessorHandlers.
+// It is not nice to test it like this, but the effect should completely be transparent through the public interface
+// so one would need some indirect methods and investigate side effects to test this through device.
+class TestableRegisterAccessor: public RegisterAccessor{
+public:
+  TestableRegisterAccessor(boost::shared_ptr<DeviceBackend> & deviceBackendPointer, const RegisterPath &registerPathName)
+  : RegisterAccessor(deviceBackendPointer, registerPathName){}
+  template<typename UserType>
+  AccessorHandler<UserType> const & getAccessorHandler(){
+    return boost::fusion::at_key<UserType>(_convertingAccessorHandlers.table);
+  }
+};
+
+void MtcaDeviceTest::testRegisterAccessor_readWriteResize(){
+  // To be able to use the testable accessor, we have to create it manually,
+  // so we need the backend. Arghhh, now this is ugly....
+  auto backend = BackendFactory::getInstance().createBackend("sdm://./dummy=mtcadummy.map");
+
+  TestableRegisterAccessor accessor(backend, "ADC/AREA_DMAABLE");
+  // We just test the implementation with some data type. It's template code.
+  // For convenience we use int32_t because we can reuse the buffer for raw.
+  std::vector<int32_t> buffer(accessor.getNumberOfElements());
+
+  auto & accessorHandler=accessor.getAccessorHandler<int32_t>();
+  BOOST_CHECK( ! accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.beginIndex == 0);
+  BOOST_CHECK( accessorHandler.endIndex == 0);
+
+  // Systematically check the following cases:
+  // 1) |......XXXX......|
+  // 1a)|......XXXX......|
+  // 2) |.......XX.......|
+  // 3) |....XXXX........|
+  // 4) |........XXXX....|
+  // 5) |.XX.............|
+  // 6) |.............XX.|
+
+
+  // now use read(Raw)/write(Raw) in a manner that the internal accessor is forced to change
+  // Just check that the accessor is growing. That the correct offsets and data are accessed are
+  // not part of this detail test and are checked above in an implementation-independent way, as it should be.
+  // 1)
+  accessor.write(buffer.data(), 4, 30);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 4);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 30);
+  BOOST_CHECK( accessorHandler.endIndex == 34);
+  auto ndAccessorRawPointer = accessorHandler.accessor.get(); // attention, raw pointer. Never dereference, will become invalid!
+
+  // 1a) same range, accessor should not change / be reallocated
+  accessor.read(buffer.data(), 4, 30);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 4);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 30);
+  BOOST_CHECK( accessorHandler.endIndex == 34);
+  BOOST_CHECK( accessorHandler.accessor.get() == ndAccessorRawPointer);
+
+  // 2) smaller range, accessor should not change / be reallocated
+  accessor.read(buffer.data(), 2, 31);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 4);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 30);
+  BOOST_CHECK( accessorHandler.endIndex == 34);
+  BOOST_CHECK( accessorHandler.accessor.get() == ndAccessorRawPointer);
+
+  // 3)
+  accessor.read(buffer.data(), 4, 28);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 6);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 28);
+  BOOST_CHECK( accessorHandler.endIndex == 34);
+
+  // 4)
+  accessor.read(buffer.data(), 4, 32);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 8);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 28);
+  BOOST_CHECK( accessorHandler.endIndex == 36);
+
+  // 5)
+  accessor.read(buffer.data(), 4, 2);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 34);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 2);
+  BOOST_CHECK( accessorHandler.endIndex == 36);
+
+  // 6)
+  accessor.read(buffer.data(), 4, 60);
+  BOOST_REQUIRE( accessorHandler.accessor);
+  BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 62);
+  std::cout << "begin " << accessorHandler.beginIndex << ", size " << accessorHandler.accessor->getNumberOfSamples() << std::endl;
+  BOOST_CHECK( accessorHandler.beginIndex == 2);
+  BOOST_CHECK( accessorHandler.endIndex == 64);
+
 }
