@@ -132,7 +132,8 @@ void UtilitiesTest::testgetAliasList() {
     "PCIE1",   "PCIE0",   "PCIE2",    "PCIE3",     "PCIE0",
     "FAKE0",   "FAKE1",   "FAKE3",    "DUMMYD0",   "DUMMYD1",  "DUMMYD2",
     "example", "DUMMYD9", "mskrebot", "mskrebot1", "OLD_PCIE",
-    "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES", "PCIE_DOUBLEMAP"
+    "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES", "PCIE_DOUBLEMAP",
+    "REBOT_DOUBLEMAP"
   };
 
   mtca4u::setDMapFilePath("./dummies.dmap");

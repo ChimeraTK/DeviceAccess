@@ -120,6 +120,24 @@ namespace mtca4u {
 
     std::string tmcbIP = *it;
     int portNumber = std::stoi(*(++it));
+
+    if (++it != parameters.end()){
+      // there is a third parameter, it is the map file
+      if (mapFileName.empty()){
+        // we use the parameter from the URI
+        // \todo FIXME This can be a relative path. In case the URI is coming from a dmap file,
+        // and no map file has been defined in the third column, this path is not interpreted relative to the dmap file.
+        // Note: you cannot always interpret it relative to the dmap file because the URI can directly come from the Devic::open() function,
+        // although a dmap file path has been set. We don't know this here.
+        mapFileName =  *it;
+      }else{
+        // We take the entry from the dmap file because it contains the correct path relative to the dmap file
+        // (this is case we print a warning)
+        std::cout << "Warning: map file name specified in the sdm URI and the third column of the dmap file. "
+                    << "Taking the name from the dmap file ('" << mapFileName << "')" << std::endl;
+      }
+    }
+
     return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName));
   }
 

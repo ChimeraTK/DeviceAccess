@@ -5,8 +5,10 @@
 
 #include "Utilities.h"
 #include "DMapFileParser.h"
+#include "NumericAddress.h"
 
 using namespace boost::unit_test_framework;
+using mtca4u::numeric_address::BAR;
 
 typedef mtca4u::DeviceInfoMap::DeviceInfo DeviceInfo;
 
@@ -176,9 +178,43 @@ BOOST_CHECK_EQUAL(data, readValue);
 
 inline void RebotTestClass::testFactory() {
 
+  // There are four situations where the map-file information is coming from
+  // 1. From the dmap file (old way, third column in dmap file)
+  // 2. From the URI (new, recommended, not supported by dmap parser at the moment)
+  // 3. No map file at all (not supported by the dmap parser at the moment)
+  // 4. Both dmap file and URI contain the information (prints a warning and takes the one from the dmap file)
+
+  // 1. The original way with map file as third column in the dmap file
   mtca4u::Device rebotDevice;
   rebotDevice.open(_cardAlias);
   checkWriteReadFromRegister(rebotDevice);
+  rebotDevice.write<double>("BOARD/WORD_USER", 48 );
+  rebotDevice.close(); // we have to close this because
+
+  // 2. Creating without map file in the dmap only works by putting an sdm on creation because we have to bypass the
+  // dmap file parser which at the time of writing this requires a map file as third column
+  try{
+    mtca4u::Device secondDevice;
+    secondDevice.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+    BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
+    secondDevice.close();
+  }catch(mtca4u::DeviceException &e){
+    BOOST_ERROR("Just an error, don't fail on exception during developnment");
+  }
+
+  // 3. We don't have a map file, so we have to use numerical addressing
+  mtca4u::Device thirdDevice;
+  thirdDevice.open("sdm://./rebot=localhost,5001");
+  BOOST_CHECK( thirdDevice.read<int32_t>(BAR/0/0xC)== 48<<3 ); // The user register is on bar 0, address 0xC.
+                                                               // We have no fixed point data conversion but 3 fractional bits.
+  thirdDevice.close();
+
+  // 4. This should print a warning. We can't check that, so we just check that it does work like the other two options.
+  mtca4u::Device fourthDevice;
+  fourthDevice.open("REBOT_DOUBLEMAP");
+  BOOST_CHECK( fourthDevice.read<double>("BOARD/WORD_USER")== 48 );
+
+
 }
 
 void RebotTestClass::checkWriteReadFromRegister(

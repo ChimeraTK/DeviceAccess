@@ -19,4 +19,4 @@ SEQUENCES   sdm://./dummy=sequences.map sequences.map
 MIXED_SEQUENCES   sdm://./dummy=sequences.map bam_fmc25_r1225.mapp
 INVALID_SEQUENCES   sdm://./dummy=sequences.map invalidSequences.map
 PCIE_DOUBLEMAP sdm://./pci:pcieunidummys6=mtcadummy.map mtcadummy.map
-
+REBOT_DOUBLEMAP sdm://./rebot=localhost,5001,mtcadummy_rebot.map mtcadummy_rebot.map
