@@ -9,8 +9,12 @@ using namespace boost::unit_test_framework;
 #include "PcieBackendException.h"
 #include "BackendFactory.h"
 #include "MapException.h"
+#include "Device.h"
+#include "DeviceException.h"
+#include "NumericAddress.h"
 
 using namespace mtca4u;
+using mtca4u::numeric_address::BAR;
 
 //constants for the registers and their contents. We keep the hard coded
 //values at one place and only use the constants in the code below.
@@ -38,7 +42,7 @@ using namespace mtca4u;
  *  has to be executed first, and testClose() has to be executed last.
  *  Further dependencies are implemented in the teste suite.
  */
-static BackendFactory &FactoryInstance = BackendFactory::getInstance();
+static BackendFactory &factoryInstance = BackendFactory::getInstance();
 class PcieBackendTest
 {
   public:
@@ -414,15 +418,47 @@ void PcieBackendTest::testOpen(){
 }
 
 void PcieBackendTest::testCreateBackend(){
-  /** Try creating a non existing device */
-  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
-  /** Try creating an existing device */
-  std::cout<<"DeviceName"<<_deviceFileName<<std::endl;
-  _pcieBackendInstance = FactoryInstance.createBackend(_deviceFileName);
+  /** Try creating a non existing backend */
+  BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
+  /** Try creating an existing backend */
+  _pcieBackendInstance = factoryInstance.createBackend(_deviceFileName);
   BOOST_CHECK(_pcieBackendInstance != 0);
   /** Backend should be in connect state now */
   BOOST_CHECK(_pcieBackendInstance->isConnected() == true );
   /** Backend should not be in open state */
   BOOST_CHECK(_pcieBackendInstance->isOpen() == false );
+
+  // OK, now that we know that basic creation is working let's do some tests of the specifics
+  // of the create function. We use the device interface because it is much more convenient.
+
+  // There are four situations where the map-file information is coming from
+  // 1. From the dmap file (old way, third column in dmap file)
+  // 2. From the URI (new, recommended, not supported by dmap parser at the moment)
+  // 3. No map file at all (not supported by the dmap parser at the moment)
+  // 4. Both dmap file and URI contain the information (prints a warning and takes the one from the dmap file)
+
+  // 1. The original way with map file as third column in the dmap file
+  Device firstDevice; firstDevice.open("PCIE0");
+  // this backend is without module in the register name
+  firstDevice.write<double>("WORD_USER",48);
+  BOOST_CHECK(true);
+
+  // 2. Creating without map file in the dmap only works by putting an sdm on creation because we have to bypass the
+  // dmap file parser which at the time of writing this requires a map file as third column
+  Device secondDevice; secondDevice.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
+  try{
+    BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
+  }catch(DeviceException &){
+    BOOST_ERROR("Report an error because of an exception. But don't fail during development to get all checks through.");
+  }
+
+  // 3. We don't have a map file, so we have to use numerical addressing
+  Device thirdDevice; thirdDevice.open("sdm://./pci:pcieunidummys6");
+  BOOST_CHECK( thirdDevice.read<int32_t>(BAR/0/0xC)== 48<<3 ); // the user register is on bar 0, address 0xC. We have no fixed point data conversion
+
+  // 4. This should print a warning. We can't check that, so we just check that it does work like the other two options.
+  Device fourthDevice;  fourthDevice.open("PCIE_DOUBLEMAP");
+  BOOST_CHECK( fourthDevice.read<double>("BOARD/WORD_USER")== 48 );
+
 }
 

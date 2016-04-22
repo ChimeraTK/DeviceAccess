@@ -37,6 +37,9 @@ namespace mtca4u{
         /** The dmap file path has not been set */
         NO_DMAP_FILE,
 
+        /** There has been an error (logical or parse error) in the dmap file*/
+        DMAP_FILE_ERROR,
+
         /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
         EMPTY_AREA = CANNOT_OPEN_MAP_FILE,
 
