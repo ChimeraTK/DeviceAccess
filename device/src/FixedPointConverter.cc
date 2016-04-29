@@ -1,4 +1,5 @@
 #include "FixedPointConverter.h"
+#include "DeviceException.h"
 
 namespace mtca4u {
 
@@ -23,11 +24,11 @@ namespace mtca4u {
     if (nBits > 32){
       std::stringstream errorMessage;
       errorMessage << "The number of bits must be <= 32, but is " << nBits;
-      throw std::invalid_argument(errorMessage.str());
+      throw DeviceException(errorMessage.str(), DeviceException::WRONG_PARAMETER);
     }
 
     if (nBits == 0){
-      throw std::invalid_argument("A word with zero significant bits is not valid.");
+      throw DeviceException("A word with zero significant bits is not valid.", DeviceException::WRONG_PARAMETER);
     }
 
     // For floating-point types: check if number of fractional bits are complying with the dynamic range
@@ -37,7 +38,7 @@ namespace mtca4u {
       std::stringstream errorMessage;
       errorMessage << "The number of fractional bits exceeds the dynamic"
           << " range of a double.";
-      throw std::invalid_argument(errorMessage.str());
+      throw DeviceException(errorMessage.str(), DeviceException::WRONG_PARAMETER);
     }
 
     // compute mask for the signed bit

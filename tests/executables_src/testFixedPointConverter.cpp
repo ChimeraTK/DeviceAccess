@@ -33,7 +33,7 @@
 using namespace boost::unit_test_framework;
 
 #include <sstream>
-#include <stdexcept>
+#include "DeviceException.h"
 
 #include "FixedPointConverter.h"
 using namespace mtca4u;
@@ -129,12 +129,12 @@ BOOST_AUTO_TEST_CASE( testConstructor ){
   BOOST_CHECK_NO_THROW( FixedPointConverter(16, 42, false) );
 
   // number of significant bits
-  BOOST_CHECK_THROW( FixedPointConverter(33), std::invalid_argument);
-  BOOST_CHECK_THROW( FixedPointConverter(0) , std::invalid_argument);
+  BOOST_CHECK_THROW( FixedPointConverter(33), DeviceException);
+  BOOST_CHECK_THROW( FixedPointConverter(0) , DeviceException);
 
   // dynamic range of sufficient for bit shift
-  BOOST_CHECK_THROW( FixedPointConverter(2, 1021-1) , std::invalid_argument);
-  BOOST_CHECK_THROW( FixedPointConverter(2, -1024+1) , std::invalid_argument);
+  BOOST_CHECK_THROW( FixedPointConverter(2, 1021-1) , DeviceException);
+  BOOST_CHECK_THROW( FixedPointConverter(2, -1024+1) , DeviceException);
   BOOST_CHECK_NO_THROW( FixedPointConverter(2, 1021-2) );
   BOOST_CHECK_NO_THROW( FixedPointConverter(2, -1024+2) );
 }
