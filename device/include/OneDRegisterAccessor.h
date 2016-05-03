@@ -56,8 +56,8 @@ namespace mtca4u {
        *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
        *  the register.
        *  Note: Using the iterators is slightly more efficient than using this operator! */
-      UserType& operator[](unsigned int sample) {
-        return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,sample);
+      UserType& operator[](unsigned int element) {
+        return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,element);
       }
 
       /** Return number of elements/samples in the register */
@@ -86,6 +86,14 @@ namespace mtca4u {
       /* Swap content of (cooked) buffer with std::vector */
       void swap(std::vector<UserType> &x) {
         NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).swap(x);
+      }
+
+      /** Return a direct pointer to the memory buffer storng the elements.
+       *  @attention Note that this pointer will be invalidated during read(), write() and swap(). If this accessor is
+       *  part of a TransferGroup, any call to one of these functions on any element of the TransferGroup or the
+       *  TransferGroup itself may invalidate the pointer! */
+      UserType* data() {
+        return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).data();
       }
 
       /** Return if the register accessor allows only reading */

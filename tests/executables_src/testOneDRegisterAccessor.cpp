@@ -92,6 +92,15 @@ void OneDRegisterTest::testRegisterAccessor() {
   device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
   BOOST_CHECK( compare == 999 );
 
+  // test data() function
+  int *ptr = intRegister.data();
+  BOOST_CHECK( ptr[0] = -666 );
+  BOOST_CHECK( ptr[1] = 999 );
+  ptr[0] = 123;
+  ptr[1] = 456;
+  BOOST_CHECK( intRegister[0] = 123 );
+  BOOST_CHECK( intRegister[1] = 456 );
+
   // test iterators with begin and end
   int ic = 0;
   for(OneDRegisterAccessor<int>::iterator it = intRegister.begin(); it != intRegister.end(); ++it) {
