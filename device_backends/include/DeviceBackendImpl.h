@@ -25,18 +25,28 @@ namespace mtca4u {
 
       virtual bool isConnected(){ return _connected; }
 
+      virtual const RegisterCatalogue& getRegisterCatalogue() const {
+        return _catalogue;
+      }
+
       virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/) {
-        // implementing this read function is not mandatory, so we throw a not-implemented exception by default
-        throw DeviceException("Reading by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+        throw DeviceException("The depcrecated DeviceBackend::read() function is not implemented by this backend. "
+            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
       }
 
       virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/,  size_t /*sizeInBytes*/) {
-        // implementing this read function is not mandatory, so we throw a not-implemented exception by default
-        throw DeviceException("Writing by memory address is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+        throw DeviceException("The depcrecated DeviceBackend::write() function is not implemented by this backend. "
+            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
       }
 
-      virtual const RegisterCatalogue& getRegisterCatalogue() const {
-        return _catalogue;
+      virtual void read(const std::string &, const std::string &, int32_t *, size_t = 0, uint32_t = 0) {
+        throw DeviceException("The depcrecated DeviceBackend::read() function is not implemented by this backend. "
+            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
+      }
+
+      virtual void write(const std::string &, const std::string &, int32_t const *, size_t = 0, uint32_t = 0) {
+        throw DeviceException("The depcrecated DeviceBackend::write() function is not implemented by this backend. "
+            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
       }
 
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const  {
@@ -55,7 +65,7 @@ namespace mtca4u {
       /** flag if device is connected. */
       bool        _connected;
 
-      /** Add plugin-provided decorators to a BufferingRegisterAccessor */
+      /** Add plugin-provided decorators to a NDRegisterAccessor */
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor(
           const RegisterPath &registerPathName, boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
