@@ -81,10 +81,6 @@ namespace mtca4u {
         return _info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
-      virtual FixedPointConverter getFixedPointConverter() const {
-        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
-      }
-
     protected:
 
       /// register and module name

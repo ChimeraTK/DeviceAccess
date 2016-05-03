@@ -11,6 +11,7 @@
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
 #include "FixedPointConverter.h"
+#include "DeviceException.h"
 
 namespace mtca4u {
 
@@ -67,7 +68,9 @@ namespace mtca4u {
        *  \deprecated This function is for backwards compatibility with the deprecated RegisterAccessor only.
        *  Return the fixed point converter used to convert the raw data from the device to the type T. If no conversion
        *  by the fixed point converter is required, this function will throw an exception. */
-      virtual FixedPointConverter getFixedPointConverter() const = 0;
+      virtual FixedPointConverter getFixedPointConverter() const  {
+        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+      }
 
     protected:
 
