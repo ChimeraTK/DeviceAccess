@@ -97,6 +97,7 @@ namespace mtca4u {
   : _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName)
   {
       // re-split register and module after merging names by the last dot (to allow module.register in the register name)
+      _registerPathName.setAltSeparator(".");
       auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
       _moduleName = moduleAndRegister.first;
       _registerName = moduleAndRegister.second;

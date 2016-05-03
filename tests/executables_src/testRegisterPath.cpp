@@ -44,16 +44,30 @@ void RegisterPathTest::testRegisterPath() {
   RegisterPath path1;
   RegisterPath path2("module1");
   RegisterPath path3("//module//blah/");
-  RegisterPath path4("moduleX..Yblah/sub");
+  RegisterPath path4("moduleX..Yblah./sub");
   BOOST_CHECK( path1 == "/" );
   BOOST_CHECK( path1.length() == 1 );
   BOOST_CHECK( path2 == "/module1" );
   BOOST_CHECK( path2.length() == 8 );
   BOOST_CHECK( path3 == "/module/blah" );
   BOOST_CHECK( path3.length() == 12 );
+
+  BOOST_CHECK( path3.getWithAltSeparator() == "module/blah" );
+  path3.setAltSeparator(".");
+  BOOST_CHECK( path3 == "/module/blah" );
   BOOST_CHECK( path3.getWithAltSeparator() == "module.blah" );
+  path3.setAltSeparator("");
+
+  BOOST_CHECK( path4 == "/moduleX..Yblah./sub" );
+  path4.setAltSeparator(".");
   BOOST_CHECK( path4 == "/moduleX/Yblah/sub" );
+  BOOST_CHECK( path4.getWithAltSeparator() == "moduleX.Yblah.sub" );
   BOOST_CHECK( (path4/"next.register").getWithAltSeparator() == "moduleX.Yblah.sub.next.register" );
+  path4.setAltSeparator("/");   // this should clear the alternate separator as well
+  BOOST_CHECK( path4 == "/moduleX..Yblah./sub" );
+  path4.setAltSeparator("");
+  BOOST_CHECK( path4 == "/moduleX..Yblah./sub" );
+
   BOOST_CHECK( path3/"register" == "/module/blah/register");
   BOOST_CHECK( "root"/path3/"register" == "/root/module/blah/register");
   BOOST_CHECK( "root/"+path3+"register" == "root//module/blahregister");

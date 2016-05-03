@@ -57,7 +57,9 @@ namespace mtca4u {
         public:
 
           virtual RegisterPath getRegisterName() const {
-            return RegisterPath(module)/name;
+            RegisterPath path = RegisterPath(module)/name;
+            path.setAltSeparator(".");
+            return path;
           }
 
           virtual unsigned int getNumberOfElements() const {

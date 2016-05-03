@@ -7,15 +7,20 @@
 
 #include "RegisterPath.h"
 
+#include <iostream>
+
 namespace mtca4u {
 
   const char RegisterPath::separator[] = "/";
-  const char RegisterPath::separator_alt[] = ".";
 
   /********************************************************************************************************************/
 
   RegisterPath operator/(const RegisterPath &leftHandSide, const RegisterPath &rightHandSide) {
-    return ((std::string)leftHandSide)+((std::string)rightHandSide);
+    leftHandSide.getCommonAltSeparator(rightHandSide); // just to check compatibility of the two RegisterPaths
+    RegisterPath ret(leftHandSide);
+    ret.path += rightHandSide.path;     // rightHandSide has a leading separator
+    ret.removeExtraSeparators();
+    return ret;
   }
 
   /********************************************************************************************************************/
@@ -26,8 +31,11 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::string operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide) {
-    return ((std::string)leftHandSide)+rightHandSide;
+  RegisterPath operator+(const RegisterPath &leftHandSide, const std::string &rightHandSide) {
+    RegisterPath ret(leftHandSide);
+    ret.path += rightHandSide;
+    ret.removeExtraSeparators();
+    return ret;
   }
 
   /********************************************************************************************************************/
@@ -39,7 +47,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   RegisterPath operator*(const RegisterPath &leftHandSide, int rightHandSide) {
-    return std::string(leftHandSide) + std::string("*") + std::to_string(rightHandSide);
+    RegisterPath ret(std::string(leftHandSide) + std::string("*") + std::to_string(rightHandSide));
+    ret.setAltSeparator(leftHandSide.separator_alt);
+    ret.removeExtraSeparators();
+    return ret;
   }
 
   /********************************************************************************************************************/
