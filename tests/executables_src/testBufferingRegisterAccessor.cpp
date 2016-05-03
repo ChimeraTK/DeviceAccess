@@ -185,9 +185,10 @@ void BufferingRegisterTest::testRegisterAccessor() {
   BOOST_CHECK( compare == 23.*8. );
 
   // test pre-decrement operator
-  copy = --floatRegister;
+  copy.replace(--floatRegister);
   BOOST_CHECK( implCopy->isSameRegister(impl->getHardwareAccessingElements()[0]) );
   BOOST_CHECK( floatRegister == 22. );
+  BOOST_CHECK( copy == 22. );
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 22.*8. );

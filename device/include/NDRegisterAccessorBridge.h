@@ -19,6 +19,17 @@ namespace mtca4u {
    *  to be added to a TransferGroup. Also stores the shared pointer to the NDRegisterAccessor implementation. */
   template<typename UserType>
   class NDRegisterAccessorBridge : protected TransferElement {
+
+    public:
+
+      /** Assign a new accessor to this NDRegisterAccessorBridge. Since another NDRegisterAccessorBridge is passed as
+       *  argument, both NDRegisterAccessorBridges will then point to the same accessor and thus are sharing the
+       *  same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding
+       *  getXXRegisterAccessor() function of Device must be called. */
+      void replace(const NDRegisterAccessorBridge &newAccessor) {
+        _impl = newAccessor._impl;
+      }
+
     protected:
 
       NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
@@ -52,6 +63,12 @@ namespace mtca4u {
       }
 
       friend class TransferGroup;
+
+    private:
+
+      /** prevent copying by operator=, since it will be confusing (operator= may also be overloaded to access the
+       *  content of the buffer!) */
+      const NDRegisterAccessorBridge& operator=(const NDRegisterAccessorBridge& rightHandSide) const;
 
   };
 }

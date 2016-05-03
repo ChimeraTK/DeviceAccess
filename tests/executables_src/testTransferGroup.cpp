@@ -143,12 +143,12 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
 
   device.open("LMAP0");
   BufferingRegisterAccessor<int> a[6];
-  a[0] = device.getBufferingRegisterAccessor<int>("","SingleWord");
-  a[1] = device.getBufferingRegisterAccessor<int>("","FullArea");
-  a[2] = device.getBufferingRegisterAccessor<int>("","PartOfArea");
-  a[3] = device.getBufferingRegisterAccessor<int>("","Channel3");
-  a[4] = device.getBufferingRegisterAccessor<int>("","Channel4");
-  a[5] = device.getBufferingRegisterAccessor<int>("","Constant");
+  a[0].replace(device.getBufferingRegisterAccessor<int>("","SingleWord"));
+  a[1].replace(device.getBufferingRegisterAccessor<int>("","FullArea"));
+  a[2].replace(device.getBufferingRegisterAccessor<int>("","PartOfArea"));
+  a[3].replace(device.getBufferingRegisterAccessor<int>("","Channel3"));
+  a[4].replace(device.getBufferingRegisterAccessor<int>("","Channel4"));
+  a[5].replace(device.getBufferingRegisterAccessor<int>("","Constant"));
 
   // obtain the private pointers to the implementation of the accessor
   boost::shared_ptr< NDRegisterAccessor<int> > impl[6];

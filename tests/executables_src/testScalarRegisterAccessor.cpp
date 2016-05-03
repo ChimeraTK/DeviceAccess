@@ -68,7 +68,7 @@ void ScalarRegisterTest::testCreation() {
   // obtain register accessor in disconnected state
   ScalarRegisterAccessor<int> intRegisterDisconnected;
   BOOST_CHECK( intRegisterDisconnected.isInitialised() == false );
-  intRegisterDisconnected = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  intRegisterDisconnected.replace(device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS"));
   BOOST_CHECK( intRegisterDisconnected.isInitialised() == true );
 
   // obtain register accessor with integral type
@@ -129,7 +129,7 @@ void ScalarRegisterTest::testIntRegisterAccessor() {
   BOOST_CHECK( dummy == 3 );
 
   // test pre-decrement operator
-  copy = --accessor;
+  copy.replace(--accessor);
 
   BOOST_CHECK( accessor == 2 );
   BOOST_CHECK( copy == 2 );
