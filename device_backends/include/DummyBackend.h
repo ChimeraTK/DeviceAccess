@@ -149,12 +149,15 @@ namespace mtca4u {
       static boost::shared_ptr<DeviceBackend> returnInstance(
           const std::string& instanceId, Args&&... arguments) {
         if (instanceId == "") {
-          return boost::shared_ptr<DeviceBackend>(new T(arguments...));
+          // std::forward because template accepts forwarding references
+          // (Args&&) and this can have both lvalue and rvalue references passed
+          // as arguments.
+          return boost::shared_ptr<DeviceBackend>(new T(std::forward<Args>(arguments)...));
         }
         // search instance map and create new instanceId, if not found under the
         // name
         if (getInstanceMap().find(instanceId) == getInstanceMap().end()) {
-          boost::shared_ptr<DeviceBackend> ptr(new T(arguments...));
+          boost::shared_ptr<DeviceBackend> ptr(new T(std::forward<Args>(arguments)...));
           getInstanceMap().insert(std::make_pair(instanceId, ptr));
           return ptr;
         }
