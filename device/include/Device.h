@@ -1,14 +1,10 @@
+/*
+ * Device.h
+ */
+
 #ifndef MTCA4U_DEVICE_H
 #define MTCA4U_DEVICE_H
 
-/**
- *      @file           Device.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @brief          Template that connect functionality of libdev and libmap
- *libraries.
- *                      This file support only map file parsing.
- *
- */
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -20,6 +16,7 @@
 #include "OneDRegisterAccessor.h"
 #include "TwoDRegisterAccessor.h"
 #include "BufferingRegisterAccessor.h"
+#include "AccessMode.h"
 
 // Note: for backwards compatibility there is RegisterAccessor.h and MultiplexedDataAccessor.h included at the end
 // of this file.
@@ -75,12 +72,12 @@ namespace mtca4u {
        *
        *  The optional argument wordOffsetInRegister allows to access another but the first word of a larger register.
        *
-       *  The last optional argument enforceRawAccess allows to enforce the raw access by disabling any possible
-       *  conversion from the original hardware data type into the given UserType. Obtaining the accessor with a
-       *  UserType unequal to the raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER. */
+       *  The last optional argument flags allows to control certain details how the register is accessed. It allows
+       *  e.g. to enable raw access. See AccessMode documentation for more details. Passing an access mode flag which
+       *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException. */
       template<typename UserType>
       ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
+          size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
 
       /** Get a OneDRegisterAccessor object for the given register.
        *
@@ -91,12 +88,12 @@ namespace mtca4u {
        *  The optional arguments numberOfWords and wordOffsetInRegister allow to limit the accessor to a part of the
        *  register.
        *
-       *  The last optional argument enforceRawAccess allows to enforce the raw access by disabling any possible
-       *  conversion from the original hardware data type into the given UserType. Obtaining the accessor with a
-       *  UserType unequal to the raw data type will fail and throw a DeviceException with the id EX_WRONG_PARAMETER. */
+       *  The last optional argument flags allows to control certain details how the register is accessed. It allows
+       *  e.g. to enable raw access. See AccessMode documentation for more details. Passing an access mode flag which
+       *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException. */
       template<typename UserType>
       OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
-          size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
+          size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
 
       /** Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor. */
@@ -117,7 +114,7 @@ namespace mtca4u {
        *  If a multi-word register is read, only the first element is returned. This function only works for 1D
        *  registers. */
       template<typename UserType>
-      UserType read(const RegisterPath &registerPathName, bool enforceRawAccess=false) const;
+      UserType read(const RegisterPath &registerPathName, const AccessModeFlags &flags={}) const;
 
       /** \brief <b>Inefficient convenience function</b> to read a multi-word register without obtaining an accessor.
        *
@@ -130,7 +127,7 @@ namespace mtca4u {
        *  allows to skip the first wordOffsetInRegister elements of the register. */
       template<typename UserType>
       std::vector<UserType> read(const RegisterPath &registerPathName, size_t numberOfWords,
-          size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
+          size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
 
       /** \brief <b>Inefficient convenience function</b> to write a single-word register without obtaining an accessor.
        *
@@ -140,7 +137,7 @@ namespace mtca4u {
        *  If a multi-word register is read, only the first element is written. This function only works for 1D
        *  registers.*/
       template<typename UserType>
-      void write(const RegisterPath &registerPathName, UserType value, bool enforceRawAccess=false);
+      void write(const RegisterPath &registerPathName, UserType value, const AccessModeFlags &flags={});
 
       /** \brief <b>Inefficient convenience function</b> to write a multi-word register without obtaining an accessor.
        *
@@ -151,7 +148,78 @@ namespace mtca4u {
        *  argument wordOffsetInRegister allows to skip the first wordOffsetInRegister elements of the register. */
       template<typename UserType>
       void write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister=0,
-          bool enforceRawAccess=false);
+          const AccessModeFlags &flags={});
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  <b>Inefficient convenience function</b> to read a single-word register without obtaining an accessor.
+       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
+       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
+       *
+       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
+      template<typename UserType>
+      UserType read(const RegisterPath &registerPathName, bool enforceRawAccess) const;
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  Inefficient convenience function</b> to read a multi-word register without obtaining an accessor.
+       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
+       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
+       *
+       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
+      template<typename UserType>
+      std::vector<UserType> read(const RegisterPath &registerPathName, size_t numberOfWords,
+          size_t wordOffsetInRegister, bool enforceRawAccess) const;
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  Inefficient convenience function</b> to write a single-word register without obtaining an accessor.
+       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
+       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
+       *
+       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
+      template<typename UserType>
+      void write(const RegisterPath &registerPathName, UserType value, bool enforceRawAccess);
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  Inefficient convenience function</b> to write a multi-word register without obtaining an accessor.
+       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
+       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
+       *
+       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
+      template<typename UserType>
+      void write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
+          bool enforceRawAccess);
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  Get a ScalarRegisterObject object for the given register.
+       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
+       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
+       *
+       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
+
+      template<typename UserType>
+      ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(const RegisterPath &registerPathName,
+          size_t wordOffsetInRegister, bool enforceRawAccess) const;
+
+      /** \brief <b>DEPRECATED</b>
+       *
+       *  \deprecated
+       *  Get a OneDRegisterAccessor object for the given register.
+       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
+       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
+       *
+       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
+      template<typename UserType>
+      OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
+          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const;
 
       /** \brief <b>DEPRECATED</b>
        *
@@ -404,11 +472,34 @@ namespace mtca4u {
 
   template<typename UserType>
   ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(const RegisterPath &registerPathName,
-      size_t wordOffsetInRegister, bool enforceRawAccess) const {
+      size_t wordOffsetInRegister, const AccessModeFlags &flags) const {
     checkPointersAreNotNull();
     return ScalarRegisterAccessor<UserType>(
-        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, 1, wordOffsetInRegister,
-            enforceRawAccess) );
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, 1, wordOffsetInRegister,flags) );
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(const RegisterPath &registerPathName,
+      size_t wordOffsetInRegister, bool enforceRawAccess) const {
+    if(!enforceRawAccess) {
+      return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister);
+    }
+    else {
+      return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister, {AccessMode::raw});
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  OneDRegisterAccessor<UserType> Device::getOneDRegisterAccessor(const RegisterPath &registerPathName,
+      size_t numberOfWords, size_t wordOffsetInRegister, const AccessModeFlags &flags) const {
+    checkPointersAreNotNull();
+    return OneDRegisterAccessor<UserType>(
+        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
+            wordOffsetInRegister, flags) );
   }
 
   /********************************************************************************************************************/
@@ -416,10 +507,16 @@ namespace mtca4u {
   template<typename UserType>
   OneDRegisterAccessor<UserType> Device::getOneDRegisterAccessor(const RegisterPath &registerPathName,
       size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const {
-    checkPointersAreNotNull();
-    return OneDRegisterAccessor<UserType>(
-        _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
-            wordOffsetInRegister, enforceRawAccess) );
+    if(!enforceRawAccess) {
+      return OneDRegisterAccessor<UserType>(
+          _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
+              wordOffsetInRegister) );
+    }
+    else {
+      return OneDRegisterAccessor<UserType>(
+          _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
+              wordOffsetInRegister, {AccessMode::raw}) );
+    }
   }
 
   /********************************************************************************************************************/
@@ -434,8 +531,8 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  UserType Device::read(const RegisterPath &registerPathName, bool enforceRawAccess) const {
-    auto acc = getBufferingRegisterAccessor<UserType>(registerPathName, enforceRawAccess);
+  UserType Device::read(const RegisterPath &registerPathName, const AccessModeFlags &flags) const {
+    auto acc = getScalarRegisterAccessor<UserType>(registerPathName, 0, flags);
     acc.read();
     return acc;
   }
@@ -444,9 +541,8 @@ namespace mtca4u {
 
   template<typename UserType>
   std::vector<UserType> Device::read(const RegisterPath &registerPathName, size_t numberOfWords,
-      size_t wordOffsetInRegister, bool enforceRawAccess) const {
-    auto acc = getBufferingRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister,
-        enforceRawAccess);
+      size_t wordOffsetInRegister, const AccessModeFlags &flags) const {
+    auto acc = getOneDRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     acc.read();
     std::vector<UserType> vector;
     acc.swap(vector);
@@ -456,8 +552,8 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void Device::write(const RegisterPath &registerPathName, UserType value, bool enforceRawAccess) {
-    auto acc = getBufferingRegisterAccessor<UserType>(registerPathName, enforceRawAccess);
+  void Device::write(const RegisterPath &registerPathName, UserType value, const AccessModeFlags &flags) {
+    auto acc = getScalarRegisterAccessor<UserType>(registerPathName, 0, flags);
     acc = value;
     acc.write();
   }
@@ -466,11 +562,43 @@ namespace mtca4u {
 
   template<typename UserType>
   void Device::write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
-      bool enforceRawAccess) {
-     auto acc = getBufferingRegisterAccessor<UserType>(registerPathName, vector.size(), wordOffsetInRegister, enforceRawAccess);
+      const AccessModeFlags &flags) {
+     auto acc = getOneDRegisterAccessor<UserType>(registerPathName, vector.size(), wordOffsetInRegister, flags);
      acc.swap(vector);
      acc.write();
      acc.swap(vector);
+   }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  UserType Device::read(const RegisterPath &registerPathName, bool enforceRawAccess) const {
+    return read<UserType>(registerPathName, ( enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({}) ) );
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  std::vector<UserType> Device::read(const RegisterPath &registerPathName, size_t numberOfWords,
+      size_t wordOffsetInRegister, bool enforceRawAccess) const {
+    return read<UserType>(registerPathName, numberOfWords, wordOffsetInRegister,
+        ( enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({}) ) );
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void Device::write(const RegisterPath &registerPathName, UserType value, bool enforceRawAccess) {
+    write(registerPathName, value, ( enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({}) ) );
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void Device::write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
+      bool enforceRawAccess) {
+    write(registerPathName, vector, wordOffsetInRegister,
+        ( enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({}) ) );
    }
 
   /********************************************************************************************************************/
