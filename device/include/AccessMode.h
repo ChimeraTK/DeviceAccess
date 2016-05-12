@@ -14,7 +14,8 @@
 
 namespace mtca4u {
 
-  /** Enum type with access mode flags for register accessors. */
+  /** Enum type with access mode flags for register accessors. Note: when adding new flags, also add the flag in
+   *  the map of the AccessModeFlags with a string representation. */
   enum class AccessMode {
 
     /** Raw access: disable any possible conversion from the original hardware data type into the given UserType.
@@ -29,40 +30,57 @@ namespace mtca4u {
      *  all registers (and backends), in which case a DeviceException with the id NOT_IMPLEMENTED will be thrown. */
     wait_for_new_data
 
+    /* IMPORTANT: When adding flags, don't forget to update AccessModeFlags::getStringMap()! */
   };
 
-  /** */
+  /** Set of AccessMode flags with additional functionality for an easier handling. */
   class AccessModeFlags {
 
     public:
 
-      AccessModeFlags(std::set<AccessMode> flags)
+      /** Constructor initialises from a std::set<AccessMode> */
+      AccessModeFlags(const std::set<AccessMode> &flags)
       : _flags(flags)
-      {
-      }
+      {}
 
-      bool has(AccessMode flag) {
+      /** Check if a certain flag is in the set */
+      bool has(AccessMode flag) const {
         return ( _flags.count(flag) != 0 );
       }
 
-      bool empty() {
+      /** Check if the set is empty (i.e. no flag has been set) */
+      bool empty() const {
         return ( _flags == std::set<AccessMode>() );
       }
 
-      void checkForUnknownFlags(std::set<AccessMode> knownFlags) {
+      /** Check of any flag which is not in the given set "knownFlags" is set. If an unknown flag has been found, a
+       *  DeviceException with the id NOT_IMPLEMENTED is raised. */
+      void checkForUnknownFlags(const std::set<AccessMode> &knownFlags) const {
         for(auto flag : _flags) {
           if(knownFlags.count(flag) == 0) {
-            throw DeviceException("Access mode flag "+
-                std::to_string(static_cast<typename std::underlying_type<AccessMode>::type>(flag))+
-                " is not known by this backend.",
+            throw DeviceException("Access mode flag '"+getString(flag)+"' is not known by this backend.",
                 DeviceException::NOT_IMPLEMENTED);
           }
         }
       }
 
+      /** Get a string representation of the given flag */
+      const std::string& getString(const AccessMode flag) const {
+        return getStringMap().at(flag);
+      }
+
     private:
 
+      /* set of flags */
       std::set<AccessMode> _flags;
+
+      /** return the string map */
+      static const std::map<AccessMode, std::string> &getStringMap() {
+        static std::map<AccessMode, std::string> m;
+        m[AccessMode::raw] = "raw";
+        m[AccessMode::wait_for_new_data] = "wait_for_new_data";
+        return m;
+       }
   };
 
 } /* namespace mtca4u */
