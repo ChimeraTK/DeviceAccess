@@ -22,6 +22,7 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferGroup.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferElement.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/RegisterCatalogue.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/AccessMode.h
    PARENT_SCOPE
 )
 
