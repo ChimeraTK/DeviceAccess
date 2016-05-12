@@ -24,10 +24,12 @@ namespace mtca4u {
     public:
 
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
-          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
+          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
       : _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
       {
+        // check for unknown flags
+        flags.checkForUnknownFlags({AccessMode::raw});
         // check device backend
         _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
         if(!_dev) {
@@ -59,7 +61,7 @@ namespace mtca4u {
         _numberOfBytes = _numberOfWords*sizeof(int32_t);
 
         // configure fixed point converter
-        if(!enforceRawAccess) {
+        if(!flags.has(AccessMode::raw)) {
           _fixedPointConverter = FixedPointConverter(_registerInfo->width, _registerInfo->nFractionalBits,
               _registerInfo->signedFlag);
         }

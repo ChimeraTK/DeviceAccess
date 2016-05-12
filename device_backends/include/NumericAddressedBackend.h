@@ -57,7 +57,7 @@ namespace mtca4u {
 
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
-          const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, bool enforceRawAccess);
+          const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, AccessModeFlags flags);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackend, getRegisterAccessor_impl, 4 );
 
   };

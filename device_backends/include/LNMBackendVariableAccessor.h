@@ -27,14 +27,17 @@ namespace mtca4u {
     public:
 
       LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
-          size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess)
+          size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
       : _registerPathName(registerPathName), _fixedPointConverter(32, 0, 1)
       {
+        // check for unknown flags
+        flags.checkForUnknownFlags({AccessMode::raw});
+        // check for illegal parameter combinations
         if(wordOffsetInRegister != 0 || numberOfWords > 1) {
           throw DeviceException("LNMBackendBufferingVariableAccessor: offset and number of words not "
               "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
         }
-        if(enforceRawAccess) {
+        if(flags.has(AccessMode::raw)) {
           if(typeid(UserType) != typeid(int32_t)) {
             throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
                 " does not match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);

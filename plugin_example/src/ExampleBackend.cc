@@ -38,6 +38,6 @@ void ExampleBackend::close(){
 // We do not have a suitable buffering register accessor, so we throw an exception.
 template<typename UserType>
 boost::shared_ptr< NDRegisterAccessor<UserType> > ExampleBackend::getRegisterAccessor_impl(
-    const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, bool /*enforceRawAccess*/) {
+    const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, mtca4u::AccessModeFlags /*flags*/) {
   throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
 }

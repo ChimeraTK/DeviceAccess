@@ -83,7 +83,7 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< NDRegisterAccessor<UserType> > LogicalNameMappingBackend::getRegisterAccessor_impl(
-      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
 
     // obtain register info
     auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue.getRegister(registerPathName));
@@ -96,17 +96,16 @@ namespace mtca4u {
       size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
       size_t actualLength = ( numberOfWords > 0 ? numberOfWords : size_t(info->length) );
       // obtain underlying register accessor
-      ptr = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(info->registerName),actualLength,actualOffset,
-          enforceRawAccess);
+      ptr = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(info->registerName),actualLength,actualOffset,flags);
     }
     else if( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
       ptr = boost::shared_ptr< NDRegisterAccessor<UserType> >(new LNMBackendChannelAccessor<UserType>(shared_from_this(),
-          registerPathName, numberOfWords, wordOffsetInRegister, enforceRawAccess));
+          registerPathName, numberOfWords, wordOffsetInRegister, flags));
     }
     else if( info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT ||
              info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
       ptr = boost::shared_ptr< NDRegisterAccessor<UserType> >(new LNMBackendVariableAccessor<UserType>(shared_from_this(),
-          registerPathName, numberOfWords, wordOffsetInRegister, enforceRawAccess));
+          registerPathName, numberOfWords, wordOffsetInRegister, flags));
     }
     else {
       throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+

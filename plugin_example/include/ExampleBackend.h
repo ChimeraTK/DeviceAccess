@@ -28,38 +28,14 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
     static boost::shared_ptr<mtca4u::DeviceBackend> createInstance(std::string host, std::string instance,
         std::list<std::string> parameters, std::string mapFileName);
 
-    virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/){};
-    virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
-
-    virtual void read(const std::string &/*regModule*/, const std::string &/*regName*/,
-        int32_t */*data*/, size_t /*dataSize*/ = 0, uint32_t /*addRegOffset*/ = 0) {}
-    virtual void write(const std::string &/*regName*/, const std::string &/*regModule*/, int32_t const */*data*/,
-        size_t /*dataSize*/ = 0, uint32_t /*addRegOffset*/ = 0) {}
-
-    virtual void readDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/, size_t /*sizeInBytes*/) {};
-    virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
     virtual std::string readDeviceInfo() {return std::string("Example_Device");}
-
-    virtual boost::shared_ptr<const mtca4u::RegisterInfoMap> getRegisterMap() const {
-      return boost::shared_ptr<const mtca4u::RegisterInfoMap>();
-    }
-
-    virtual std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
-        const std::string &/*moduleName*/) const {
-      return std::list<mtca4u::RegisterInfoMap::RegisterInfo>();
-    }
-
-    virtual std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
-        const std::string &/*moduleName*/) {
-      return std::list< boost::shared_ptr<mtca4u::RegisterAccessor> >();
-    }
 
   protected:
 
     /** Implement the virtual function template to obtain the buffering register accessor */
     template<typename UserType>
     boost::shared_ptr< mtca4u::NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
-        const mtca4u::RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
+        const mtca4u::RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, mtca4u::AccessModeFlags flags);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getRegisterAccessor_impl, 4 );
 
   public:

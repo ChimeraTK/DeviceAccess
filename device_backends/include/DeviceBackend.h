@@ -15,6 +15,7 @@
 #include "RegisterCatalogue.h"
 #include "DeviceException.h"
 #include "VirtualFunctionTemplate.h"
+#include "AccessMode.h"
 
 namespace mtca4u {
 
@@ -47,15 +48,26 @@ namespace mtca4u {
       /** Get a NDRegisterAccessor object from the register name. */
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor(
-          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
+          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getRegisterAccessor_impl,
-          boost::shared_ptr< NDRegisterAccessor<T> >(const RegisterPath&, size_t, size_t, bool) );
+          boost::shared_ptr< NDRegisterAccessor<T> >(const RegisterPath&, size_t, size_t, AccessModeFlags) );
 
       /** Return a device information string containing hardware details like the firmware version number or the
        *  slot number used by the board. The format and contained information of this string is completely
        *  backend implementation dependent, so the string may only be printed to the user as an informational
        *  output. Do not try to parse this string or extract information from it programmatically. */
       virtual std::string readDeviceInfo() = 0;
+
+      /** DEPRECATED
+       *
+       *  \deprecated {
+       *  This function is deprecated. Do not use the backend directly, always use a Device.
+       *  @todo Add runtine warning after release of version 0.12
+       *  }
+       */
+      template<typename UserType>
+      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor(
+          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess);
 
       /** DEPRECATED
        *
@@ -129,9 +141,24 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< NDRegisterAccessor<UserType> > DeviceBackend::getRegisterAccessor(
-      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
-        wordOffsetInRegister, enforceRawAccess);
+      wordOffsetInRegister, flags);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr< NDRegisterAccessor<UserType> > DeviceBackend::getRegisterAccessor(
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
+    if(!enforceRawAccess) {
+      return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
+        wordOffsetInRegister, std::set<AccessMode>({}));
+    }
+    else {
+      return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
+        wordOffsetInRegister, std::set<AccessMode>({AccessMode::raw}));
+    }
   }
 
 } // namespace mtca4u
