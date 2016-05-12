@@ -14,8 +14,10 @@
 
 namespace mtca4u {
 
-  /** Enum type with access mode flags for register accessors. Note: when adding new flags, also add the flag in
-   *  the map of the AccessModeFlags with a string representation. */
+  /** Enum type with access mode flags for register accessors.
+   *
+   *  Developers note: when adding new flags, also add the flag in the map of the AccessModeFlags with a string
+   *  representation. */
   enum class AccessMode {
 
     /** Raw access: disable any possible conversion from the original hardware data type into the given UserType.
@@ -40,6 +42,11 @@ namespace mtca4u {
 
       /** Constructor initialises from a std::set<AccessMode> */
       AccessModeFlags(const std::set<AccessMode> &flags)
+      : _flags(flags)
+      {}
+
+      /** Constructor initialises from a brace initialiser list (e.g. "{AccessMode::raw}") */
+      AccessModeFlags(const std::initializer_list<AccessMode> &flags)
       : _flags(flags)
       {}
 
