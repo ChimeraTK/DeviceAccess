@@ -164,7 +164,7 @@ namespace mtca4u {
       /** \brief <b>DEPRECATED</b>
        *
        *  \deprecated
-       *  Inefficient convenience function</b> to read a multi-word register without obtaining an accessor.
+       *  <b>Inefficient convenience function</b> to read a multi-word register without obtaining an accessor.
        *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
        *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
        *
@@ -176,7 +176,7 @@ namespace mtca4u {
       /** \brief <b>DEPRECATED</b>
        *
        *  \deprecated
-       *  Inefficient convenience function</b> to write a single-word register without obtaining an accessor.
+       *  <b>Inefficient convenience function</b> to write a single-word register without obtaining an accessor.
        *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
        *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
        *
@@ -187,7 +187,7 @@ namespace mtca4u {
       /** \brief <b>DEPRECATED</b>
        *
        *  \deprecated
-       *  Inefficient convenience function</b> to write a multi-word register without obtaining an accessor.
+       *  <b>Inefficient convenience function</b> to write a multi-word register without obtaining an accessor.
        *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
        *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
        *
