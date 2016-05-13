@@ -153,11 +153,11 @@ namespace mtca4u {
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
     if(!enforceRawAccess) {
       return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
-        wordOffsetInRegister, {});
+        wordOffsetInRegister, AccessModeFlags({}));
     }
     else {
       return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
-        wordOffsetInRegister, {AccessMode::raw});
+        wordOffsetInRegister, AccessModeFlags({AccessMode::raw}));
     }
   }
 

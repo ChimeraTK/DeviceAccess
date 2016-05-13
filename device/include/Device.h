@@ -77,7 +77,7 @@ namespace mtca4u {
        *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException. */
       template<typename UserType>
       ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
+          size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** Get a OneDRegisterAccessor object for the given register.
        *
@@ -93,7 +93,7 @@ namespace mtca4u {
        *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException. */
       template<typename UserType>
       OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
-          size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
+          size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor. */
@@ -114,7 +114,7 @@ namespace mtca4u {
        *  If a multi-word register is read, only the first element is returned. This function only works for 1D
        *  registers. */
       template<typename UserType>
-      UserType read(const RegisterPath &registerPathName, const AccessModeFlags &flags={}) const;
+      UserType read(const RegisterPath &registerPathName, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** \brief <b>Inefficient convenience function</b> to read a multi-word register without obtaining an accessor.
        *
@@ -127,7 +127,7 @@ namespace mtca4u {
        *  allows to skip the first wordOffsetInRegister elements of the register. */
       template<typename UserType>
       std::vector<UserType> read(const RegisterPath &registerPathName, size_t numberOfWords,
-          size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
+          size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** \brief <b>Inefficient convenience function</b> to write a single-word register without obtaining an accessor.
        *
@@ -137,7 +137,7 @@ namespace mtca4u {
        *  If a multi-word register is read, only the first element is written. This function only works for 1D
        *  registers.*/
       template<typename UserType>
-      void write(const RegisterPath &registerPathName, UserType value, const AccessModeFlags &flags={});
+      void write(const RegisterPath &registerPathName, UserType value, const AccessModeFlags &flags=AccessModeFlags({}));
 
       /** \brief <b>Inefficient convenience function</b> to write a multi-word register without obtaining an accessor.
        *
@@ -148,7 +148,7 @@ namespace mtca4u {
        *  argument wordOffsetInRegister allows to skip the first wordOffsetInRegister elements of the register. */
       template<typename UserType>
       void write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister=0,
-          const AccessModeFlags &flags={});
+          const AccessModeFlags &flags=AccessModeFlags({}));
 
       /** \brief <b>DEPRECATED</b>
        *
@@ -487,7 +487,7 @@ namespace mtca4u {
       return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister);
     }
     else {
-      return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister, {AccessMode::raw});
+      return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister, AccessModeFlags({AccessMode::raw}));
     }
   }
 
@@ -515,7 +515,7 @@ namespace mtca4u {
     else {
       return OneDRegisterAccessor<UserType>(
           _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
-              wordOffsetInRegister, {AccessMode::raw}) );
+              wordOffsetInRegister, AccessModeFlags({AccessMode::raw}) ));
     }
   }
 
