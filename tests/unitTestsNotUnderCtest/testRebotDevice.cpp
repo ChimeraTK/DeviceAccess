@@ -272,11 +272,11 @@ void RebotTestClass::checkWriteReadFromRegister(
       "TEST_AREA", "ADC"); // testArea is 1024 words long
 
   for (int i = 0; i < 10; ++i) {
-    float value = i;
+    int value = i;
     testArea->write(&value, 1, i);
   }
   for (int i = 0; i < 10; ++i) {
-    int value = i;
+    int value;
     testArea->read(&value, 1, i);
     BOOST_CHECK_EQUAL(value, i);
   }
