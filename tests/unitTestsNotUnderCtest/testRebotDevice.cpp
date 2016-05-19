@@ -219,12 +219,66 @@ inline void RebotTestClass::testFactory() {
 
 void RebotTestClass::checkWriteReadFromRegister(
     mtca4u::Device& rebotDevice) {
-  int32_t dataToWrite[4] = {rand(), rand(), rand(), rand()};
+  int32_t dataToWrite[4] = {2, 3, 100, 20};
   int32_t readInData[4];
+
+  // 0xDEADBEEF is a word preset by the dummy firmware in the WORD_COMPILATION
+  // register (addr 0x04). reading and verifying this register means the read
+  // api of device acces works for the rebot device.
+  rebotDevice.readReg("WORD_COMPILATION", "BOARD", readInData, sizeof(int32_t));
+  BOOST_CHECK_EQUAL(0xDEADBEEF, readInData[0]);
+
+  // ADC.WORLD_CLK_MUX is a 4 word/element register, this test would verify
+  // write to the device through the api works. (THe read command has been
+  // established to work by the read of the preset word).
   rebotDevice.writeReg("WORD_CLK_MUX", "ADC", dataToWrite, sizeof(dataToWrite));
   rebotDevice.readReg("WORD_CLK_MUX", "ADC", readInData, sizeof(readInData));
-
   for(int i = 0; i < 4; i++){
     BOOST_CHECK_EQUAL(dataToWrite[i], readInData[i]);
   }
+
+
+  // test read from offset 2 on a multi word/element register.
+  rebotDevice.readReg("WORD_CLK_MUX", "ADC", readInData, sizeof(int32_t), 2*sizeof(int32_t));
+  BOOST_CHECK_EQUAL(dataToWrite[2], readInData[0]);
+
+  // test write one element at offset position 2 on a multiword register.
+  rebotDevice.writeReg("WORD_CLK_MUX", "ADC", dataToWrite, sizeof(int32_t), 2 * sizeof(int32_t));
+  rebotDevice.readReg("WORD_CLK_MUX", "ADC", readInData, sizeof(int32_t), 2 * sizeof(int32_t));
+  BOOST_CHECK_EQUAL(dataToWrite[0], readInData[0]);
+
+
+  // test writing a continuous block from offset 1 in a multiword register.
+  int32_t data[2] = {7896, 45678};
+  rebotDevice.writeReg("WORD_CLK_MUX", "ADC", data, sizeof(data), 1 * sizeof(int32_t));
+  rebotDevice.readReg("WORD_CLK_MUX", "ADC", readInData, sizeof(data), 1 * sizeof(int32_t));
+  for(int i = 0; i < 2; i++){
+    BOOST_CHECK_EQUAL(data[i], readInData[i]);
+  }
+
+  // test writing a continuous block from offset 1 in a multiword register
+  // through an accessor
+  data[0] = 676; data[1] = 9987; 
+  auto accessor = rebotDevice.getRegisterAccessor("WORD_CLK_MUX", "ADC");
+  accessor->write(data, 2, 1);
+  accessor->read(readInData, 2, 1);
+  for(int i = 0; i < 2; i++){
+    BOOST_CHECK_EQUAL(data[i], readInData[i]);
+  }
+
+
+  // write to larger area using offsets in a loop
+  auto testArea = rebotDevice.getRegisterAccessor(
+      "TEST_AREA", "ADC"); // testArea is 1024 words long
+
+  for (int i = 0; i < 10; ++i) {
+    float value = i;
+    testArea->write(&value, 1, i);
+  }
+  for (int i = 0; i < 10; ++i) {
+    int value = i;
+    testArea->read(&value, 1, i);
+    BOOST_CHECK_EQUAL(value, i);
+  }
+
 }
