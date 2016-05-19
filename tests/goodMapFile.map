@@ -18,3 +18,5 @@ MODULE1.WORD_USER2                0x00000001    0x00000024    0x00000004    0x00
 
 # The module name could even contain dots. The register name must not. It the part after the last dot.
 MODULE.NAME.WITH.DOTS.REGISTER    0x00000001    0x00000000    0x00000004    0x00000002
+
+MODULE1.TEST_AREA                 0x0000000A    0x00000025    0x00000028    0x00000001       32         0        0  

@@ -69,6 +69,7 @@ class MtcaDeviceTest {
      *  Also checks the write convenience function.
      */
     void testRegisterAccessor_writeSimple();
+    void testRegisterAccessor_writeWithOffsets();
 
     void getRegistersInModule();
     void getRegisterAccerrossInModule();
@@ -112,9 +113,12 @@ class MtcaDeviceTestSuite : public test_suite {
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries,
           mtcaDeviceTest));
       add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_readWriteResize,
-	  mtcaDeviceTest));
+          mtcaDeviceTest));
+      add(BOOST_CLASS_TEST_CASE(&MtcaDeviceTest::testRegisterAccessor_writeWithOffsets,
+          mtcaDeviceTest));
       add(BOOST_TEST_CASE(&MtcaDeviceTest::testMapFileParser_parse));
       add(BOOST_TEST_CASE(&MtcaDeviceTest::testThrowIfNeverOpened));
+
       //        test_case* writeTestCase = BOOST_CLASS_TEST_CASE(
       // &MtcaDeviceTest::testWrite, mtcaDeviceTest );
 
@@ -359,7 +363,23 @@ void MtcaDeviceTest::testRegisterAccessor_readBlock() {
   BOOST_CHECK(fpc.isSigned());
 }
 
-void MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries(){
+void MtcaDeviceTest::testRegisterAccessor_writeWithOffsets() {
+  mtca4u::Device device;
+  device.open("DUMMYD2");
+  auto registerAccessor = device.getRegisterAccessor("TEST_AREA","MODULE1");
+
+  for (int i = 0; i < 10; ++i) {
+    int value = i;
+    registerAccessor->write(&value, 1, i);
+  }
+  for (int i = 0; i < 10; ++i) {
+      int value;
+      registerAccessor->read(&value, 1, i);
+      BOOST_CHECK_EQUAL(value, i);
+    }
+}
+
+void MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries() {
   testRegisterAccessor_typedCheckBlockBoundaries<int8_t>();
   testRegisterAccessor_typedCheckBlockBoundaries<uint8_t>();
   testRegisterAccessor_typedCheckBlockBoundaries<int16_t>();
