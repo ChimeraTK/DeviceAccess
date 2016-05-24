@@ -22,6 +22,15 @@ namespace mtca4u {
 
     public:
 
+      /** Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
+       *  AccessMode::wait_for_new_data to obtain the amount of data waiting for retrieval in this accessor. If the
+       *  returned value is 0, the call to read() will block until new data has arrived. If the returned value is > 0,
+       *  it is guaranteed that the next call to read() will not block. If the accessor was obtained without the
+       *  AccessMode::wait_for_new_data flag, this function will always return 1. */
+      unsigned int getNInputQueueElements() const {
+        return _impl->getNInputQueueElements();
+      }
+
       /** Assign a new accessor to this NDRegisterAccessorBridge. Since another NDRegisterAccessorBridge is passed as
        *  argument, both NDRegisterAccessorBridges will then point to the same accessor and thus are sharing the
        *  same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding

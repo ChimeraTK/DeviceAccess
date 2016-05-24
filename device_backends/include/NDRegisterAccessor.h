@@ -63,6 +63,15 @@ namespace mtca4u {
         return buffer_2D.size();
       }
 
+      /** Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
+       *  AccessMode::wait_for_new_data to obtain the amount of data waiting for retrieval in this accessor. If the
+       *  returned value is 0, the call to read() will block until new data has arrived. If the returned value is > 0,
+       *  it is guaranteed that the next call to read() will not block. If the accessor was obtained without the
+       *  AccessMode::wait_for_new_data flag, this function will always return 1. */
+      virtual unsigned int getNInputQueueElements() const {
+        return 1;
+      }
+
       /** DO NOT USE. FOR BACKWARDS COMPATIBILITY ONLY.
        *
        *  \deprecated This function is for backwards compatibility with the deprecated RegisterAccessor only.
