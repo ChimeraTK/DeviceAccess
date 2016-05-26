@@ -55,7 +55,9 @@ namespace mtca4u {
       if(reg.getNumberOfDimensions() == 0) {
         ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>(reg.getRegisterName());
         boost::shared_ptr< ProcessScalar<int> > pv = impl->processVariableManager->createProcessScalar<int>(mtca4u::deviceToControlSystem, pvName);
-        impl->scalarIntMap[baseName] = std::make_pair(accessor,pv);
+        auto mypair = impl->scalarIntMap[baseName];
+        mypair.first.replace(accessor);
+        mypair.second = pv;
       }
       else if(reg.getNumberOfDimensions() == 1) {
         throw std::string("not yet implemented.");
