@@ -14,16 +14,16 @@ if  [ $# -eq 0 ]; then
     exit 1
 fi
 
-#The variables are all prepared in CMAKE and also provided by 
+#The variables are all prepared in CMAKE and also provided by
 #Find@PROJECT_NAME@.cmake, so dependent applications can create consistent
 #Makefiles.
 while [ $# -gt 0 ]; do
     case "$1" in
       --cppflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CPPFLAGS_MAKEFILE@"
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CXX_FLAGS_MAKEFILE@"
         shift;;
       --ldflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LDFLAGS_MAKEFILE@"
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LINKER_FLAGS_MAKEFILE@"
         shift;;
       --version)
         OUTPUT="${OUTPUT}@@PROJECT_NAME@_SOVERSION@"
