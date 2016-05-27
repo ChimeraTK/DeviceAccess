@@ -29,16 +29,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
 if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
-    set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -std=c++11 -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
-    set(${PROJECT_NAME}_CMAKE_CXX_FLAGS "${${PROJECT_NAME}_CMAKE_CXX_FLAGS} -std=c++11 -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
-    set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -std=c++0x -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
-    set(${PROJECT_NAME}_CMAKE_CXX_FLAGS "${${PROJECT_NAME}_CMAKE_CXX_FLAGS} -std=c++0x -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
-        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
@@ -146,42 +143,19 @@ install(TARGETS ${PROJECT_NAME}
 #all include files go into include/PROJECT_NAME
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
 
-#create the config files by filling the correct variables into the template (*.cmake.in)
-#All variables @VARIABLE@ are replaced with the current values
+#Create the config files by filling the correct variables into the template (*.cmake.in).
+#All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
+#Only the reference header is needed. The other variables are for dependencies of this library,
+#but there are none.
+set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME} ${Boost_CHRONO_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY}")
+set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
+set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
+include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
-#some variables we need for regular Makefiles, for which we also provide the config
-set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -I${CMAKE_INSTALL_PREFIX}/include ")
-set(${PROJECT_NAME}_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME} ")
-#MATLABs mex cannot deal with the rpath and C+=11 flags, so we provide special flags
-set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include ${${PROJECT_NAME}_LDFLAGS} ")
-#only now we extend the LDFLAGS to its final value, including the runpath
-set(${PROJECT_NAME}_LDFLAGS "${${PROJECT_NAME}_LDFLAGS} -Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags ")
-
-#We have nested @-statements, so we have to parse twice
-configure_file(cmake/${PROJECT_NAME}Config.cmake.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-
-configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
- 
-configure_file(cmake/PROJECT_NAME-config.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
-
-# Install the ..Config.cmake and ..ConfigVersion.cmake
-install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
-  "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
-  DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules COMPONENT dev)
-
-install(PROGRAMS "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config"
-  DESTINATION bin COMPONENT dev)
-
+# debian packaging
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
