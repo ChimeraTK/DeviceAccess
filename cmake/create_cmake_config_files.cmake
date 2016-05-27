@@ -10,6 +10,7 @@
 #   ${PROJECT_NAME}_LIBRARIES - list of libraries needed when linking against this project
 #   ${PROJECT_NAME}_CXX_FLAGS - list of additional C++ compiler flags needed when compiling against this project
 #   ${PROJECT_NAME}_LINKER_FLAGS - list of additional linker flags needed when linking against this project
+#   ${PROJECT_NAME}_MEXFLAGS - (optional) mex compiler flags
 #
 #######################################################################################################################
 
@@ -34,9 +35,13 @@ foreach(LIBRARY ${LIST})
 endforeach()
 
 # force the lists to be space separated (may be sometimes semicolon separated)
+string(REPLACE ";" " " ${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_SOVERSION})
 string(REPLACE ";" " " ${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS})
 string(REPLACE ";" " " ${PROJECT_NAME}_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
 string(REPLACE ";" " " ${PROJECT_NAME}_LIBRARIES ${${PROJECT_NAME}_LIBRARIES})
+string(REPLACE ";" " " ${PROJECT_NAME}_CXX_FLAGS ${${PROJECT_NAME}_CXX_FLAGS})
+string(REPLACE ";" " " ${PROJECT_NAME}_LINKER_FLAGS ${${PROJECT_NAME}_LINKER_FLAGS})
+string(REPLACE ";" " " ${PROJECT_NAME}_MEXFLAGS ${${PROJECT_NAME}_MEXFLAGS})
 
 # we have nested @-statements, so we have to parse twice:
 
