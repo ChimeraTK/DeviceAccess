@@ -15,12 +15,12 @@
 
 # Since this file is already part of the installation to be found, the configuration can be hard-coded at
 # installation time
-set(@PROJECT_NAME@_VERSION @@PROJECT_NAME@_SOVERSION@)
+set(@PROJECT_NAME@_VERSION "@@PROJECT_NAME@_SOVERSION@")
 set(@PROJECT_NAME@_INCLUDE_DIRS @@PROJECT_NAME@_INCLUDE_DIRS@)
 set(@PROJECT_NAME@_LIBRARY_DIRS @@PROJECT_NAME@_LIBRARY_DIRS@)
 set(@PROJECT_NAME@_LIBRARIES @@PROJECT_NAME@_LIBRARIES@)
-set(@PROJECT_NAME@_CXX_FLAGS @@PROJECT_NAME@_CXX_FLAGS@)
-set(@PROJECT_NAME@_LINKER_FLAGS @@PROJECT_NAME@_LINKER_FLAGS@)
+set(@PROJECT_NAME@_CXX_FLAGS "@@PROJECT_NAME@_CXX_FLAGS@")
+set(@PROJECT_NAME@_LINKER_FLAGS "@@PROJECT_NAME@_LINKER_FLAGS@")
 
 # Use a macro provided by CMake to check if all the listed arguments are valid and set @PROJECT_NAME@_FOUND accordingly.
 # This is mainly important to check the version.

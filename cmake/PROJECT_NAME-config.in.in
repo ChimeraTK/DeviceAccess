@@ -1,7 +1,12 @@
 #!/bin/sh
 
 print_usage(){
-    echo "usage: $0 [--cppflags] [--ldflags] [--version]" 1>&2
+    echo -n "usage: $0 [--version] [--cppflags] [--ldflags]" 1>&2
+    if [ -n "@@PROJECT_NAME@_MEXFLAGS@" ]; then
+      echo " [--mexflags]" 1>&2
+      echo -n " The mexflags are only for use with MATLABs mex." 1>&2
+    fi
+    echo ""
 }
 
 if  [ $# -eq 0 ]; then
@@ -9,19 +14,22 @@ if  [ $# -eq 0 ]; then
     exit 1
 fi
 
-#The variables are all prepared in CMAKE and also provided by 
+#The variables are all prepared in CMAKE and also provided by
 #Find@PROJECT_NAME@.cmake, so dependent applications can create consistent
 #Makefiles.
 while [ $# -gt 0 ]; do
     case "$1" in
       --cppflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CPPFLAGS_MAKEFILE@"
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CXX_FLAGS_MAKEFILE@"
         shift;;
       --ldflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LDFLAGS_MAKEFILE@"
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LINKER_FLAGS_MAKEFILE@"
         shift;;
       --version)
         OUTPUT="${OUTPUT}@@PROJECT_NAME@_SOVERSION@"
+        shift;;
+      --mexflags)
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_MEXFLAGS@"
         shift;;
       *)
         echo "invalid option: $1" 1>&2
