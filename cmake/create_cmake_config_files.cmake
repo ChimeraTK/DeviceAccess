@@ -13,13 +13,6 @@
 #
 #######################################################################################################################
 
-# check that all config variables which have to be replaced are set
-foreach(CONFIG_VARIABLE SOVERSION INCLUDE_DIRS LIBRARY_DIRS LIBRARIES CPPFLAGS LDFLAGS)
-  if(DEFINED ${${PROJECT_NAME}_${CONFIG_VARIABLE}} )
-    message(FATAL_ERROR "${PROJECT_NAME}_${CONFIG_VARIABLE} not set in CMakeListst.txt")
-  endif()
-endforeach()
-
 # create variables for standard makefiles
 set(${PROJECT_NAME}_CPPFLAGS_MAKEFILE "${${PROJECT_NAME}_CPPFLAGS}")
 
