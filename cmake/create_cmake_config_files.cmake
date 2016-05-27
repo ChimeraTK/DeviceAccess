@@ -8,30 +8,35 @@
 #   ${PROJECT_NAME}_INCLUDE_DIRS - list include directories needed when compiling against this project
 #   ${PROJECT_NAME}_LIBRARY_DIRS - list of library directories needed when linking against this project
 #   ${PROJECT_NAME}_LIBRARIES - list of libraries needed when linking against this project
-#   ${PROJECT_NAME}_CPPFLAGS - list of C++ compiler flags when compiling against this project
-#   ${PROJECT_NAME}_LDFLAGS - list of linker flags when linking against this project
+#   ${PROJECT_NAME}_CXX_FLAGS - list of additional C++ compiler flags needed when compiling against this project
+#   ${PROJECT_NAME}_LINKER_FLAGS - list of additional linker flags needed when linking against this project
 #
 #######################################################################################################################
 
 # create variables for standard makefiles
-set(${PROJECT_NAME}_CPPFLAGS_MAKEFILE "${${PROJECT_NAME}_CPPFLAGS}")
+set(${PROJECT_NAME}_CXX_FLAGS_MAKEFILE "${${PROJECT_NAME}_CXX_FLAGS}")
 
 string(REPLACE " " ";" LIST ${${PROJECT_NAME}_INCLUDE_DIRS})
 foreach(INCLUDE_DIR ${LIST})
-  set(${PROJECT_NAME}_CPPFLAGS_MAKEFILE "${${PROJECT_NAME}_CPPFLAGS_MAKEFILE} -I${INCLUDE_DIR}")
+  set(${PROJECT_NAME}_CXX_FLAGS_MAKEFILE "${${PROJECT_NAME}_CXX_FLAGS_MAKEFILE} -I${INCLUDE_DIR}")
 endforeach()
 
-set(${PROJECT_NAME}_LDFLAGS_MAKEFILE "${${PROJECT_NAME}_LDFLAGS}")
+set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS}")
 
 string(REPLACE " " ";" LIST ${${PROJECT_NAME}_LIBRARY_DIRS})
 foreach(LIBRARY_DIR ${LIST})
-  set(${PROJECT_NAME}_LDFLAGS_MAKEFILE "${${PROJECT_NAME}_LDFLAGS_MAKEFILE} -L${LIBRARY_DIR}")
+  set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} -L${LIBRARY_DIR}")
 endforeach()
 
 string(REPLACE " " ";" LIST ${${PROJECT_NAME}_LIBRARIES})
 foreach(LIBRARY ${LIST})
-  set(${PROJECT_NAME}_LDFLAGS_MAKEFILE "${${PROJECT_NAME}_LDFLAGS_MAKEFILE} -l${LIBRARY}")
+  set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} -l${LIBRARY}")
 endforeach()
+
+# force the lists to be space separated (may be sometimes semicolon separated)
+string(REPLACE ";" " " ${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS})
+string(REPLACE ";" " " ${PROJECT_NAME}_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
+string(REPLACE ";" " " ${PROJECT_NAME}_LIBRARIES ${${PROJECT_NAME}_LIBRARIES})
 
 # we have nested @-statements, so we have to parse twice:
 
