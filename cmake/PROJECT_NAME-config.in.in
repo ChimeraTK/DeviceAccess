@@ -1,8 +1,12 @@
 #!/bin/sh
 
 print_usage(){
-    echo "usage: $0 [--cppflags] [--ldflags] [--mexflags]" 1>&2
-    echo " The mexflags are only for use with MATLABs mex." 1>&2
+    echo -n "usage: $0 [--version] [--cppflags] [--ldflags]" 1>&2
+    if [ -n "@@PROJECT_NAME@_MEXFLAGS@" ]; then
+      echo " [--mexflags]" 1>&2
+      echo -n " The mexflags are only for use with MATLABs mex." 1>&2
+    fi
+    echo ""
 }
 
 if  [ $# -eq 0 ]; then
@@ -16,10 +20,13 @@ fi
 while [ $# -gt 0 ]; do
     case "$1" in
       --cppflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CPPFLAGS@"
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CPPFLAGS_MAKEFILE@"
         shift;;
       --ldflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LDFLAGS@"
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LDFLAGS_MAKEFILE@"
+        shift;;
+      --version)
+        OUTPUT="${OUTPUT}@@PROJECT_NAME@_SOVERSION@"
         shift;;
       --mexflags)
         OUTPUT="${OUTPUT}@@PROJECT_NAME@_MEXFLAGS@"
