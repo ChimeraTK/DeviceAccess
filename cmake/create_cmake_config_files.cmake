@@ -34,15 +34,6 @@ foreach(LIBRARY ${LIST})
   set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} -l${LIBRARY}")
 endforeach()
 
-# force the lists to be space separated (may be sometimes semicolon separated)
-string(REPLACE ";" " " ${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_SOVERSION})
-string(REPLACE ";" " " ${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS})
-string(REPLACE ";" " " ${PROJECT_NAME}_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
-string(REPLACE ";" " " ${PROJECT_NAME}_LIBRARIES ${${PROJECT_NAME}_LIBRARIES})
-string(REPLACE ";" " " ${PROJECT_NAME}_CXX_FLAGS ${${PROJECT_NAME}_CXX_FLAGS})
-string(REPLACE ";" " " ${PROJECT_NAME}_LINKER_FLAGS ${${PROJECT_NAME}_LINKER_FLAGS})
-string(REPLACE ";" " " ${PROJECT_NAME}_MEXFLAGS ${${PROJECT_NAME}_MEXFLAGS})
-
 # we have nested @-statements, so we have to parse twice:
 
 # create the cmake Find package script
