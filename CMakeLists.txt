@@ -128,47 +128,12 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/mtca4u/Ins
 	  PATTERN "${PROJECT_NAME}" EXCLUDE
 	  )
 
-#create the config files by filling the correct variables into the template (*.cmake.in)
-#All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
-set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS})
-set(${PROJECT_NAME}_CONFIG_LIBRARIES ${${PROJECT_NAME}_LIBRARIES})
-set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
-set(${PROJECT_NAME}_CONFIG_CXX_FLAGS ${mtca4u-deviceaccess_CPPFLAGS})
-set(${PROJECT_NAME}_CPPFLAGS ${mtca4u-deviceaccess_CPPFLAGS})
-#create the config files by filling the correct variables into the template (*.cmake.in)
-#All variables @VARIABLE@ are replaced with the current values
+set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME}")
+set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
+set(${PROJECT_NAME}_CPPFLAGS "${mtca4u-deviceaccess_CPPFLAGS}")
+set(${PROJECT_NAME}_LDFLAGS "")
+include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
-#some variables we need for regular Makefiles, for which we also provide the config
-set(${PROJECT_NAME}_CPPFLAGS "${${PROJECT_NAME}_CPPFLAGS} -I${CMAKE_INSTALL_PREFIX}/include ")
-set(${PROJECT_NAME}_LDFLAGS "-L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME} ")
-#MATLABs mex cannot deal with the rpath and C+=11 flags, so we provide special flags
-set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include ${${PROJECT_NAME}_LDFLAGS} ")
-#only now we extend the LDFLAGS to its final value, including the runpath
-set(${PROJECT_NAME}_LDFLAGS "${${PROJECT_NAME}_LDFLAGS} -Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags ")
-
-#We have nested @-statements, so we have to parse twice
-configure_file(cmake/PROJECT_NAMEConfig.cmake.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-
-configure_file(cmake/PROJECT_NAMEConfigVersion.cmake.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
-  
-configure_file(cmake/PROJECT_NAME-config.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
-
-# Install the ..Config.cmake and ..ConfigVersion.cmake
-install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
-  "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
-  DESTINATION  share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules COMPONENT dev)
-
-install(PROGRAMS "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config"
-  DESTINATION bin COMPONENT dev)
 # The instructions to create a debian package are loaded from a separate file
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
