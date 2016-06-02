@@ -6,26 +6,33 @@
 #   @PROJECT_NAME@_VERSION      : the package version
 #   @PROJECT_NAME@_INCLUDE_DIRS : path to the include directory
 #   @PROJECT_NAME@_LIBRARY_DIRS : path to the library directory
-#   @PROJECT_NAME@_LIBRARIES    : the provided libraries
+#   @PROJECT_NAME@_LIBRARIES    : libraries the depending project needs to link against
 #   @PROJECT_NAME@_CXX_FLAGS    : additional C++ compiler flags
 #   @PROJECT_NAME@_LINKER_FLAGS : additional linker flags
 #
 # @author Martin Killenberg, DESY
 #
 
+# The library itself must be "searched" using the FIND_LIBRARY command in the known install directory, to set
+# the variable properly
+FIND_LIBRARY(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
+  @CMAKE_INSTALL_PREFIX@/lib
+  NO_DEFAULT_PATH
+)
+
 # Since this file is already part of the installation to be found, the configuration can be hard-coded at
 # installation time
 set(@PROJECT_NAME@_VERSION "@@PROJECT_NAME@_SOVERSION@")
 set(@PROJECT_NAME@_INCLUDE_DIRS @@PROJECT_NAME@_INCLUDE_DIRS@)
 set(@PROJECT_NAME@_LIBRARY_DIRS @@PROJECT_NAME@_LIBRARY_DIRS@)
-set(@PROJECT_NAME@_LIBRARIES @@PROJECT_NAME@_LIBRARIES@)
+set(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_LIBRARY} @@PROJECT_NAME@_LIBRARIES@)
 set(@PROJECT_NAME@_CXX_FLAGS "@@PROJECT_NAME@_CXX_FLAGS@")
 set(@PROJECT_NAME@_LINKER_FLAGS "@@PROJECT_NAME@_LINKER_FLAGS@")
+set(@PROJECT_NAME@_PREFIX "@CMAKE_INSTALL_PREFIX@")
 
 # Use a macro provided by CMake to check if all the listed arguments are valid and set @PROJECT_NAME@_FOUND accordingly.
 # This is mainly important to check the version.
 set(@PROJECT_NAME@_FOUND 0)
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(@PROJECT_NAME@ REQUIRED_VARS @PROJECT_NAME@_LIBRARIES @PROJECT_NAME@_INCLUDE_DIRS
-	VERSION_VAR @PROJECT_NAME@_VERSION )
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(@PROJECT_NAME@ REQUIRED_VARS @PROJECT_NAME@_PREFIX VERSION_VAR @PROJECT_NAME@_VERSION )
 
