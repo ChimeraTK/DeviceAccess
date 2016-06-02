@@ -1,4 +1,21 @@
 #!/bin/sh
+#######################################################################################################################
+#
+# Shell script to output compiler and linker flags for use in plain Makefiles or at command line.
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
 
 print_usage(){
     echo -n "usage: $0 [--version] [--cppflags] [--ldflags]" 1>&2
@@ -14,9 +31,9 @@ if  [ $# -eq 0 ]; then
     exit 1
 fi
 
-#The variables are all prepared in CMAKE and also provided by
-#Find@PROJECT_NAME@.cmake, so dependent applications can create consistent
-#Makefiles.
+# The variables are all prepared in CMAKE and also provided by
+# Find@PROJECT_NAME@.cmake, so dependent applications can create consistent
+# Makefiles.
 while [ $# -gt 0 ]; do
     case "$1" in
       --cppflags)

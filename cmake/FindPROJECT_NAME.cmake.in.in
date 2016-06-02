@@ -1,3 +1,4 @@
+#######################################################################################################################
 #
 # cmake module for finding @PROJECT_NAME@
 #
@@ -12,6 +13,19 @@
 #
 # @author Martin Killenberg, DESY
 #
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
 
 # The library itself must be "searched" using the FIND_LIBRARY command in the known install directory, to set
 # the variable properly
