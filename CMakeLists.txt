@@ -32,13 +32,13 @@ FIND_PACKAGE(ControlSystemAdapter ${ControlSystemAdapter_MIN_VERSION} REQUIRED)
 include_directories(SYSTEM ${ControlSystemAdapter_INCLUDE_DIRS})
 
 #Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CMAKE_CXX_FLAGS} -O3 -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CXX_FLAGS} -O3")
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
 
 # linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${mtca4u-deviceaccess_LINK_FLAGS}")
 
 #BOOST unit test framework
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
@@ -131,8 +131,8 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/mtca4u/Ins
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
-set(${PROJECT_NAME}_CPPFLAGS "${mtca4u-deviceaccess_CPPFLAGS}")
-set(${PROJECT_NAME}_LDFLAGS "")
+set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
 # The instructions to create a debian package are loaded from a separate file
