@@ -1,4 +1,4 @@
-#include <DoocsAdapter.h>
+#include <ControlSystemAdapter-DoocsAdapter/DoocsAdapter.h>
 
 // Include all the control applications you want in this server
 #include "IndependentControlCore.h"
