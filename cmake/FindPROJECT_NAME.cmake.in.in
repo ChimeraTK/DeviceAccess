@@ -6,8 +6,7 @@
 #   @PROJECT_NAME@_VERSION      : the package version
 #   @PROJECT_NAME@_INCLUDE_DIRS : path to the include directory
 #   @PROJECT_NAME@_LIBRARY_DIRS : path to the library directory
-#   @PROJECT_NAME@_LIBRARIES    : additional libraries the depending project needs to link against. The library provided
-#                                 by the package @PROJECT_NAME@ will be added automatically
+#   @PROJECT_NAME@_LIBRARIES    : libraries the depending project needs to link against
 #   @PROJECT_NAME@_CXX_FLAGS    : additional C++ compiler flags
 #   @PROJECT_NAME@_LINKER_FLAGS : additional linker flags
 #
