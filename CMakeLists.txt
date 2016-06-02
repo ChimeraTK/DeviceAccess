@@ -1,7 +1,7 @@
 PROJECT(ChimeraTK-ControlSystemDeviceConnector)
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake) 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
 set(${PROJECT_NAME}_MINOR_VERSION 01)
@@ -22,7 +22,7 @@ message("${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_SOVERSION}")
 set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 
 #put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-set(mtca4u-deviceaccess_MIN_VERSION 00.09)
+set(mtca4u-deviceaccess_MIN_VERSION 00.12)
 FIND_PACKAGE(mtca4u-deviceaccess ${mtca4u-deviceaccess_MIN_VERSION} REQUIRED)
 include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
