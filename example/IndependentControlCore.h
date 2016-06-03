@@ -42,7 +42,7 @@ class IndependentControlCore{
     _device.open("Dummy0");
 
     // initialise the synchroniser
-    _synchroniser.addModule(_device, "MyModule", "");
+    _synchroniser.addModule(_device, "MyModule", "MyLocation");
 
     // start the device thread, which is executing the main loop
     _deviceThread.reset( new boost::thread( boost::bind( &IndependentControlCore::mainLoop, this ) ) );

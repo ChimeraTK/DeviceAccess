@@ -1,5 +1,5 @@
 <logicalNameMap>
-    <module name="MyLocation">
+    <module name="MyModule">
       <constant name="Constant">
         <type>integer</type>
         <value>42</value>
