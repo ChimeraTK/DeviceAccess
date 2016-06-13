@@ -106,13 +106,13 @@ endif(TESTING_IS_ENABLED)
 # build example
 if(TESTING_IS_ENABLED)
 
-  add_executable(InstaCoSADevExample_server example/InstaCoSADevExample_server.cc)
-  set_target_properties(InstaCoSADevExample_server PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${DOOCS_CXX_FLAGS}")
-  set_target_properties(InstaCoSADevExample_server PROPERTIES LINK_FLAGS ${DOOCS_LINK_FLAGS})
-  target_link_libraries(InstaCoSADevExample_server ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES})
-  
+  add_executable(demoApp example/demoApp.cc)
+  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${DOOCS_CXX_FLAGS}")
+  set_target_properties(demoApp PROPERTIES LINK_FLAGS ${DOOCS_LINK_FLAGS})
+  target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES})
+
   # copy config file
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/InstaCoSADevExample_server.conf DESTINATION ${PROJECT_BINARY_DIR})
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.xlmap DESTINATION ${PROJECT_BINARY_DIR})
 
