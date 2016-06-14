@@ -4,9 +4,11 @@
  *  Created on: Jun 9, 2016
  *      Author: Martin Hierholzer
  */
-#include <ControlSystemAdapter-DoocsAdapter/DoocsAdapter.h>
 
 #include <iostream>
+
+#include <mtca4u/BackendFactory.h>
+#include <ControlSystemAdapter-DoocsAdapter/DoocsAdapter.h>
 
 #include "Application.h"
 #include "ScalarAccessor.h"
@@ -67,8 +69,10 @@ class MyApp : public ctk::Application {
     constexpr static char unit_Field[] = "MV/m";
 
     void initialise() {
-      firstModule.feedforward.connectTo(secondModule.feedforward);
-      //firstModule.setpoint.connectTo(secondModule.readback);
+      mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
+      firstModule.feedforward.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      secondModule.feedforward.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
 
       firstModule.setpoint.publish("MyLocation/setpoint");
       secondModule.readback.publish("MyLocation/readback");

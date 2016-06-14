@@ -64,6 +64,10 @@ namespace ChimeraTK {
       /** Publish the variable to the control system under the given name */
       void publish(const std::string& name);
 
+      /** Connect variable to a device register */
+      void connectToDevice(const std::string &deviceAlias, const std::string &registerName,
+          UpdateMode mode, size_t numberOfElements=1, size_t elementOffsetInRegister=0);
+
       virtual bool isOutput();
 
       /** Obtain direction of the accessor */
@@ -100,10 +104,20 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
+
   template< typename UserType >
   bool Accessor<UserType>::isOutput() {
     return _direction == VariableDirection::output;
   };
+
+  /*********************************************************************************************************************/
+
+  template< typename UserType >
+  void Accessor<UserType>::connectToDevice(const std::string &deviceAlias, const std::string &registerName,
+      UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
+    Application::getInstance().connectAccessorToDevice(*this, deviceAlias, registerName, mode, numberOfElements,
+        elementOffsetInRegister);
+  }
 
 } /* namespace ChimeraTK */
 

@@ -10,6 +10,7 @@
 
 #include <mutex>
 
+#include <mtca4u/DeviceBackend.h>
 #include <ControlSystemAdapter/DevicePVManager.h>
 
 namespace ChimeraTK {
@@ -22,7 +23,7 @@ namespace ChimeraTK {
 
   /** Enum to define the update mode of variables. */
   enum class UpdateMode {
-    pull, push
+    poll, push
   };
 
   class ApplicationModule;
@@ -30,6 +31,9 @@ namespace ChimeraTK {
 
   template<typename UserType>
   class Accessor;
+
+  template<typename UserType>
+  class DeviceAccessor;
 
   class Application {
 
@@ -66,14 +70,12 @@ namespace ChimeraTK {
         return *instance;
       }
 
-      /** Register a connection between two Accessors */
-      void connectAccessors(AccessorBase &a, AccessorBase &b);
-
-      /** Register an accessor to be published under the given name to the control system adapter */
-      template<typename UserType>
-      void publishAccessor(Accessor<UserType> &a, const std::string& name);
-
     protected:
+
+      friend class ApplicationModule;
+
+      template<typename UserType>
+      friend class Accessor;
 
       /** To be implemented by the user: Instantiate all application modules and connect the variables to each other */
       virtual void initialise() = 0;
@@ -81,7 +83,17 @@ namespace ChimeraTK {
       /** Make the connections between accessors as requested in the initialise() function. */
       void makeConnections();
 
-      friend class ApplicationModule;
+      /** Register a connection between two Accessors */
+      void connectAccessors(AccessorBase &a, AccessorBase &b);
+
+      /** Register an accessor to be published under the given name to the control system adapter */
+      template<typename UserType>
+      void publishAccessor(Accessor<UserType> &a, const std::string& name);
+
+      /** Connect accessor to a device register */
+      template<typename UserType>
+      void connectAccessorToDevice(Accessor<UserType> &a, const std::string &deviceAlias,
+          const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
@@ -92,15 +104,16 @@ namespace ChimeraTK {
       /** List of application modules */
       std::list<ApplicationModule*> moduleList;
 
-      template<typename UserType>
-      friend class Accessor;
-
       /** Map of accessor connections: the map key is the output accessor (providing the data) and the map target is
        *  a list of input accessors (consuming the data). */
       std::map< AccessorBase*, std::list<AccessorBase*> > connectionMap;
 
       /** List of published accessors */
       std::list< boost::shared_ptr<AccessorBase> > publicationList;
+
+      /** Map of accessor-to-device connections: the map key is the accessor and the map target is the implementation
+       *  used to access the device register */
+      std::map< AccessorBase*, boost::shared_ptr<mtca4u::ProcessVariable> > deviceAccessorMap;
 
       /** Pointer to the process variable manager used to create variables exported to the control system */
       boost::shared_ptr<mtca4u::DevicePVManager> _processVariableManager;
@@ -110,6 +123,9 @@ namespace ChimeraTK {
 
       /** Mutex for thread-safety when setting the instance pointer */
       static std::mutex instance_mutex;
+
+      /** Map of DeviceBackends used by this application. The map key is the alias name from the DMAP file */
+      std::map<std::string, boost::shared_ptr<mtca4u::DeviceBackend>> deviceMap;
 
   };
 
