@@ -23,25 +23,6 @@ using namespace ChimeraTK;
 Application *Application::instance = nullptr;
 std::mutex Application::instance_mutex;
 
-
-namespace {
-  // TODO @todo this is copy&paste from SupportedUserTypes.h of DeviceAccess, but with string and 64-bit ints removed
-  template< template<typename> class TemplateClass >
-  class myTemplateUserTypeMap {
-    public:
-      boost::fusion::map<
-          boost::fusion::pair<int8_t, TemplateClass<int8_t> >,
-          boost::fusion::pair<uint8_t, TemplateClass<uint8_t> >,
-          boost::fusion::pair<int16_t, TemplateClass<int16_t> >,
-          boost::fusion::pair<uint16_t, TemplateClass<uint16_t> >,
-          boost::fusion::pair<int32_t, TemplateClass<int32_t> >,
-          boost::fusion::pair<uint32_t, TemplateClass<uint32_t> >,
-          boost::fusion::pair<float, TemplateClass<float> >,
-          boost::fusion::pair<double, TemplateClass<double> >
-       > table;
-  };
-}
-
 /*********************************************************************************************************************/
 
 Application::Application() {
@@ -64,57 +45,51 @@ void Application::run() {
 
 /*********************************************************************************************************************/
 
+void Application::generateXML() {
+  initialise();
+
+}
+
+/*********************************************************************************************************************/
+
 void Application::connectAccessors(AccessorBase &a, AccessorBase &b) {
-  if(a.isOutput() && !b.isOutput()) {
-    connectionMap[&a].push_back(&b);
-  }
-  else if(b.isOutput() && !a.isOutput()) {
-    connectionMap[&b].push_back(&a);
-  }
-  else {
-    throw std::string("Cannot connect accessors with equal direction."); // @todo TODO throw proper exception
-  }
-  // @todo TODO check if the input accessor is already in the list of another output accessor
+  VariableNetwork &network = findOrCreateNetwork(&a,&b);
+  network.addAccessor(a);
+  network.addAccessor(b);
 }
 
 /*********************************************************************************************************************/
 
-template<typename UserType>
-void Application::publishAccessor(Accessor<UserType> &a, const std::string& name) {
-  // @todo TODO check if already published and throw an error
-
-  // turn around the direction: the PublishedAccessor represents the control-system-side part!
-  VariableDirection direction;
-  if(a.getDirection() == VariableDirection::input) {
-    direction = VariableDirection::output;
+void Application::publishAccessor(AccessorBase &a, const std::string& name) {
+  VariableNetwork &network = findOrCreateNetwork(&a);
+  network.addAccessor(a);
+  if(a.isOutput()) {
+    network.addDev2CSPublication(name);
   }
   else {
-    direction = VariableDirection::input;
+    network.addCS2DevPublication(a,name);
   }
-
-  // first create a PublishedAccessor to represent the control-system-side part, and store it to the list
-  boost::shared_ptr<AccessorBase> b;
-  b.reset( new PublishedAccessor<UserType>(name, direction, a.getUnit()) );
-  publicationList.push_back(b);
-
-  // now connect the accessor with the PublishedAccessor
-  connectAccessors(a, *b);
 }
-
-template void Application::publishAccessor(Accessor<int8_t> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<uint8_t> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<int16_t> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<uint16_t> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<int32_t> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<uint32_t> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<float> &a, const std::string& name);
-template void Application::publishAccessor(Accessor<double> &a, const std::string& name);
 
 /*********************************************************************************************************************/
 
-template<typename UserType>
-void Application::connectAccessorToDevice(Accessor<UserType> &a, const std::string &deviceAlias,
+void Application::connectAccessorToDevice(AccessorBase &a, const std::string &deviceAlias,
     const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
+  VariableNetwork &network = findOrCreateNetwork(&a);
+  network.addAccessor(a);
+  if(a.isOutput()) {
+    network.addInputDeviceRegister(deviceAlias, registerName, mode, numberOfElements, elementOffsetInRegister);
+  }
+  else {
+    network.addOutputDeviceRegister(deviceAlias, registerName, mode, numberOfElements, elementOffsetInRegister);
+  }
+}
+
+/*********************************************************************************************************************/
+
+boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(AccessorBase &a,
+    const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, size_t numberOfElements,
+    size_t elementOffsetInRegister) {
 
   // open device if needed
   if(deviceMap.count(deviceAlias) == 0) {
@@ -122,58 +97,230 @@ void Application::connectAccessorToDevice(Accessor<UserType> &a, const std::stri
     deviceMap[deviceAlias]->open();
   }
 
-  // obtain accessor from device
+  // use wait_for_new_data mode if push update mode was requested
   mtca4u::AccessModeFlags flags{};
   if(mode == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
-  auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName,
-      numberOfElements, elementOffsetInRegister, flags);
 
-  // "convert" DeviceAccess accessor into a ProcessScalar implementation
-  boost::shared_ptr<mtca4u::ProcessVariable> impl( new DeviceAccessor<UserType>(regacc,a.getDirection(),mode) );
-
-  // the actual connection is done later in makeConnections(), so just save the accessor and the implementation to a map
-  deviceAccessorMap[&a] = impl;
+  // create DeviceAccessor for the proper UserType
+  // @todo TODO replace with boost::mpl::for_each loop!
+  boost::shared_ptr<mtca4u::ProcessVariable> impl;
+  if(a.getValueType() == typeid(int8_t)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<int8_t>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<int8_t>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(uint8_t)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<uint8_t>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<uint8_t>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(int16_t)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<int16_t>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<int16_t>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(uint16_t)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<uint16_t>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<uint16_t>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(int32_t)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<int32_t>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<int32_t>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(uint32_t)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<uint32_t>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<uint32_t>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(float)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<float>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<float>(regacc,a.getDirection(),mode));
+  }
+  else if(a.getValueType() == typeid(double)) {
+    auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<double>(registerName,
+        numberOfElements, elementOffsetInRegister, flags);
+    impl.reset(new DeviceAccessor<double>(regacc,a.getDirection(),mode));
+  }
+  return impl;
 }
 
-template void Application::connectAccessorToDevice(Accessor<int8_t> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<uint8_t> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<int16_t> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<uint16_t> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<int32_t> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<uint32_t> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<float> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
-template void Application::connectAccessorToDevice(Accessor<double> &a, const std::string&, const std::string &, UpdateMode, size_t, size_t);
+/*********************************************************************************************************************/
+
+boost::shared_ptr<mtca4u::ProcessVariable> Application::createProcessScalar(AccessorBase &a, const std::string &name) {
+
+  // determine the SynchronizationDirection
+  SynchronizationDirection dir;
+  if(a.isOutput()) {
+    dir = SynchronizationDirection::deviceToControlSystem;
+  }
+  else {
+    dir = SynchronizationDirection::controlSystemToDevice;
+  }
+
+  // create the ProcessScalar for the proper UserType
+  // @todo TODO replace with boost::mpl::for_each loop!
+  boost::shared_ptr<mtca4u::ProcessVariable> impl;
+  if(a.getValueType() == typeid(int8_t)) {
+    impl = _processVariableManager->createProcessScalar<int8_t>(dir, name);
+  }
+  else if(a.getValueType() == typeid(uint8_t)) {
+    impl = _processVariableManager->createProcessScalar<uint8_t>(dir, name);
+  }
+  else if(a.getValueType() == typeid(int16_t)) {
+    impl = _processVariableManager->createProcessScalar<int16_t>(dir, name);
+  }
+  else if(a.getValueType() == typeid(uint16_t)) {
+    impl = _processVariableManager->createProcessScalar<uint16_t>(dir, name);
+  }
+  else if(a.getValueType() == typeid(int32_t)) {
+    impl = _processVariableManager->createProcessScalar<int32_t>(dir, name);
+  }
+  else if(a.getValueType() == typeid(uint32_t)) {
+    impl = _processVariableManager->createProcessScalar<uint32_t>(dir, name);
+  }
+  else if(a.getValueType() == typeid(float)) {
+    impl = _processVariableManager->createProcessScalar<float>(dir, name);
+  }
+  else if(a.getValueType() == typeid(double)) {
+    impl = _processVariableManager->createProcessScalar<double>(dir, name);
+  }
+  return impl;
+}
+
+/*********************************************************************************************************************/
+
+std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u::ProcessVariable> >
+  Application::createProcessScalar(AccessorBase &a) {
+
+  // create the ProcessScalar for the proper UserType
+  // @todo TODO replace with boost::mpl::for_each loop!
+  if(a.getValueType() == typeid(int8_t)) {
+    return createSynchronizedProcessScalar<int8_t>();
+  }
+  else if(a.getValueType() == typeid(uint8_t)) {
+    return createSynchronizedProcessScalar<uint8_t>();
+  }
+  else if(a.getValueType() == typeid(int16_t)) {
+    return createSynchronizedProcessScalar<int16_t>();
+  }
+  else if(a.getValueType() == typeid(uint16_t)) {
+    return createSynchronizedProcessScalar<uint16_t>();
+  }
+  else if(a.getValueType() == typeid(int32_t)) {
+    return createSynchronizedProcessScalar<int32_t>();
+  }
+  else if(a.getValueType() == typeid(uint32_t)) {
+    return createSynchronizedProcessScalar<uint32_t>();
+  }
+  else if(a.getValueType() == typeid(float)) {
+    return createSynchronizedProcessScalar<float>();
+  }
+  else if(a.getValueType() == typeid(double)) {
+    return createSynchronizedProcessScalar<double>();
+  }
+  return std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u::ProcessVariable> >();
+}
 
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
 
   // make connections between accessors
-  for(auto conn : connectionMap) {
+  for(auto network : networkList) {
     // make connection in single target case
-    if(conn.second.size() == 1 ) {
-      if(!conn.second.front()->isInitialised()) {
-        auto pv = conn.first->createProcessVariable();
-        conn.second.front()->useProcessVariable(pv);
+    bool connectionMade = false;
+    network.dump();
+    if(network.countInputAccessors() == 0) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Illegal variable network found: no input accessors connected!");
+    }
+    if(network.countInputAccessors() == 1) {
+      if(network.getOutputAccessorType() == VariableNetwork::AccessorType::Device) {
+        if(network.hasInputAccessorType(VariableNetwork::AccessorType::Application)) {
+          auto acc = network.getInputAccessorList().front(); // we have only one in the list here
+          auto info = network.getDeviceOutputRegisterInfo();
+          auto impl = createDeviceAccessor(*acc, info.deviceAlias, info.registerName, info.mode, 1, 0);
+          acc->useProcessVariable(impl);
+          connectionMade = true;
+        }
       }
-      else {
-        auto pv = conn.second.front()->createProcessVariable();
-        conn.first->useProcessVariable(pv);
+      else if(network.getOutputAccessorType() == VariableNetwork::AccessorType::Application) {
+        if(network.hasInputAccessorType(VariableNetwork::AccessorType::Device)) {
+          auto acc = network.getOutputAccessor();
+          auto info = network.getDeviceInputRegisterInfos().front(); // we have only one in the list here
+          auto impl = createDeviceAccessor(*acc, info.deviceAlias, info.registerName, info.mode, 1, 0);
+          acc->useProcessVariable(impl);
+          connectionMade = true;
+        }
+        else if(network.hasInputAccessorType(VariableNetwork::AccessorType::ControlSystem)) {
+          auto acc = network.getOutputAccessor();
+          auto pubName = network.getInputPublicationNames().front(); // we have only one in the list here
+          auto impl = createProcessScalar(*acc,pubName);
+          acc->useProcessVariable(impl);
+          connectionMade = true;
+        }
+        else if(network.hasInputAccessorType(VariableNetwork::AccessorType::Application)) {
+          auto accO = network.getOutputAccessor();
+          auto accI = network.getInputAccessorList().front(); // we have only one in the list here
+          auto impls = createProcessScalar(*accO);
+          accO->useProcessVariable(impls.first);
+          accI->useProcessVariable(impls.second);
+          connectionMade = true;
+        }
+      }
+      else if(network.getOutputAccessorType() == VariableNetwork::AccessorType::ControlSystem) {
+        if(network.hasInputAccessorType(VariableNetwork::AccessorType::Application)) {
+          auto acc = network.getInputAccessorList().front(); // we have only one in the list here
+          auto pubName = network.getOutputPublicationName();
+          auto impl = createProcessScalar(*acc,pubName);
+          acc->useProcessVariable(impl);
+          connectionMade = true;
+        }
       }
     }
-    else {
-      throw std::string("Connecting to multiple inputs is not yet implemented."); // @todo TODO implement
+    if(!connectionMade) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(
+          "The variable network cannot be handled. Implementation missing!"); // @todo TODO implement
     }
   }
 
   // make connections to devices
-  for(auto devconn : deviceAccessorMap) {
+  /* for(auto devconn : deviceAccessorMap) {
     if(devconn.first->isInitialised()) {
       throw std::string("Connecting to multiple inputs is not yet implemented (2)."); // @todo TODO implement
     }
     devconn.first->useProcessVariable(devconn.second);
+  } */
+
+}
+
+/*********************************************************************************************************************/
+
+VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a, AccessorBase *b) {
+
+  // search for a and b in the inputAccessorList
+  auto r = find_if(networkList.begin(), networkList.end(),
+      [a,b](const VariableNetwork& n) { return n.hasAccessor(a,b); } );
+
+  // if no network found, create one
+  if(r == networkList.end()) {
+    networkList.push_back({});
+    return networkList.back();
   }
 
+  // store the reference to the found network
+  VariableNetwork &ret = *r;
+
+  // check if more than one network is found
+  if(++r != networkList.end()) {
+    throw std::string("Trying to connect two accessors which already are part of a network."); // @todo TODO throw proper exception
+  }
+
+  // return the found network
+  return ret;
 }
 
 /*********************************************************************************************************************/

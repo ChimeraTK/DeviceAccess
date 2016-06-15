@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include <ControlSystemAdapter/ProcessArrayImpl.h>
+#include <ControlSystemAdapter/ProcessArray.h>
 #include <mtca4u/RegisterPath.h>
 
 #include "Application.h"
@@ -41,6 +41,12 @@ namespace ChimeraTK {
 
       /** Use a ProcessVariable as implementation. */
       virtual void useProcessVariable(boost::shared_ptr<ProcessVariable> &var) = 0;
+
+      /* Obtain the type info of the UserType */
+      virtual const std::type_info& getValueType() const = 0;
+
+      /** Obtain direction of the accessor */
+      virtual VariableDirection getDirection() const = 0;
   };
 
   /*********************************************************************************************************************/
@@ -70,11 +76,14 @@ namespace ChimeraTK {
 
       virtual bool isOutput();
 
-      /** Obtain direction of the accessor */
       VariableDirection getDirection() const {return _direction;}
 
       /* Obtain the unit of the variable */
       const std::string& getUnit() const {return _unit;}
+
+      const std::type_info& getValueType() const {
+        return typeid(UserType);
+      }
 
     protected:
 

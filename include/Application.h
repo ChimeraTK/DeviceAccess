@@ -13,18 +13,11 @@
 #include <mtca4u/DeviceBackend.h>
 #include <ControlSystemAdapter/DevicePVManager.h>
 
+#include "ApplicationException.h"
+#include "VariableNetwork.h"
+#include "Flags.h"
+
 namespace ChimeraTK {
-
-  /** Enum to define directions of variables. The direction is always defined from the point-of-view of the
-   *  definer, i.e. the application module owning the instance of the accessor in this context. */
-  enum class VariableDirection {
-    input, output
-  };
-
-  /** Enum to define the update mode of variables. */
-  enum class UpdateMode {
-    poll, push
-  };
 
   class ApplicationModule;
   class AccessorBase;
@@ -63,6 +56,9 @@ namespace ChimeraTK {
       /** Initialise and run the application */
       void run();
 
+      /** Instead of running the application, just initialise it and output the published variables to an XML file. */
+      void generateXML();
+
       /** Obtain instance of the application. Will throw an exception if called before the instance has been
        *  created by the control system adapter. */
       static Application& getInstance() {
@@ -87,13 +83,23 @@ namespace ChimeraTK {
       void connectAccessors(AccessorBase &a, AccessorBase &b);
 
       /** Register an accessor to be published under the given name to the control system adapter */
-      template<typename UserType>
-      void publishAccessor(Accessor<UserType> &a, const std::string& name);
+      void publishAccessor(AccessorBase &a, const std::string& name);
 
-      /** Connect accessor to a device register */
-      template<typename UserType>
-      void connectAccessorToDevice(Accessor<UserType> &a, const std::string &deviceAlias,
+      /** Register a connection of an accessor to a device register */
+      void connectAccessorToDevice(AccessorBase &a, const std::string &deviceAlias,
           const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
+
+      /** Perform the actual connection of an accessor to a device register */
+      boost::shared_ptr<mtca4u::ProcessVariable> createDeviceAccessor(AccessorBase &a, const std::string &deviceAlias,
+          const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
+
+      /** Create a process variable with the PVManager, which is exported to the control system adapter */
+      boost::shared_ptr<mtca4u::ProcessVariable> createProcessScalar(AccessorBase &a, const std::string &name);
+
+      /** Create a local process variable which is not exported. The first element in the returned pair will be the
+       *  sender, the second the receiver. */
+      std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u::ProcessVariable> >
+        createProcessScalar(AccessorBase &a);
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
@@ -104,16 +110,22 @@ namespace ChimeraTK {
       /** List of application modules */
       std::list<ApplicationModule*> moduleList;
 
+      /** List of variable networks */
+      std::list<VariableNetwork> networkList;
+
+      /** Find the network containing one of the given registers. If no network has been found, create an empty one */
+      VariableNetwork& findOrCreateNetwork(AccessorBase *a, AccessorBase *b=nullptr);
+
       /** Map of accessor connections: the map key is the output accessor (providing the data) and the map target is
        *  a list of input accessors (consuming the data). */
-      std::map< AccessorBase*, std::list<AccessorBase*> > connectionMap;
+//      std::map< AccessorBase*, std::list<AccessorBase*> > connectionMap;
 
       /** List of published accessors */
-      std::list< boost::shared_ptr<AccessorBase> > publicationList;
+//      std::list< boost::shared_ptr<AccessorBase> > publicationList;
 
       /** Map of accessor-to-device connections: the map key is the accessor and the map target is the implementation
        *  used to access the device register */
-      std::map< AccessorBase*, boost::shared_ptr<mtca4u::ProcessVariable> > deviceAccessorMap;
+//      std::map< AccessorBase*, boost::shared_ptr<mtca4u::ProcessVariable> > deviceAccessorMap;
 
       /** Pointer to the process variable manager used to create variables exported to the control system */
       boost::shared_ptr<mtca4u::DevicePVManager> _processVariableManager;

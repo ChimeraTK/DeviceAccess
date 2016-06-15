@@ -8,11 +8,8 @@
 #include <iostream>
 
 #include <mtca4u/BackendFactory.h>
-#include <ControlSystemAdapter-DoocsAdapter/DoocsAdapter.h>
 
-#include "Application.h"
-#include "ScalarAccessor.h"
-#include "ApplicationModule.h"
+#include "ApplicationCore.h"
 
 namespace ctk = ChimeraTK;
 
@@ -66,13 +63,12 @@ class MyApp : public ctk::Application {
     MyFirstModule firstModule;
     MySecondModule secondModule;
 
-    constexpr static char unit_Field[] = "MV/m";
-
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
       firstModule.feedforward.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
       secondModule.feedforward.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      //firstModule.feedforward.connectTo(secondModule.feedforward);
 
       firstModule.setpoint.publish("MyLocation/setpoint");
       secondModule.readback.publish("MyLocation/readback");
@@ -82,12 +78,5 @@ class MyApp : public ctk::Application {
 
 };
 
+MyApp myApp;
 
-
-BEGIN_DOOCS_SERVER("Cosade server", 10)
-   // Create static instances for all applications cores. They must not have overlapping
-   // process variable names ("location/protery" must be unique).
-   static MyApp myApp;
-   myApp.setPVManager(doocsAdapter.getDevicePVManager());
-   myApp.run();
-END_DOOCS_SERVER()

@@ -111,6 +111,12 @@ if(TESTING_IS_ENABLED)
   set_target_properties(demoApp PROPERTIES LINK_FLAGS ${DOOCS_LINK_FLAGS})
   target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES})
 
+  add_executable(demoApp-xmlGenerator example/demoApp.cc)
+  set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} -DGENERATE_XML")
+  target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter_LIBRARIES} )
+  
+  add_custom_command(TARGET demoApp-xmlGenerator POST_BUILD COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
   # copy config file
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
