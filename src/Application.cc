@@ -14,7 +14,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "PublishedAccessor.h"
 #include "Accessor.h"
 #include "DeviceAccessor.h"
 
