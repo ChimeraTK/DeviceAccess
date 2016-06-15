@@ -31,12 +31,16 @@ namespace ChimeraTK {
       {}
 
       /** Read an input variable. In case of an output variable, an exception will be thrown. This function will block
-       *  the calling thread until the variable has been read. If the wait_for_new_data access mode flag has been set
-       *  when creating the accessor, this function will wait until a new value has been provided to the variable. If
-       *  a new value is already available before calling this function, the function will be non-blocking and
-       *  lock-free. */
+       *  the calling thread until the variable has been read. If the UpdateMode::push flag has been set when creating
+       *  the accessor, this function will wait until a new value has been provided to the variable. If a new value is
+       *  already available before calling this function, the function will be non-blocking and lock-free. */
       void read() {
-        while(impl->receive() == false) usleep(1); // @todo TODO proper blocking implementation
+        if(Accessor<UserType>::_mode == UpdateMode::push) {
+          while(impl->receive() == false) usleep(1); // @todo TODO proper blocking implementation
+        }
+        else {
+          impl->receive();
+        }
       }
 
       /** Check if an input variable has new data. In case of an output variable, an exception will be thrown. If the
@@ -90,23 +94,6 @@ namespace ChimeraTK {
 
       bool isInitialised() const {
         return impl != nullptr;
-      }
-
-      boost::shared_ptr<ProcessVariable> createProcessVariable() {
-
-        // create pair of ProcessVariables
-        auto pair = createSynchronizedProcessScalar<UserType>("<local>");
-
-        // this is an output accessor: use sender as our implementation, return receiver
-        if(Accessor<UserType>::_direction == VariableDirection::output) {
-          impl = pair.first;
-          return pair.second;
-        }
-        else {
-          impl = pair.second;
-          return pair.first;
-        }
-
       }
 
       void useProcessVariable(boost::shared_ptr<ProcessVariable> &var) {
