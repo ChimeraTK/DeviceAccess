@@ -36,9 +36,6 @@ namespace ChimeraTK {
        *  placeholder constructor without arguments. */
       virtual bool isInitialised() const = 0;
 
-      /** Create pair of ProcessVariables, use one end as the local implementation and return the other. */
-      virtual boost::shared_ptr<ProcessVariable> createProcessVariable() = 0;
-
       /** Use a ProcessVariable as implementation. */
       virtual void useProcessVariable(boost::shared_ptr<ProcessVariable> &var) = 0;
 
