@@ -13,65 +13,101 @@
 
 namespace ctk = ChimeraTK;
 
-class MyFirstModule : public ctk::ApplicationModule {
+class AutomationModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(int, setpoint, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(int, feedforward, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, operatorSetpoint, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, loopSetpoint, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
 
     void mainLoop() {
-      feedforward = 100;
-      feedforward.write();
+      loopSetpoint = 0;
+      loopSetpoint.write();
 
       while(true) {
+        operatorSetpoint.read();
+        if(operatorSetpoint > loopSetpoint) loopSetpoint++;
+        if(operatorSetpoint < loopSetpoint) loopSetpoint--;
+        std::cout << "AutomationModule: operatorSetpoint = " << operatorSetpoint << std::endl;
+        std::cout << "AutomationModule: loopSetpoint = " << loopSetpoint << std::endl;
+        loopSetpoint.write();
+        usleep(200000);
+      }
+
+    }
+};
+
+
+class ControlLoopModule : public ctk::ApplicationModule {
+  public:
+
+    SCALAR_ACCESSOR(double, setpoint, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+
+    void mainLoop() {
+
+      while(true) {
+        readback.read();
         setpoint.read();
-        feedforward = 42*setpoint;
-        std::cout << "FirstModule: feedforward = " << feedforward << std::endl;
+        actuator = 10.*(setpoint-readback);
+        std::cout << "ControlLoopModule: setpoint = " << setpoint << std::endl;
+        std::cout << "ControlLoopModule: readback = " << readback << std::endl;
+        std::cout << "ControlLoopModule: actuator = " << actuator << std::endl;
+        actuator.write();
         usleep(200000);
-        feedforward.write();
       }
 
     }
 };
 
 
-class MySecondModule : public ctk::ApplicationModule {
+class SimulatorModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(int, feedforward, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(int, readback, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, readback2, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+
+    double lastValue{0};
 
     void mainLoop() {
 
       while(true) {
-        feedforward.read();
-        std::cout << "SecondModule: feedforward = " << feedforward << std::endl;
-        readback = feedforward/21;
-        usleep(200000);
+        actuator.read();
+        readback = (100*lastValue + actuator)/101.;
+        lastValue = readback;
+        std::cout << "SimulatorModule: actuator = " << actuator << std::endl;
+        std::cout << "SimulatorModule: readback = " << readback << std::endl;
+        readback2 = readback;
+        readback2.write();
         readback.write();
+        usleep(200000);
       }
 
     }
 };
-
 
 
 class MyApp : public ctk::Application {
 
   public:
 
-    MyFirstModule firstModule;
-    MySecondModule secondModule;
+    AutomationModule automation;
+    ControlLoopModule controlLoop;
+    SimulatorModule simulator;
 
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-      firstModule.feedforward.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-      secondModule.feedforward.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-      //firstModule.feedforward.connectTo(secondModule.feedforward);
+      automation.operatorSetpoint.publish("MyLocation/setpoint");
+      automation.loopSetpoint.connectTo(controlLoop.setpoint);
 
-      firstModule.setpoint.publish("MyLocation/setpoint");
-      secondModule.readback.publish("MyLocation/readback");
+      controlLoop.actuator.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      simulator.actuator.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+
+      simulator.readback.connectTo(controlLoop.readback);
+
+      simulator.readback2.publish("MyLocation/readback");
     }
 
     virtual ~MyApp() {};
