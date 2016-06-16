@@ -36,10 +36,11 @@ namespace ChimeraTK {
        *  already available before calling this function, the function will be non-blocking and lock-free. */
       void read() {
         if(Accessor<UserType>::_mode == UpdateMode::push) {
-          while(impl->receive() == false) usleep(1); // @todo TODO proper blocking implementation
+          while(impl->receive() == false) usleep(1); /// @todo TODO proper blocking implementation
         }
         else {
-          while(impl->receive() == true);
+          /// @todo TODO empty the queue to always receive the latest value
+          impl->receive();
         }
       }
 

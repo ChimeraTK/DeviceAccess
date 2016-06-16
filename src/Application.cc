@@ -117,7 +117,7 @@ boost::shared_ptr<mtca4u::ProcessVariable> Application::createProcessScalar(Vari
 
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
-  if(direction == VariableDirection::feeding) {
+  if(direction == VariableDirection::consuming) {
     dir = SynchronizationDirection::controlSystemToDevice;
   }
   else {
@@ -211,20 +211,24 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   // 1st case: the feeder requires a fixed implementation
   if(feeder.hasImplementation()) {
 
-    // create feeder's implementation
-    boost::shared_ptr<mtca4u::ProcessVariable> feederImpl;
+    // Create feeding implementation. Note: though the implementation is derived from the feeder, it will be used as
+    // the implementation of the (or one of the) consumer. Logically, implementations are always pairs of
+    // implementations (sender and receiver), but in this case the feeder already has a fixed implementation pair.
+    // So our feedingImpl will contain the consumer-end of the implementation pair. This is the reason why the
+    // functions createProcessScalar() and createDeviceAccessor() get the VariableDirection::consuming.
+    boost::shared_ptr<mtca4u::ProcessVariable> feedingImpl;
     if(feeder.type == VariableNetwork::NodeType::Device) {
-      feederImpl = createDeviceAccessor<UserType>(feeder.deviceAlias, feeder.registerName, VariableDirection::feeding,
-          feeder.mode);
+      feedingImpl = createDeviceAccessor<UserType>(feeder.deviceAlias, feeder.registerName,
+          VariableDirection::consuming, feeder.mode);
     }
     else if(feeder.type == VariableNetwork::NodeType::ControlSystem) {
-      feederImpl = createProcessScalar<UserType>(VariableDirection::feeding, feeder.publicName);
+      feedingImpl = createProcessScalar<UserType>(VariableDirection::consuming, feeder.publicName);
     }
 
     // if we just have two nodes, directly connect them
     if(nNodes == 2) {
       if(consumers.front().type == VariableNetwork::NodeType::Application) {
-        consumers.front().appNode->useProcessVariable(feederImpl);
+        consumers.front().appNode->useProcessVariable(feedingImpl);
         connectionMade = true;
       }
       else {
@@ -233,7 +237,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else {
       // create FanOut
-      fanOut.reset(new FanOut<UserType>(feederImpl));
+      fanOut.reset(new FanOut<UserType>(feedingImpl));
 
       // use FanOut as implementation for the first application consumer node, add all others as slaves
       // @todo TODO need a more sophisticated logic to take care of the UpdateMode
@@ -251,12 +255,12 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           }
         }
         else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
-          auto impl = createProcessScalar<UserType>(VariableDirection::consuming, consumer.publicName);
+          auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
           fanOut->addSlave(impl);
         }
         else if(consumer.type == VariableNetwork::NodeType::Device) {
           auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
-              VariableDirection::consuming, consumer.mode);
+              VariableDirection::feeding, consumer.mode);
           fanOut->addSlave(impl);
         }
         else {
@@ -285,13 +289,13 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumers.front().type == VariableNetwork::NodeType::ControlSystem) {
-        auto impl = createProcessScalar<UserType>(VariableDirection::consuming, consumers.front().publicName);
+        auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumers.front().publicName);
         feeder.appNode->useProcessVariable(impl);
         connectionMade = true;
       }
       else if(consumers.front().type == VariableNetwork::NodeType::Device) {
         auto impl = createDeviceAccessor<UserType>(consumers.front().deviceAlias, consumers.front().registerName,
-            VariableDirection::consuming, consumers.front().mode);
+            VariableDirection::feeding, consumers.front().mode);
         feeder.appNode->useProcessVariable(impl);
         connectionMade = true;
       }
@@ -311,12 +315,12 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.appNode->useProcessVariable(impls.second);
         }
         else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
-          auto impl = createProcessScalar<UserType>(VariableDirection::consuming, consumer.publicName);
+          auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
           fanOut->addSlave(impl);
         }
         else if(consumer.type == VariableNetwork::NodeType::Device) {
-          auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName, VariableDirection::consuming,
-              consumer.mode);
+          auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
+              VariableDirection::feeding, consumer.mode);
           fanOut->addSlave(impl);
         }
         else {
