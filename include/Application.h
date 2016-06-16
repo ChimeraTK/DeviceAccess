@@ -16,6 +16,7 @@
 #include "ApplicationException.h"
 #include "VariableNetwork.h"
 #include "Flags.h"
+#include "ImplementationAdapter.h"
 
 namespace ChimeraTK {
 
@@ -91,7 +92,17 @@ namespace ChimeraTK {
 
       /** Register a connection of an accessor to a device register */
       void connectAccessorToDevice(AccessorBase &a, const std::string &deviceAlias,
-          const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
+          const std::string &registerName, UpdateMode mode);
+
+      /** Register a connection between a device read-only register and the control system adapter */
+      template<typename UserType>
+      void publishDeviceReadRegister(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
+          const std::string& publicName);
+
+      /** Register a connection between a device write-only register and the control system adapter */
+      template<typename UserType>
+      void publishDeviceWriteRegister(const std::string& publicName,
+          const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>
@@ -118,11 +129,23 @@ namespace ChimeraTK {
       /** List of application modules */
       std::list<ApplicationModule*> moduleList;
 
+      /** List of ImplementationAdapters */
+      std::list<boost::shared_ptr<ImplementationAdapterBase>> adapterList;
+
       /** List of variable networks */
       std::list<VariableNetwork> networkList;
 
-      /** Find the network containing one of the given registers. If no network has been found, create an empty one */
-      VariableNetwork& findOrCreateNetwork(AccessorBase *a, AccessorBase *b=nullptr);
+      /** Find the network containing one of the given registers. If no network has been found, create an empty one
+       *  and add it to the networkList. */
+      VariableNetwork& findOrCreateNetwork(AccessorBase *a, AccessorBase *b);
+      VariableNetwork& findOrCreateNetwork(AccessorBase *a);
+
+      /** Find the network containing one of the given registers. If no network has been found, invalidNetwork
+       *  is returned. */
+      VariableNetwork& findNetwork(AccessorBase *a);
+
+      /** Instance of VariableNetwork to indicate an invalid network */
+      VariableNetwork invalidNetwork;
 
       /** Pointer to the process variable manager used to create variables exported to the control system */
       boost::shared_ptr<mtca4u::DevicePVManager> _processVariableManager;

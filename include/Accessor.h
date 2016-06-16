@@ -10,7 +10,6 @@
 
 #include <string>
 
-#include <ControlSystemAdapter/ProcessArray.h>
 #include <mtca4u/RegisterPath.h>
 
 #include "Application.h"
@@ -73,7 +72,7 @@ namespace ChimeraTK {
 
       /** Connect variable to a device register */
       void connectToDevice(const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode, size_t numberOfElements=1, size_t elementOffsetInRegister=0);
+          UpdateMode mode);
 
       virtual bool isFeeding();
 
@@ -126,9 +125,8 @@ namespace ChimeraTK {
 
   template< typename UserType >
   void Accessor<UserType>::connectToDevice(const std::string &deviceAlias, const std::string &registerName,
-      UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
-    Application::getInstance().connectAccessorToDevice(*this, deviceAlias, registerName, mode, numberOfElements,
-        elementOffsetInRegister);
+      UpdateMode mode) {
+    Application::getInstance().connectAccessorToDevice(*this, deviceAlias, registerName, mode);
   }
 
 } /* namespace ChimeraTK */

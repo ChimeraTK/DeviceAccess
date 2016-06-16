@@ -74,14 +74,14 @@ void Application::publishAccessor(AccessorBase &a, const std::string& name) {
 /*********************************************************************************************************************/
 
 void Application::connectAccessorToDevice(AccessorBase &a, const std::string &deviceAlias,
-    const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
+    const std::string &registerName, UpdateMode mode) {
   VariableNetwork &network = findOrCreateNetwork(&a);
   network.addAppNode(a);
   if(a.isFeeding()) {
-    network.addConsumingDeviceRegister(deviceAlias, registerName, mode, numberOfElements, elementOffsetInRegister);
+    network.addConsumingDeviceRegister(deviceAlias, registerName, mode);
   }
   else {
-    network.addFeedingDeviceRegister(a, deviceAlias, registerName, mode, numberOfElements, elementOffsetInRegister);
+    network.addFeedingDeviceRegister(a, deviceAlias, registerName, mode);
   }
 }
 
@@ -196,16 +196,10 @@ template<typename UserType>
 void Application::typedMakeConnection(VariableNetwork &network) {
   bool connectionMade = false;  // to check the logic...
 
-  // ??
   size_t nNodes = network.countConsumingNodes()+1;
-  size_t nImpls = network.countFixedImplementations();
-  if(nImpls > nNodes-1) {
-    throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(
-        "The variable network cannot be handled. Too many fixed implementations!"); // @todo TODO implement
-  }
-
   auto &feeder = network.getFeedingNode();
   auto &consumers = network.getConsumingNodes();
+
   boost::shared_ptr<FanOut<UserType>> fanOut;
 
   // 1st case: the feeder requires a fixed implementation
@@ -227,8 +221,24 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
     // if we just have two nodes, directly connect them
     if(nNodes == 2) {
-      if(consumers.front().type == VariableNetwork::NodeType::Application) {
-        consumers.front().appNode->useProcessVariable(feedingImpl);
+      auto consumer = consumers.front();
+      if(consumer.type == VariableNetwork::NodeType::Application) {
+        consumer.appNode->useProcessVariable(feedingImpl);
+        connectionMade = true;
+      }
+      else if(consumers.front().type == VariableNetwork::NodeType::Device) {
+        auto consumingImpl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
+            VariableDirection::feeding, consumer.mode);
+        // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
+        adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
+            new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
+        connectionMade = true;
+      }
+      else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
+        auto consumingImpl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
+        // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
+        adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
+            new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
         connectionMade = true;
       }
       else {
@@ -333,7 +343,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
   if(!connectionMade) {
     throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(
-        "The variable network cannot be handled. Implementation missing!"); // @todo TODO implement
+        "The variable network cannot be handled. Implementation missing!");
   }
 
 }
@@ -342,26 +352,103 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
 VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a, AccessorBase *b) {
 
-  // search for a and b in the inputAccessorList
+  // search for a and b in the networkList
+  auto &na = findNetwork(a);
+  auto &nb = findNetwork(b);
+
+  // if both accessors are found, check if both are in the same network
+  if(na != invalidNetwork && nb != invalidNetwork) {
+    if(na == nb) {
+      return na;
+    }
+    else {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+          "Trying to connect two accessors which already are part of a network.");
+    }
+  }
+  // if only one accessor is found, return its network
+  else if(na != invalidNetwork && nb == invalidNetwork) {
+    return na;
+  }
+  else if(na == invalidNetwork && nb != invalidNetwork) {
+    return nb;
+  }
+  // if no accessor is found, create a new network and add it to the list
+  networkList.push_back({});
+  return networkList.back();
+}
+
+/*********************************************************************************************************************/
+
+VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a) {
+
+  // search in the networkList
+  auto &na = findNetwork(a);
+
+  // if the accessors is found, return its network
+  if(na != invalidNetwork) {
+    return na;
+  }
+  // if no accessor is found, create a new network and add it to the list
+  networkList.push_back({});
+  return networkList.back();
+}
+
+/*********************************************************************************************************************/
+
+VariableNetwork& Application::findNetwork(AccessorBase *a) {
+
+  // search for a and b in the networkList
   auto r = find_if(networkList.begin(), networkList.end(),
-      [a,b](const VariableNetwork& n) { return n.hasAppNode(a,b); } );
+      [a](const VariableNetwork& n) { return n.hasAppNode(a); } );
 
   // if no network found, create one
   if(r == networkList.end()) {
-    networkList.push_back({});
-    return networkList.back();
-  }
-
-  // store the reference to the found network
-  VariableNetwork &ret = *r;
-
-  // check if more than one network is found
-  if(++r != networkList.end()) {
-    throw std::string("Trying to connect two accessors which already are part of a network."); // @todo TODO throw proper exception
+    return invalidNetwork;
   }
 
   // return the found network
-  return ret;
+  return *r;
 }
+
+/*********************************************************************************************************************/
+
+template<typename UserType>
+void Application::publishDeviceReadRegister(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
+    const std::string& publicName) {
+  VariableNetwork network;
+  network.addFeedingDeviceRegister(typeid(UserType), deviceAlias, registerName, mode);
+  network.addConsumingPublication(publicName);
+  networkList.push_back(network);
+}
+
+template void Application::publishDeviceReadRegister<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::publishDeviceReadRegister<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+
+/*********************************************************************************************************************/
+
+template<typename UserType>
+void Application::publishDeviceWriteRegister(const std::string& publicName,
+    const std::string &deviceAlias, const std::string &registerName, UpdateMode mode) {
+  VariableNetwork network;
+  network.addFeedingPublication(typeid(UserType), publicName);
+  network.addConsumingDeviceRegister(deviceAlias, registerName, mode);
+  networkList.push_back(network);
+}
+
+template void Application::publishDeviceWriteRegister<int8_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<uint8_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<int16_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<uint16_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<int32_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<uint32_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<float>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::publishDeviceWriteRegister<double>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
 
 /*********************************************************************************************************************/

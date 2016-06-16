@@ -20,7 +20,8 @@ namespace ChimeraTK {
     // search for a and b in the inputAccessorList
     size_t c = count_if( consumerList.begin(), consumerList.end(),
         [a,b](const Node n) {
-          return n.type == NodeType::Application && ( a == n.appNode || ( b != nullptr && b == n.appNode ) );
+          if(n.type != NodeType::Application) return false;
+          return a == n.appNode || ( b != nullptr && b == n.appNode );
         } );
 
     if(c > 0) return true;
@@ -30,7 +31,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetwork::hasFeedingNode() const {
-    if(feeder.type == NodeType::Undefined) return false;
+    if(feeder.type == NodeType::invalid) return false;
     return true;
   }
 
@@ -62,7 +63,8 @@ namespace ChimeraTK {
     node.appNode = &a;
     if(a.isFeeding()) {
       if(hasFeedingNode()) {
-        throw std::string("Trying to add an output accessor to a network already having an output accessor.");  // @todo TODO throw proper exception
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+            "Trying to add a feeding accessor to a network already having a feeding accessor.");
       }
       feeder = node;
       valueType = &(a.getValueType());
@@ -85,19 +87,26 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::addFeedingPublication(AccessorBase &a, const std::string& name) {
+    addFeedingPublication(a.getValueType(), name);
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::addFeedingPublication(const std::type_info &typeInfo, const std::string& name) {
     if(hasFeedingNode()) {
-      throw std::string("Trying to add control-system-to-device publication to a network already having an output accessor.");  // @todo TODO throw proper exception
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Trying to add control-system-to-device publication to a network already having a feeding accessor.");
     }
     feeder.type = NodeType::ControlSystem;
     feeder.mode = UpdateMode::push;
     feeder.publicName = name;
-    valueType = &(a.getValueType());
+    valueType = &typeInfo;
   }
 
   /*********************************************************************************************************************/
 
   void VariableNetwork::addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName,
-      UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
+      UpdateMode mode) {
     Node node;
     node.type = NodeType::Device;
     node.mode = mode;
@@ -109,15 +118,23 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::addFeedingDeviceRegister(AccessorBase &a, const std::string &deviceAlias,
-      const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
+      const std::string &registerName, UpdateMode mode) {
+    addFeedingDeviceRegister(a.getValueType(), deviceAlias, registerName, mode);
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string &deviceAlias,
+      const std::string &registerName, UpdateMode mode) {
     if(hasFeedingNode()) {
-      throw std::string("Trying to add control-system-to-device publication to a network already having an output accessor.");  // @todo TODO throw proper exception
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Trying to add a feeding device register to a network already having a feeding accessor.");
     }
     feeder.type = NodeType::Device;
     feeder.mode = mode;
     feeder.deviceAlias = deviceAlias;
     feeder.registerName = registerName;
-    valueType = &(a.getValueType());
+    valueType = &typeInfo;
   }
 
   /*********************************************************************************************************************/

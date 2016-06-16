@@ -33,7 +33,7 @@
 
 #else
 
-  int main(int argc, char **argv) {
+  int main(int, char **) {
     ChimeraTK::Application::getInstance().generateXML();
     return 0;
   }

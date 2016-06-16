@@ -101,9 +101,11 @@ class MyApp : public ctk::Application {
 
       controlLoop.actuator.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
       simulator.actuator.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      controlLoop.actuator.publish("MyLocation/actuatorLoop");
+      //simulator.actuator.publish("MyLocation/actuatorSimulator"); // not allowed, since this would create a feeding publication
+      publishDeviceReadRegister<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll, "MyLocation/actuatorSimulator");
 
       simulator.readback.connectTo(controlLoop.readback);
-
       simulator.readback.publish("MyLocation/readback");
     }
 

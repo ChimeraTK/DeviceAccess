@@ -27,12 +27,12 @@ namespace ChimeraTK {
 
       /** Define accessor types */
       enum class NodeType {
-          Device, ControlSystem, Application, Undefined
+          Device, ControlSystem, Application, invalid
       };
 
       /** Structure describing a node of the network */
       struct Node {
-          NodeType type{NodeType::Undefined};
+          NodeType type{NodeType::invalid};
           UpdateMode mode{UpdateMode::invalid};
 
           /** Pointer to Accessor if type == Application */
@@ -57,6 +57,20 @@ namespace ChimeraTK {
             if(type == NodeType::Device) std::cout << " type = Device (" << deviceAlias << ": "
                 << registerName << ")" << std::endl;
           }
+
+          /** Compare two nodes */
+          bool operator==(const Node& other) const {
+            if(other.type != type) return false;
+            if(other.mode != mode) return false;
+            if(other.appNode != appNode) return false;
+            if(other.publicName != publicName) return false;
+            if(other.deviceAlias != deviceAlias) return false;
+            if(other.registerName != registerName) return false;
+            return true;
+          }
+          bool operator!=(const Node& other) const {
+            return !operator==(other);
+          }
       };
 
       /** Add an application-side node (i.e. an Accessor) to the network. */
@@ -66,16 +80,24 @@ namespace ChimeraTK {
        *  The name will be the name of the process variable visible in the control system adapter. */
       void addFeedingPublication(AccessorBase &a, const std::string& name);
 
+      /** Add control-system-to-device publication. The given accessor will be used to derive the requred value type.
+       *  The name will be the name of the process variable visible in the control system adapter. */
+      void addFeedingPublication(const std::type_info &typeInfo, const std::string& name);
+
       /** Add device-to-control-system publication. */
       void addConsumingPublication(const std::string& name);
 
       /** Add a device register as a consuming node (i.e. which will be written by this network) */
       void addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
+          UpdateMode mode);
 
       /** Add a device register as a feeding node (i.e. which will be read from this network) */
       void addFeedingDeviceRegister(AccessorBase &a, const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
+          UpdateMode mode);
+
+      /** Add a device register as a feeding node (i.e. which will be read from this network) */
+      void addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string &deviceAlias,
+          const std::string &registerName, UpdateMode mode);
 
       /** Check if the network already has a feeding node connected to it. */
       bool hasFeedingNode() const;
@@ -104,6 +126,17 @@ namespace ChimeraTK {
 
       /** Dump the network structure to std::cout */
       void dump() const;
+
+      /** Compare two networks */
+      bool operator==(const VariableNetwork &other) const {
+        if(other.feeder != feeder) return false;
+        if(other.valueType != valueType) return false;
+        if(other.consumerList != consumerList) return false;
+        return true;
+      }
+      bool operator!=(const VariableNetwork &other) const {
+        return !operator==(other);
+      }
 
     protected:
 
