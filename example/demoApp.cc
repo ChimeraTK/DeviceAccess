@@ -16,8 +16,8 @@ namespace ctk = ChimeraTK;
 class AutomationModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, operatorSetpoint, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(double, loopSetpoint, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, operatorSetpoint, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, loopSetpoint, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
 
     void mainLoop() {
       loopSetpoint = 0;
@@ -40,9 +40,9 @@ class AutomationModule : public ctk::ApplicationModule {
 class ControlLoopModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, setpoint, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, setpoint, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
 
     void mainLoop() {
 
@@ -64,9 +64,8 @@ class ControlLoopModule : public ctk::ApplicationModule {
 class SimulatorModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::input, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(double, readback2, ctk::VariableDirection::output, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
 
     double lastValue{0};
 
@@ -78,8 +77,6 @@ class SimulatorModule : public ctk::ApplicationModule {
         lastValue = readback;
         std::cout << "SimulatorModule: actuator = " << actuator << std::endl;
         std::cout << "SimulatorModule: readback = " << readback << std::endl;
-        readback2 = readback;
-        readback2.write();
         readback.write();
         usleep(200000);
       }
@@ -107,7 +104,7 @@ class MyApp : public ctk::Application {
 
       simulator.readback.connectTo(controlLoop.readback);
 
-      simulator.readback2.publish("MyLocation/readback");
+      simulator.readback.publish("MyLocation/readback");
     }
 
     virtual ~MyApp() {};

@@ -14,6 +14,10 @@ namespace ChimeraTK {
 
   /** IDs for exceptions */
   enum class ApplicationExceptionID {
+
+      /** An illegal parameter has been passed to a function. */
+      illegalParameter,
+
       /** The variable network is not legal, e.g. more than one output accessor is connected to the network. */
       illegalVariableNetwork,
 

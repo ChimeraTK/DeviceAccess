@@ -28,8 +28,9 @@ namespace ChimeraTK {
       virtual ~AccessorBase() {}
 
       /** Check if this accessor is a output or input variable, from the point-of-view of the ApplicationModule
-       *  owning the instance of the Accessor */
-      virtual bool isOutput() = 0;
+       *  owning the instance of the Accessor. A feeding accessor feeds values to its peers and thus is an output
+       *  accessor. */
+      virtual bool isFeeding() = 0;
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
        *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
@@ -37,13 +38,16 @@ namespace ChimeraTK {
       virtual bool isInitialised() const = 0;
 
       /** Use a ProcessVariable as implementation. */
-      virtual void useProcessVariable(boost::shared_ptr<ProcessVariable> &var) = 0;
+      virtual void useProcessVariable(const boost::shared_ptr<ProcessVariable> &var) = 0;
 
       /* Obtain the type info of the UserType */
       virtual const std::type_info& getValueType() const = 0;
 
       /** Obtain direction of the accessor */
       virtual VariableDirection getDirection() const = 0;
+
+      /** Obtain the update mode of the accessor */
+      virtual UpdateMode getUpdateMode() const = 0;
   };
 
   /*********************************************************************************************************************/
@@ -71,9 +75,11 @@ namespace ChimeraTK {
       void connectToDevice(const std::string &deviceAlias, const std::string &registerName,
           UpdateMode mode, size_t numberOfElements=1, size_t elementOffsetInRegister=0);
 
-      virtual bool isOutput();
+      virtual bool isFeeding();
 
       VariableDirection getDirection() const {return _direction;}
+
+      UpdateMode getUpdateMode() const {return _mode;}
 
       /* Obtain the unit of the variable */
       const std::string& getUnit() const {return _unit;}
@@ -112,8 +118,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template< typename UserType >
-  bool Accessor<UserType>::isOutput() {
-    return _direction == VariableDirection::output;
+  bool Accessor<UserType>::isFeeding() {
+    return _direction == VariableDirection::feeding;
   };
 
   /*********************************************************************************************************************/

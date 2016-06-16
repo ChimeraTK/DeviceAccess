@@ -79,6 +79,10 @@ namespace ChimeraTK {
       /** Make the connections between accessors as requested in the initialise() function. */
       void makeConnections();
 
+      /** UserType-dependent part of makeConnections() */
+      template<typename UserType>
+      void typedMakeConnection(VariableNetwork &network);
+
       /** Register a connection between two Accessors */
       void connectAccessors(AccessorBase &a, AccessorBase &b);
 
@@ -90,16 +94,20 @@ namespace ChimeraTK {
           const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
 
       /** Perform the actual connection of an accessor to a device register */
-      boost::shared_ptr<mtca4u::ProcessVariable> createDeviceAccessor(AccessorBase &a, const std::string &deviceAlias,
-          const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister);
+      template<typename UserType>
+      boost::shared_ptr<mtca4u::ProcessVariable> createDeviceAccessor(const std::string &deviceAlias,
+          const std::string &registerName, VariableDirection direction, UpdateMode mode);
 
       /** Create a process variable with the PVManager, which is exported to the control system adapter */
-      boost::shared_ptr<mtca4u::ProcessVariable> createProcessScalar(AccessorBase &a, const std::string &name);
+      template<typename UserType>
+      boost::shared_ptr<mtca4u::ProcessVariable> createProcessScalar(VariableDirection direction,
+          const std::string &name);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
        *  sender, the second the receiver. */
+      template<typename UserType>
       std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u::ProcessVariable> >
-        createProcessScalar(AccessorBase &a);
+        createProcessScalar();
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
@@ -115,17 +123,6 @@ namespace ChimeraTK {
 
       /** Find the network containing one of the given registers. If no network has been found, create an empty one */
       VariableNetwork& findOrCreateNetwork(AccessorBase *a, AccessorBase *b=nullptr);
-
-      /** Map of accessor connections: the map key is the output accessor (providing the data) and the map target is
-       *  a list of input accessors (consuming the data). */
-//      std::map< AccessorBase*, std::list<AccessorBase*> > connectionMap;
-
-      /** List of published accessors */
-//      std::list< boost::shared_ptr<AccessorBase> > publicationList;
-
-      /** Map of accessor-to-device connections: the map key is the accessor and the map target is the implementation
-       *  used to access the device register */
-//      std::map< AccessorBase*, boost::shared_ptr<mtca4u::ProcessVariable> > deviceAccessorMap;
 
       /** Pointer to the process variable manager used to create variables exported to the control system */
       boost::shared_ptr<mtca4u::DevicePVManager> _processVariableManager;

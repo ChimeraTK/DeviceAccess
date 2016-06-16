@@ -13,12 +13,12 @@ namespace ChimeraTK {
   /** Enum to define directions of variables. The direction is always defined from the point-of-view of the
    *  definer, i.e. the application module owning the instance of the accessor in this context. */
   enum class VariableDirection {
-    input, output
+    consuming, feeding, invalid
   };
 
   /** Enum to define the update mode of variables. */
   enum class UpdateMode {
-    poll, push
+    poll, push, invalid
   };
 
 } /* namespace ChimeraTK */

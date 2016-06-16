@@ -39,7 +39,7 @@ namespace ChimeraTK {
           while(impl->receive() == false) usleep(1); // @todo TODO proper blocking implementation
         }
         else {
-          impl->receive();
+          while(impl->receive() == true);
         }
       }
 
@@ -96,7 +96,7 @@ namespace ChimeraTK {
         return impl != nullptr;
       }
 
-      void useProcessVariable(boost::shared_ptr<ProcessVariable> &var) {
+      void useProcessVariable(const boost::shared_ptr<ProcessVariable> &var) {
         impl = boost::dynamic_pointer_cast< ProcessScalar<UserType> >(var);
         if(!impl) {
           throw std::string("ProcessVariable of the wrong type provided, cannot be used as the implementation!"); // @todo TODO throw proper exception

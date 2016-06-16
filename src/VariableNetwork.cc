@@ -12,127 +12,126 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetwork::hasAccessor(AccessorBase *a, AccessorBase *b) const {
-    if(a == outputAccessor || (b != nullptr && b == outputAccessor) ) return true;
+  bool VariableNetwork::hasAppNode(AccessorBase *a, AccessorBase *b) const {
+    if(feeder.type == NodeType::Application) {
+      if(a == feeder.appNode || (b != nullptr && b == feeder.appNode) ) return true;
+    }
 
     // search for a and b in the inputAccessorList
-    size_t n = count_if(inputAccessorList.begin(), inputAccessorList.end(),
-        [a,b](const AccessorBase* e) { return a == e || ( b != nullptr && b == e ); });
+    size_t c = count_if( consumerList.begin(), consumerList.end(),
+        [a,b](const Node n) {
+          return n.type == NodeType::Application && ( a == n.appNode || ( b != nullptr && b == n.appNode ) );
+        } );
 
-    if(n > 0) return true;
+    if(c > 0) return true;
     return false;
   }
 
   /*********************************************************************************************************************/
 
-  bool VariableNetwork::hasOutputAccessor() const {
-    if(outputAccessor != nullptr) return true;
-    if(publicCS2DevName.length() > 0) return true;
-    if(deviceReadRegisterInfo.deviceAlias.length() > 0) return true;
-    return false;
+  bool VariableNetwork::hasFeedingNode() const {
+    if(feeder.type == NodeType::Undefined) return false;
+    return true;
   }
 
   /*********************************************************************************************************************/
 
-  size_t VariableNetwork::countInputAccessors() const {
+  size_t VariableNetwork::countConsumingNodes() const {
+    return consumerList.size();
+  }
+
+  /*********************************************************************************************************************/
+
+  size_t VariableNetwork::countFixedImplementations() const {
     size_t count = 0;
-    count += inputAccessorList.size();
-    count += publicDev2CSNames.size();
-    count += deviceWriteRegisterInfos.size();
+    if(feeder.hasImplementation()) count++;
+    count += count_if( consumerList.begin(), consumerList.end(),
+        [](const Node n) {
+          return n.hasImplementation();
+        } );
     return count;
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addAccessor(AccessorBase &a) {
-    if(hasAccessor(&a)) return;  // already in the network
-    if(a.isOutput()) {
-      if(hasOutputAccessor()) {
+  void VariableNetwork::addAppNode(AccessorBase &a) {
+    if(hasAppNode(&a)) return;  // already in the network
+    Node node;
+    node.type = NodeType::Application;
+    node.mode = a.getUpdateMode();
+    node.appNode = &a;
+    if(a.isFeeding()) {
+      if(hasFeedingNode()) {
         throw std::string("Trying to add an output accessor to a network already having an output accessor.");  // @todo TODO throw proper exception
       }
-      outputAccessor = &a;
+      feeder = node;
       valueType = &(a.getValueType());
     }
     else {
-      inputAccessorList.push_back(&a);
+      consumerList.push_back(node);
     }
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addCS2DevPublication(AccessorBase &a, const std::string& name) {
-    if(hasOutputAccessor()) {
+  void VariableNetwork::addConsumingPublication(const std::string& name) {
+    Node node;
+    node.type = NodeType::ControlSystem;
+    node.mode = UpdateMode::push;
+    node.publicName = name;
+    consumerList.push_back(node);
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::addFeedingPublication(AccessorBase &a, const std::string& name) {
+    if(hasFeedingNode()) {
       throw std::string("Trying to add control-system-to-device publication to a network already having an output accessor.");  // @todo TODO throw proper exception
     }
-    publicCS2DevName = name;
+    feeder.type = NodeType::ControlSystem;
+    feeder.mode = UpdateMode::push;
+    feeder.publicName = name;
     valueType = &(a.getValueType());
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addInputDeviceRegister(const std::string &deviceAlias, const std::string &registerName,
+  void VariableNetwork::addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName,
       UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
-    DeviceRegisterInfo info;
-    info.deviceAlias = deviceAlias;
-    info.registerName = registerName;
-    info.mode = mode;
-    deviceWriteRegisterInfos.push_back(info);
+    Node node;
+    node.type = NodeType::Device;
+    node.mode = mode;
+    node.deviceAlias = deviceAlias;
+    node.registerName = registerName;
+    consumerList.push_back(node);
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addOutputDeviceRegister(const std::string &deviceAlias, const std::string &registerName,
-      UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
-    if(hasOutputAccessor()) {
+  void VariableNetwork::addFeedingDeviceRegister(AccessorBase &a, const std::string &deviceAlias,
+      const std::string &registerName, UpdateMode mode, size_t numberOfElements, size_t elementOffsetInRegister) {
+    if(hasFeedingNode()) {
       throw std::string("Trying to add control-system-to-device publication to a network already having an output accessor.");  // @todo TODO throw proper exception
     }
-    deviceReadRegisterInfo.deviceAlias = deviceAlias;
-    deviceReadRegisterInfo.registerName = registerName;
-    deviceReadRegisterInfo.mode = mode;
-  }
-
-  /*********************************************************************************************************************/
-
-  void VariableNetwork::addDev2CSPublication(const std::string& name) {
-    publicDev2CSNames.push_back(name);
-  }
-
-  /*********************************************************************************************************************/
-
-  bool VariableNetwork::hasInputAccessorType(VariableNetwork::AccessorType type) const {
-    if(type == AccessorType::Device) {
-      if(deviceWriteRegisterInfos.size() > 0) return true;
-    }
-    else if(type == AccessorType::ControlSystem) {
-      if(publicDev2CSNames.size() > 0) return true;
-    }
-    else if(type == AccessorType::Application) {
-      if(inputAccessorList.size() > 0) return true;
-    }
-    return false;
-  }
-
-  /*********************************************************************************************************************/
-
-  VariableNetwork::AccessorType VariableNetwork::getOutputAccessorType() const {
-    if(outputAccessor != nullptr) return AccessorType::Application;
-    if(publicCS2DevName.length() > 0) return AccessorType::ControlSystem;
-    if(deviceReadRegisterInfo.deviceAlias.length() > 0) return AccessorType::Device;
-    return AccessorType::Undefined;
+    feeder.type = NodeType::Device;
+    feeder.mode = mode;
+    feeder.deviceAlias = deviceAlias;
+    feeder.registerName = registerName;
+    valueType = &(a.getValueType());
   }
 
   /*********************************************************************************************************************/
 
   void VariableNetwork::dump() const {
     std::cout << "VariableNetwork {" << std::endl;
-    auto type = getOutputAccessorType();
-    if(type == AccessorType::Application) std::cout << "  outputType = Application" << std::endl;
-    if(type == AccessorType::ControlSystem) std::cout << "  outputType = ControlSystem ('" << publicCS2DevName << "')" << std::endl;
-    if(type == AccessorType::Device) std::cout << "  outputType = Device (" << deviceReadRegisterInfo.deviceAlias << ": "
-        << deviceReadRegisterInfo.registerName << ")" << std::endl;
-    std::cout << "  Application inputs: " << inputAccessorList.size() << std::endl;
-    std::cout << "  ControlSystem inputs: " << publicDev2CSNames.size() << std::endl;
-    std::cout << "  Device inputs: " << deviceWriteRegisterInfos.size() << std::endl;
+    std::cout << "  feeder";
+    feeder.dump();
+    std::cout << "  number of consumers: " << consumerList.size() << std::endl;
+    size_t count = 0;
+    for(auto &consumer : consumerList) {
+      std::cout << "  consumer " << ++count << ":";
+      consumer.dump();
+    }
     std::cout << "}" << std::endl;
   }
 }

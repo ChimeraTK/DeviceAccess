@@ -50,11 +50,11 @@ namespace ChimeraTK {
       }
 
       bool isReceiver() const {
-        return _direction == VariableDirection::input;
+        return _direction == VariableDirection::consuming;
       }
 
       bool isSender() const {
-        return _direction == VariableDirection::output;
+        return _direction == VariableDirection::feeding;
       }
 
       TimeStamp getTimeStamp() const {
