@@ -87,13 +87,6 @@ namespace ChimeraTK {
       /** Register a connection between two Accessors */
       void connectAccessors(AccessorBase &a, AccessorBase &b);
 
-      /** Register an accessor to be published under the given name to the control system adapter */
-      void publishAccessor(AccessorBase &a, const std::string& name);
-
-      /** Register a connection of an accessor to a device register */
-      void connectAccessorToDevice(AccessorBase &a, const std::string &deviceAlias,
-          const std::string &registerName, UpdateMode mode);
-
       /** Register a connection between a device read-only register and the control system adapter */
       template<typename UserType>
       void publishDeviceReadRegister(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,

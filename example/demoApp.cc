@@ -73,7 +73,7 @@ class SimulatorModule : public ctk::ApplicationModule {
 
       while(true) {
         actuator.read();
-        readback = (100*lastValue + actuator)/101.;
+        readback = (100*lastValue + actuator)/100.;
         lastValue = readback;
         std::cout << "SimulatorModule: actuator = " << actuator << std::endl;
         std::cout << "SimulatorModule: readback = " << readback << std::endl;
@@ -96,17 +96,21 @@ class MyApp : public ctk::Application {
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-      automation.operatorSetpoint.publish("MyLocation/setpoint");
+      automation.operatorSetpoint.consumeFromControlSystem("MyLocation/setpoint");
       automation.loopSetpoint.connectTo(controlLoop.setpoint);
+      automation.loopSetpoint.feedToControlSystem("MyLocation/setpoint_automation");
 
-      controlLoop.actuator.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-      simulator.actuator.connectToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-      controlLoop.actuator.publish("MyLocation/actuatorLoop");
-      //simulator.actuator.publish("MyLocation/actuatorSimulator"); // not allowed, since this would create a feeding publication
+      controlLoop.actuator.feedToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      controlLoop.actuator.feedToControlSystem("MyLocation/actuatorLoop");
+
+      simulator.actuator.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      //simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator"); // not allowed, since simulator.actuator consuming
+
       publishDeviceReadRegister<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll, "MyLocation/actuatorSimulator");
 
       simulator.readback.connectTo(controlLoop.readback);
-      simulator.readback.publish("MyLocation/readback");
+      simulator.readback.feedToControlSystem("MyLocation/readback");
+      simulator.readback.feedToControlSystem("MyLocation/readback_another_time");
     }
 
     virtual ~MyApp() {};

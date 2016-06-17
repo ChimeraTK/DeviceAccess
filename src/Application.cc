@@ -60,33 +60,6 @@ void Application::connectAccessors(AccessorBase &a, AccessorBase &b) {
 
 /*********************************************************************************************************************/
 
-void Application::publishAccessor(AccessorBase &a, const std::string& name) {
-  VariableNetwork &network = findOrCreateNetwork(&a);
-  network.addAppNode(a);
-  if(a.isFeeding()) {
-    network.addConsumingPublication(name);
-  }
-  else {
-    network.addFeedingPublication(a,name);
-  }
-}
-
-/*********************************************************************************************************************/
-
-void Application::connectAccessorToDevice(AccessorBase &a, const std::string &deviceAlias,
-    const std::string &registerName, UpdateMode mode) {
-  VariableNetwork &network = findOrCreateNetwork(&a);
-  network.addAppNode(a);
-  if(a.isFeeding()) {
-    network.addConsumingDeviceRegister(deviceAlias, registerName, mode);
-  }
-  else {
-    network.addFeedingDeviceRegister(a, deviceAlias, registerName, mode);
-  }
-}
-
-/*********************************************************************************************************************/
-
 template<typename UserType>
 boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(const std::string &deviceAlias,
     const std::string &registerName, VariableDirection direction, UpdateMode mode) {
