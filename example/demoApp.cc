@@ -106,7 +106,7 @@ class MyApp : public ctk::Application {
       simulator.actuator.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
       //simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator"); // not allowed, since simulator.actuator consuming
 
-      publishDeviceReadRegister<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll, "MyLocation/actuatorSimulator");
+      feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll, "MyLocation/actuatorSimulator");
 
       simulator.readback.connectTo(controlLoop.readback);
       simulator.readback.feedToControlSystem("MyLocation/readback");

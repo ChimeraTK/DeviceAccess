@@ -387,41 +387,41 @@ VariableNetwork& Application::findNetwork(AccessorBase *a) {
 /*********************************************************************************************************************/
 
 template<typename UserType>
-void Application::publishDeviceReadRegister(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
-    const std::string& publicName) {
+void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
+    UpdateMode mode, const std::string& publicName) {
   VariableNetwork network;
   network.addFeedingDeviceRegister(typeid(UserType), deviceAlias, registerName, mode);
   network.addConsumingPublication(publicName);
   networkList.push_back(network);
 }
 
-template void Application::publishDeviceReadRegister<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::publishDeviceReadRegister<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
 
 /*********************************************************************************************************************/
 
 template<typename UserType>
-void Application::publishDeviceWriteRegister(const std::string& publicName,
-    const std::string &deviceAlias, const std::string &registerName, UpdateMode mode) {
+void Application::consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
+    UpdateMode mode, const std::string& publicName) {
   VariableNetwork network;
   network.addFeedingPublication(typeid(UserType), publicName);
   network.addConsumingDeviceRegister(deviceAlias, registerName, mode);
   networkList.push_back(network);
 }
 
-template void Application::publishDeviceWriteRegister<int8_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<uint8_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<int16_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<uint16_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<int32_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<uint32_t>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<float>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template void Application::publishDeviceWriteRegister<double>(const std::string& publicName, const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+template void Application::consumeDeviceRegisterFromControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
 
 /*********************************************************************************************************************/

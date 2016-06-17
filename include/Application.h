@@ -89,13 +89,13 @@ namespace ChimeraTK {
 
       /** Register a connection between a device read-only register and the control system adapter */
       template<typename UserType>
-      void publishDeviceReadRegister(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
-          const std::string& publicName);
+      void feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
+          UpdateMode mode, const std::string& publicName);
 
       /** Register a connection between a device write-only register and the control system adapter */
       template<typename UserType>
-      void publishDeviceWriteRegister(const std::string& publicName,
-          const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+      void consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
+          UpdateMode mode, const std::string& publicName);
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>
