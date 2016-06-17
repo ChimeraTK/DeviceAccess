@@ -8,10 +8,6 @@
 #ifndef CHIMERATK_APPLICATION_MODULE_H
 #define CHIMERATK_APPLICATION_MODULE_H
 
-#include <thread>
-
-#include "Application.h"
-
 namespace ChimeraTK {
 
   class ApplicationModule {
@@ -19,9 +15,7 @@ namespace ChimeraTK {
     public:
 
       /** Constructor: register the module with the Application */
-      ApplicationModule() {
-        Application::getInstance().registerModule(*this);
-      }
+      ApplicationModule();
 
       /** Destructor */
       virtual ~ApplicationModule() {}
@@ -30,10 +24,7 @@ namespace ChimeraTK {
       virtual void mainLoop() = 0;
 
       /** Execute mainLoop() in a separate thread */
-      void run() {
-        std::thread moduleThread(&ApplicationModule::mainLoop, this);
-        moduleThread.detach();
-      }
+      void run();
 
   };
 

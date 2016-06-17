@@ -40,8 +40,8 @@ class AutomationModule : public ctk::ApplicationModule {
 class ControlLoopModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, setpoint, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, setpoint, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
     SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
 
     void mainLoop() {
@@ -64,7 +64,7 @@ class ControlLoopModule : public ctk::ApplicationModule {
 class SimulatorModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
     SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
 
     double lastValue{0};
@@ -100,13 +100,14 @@ class MyApp : public ctk::Application {
       automation.loopSetpoint.connectTo(controlLoop.setpoint);
       automation.loopSetpoint.feedToControlSystem("MyLocation/setpoint_automation");
 
-      controlLoop.actuator.feedToDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      controlLoop.actuator.feedToDevice("Dummy0","/MyModule/Variable");
       controlLoop.actuator.feedToControlSystem("MyLocation/actuatorLoop");
 
       simulator.actuator.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+      simulator.actuator.addTrigger(controlLoop.actuator);
       //simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator"); // not allowed, since simulator.actuator consuming
 
-      feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll, "MyLocation/actuatorSimulator");
+      //feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::push, "MyLocation/actuatorSimulator");
 
       simulator.readback.connectTo(controlLoop.readback);
       simulator.readback.feedToControlSystem("MyLocation/readback");

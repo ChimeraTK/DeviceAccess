@@ -47,7 +47,9 @@ void Application::run() {
 
 void Application::generateXML() {
   initialise();
-
+  for(auto &network : networkList) {
+    network.dump();
+  }
 }
 
 /*********************************************************************************************************************/
@@ -72,7 +74,7 @@ boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(con
 
   // use wait_for_new_data mode if push update mode was requested
   mtca4u::AccessModeFlags flags{};
-  if(mode == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+  if(mode == UpdateMode::push && direction == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
   // create DeviceAccessor for the proper UserType
   boost::shared_ptr<mtca4u::ProcessVariable> impl;
@@ -116,51 +118,56 @@ std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u:
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
+  // make the connections for all networks
+  for(auto &network : networkList) {
+    makeConnectionsForNetwork(network);
+  }
+}
 
-  // make connections between accessors
-  for(auto network : networkList) {
+/*********************************************************************************************************************/
 
-    // output network information
-    network.dump();
+void Application::makeConnectionsForNetwork(VariableNetwork &network) {
+  // if the network has been created already, do nothing
+  if(network.isCreated()) return;
 
-    // check if network is legal
-    if(network.countConsumingNodes() == 0) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Illegal variable network found: no consuming nodes connected!");
-    }
-    if(!network.hasFeedingNode()) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Illegal variable network found: no feeding node connected!");
-    }
+  // check if the network is legal
+  network.check();
 
-    // defer actual network creation to templated function
-    // @todo TODO replace with boost::mpl::for_each loop!
-    if(network.getValueType() == typeid(int8_t)) {
-      typedMakeConnection<int8_t>(network);
-    }
-    else if(network.getValueType() == typeid(uint8_t)) {
-      typedMakeConnection<uint8_t>(network);
-    }
-    else if(network.getValueType() == typeid(int16_t)) {
-      typedMakeConnection<int16_t>(network);
-    }
-    else if(network.getValueType() == typeid(uint16_t)) {
-      typedMakeConnection<uint16_t>(network);
-    }
-    else if(network.getValueType() == typeid(int32_t)) {
-      typedMakeConnection<int32_t>(network);
-    }
-    else if(network.getValueType() == typeid(uint32_t)) {
-      typedMakeConnection<uint32_t>(network);
-    }
-    else if(network.getValueType() == typeid(float)) {
-      typedMakeConnection<float>(network);
-    }
-    else if(network.getValueType() == typeid(double)) {
-      typedMakeConnection<double>(network);
-    }
+  // if the trigger type is external, create the trigger first
+  if(network.getTriggerType() == VariableNetwork::TriggerType::external) {
+    VariableNetwork &dependency = network.getExternalTrigger();
+    if(!dependency.isCreated()) makeConnectionsForNetwork(dependency);
   }
 
+  // defer actual network creation to templated function
+  // @todo TODO replace with boost::mpl::for_each loop!
+  if(network.getValueType() == typeid(int8_t)) {
+    typedMakeConnection<int8_t>(network);
+  }
+  else if(network.getValueType() == typeid(uint8_t)) {
+    typedMakeConnection<uint8_t>(network);
+  }
+  else if(network.getValueType() == typeid(int16_t)) {
+    typedMakeConnection<int16_t>(network);
+  }
+  else if(network.getValueType() == typeid(uint16_t)) {
+    typedMakeConnection<uint16_t>(network);
+  }
+  else if(network.getValueType() == typeid(int32_t)) {
+    typedMakeConnection<int32_t>(network);
+  }
+  else if(network.getValueType() == typeid(uint32_t)) {
+    typedMakeConnection<uint32_t>(network);
+  }
+  else if(network.getValueType() == typeid(float)) {
+    typedMakeConnection<float>(network);
+  }
+  else if(network.getValueType() == typeid(double)) {
+    typedMakeConnection<double>(network);
+  }
+
+  // mark the network as created
+  network.markCreated();
 }
 
 /*********************************************************************************************************************/
@@ -172,6 +179,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   size_t nNodes = network.countConsumingNodes()+1;
   auto &feeder = network.getFeedingNode();
   auto &consumers = network.getConsumingNodes();
+  bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
 
   boost::shared_ptr<FanOut<UserType>> fanOut;
 
@@ -193,7 +201,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
 
     // if we just have two nodes, directly connect them
-    if(nNodes == 2) {
+    if(nNodes == 2 && !useExternalTrigger) {
       auto consumer = consumers.front();
       if(consumer.type == VariableNetwork::NodeType::Application) {
         consumer.appNode->useProcessVariable(feedingImpl);
@@ -209,9 +217,13 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
         auto consumingImpl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
-        // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
+        // connect the ControlSystem with e.g. a Device node via an ImplementationAdapter
         adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
             new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
+        connectionMade = true;
+      }
+      else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+        consumer.triggerReceiver->setExternalTriggerImpl(feedingImpl);
         connectionMade = true;
       }
       else {
@@ -225,6 +237,11 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       // use FanOut as implementation for the first application consumer node, add all others as slaves
       // @todo TODO need a more sophisticated logic to take care of the UpdateMode
       bool isFirst = true;
+      // if external trigger is enabled, add it to FanOut
+      if(useExternalTrigger) {
+        isFirst = false; // don't use the FanOut as an implementation if we have an external trigger
+        fanOut->addExternalTrigger(network.getExternalTriggerImpl());
+      }
       for(auto &consumer : consumers) {
         if(consumer.type == VariableNetwork::NodeType::Application) {
           if(isFirst) {
@@ -246,13 +263,17 @@ void Application::typedMakeConnection(VariableNetwork &network) {
               VariableDirection::feeding, consumer.mode);
           fanOut->addSlave(impl);
         }
+        else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+          auto impls = createProcessScalar<UserType>();
+          fanOut->addSlave(impls.first);
+          consumer.triggerReceiver->setExternalTriggerImpl(impls.second);
+        }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
         }
       }
-      if(isFirst) { // there was no application consumer node
-        throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(
-            "The variable network cannot be handled. Implementation missing!");
+      if(isFirst) { // FanOut wasn't used as implementation: store to list to keep it alive
+        adapterList.push_back(fanOut);
       }
       connectionMade = true;
     }
@@ -263,23 +284,31 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(feeder.type != VariableNetwork::NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
     }
+    assert(!useExternalTrigger);
     // if we just have two nodes, directly connect them
     if(nNodes == 2) {
-      if(consumers.front().type == VariableNetwork::NodeType::Application) {
+      auto consumer = consumers.front();
+      if(consumer.type == VariableNetwork::NodeType::Application) {
         auto impls = createProcessScalar<UserType>();
         feeder.appNode->useProcessVariable(impls.first);
-        consumers.front().appNode->useProcessVariable(impls.second);
+        consumer.appNode->useProcessVariable(impls.second);
         connectionMade = true;
       }
-      else if(consumers.front().type == VariableNetwork::NodeType::ControlSystem) {
-        auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumers.front().publicName);
+      else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
+        auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
         feeder.appNode->useProcessVariable(impl);
         connectionMade = true;
       }
-      else if(consumers.front().type == VariableNetwork::NodeType::Device) {
-        auto impl = createDeviceAccessor<UserType>(consumers.front().deviceAlias, consumers.front().registerName,
-            VariableDirection::feeding, consumers.front().mode);
+      else if(consumer.type == VariableNetwork::NodeType::Device) {
+        auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
+            VariableDirection::feeding, consumer.mode);
         feeder.appNode->useProcessVariable(impl);
+        connectionMade = true;
+      }
+      else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+        auto impls = createProcessScalar<UserType>();
+        feeder.appNode->useProcessVariable(impls.first);
+        consumer.triggerReceiver->setExternalTriggerImpl(impls.second);
         connectionMade = true;
       }
       else {
@@ -305,6 +334,11 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
               VariableDirection::feeding, consumer.mode);
           fanOut->addSlave(impl);
+        }
+        else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+          auto impls = createProcessScalar<UserType>();
+          fanOut->addSlave(impls.first);
+          consumer.triggerReceiver->setExternalTriggerImpl(impls.second);
         }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
@@ -388,40 +422,45 @@ VariableNetwork& Application::findNetwork(AccessorBase *a) {
 
 template<typename UserType>
 void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
-    UpdateMode mode, const std::string& publicName) {
+    const std::string& publicName, AccessorBase &trigger) {
   VariableNetwork network;
+  UpdateMode mode = UpdateMode::push;
+  if(dynamic_cast<InvalidAccessor*>(&trigger) != nullptr) {
+    mode = UpdateMode::poll;
+    network.addTrigger(trigger);
+  }
   network.addFeedingDeviceRegister(typeid(UserType), deviceAlias, registerName, mode);
   network.addConsumingPublication(publicName);
   networkList.push_back(network);
 }
 
-template void Application::feedDeviceRegisterToControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::feedDeviceRegisterToControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::feedDeviceRegisterToControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
+template void Application::feedDeviceRegisterToControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
 
 /*********************************************************************************************************************/
 
 template<typename UserType>
 void Application::consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
-    UpdateMode mode, const std::string& publicName) {
+    const std::string& publicName) {
   VariableNetwork network;
   network.addFeedingPublication(typeid(UserType), publicName);
-  network.addConsumingDeviceRegister(deviceAlias, registerName, mode);
+  network.addConsumingDeviceRegister(deviceAlias, registerName);
   networkList.push_back(network);
 }
 
-template void Application::consumeDeviceRegisterFromControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
+template void Application::consumeDeviceRegisterFromControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
 
 /*********************************************************************************************************************/

@@ -11,11 +11,16 @@
 #include <ControlSystemAdapter/ProcessScalar.h>
 
 #include "ApplicationException.h"
+#include "ImplementationAdapter.h"
 
 namespace ChimeraTK {
 
+
+  /** @todo TODO This class should be split into two classes, one with a thread and the other without. The
+   *  threaded version doesn't have to be a ProcessScalar! Instead it should be unified with the
+   *  ImplementationAdapter class... */
   template<typename UserType>
-  class FanOut : public mtca4u::ProcessScalar<UserType> {
+  class FanOut : public mtca4u::ProcessScalar<UserType>, public ImplementationAdapterBase {
 
     public:
 
@@ -35,8 +40,6 @@ namespace ChimeraTK {
       : impl(nullptr), _direction(VariableDirection::feeding)
       {}
 
-    public:
-
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
       void addSlave(boost::shared_ptr<mtca4u::ProcessVariable> slave) {
         if(!slave->isSender()) {
@@ -49,10 +52,42 @@ namespace ChimeraTK {
               "FanOut::addSlave() has been called with a wrong input implementation type!");
         }
         if(impl == nullptr) {       // the first slave will be used as a "main" implementation, if
-          impl = castedSlave;             // none was specified at construction
+          impl = castedSlave;       // none was specified at construction
         }
         else {
           slaves.push_back(castedSlave);
+        }
+      }
+
+      /** Add an external trigger to allow poll-type feeders to be used for push-type consumers */
+      void addExternalTrigger(const boost::shared_ptr<mtca4u::ProcessVariable>& externalTriggerImpl) {
+        assert(_direction == VariableDirection::consuming);
+        externalTrigger = externalTriggerImpl;
+        hasExternalTrigger = true;
+      }
+
+      /** Activate synchronisation thread if needed
+       *  @todo TODO need to activate the thread also if feeder is pushing, but this information is not available at this point!? */
+      void activate() {
+        if(hasExternalTrigger) {
+          assert(_direction == VariableDirection::consuming);
+          _thread = std::thread([this] { this->run(); });
+        }
+      }
+
+      /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
+      void run() {
+        assert(_direction == VariableDirection::consuming);
+        assert(hasExternalTrigger);
+        while(true) {
+          // wait for external trigger
+          externalTrigger->receive();
+          // receive data
+          impl->receive();
+          for(auto &slave : slaves) {     // send out copies to slaves
+            slave->set(impl->get());
+            slave->send();
+          }
         }
       }
 
@@ -118,6 +153,12 @@ namespace ChimeraTK {
       std::list<boost::shared_ptr<mtca4u::ProcessScalar<UserType>>> slaves;
 
       VariableDirection _direction;
+
+      bool hasExternalTrigger{false};
+      boost::shared_ptr<mtca4u::ProcessVariable> externalTrigger;
+
+      /** Thread handling the synchronisation, if needed */
+      std::thread _thread;
 
   };
 

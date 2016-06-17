@@ -22,6 +22,8 @@ namespace ChimeraTK {
 
   class ApplicationModule;
   class AccessorBase;
+  class InvalidAccessor;
+  class VariableNetwork;
 
   template<typename UserType>
   class Accessor;
@@ -70,6 +72,7 @@ namespace ChimeraTK {
     protected:
 
       friend class ApplicationModule;
+      friend class VariableNetwork;
 
       template<typename UserType>
       friend class Accessor;
@@ -80,7 +83,10 @@ namespace ChimeraTK {
       /** Make the connections between accessors as requested in the initialise() function. */
       void makeConnections();
 
-      /** UserType-dependent part of makeConnections() */
+      /** Make the connections for a single network */
+      void makeConnectionsForNetwork(VariableNetwork &network);
+
+      /** UserType-dependent part of makeConnectionsForNetwork() */
       template<typename UserType>
       void typedMakeConnection(VariableNetwork &network);
 
@@ -90,12 +96,12 @@ namespace ChimeraTK {
       /** Register a connection between a device read-only register and the control system adapter */
       template<typename UserType>
       void feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode, const std::string& publicName);
+          const std::string& publicName, AccessorBase &trigger=InvalidAccessor());
 
       /** Register a connection between a device write-only register and the control system adapter */
       template<typename UserType>
       void consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode, const std::string& publicName);
+          const std::string& publicName);
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>

@@ -7,6 +7,7 @@
 
 #include "VariableNetwork.h"
 #include "Accessor.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
@@ -57,19 +58,28 @@ namespace ChimeraTK {
 
   void VariableNetwork::addAppNode(AccessorBase &a) {
     if(hasAppNode(&a)) return;  // already in the network
+
+    // create Node structure
     Node node;
     node.type = NodeType::Application;
     node.mode = a.getUpdateMode();
     node.appNode = &a;
+
+    // if node is feeding, save as feeder for this network
     if(a.isFeeding()) {
+      // make sure we only have one feeding node per network
       if(hasFeedingNode()) {
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
             "Trying to add a feeding accessor to a network already having a feeding accessor.");
       }
-      feeder = node;
+      // update value type
       valueType = &(a.getValueType());
+      // update feeder
+      feeder = node;
     }
+    // not is not feeding, add it to list of consumers
     else {
+      // add node to consumer list
       consumerList.push_back(node);
     }
   }
@@ -105,11 +115,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName,
-      UpdateMode mode) {
+  void VariableNetwork::addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName) {
     Node node;
     node.type = NodeType::Device;
-    node.mode = mode;
+    node.mode = UpdateMode::push;
     node.deviceAlias = deviceAlias;
     node.registerName = registerName;
     consumerList.push_back(node);
@@ -151,4 +160,91 @@ namespace ChimeraTK {
     }
     std::cout << "}" << std::endl;
   }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::addTriggerReceiver(VariableNetwork *network) {
+    Node node;
+    node.type = NodeType::TriggerReceiver;
+    node.mode = UpdateMode::push;
+    node.triggerReceiver = network;
+    consumerList.push_back(node);
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::addTrigger(AccessorBase &trigger) {
+
+    if(hasExternalTrigger) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Only one external trigger per variable network is allowed.");
+    }
+
+    // find the network the triggering accessor is connected to
+    VariableNetwork &otherNetwork = Application::getInstance().findOrCreateNetwork(&trigger);
+    otherNetwork.addAppNode(trigger);
+
+    // add ourselves as a trigger receiver to the other network
+    otherNetwork.addTriggerReceiver(this);
+
+    // set flag and store pointer to other network
+    hasExternalTrigger = true;
+    externalTrigger = &otherNetwork;
+
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetwork::TriggerType VariableNetwork::getTriggerType() {
+    // network has an external trigger
+    if(hasExternalTrigger) {
+      if(feeder.mode == UpdateMode::push) {
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+            "Providing an external trigger to a variable network which is fed by a pushing variable is not allowed.");
+      }
+      return TriggerType::external;
+    }
+    // network is fed by a pushing node
+    if(feeder.mode == UpdateMode::push) {
+      return TriggerType::feeder;
+    }
+    // network is fed by a poll-type node: must have exactly one polling consumer
+    size_t nPollingConsumers = count_if( consumerList.begin(), consumerList.end(),
+        [](const Node n) { return n.mode == UpdateMode::poll; } );
+    if(nPollingConsumers != 1) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer.");
+    }
+    return TriggerType::pollingConsumer;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::check() {
+    // must have consuming nodes
+    if(countConsumingNodes() == 0) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Illegal variable network found: no consuming nodes connected!");
+    }
+
+    // must have a feeding node
+    if(!hasFeedingNode()) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Illegal variable network found: no feeding node connected!");
+    }
+
+    // check if trigger is correctly defined (the return type doesn't matter, only the checks done in the function are needed)
+    getTriggerType();
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetwork& VariableNetwork::getExternalTrigger() {
+    if(getTriggerType() != TriggerType::external) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+          "VariableNetwork::getExternalTrigger() may only be called if the trigger type is external.");
+    }
+    return *externalTrigger;
+  }
+
 }

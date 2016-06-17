@@ -18,7 +18,7 @@ namespace ChimeraTK {
 
   /** Enum to define the update mode of variables. */
   enum class UpdateMode {
-    poll, push, invalid
+      poll, push, invalid
   };
 
 } /* namespace ChimeraTK */

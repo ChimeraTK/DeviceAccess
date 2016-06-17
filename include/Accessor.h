@@ -19,6 +19,8 @@ namespace ChimeraTK {
 
   using namespace mtca4u;
 
+  class Application;
+
   /*********************************************************************************************************************/
 
   // stupid temporary base class for accessors, which is not templated @todo TODO replace with proper class structure
@@ -51,6 +53,21 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  /** An invalid instance which can be used e.g. for optional arguments passed by reference */
+  class InvalidAccessor : public AccessorBase {
+    public:
+      constexpr InvalidAccessor() {}
+      ~InvalidAccessor() {}
+      bool isFeeding() {std::terminate();}
+      bool isInitialised() const {std::terminate();}
+      void useProcessVariable(const boost::shared_ptr<ProcessVariable> &) {std::terminate();}
+      const std::type_info& getValueType() const {std::terminate();}
+      VariableDirection getDirection() const {std::terminate();}
+      UpdateMode getUpdateMode() const {std::terminate();}
+  };
+
+  /*********************************************************************************************************************/
+
   template< typename UserType >
   class Accessor : public AccessorBase {
 
@@ -77,7 +94,10 @@ namespace ChimeraTK {
       void consumeFromDevice(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
 
       /** Connect variable to a device register and request that the variable will "feed" data to the register.*/
-      void feedToDevice(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+      void feedToDevice(const std::string &deviceAlias, const std::string &registerName);
+
+      /** Add another accessor as an external trigger */
+      void addTrigger(AccessorBase &trigger);
 
       virtual bool isFeeding();
 
@@ -153,12 +173,20 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template< typename UserType >
-  void Accessor<UserType>::feedToDevice(const std::string &deviceAlias, const std::string &registerName,
-      UpdateMode mode) {
+  void Accessor<UserType>::feedToDevice(const std::string &deviceAlias, const std::string &registerName) {
     assert( _direction == VariableDirection::feeding );
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
     network.addAppNode(*this);
-    network.addConsumingDeviceRegister(deviceAlias, registerName, mode);
+    network.addConsumingDeviceRegister(deviceAlias, registerName);
+  }
+
+  /*********************************************************************************************************************/
+
+  template< typename UserType >
+  void Accessor<UserType>::addTrigger(AccessorBase &trigger) {
+    VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
+    network.addAppNode(*this);
+    network.addTrigger(trigger);
   }
 
 } /* namespace ChimeraTK */
