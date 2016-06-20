@@ -17,8 +17,11 @@ namespace ChimeraTK {
   /** Stupid base class just to be able to put the adapters into a list.
    *  @todo TODO find a better name! */
   class ImplementationAdapterBase {
-      /** We currently have no interest in a usable interface, since the list of ImplementationAdapter is only
-       *  kept to keep them alive (via the reference count in their shared_ptrs). */
+    public:
+      virtual ~ImplementationAdapterBase(){}
+
+      /** Activate synchronisation thread if needed */
+      virtual void activate() {}
   };
 
   /** Adapts two variable implementations (i.e. two ProcessVariables) so they can be connected together. This is needed

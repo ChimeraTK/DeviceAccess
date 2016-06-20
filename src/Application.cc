@@ -36,8 +36,15 @@ Application::Application() {
 /*********************************************************************************************************************/
 
 void Application::run() {
+  // call the user-defined initialise() function which describes the structure of the application
   initialise();
+  // realise the connections between variable accessors as described in the initialise() function
   makeConnections();
+  // start the necessary threads for the FanOuts etc.
+  for(auto &adapter : adapterList) {
+    adapter->activate();
+  }
+  // start the threads for the modules
   for(auto module : moduleList) {
     module->run();
   }
@@ -272,7 +279,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
         }
       }
-      if(isFirst) { // FanOut wasn't used as implementation: store to list to keep it alive
+      if(isFirst || useExternalTrigger) { // FanOut wasn't used as implementation: store to list to keep it alive
         adapterList.push_back(fanOut);
       }
       connectionMade = true;

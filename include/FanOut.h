@@ -66,13 +66,9 @@ namespace ChimeraTK {
         hasExternalTrigger = true;
       }
 
-      /** Activate synchronisation thread if needed
-       *  @todo TODO need to activate the thread also if feeder is pushing, but this information is not available at this point!? */
       void activate() {
-        if(hasExternalTrigger) {
-          assert(_direction == VariableDirection::consuming);
-          _thread = std::thread([this] { this->run(); });
-        }
+        assert(_direction == VariableDirection::consuming);
+        _thread = std::thread([this] { this->run(); });
       }
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
