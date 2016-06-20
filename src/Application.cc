@@ -10,6 +10,8 @@
 
 #include <boost/fusion/container/map.hpp>
 
+#include <libxml++/libxml++.h>
+
 #include <mtca4u/BackendFactory.h>
 
 #include "Application.h"
@@ -54,9 +56,53 @@ void Application::run() {
 
 void Application::generateXML() {
   initialise();
+
+  // create XML document with root node
+  xmlpp::Document doc;
+  xmlpp::Element *rootElement = doc.create_root_node("ApplicationVariables");
+
   for(auto &network : networkList) {
+
+    // perform checks
     network.dump();
+    network.check();
+
+    // check if feeder is a control system node
+    auto feeder = network.getFeedingNode();
+    if(feeder.type == VariableNetwork::NodeType::ControlSystem) {
+
+      // Create the directory for the path name in the XML document with all parent directories, if not yet existing:
+      // First split the publication name into components and loop over each component. For each component, try to find
+      // the directory node and create it it does not exist. After the loop, the "current" will point to the Element
+      // representing the directory.
+      mtca4u::RegisterPath directory(feeder.publicName);
+      directory--;  // strip the variable name from the path
+      xmlpp::Element *current = rootElement;
+      for(auto pathComponent : directory.getComponents()) {
+        // find directory for this path component in the current directory
+        auto list = current->find(std::string("/directory[@name=")+pathComponent+std::string("]"));
+        if(list.size() == 0) {  // not found: create it
+          xmlpp::Element *newChild = current->add_child("directory");
+          newChild->set_attribute("name",pathComponent);
+          current = newChild;
+        }
+        else {
+          assert(list.size() == 1);
+          current = dynamic_cast<xmlpp::Element*>(list[0]);
+          assert(current != nullptr);
+        }
+      }
+      // now add the variable to the directory
+      xmlpp::Element *variable = current->add_child("variable");
+      mtca4u::RegisterPath pathName(feeder.publicName);
+      auto pathComponents = pathName.getComponents();
+      variable->set_attribute("name",pathComponents[pathComponents.size()-1]);
+      /// @todo TODO add sub-elements for data type and unit
+    }
+
   }
+  /// @todo TODO don't write to stdout but to a file...
+  doc.write_to_stream_formatted(std::cout);
 }
 
 /*********************************************************************************************************************/

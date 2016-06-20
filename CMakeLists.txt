@@ -20,15 +20,24 @@ endif( ${PROJECT_NAME}_BUILDVERSION )
 # We need the build name to be part of the libraries full version name
 set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 
+# Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
 set(mtca4u-deviceaccess_MIN_VERSION 00.12)
 FIND_PACKAGE(mtca4u-deviceaccess ${mtca4u-deviceaccess_MIN_VERSION} REQUIRED)
 include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
+# Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
 set(ControlSystemAdapter_MIN_VERSION 00.00)
 FIND_PACKAGE(ControlSystemAdapter ${ControlSystemAdapter_MIN_VERSION} REQUIRED)
 include_directories(SYSTEM ${ControlSystemAdapter_INCLUDE_DIRS})
+
+# Find the XML parser library libxml++
+FIND_PACKAGE(PkgConfig REQUIRED)
+set(LIBXML++_VERSION "libxml++-2.6")
+PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
+PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
+include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}" ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
 # optional dependency: if finding the DOOCS server library, the example and tests will be built
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
@@ -86,7 +95,7 @@ if(TESTING_IS_ENABLED)
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${testExecutableSrcFile})
-    target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
 
@@ -109,11 +118,11 @@ if(TESTING_IS_ENABLED)
   add_executable(demoApp example/demoApp.cc)
   set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${DOOCS_CXX_FLAGS}")
   set_target_properties(demoApp PROPERTIES LINK_FLAGS ${DOOCS_LINK_FLAGS})
-  target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES})
+  target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
 
   add_executable(demoApp-xmlGenerator example/demoApp.cc)
   set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} -DGENERATE_XML")
-  target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter_LIBRARIES} )
+  target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
   
   add_custom_command(TARGET demoApp-xmlGenerator POST_BUILD COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
@@ -127,7 +136,7 @@ endif(TESTING_IS_ENABLED)
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
-target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter_LIBRARIES} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
 
 # do not remove runtime path of the library when installing
 set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
