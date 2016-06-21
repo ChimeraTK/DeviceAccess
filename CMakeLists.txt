@@ -124,7 +124,7 @@ if(TESTING_IS_ENABLED)
   set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} -DGENERATE_XML")
   target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ControlSystemAdapter_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
   
-  add_custom_command(TARGET demoApp-xmlGenerator POST_BUILD COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+  add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
   # copy config file
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
