@@ -14,6 +14,7 @@
 namespace ChimeraTK {
 
   ApplicationModule::ApplicationModule() {
+    assert(&(Application::getInstance()) != nullptr);
     Application::getInstance().registerModule(*this);
   }
 
