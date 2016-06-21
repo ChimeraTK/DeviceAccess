@@ -47,7 +47,7 @@ namespace ChimeraTK {
       /** Check if an input variable has new data. In case of an output variable, an exception will be thrown. If the
        *  wait_for_new_data access mode flag was not provided when creating the accessor, this function will return
        *  always false. */
-      bool hasNewData();
+      //bool hasNewData();  /// @todo TODO right now impossible to implement...
 
       /** Write an output variable. In case of an input variable, an exception will be thrown. This function never
        *  blocks and is always implemented in a lock-free manner. */
