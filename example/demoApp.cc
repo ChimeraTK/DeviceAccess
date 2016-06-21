@@ -107,7 +107,7 @@ class MyApp : public ctk::Application {
       simulator.actuator.addTrigger(controlLoop.actuator);
       //simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator"); // not allowed, since simulator.actuator consuming
 
-      //feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::push, "MyLocation/actuatorSimulator");
+      feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", "MyLocation/actuatorSimulator", controlLoop.actuator);
 
       simulator.readback.connectTo(controlLoop.readback);
       simulator.readback.feedToControlSystem("MyLocation/readback");
