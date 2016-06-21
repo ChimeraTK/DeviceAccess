@@ -12,6 +12,7 @@
 
 #include <mtca4u/RegisterPath.h>
 
+#include "Flags.h"
 #include "Application.h"
 #include "ApplicationModule.h"
 
