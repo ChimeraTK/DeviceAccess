@@ -42,11 +42,16 @@ namespace ChimeraTK {
     mtca4u::RegisterPath directory(publicName);
     directory--;
 
+    // the namespace map is needed to properly refer to elements with an xpath expression in xmlpp::Element::find()
+    /// @todo TODO move this somewhere else, or at least take the namespace URI from a common place!
+    xmlpp::Node::PrefixNsMap nsMap{{"ac", "https://github.com/ChimeraTK/ApplicationCore"}};
+
     // go through each directory path component
     xmlpp::Element *current = rootElement;
     for(auto pathComponent : directory.getComponents()) {
       // find directory for this path component in the current directory
-      auto list = current->find(std::string("/directory[@name=")+pathComponent+std::string("]"));
+      std::string xpath = std::string("ac:directory[@name='")+pathComponent+std::string("']");
+      auto list = current->find(xpath, nsMap);
       if(list.size() == 0) {  // not found: create it
         xmlpp::Element *newChild = current->add_child("directory");
         newChild->set_attribute("name",pathComponent);
