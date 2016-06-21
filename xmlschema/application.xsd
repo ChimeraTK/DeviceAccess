@@ -31,9 +31,9 @@
 
   <xsd:complexType name="VariableType">
     <xsd:sequence>
-      <xsd:element name="value_type"   type="ValueType"/>
-      <xsd:element name="direction" type="DirectionType"/>
-      <xsd:element name="unit"   type="xsd:string"/>
+      <xsd:element name="value_type" type="ValueType" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="direction" type="DirectionType" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="unit" type="xsd:string" minOccurs="1" maxOccurs="1"/>
     </xsd:sequence>
     <xsd:attribute name="name" type="xsd:string" use="required"/>
   </xsd:complexType>
