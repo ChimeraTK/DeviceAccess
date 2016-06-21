@@ -86,8 +86,8 @@ class SimulatorModule : public ctk::ApplicationModule {
 
 
 class MyApp : public ctk::Application {
-
   public:
+    using Application::Application;
 
     AutomationModule automation;
     ControlLoopModule controlLoop;
@@ -118,5 +118,5 @@ class MyApp : public ctk::Application {
 
 };
 
-MyApp myApp;
+MyApp myApp("demoApp");
 

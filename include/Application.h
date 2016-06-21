@@ -41,7 +41,7 @@ namespace ChimeraTK {
        *  actual instance is created as a static variable.
        *  The application developer should derive his application from this class and implement the initialise()
        *  function only. */
-      Application();
+      Application(const std::string& name);
 
       /** Destructor */
       virtual ~Application() {}
@@ -124,6 +124,9 @@ namespace ChimeraTK {
       void registerModule(ApplicationModule &module) {
         moduleList.push_back(&module);
       }
+
+      /** The name of the application */
+      std::string applicationName;
 
       /** List of application modules */
       std::list<ApplicationModule*> moduleList;

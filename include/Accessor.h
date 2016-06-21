@@ -49,7 +49,10 @@ namespace ChimeraTK {
 
       /** Obtain the update mode of the accessor */
       virtual UpdateMode getUpdateMode() const = 0;
-  };
+
+      /* Obtain the unit of the variable */
+      virtual const std::string& getUnit() const = 0;
+};
 
   /*********************************************************************************************************************/
 
@@ -105,7 +108,6 @@ namespace ChimeraTK {
 
       UpdateMode getUpdateMode() const {return _mode;}
 
-      /* Obtain the unit of the variable */
       const std::string& getUnit() const {return _unit;}
 
       const std::type_info& getValueType() const {

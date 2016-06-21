@@ -18,6 +18,10 @@
 
 #include "Flags.h"
 
+namespace xmlpp {
+  class Element;
+}
+
 namespace ChimeraTK {
 
   class AccessorBase;
@@ -45,6 +49,9 @@ namespace ChimeraTK {
           NodeType type{NodeType::invalid};
           UpdateMode mode{UpdateMode::invalid};
 
+          /** The network this node belongs to */
+          VariableNetwork *network{nullptr};
+
           /** Pointer to Accessor if type == Application */
           AccessorBase *appNode{nullptr};
 
@@ -59,31 +66,20 @@ namespace ChimeraTK {
           std::string registerName;
 
           /** Function checking if the node requires a fixed implementation */
-          bool hasImplementation() const {
-            return type == NodeType::Device || type == NodeType::ControlSystem;
-          }
-
-          /** Print node information to std::cout */
-          void dump() const {
-            if(type == NodeType::Application) std::cout << " type = Application" << std::endl;
-            if(type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << publicName << "')" << std::endl;
-            if(type == NodeType::Device) std::cout << " type = Device (" << deviceAlias << ": "
-                << registerName << ")" << std::endl;
-          }
+          bool hasImplementation() const;
 
           /** Compare two nodes */
-          bool operator==(const Node& other) const {
-            if(other.type != type) return false;
-            if(other.mode != mode) return false;
-            if(other.appNode != appNode) return false;
-            if(other.publicName != publicName) return false;
-            if(other.deviceAlias != deviceAlias) return false;
-            if(other.registerName != registerName) return false;
-            return true;
-          }
-          bool operator!=(const Node& other) const {
-            return !operator==(other);
-          }
+          bool operator==(const Node& other) const;
+          bool operator!=(const Node& other) const;
+
+          /** Print node information to std::cout */
+          void dump() const;
+
+          /** Create an XML node describing this network node as seen by the control syste. If the type is not
+           *  NodeType::ControlSystem, this function does nothing. Otherwise the correct directory hierarchy will be
+           *  created (if not yet existing) and a variable tag will be created containing the externally visible
+           *  properties of this variable. */
+          void createXML(xmlpp::Element *rootElement) const;
       };
 
       /** Add an application-side node (i.e. an Accessor) to the network. */
@@ -95,7 +91,7 @@ namespace ChimeraTK {
 
       /** Add control-system-to-device publication. The given accessor will be used to derive the requred value type.
        *  The name will be the name of the process variable visible in the control system adapter. */
-      void addFeedingPublication(const std::type_info &typeInfo, const std::string& name);
+      void addFeedingPublication(const std::type_info &typeInfo, const std::string& unit, const std::string& name);
 
       /** Add device-to-control-system publication. */
       void addConsumingPublication(const std::string& name);
@@ -108,8 +104,8 @@ namespace ChimeraTK {
           UpdateMode mode);
 
       /** Add a device register as a feeding node (i.e. which will be read from this network) */
-      void addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string &deviceAlias,
-          const std::string &registerName, UpdateMode mode);
+      void addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string& unit,
+          const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
 
       /** Add a trigger receiver node */
       void addTriggerReceiver(VariableNetwork *network);
@@ -157,6 +153,9 @@ namespace ChimeraTK {
        *  the aspect of the trigger type. */
       TriggerType getTriggerType();
 
+      /** Return the enginerring unit */
+      const std::string& getUnit() { return engineeringUnit; }
+
       /** Return the network providing the external trigger to this network, if TriggerType::external. If the network
        *  has another trigger type, an exception will be thrown. */
       VariableNetwork& getExternalTrigger();
@@ -196,6 +195,9 @@ namespace ChimeraTK {
       /** The network value type id. Since in C++, std::type_info is non-copyable and typeid() returns a reference to
        *  an object with static storage duration, we have to (and can safely) store a pointer here. */
       const std::type_info* valueType{&typeid(void)};
+
+      /** Engineering unit */
+      std::string engineeringUnit;
 
       /** Flag if an external trigger has been added to this network */
       bool hasExternalTrigger{false};

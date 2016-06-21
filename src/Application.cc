@@ -27,7 +27,9 @@ std::mutex Application::instance_mutex;
 
 /*********************************************************************************************************************/
 
-Application::Application() {
+Application::Application(const std::string& name)
+: applicationName(name)
+{
   std::lock_guard<std::mutex> lock(instance_mutex);
   if(instance != nullptr) {
     throw std::string("Multiple instances of ChimeraTK::Application cannot be created."); // @todo TODO throw proper exception
@@ -59,7 +61,8 @@ void Application::generateXML() {
 
   // create XML document with root node
   xmlpp::Document doc;
-  xmlpp::Element *rootElement = doc.create_root_node("ApplicationVariables");
+  xmlpp::Element *rootElement = doc.create_root_node("application", "https://github.com/ChimeraTK/ApplicationCore");
+  rootElement->set_attribute("name",applicationName);
 
   for(auto &network : networkList) {
 
@@ -67,42 +70,18 @@ void Application::generateXML() {
     network.dump();
     network.check();
 
-    // check if feeder is a control system node
+    // create xml code for the feeder (if it is a control system node)
     auto feeder = network.getFeedingNode();
-    if(feeder.type == VariableNetwork::NodeType::ControlSystem) {
+    feeder.createXML(rootElement);
 
-      // Create the directory for the path name in the XML document with all parent directories, if not yet existing:
-      // First split the publication name into components and loop over each component. For each component, try to find
-      // the directory node and create it it does not exist. After the loop, the "current" will point to the Element
-      // representing the directory.
-      mtca4u::RegisterPath directory(feeder.publicName);
-      directory--;  // strip the variable name from the path
-      xmlpp::Element *current = rootElement;
-      for(auto pathComponent : directory.getComponents()) {
-        // find directory for this path component in the current directory
-        auto list = current->find(std::string("/directory[@name=")+pathComponent+std::string("]"));
-        if(list.size() == 0) {  // not found: create it
-          xmlpp::Element *newChild = current->add_child("directory");
-          newChild->set_attribute("name",pathComponent);
-          current = newChild;
-        }
-        else {
-          assert(list.size() == 1);
-          current = dynamic_cast<xmlpp::Element*>(list[0]);
-          assert(current != nullptr);
-        }
-      }
-      // now add the variable to the directory
-      xmlpp::Element *variable = current->add_child("variable");
-      mtca4u::RegisterPath pathName(feeder.publicName);
-      auto pathComponents = pathName.getComponents();
-      variable->set_attribute("name",pathComponents[pathComponents.size()-1]);
-      /// @todo TODO add sub-elements for data type and unit
+    // create xml code for the consumers
+    for(auto &consumer : network.getConsumingNodes()) {
+      consumer.createXML(rootElement);
     }
 
   }
   /// @todo TODO don't write to stdout but to a file...
-  doc.write_to_stream_formatted(std::cout);
+  doc.write_to_file_formatted(applicationName+".xml");
 }
 
 /*********************************************************************************************************************/
@@ -482,7 +461,7 @@ void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAli
     mode = UpdateMode::poll;
     network.addTrigger(trigger);
   }
-  network.addFeedingDeviceRegister(typeid(UserType), deviceAlias, registerName, mode);
+  network.addFeedingDeviceRegister(typeid(UserType), "arbitrary", deviceAlias, registerName, mode);
   network.addConsumingPublication(publicName);
   networkList.push_back(network);
 }
@@ -502,7 +481,7 @@ template<typename UserType>
 void Application::consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
     const std::string& publicName) {
   VariableNetwork network;
-  network.addFeedingPublication(typeid(UserType), publicName);
+  network.addFeedingPublication(typeid(UserType), "arbitrary", publicName);
   network.addConsumingDeviceRegister(deviceAlias, registerName);
   networkList.push_back(network);
 }

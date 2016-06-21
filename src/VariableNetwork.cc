@@ -5,11 +5,110 @@
  *      Author: Martin Hierholzer
  */
 
+#include <libxml++/libxml++.h>
+
 #include "VariableNetwork.h"
 #include "Accessor.h"
 #include "Application.h"
 
 namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
+
+  bool VariableNetwork::Node::hasImplementation() const {
+    return type == NodeType::Device || type == NodeType::ControlSystem;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::Node::dump() const {
+    if(type == NodeType::Application) std::cout << " type = Application" << std::endl;
+    if(type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << publicName << "')" << std::endl;
+    if(type == NodeType::Device) std::cout << " type = Device (" << deviceAlias << ": "
+        << registerName << ")" << std::endl;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::Node::createXML(xmlpp::Element *rootElement) const {
+    if(type != NodeType::ControlSystem) return;
+
+    // Create the directory for the path name in the XML document with all parent directories, if not yet existing:
+    // First split the publication name into components and loop over each component. For each component, try to find
+    // the directory node and create it it does not exist. After the loop, the "current" will point to the Element
+    // representing the directory.
+
+    // strip the variable name from the path
+    mtca4u::RegisterPath directory(publicName);
+    directory--;
+
+    // go through each directory path component
+    xmlpp::Element *current = rootElement;
+    for(auto pathComponent : directory.getComponents()) {
+      // find directory for this path component in the current directory
+      auto list = current->find(std::string("/directory[@name=")+pathComponent+std::string("]"));
+      if(list.size() == 0) {  // not found: create it
+        xmlpp::Element *newChild = current->add_child("directory");
+        newChild->set_attribute("name",pathComponent);
+        current = newChild;
+      }
+      else {
+        assert(list.size() == 1);
+        current = dynamic_cast<xmlpp::Element*>(list[0]);
+        assert(current != nullptr);
+      }
+    }
+
+    // now add the variable to the directory
+    xmlpp::Element *variable = current->add_child("variable");
+    mtca4u::RegisterPath pathName(publicName);
+    auto pathComponents = pathName.getComponents();
+
+    // set the name attribute
+    variable->set_attribute("name",pathComponents[pathComponents.size()-1]);
+
+    // add sub-element containing the data type
+    std::string dataTypeName{"unknown"};
+    if(network->getValueType() == typeid(int8_t)) { dataTypeName = "int8"; }
+    else if(network->getValueType() == typeid(uint8_t)) { dataTypeName = "uint8"; }
+    else if(network->getValueType() == typeid(int16_t)) { dataTypeName = "int16"; }
+    else if(network->getValueType() == typeid(uint16_t)) { dataTypeName = "uint16"; }
+    else if(network->getValueType() == typeid(int32_t)) { dataTypeName = "int32"; }
+    else if(network->getValueType() == typeid(uint32_t)) { dataTypeName = "uint32"; }
+    else if(network->getValueType() == typeid(float)) { dataTypeName = "float"; }
+    else if(network->getValueType() == typeid(double)) { dataTypeName = "double"; }
+    else if(network->getValueType() == typeid(std::string)) { dataTypeName = "string"; }
+    xmlpp::Element *valueTypeElement = variable->add_child("value_type");
+    valueTypeElement->set_child_text(dataTypeName);
+
+    // add sub-element containing the data flow direction
+    std::string dataFlowName{"application_to_control_system"};
+    if(network->getFeedingNode() == *this) { dataFlowName = "control_system_to_application"; }
+    xmlpp::Element *directionElement = variable->add_child("direction");
+    directionElement->set_child_text(dataFlowName);
+
+    // add sub-element containing the engineering unit
+    xmlpp::Element *unitElement = variable->add_child("unit");
+    unitElement->set_child_text(network->getUnit());
+  }
+
+  /*********************************************************************************************************************/
+
+  bool VariableNetwork::Node::operator==(const Node& other) const {
+    if(other.type != type) return false;
+    if(other.mode != mode) return false;
+    if(other.appNode != appNode) return false;
+    if(other.publicName != publicName) return false;
+    if(other.deviceAlias != deviceAlias) return false;
+    if(other.registerName != registerName) return false;
+    return true;
+  }
+
+  /*********************************************************************************************************************/
+
+  bool VariableNetwork::Node::operator!=(const Node& other) const {
+    return !operator==(other);
+  }
 
   /*********************************************************************************************************************/
 
@@ -61,6 +160,7 @@ namespace ChimeraTK {
 
     // create Node structure
     Node node;
+    node.network = this;
     node.type = NodeType::Application;
     node.mode = a.getUpdateMode();
     node.appNode = &a;
@@ -74,6 +174,8 @@ namespace ChimeraTK {
       }
       // update value type
       valueType = &(a.getValueType());
+      // update engineering unit
+      engineeringUnit = a.getUnit();
       // update feeder
       feeder = node;
     }
@@ -88,6 +190,7 @@ namespace ChimeraTK {
 
   void VariableNetwork::addConsumingPublication(const std::string& name) {
     Node node;
+    node.network = this;
     node.type = NodeType::ControlSystem;
     node.mode = UpdateMode::push;
     node.publicName = name;
@@ -97,26 +200,29 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::addFeedingPublication(AccessorBase &a, const std::string& name) {
-    addFeedingPublication(a.getValueType(), name);
+    addFeedingPublication(a.getValueType(), a.getUnit(), name);
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addFeedingPublication(const std::type_info &typeInfo, const std::string& name) {
+  void VariableNetwork::addFeedingPublication(const std::type_info &typeInfo, const std::string& unit, const std::string& name) {
     if(hasFeedingNode()) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "Trying to add control-system-to-device publication to a network already having a feeding accessor.");
     }
+    feeder.network = this;
     feeder.type = NodeType::ControlSystem;
     feeder.mode = UpdateMode::push;
     feeder.publicName = name;
     valueType = &typeInfo;
+    engineeringUnit = unit;
   }
 
   /*********************************************************************************************************************/
 
   void VariableNetwork::addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName) {
     Node node;
+    node.network = this;
     node.type = NodeType::Device;
     node.mode = UpdateMode::push;
     node.deviceAlias = deviceAlias;
@@ -128,22 +234,24 @@ namespace ChimeraTK {
 
   void VariableNetwork::addFeedingDeviceRegister(AccessorBase &a, const std::string &deviceAlias,
       const std::string &registerName, UpdateMode mode) {
-    addFeedingDeviceRegister(a.getValueType(), deviceAlias, registerName, mode);
+    addFeedingDeviceRegister(a.getValueType(), a.getUnit(), deviceAlias, registerName, mode);
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string &deviceAlias,
-      const std::string &registerName, UpdateMode mode) {
+  void VariableNetwork::addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string& unit
+      , const std::string &deviceAlias, const std::string &registerName, UpdateMode mode) {
     if(hasFeedingNode()) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "Trying to add a feeding device register to a network already having a feeding accessor.");
     }
+    feeder.network = this;
     feeder.type = NodeType::Device;
     feeder.mode = mode;
     feeder.deviceAlias = deviceAlias;
     feeder.registerName = registerName;
     valueType = &typeInfo;
+    engineeringUnit = unit;
   }
 
   /*********************************************************************************************************************/
@@ -165,6 +273,7 @@ namespace ChimeraTK {
 
   void VariableNetwork::addTriggerReceiver(VariableNetwork *network) {
     Node node;
+    node.network = this;
     node.type = NodeType::TriggerReceiver;
     node.mode = UpdateMode::push;
     node.triggerReceiver = network;
@@ -231,6 +340,12 @@ namespace ChimeraTK {
     if(!hasFeedingNode()) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "Illegal variable network found: no feeding node connected!");
+    }
+
+    // all nodes must have this network as the owner
+    assert(feeder.network == this);
+    for(auto &consumer : consumerList) {
+      assert(consumer.network == this);
     }
 
     // check if trigger is correctly defined (the return type doesn't matter, only the checks done in the function are needed)
