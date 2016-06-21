@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="https://github.com/ChimeraTK/ApplicationCore"
+            xmlns="https://github.com/ChimeraTK/ApplicationCore"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+  <xsd:annotation>
+    <xsd:documentation xml:lang="en">
+     Application variable description schema for ChimeraTK ApplicationCore.
+     NOTE: This is a first draft version! Do not use for production!
+    </xsd:documentation>
+  </xsd:annotation>
+
+  <xsd:element name="application" type="ApplicationType"/>
+
+  <xsd:complexType name="ApplicationType">
+    <xsd:sequence>
+      <xsd:element name="directory" type="DirectoryType" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="DirectoryType">
+    <xsd:sequence>
+      <xsd:element name="directory" type="DirectoryType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:element name="variable" type="VariableType" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="VariableType">
+    <xsd:sequence>
+      <xsd:element name="value_type"   type="ValueType"/>
+      <xsd:element name="direction" type="DirectionType"/>
+      <xsd:element name="unit"   type="xsd:string"/>
+    </xsd:sequence>
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:simpleType name="ValueType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="int8"/>
+      <xsd:enumeration value="uint8"/>
+      <xsd:enumeration value="int16"/>
+      <xsd:enumeration value="uint16"/>
+      <xsd:enumeration value="int32"/>
+      <xsd:enumeration value="uint32"/>
+      <xsd:enumeration value="float"/>
+      <xsd:enumeration value="double"/>
+      <xsd:enumeration value="string"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="DirectionType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="control_system_to_application"/>
+      <xsd:enumeration value="application_to_control_system"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+</xsd:schema>
