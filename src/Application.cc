@@ -413,7 +413,7 @@ VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a, AccessorBase 
     return nb;
   }
   // if no accessor is found, create a new network and add it to the list
-  networkList.push_back({});
+  networkList.emplace_back();
   return networkList.back();
 }
 
@@ -429,7 +429,7 @@ VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a) {
     return na;
   }
   // if no accessor is found, create a new network and add it to the list
-  networkList.push_back({});
+  networkList.emplace_back();
   return networkList.back();
 }
 
@@ -455,7 +455,8 @@ VariableNetwork& Application::findNetwork(AccessorBase *a) {
 template<typename UserType>
 void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
     const std::string& publicName, AccessorBase &trigger) {
-  VariableNetwork network;
+  networkList.emplace_back();
+  VariableNetwork& network = networkList.back();
   UpdateMode mode = UpdateMode::push;
   if(dynamic_cast<InvalidAccessor*>(&trigger) != nullptr) {
     mode = UpdateMode::poll;
@@ -463,7 +464,6 @@ void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAli
   }
   network.addFeedingDeviceRegister(typeid(UserType), "arbitrary", deviceAlias, registerName, mode);
   network.addConsumingPublication(publicName);
-  networkList.push_back(network);
 }
 
 template void Application::feedDeviceRegisterToControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
@@ -480,10 +480,10 @@ template void Application::feedDeviceRegisterToControlSystem<double>(const std::
 template<typename UserType>
 void Application::consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
     const std::string& publicName) {
-  VariableNetwork network;
+  networkList.emplace_back();
+  VariableNetwork& network = networkList.back();
   network.addFeedingPublication(typeid(UserType), "arbitrary", publicName);
   network.addConsumingDeviceRegister(deviceAlias, registerName);
-  networkList.push_back(network);
 }
 
 template void Application::consumeDeviceRegisterFromControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);

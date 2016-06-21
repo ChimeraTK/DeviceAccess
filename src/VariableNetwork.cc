@@ -95,6 +95,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetwork::Node::operator==(const Node& other) const {
+    if(other.network != network) return false;
     if(other.type != type) return false;
     if(other.mode != mode) return false;
     if(other.appNode != appNode) return false;

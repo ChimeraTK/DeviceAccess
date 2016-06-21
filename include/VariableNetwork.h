@@ -29,7 +29,12 @@ namespace ChimeraTK {
   /** This class describes a network of variables all connected to each other. */
   class VariableNetwork {
 
+      VariableNetwork( const VariableNetwork& other ) = delete;         // non construction-copyable
+      VariableNetwork& operator=( const VariableNetwork& ) = delete;    // non copyable
+
     public:
+
+      VariableNetwork() {}
 
       /** Define accessor types */
       enum class NodeType {
