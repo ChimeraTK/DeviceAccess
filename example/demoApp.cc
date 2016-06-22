@@ -16,8 +16,8 @@ namespace ctk = ChimeraTK;
 class AutomationModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, operatorSetpoint, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(double, loopSetpoint, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(double, operatorSetpoint, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_OUTPUT(double, loopSetpoint, "MV/m");
 
     void mainLoop() {
       loopSetpoint = 0;
@@ -40,9 +40,9 @@ class AutomationModule : public ctk::ApplicationModule {
 class ControlLoopModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, setpoint, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(double, setpoint, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(double, readback, "MV/m", ctk::UpdateMode::push);
+    SCALAR_OUTPUT(double, actuator, "MV/m");
 
     void mainLoop() {
 
@@ -67,8 +67,8 @@ class ControlLoopModule : public ctk::ApplicationModule {
 class SimulatorModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_ACCESSOR(double, actuator, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(double, readback, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(double, actuator, "MV/m", ctk::UpdateMode::push);
+    SCALAR_OUTPUT(double, readback, "MV/m");
 
     double lastValue{0};
 
@@ -110,7 +110,7 @@ class MyApp : public ctk::Application {
       simulator.actuator.addTrigger(controlLoop.actuator);
       simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator");
 
-      // this will create an independent variable network,thus also another accessor to the device
+      // this will create an independent variable network, thus also another accessor to the device
       feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", "MyLocation/actuatorSimulator_direct", controlLoop.actuator);
 
       simulator.readback.connectTo(controlLoop.readback);

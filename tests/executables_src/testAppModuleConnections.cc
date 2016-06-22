@@ -13,6 +13,8 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
+#include <mtca4u/BackendFactory.h>
+
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 
@@ -31,15 +33,16 @@ typedef boost::mpl::list<int8_t,uint8_t,
 template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
-    SCALAR_ACCESSOR(T, feedingPush, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, consumingPush, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, consumingPush2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, consumingPush3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
+    SCALAR_OUTPUT(T, feedingPush, "MV/m");
+    SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push);
 
-    SCALAR_ACCESSOR(T, feedingPoll, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(T, consumingPoll, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(T, consumingPoll2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(T, consumingPoll3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
+
+    SCALAR_OUTPUT(T, feedingToDevice, "MV/m");
 
     void mainLoop() {}
 };
@@ -159,17 +162,20 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollAccessors, T, test_types ) {
 
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
   TestApplication app("Test Suite");
   TestModule<T> testModule;
 
-  testModule.feedingPoll.connectTo(testModule.consumingPoll);
+  testModule.feedingToDevice.feedToDevice("Dummy0","/MyModule/Variable");
+  testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
   app.makeConnections();
 
   // single theaded test only, since read() does not block in this case
   testModule.consumingPoll = 0;
-  testModule.feedingPoll = 42;
+  testModule.feedingToDevice = 42;
   BOOST_CHECK(testModule.consumingPoll == 0);
-  testModule.feedingPoll.write();
+  testModule.feedingToDevice.write();
   BOOST_CHECK(testModule.consumingPoll == 0);
   testModule.consumingPoll.read();
   BOOST_CHECK(testModule.consumingPoll == 42);
@@ -177,9 +183,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollAccessors, T, test_types ) {
   BOOST_CHECK(testModule.consumingPoll == 42);
   testModule.consumingPoll.read();
   BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.feedingPoll = 120;
+  testModule.feedingToDevice = 120;
   BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.feedingPoll.write();
+  testModule.feedingToDevice.write();
   BOOST_CHECK(testModule.consumingPoll == 42);
   testModule.consumingPoll.read();
   BOOST_CHECK( testModule.consumingPoll == 120 );

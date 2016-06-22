@@ -375,6 +375,11 @@ namespace ChimeraTK {
       assert(consumer.network == this);
     }
 
+    // if the feeder is an application node, it must be in push mode
+    if(feeder.type == NodeType::Application) {
+      assert(feeder.mode == UpdateMode::push);
+    }
+
     // check if trigger is correctly defined (the return type doesn't matter, only the checks done in the function are needed)
     getTriggerType();
   }

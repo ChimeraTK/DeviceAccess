@@ -14,10 +14,20 @@
 
 #include "Accessor.h"
 
-/** Macro to declare a scalar variable/accessor more easily. The call to this macro must be placed inside the
- *  class definiton of an ApplicationModule. */
-#define SCALAR_ACCESSOR(UserType, name, direction, unit, mode)                                                      \
-    ChimeraTK::ScalarAccessor<UserType> name{this, #name, direction, unit, mode}
+/** Macros to declare a scalar variable/accessor more easily. The call to this macro must be placed inside the
+ *  class definiton of an ApplicationModule.
+ *
+ *  UserType is the data type of the variable.
+ *  name will be the C++ symbol name of the variable accessor. It will be of the type ChimeraTK::ScalarAccessor<UserType>
+ *  unit is the engineering unit as a character constant.
+ *  mode can be either ChimeraTK::UpdateMode::push or ChimeraTK::UpdateMode::poll, deciding whether a call to read()
+ *  will block until new data is available (push) or just return the latest value (poll, might not be fully realtime
+ *  capable). */
+#define SCALAR_INPUT(UserType, name, unit, mode)                                                                    \
+    ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit, mode}
+#define SCALAR_OUTPUT(UserType, name, unit)                                                                         \
+    ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::feeding, unit,              \
+                                             ChimeraTK::UpdateMode::push}
 
 namespace ChimeraTK {
 

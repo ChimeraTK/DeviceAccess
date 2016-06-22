@@ -13,6 +13,8 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
+#include <mtca4u/BackendFactory.h>
+
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 
@@ -31,16 +33,15 @@ typedef boost::mpl::list<int8_t,uint8_t,
 template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
-    SCALAR_ACCESSOR(T, feedingPush, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, feedingPush2, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, consumingPush, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, consumingPush2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(T, consumingPush3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
+    SCALAR_OUTPUT(T, feedingPush, "MV/m");
+    SCALAR_OUTPUT(T, feedingPush2, "MV/m");
+    SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push);
+    SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push);
 
-    SCALAR_ACCESSOR(T, feedingPoll, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(T, consumingPoll, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(T, consumingPoll2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_ACCESSOR(T, consumingPoll3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
 
     void mainLoop() {}
 };
@@ -60,10 +61,12 @@ class TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
   TestApplication app("Test Suite");
   TestModule<T> testModule;
 
-  testModule.feedingPoll.connectTo(testModule.consumingPush);
+  testModule.consumingPush.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
@@ -92,9 +95,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
 }
 
 /*********************************************************************************************************************/
-/* test case for no consumer */
+/* test case for two feeders */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( testNoConsumer, T, test_types ) {
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
 
   TestApplication app("Test Suite");
   TestModule<T> testModule;
@@ -113,11 +116,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoConsumer, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
 
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
   TestApplication app("Test Suite");
   TestModule<T> testModule;
 
-  testModule.feedingPoll.connectTo(testModule.consumingPoll);
-  testModule.feedingPoll.connectTo(testModule.consumingPoll2);
+  testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+  testModule.consumingPoll.connectTo(testModule.consumingPoll2);
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
