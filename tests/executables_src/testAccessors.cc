@@ -5,7 +5,13 @@
  *      Author: Martin Hierholzer
  */
 
+#include <future>
+
+#define BOOST_TEST_MODULE testAccessors
+
 #include <boost/test/included/unit_test.hpp>
+#include <boost/test/test_case_template.hpp>
+#include <boost/mpl/list.hpp>
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
@@ -13,60 +19,132 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-class AccessorTest {
-  public:
-    //void testExceptions();
-    void testScalarPushAccessor();
-};
+// list of user types the accessors are tested with
+typedef boost::mpl::list<int8_t,uint8_t,
+                         int16_t,uint16_t,
+                         int32_t,uint32_t,
+                         float,double>        test_types;
 
-class AccessorTestSuite : public test_suite {
-  public:
-    AccessorTestSuite() : test_suite("Test suite for accessors") {
-      boost::shared_ptr<AccessorTest> test(new AccessorTest);
+/*********************************************************************************************************************/
+/* the ApplicationModule for the test is a template of the user type */
 
-      add( BOOST_CLASS_TEST_CASE(&AccessorTest::testScalarPushAccessor, test) );
-    }
-};
-
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
-  framework::master_test_suite().p_name.value = "Accessor test suite";
-  framework::master_test_suite().add(new AccessorTestSuite());
-
-  return NULL;
-}
-
+template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
-    SCALAR_ACCESSOR(int, consumingPushInt, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
-    SCALAR_ACCESSOR(int, feedingPushInt, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(T, feedingPush, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(T, consumingPush, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(T, consumingPush2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(T, consumingPush3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
 
     void mainLoop() {}
 };
 
+/*********************************************************************************************************************/
+/* dummy application */
+
 class TestApplication : public ctk::Application {
   public:
     using Application::Application;
-    using Application::makeConnections;
-    void initialise() {}
+    using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
+    void initialise() {}                    // the setup is done in the tests
 };
-TestApplication app("Test Suite");
 
-void AccessorTest::testScalarPushAccessor() {
+/*********************************************************************************************************************/
+/* test case for two scalar accessors in push mode */
 
-  TestModule testModule;
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
 
-  testModule.feedingPushInt.connectTo(testModule.consumingPushInt);
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.feedingPush.connectTo(testModule.consumingPush);
   app.makeConnections();
 
-  testModule.consumingPushInt = 0;
-  testModule.feedingPushInt = 42;
-  BOOST_CHECK(testModule.consumingPushInt == 0);
-  testModule.feedingPushInt.write();
-  BOOST_CHECK(testModule.consumingPushInt == 0);
-  testModule.consumingPushInt.read();
-  BOOST_CHECK(testModule.consumingPushInt == 42);
+  // single theaded test
+  testModule.consumingPush = 0;
+  testModule.feedingPush = 42;
+  BOOST_CHECK(testModule.consumingPush == 0);
+  testModule.feedingPush.write();
+  BOOST_CHECK(testModule.consumingPush == 0);
+  testModule.consumingPush.read();
+  BOOST_CHECK(testModule.consumingPush == 42);
 
+  // launch read() on the consumer asynchronously and make sure it does not yet receive anything
+  auto futRead = std::async(std::launch::async, [&testModule]{ testModule.consumingPush.read(); });
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
 
+  BOOST_CHECK(testModule.consumingPush == 42);
 
+  // write to the feeder
+  testModule.feedingPush = 120;
+  testModule.feedingPush.write();
+
+  // check that the consumer now receives the just written value
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK( testModule.consumingPush == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test case for four scalar accessors in push mode: one feeder and three consumers */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.feedingPush.connectTo(testModule.consumingPush);
+  testModule.feedingPush.connectTo(testModule.consumingPush2);
+  testModule.feedingPush.connectTo(testModule.consumingPush3);
+  app.makeConnections();
+
+  // single theaded test
+  testModule.consumingPush = 0;
+  testModule.consumingPush2 = 2;
+  testModule.consumingPush3 = 3;
+  testModule.feedingPush = 42;
+  BOOST_CHECK(testModule.consumingPush == 0);
+  BOOST_CHECK(testModule.consumingPush2 == 2);
+  BOOST_CHECK(testModule.consumingPush3 == 3);
+  testModule.feedingPush.write();
+  BOOST_CHECK(testModule.consumingPush == 0);
+  BOOST_CHECK(testModule.consumingPush2 == 2);
+  BOOST_CHECK(testModule.consumingPush3 == 3);
+  testModule.consumingPush.read();
+  BOOST_CHECK(testModule.consumingPush == 42);
+  BOOST_CHECK(testModule.consumingPush2 == 2);
+  BOOST_CHECK(testModule.consumingPush3 == 3);
+  testModule.consumingPush2.read();
+  BOOST_CHECK(testModule.consumingPush == 42);
+  BOOST_CHECK(testModule.consumingPush2 == 42);
+  BOOST_CHECK(testModule.consumingPush3 == 3);
+  testModule.consumingPush3.read();
+  BOOST_CHECK(testModule.consumingPush == 42);
+  BOOST_CHECK(testModule.consumingPush2 ==42);
+  BOOST_CHECK(testModule.consumingPush3 == 42);
+
+  // launch read() on the consumers asynchronously and make sure it does not yet receive anything
+  auto futRead = std::async(std::launch::async, [&testModule]{ testModule.consumingPush.read(); });
+  auto futRead2 = std::async(std::launch::async, [&testModule]{ testModule.consumingPush2.read(); });
+  auto futRead3 = std::async(std::launch::async, [&testModule]{ testModule.consumingPush3.read(); });
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
+  BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
+
+  BOOST_CHECK(testModule.consumingPush == 42);
+  BOOST_CHECK(testModule.consumingPush2 ==42);
+  BOOST_CHECK(testModule.consumingPush3 == 42);
+
+  // write to the feeder
+  testModule.feedingPush = 120;
+  testModule.feedingPush.write();
+
+  // check that the consumers now receive the just written value
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK( testModule.consumingPush == 120 );
+  BOOST_CHECK( testModule.consumingPush2 == 120 );
+  BOOST_CHECK( testModule.consumingPush3 == 120 );
 
 }
