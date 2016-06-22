@@ -1,5 +1,5 @@
 /*
- * testAccessors.cc
+ * testAppModuleConnections.cc
  *
  *  Created on: Jun 21, 2016
  *      Author: Martin Hierholzer
@@ -7,7 +7,7 @@
 
 #include <future>
 
-#define BOOST_TEST_MODULE testAccessors
+#define BOOST_TEST_MODULE testAppModuleConnections
 
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/test_case_template.hpp>
