@@ -131,7 +131,6 @@ namespace ChimeraTK {
   template< typename UserType >
   template< typename UserType_o >
   void Accessor<UserType>::connectTo(Accessor<UserType_o> &targetAccessor) {
-    assert( _direction != targetAccessor._direction );
     Application::getInstance().connectAccessors(*this, targetAccessor);
   }
 
@@ -139,7 +138,6 @@ namespace ChimeraTK {
 
   template< typename UserType >
   void Accessor<UserType>::feedToControlSystem(const std::string& name) {
-    assert( _direction == VariableDirection::feeding );
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
     network.addAppNode(*this);
     network.addConsumingPublication(name);
@@ -149,7 +147,6 @@ namespace ChimeraTK {
 
   template< typename UserType >
   void Accessor<UserType>::consumeFromControlSystem(const std::string& name) {
-    assert( _direction == VariableDirection::consuming );
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
     network.addAppNode(*this);
     network.addFeedingPublication(*this,name);
@@ -167,7 +164,6 @@ namespace ChimeraTK {
   template< typename UserType >
   void Accessor<UserType>::consumeFromDevice(const std::string &deviceAlias, const std::string &registerName,
       UpdateMode mode) {
-    assert( _direction == VariableDirection::consuming );
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
     network.addAppNode(*this);
     network.addFeedingDeviceRegister(*this, deviceAlias, registerName, mode);
@@ -177,7 +173,6 @@ namespace ChimeraTK {
 
   template< typename UserType >
   void Accessor<UserType>::feedToDevice(const std::string &deviceAlias, const std::string &registerName) {
-    assert( _direction == VariableDirection::feeding );
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
     network.addAppNode(*this);
     network.addConsumingDeviceRegister(deviceAlias, registerName);
