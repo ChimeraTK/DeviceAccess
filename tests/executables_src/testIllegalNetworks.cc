@@ -32,6 +32,7 @@ template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
     SCALAR_ACCESSOR(T, feedingPush, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
+    SCALAR_ACCESSOR(T, feedingPush2, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::push);
     SCALAR_ACCESSOR(T, consumingPush, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
     SCALAR_ACCESSOR(T, consumingPush2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
     SCALAR_ACCESSOR(T, consumingPush3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
@@ -63,6 +64,60 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
   TestModule<T> testModule;
 
   testModule.feedingPoll.connectTo(testModule.consumingPush);
+  try {
+    app.makeConnections();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test case for no feeder */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.consumingPush2.connectTo(testModule.consumingPush);
+  try {
+    app.makeConnections();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test case for no consumer */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testNoConsumer, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  try {
+    testModule.feedingPush.connectTo(testModule.feedingPush2);
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test case for too many polling consumers */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.feedingPoll.connectTo(testModule.consumingPoll);
+  testModule.feedingPoll.connectTo(testModule.consumingPoll2);
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
