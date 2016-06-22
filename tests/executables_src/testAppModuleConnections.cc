@@ -42,8 +42,6 @@ class TestModule : public ctk::ApplicationModule {
     SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
     SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
 
-    SCALAR_OUTPUT(T, feedingToDevice, "MV/m");
-
     void mainLoop() {}
 };
 
@@ -154,45 +152,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
   BOOST_CHECK( testModule.consumingPush == 120 );
   BOOST_CHECK( testModule.consumingPush2 == 120 );
   BOOST_CHECK( testModule.consumingPush3 == 120 );
-
-}
-
-/*********************************************************************************************************************/
-/* test case for two scalar accessors in poll mode */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollAccessors, T, test_types ) {
-
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
-
-  TestApplication app("Test Suite");
-  TestModule<T> testModule;
-
-  testModule.feedingToDevice.feedToDevice("Dummy0","/MyModule/Variable");
-  testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-  app.makeConnections();
-
-  // single theaded test only, since read() does not block in this case
-  testModule.consumingPoll = 0;
-  testModule.feedingToDevice = 42;
-  BOOST_CHECK(testModule.consumingPoll == 0);
-  testModule.feedingToDevice.write();
-  BOOST_CHECK(testModule.consumingPoll == 0);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.feedingToDevice = 120;
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.feedingToDevice.write();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
 
 }
 
