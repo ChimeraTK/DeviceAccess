@@ -22,11 +22,15 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::Node::dump() const {
-    if(type == NodeType::Application) std::cout << " type = Application" << std::endl;
-    if(type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << publicName << "')" << std::endl;
-    if(type == NodeType::Device) std::cout << " type = Device (" << deviceAlias << ": "
-        << registerName << ")" << std::endl;
-  }
+    if(type == NodeType::Application) std::cout << " type = Application";
+    if(type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << publicName << "')";
+    if(type == NodeType::Device) std::cout << " type = Device (" << deviceAlias << ": " << registerName << ")";
+    if(type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
+    if(type == NodeType::invalid) std::cout << " type = **invalid**";
+
+    if(mode == UpdateMode::push) std::cout << " pushing" << std::endl;
+    if(mode == UpdateMode::poll) std::cout << " polling" << std::endl;
+}
 
   /*********************************************************************************************************************/
 
@@ -262,17 +266,34 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::dump() const {
-    std::cout << "VariableNetwork {" << std::endl;
-    std::cout << "  feeder";
+  void VariableNetwork::dump(const std::string& linePrefix) const {
+    std::cout << linePrefix << "VariableNetwork {" << std::endl;
+    std::cout << linePrefix << "  value type = " << valueType->name() << ", engineering unit = " << engineeringUnit << std::endl;
+    std::cout << linePrefix << "  trigger type = ";
+    try {
+      TriggerType tt = getTriggerType();
+      if(tt == TriggerType::feeder) std::cout << "feeder" << std::endl;
+      if(tt == TriggerType::pollingConsumer) std::cout << "pollingConsumer" << std::endl;
+      if(tt == TriggerType::external) std::cout << "external" << std::endl;
+      if(tt == TriggerType::none) std::cout << "none" << std::endl;
+    }
+    catch(ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork> &e) {
+      std::cout << "**error**" << std::endl;
+    }
+    std::cout << linePrefix << "  feeder";
     feeder.dump();
-    std::cout << "  number of consumers: " << consumerList.size() << std::endl;
+    std::cout << linePrefix << "  consumers: " << consumerList.size() << std::endl;
     size_t count = 0;
     for(auto &consumer : consumerList) {
-      std::cout << "  consumer " << ++count << ":";
+      std::cout << linePrefix << "    # " << ++count << ":";
       consumer.dump();
     }
-    std::cout << "}" << std::endl;
+    if(hasExternalTrigger) {
+      std::cout << linePrefix << "  external trigger network:" << std::endl;;
+      assert(externalTrigger != nullptr);
+      externalTrigger->dump("    ");
+    }
+    std::cout << linePrefix << "}" << std::endl;
   }
 
   /*********************************************************************************************************************/
@@ -310,7 +331,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetwork::TriggerType VariableNetwork::getTriggerType() {
+  VariableNetwork::TriggerType VariableNetwork::getTriggerType() const {
     // network has an external trigger
     if(hasExternalTrigger) {
       if(feeder.mode == UpdateMode::push) {

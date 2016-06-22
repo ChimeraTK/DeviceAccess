@@ -140,8 +140,8 @@ namespace ChimeraTK {
       /** Return list of consuming nodes */
       const std::list<Node>& getConsumingNodes() const { return consumerList; }
 
-      /** Dump the network structure to std::cout */
-      void dump() const;
+      /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
+      void dump(const std::string& linePrefix="") const;
 
       /** Compare two networks */
       bool operator==(const VariableNetwork &other) const {
@@ -156,7 +156,7 @@ namespace ChimeraTK {
 
       /** Return the trigger type. This function will also do some checking if the network confguration is valid under
        *  the aspect of the trigger type. */
-      TriggerType getTriggerType();
+      TriggerType getTriggerType() const;
 
       /** Return the enginerring unit */
       const std::string& getUnit() { return engineeringUnit; }

@@ -43,8 +43,11 @@ namespace ChimeraTK {
        *  function only. */
       Application(const std::string& name);
 
-      /** Destructor */
-      virtual ~Application() {}
+      /** The destructor will remove the global pointer to the instance and allows creating another instance
+       *  afterwards. This is mostly useful for writing tests, as it allows to run several applications sequentially
+       *  in the same executable. Note that any ApplicationModules etc. owned by this Application are no longer
+       *  valid after destroying the Application and must be destroyed as well (or at least no longer used). */
+      virtual ~Application();
 
       /** Set the process variable manager. This will be called by the control system adapter initialisation code. */
       void setPVManager(boost::shared_ptr<mtca4u::DevicePVManager> const &processVariableManager) {

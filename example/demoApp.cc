@@ -46,6 +46,9 @@ class ControlLoopModule : public ctk::ApplicationModule {
 
     void mainLoop() {
 
+      actuator = 0;
+      actuator.write();
+
       while(true) {
         readback.read();
         setpoint.read();

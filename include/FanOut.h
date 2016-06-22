@@ -77,7 +77,8 @@ namespace ChimeraTK {
         assert(hasExternalTrigger);
         while(true) {
           // wait for external trigger
-          externalTrigger->receive();
+          /// @todo TODO replace with proper blocking implementation when supported by the CSA
+          while(externalTrigger->receive() == false) std::this_thread::yield();
           // receive data
           impl->receive();
           for(auto &slave : slaves) {     // send out copies to slaves

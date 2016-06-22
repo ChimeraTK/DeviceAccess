@@ -39,6 +39,13 @@ Application::Application(const std::string& name)
 
 /*********************************************************************************************************************/
 
+Application::~Application() {
+  std::lock_guard<std::mutex> lock(instance_mutex);
+  instance = nullptr;
+}
+
+/*********************************************************************************************************************/
+
 void Application::run() {
   // call the user-defined initialise() function which describes the structure of the application
   initialise();
@@ -458,7 +465,7 @@ void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAli
   networkList.emplace_back();
   VariableNetwork& network = networkList.back();
   UpdateMode mode = UpdateMode::push;
-  if(dynamic_cast<InvalidAccessor*>(&trigger) != nullptr) {
+  if(dynamic_cast<InvalidAccessor*>(&trigger) == nullptr) {
     mode = UpdateMode::poll;
     network.addTrigger(trigger);
   }
