@@ -108,9 +108,10 @@ class MyApp : public ctk::Application {
 
       simulator.actuator.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
       simulator.actuator.addTrigger(controlLoop.actuator);
-      //simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator"); // not allowed, since simulator.actuator consuming
+      simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator");
 
-      feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", "MyLocation/actuatorSimulator", controlLoop.actuator);
+      // this will create an independent variable network,thus also another accessor to the device
+      feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", "MyLocation/actuatorSimulator_direct", controlLoop.actuator);
 
       simulator.readback.connectTo(controlLoop.readback);
       simulator.readback.feedToControlSystem("MyLocation/readback");
