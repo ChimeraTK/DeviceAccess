@@ -40,6 +40,14 @@ namespace ChimeraTK {
       : impl(nullptr), _direction(VariableDirection::feeding)
       {}
 
+      /** The destructor will terminate the internal thread, if running */
+      ~FanOut() {
+        if(_thread.joinable()) {
+          requestTerminateThread = true;
+          _thread.join();
+        }
+      }
+
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
       void addSlave(boost::shared_ptr<mtca4u::ProcessVariable> slave) {
         if(!slave->isSender()) {
@@ -68,6 +76,7 @@ namespace ChimeraTK {
 
       void activate() {
         assert(_direction == VariableDirection::consuming);
+        assert(!_thread.joinable());
         _thread = std::thread([this] { this->run(); });
       }
 
@@ -78,7 +87,10 @@ namespace ChimeraTK {
         while(true) {
           // wait for external trigger
           /// @todo TODO replace with proper blocking implementation when supported by the CSA
-          while(externalTrigger->receive() == false) std::this_thread::yield();
+          while(externalTrigger->receive() == false) {
+            if(requestTerminateThread) return;
+            std::this_thread::yield();
+          }
           // receive data
           impl->receive();
           for(auto &slave : slaves) {     // send out copies to slaves
@@ -156,6 +168,9 @@ namespace ChimeraTK {
 
       /** Thread handling the synchronisation, if needed */
       std::thread _thread;
+
+      /** Flag to request termination of the synchronisation thread. */
+      bool requestTerminateThread{false};
 
   };
 
