@@ -72,6 +72,10 @@ namespace ChimeraTK {
         return *instance;
       }
 
+      /** Output the connections requested in the initialise() function to std::cout. This may be done also before
+       *  makeConnections() has been called. */
+      void dumpConnections();
+
     protected:
 
       friend class ApplicationModule;

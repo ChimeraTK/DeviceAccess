@@ -165,6 +165,14 @@ void Application::makeConnections() {
 
 /*********************************************************************************************************************/
 
+void Application::dumpConnections() {
+  for(auto &network : networkList) {
+    network.dump();
+  }
+}
+
+/*********************************************************************************************************************/
+
 void Application::makeConnectionsForNetwork(VariableNetwork &network) {
   // if the network has been created already, do nothing
   if(network.isCreated()) return;
