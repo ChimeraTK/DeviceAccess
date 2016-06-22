@@ -225,21 +225,3 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
   BOOST_CHECK( testModule.consumingPoll == 120 );
 
 }
-
-/*********************************************************************************************************************/
-/* test case for two scalar accessors, feeder in poll mode and consumer in push mode (without trigger) */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
-
-  TestApplication app("Test Suite");
-  TestModule<T> testModule;
-
-  testModule.feedingPoll.connectTo(testModule.consumingPush);
-  try {
-    app.makeConnections();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
-  }
-
-}
