@@ -36,6 +36,11 @@ class TestModule : public ctk::ApplicationModule {
     SCALAR_ACCESSOR(T, consumingPush2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
     SCALAR_ACCESSOR(T, consumingPush3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::push);
 
+    SCALAR_ACCESSOR(T, feedingPoll, ctk::VariableDirection::feeding, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(T, consumingPoll, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(T, consumingPoll2, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+    SCALAR_ACCESSOR(T, consumingPoll3, ctk::VariableDirection::consuming, "MV/m", ctk::UpdateMode::poll);
+
     void mainLoop() {}
 };
 
@@ -146,5 +151,95 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
   BOOST_CHECK( testModule.consumingPush == 120 );
   BOOST_CHECK( testModule.consumingPush2 == 120 );
   BOOST_CHECK( testModule.consumingPush3 == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test case for two scalar accessors in poll mode */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollAccessors, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.feedingPoll.connectTo(testModule.consumingPoll);
+  app.makeConnections();
+
+  // single theaded test only, since read() does not block in this case
+  testModule.consumingPoll = 0;
+  testModule.feedingPoll = 42;
+  BOOST_CHECK(testModule.consumingPoll == 0);
+  testModule.feedingPoll.write();
+  BOOST_CHECK(testModule.consumingPoll == 0);
+  testModule.consumingPoll.read();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.consumingPoll.read();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.consumingPoll.read();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.feedingPoll = 120;
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.feedingPoll.write();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.consumingPoll.read();
+  BOOST_CHECK( testModule.consumingPoll == 120 );
+  testModule.consumingPoll.read();
+  BOOST_CHECK( testModule.consumingPoll == 120 );
+  testModule.consumingPoll.read();
+  BOOST_CHECK( testModule.consumingPoll == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test case for two scalar accessors, feeder in push mode and consumer in poll mode */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.feedingPush.connectTo(testModule.consumingPoll);
+  app.makeConnections();
+
+  // single theaded test only, since read() does not block in this case
+  testModule.consumingPoll = 0;
+  testModule.feedingPush = 42;
+  BOOST_CHECK(testModule.consumingPoll == 0);
+  testModule.feedingPush.write();
+  BOOST_CHECK(testModule.consumingPoll == 0);
+  testModule.consumingPoll.read();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.consumingPoll.read();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.consumingPoll.read();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.feedingPush = 120;
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.feedingPush.write();
+  BOOST_CHECK(testModule.consumingPoll == 42);
+  testModule.consumingPoll.read();
+  BOOST_CHECK( testModule.consumingPoll == 120 );
+  testModule.consumingPoll.read();
+  BOOST_CHECK( testModule.consumingPoll == 120 );
+  testModule.consumingPoll.read();
+  BOOST_CHECK( testModule.consumingPoll == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test case for two scalar accessors, feeder in poll mode and consumer in push mode (without trigger) */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
+
+  TestApplication app("Test Suite");
+  TestModule<T> testModule;
+
+  testModule.feedingPoll.connectTo(testModule.consumingPush);
+  try {
+    app.makeConnections();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  }
 
 }
