@@ -16,6 +16,46 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
+  : type(NodeType::Application),
+    mode(accessor.getUpdateMode()),
+    appNode(&accessor)
+  {}
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod)
+  : type(NodeType::Device),
+    mode(mod),
+    deviceAlias(devAlias),
+    registerName(regName)
+  {}
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode(std::string pubName)
+  : type(NodeType::ControlSystem),
+    mode(UpdateMode::push),
+    publicName(pubName)
+  {}
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode(VariableNetwork *networkToTrigger)
+  : type(NodeType::TriggerReceiver),
+    triggerReceiver(networkToTrigger)
+  {}
+
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setOwner(VariableNetwork *net) {
+    assert(network == nullptr);
+    assert(type != NodeType::invalid);
+    network = net;
+  }
+
+  /*********************************************************************************************************************/
+
   bool VariableNetworkNode::hasImplementation() const {
     return type == NodeType::Device || type == NodeType::ControlSystem;
   }
