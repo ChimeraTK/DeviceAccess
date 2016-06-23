@@ -17,10 +17,7 @@
 #include <ControlSystemAdapter/ProcessVariable.h>
 
 #include "Flags.h"
-
-namespace xmlpp {
-  class Element;
-}
+#include "VariableNetworkNode.h"
 
 namespace ChimeraTK {
 
@@ -36,55 +33,12 @@ namespace ChimeraTK {
 
       VariableNetwork() {}
 
-      /** Define accessor types */
-      enum class NodeType {
-          Device, ControlSystem, Application, TriggerReceiver, invalid
-      };
-
       /** Define trigger types. The trigger decides when values are fed into the network and distributed to the consumers. */
       enum class TriggerType {
           feeder,           ///< The feeder has an UpdateMode::push and thus decides when new values are fed
           pollingConsumer,  ///< If there is exacly one consumer with UpdateMode::poll, it will trigger the feeding
           external,         ///< another variable network can trigger the feeding of this network
           none              ///< no trigger has yet been selected
-      };
-
-      /** Structure describing a node of the network */
-      struct Node {
-          NodeType type{NodeType::invalid};
-          UpdateMode mode{UpdateMode::invalid};
-
-          /** The network this node belongs to */
-          VariableNetwork *network{nullptr};
-
-          /** Pointer to Accessor if type == Application */
-          AccessorBase *appNode{nullptr};
-
-          /** Pointer to network which should be triggered by this node */
-          VariableNetwork *triggerReceiver{nullptr};
-
-          /** Public name if type == ControlSystem */
-          std::string publicName;
-
-          /** Device information if type == Device */
-          std::string deviceAlias;
-          std::string registerName;
-
-          /** Function checking if the node requires a fixed implementation */
-          bool hasImplementation() const;
-
-          /** Compare two nodes */
-          bool operator==(const Node& other) const;
-          bool operator!=(const Node& other) const;
-
-          /** Print node information to std::cout */
-          void dump() const;
-
-          /** Create an XML node describing this network node as seen by the control syste. If the type is not
-           *  NodeType::ControlSystem, this function does nothing. Otherwise the correct directory hierarchy will be
-           *  created (if not yet existing) and a variable tag will be created containing the externally visible
-           *  properties of this variable. */
-          void createXML(xmlpp::Element *rootElement) const;
       };
 
       /** Add an application-side node (i.e. an Accessor) to the network. */
@@ -135,10 +89,10 @@ namespace ChimeraTK {
       }
 
       /** Return the feeding node */
-      const Node& getFeedingNode() const { return feeder; }
+      const VariableNetworkNode& getFeedingNode() const { return feeder; }
 
       /** Return list of consuming nodes */
-      const std::list<Node>& getConsumingNodes() const { return consumerList; }
+      const std::list<VariableNetworkNode>& getConsumingNodes() const { return consumerList; }
 
       /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
       void dump(const std::string& linePrefix="") const;
@@ -192,10 +146,10 @@ namespace ChimeraTK {
     protected:
 
       /** Feeding node (i.e. the node providing values to the network) */
-      Node feeder;
+      VariableNetworkNode feeder;
 
       /** List of consuming nodes (i.e. the nodes receiving values from the network) */
-      std::list<Node> consumerList;
+      std::list<VariableNetworkNode> consumerList;
 
       /** The network value type id. Since in C++, std::type_info is non-copyable and typeid() returns a reference to
        *  an object with static storage duration, we have to (and can safely) store a pointer here. */

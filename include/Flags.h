@@ -21,6 +21,11 @@ namespace ChimeraTK {
       poll, push, invalid
   };
 
+  /** Enum to define types of VariableNetworkNode */
+  enum class NodeType {
+      Device, ControlSystem, Application, TriggerReceiver, invalid
+  };
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERATK_FLAGS_H */

@@ -240,22 +240,22 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     // So our feedingImpl will contain the consumer-end of the implementation pair. This is the reason why the
     // functions createProcessScalar() and createDeviceAccessor() get the VariableDirection::consuming.
     boost::shared_ptr<mtca4u::ProcessVariable> feedingImpl;
-    if(feeder.type == VariableNetwork::NodeType::Device) {
+    if(feeder.type == NodeType::Device) {
       feedingImpl = createDeviceAccessor<UserType>(feeder.deviceAlias, feeder.registerName,
           VariableDirection::consuming, feeder.mode);
     }
-    else if(feeder.type == VariableNetwork::NodeType::ControlSystem) {
+    else if(feeder.type == NodeType::ControlSystem) {
       feedingImpl = createProcessScalar<UserType>(VariableDirection::consuming, feeder.publicName);
     }
 
     // if we just have two nodes, directly connect them
     if(nNodes == 2 && !useExternalTrigger) {
       auto consumer = consumers.front();
-      if(consumer.type == VariableNetwork::NodeType::Application) {
+      if(consumer.type == NodeType::Application) {
         consumer.appNode->useProcessVariable(feedingImpl);
         connectionMade = true;
       }
-      else if(consumers.front().type == VariableNetwork::NodeType::Device) {
+      else if(consumers.front().type == NodeType::Device) {
         auto consumingImpl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
             VariableDirection::feeding, consumer.mode);
         // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
@@ -263,14 +263,14 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
         connectionMade = true;
       }
-      else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
+      else if(consumer.type == NodeType::ControlSystem) {
         auto consumingImpl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
         // connect the ControlSystem with e.g. a Device node via an ImplementationAdapter
         adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
             new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
         connectionMade = true;
       }
-      else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+      else if(consumer.type == NodeType::TriggerReceiver) {
         consumer.triggerReceiver->setExternalTriggerImpl(feedingImpl);
         connectionMade = true;
       }
@@ -296,7 +296,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         isFirst = false;
       }
       for(auto &consumer : consumers) {
-        if(consumer.type == VariableNetwork::NodeType::Application) {
+        if(consumer.type == NodeType::Application) {
           if(isFirst) {
             consumer.appNode->useProcessVariable(fanOut);
             isFirst = false;
@@ -307,16 +307,16 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             consumer.appNode->useProcessVariable(impls.second);
           }
         }
-        else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
+        else if(consumer.type == NodeType::ControlSystem) {
           auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
           fanOut->addSlave(impl);
         }
-        else if(consumer.type == VariableNetwork::NodeType::Device) {
+        else if(consumer.type == NodeType::Device) {
           auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
               VariableDirection::feeding, consumer.mode);
           fanOut->addSlave(impl);
         }
-        else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+        else if(consumer.type == NodeType::TriggerReceiver) {
           auto impls = createProcessScalar<UserType>();
           fanOut->addSlave(impls.first);
           consumer.triggerReceiver->setExternalTriggerImpl(impls.second);
@@ -334,31 +334,31 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   // 2nd case: the feeder does not require a fixed implementation
   else {    /* !feeder.hasImplementation() */
     // we should be left with an application feeder node
-    if(feeder.type != VariableNetwork::NodeType::Application) {
+    if(feeder.type != NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
     }
     assert(!useExternalTrigger);
     // if we just have two nodes, directly connect them
     if(nNodes == 2) {
       auto consumer = consumers.front();
-      if(consumer.type == VariableNetwork::NodeType::Application) {
+      if(consumer.type == NodeType::Application) {
         auto impls = createProcessScalar<UserType>();
         feeder.appNode->useProcessVariable(impls.first);
         consumer.appNode->useProcessVariable(impls.second);
         connectionMade = true;
       }
-      else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
+      else if(consumer.type == NodeType::ControlSystem) {
         auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
         feeder.appNode->useProcessVariable(impl);
         connectionMade = true;
       }
-      else if(consumer.type == VariableNetwork::NodeType::Device) {
+      else if(consumer.type == NodeType::Device) {
         auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
             VariableDirection::feeding, consumer.mode);
         feeder.appNode->useProcessVariable(impl);
         connectionMade = true;
       }
-      else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+      else if(consumer.type == NodeType::TriggerReceiver) {
         auto impls = createProcessScalar<UserType>();
         feeder.appNode->useProcessVariable(impls.first);
         consumer.triggerReceiver->setExternalTriggerImpl(impls.second);
@@ -374,21 +374,21 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       feeder.appNode->useProcessVariable(fanOut);
 
       for(auto &consumer : consumers) {
-        if(consumer.type == VariableNetwork::NodeType::Application) {
+        if(consumer.type == NodeType::Application) {
           auto impls = createProcessScalar<UserType>();
           fanOut->addSlave(impls.first);
           consumer.appNode->useProcessVariable(impls.second);
         }
-        else if(consumer.type == VariableNetwork::NodeType::ControlSystem) {
+        else if(consumer.type == NodeType::ControlSystem) {
           auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.publicName);
           fanOut->addSlave(impl);
         }
-        else if(consumer.type == VariableNetwork::NodeType::Device) {
+        else if(consumer.type == NodeType::Device) {
           auto impl = createDeviceAccessor<UserType>(consumer.deviceAlias, consumer.registerName,
               VariableDirection::feeding, consumer.mode);
           fanOut->addSlave(impl);
         }
-        else if(consumer.type == VariableNetwork::NodeType::TriggerReceiver) {
+        else if(consumer.type == NodeType::TriggerReceiver) {
           auto impls = createProcessScalar<UserType>();
           fanOut->addSlave(impls.first);
           consumer.triggerReceiver->setExternalTriggerImpl(impls.second);
