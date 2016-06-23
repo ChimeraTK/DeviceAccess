@@ -83,16 +83,24 @@ namespace ChimeraTK {
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
         assert(_direction == VariableDirection::consuming);
-        assert(hasExternalTrigger);
         while(true) {
-          // wait for external trigger
-          /// @todo TODO replace with proper blocking implementation when supported by the CSA
-          while(externalTrigger->receive() == false) {
-            if(requestTerminateThread) return;
-            std::this_thread::yield();
+          if(hasExternalTrigger) {
+            // wait for external trigger (if present)
+            /// @todo TODO replace with proper blocking implementation when supported by the CSA
+            while(externalTrigger->receive() == false) {
+              if(requestTerminateThread) return;
+              std::this_thread::yield();
+            }
+            // receive data
+            impl->receive();
           }
-          // receive data
-          impl->receive();
+          else {
+            // receive data
+            while(impl->receive() == false) {
+              if(requestTerminateThread) return;
+              std::this_thread::yield();
+            }
+          }
           for(auto &slave : slaves) {     // send out copies to slaves
             slave->set(impl->get());
             slave->send();

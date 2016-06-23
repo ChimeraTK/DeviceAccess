@@ -227,6 +227,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   auto &feeder = network.getFeedingNode();
   auto &consumers = network.getConsumingNodes();
   bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
+  bool useFeederTrigger = network.getTriggerType() == VariableNetwork::TriggerType::feeder;
 
   boost::shared_ptr<FanOut<UserType>> fanOut;
 
@@ -277,7 +278,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
       }
     }
-    else {
+    else { /* !(nNodes == 2 && !useExternalTrigger) */
       // create FanOut
       fanOut.reset(new FanOut<UserType>(feedingImpl));
 
@@ -288,6 +289,11 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       if(useExternalTrigger) {
         isFirst = false; // don't use the FanOut as an implementation if we have an external trigger
         fanOut->addExternalTrigger(network.getExternalTriggerImpl());
+      }
+      // if the trigger is provided by the pushing feeder, use the treaded version of the FanOut to distribute
+      // new values immediately to all consumers.
+      else if(useFeederTrigger) {
+        isFirst = false;
       }
       for(auto &consumer : consumers) {
         if(consumer.type == VariableNetwork::NodeType::Application) {
@@ -319,14 +325,14 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
         }
       }
-      if(isFirst || useExternalTrigger) { // FanOut wasn't used as implementation: store to list to keep it alive
+      if(isFirst || useExternalTrigger || useFeederTrigger) { // FanOut wasn't used as implementation: store to list to keep it alive
         adapterList.push_back(fanOut);
       }
       connectionMade = true;
     }
   }
   // 2nd case: the feeder does not require a fixed implementation
-  else {
+  else {    /* !feeder.hasImplementation() */
     // we should be left with an application feeder node
     if(feeder.type != VariableNetwork::NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
