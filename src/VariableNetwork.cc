@@ -283,19 +283,33 @@ namespace ChimeraTK {
     // must have consuming nodes
     if(countConsumingNodes() == 0) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Illegal variable network found: no consuming nodes connected!");
+          "No consuming nodes connected to this network!");
     }
 
     // must have a feeding node
     if(!hasFeedingNode()) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Illegal variable network found: no feeding node connected!");
+          "No feeding node connected to this network!");
     }
 
-    // all nodes must have this network as the owner
+    dump();
+
+    // the network's value type must be correctly set
+    if(*valueType == typeid(AnyType)) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "No data type specified for any of the nodes in this network!");
+    }
+
+    // the feeder must have a value type equal to the network's value type
+    if(feeder.getValueType() == typeid(AnyType)) feeder.setValueType(*valueType);
+    assert(feeder.getValueType() == *valueType);
+
+    // all nodes must have this network as the owner and a value type equal the network's value type
     assert(&(feeder.getOwner()) == this);
     for(auto &consumer : consumerList) {
       assert(&(consumer.getOwner()) == this);
+      if(consumer.getValueType() == typeid(AnyType)) consumer.setValueType(*valueType);
+      assert(consumer.getValueType() == *valueType);
     }
 
     // if the feeder is an application node, it must be in push mode

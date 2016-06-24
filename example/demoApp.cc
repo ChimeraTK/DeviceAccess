@@ -99,7 +99,9 @@ class MyApp : public ctk::Application {
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-      automation.operatorSetpoint.consumeFromControlSystem("MyLocation/setpoint");
+      automation.operatorSetpoint << CtrlVar("MyLocation/setpoint");
+
+      //automation.operatorSetpoint.consumeFromControlSystem("MyLocation/setpoint");
       //connect(automation.operatorSetpoint, feedByControlSystem("MyLocation/setpoint"));
       automation.loopSetpoint.connectTo(controlLoop.setpoint);
       automation.loopSetpoint.feedToControlSystem("MyLocation/setpoint_automation");
@@ -115,8 +117,8 @@ class MyApp : public ctk::Application {
       feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", "MyLocation/actuatorSimulator_direct", controlLoop.actuator);
 
       // this is the same as above
-      connect(feedByDevice<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll),
-              consumeByControlSystem("MyLocation/actuatorSimulator_direct2")
+      connect(feedingDevReg<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll),
+              consumingCtrlVar("MyLocation/actuatorSimulator_direct2")
              ).addTrigger(findNetwork(&controlLoop.actuator));
 
       simulator.readback.connectTo(controlLoop.readback);

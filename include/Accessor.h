@@ -81,11 +81,8 @@ namespace ChimeraTK {
        *  until it is properly initialised using connectTo(). */
       Accessor(ApplicationModule *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode)
-      : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode)
-      {
-        Application::getInstance().nodeList.emplace_back(*this);
-        node = &(Application::getInstance().nodeList.back());
-      };
+      : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), node{*this}
+      {}
 
       /** Connect the accessor to another accessor */
       template< typename UserType_o >
@@ -118,8 +115,20 @@ namespace ChimeraTK {
         return typeid(UserType);
       }
 
-      operator VariableNetworkNode&() const {
-        return *node;
+      operator const VariableNetworkNode&() const {
+        return node;
+      }
+
+      operator VariableNetworkNode&() {
+        return node;
+      }
+
+      /** Connect with node */
+      VariableNetworkNode& operator<<(const VariableNetworkNode &other) {
+        return node.operator<<(other);
+      }
+      VariableNetworkNode& operator>>(const VariableNetworkNode &other) {
+        return node.operator>>(other);
       }
 
     protected:
@@ -130,7 +139,7 @@ namespace ChimeraTK {
       std::string _unit;
       UpdateMode _mode;
 
-      VariableNetworkNode *node;
+      VariableNetworkNode node;
 
   };
 

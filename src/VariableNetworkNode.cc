@@ -16,71 +16,92 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
-  : type(NodeType::Application),
-    mode(accessor.getUpdateMode()),
-    direction(accessor.getDirection()),
-    valueType(&(accessor.getValueType())),
-    unit(accessor.getUnit()),
-    appNode(&accessor)
+  VariableNetworkNode::VariableNetworkNode(const VariableNetworkNode &other)
+  : pdata(other.pdata)
   {}
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode& VariableNetworkNode::operator=(const VariableNetworkNode &rightHandSide) {
+    pdata = rightHandSide.pdata;
+    return *this;
+  }
+
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
+  : pdata(new data)
+  {
+    pdata->type = NodeType::Application;
+    pdata->mode = accessor.getUpdateMode();
+    pdata->direction = accessor.getDirection();
+    pdata->valueType = &(accessor.getValueType());
+    pdata->unit = accessor.getUnit();
+    pdata->appNode = &accessor;
+  }
 
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod,
       VariableDirection dir, const std::type_info &valTyp)
-  : type(NodeType::Device),
-    mode(mod),
-    direction(dir),
-    valueType(&valTyp),
-    deviceAlias(devAlias),
-    registerName(regName)
-  {}
-
+  : pdata(new data)
+  {
+    pdata->type = NodeType::Device;
+    pdata->mode = mod;
+    pdata->direction = dir;
+    pdata->valueType = &valTyp;
+    pdata->deviceAlias = devAlias;
+    pdata->registerName = regName;
+  }
 
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir, const std::type_info &valTyp)
-  : type(NodeType::ControlSystem),
-    mode(UpdateMode::push),
-    direction(dir),
-    valueType(&valTyp),
-    publicName(pubName)
-  {}
+  : pdata(new data)
+  {
+    pdata->type = NodeType::ControlSystem;
+    pdata->mode = UpdateMode::push;
+    pdata->direction = dir;
+    pdata->valueType = &valTyp;
+    pdata->publicName = pubName;
+  }
 
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(VariableNetwork *networkToTrigger)
-  : type(NodeType::TriggerReceiver),
-    direction(VariableDirection::consuming),
-    triggerReceiver(networkToTrigger)
-  {}
+  : pdata(new data)
+  {
+    pdata->type = NodeType::TriggerReceiver;
+    pdata->direction = VariableDirection::consuming;
+    pdata->triggerReceiver = networkToTrigger;
+  }
 
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::setOwner(VariableNetwork *net) {
-    assert(network == nullptr);
-    assert(type != NodeType::invalid);
-    network = net;
+    assert(pdata->network == nullptr);
+    assert(pdata->type != NodeType::invalid);
+    pdata->network = net;
   }
 
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::hasImplementation() const {
-    return type == NodeType::Device || type == NodeType::ControlSystem;
+    return pdata->type == NodeType::Device || pdata->type == NodeType::ControlSystem;
   }
 
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::dump() const {
-    if(type == NodeType::Application) std::cout << " type = Application";
-    if(type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << publicName << "')";
-    if(type == NodeType::Device) std::cout << " type = Device (" << deviceAlias << ": " << registerName << ")";
-    if(type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
-    if(type == NodeType::invalid) std::cout << " type = **invalid**";
+    if(pdata->type == NodeType::Application) std::cout << " type = Application";
+    if(pdata->type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << pdata->publicName << "')";
+    if(pdata->type == NodeType::Device) std::cout << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
+    if(pdata->type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
+    if(pdata->type == NodeType::invalid) std::cout << " type = **invalid**";
 
-    if(mode == UpdateMode::push) std::cout << " pushing";
-    if(mode == UpdateMode::poll) std::cout << " polling";
+    if(pdata->mode == UpdateMode::push) std::cout << " pushing";
+    if(pdata->mode == UpdateMode::poll) std::cout << " polling";
 
     std::cout << std::endl;
 }
@@ -88,7 +109,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::createXML(xmlpp::Element *rootElement) const {
-    if(type != NodeType::ControlSystem) return;
+    if(pdata->type != NodeType::ControlSystem) return;
 
     // Create the directory for the path name in the XML document with all parent directories, if not yet existing:
     // First split the publication name into components and loop over each component. For each component, try to find
@@ -96,7 +117,7 @@ namespace ChimeraTK {
     // representing the directory.
 
     // strip the variable name from the path
-    mtca4u::RegisterPath directory(publicName);
+    mtca4u::RegisterPath directory(pdata->publicName);
     directory--;
 
     // the namespace map is needed to properly refer to elements with an xpath expression in xmlpp::Element::find()
@@ -123,7 +144,7 @@ namespace ChimeraTK {
 
     // now add the variable to the directory
     xmlpp::Element *variable = current->add_child("variable");
-    mtca4u::RegisterPath pathName(publicName);
+    mtca4u::RegisterPath pathName(pdata->publicName);
     auto pathComponents = pathName.getComponents();
 
     // set the name attribute
@@ -131,39 +152,33 @@ namespace ChimeraTK {
 
     // add sub-element containing the data type
     std::string dataTypeName{"unknown"};
-    if(network->getValueType() == typeid(int8_t)) { dataTypeName = "int8"; }
-    else if(network->getValueType() == typeid(uint8_t)) { dataTypeName = "uint8"; }
-    else if(network->getValueType() == typeid(int16_t)) { dataTypeName = "int16"; }
-    else if(network->getValueType() == typeid(uint16_t)) { dataTypeName = "uint16"; }
-    else if(network->getValueType() == typeid(int32_t)) { dataTypeName = "int32"; }
-    else if(network->getValueType() == typeid(uint32_t)) { dataTypeName = "uint32"; }
-    else if(network->getValueType() == typeid(float)) { dataTypeName = "float"; }
-    else if(network->getValueType() == typeid(double)) { dataTypeName = "double"; }
-    else if(network->getValueType() == typeid(std::string)) { dataTypeName = "string"; }
+    if(pdata->network->getValueType() == typeid(int8_t)) { dataTypeName = "int8"; }
+    else if(pdata->network->getValueType() == typeid(uint8_t)) { dataTypeName = "uint8"; }
+    else if(pdata->network->getValueType() == typeid(int16_t)) { dataTypeName = "int16"; }
+    else if(pdata->network->getValueType() == typeid(uint16_t)) { dataTypeName = "uint16"; }
+    else if(pdata->network->getValueType() == typeid(int32_t)) { dataTypeName = "int32"; }
+    else if(pdata->network->getValueType() == typeid(uint32_t)) { dataTypeName = "uint32"; }
+    else if(pdata->network->getValueType() == typeid(float)) { dataTypeName = "float"; }
+    else if(pdata->network->getValueType() == typeid(double)) { dataTypeName = "double"; }
+    else if(pdata->network->getValueType() == typeid(std::string)) { dataTypeName = "string"; }
     xmlpp::Element *valueTypeElement = variable->add_child("value_type");
     valueTypeElement->set_child_text(dataTypeName);
 
     // add sub-element containing the data flow direction
     std::string dataFlowName{"application_to_control_system"};
-    if(network->getFeedingNode() == *this) { dataFlowName = "control_system_to_application"; }
+    if(pdata->network->getFeedingNode() == *this) { dataFlowName = "control_system_to_application"; }
     xmlpp::Element *directionElement = variable->add_child("direction");
     directionElement->set_child_text(dataFlowName);
 
     // add sub-element containing the engineering unit
     xmlpp::Element *unitElement = variable->add_child("unit");
-    unitElement->set_child_text(network->getUnit());
+    unitElement->set_child_text(pdata->network->getUnit());
   }
 
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::operator==(const VariableNetworkNode& other) const {
-    if(other.network != network) return false;
-    if(other.type != type) return false;
-    if(other.mode != mode) return false;
-    if(other.appNode != appNode) return false;
-    if(other.publicName != publicName) return false;
-    if(other.deviceAlias != deviceAlias) return false;
-    if(other.registerName != registerName) return false;
+    if(other.pdata != pdata) return false;
     return true;
   }
 
@@ -171,6 +186,40 @@ namespace ChimeraTK {
 
   bool VariableNetworkNode::operator!=(const VariableNetworkNode& other) const {
     return !operator==(other);
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode& VariableNetworkNode::operator<<(const VariableNetworkNode &other) {
+    if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::consuming;
+    if(pdata->direction != VariableDirection::consuming) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Trying to feed something into a feeding node.");
+    }
+    if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::feeding;
+    if(other.pdata->direction != VariableDirection::feeding) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Trying to feed a non-feeding node into another node.");
+    }
+    Application::getInstance().connect(*this, other);
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode& VariableNetworkNode::operator>>(const VariableNetworkNode &other) {
+    if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
+    if(pdata->direction != VariableDirection::feeding) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Trying to feed a non-feeding node into another node.");
+    }
+    if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::consuming;
+    if(other.pdata->direction != VariableDirection::consuming) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Trying to feed something into a feeding node.");
+    }
+    Application::getInstance().connect(*this, other);
+    return *this;
   }
 
 }

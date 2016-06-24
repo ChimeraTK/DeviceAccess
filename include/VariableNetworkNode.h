@@ -10,6 +10,8 @@
 
 #include <assert.h>
 
+#include <boost/shared_ptr.hpp>
+
 #include "Flags.h"
 
 namespace xmlpp {
@@ -29,6 +31,12 @@ namespace ChimeraTK {
 
     public:
 
+      /** Copy-constructor: Just copy the pointer to the data storage object */
+      VariableNetworkNode(const VariableNetworkNode &other);
+
+      /** Copy by assignment operator: Just copy the pointer to the data storage object */
+      VariableNetworkNode& operator=(const VariableNetworkNode &rightHandSide);
+
       /** Constructor for an Application node */
       VariableNetworkNode(AccessorBase &accessor);
 
@@ -44,10 +52,16 @@ namespace ChimeraTK {
       VariableNetworkNode(VariableNetwork *networkToTrigger);
 
       /** Default constructor for an invalid node */
-      VariableNetworkNode() {}
+      VariableNetworkNode() : pdata(new data) {}
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
+
+      /** Set the value type for this node. Only possible of the current value type is undecided (i.e. AnyType). */
+      void setValueType(const std::type_info& newType) const {
+        assert(*pdata->valueType == typeid(AnyType));
+        pdata->valueType = &newType;
+      }
 
       /** Function checking if the node requires a fixed implementation */
       bool hasImplementation() const;
@@ -55,6 +69,10 @@ namespace ChimeraTK {
       /** Compare two nodes */
       bool operator==(const VariableNetworkNode& other) const;
       bool operator!=(const VariableNetworkNode& other) const;
+
+      /** Connect two nodes */
+      VariableNetworkNode& operator<<(const VariableNetworkNode &other);
+      VariableNetworkNode& operator>>(const VariableNetworkNode &other);
 
       /** Print node information to std::cout */
       void dump() const;
@@ -66,54 +84,60 @@ namespace ChimeraTK {
       void createXML(xmlpp::Element *rootElement) const;
 
       /** Check if the node already has an owner */
-      bool hasOwner() const { return network != nullptr; }
+      bool hasOwner() const { return pdata->network != nullptr; }
 
       /** Getter for the properties */
-      NodeType getType() const { return type; }
-      UpdateMode getMode() const { return mode; }
-      VariableDirection getDirection() const { return direction; }
-      const std::type_info& getValueType() const { return *valueType; }
-      const std::string& getUnit() const { return unit; }
-      VariableNetwork& getOwner() const { assert(network != nullptr); return *network; }
-      AccessorBase& getAppAccessor() const { assert(appNode != nullptr); return *appNode; }
-      VariableNetwork& getTriggerReceiver() const { assert(triggerReceiver != nullptr); return *triggerReceiver; }
-      const std::string& getPublicName() const { assert(type == NodeType::ControlSystem); return publicName; }
-      const std::string& getDeviceAlias() const { assert(type == NodeType::Device); return deviceAlias; }
-      const std::string& getRegisterName() const { assert(type == NodeType::Device); return registerName; }
+      NodeType getType() const { return pdata->type; }
+      UpdateMode getMode() const { return pdata->mode; }
+      VariableDirection getDirection() const { return pdata->direction; }
+      const std::type_info& getValueType() const { return *(pdata->valueType); }
+      const std::string& getUnit() const { return pdata->unit; }
+      VariableNetwork& getOwner() const { assert(pdata->network != nullptr); return *(pdata->network); }
+      AccessorBase& getAppAccessor() const { assert(pdata->appNode != nullptr); return *(pdata->appNode); }
+      VariableNetwork& getTriggerReceiver() const { assert(pdata->triggerReceiver != nullptr); return *(pdata->triggerReceiver); }
+      const std::string& getPublicName() const { assert(pdata->type == NodeType::ControlSystem); return pdata->publicName; }
+      const std::string& getDeviceAlias() const { assert(pdata->type == NodeType::Device); return pdata->deviceAlias; }
+      const std::string& getRegisterName() const { assert(pdata->type == NodeType::Device); return pdata->registerName; }
 
-    private:
+    protected:
 
-      /** Type of the node (Application, Device, ControlSystem, Trigger) */
-      NodeType type{NodeType::invalid};
+      struct data {
 
-      /** Update mode: poll or push */
-      UpdateMode mode{UpdateMode::invalid};
+        /** Type of the node (Application, Device, ControlSystem, Trigger) */
+        NodeType type{NodeType::invalid};
 
-      /** Node direction: feeding or consuming */
-      VariableDirection direction{VariableDirection::invalid};
+        /** Update mode: poll or push */
+        UpdateMode mode{UpdateMode::invalid};
 
-      /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
-       *  the connections. */
-      const std::type_info* valueType{&typeid(AnyType)};
+        /** Node direction: feeding or consuming */
+        VariableDirection direction{VariableDirection::invalid};
 
-      /** Engineering unit. If "arbitrary", no unit has been defined (and any unit is allowed). */
-      std::string unit{"arbitrary"};
+        /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
+         *  the connections. */
+        const std::type_info* valueType{&typeid(AnyType)};
 
-      /** The network this node belongs to */
-      VariableNetwork *network{nullptr};
+        /** Engineering unit. If "arbitrary", no unit has been defined (and any unit is allowed). */
+        std::string unit{"arbitrary"};
 
-      /** Pointer to Accessor if type == Application */
-      AccessorBase *appNode{nullptr};
+        /** The network this node belongs to */
+        VariableNetwork *network{nullptr};
 
-      /** Pointer to network which should be triggered by this node */
-      VariableNetwork *triggerReceiver{nullptr};
+        /** Pointer to Accessor if type == Application */
+        AccessorBase *appNode{nullptr};
 
-      /** Public name if type == ControlSystem */
-      std::string publicName;
+        /** Pointer to network which should be triggered by this node */
+        VariableNetwork *triggerReceiver{nullptr};
 
-      /** Device information if type == Device */
-      std::string deviceAlias;
-      std::string registerName;
+        /** Public name if type == ControlSystem */
+        std::string publicName;
+
+        /** Device information if type == Device */
+        std::string deviceAlias;
+        std::string registerName;
+
+      };
+
+      boost::shared_ptr<data> pdata;
   };
 
 } /* namespace ChimeraTK */

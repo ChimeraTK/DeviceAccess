@@ -92,7 +92,7 @@ namespace ChimeraTK {
       }
 
       /** Return the feeding node */
-      const VariableNetworkNode& getFeedingNode() const { return feeder; }
+      VariableNetworkNode getFeedingNode() const { return feeder; }
 
       /** Return list of consuming nodes */
       const std::list<VariableNetworkNode>& getConsumingNodes() const { return consumerList; }
