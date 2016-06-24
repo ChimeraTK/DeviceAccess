@@ -44,6 +44,9 @@ namespace ChimeraTK {
       /** Add an application-side node (i.e. an Accessor) to the network. */
       void addAppNode(AccessorBase &a);
 
+      /** Add an node to the network. */
+      void addNode(VariableNetworkNode &a);
+
       /** Add control-system-to-device publication. The given accessor will be used to derive the requred value type.
        *  The name will be the name of the process variable visible in the control system adapter. */
       void addFeedingPublication(AccessorBase &a, const std::string& name);
@@ -123,6 +126,7 @@ namespace ChimeraTK {
        *  VariableNetwork of the given accessor will be fed with a new value, feeding of this network will be
        *  triggered as well. */
       void addTrigger(AccessorBase &trigger);
+      void addTrigger(VariableNetwork &trigger);
 
       /** Check if the network is legally configured */
       void check();

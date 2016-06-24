@@ -101,6 +101,28 @@ void Application::connectAccessors(AccessorBase &a, AccessorBase &b) {
 
 /*********************************************************************************************************************/
 
+void Application::connect(VariableNetworkNode &a, VariableNetworkNode &b) {
+  // if both nodes already have an owner, we are done
+  if(a.hasOwner() && b.hasOwner()) {
+    assert( &(a.getOwner()) == &(b.getOwner()) );   /// @todo TODO merge networks?
+    return;
+  }
+  else if(a.hasOwner()) {
+    a.getOwner().addNode(b);
+  }
+  else if(b.hasOwner()) {
+    b.getOwner().addNode(a);
+  }
+  else {
+    networkList.emplace_back();
+    networkList.back().addNode(a);
+    networkList.back().addNode(b);
+  }
+}
+
+
+/*********************************************************************************************************************/
+
 template<typename UserType>
 boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(const std::string &deviceAlias,
     const std::string &registerName, VariableDirection direction, UpdateMode mode) {

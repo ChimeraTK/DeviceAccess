@@ -100,6 +100,9 @@ namespace ChimeraTK {
       /** Register a connection between two Accessors */
       void connectAccessors(AccessorBase &a, AccessorBase &b);
 
+      /** Register a connection between two VariableNetworkNode */
+      void connect(VariableNetworkNode &a, VariableNetworkNode &b);
+
       /** Register a connection between a device read-only register and the control system adapter */
       template<typename UserType>
       void feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,

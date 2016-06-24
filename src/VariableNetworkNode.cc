@@ -19,31 +19,40 @@ namespace ChimeraTK {
   VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
   : type(NodeType::Application),
     mode(accessor.getUpdateMode()),
-    appNode(&accessor)
+    appNode(&accessor),
+    direction(accessor.getDirection()),
+    valueType(&(accessor.getValueType())),
+    unit(accessor.getUnit())
   {}
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod)
+  VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod,
+      VariableDirection dir, const std::type_info &valTyp)
   : type(NodeType::Device),
     mode(mod),
     deviceAlias(devAlias),
-    registerName(regName)
+    registerName(regName),
+    direction(dir),
+    valueType(&valTyp)
   {}
+
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(std::string pubName)
+  VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir)
   : type(NodeType::ControlSystem),
     mode(UpdateMode::push),
-    publicName(pubName)
+    publicName(pubName),
+    direction(dir)
   {}
 
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(VariableNetwork *networkToTrigger)
   : type(NodeType::TriggerReceiver),
-    triggerReceiver(networkToTrigger)
+    triggerReceiver(networkToTrigger),
+    direction(VariableDirection::consuming)
   {}
 
   /*********************************************************************************************************************/
@@ -69,8 +78,10 @@ namespace ChimeraTK {
     if(type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
     if(type == NodeType::invalid) std::cout << " type = **invalid**";
 
-    if(mode == UpdateMode::push) std::cout << " pushing" << std::endl;
-    if(mode == UpdateMode::poll) std::cout << " polling" << std::endl;
+    if(mode == UpdateMode::push) std::cout << " pushing";
+    if(mode == UpdateMode::poll) std::cout << " polling";
+
+    std::cout << std::endl;
 }
 
   /*********************************************************************************************************************/

@@ -30,10 +30,11 @@ namespace ChimeraTK {
       VariableNetworkNode(AccessorBase &accessor);
 
       /** Constructor for a Device node */
-      VariableNetworkNode(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
+      VariableNetworkNode(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
+          VariableDirection direction, const std::type_info &valTyp=typeid(AnyType));
 
       /** Constructor for a ControlSystem node */
-      VariableNetworkNode(std::string publicName);
+      VariableNetworkNode(std::string publicName, VariableDirection direction);
 
       /** Constructor for a TriggerReceiver node triggering the data transfer of another network */
       VariableNetworkNode(VariableNetwork *networkToTrigger);
@@ -60,15 +61,24 @@ namespace ChimeraTK {
        *  properties of this variable. */
       void createXML(xmlpp::Element *rootElement) const;
 
+      /** Check if the node already has an owner */
+      bool hasOwner() const { return network != nullptr; }
+
       /** Getter for the properties */
       NodeType getType() const { return type; }
       UpdateMode getMode() const { return mode; }
+      VariableDirection getDirection() const { return direction; }
+      const std::type_info& getValueType() const { return *valueType; }
+      const std::string& getUnit() const { return unit; }
       VariableNetwork& getOwner() const { assert(network != nullptr); return *network; }
       AccessorBase& getAppAccessor() const { assert(appNode != nullptr); return *appNode; }
       VariableNetwork& getTriggerReceiver() const { assert(triggerReceiver != nullptr); return *triggerReceiver; }
       const std::string& getPublicName() const { assert(type == NodeType::ControlSystem); return publicName; }
       const std::string& getDeviceAlias() const { assert(type == NodeType::Device); return deviceAlias; }
       const std::string& getRegisterName() const { assert(type == NodeType::Device); return registerName; }
+
+      /** Pseudo type to identify nodes which can have arbitrary types */
+      class AnyType {};
 
     private:
 
@@ -77,6 +87,16 @@ namespace ChimeraTK {
 
       /** Update mode: poll or push */
       UpdateMode mode{UpdateMode::invalid};
+
+      /** Node direction: feeding or consuming */
+      VariableDirection direction{VariableDirection::invalid};
+
+      /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
+       *  the connections. */
+      const std::type_info* valueType{&typeid(AnyType)};
+
+      /** Engineering unit. If "arbitrary", no unit has been defined (and any unit is allowed). */
+      std::string unit{"arbitrary"};
 
       /** The network this node belongs to */
       VariableNetwork *network{nullptr};
