@@ -19,6 +19,7 @@
 #include "Accessor.h"
 #include "DeviceAccessor.h"
 #include "FanOut.h"
+#include "VariableNetworkNode.h"
 
 using namespace ChimeraTK;
 
@@ -101,11 +102,10 @@ void Application::connectAccessors(AccessorBase &a, AccessorBase &b) {
 
 /*********************************************************************************************************************/
 
-void Application::connect(VariableNetworkNode &a, VariableNetworkNode &b) {
+VariableNetwork& Application::connect(VariableNetworkNode &a, VariableNetworkNode &b) {
   // if both nodes already have an owner, we are done
   if(a.hasOwner() && b.hasOwner()) {
     assert( &(a.getOwner()) == &(b.getOwner()) );   /// @todo TODO merge networks?
-    return;
   }
   else if(a.hasOwner()) {
     a.getOwner().addNode(b);
@@ -118,8 +118,52 @@ void Application::connect(VariableNetworkNode &a, VariableNetworkNode &b) {
     networkList.back().addNode(a);
     networkList.back().addNode(b);
   }
+  return a.getOwner();
 }
 
+/*********************************************************************************************************************/
+
+VariableNetworkNode& Application::feedByDevice(const std::string &deviceAlias, const std::string &registerName,
+    UpdateMode mode, const std::type_info &valTyp) {
+  nodeList.emplace_back(deviceAlias, registerName, mode, VariableDirection::feeding, valTyp);
+  return nodeList.back();
+}
+
+/*********************************************************************************************************************/
+
+template<typename UserType>
+VariableNetworkNode& Application::feedByDevice(const std::string &deviceAlias, const std::string &registerName,
+    UpdateMode mode) {
+  return feedByDevice(deviceAlias, registerName, mode, typeid(UserType));
+}
+
+/*********************************************************************************************************************/
+
+VariableNetworkNode& Application::consumeByControlSystem(const std::string &publicName, const std::type_info &valTyp) {
+  nodeList.emplace_back(publicName, VariableDirection::consuming, valTyp);
+  return nodeList.back();
+}
+
+/*********************************************************************************************************************/
+
+template<typename UserType>
+VariableNetworkNode& Application::consumeByControlSystem(const std::string &publicName) {
+  return consumeByControlSystem(publicName, typeid(UserType));
+}
+
+/*********************************************************************************************************************/
+
+VariableNetworkNode& Application::feedByControlSystem(const std::string &publicName, const std::type_info &valTyp) {
+  nodeList.emplace_back(publicName, VariableDirection::feeding, valTyp);
+  return nodeList.back();
+}
+
+/*********************************************************************************************************************/
+
+template<typename UserType>
+VariableNetworkNode& Application::feedByControlSystem(const std::string &publicName) {
+  return feedByControlSystem(publicName, typeid(UserType));
+}
 
 /*********************************************************************************************************************/
 
@@ -498,15 +542,15 @@ VariableNetwork& Application::findNetwork(AccessorBase *a) {
 template<typename UserType>
 void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
     const std::string& publicName, AccessorBase &trigger) {
-  networkList.emplace_back();
-  VariableNetwork& network = networkList.back();
+
   UpdateMode mode = UpdateMode::push;
-  if(dynamic_cast<InvalidAccessor*>(&trigger) == nullptr) {
-    mode = UpdateMode::poll;
-    network.addTrigger(trigger);
-  }
-  network.addFeedingDeviceRegister(typeid(UserType), "arbitrary", deviceAlias, registerName, mode);
-  network.addConsumingPublication(publicName);
+  if(dynamic_cast<InvalidAccessor*>(&trigger) == nullptr) mode = UpdateMode::poll;
+
+  //VariableNetworkNode n1{deviceAlias,registerName, mode, VariableDirection::feeding, typeid(UserType)};
+  auto &net = connect(feedByDevice<UserType>(deviceAlias,registerName, mode),
+                      consumeByControlSystem<UserType>(publicName));
+
+  if(dynamic_cast<InvalidAccessor*>(&trigger) == nullptr) net.addTrigger(findNetwork(&trigger));
 }
 
 template void Application::feedDeviceRegisterToControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);

@@ -94,7 +94,9 @@ namespace ChimeraTK {
       return;
     }
 
-    // create Node structure
+    // change owner of the node: erase from Application's unconnectedNodeList and set this as owner
+    //auto &list = Application::getInstance().nodeList;
+    //list.erase(std::find(list.begin(), list.end(), a));
     a.setOwner(this);
 
     // if node is feeding, save as feeder for this network

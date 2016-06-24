@@ -21,6 +21,9 @@ namespace ChimeraTK {
   class VariableNetwork;
   class AccessorBase;
 
+  /** Pseudo type to identify nodes which can have arbitrary types */
+  class AnyType {};
+
   /** Class describing a node of a variable network */
   class VariableNetworkNode {
 
@@ -34,7 +37,8 @@ namespace ChimeraTK {
           VariableDirection direction, const std::type_info &valTyp=typeid(AnyType));
 
       /** Constructor for a ControlSystem node */
-      VariableNetworkNode(std::string publicName, VariableDirection direction);
+      VariableNetworkNode(std::string publicName, VariableDirection direction,
+          const std::type_info &valTyp=typeid(AnyType));
 
       /** Constructor for a TriggerReceiver node triggering the data transfer of another network */
       VariableNetworkNode(VariableNetwork *networkToTrigger);
@@ -76,9 +80,6 @@ namespace ChimeraTK {
       const std::string& getPublicName() const { assert(type == NodeType::ControlSystem); return publicName; }
       const std::string& getDeviceAlias() const { assert(type == NodeType::Device); return deviceAlias; }
       const std::string& getRegisterName() const { assert(type == NodeType::Device); return registerName; }
-
-      /** Pseudo type to identify nodes which can have arbitrary types */
-      class AnyType {};
 
     private:
 

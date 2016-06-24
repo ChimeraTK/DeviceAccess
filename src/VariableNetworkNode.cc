@@ -19,10 +19,10 @@ namespace ChimeraTK {
   VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
   : type(NodeType::Application),
     mode(accessor.getUpdateMode()),
-    appNode(&accessor),
     direction(accessor.getDirection()),
     valueType(&(accessor.getValueType())),
-    unit(accessor.getUnit())
+    unit(accessor.getUnit()),
+    appNode(&accessor)
   {}
 
   /*********************************************************************************************************************/
@@ -31,28 +31,29 @@ namespace ChimeraTK {
       VariableDirection dir, const std::type_info &valTyp)
   : type(NodeType::Device),
     mode(mod),
-    deviceAlias(devAlias),
-    registerName(regName),
     direction(dir),
-    valueType(&valTyp)
+    valueType(&valTyp),
+    deviceAlias(devAlias),
+    registerName(regName)
   {}
 
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir)
+  VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir, const std::type_info &valTyp)
   : type(NodeType::ControlSystem),
     mode(UpdateMode::push),
-    publicName(pubName),
-    direction(dir)
+    direction(dir),
+    valueType(&valTyp),
+    publicName(pubName)
   {}
 
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(VariableNetwork *networkToTrigger)
   : type(NodeType::TriggerReceiver),
-    triggerReceiver(networkToTrigger),
-    direction(VariableDirection::consuming)
+    direction(VariableDirection::consuming),
+    triggerReceiver(networkToTrigger)
   {}
 
   /*********************************************************************************************************************/
