@@ -99,31 +99,22 @@ class MyApp : public ctk::Application {
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-      automation.operatorSetpoint << CtrlVar("MyLocation/setpoint");
+      automation.operatorSetpoint << ctrlVar("MyLocation/setpoint");
+      automation.loopSetpoint >> controlLoop.setpoint
+                              >> ctrlVar("MyLocation/setpoint_automation");
 
-      //automation.operatorSetpoint.consumeFromControlSystem("MyLocation/setpoint");
-      //connect(automation.operatorSetpoint, feedByControlSystem("MyLocation/setpoint"));
-      automation.loopSetpoint.connectTo(controlLoop.setpoint);
-      automation.loopSetpoint.feedToControlSystem("MyLocation/setpoint_automation");
+      controlLoop.actuator >> devReg("Dummy0","/MyModule/Variable")
+                           >> ctrlVar("MyLocation/actuatorLoop");
 
-      controlLoop.actuator.feedToDevice("Dummy0","/MyModule/Variable");
-      controlLoop.actuator.feedToControlSystem("MyLocation/actuatorLoop");
-
-      simulator.actuator.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-      simulator.actuator.addTrigger(controlLoop.actuator);
-      simulator.actuator.feedToControlSystem("MyLocation/actuatorSimulator");
+      simulator.actuator [ controlLoop.actuator ] << devReg("Dummy0","/MyModule/Variable")
+                                                  >> ctrlVar("MyLocation/actuatorSimulator");
 
       // this will create an independent variable network, thus also another accessor to the device
-      feedDeviceRegisterToControlSystem<double>("Dummy0","/MyModule/Variable", "MyLocation/actuatorSimulator_direct", controlLoop.actuator);
+      //devReg<double>("Dummy0","/MyModule/Variable") [ controlLoop.actuator ] >> ctrlVar("MyLocation/actuatorSimulator_direct");
 
-      // this is the same as above
-      connect(feedingDevReg<double>("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll),
-              consumingCtrlVar("MyLocation/actuatorSimulator_direct2")
-             ).addTrigger(findNetwork(&controlLoop.actuator));
-
-      simulator.readback.connectTo(controlLoop.readback);
-      simulator.readback.feedToControlSystem("MyLocation/readback");
-      simulator.readback.feedToControlSystem("MyLocation/readback_another_time");
+      simulator.readback >> controlLoop.readback
+                         >> ctrlVar("MyLocation/readback")
+                         >> ctrlVar("MyLocation/readback_another_time");
 
       dumpConnections();
     }

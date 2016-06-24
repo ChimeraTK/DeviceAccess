@@ -41,9 +41,6 @@ namespace ChimeraTK {
           none              ///< no trigger has yet been selected
       };
 
-      /** Add an application-side node (i.e. an Accessor) to the network. */
-      void addAppNode(AccessorBase &a);
-
       /** Add an node to the network. */
       void addNode(VariableNetworkNode &a);
 
@@ -92,19 +89,18 @@ namespace ChimeraTK {
       }
 
       /** Return the feeding node */
-      VariableNetworkNode getFeedingNode() const { return feeder; }
+      VariableNetworkNode getFeedingNode() const;
 
       /** Return list of consuming nodes */
-      const std::list<VariableNetworkNode>& getConsumingNodes() const { return consumerList; }
+      std::list<VariableNetworkNode> getConsumingNodes() const;
 
       /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
       void dump(const std::string& linePrefix="") const;
 
       /** Compare two networks */
       bool operator==(const VariableNetwork &other) const {
-        if(other.feeder != feeder) return false;
         if(other.valueType != valueType) return false;
-        if(other.consumerList != consumerList) return false;
+        if(other.nodeList != nodeList) return false;
         return true;
       }
       bool operator!=(const VariableNetwork &other) const {
@@ -125,8 +121,8 @@ namespace ChimeraTK {
       /** Add an accessor belonging to another network as an external trigger to this network. Whenever the
        *  VariableNetwork of the given accessor will be fed with a new value, feeding of this network will be
        *  triggered as well. */
-      void addTrigger(AccessorBase &trigger);
       void addTrigger(VariableNetwork &trigger);
+      void addTrigger(VariableNetworkNode trigger);
 
       /** Check if the network is legally configured */
       void check();
@@ -149,15 +145,12 @@ namespace ChimeraTK {
 
     protected:
 
-      /** Feeding node (i.e. the node providing values to the network) */
-      VariableNetworkNode feeder;
-
-      /** List of consuming nodes (i.e. the nodes receiving values from the network) */
-      std::list<VariableNetworkNode> consumerList;
+      /** List of nodes in the network */
+      std::list<VariableNetworkNode> nodeList;
 
       /** The network value type id. Since in C++, std::type_info is non-copyable and typeid() returns a reference to
        *  an object with static storage duration, we have to (and can safely) store a pointer here. */
-      const std::type_info* valueType{&typeid(void)};
+      const std::type_info* valueType{&typeid(AnyType)};
 
       /** Engineering unit */
       std::string engineeringUnit;

@@ -74,6 +74,9 @@ namespace ChimeraTK {
       VariableNetworkNode& operator<<(const VariableNetworkNode &other);
       VariableNetworkNode& operator>>(const VariableNetworkNode &other);
 
+      /** Add a trigger */
+      VariableNetworkNode& operator[](const VariableNetworkNode &trigger);
+
       /** Print node information to std::cout */
       void dump() const;
 
@@ -102,6 +105,13 @@ namespace ChimeraTK {
     protected:
 
       struct data {
+
+        data() {}
+
+        /** prevent copies of the data container */
+        data(data const &) = delete;
+        data(data const &&) = delete;
+        data& operator=(data const &) = delete;
 
         /** Type of the node (Application, Device, ControlSystem, Trigger) */
         NodeType type{NodeType::invalid};

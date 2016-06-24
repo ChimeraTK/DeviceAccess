@@ -131,6 +131,14 @@ namespace ChimeraTK {
         return node.operator>>(other);
       }
 
+      /** Add a trigger */
+      VariableNetworkNode& operator[](const VariableNetworkNode &trigger) {
+        VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
+        network.addNode(node);
+        network.addTrigger(trigger);
+        return node;
+      }
+
     protected:
 
       ApplicationModule *_owner;
@@ -149,7 +157,7 @@ namespace ChimeraTK {
   template< typename UserType >
   template< typename UserType_o >
   void Accessor<UserType>::connectTo(Accessor<UserType_o> &targetAccessor) {
-    Application::getInstance().connectAccessors(*this, targetAccessor);
+    Application::getInstance().connect(*this, targetAccessor);
   }
 
   /*********************************************************************************************************************/
@@ -157,7 +165,7 @@ namespace ChimeraTK {
   template< typename UserType >
   void Accessor<UserType>::feedToControlSystem(const std::string& name) {
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addAppNode(*this);
+    network.addNode(*this);
     network.addConsumingPublication(name);
   }
 
@@ -166,7 +174,7 @@ namespace ChimeraTK {
   template< typename UserType >
   void Accessor<UserType>::consumeFromControlSystem(const std::string& name) {
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addAppNode(*this);
+    network.addNode(*this);
     network.addFeedingPublication(*this,name);
   }
 
@@ -183,7 +191,7 @@ namespace ChimeraTK {
   void Accessor<UserType>::consumeFromDevice(const std::string &deviceAlias, const std::string &registerName,
       UpdateMode mode) {
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addAppNode(*this);
+    network.addNode(*this);
     network.addFeedingDeviceRegister(*this, deviceAlias, registerName, mode);
   }
 
@@ -192,7 +200,7 @@ namespace ChimeraTK {
   template< typename UserType >
   void Accessor<UserType>::feedToDevice(const std::string &deviceAlias, const std::string &registerName) {
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addAppNode(*this);
+    network.addNode(*this);
     network.addConsumingDeviceRegister(deviceAlias, registerName);
   }
 
@@ -201,7 +209,7 @@ namespace ChimeraTK {
   template< typename UserType >
   void Accessor<UserType>::addTrigger(AccessorBase &trigger) {
     VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addAppNode(*this);
+    network.addNode(*this);
     network.addTrigger(trigger);
   }
 

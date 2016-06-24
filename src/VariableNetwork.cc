@@ -16,12 +16,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetwork::hasAppNode(AccessorBase *a, AccessorBase *b) const {
-    if(feeder.getType() == NodeType::Application) {
-      if(a == &(feeder.getAppAccessor()) || (b != nullptr && b == &(feeder.getAppAccessor())) ) return true;
-    }
-
-    // search for a and b in the inputAccessorList
-    size_t c = count_if( consumerList.begin(), consumerList.end(),
+    // search for a and b in the nodeList
+    size_t c = std::count_if( nodeList.begin(), nodeList.end(),
         [a,b](const VariableNetworkNode n) {
           if(n.getType() != NodeType::Application) return false;
           return a == &(n.getAppAccessor()) || ( b != nullptr && b == &(n.getAppAccessor()) );
@@ -34,56 +30,27 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetwork::hasFeedingNode() const {
-    if(feeder.getType() == NodeType::invalid) return false;
-    return true;
+    auto n = std::count_if( nodeList.begin(), nodeList.end(),
+        [](const VariableNetworkNode n) {
+          return n.getDirection() == VariableDirection::feeding;
+        } );
+    assert(n < 2);
+    return n == 1;
   }
 
   /*********************************************************************************************************************/
 
   size_t VariableNetwork::countConsumingNodes() const {
-    return consumerList.size();
+    return nodeList.size() - (hasFeedingNode() ? 1 : 0);
   }
 
   /*********************************************************************************************************************/
 
   size_t VariableNetwork::countFixedImplementations() const {
-    size_t count = 0;
-    if(feeder.hasImplementation()) count++;
-    count += count_if( consumerList.begin(), consumerList.end(),
+    return count_if( nodeList.begin(), nodeList.end(),
         [](const VariableNetworkNode n) {
           return n.hasImplementation();
         } );
-    return count;
-  }
-
-  /*********************************************************************************************************************/
-
-  void VariableNetwork::addAppNode(AccessorBase &a) {
-    if(hasAppNode(&a)) return;  // already in the network
-
-    // create Node structure
-    VariableNetworkNode node(a);
-    node.setOwner(this);
-
-    // if node is feeding, save as feeder for this network
-    if(a.isFeeding()) {
-      // make sure we only have one feeding node per network
-      if(hasFeedingNode()) {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-            "Trying to add a feeding accessor to a network already having a feeding accessor.");
-      }
-      // update value type
-      valueType = &(a.getValueType());
-      // update engineering unit
-      engineeringUnit = a.getUnit();
-      // update feeder
-      feeder = node;
-    }
-    // not is not feeding, add it to list of consumers
-    else {
-      // add node to consumer list
-      consumerList.push_back(node);
-    }
   }
 
   /*********************************************************************************************************************/
@@ -95,8 +62,6 @@ namespace ChimeraTK {
     }
 
     // change owner of the node: erase from Application's unconnectedNodeList and set this as owner
-    //auto &list = Application::getInstance().nodeList;
-    //list.erase(std::find(list.begin(), list.end(), a));
     a.setOwner(this);
 
     // if node is feeding, save as feeder for this network
@@ -107,17 +72,12 @@ namespace ChimeraTK {
             "Trying to add a feeding accessor to a network already having a feeding accessor.");
       }
       // update value type
-      valueType = &(a.getValueType());
+      if(a.getValueType() != typeid(AnyType)) valueType = &(a.getValueType());
       // update engineering unit
-      engineeringUnit = a.getUnit();
-      // update feeder
-      feeder = a;
+      if(a.getUnit() != "arbitrary") engineeringUnit = a.getUnit();
     }
-    // not is not feeding, add it to list of consumers
-    else {
-      // add node to consumer list
-      consumerList.push_back(a);
-    }
+    // add node to node list
+    nodeList.push_back(a);
   }
 
   /*********************************************************************************************************************/
@@ -125,7 +85,7 @@ namespace ChimeraTK {
   void VariableNetwork::addConsumingPublication(const std::string& name) {
     VariableNetworkNode node(name, VariableDirection::consuming);
     node.setOwner(this);
-    consumerList.push_back(node);
+    nodeList.push_back(node);
   }
 
   /*********************************************************************************************************************/
@@ -141,8 +101,9 @@ namespace ChimeraTK {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "Trying to add control-system-to-device publication to a network already having a feeding accessor.");
     }
-    feeder = VariableNetworkNode(name, VariableDirection::feeding);
+    auto feeder = VariableNetworkNode(name, VariableDirection::feeding);
     feeder.setOwner(this);
+    nodeList.push_back(feeder);
     valueType = &typeInfo;
     engineeringUnit = unit;
   }
@@ -152,7 +113,7 @@ namespace ChimeraTK {
   void VariableNetwork::addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName) {
     VariableNetworkNode node(deviceAlias, registerName, UpdateMode::push, VariableDirection::consuming);
     node.setOwner(this);
-    consumerList.push_back(node);
+    nodeList.push_back(node);
   }
 
   /*********************************************************************************************************************/
@@ -170,8 +131,9 @@ namespace ChimeraTK {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "Trying to add a feeding device register to a network already having a feeding accessor.");
     }
-    feeder = VariableNetworkNode(deviceAlias, registerName, mode, VariableDirection::feeding);
+    auto feeder = VariableNetworkNode(deviceAlias, registerName, mode, VariableDirection::feeding);
     feeder.setOwner(this);
+    nodeList.push_back(feeder);
     valueType = &typeInfo;
     engineeringUnit = unit;
   }
@@ -193,10 +155,11 @@ namespace ChimeraTK {
       std::cout << "**error**" << std::endl;
     }
     std::cout << linePrefix << "  feeder";
-    feeder.dump();
-    std::cout << linePrefix << "  consumers: " << consumerList.size() << std::endl;
+    getFeedingNode().dump();
+    std::cout << linePrefix << "  consumers: " << countConsumingNodes() << std::endl;
     size_t count = 0;
-    for(auto &consumer : consumerList) {
+    for(auto &consumer : nodeList) {
+      if(consumer.getDirection() != VariableDirection::consuming) continue;
       std::cout << linePrefix << "    # " << ++count << ":";
       consumer.dump();
     }
@@ -213,25 +176,7 @@ namespace ChimeraTK {
   void VariableNetwork::addTriggerReceiver(VariableNetwork *network) {
     VariableNetworkNode node(network);
     node.setOwner(this);
-    consumerList.push_back(node);
-  }
-
-  /*********************************************************************************************************************/
-
-  void VariableNetwork::addTrigger(AccessorBase &trigger) {
-
-    if(hasExternalTrigger) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Only one external trigger per variable network is allowed.");
-    }
-
-    // find the network the triggering accessor is connected to
-    VariableNetwork &otherNetwork = Application::getInstance().findOrCreateNetwork(&trigger);
-    otherNetwork.addAppNode(trigger);
-
-    // add the found network as trigger
-    addTrigger(otherNetwork);
-
+    nodeList.push_back(node);
   }
 
   /*********************************************************************************************************************/
@@ -254,7 +199,25 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void VariableNetwork::addTrigger(VariableNetworkNode trigger) {
+
+    if(hasExternalTrigger) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Only one external trigger per variable network is allowed.");
+    }
+
+    // add ourselves as a trigger receiver to the other network
+    trigger.getOwner().addTriggerReceiver(this);
+
+    // set flag and store pointer to other network
+    hasExternalTrigger = true;
+    externalTrigger = &trigger.getOwner();
+
+  }
+  /*********************************************************************************************************************/
+
   VariableNetwork::TriggerType VariableNetwork::getTriggerType() const {
+    const auto &feeder = getFeedingNode();
     // network has an external trigger
     if(hasExternalTrigger) {
       if(feeder.getMode() == UpdateMode::push) {
@@ -268,8 +231,10 @@ namespace ChimeraTK {
       return TriggerType::feeder;
     }
     // network is fed by a poll-type node: must have exactly one polling consumer
-    size_t nPollingConsumers = count_if( consumerList.begin(), consumerList.end(),
-        [](const VariableNetworkNode n) { return n.getMode() == UpdateMode::poll; } );
+    size_t nPollingConsumers = count_if( nodeList.begin(), nodeList.end(),
+        [](const VariableNetworkNode n) {
+          return n.getDirection() == VariableDirection::consuming && n.getMode() == UpdateMode::poll;
+        } );
     if(nPollingConsumers != 1) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer.");
@@ -300,21 +265,16 @@ namespace ChimeraTK {
           "No data type specified for any of the nodes in this network!");
     }
 
-    // the feeder must have a value type equal to the network's value type
-    if(feeder.getValueType() == typeid(AnyType)) feeder.setValueType(*valueType);
-    assert(feeder.getValueType() == *valueType);
-
     // all nodes must have this network as the owner and a value type equal the network's value type
-    assert(&(feeder.getOwner()) == this);
-    for(auto &consumer : consumerList) {
-      assert(&(consumer.getOwner()) == this);
-      if(consumer.getValueType() == typeid(AnyType)) consumer.setValueType(*valueType);
-      assert(consumer.getValueType() == *valueType);
+    for(auto &node : nodeList) {
+      assert(&(node.getOwner()) == this);
+      if(node.getValueType() == typeid(AnyType)) node.setValueType(*valueType);
+      assert(node.getValueType() == *valueType);
     }
 
     // if the feeder is an application node, it must be in push mode
-    if(feeder.getType() == NodeType::Application) {
-      assert(feeder.getMode() == UpdateMode::push);
+    if(getFeedingNode().getType() == NodeType::Application) {
+      assert(getFeedingNode().getMode() == UpdateMode::push);
     }
 
     // check if trigger is correctly defined (the return type doesn't matter, only the checks done in the function are needed)
@@ -329,6 +289,25 @@ namespace ChimeraTK {
           "VariableNetwork::getExternalTrigger() may only be called if the trigger type is external.");
     }
     return *externalTrigger;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode VariableNetwork::getFeedingNode() const {
+    auto iter = std::find_if( nodeList.begin(), nodeList.end(),
+        [](const VariableNetworkNode n) {
+          return n.getDirection() == VariableDirection::feeding;
+        } );
+    assert(iter != nodeList.end());
+    return *iter;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<VariableNetworkNode> VariableNetwork::getConsumingNodes() const{
+    std::list<VariableNetworkNode> consumers;
+    for(auto &n : nodeList) if(n.getDirection() == VariableDirection::feeding) consumers.push_back(n);
+    return consumers;
   }
 
 }

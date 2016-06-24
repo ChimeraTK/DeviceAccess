@@ -192,15 +192,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode& VariableNetworkNode::operator<<(const VariableNetworkNode &other) {
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::consuming;
-    if(pdata->direction != VariableDirection::consuming) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Trying to feed something into a feeding node.");
-    }
     if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::feeding;
-    if(other.pdata->direction != VariableDirection::feeding) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Trying to feed a non-feeding node into another node.");
-    }
     Application::getInstance().connect(*this, other);
     return *this;
   }
@@ -209,16 +201,19 @@ namespace ChimeraTK {
 
   VariableNetworkNode& VariableNetworkNode::operator>>(const VariableNetworkNode &other) {
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
-    if(pdata->direction != VariableDirection::feeding) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Trying to feed a non-feeding node into another node.");
-    }
     if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::consuming;
-    if(other.pdata->direction != VariableDirection::consuming) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Trying to feed something into a feeding node.");
-    }
     Application::getInstance().connect(*this, other);
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode& VariableNetworkNode::operator[](const VariableNetworkNode &trigger) {
+    // if this node is not yet part of a network, we have to add ourselves to a new network
+    if(pdata->network == nullptr) {
+      pdata->network = &Application::getInstance().createNetwork();
+    }
+    pdata->network->addTrigger(trigger);
     return *this;
   }
 

@@ -99,21 +99,22 @@ namespace ChimeraTK {
       void typedMakeConnection(VariableNetwork &network);
 
       /** Register a connection between two Accessors */
-      void connectAccessors(AccessorBase &a, AccessorBase &b);
+      //void connectAccessors(AccessorBase &a, AccessorBase &b);
 
       /** Register a connection between two VariableNetworkNode */
       VariableNetwork& connect(VariableNetworkNode a, VariableNetworkNode b);
 
       /** Return a VariableNetworkNode for a device register with a not yet defined direction */
       template<typename UserType>
-      VariableNetworkNode DevReg(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-      VariableNetworkNode DevReg(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
-          const std::type_info &valTyp=typeid(AnyType));
+      VariableNetworkNode devReg(const std::string &deviceAlias, const std::string &registerName,
+          UpdateMode mode=UpdateMode::poll);
+      VariableNetworkNode devReg(const std::string &deviceAlias, const std::string &registerName,
+          UpdateMode mode=UpdateMode::poll, const std::type_info &valTyp=typeid(AnyType));
 
       /** Return a VariableNetworkNode for a control system variable with a not yet defined direction */
       template<typename UserType>
-      VariableNetworkNode CtrlVar(const std::string &publicName);
-      VariableNetworkNode CtrlVar(const std::string &publicName, const std::type_info &valTyp=typeid(AnyType));
+      VariableNetworkNode ctrlVar(const std::string &publicName);
+      VariableNetworkNode ctrlVar(const std::string &publicName, const std::type_info &valTyp=typeid(AnyType));
 
       /** Return a VariableNetworkNode for a feeding device register (i.e. a register that will be read by the application) */
       template<typename UserType>
@@ -183,6 +184,9 @@ namespace ChimeraTK {
       /** Find the network containing one of the given registers. If no network has been found, invalidNetwork
        *  is returned. */
       VariableNetwork& findNetwork(AccessorBase *a);
+
+      /** Create a new, empty network */
+      VariableNetwork& createNetwork();
 
       /** Instance of VariableNetwork to indicate an invalid network */
       VariableNetwork invalidNetwork;
