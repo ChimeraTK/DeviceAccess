@@ -306,7 +306,7 @@ namespace ChimeraTK {
 
   std::list<VariableNetworkNode> VariableNetwork::getConsumingNodes() const{
     std::list<VariableNetworkNode> consumers;
-    for(auto &n : nodeList) if(n.getDirection() == VariableDirection::feeding) consumers.push_back(n);
+    for(auto &n : nodeList) if(n.getDirection() == VariableDirection::consuming) consumers.push_back(n);
     return consumers;
   }
 
