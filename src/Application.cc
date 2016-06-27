@@ -177,14 +177,14 @@ template VariableNetworkNode Application::ctrlVar<double>(const std::string &pub
 /*********************************************************************************************************************/
 
 VariableNetworkNode Application::ctrlVar(const std::string &publicName, const std::type_info &valTyp) {
-  return{publicName, VariableDirection::invalid, valTyp};
+  return {publicName, VariableDirection::invalid, valTyp};
 }
 
 /*********************************************************************************************************************/
 
 VariableNetworkNode Application::feedingDevReg(const std::string &deviceAlias, const std::string &registerName,
     UpdateMode mode, const std::type_info &valTyp) {
-  return{deviceAlias, registerName, mode, VariableDirection::feeding, valTyp};
+  return {deviceAlias, registerName, mode, VariableDirection::feeding, valTyp};
 }
 
 /*********************************************************************************************************************/
@@ -198,7 +198,7 @@ VariableNetworkNode Application::feedingDevReg(const std::string &deviceAlias, c
 /*********************************************************************************************************************/
 
 VariableNetworkNode Application::consumingCtrlVar(const std::string &publicName, const std::type_info &valTyp) {
-  return{publicName, VariableDirection::consuming, valTyp};
+  return {publicName, VariableDirection::consuming, valTyp};
 }
 
 /*********************************************************************************************************************/
@@ -288,9 +288,11 @@ void Application::makeConnections() {
 /*********************************************************************************************************************/
 
 void Application::dumpConnections() {
+  std::cout << "==== List of all variable connections of the current Application ====" << std::endl;
   for(auto &network : networkList) {
     network.dump();
   }
+  std::cout << "=====================================================================" << std::endl;
 }
 
 /*********************************************************************************************************************/
