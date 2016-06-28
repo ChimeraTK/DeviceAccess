@@ -8,14 +8,13 @@
 #ifndef CHIMERATK_APPLICATION_MODULE_H
 #define CHIMERATK_APPLICATION_MODULE_H
 
+#include "Module.h"
+
 namespace ChimeraTK {
 
-  class ApplicationModule {
+  class ApplicationModule : public Module {
 
     public:
-
-      /** Constructor: register the module with the Application */
-      ApplicationModule();
 
       /** Destructor */
       virtual ~ApplicationModule() {}

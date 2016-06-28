@@ -48,14 +48,24 @@ Application::~Application() {
 /*********************************************************************************************************************/
 
 void Application::run() {
+
   // call the user-defined initialise() function which describes the structure of the application
   initialise();
+
+  // check if the application name has been set
+  if(applicationName == "") {
+    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+        "Error: An instance of Application must have its applicationName set.");
+  }
+
   // realise the connections between variable accessors as described in the initialise() function
   makeConnections();
+
   // start the necessary threads for the FanOuts etc.
   for(auto &adapter : adapterList) {
     adapter->activate();
   }
+
   // start the threads for the modules
   for(auto module : moduleList) {
     module->run();
@@ -66,6 +76,12 @@ void Application::run() {
 
 void Application::generateXML() {
   initialise();
+
+  // check if the application name has been set
+  if(applicationName == "") {
+    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+        "Error: An instance of Application must have its applicationName set.");
+  }
 
   // create XML document with root node
   xmlpp::Document doc;

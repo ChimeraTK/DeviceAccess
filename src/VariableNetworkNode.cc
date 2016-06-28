@@ -103,6 +103,8 @@ namespace ChimeraTK {
     if(pdata->mode == UpdateMode::push) std::cout << " pushing";
     if(pdata->mode == UpdateMode::poll) std::cout << " polling";
 
+    std::cout << " data type: " << pdata->valueType->name();
+
     std::cout << std::endl;
 }
 
@@ -209,9 +211,11 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode& VariableNetworkNode::operator[](const VariableNetworkNode &trigger) {
+    if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
+    assert(pdata->direction == VariableDirection::feeding);
     // if this node is not yet part of a network, we have to add ourselves to a new network
     if(pdata->network == nullptr) {
-      pdata->network = &Application::getInstance().createNetwork();
+      Application::getInstance().createNetwork().addNode(*this);
     }
     pdata->network->addTrigger(trigger);
     return *this;

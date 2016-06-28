@@ -47,7 +47,8 @@ class TestModule : public ctk::ApplicationModule {
 
 class TestApplication : public ctk::Application {
   public:
-    using Application::Application;
+    TestApplication() : Application("test suite") {}
+
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void initialise() {}                    // the setup is done in the tests
 };
@@ -57,7 +58,7 @@ class TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   auto pvManagers = mtca4u::createPVManager();
@@ -90,7 +91,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   auto pvManagers = mtca4u::createPVManager();
@@ -119,7 +120,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   auto pvManagers = mtca4u::createPVManager();
@@ -204,7 +205,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   auto pvManagers = mtca4u::createPVManager();

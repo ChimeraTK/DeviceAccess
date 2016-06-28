@@ -71,10 +71,14 @@ namespace ChimeraTK {
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
             "Trying to add a feeding accessor to a network already having a feeding accessor.");
       }
-      // update value type
+      // force value type and engineering unit of the network if set in this feeding node
       if(a.getValueType() != typeid(AnyType)) valueType = &(a.getValueType());
-      // update engineering unit
       if(a.getUnit() != "arbitrary") engineeringUnit = a.getUnit();
+    }
+    else {
+      // update value type and engineering unit, if not yet set
+      if(valueType == &typeid(AnyType)) valueType = &(a.getValueType());
+      if(engineeringUnit == "arbitrary") engineeringUnit = a.getUnit();
     }
     // add node to node list
     nodeList.push_back(a);
@@ -155,7 +159,12 @@ namespace ChimeraTK {
       std::cout << "**error**" << std::endl;
     }
     std::cout << linePrefix << "  feeder";
-    getFeedingNode().dump();
+    if(hasFeedingNode()) {
+      getFeedingNode().dump();
+    }
+    else {
+      std::cout << " **error, no feeder found**" << std::endl;
+    }
     std::cout << linePrefix << "  consumers: " << countConsumingNodes() << std::endl;
     size_t count = 0;
     for(auto &consumer : nodeList) {
@@ -207,7 +216,14 @@ namespace ChimeraTK {
     }
 
     // add ourselves as a trigger receiver to the other network
-    trigger.getOwner().addTriggerReceiver(this);
+    if(trigger.hasOwner()) {
+      trigger.getOwner().addTriggerReceiver(this);
+    }
+    else {
+      auto &network = Application::getInstance().createNetwork();
+      network.addNode(trigger);
+      network.addTriggerReceiver(this);
+    }
 
     // set flag and store pointer to other network
     hasExternalTrigger = true;
@@ -298,7 +314,10 @@ namespace ChimeraTK {
         [](const VariableNetworkNode n) {
           return n.getDirection() == VariableDirection::feeding;
         } );
-    assert(iter != nodeList.end());
+    if(iter == nodeList.end()) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "No feeding node in this network!");
+    }
     return *iter;
   }
 

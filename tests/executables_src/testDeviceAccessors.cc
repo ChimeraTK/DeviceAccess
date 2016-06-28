@@ -47,7 +47,8 @@ class TestModule : public ctk::ApplicationModule {
 
 class TestApplication : public ctk::Application {
   public:
-    using Application::Application;
+    TestApplication() : Application("test suite") {}
+
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     using Application::deviceMap;           // expose the device map for the tests
     void initialise() {}                    // the setup is done in the tests
@@ -60,7 +61,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   testModule.feedingToDevice.feedToDevice("Dummy0","/MyModule/Variable");
@@ -89,7 +90,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);

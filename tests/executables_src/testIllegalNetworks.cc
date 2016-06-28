@@ -51,7 +51,8 @@ class TestModule : public ctk::ApplicationModule {
 
 class TestApplication : public ctk::Application {
   public:
-    using Application::Application;
+    TestApplication() : Application("test suite") {}
+
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void initialise() {}                    // the setup is done in the tests
 };
@@ -63,7 +64,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   testModule.consumingPush.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
@@ -81,7 +82,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   testModule.consumingPush2.connectTo(testModule.consumingPush);
@@ -99,7 +100,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   try {
@@ -118,7 +119,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app("Test Suite");
+  TestApplication app;
   TestModule<T> testModule;
 
   testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);

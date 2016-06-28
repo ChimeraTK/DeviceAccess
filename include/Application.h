@@ -20,7 +20,7 @@
 
 namespace ChimeraTK {
 
-  class ApplicationModule;
+  class Module;
   class AccessorBase;
   class InvalidAccessor;
   class VariableNetwork;
@@ -78,7 +78,7 @@ namespace ChimeraTK {
 
     protected:
 
-      friend class ApplicationModule;
+      friend class Module;
       friend class VariableNetwork;
       friend class VariableNetworkNode;
 
@@ -160,7 +160,7 @@ namespace ChimeraTK {
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
-      void registerModule(ApplicationModule &module) {
+      void registerModule(Module &module) {
         moduleList.push_back(&module);
       }
 
@@ -168,7 +168,7 @@ namespace ChimeraTK {
       std::string applicationName;
 
       /** List of application modules */
-      std::list<ApplicationModule*> moduleList;
+      std::list<Module*> moduleList;
 
       /** List of ImplementationAdapters */
       std::list<boost::shared_ptr<ImplementationAdapterBase>> adapterList;

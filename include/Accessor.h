@@ -132,7 +132,7 @@ namespace ChimeraTK {
       }
 
       /** Add a trigger */
-      VariableNetworkNode& operator[](const VariableNetworkNode &trigger) {
+      VariableNetworkNode& operator+(const VariableNetworkNode &trigger) {
         VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
         network.addNode(node);
         network.addTrigger(trigger);
