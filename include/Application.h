@@ -98,49 +98,8 @@ namespace ChimeraTK {
       template<typename UserType>
       void typedMakeConnection(VariableNetwork &network);
 
-      /** Register a connection between two Accessors */
-      //void connectAccessors(AccessorBase &a, AccessorBase &b);
-
       /** Register a connection between two VariableNetworkNode */
       VariableNetwork& connect(VariableNetworkNode a, VariableNetworkNode b);
-
-      /** Return a VariableNetworkNode for a device register with a not yet defined direction */
-      template<typename UserType>
-      VariableNetworkNode devReg(const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode=UpdateMode::poll);
-      VariableNetworkNode devReg(const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode=UpdateMode::poll, const std::type_info &valTyp=typeid(AnyType));
-
-      /** Return a VariableNetworkNode for a control system variable with a not yet defined direction */
-      template<typename UserType>
-      VariableNetworkNode ctrlVar(const std::string &publicName);
-      VariableNetworkNode ctrlVar(const std::string &publicName, const std::type_info &valTyp=typeid(AnyType));
-
-      /** Return a VariableNetworkNode for a feeding device register (i.e. a register that will be read by the application) */
-      template<typename UserType>
-      VariableNetworkNode feedingDevReg(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-      VariableNetworkNode feedingDevReg(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
-          const std::type_info &valTyp=typeid(AnyType));
-
-      /** Return a VariableNetworkNode for a consuming control system variable */
-      template<typename UserType>
-      VariableNetworkNode consumingCtrlVar(const std::string &publicName);
-      VariableNetworkNode consumingCtrlVar(const std::string &publicName, const std::type_info &valTyp=typeid(AnyType));
-
-      /** Return a VariableNetworkNode for a consuming control system variable */
-      template<typename UserType>
-      VariableNetworkNode feedingCtrlVar(const std::string &publicName);
-      VariableNetworkNode feedingCtrlVar(const std::string &publicName, const std::type_info &valTyp=typeid(AnyType));
-
-      /** Register a connection between a device read-only register and the control system adapter */
-      template<typename UserType>
-      void feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
-          const std::string& publicName, AccessorBase &trigger=InvalidAccessor());
-
-      /** Register a connection between a device write-only register and the control system adapter */
-      template<typename UserType>
-      void consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
-          const std::string& publicName);
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>
@@ -175,15 +134,6 @@ namespace ChimeraTK {
 
       /** List of variable networks */
       std::list<VariableNetwork> networkList;
-
-      /** Find the network containing one of the given registers. If no network has been found, create an empty one
-       *  and add it to the networkList. */
-      VariableNetwork& findOrCreateNetwork(AccessorBase *a, AccessorBase *b);
-      VariableNetwork& findOrCreateNetwork(AccessorBase *a);
-
-      /** Find the network containing one of the given registers. If no network has been found, invalidNetwork
-       *  is returned. */
-      VariableNetwork& findNetwork(AccessorBase *a);
 
       /** Create a new, empty network */
       VariableNetwork& createNetwork();

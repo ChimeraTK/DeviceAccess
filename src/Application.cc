@@ -110,14 +110,6 @@ void Application::generateXML() {
 
 /*********************************************************************************************************************/
 
-/*void Application::connectAccessors(AccessorBase &a, AccessorBase &b) {
-  VariableNetwork &network = findOrCreateNetwork(&a,&b);
-  network.addNode(a);
-  network.addNode(b);
-}*/
-
-/*********************************************************************************************************************/
-
 VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode b) {
 
   // if one of the nodes as the value type AnyType, set it to the type of the other
@@ -149,92 +141,6 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
     networkList.back().addNode(b);
   }
   return a.getOwner();
-}
-
-/*********************************************************************************************************************/
-
-VariableNetworkNode Application::devReg(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
-    const std::type_info &valTyp) {
-  return{deviceAlias, registerName, mode, VariableDirection::invalid, valTyp};
-}
-
-/*********************************************************************************************************************/
-
-template<typename UserType>
-VariableNetworkNode Application::devReg(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode) {
-  return devReg(deviceAlias, registerName, mode, typeid(UserType));
-}
-
-template VariableNetworkNode Application::devReg<int8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<uint8_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<int16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<uint16_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<int32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<uint32_t>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<float>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-template VariableNetworkNode Application::devReg<double>(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-
-/*********************************************************************************************************************/
-
-template<typename UserType>
-VariableNetworkNode Application::ctrlVar(const std::string &publicName) {
-  return ctrlVar(publicName, typeid(UserType));
-}
-
-template VariableNetworkNode Application::ctrlVar<int8_t>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<uint8_t>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<int16_t>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<uint16_t>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<int32_t>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<uint32_t>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<float>(const std::string &publicName);
-template VariableNetworkNode Application::ctrlVar<double>(const std::string &publicName);
-
-/*********************************************************************************************************************/
-
-VariableNetworkNode Application::ctrlVar(const std::string &publicName, const std::type_info &valTyp) {
-  return {publicName, VariableDirection::invalid, valTyp};
-}
-
-/*********************************************************************************************************************/
-
-VariableNetworkNode Application::feedingDevReg(const std::string &deviceAlias, const std::string &registerName,
-    UpdateMode mode, const std::type_info &valTyp) {
-  return {deviceAlias, registerName, mode, VariableDirection::feeding, valTyp};
-}
-
-/*********************************************************************************************************************/
-
-template<typename UserType>
-VariableNetworkNode Application::feedingDevReg(const std::string &deviceAlias, const std::string &registerName,
-    UpdateMode mode) {
-  return feedingDevReg(deviceAlias, registerName, mode, typeid(UserType));
-}
-
-/*********************************************************************************************************************/
-
-VariableNetworkNode Application::consumingCtrlVar(const std::string &publicName, const std::type_info &valTyp) {
-  return {publicName, VariableDirection::consuming, valTyp};
-}
-
-/*********************************************************************************************************************/
-
-template<typename UserType>
-VariableNetworkNode Application::consumingCtrlVar(const std::string &publicName) {
-  return consumingCtrlVar(publicName, typeid(UserType));
-}
-
-/*********************************************************************************************************************/
-
-VariableNetworkNode Application::feedingCtrlVar(const std::string &publicName, const std::type_info &valTyp) {
-  return {publicName, VariableDirection::feeding, valTyp};
-}
-
-/*********************************************************************************************************************/
-
-template<typename UserType>
-VariableNetworkNode Application::feedingCtrlVar(const std::string &publicName) {
-  return feedingCtrlVar(publicName, typeid(UserType));
 }
 
 /*********************************************************************************************************************/
@@ -550,117 +456,8 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
 /*********************************************************************************************************************/
 
-VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a, AccessorBase *b) {
-
-  // search for a and b in the networkList
-  auto &na = findNetwork(a);
-  auto &nb = findNetwork(b);
-
-  // if both accessors are found, check if both are in the same network
-  if(na != invalidNetwork && nb != invalidNetwork) {
-    if(na == nb) {
-      return na;
-    }
-    else {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-          "Trying to connect two accessors which already are part of a network.");
-    }
-  }
-  // if only one accessor is found, return its network
-  else if(na != invalidNetwork && nb == invalidNetwork) {
-    return na;
-  }
-  else if(na == invalidNetwork && nb != invalidNetwork) {
-    return nb;
-  }
-  // if no accessor is found, create a new network and add it to the list
-  networkList.emplace_back();
-  return networkList.back();
-}
-
-/*********************************************************************************************************************/
-
-VariableNetwork& Application::findOrCreateNetwork(AccessorBase *a) {
-
-  // search in the networkList
-  auto &na = findNetwork(a);
-
-  // if the accessors is found, return its network
-  if(na != invalidNetwork) {
-    return na;
-  }
-  // if no accessor is found, create a new network and add it to the list
-  networkList.emplace_back();
-  return networkList.back();
-}
-
-/*********************************************************************************************************************/
-
-VariableNetwork& Application::findNetwork(AccessorBase *a) {
-
-  // search for a and b in the networkList
-  auto r = find_if(networkList.begin(), networkList.end(),
-      [a](const VariableNetwork& n) { return n.hasAppNode(a); } );
-
-  // if no network found, create one
-  if(r == networkList.end()) {
-    return invalidNetwork;
-  }
-
-  // return the found network
-  return *r;
-}
-
-/*********************************************************************************************************************/
-
 VariableNetwork& Application::createNetwork() {
   networkList.emplace_back();
   return networkList.back();
 }
 
-/*********************************************************************************************************************/
-
-template<typename UserType>
-void Application::feedDeviceRegisterToControlSystem(const std::string &deviceAlias, const std::string &registerName,
-    const std::string& publicName, AccessorBase &trigger) {
-
-  UpdateMode mode = UpdateMode::push;
-  if(dynamic_cast<InvalidAccessor*>(&trigger) == nullptr) mode = UpdateMode::poll;
-
-  //VariableNetworkNode n1{deviceAlias,registerName, mode, VariableDirection::feeding, typeid(UserType)};
-  auto &net = connect(feedingDevReg<UserType>(deviceAlias,registerName, mode),
-                      consumingCtrlVar<UserType>(publicName));
-
-  if(dynamic_cast<InvalidAccessor*>(&trigger) == nullptr) net.addTrigger(findNetwork(&trigger));
-}
-
-template void Application::feedDeviceRegisterToControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-template void Application::feedDeviceRegisterToControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName, AccessorBase &trigger);
-
-/*********************************************************************************************************************/
-
-template<typename UserType>
-void Application::consumeDeviceRegisterFromControlSystem(const std::string &deviceAlias, const std::string &registerName,
-    const std::string& publicName) {
-  networkList.emplace_back();
-  VariableNetwork& network = networkList.back();
-  network.addFeedingPublication(typeid(UserType), "arbitrary", publicName);
-  network.addConsumingDeviceRegister(deviceAlias, registerName);
-}
-
-template void Application::consumeDeviceRegisterFromControlSystem<int8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<uint8_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<int16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<uint16_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<int32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<uint32_t>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<float>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-template void Application::consumeDeviceRegisterFromControlSystem<double>(const std::string &deviceAlias, const std::string &registerName, const std::string& publicName);
-
-/*********************************************************************************************************************/

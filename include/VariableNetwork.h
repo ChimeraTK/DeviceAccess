@@ -44,28 +44,6 @@ namespace ChimeraTK {
       /** Add an node to the network. */
       void addNode(VariableNetworkNode &a);
 
-      /** Add control-system-to-device publication. The given accessor will be used to derive the requred value type.
-       *  The name will be the name of the process variable visible in the control system adapter. */
-      void addFeedingPublication(AccessorBase &a, const std::string& name);
-
-      /** Add control-system-to-device publication. The given accessor will be used to derive the requred value type.
-       *  The name will be the name of the process variable visible in the control system adapter. */
-      void addFeedingPublication(const std::type_info &typeInfo, const std::string& unit, const std::string& name);
-
-      /** Add device-to-control-system publication. */
-      void addConsumingPublication(const std::string& name);
-
-      /** Add a device register as a consuming node (i.e. which will be written by this network) */
-      void addConsumingDeviceRegister(const std::string &deviceAlias, const std::string &registerName);
-
-      /** Add a device register as a feeding node (i.e. which will be read from this network) */
-      void addFeedingDeviceRegister(AccessorBase &a, const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode);
-
-      /** Add a device register as a feeding node (i.e. which will be read from this network) */
-      void addFeedingDeviceRegister(const std::type_info &typeInfo, const std::string& unit,
-          const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-
       /** Add a trigger receiver node */
       void addTriggerReceiver(VariableNetwork *network);
 
@@ -74,13 +52,6 @@ namespace ChimeraTK {
 
       /** Count the number of consuming nodes in the network */
       size_t countConsumingNodes() const;
-
-      /** Count the number of nodes requiring a fixed implementation */
-      size_t countFixedImplementations() const;
-
-      /** Check if either of the given accessors is part of this network. If the second argument is omitted, only
-       *  the first accessor will be checked. */
-      bool hasAppNode(AccessorBase *a, AccessorBase *b=nullptr) const;
 
       /** Obtain the type info of the UserType. If the network type has not yet been determined (i.e. if no output
        *  accessor has been assigned yet), the typeid of void will be returned. */
@@ -118,10 +89,9 @@ namespace ChimeraTK {
        *  has another trigger type, an exception will be thrown. */
       VariableNetwork& getExternalTrigger();
 
-      /** Add an accessor belonging to another network as an external trigger to this network. Whenever the
-       *  VariableNetwork of the given accessor will be fed with a new value, feeding of this network will be
+      /** Add an accessor belonging to another node as an external trigger to this network. Whenever the
+       *  VariableNetwork of the given node will be fed with a new value, feeding of this network will be
        *  triggered as well. */
-      void addTrigger(VariableNetwork &trigger);
       void addTrigger(VariableNetworkNode trigger);
 
       /** Check if the network is legally configured */

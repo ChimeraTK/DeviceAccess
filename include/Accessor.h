@@ -84,25 +84,6 @@ namespace ChimeraTK {
       : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), node{*this}
       {}
 
-      /** Connect the accessor to another accessor */
-      template< typename UserType_o >
-      void connectTo(Accessor<UserType_o> &targetAccessor);
-
-      /** Publish the variable to the control system as a control-system-to-application variable under the given name */
-      void consumeFromControlSystem(const std::string& name);
-
-      /** Publish the variable to the control system as a application-to-control-system variable under the given name */
-      void feedToControlSystem(const std::string& name);
-
-      /** Connect variable to a device register and request that the variable will "consume" data from the register. */
-      void consumeFromDevice(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode);
-
-      /** Connect variable to a device register and request that the variable will "feed" data to the register.*/
-      void feedToDevice(const std::string &deviceAlias, const std::string &registerName);
-
-      /** Add another accessor as an external trigger */
-      void addTrigger(AccessorBase &trigger);
-
       virtual bool isFeeding();
 
       VariableDirection getDirection() const {return _direction;}
@@ -131,14 +112,6 @@ namespace ChimeraTK {
         return node.operator>>(other);
       }
 
-      /** Add a trigger */
-      VariableNetworkNode& operator+(const VariableNetworkNode &trigger) {
-        VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-        network.addNode(node);
-        network.addTrigger(trigger);
-        return node;
-      }
-
     protected:
 
       ApplicationModule *_owner;
@@ -153,65 +126,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  /** Connect the accessor to another accessor */
-  template< typename UserType >
-  template< typename UserType_o >
-  void Accessor<UserType>::connectTo(Accessor<UserType_o> &targetAccessor) {
-    Application::getInstance().connect(*this, targetAccessor);
-  }
-
-  /*********************************************************************************************************************/
-
-  template< typename UserType >
-  void Accessor<UserType>::feedToControlSystem(const std::string& name) {
-    VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addNode(*this);
-    network.addConsumingPublication(name);
-  }
-
-  /*********************************************************************************************************************/
-
-  template< typename UserType >
-  void Accessor<UserType>::consumeFromControlSystem(const std::string& name) {
-    VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addNode(*this);
-    network.addFeedingPublication(*this,name);
-  }
-
-  /*********************************************************************************************************************/
-
   template< typename UserType >
   bool Accessor<UserType>::isFeeding() {
     return _direction == VariableDirection::feeding;
   };
-
-  /*********************************************************************************************************************/
-
-  template< typename UserType >
-  void Accessor<UserType>::consumeFromDevice(const std::string &deviceAlias, const std::string &registerName,
-      UpdateMode mode) {
-    VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addNode(*this);
-    network.addFeedingDeviceRegister(*this, deviceAlias, registerName, mode);
-  }
-
-  /*********************************************************************************************************************/
-
-  template< typename UserType >
-  void Accessor<UserType>::feedToDevice(const std::string &deviceAlias, const std::string &registerName) {
-    VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addNode(*this);
-    network.addConsumingDeviceRegister(deviceAlias, registerName);
-  }
-
-  /*********************************************************************************************************************/
-
-  template< typename UserType >
-  void Accessor<UserType>::addTrigger(AccessorBase &trigger) {
-    VariableNetwork &network = Application::getInstance().findOrCreateNetwork(this);
-    network.addNode(*this);
-    network.addTrigger(trigger);
-  }
 
 } /* namespace ChimeraTK */
 
