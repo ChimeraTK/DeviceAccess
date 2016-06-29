@@ -96,26 +96,21 @@ class MyApp : public ctk::Application {
     ControlLoopModule controlLoop;
     SimulatorModule simulator;
     ctk::DeviceModule dev{"Dummy0", "MyModule"};
+    ctk::ControlSystemModule cs{"MyLocation"};
 
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
       ctrlVar("MyLocation/setpoint") >> automation.operatorSetpoint;
-      automation.loopSetpoint >> controlLoop.setpoint
-                              >> ctrlVar("MyLocation/setpoint_automation");
+      automation.loopSetpoint >> controlLoop.setpoint >> cs("setpoint_automation");
 
-      controlLoop.actuator >> dev("Variable")
-                           >> ctrlVar("MyLocation/actuatorLoop");
+      controlLoop.actuator >> dev("Variable") >> cs("actuatorLoop");
 
-      dev("Variable") [ controlLoop.actuator ] >> simulator.actuator
-                                               >> ctrlVar("MyLocation/actuatorSimulator");
+      dev("Variable") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
 
-      // this will create an independent variable network, thus also another accessor to the device
-      dev("Variable", typeid(double)) [ controlLoop.actuator ] >> ctrlVar("MyLocation/actuatorSimulator_direct");
+      dev("Variable", typeid(double)) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
 
-      simulator.readback >> controlLoop.readback
-                         >> ctrlVar("MyLocation/readback")
-                         >> ctrlVar("MyLocation/readback_another_time");
+      simulator.readback >> controlLoop.readback >> cs("readback") >> cs("readback_another_time");
 
       dumpConnections();
     }

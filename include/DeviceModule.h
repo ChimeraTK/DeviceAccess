@@ -22,7 +22,8 @@ namespace ChimeraTK {
     public:
 
       /** Constructor: The device represented by this DeviceModule is identified by either the device alias found
-       *  in the DMAP file or directly an URI. The given optional prefix will be prepended to all register names. */
+       *  in the DMAP file or directly an URI. The given optional prefix will be prepended to all register names
+       *  (separated by a slash). */
       DeviceModule(const std::string& deviceAliasOrURI, const std::string& registerNamePrefix="");
 
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()

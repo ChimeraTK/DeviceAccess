@@ -12,6 +12,7 @@
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
+#include "ControlSystemModule.h"
 
 #ifndef CHIMERATK_APPLICATION_CORE_H
 #define CHIMERATK_APPLICATION_CORE_H
