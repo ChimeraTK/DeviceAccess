@@ -112,6 +112,13 @@ class MyApp : public ctk::Application {
 
       simulator.readback >> controlLoop.readback >> cs("readback") >> cs("readback_another_time");
 
+      // Proposed notations and special cases (not yet implemented):
+      // dev("Some2DRegister") [ triggerVariable ] >> ( Channel(0) >> cavity0.probe, Channel(1) >> cavity1.probe );
+      // dev("SomeBitField") [ triggerVariable ] >> ( Bit(0) >> myModule.someBoolean, Bit(31) >> anotherModule.yesOrNo );
+      // cs("SomeVector") >> ( Element(3) >> myModule.someScalar, Elements(4,2) >> myModule.smallVector );
+      // dev("Variable") [ cs("myFirstTrigger") ] >> myModuleA.Variable;
+      // dev("Variable") [ cs("mySecondTrigger") ] >> myModuleB.Variable;
+
       dumpConnections();
     }
 };
