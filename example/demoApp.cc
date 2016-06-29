@@ -101,7 +101,7 @@ class MyApp : public ctk::Application {
     void initialise() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-      ctrlVar("MyLocation/setpoint") >> automation.operatorSetpoint;
+      cs("setpoint") >> automation.operatorSetpoint;
       automation.loopSetpoint >> controlLoop.setpoint >> cs("setpoint_automation");
 
       controlLoop.actuator >> dev("Variable") >> cs("actuatorLoop");
