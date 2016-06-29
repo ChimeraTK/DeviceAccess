@@ -18,6 +18,7 @@
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
+#include "DeviceModule.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -63,8 +64,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 
   TestApplication app;
   TestModule<T> testModule;
+  ctk::DeviceModule dev{"Dummy0","MyModule"};
 
-  testModule.feedingToDevice.feedToDevice("Dummy0","/MyModule/Variable");
+  testModule.feedingToDevice >> dev("Variable");
   app.makeConnections();
 
   auto regacc = app.deviceMap["Dummy0"]->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
@@ -92,8 +94,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
 
   TestApplication app;
   TestModule<T> testModule;
+  ctk::DeviceModule dev{"Dummy0"};
 
-  testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+  dev("/MyModule/Variable") >> testModule.consumingPoll;
   app.makeConnections();
 
   auto regacc = app.deviceMap["Dummy0"]->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});

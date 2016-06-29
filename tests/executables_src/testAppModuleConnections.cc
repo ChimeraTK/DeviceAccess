@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.feedingPush.connectTo(testModule.consumingPush);
+  testModule.feedingPush >> testModule.consumingPush;
   app.makeConnections();
 
   // single theaded test
@@ -100,9 +100,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.feedingPush.connectTo(testModule.consumingPush);
-  testModule.feedingPush.connectTo(testModule.consumingPush2);
-  testModule.feedingPush.connectTo(testModule.consumingPush3);
+  testModule.feedingPush >> testModule.consumingPush;
+  testModule.feedingPush >> testModule.consumingPush2;
+  testModule.feedingPush >> testModule.consumingPush3;
   app.makeConnections();
 
   // single theaded test
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.feedingPush.connectTo(testModule.consumingPoll);
+  testModule.feedingPush >> testModule.consumingPoll;
   app.makeConnections();
 
   // single theaded test only, since read() does not block in this case
