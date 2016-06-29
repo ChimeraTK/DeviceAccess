@@ -17,6 +17,7 @@
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
+#include "DeviceModule.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -67,7 +68,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.consumingPush.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
+  ctk::DeviceModule dev{"Dummy0"};
+
+  dev("/MyModule/Variable") >> testModule.consumingPush;
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
@@ -85,7 +88,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.consumingPush2.connectTo(testModule.consumingPush);
+  testModule.consumingPush2 >> testModule.consumingPush;
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
@@ -104,7 +107,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
   TestModule<T> testModule;
 
   try {
-    testModule.feedingPush.connectTo(testModule.feedingPush2);
+    testModule.feedingPush >> testModule.feedingPush2;
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
@@ -122,8 +125,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.consumingPoll.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-  testModule.consumingPoll.connectTo(testModule.consumingPoll2);
+  ctk::DeviceModule dev{"Dummy0"};
+
+  dev("/MyModule/Variable") >> testModule.consumingPoll >> testModule.consumingPoll2;
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");

@@ -17,6 +17,7 @@
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
+#include "DeviceModule.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -68,10 +69,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerPollFeederPushConsumer, T, test_types 
   TestApplication app;
   TestModule<T> testModule;
 
-  testModule.feedingToDevice.feedToDevice("Dummy0","/MyModule/Variable");
+  ctk::DeviceModule dev{"Dummy0"};
 
-  testModule.consumingPush.consumeFromDevice("Dummy0","/MyModule/Variable", ctk::UpdateMode::poll);
-  testModule.consumingPush.addTrigger(testModule.theTrigger);
+  testModule.feedingToDevice >> dev("/MyModule/Variable");
+
+  dev("/MyModule/Variable") [ testModule.theTrigger ] >> testModule.consumingPush;
   app.run();
 
   // single theaded test
