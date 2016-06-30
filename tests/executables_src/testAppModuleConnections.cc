@@ -48,6 +48,7 @@ class TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
+template<typename T>
 class TestApplication : public ctk::Application {
   public:
     TestApplication() : Application("test suite") {}
@@ -55,6 +56,8 @@ class TestApplication : public ctk::Application {
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void initialise() {}                    // the setup is done in the tests
+
+    TestModule<T> testModule;
 };
 
 /*********************************************************************************************************************/
@@ -62,34 +65,33 @@ class TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
-  testModule.feedingPush >> testModule.consumingPush;
+  app.testModule.feedingPush >> app.testModule.consumingPush;
   app.makeConnections();
 
   // single theaded test
-  testModule.consumingPush = 0;
-  testModule.feedingPush = 42;
-  BOOST_CHECK(testModule.consumingPush == 0);
-  testModule.feedingPush.write();
-  BOOST_CHECK(testModule.consumingPush == 0);
-  testModule.consumingPush.read();
-  BOOST_CHECK(testModule.consumingPush == 42);
+  app.testModule.consumingPush = 0;
+  app.testModule.feedingPush = 42;
+  BOOST_CHECK(app.testModule.consumingPush == 0);
+  app.testModule.feedingPush.write();
+  BOOST_CHECK(app.testModule.consumingPush == 0);
+  app.testModule.consumingPush.read();
+  BOOST_CHECK(app.testModule.consumingPush == 42);
 
   // launch read() on the consumer asynchronously and make sure it does not yet receive anything
-  auto futRead = std::async(std::launch::async, [&testModule]{ testModule.consumingPush.read(); });
+  auto futRead = std::async(std::launch::async, [&app]{ app.testModule.consumingPush.read(); });
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
 
-  BOOST_CHECK(testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush == 42);
 
   // write to the feeder
-  testModule.feedingPush = 120;
-  testModule.feedingPush.write();
+  app.testModule.feedingPush = 120;
+  app.testModule.feedingPush.write();
 
   // check that the consumer now receives the just written value
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
-  BOOST_CHECK( testModule.consumingPush == 120 );
+  BOOST_CHECK( app.testModule.consumingPush == 120 );
 
 }
 
@@ -98,62 +100,61 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
-  testModule.feedingPush >> testModule.consumingPush;
-  testModule.feedingPush >> testModule.consumingPush2;
-  testModule.feedingPush >> testModule.consumingPush3;
+  app.testModule.feedingPush >> app.testModule.consumingPush;
+  app.testModule.feedingPush >> app.testModule.consumingPush2;
+  app.testModule.feedingPush >> app.testModule.consumingPush3;
   app.makeConnections();
 
   // single theaded test
-  testModule.consumingPush = 0;
-  testModule.consumingPush2 = 2;
-  testModule.consumingPush3 = 3;
-  testModule.feedingPush = 42;
-  BOOST_CHECK(testModule.consumingPush == 0);
-  BOOST_CHECK(testModule.consumingPush2 == 2);
-  BOOST_CHECK(testModule.consumingPush3 == 3);
-  testModule.feedingPush.write();
-  BOOST_CHECK(testModule.consumingPush == 0);
-  BOOST_CHECK(testModule.consumingPush2 == 2);
-  BOOST_CHECK(testModule.consumingPush3 == 3);
-  testModule.consumingPush.read();
-  BOOST_CHECK(testModule.consumingPush == 42);
-  BOOST_CHECK(testModule.consumingPush2 == 2);
-  BOOST_CHECK(testModule.consumingPush3 == 3);
-  testModule.consumingPush2.read();
-  BOOST_CHECK(testModule.consumingPush == 42);
-  BOOST_CHECK(testModule.consumingPush2 == 42);
-  BOOST_CHECK(testModule.consumingPush3 == 3);
-  testModule.consumingPush3.read();
-  BOOST_CHECK(testModule.consumingPush == 42);
-  BOOST_CHECK(testModule.consumingPush2 ==42);
-  BOOST_CHECK(testModule.consumingPush3 == 42);
+  app.testModule.consumingPush = 0;
+  app.testModule.consumingPush2 = 2;
+  app.testModule.consumingPush3 = 3;
+  app.testModule.feedingPush = 42;
+  BOOST_CHECK(app.testModule.consumingPush == 0);
+  BOOST_CHECK(app.testModule.consumingPush2 == 2);
+  BOOST_CHECK(app.testModule.consumingPush3 == 3);
+  app.testModule.feedingPush.write();
+  BOOST_CHECK(app.testModule.consumingPush == 0);
+  BOOST_CHECK(app.testModule.consumingPush2 == 2);
+  BOOST_CHECK(app.testModule.consumingPush3 == 3);
+  app.testModule.consumingPush.read();
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 2);
+  BOOST_CHECK(app.testModule.consumingPush3 == 3);
+  app.testModule.consumingPush2.read();
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  BOOST_CHECK(app.testModule.consumingPush3 == 3);
+  app.testModule.consumingPush3.read();
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 ==42);
+  BOOST_CHECK(app.testModule.consumingPush3 == 42);
 
   // launch read() on the consumers asynchronously and make sure it does not yet receive anything
-  auto futRead = std::async(std::launch::async, [&testModule]{ testModule.consumingPush.read(); });
-  auto futRead2 = std::async(std::launch::async, [&testModule]{ testModule.consumingPush2.read(); });
-  auto futRead3 = std::async(std::launch::async, [&testModule]{ testModule.consumingPush3.read(); });
+  auto futRead = std::async(std::launch::async, [&app]{ app.testModule.consumingPush.read(); });
+  auto futRead2 = std::async(std::launch::async, [&app]{ app.testModule.consumingPush2.read(); });
+  auto futRead3 = std::async(std::launch::async, [&app]{ app.testModule.consumingPush3.read(); });
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
   BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
 
-  BOOST_CHECK(testModule.consumingPush == 42);
-  BOOST_CHECK(testModule.consumingPush2 ==42);
-  BOOST_CHECK(testModule.consumingPush3 == 42);
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 ==42);
+  BOOST_CHECK(app.testModule.consumingPush3 == 42);
 
   // write to the feeder
-  testModule.feedingPush = 120;
-  testModule.feedingPush.write();
+  app.testModule.feedingPush = 120;
+  app.testModule.feedingPush.write();
 
   // check that the consumers now receive the just written value
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
   BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
   BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
-  BOOST_CHECK( testModule.consumingPush == 120 );
-  BOOST_CHECK( testModule.consumingPush2 == 120 );
-  BOOST_CHECK( testModule.consumingPush3 == 120 );
+  BOOST_CHECK( app.testModule.consumingPush == 120 );
+  BOOST_CHECK( app.testModule.consumingPush2 == 120 );
+  BOOST_CHECK( app.testModule.consumingPush3 == 120 );
 
 }
 
@@ -162,33 +163,32 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
-  testModule.feedingPush >> testModule.consumingPoll;
+  app.testModule.feedingPush >> app.testModule.consumingPoll;
   app.makeConnections();
 
   // single theaded test only, since read() does not block in this case
-  testModule.consumingPoll = 0;
-  testModule.feedingPush = 42;
-  BOOST_CHECK(testModule.consumingPoll == 0);
-  testModule.feedingPush.write();
-  BOOST_CHECK(testModule.consumingPoll == 0);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.feedingPush = 120;
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.feedingPush.write();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
+  app.testModule.consumingPoll = 0;
+  app.testModule.feedingPush = 42;
+  BOOST_CHECK(app.testModule.consumingPoll == 0);
+  app.testModule.feedingPush.write();
+  BOOST_CHECK(app.testModule.consumingPoll == 0);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.feedingPush = 120;
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.feedingPush.write();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
 
 }

@@ -50,6 +50,7 @@ class TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
+template<typename T>
 class TestApplication : public ctk::Application {
   public:
     TestApplication() : Application("test suite") {}
@@ -57,6 +58,9 @@ class TestApplication : public ctk::Application {
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void initialise() {}                    // the setup is done in the tests
+
+    TestModule<T> testModule;
+    ctk::DeviceModule dev{"Dummy0"};
 };
 
 /*********************************************************************************************************************/
@@ -66,12 +70,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
   ctk::DeviceModule dev{"Dummy0"};
 
-  dev("/MyModule/Variable") >> testModule.consumingPush;
+  dev("/MyModule/Variable") >> app.testModule.consumingPush;
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
@@ -86,10 +89,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
-  testModule.consumingPush2 >> testModule.consumingPush;
+  app.testModule.consumingPush2 >> app.testModule.consumingPush;
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");
@@ -104,11 +106,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
   try {
-    testModule.feedingPush >> testModule.feedingPush2;
+    app.testModule.feedingPush >> app.testModule.feedingPush2;
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
@@ -123,12 +124,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app;
-  TestModule<T> testModule;
+  TestApplication<T> app;
 
-  ctk::DeviceModule dev{"Dummy0"};
-
-  dev("/MyModule/Variable") >> testModule.consumingPoll >> testModule.consumingPoll2;
+  app.dev("/MyModule/Variable") >> app.testModule.consumingPoll >> app.testModule.consumingPoll2;
   try {
     app.makeConnections();
     BOOST_ERROR("Exception expected.");

@@ -46,6 +46,7 @@ class TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
+template<typename T>
 class TestApplication : public ctk::Application {
   public:
     TestApplication() : Application("test suite") {}
@@ -54,6 +55,10 @@ class TestApplication : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     using Application::deviceMap;           // expose the device map for the tests
     void initialise() {}                    // the setup is done in the tests
+
+    TestModule<T> testModule;
+    ctk::DeviceModule devMymodule{"Dummy0","MyModule"};
+    ctk::DeviceModule dev{"Dummy0"};
 };
 
 /*********************************************************************************************************************/
@@ -63,24 +68,23 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app;
-  TestModule<T> testModule;
-  ctk::DeviceModule dev{"Dummy0","MyModule"};
+  TestApplication<T> app;
 
-  testModule.feedingToDevice >> dev("Variable");
+  app.testModule.feedingToDevice >> app.devMymodule("Variable");
   app.makeConnections();
 
-  auto regacc = app.deviceMap["Dummy0"]->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
+  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
 
   regacc->accessData(0) = 0;
-  testModule.feedingToDevice = 42;
-  testModule.feedingToDevice.write();
+  app.testModule.feedingToDevice = 42;
+  app.testModule.feedingToDevice.write();
   regacc->read();
   BOOST_CHECK(regacc->accessData(0) == 42);
-  testModule.feedingToDevice = 120;
+  app.testModule.feedingToDevice = 120;
   regacc->read();
   BOOST_CHECK(regacc->accessData(0) == 42);
-  testModule.feedingToDevice.write();
+  app.testModule.feedingToDevice.write();
   regacc->read();
   BOOST_CHECK(regacc->accessData(0) == 120);
 
@@ -93,35 +97,34 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
-  TestApplication app;
-  TestModule<T> testModule;
-  ctk::DeviceModule dev{"Dummy0"};
+  TestApplication<T> app;
 
-  dev("/MyModule/Variable") >> testModule.consumingPoll;
+  app.dev("/MyModule/Variable") >> app.testModule.consumingPoll;
   app.makeConnections();
 
-  auto regacc = app.deviceMap["Dummy0"]->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
+  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
 
   // single theaded test only, since read() does not block in this case
-  testModule.consumingPoll = 0;
+  app.testModule.consumingPoll = 0;
   regacc->accessData(0) = 42;
   regacc->write();
-  BOOST_CHECK(testModule.consumingPoll == 0);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK(testModule.consumingPoll == 42);
+  BOOST_CHECK(app.testModule.consumingPoll == 0);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
   regacc->accessData(0) = 120;
   regacc->write();
-  BOOST_CHECK(testModule.consumingPoll == 42);
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
-  testModule.consumingPoll.read();
-  BOOST_CHECK( testModule.consumingPoll == 120 );
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
 
 }
 
