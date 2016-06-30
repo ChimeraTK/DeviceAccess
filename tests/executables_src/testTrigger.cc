@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToApp, T, test_types ) {
   app.testModule.theTrigger.write();
 
   // check that the consumer now receives the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK( app.testModule.consumingPush == 120 );
 }
 
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(myCSVar->receive() == false);
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->receive() == true, 200);
+  CHECK_TIMEOUT(myCSVar->receive() == true, 2000);
   BOOST_CHECK(*myCSVar == 42);
 
   BOOST_CHECK(myCSVar->receive() == false);
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(myCSVar->receive() == false);
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->receive() == true, 200);
+  CHECK_TIMEOUT(myCSVar->receive() == true, 2000);
   BOOST_CHECK(*myCSVar == 120);
 
   BOOST_CHECK(myCSVar->receive() == false);

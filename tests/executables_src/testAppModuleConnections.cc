@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
   app.testModule.feedingPush.write();
 
   // check that the consumer now receives the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK( app.testModule.consumingPush == 120 );
 
 }
@@ -149,9 +149,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
   app.testModule.feedingPush.write();
 
   // check that the consumers now receive the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
-  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
-  BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready);
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK( app.testModule.consumingPush == 120 );
   BOOST_CHECK( app.testModule.consumingPush2 == 120 );
   BOOST_CHECK( app.testModule.consumingPush3 == 120 );
