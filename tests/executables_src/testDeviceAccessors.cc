@@ -49,6 +49,7 @@ class TestModule : public ctk::ApplicationModule {
 class TestApplication : public ctk::Application {
   public:
     TestApplication() : Application("test suite") {}
+    ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     using Application::deviceMap;           // expose the device map for the tests

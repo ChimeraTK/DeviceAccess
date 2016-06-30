@@ -91,6 +91,7 @@ class SimulatorModule : public ctk::ApplicationModule {
 class MyApp : public ctk::Application {
   public:
     MyApp() : Application("demoApp") {}
+    ~MyApp() { shutdown(); }
 
     AutomationModule automation;
     ControlLoopModule controlLoop;
@@ -121,6 +122,7 @@ class MyApp : public ctk::Application {
 
       dumpConnections();
     }
+
 };
 
 MyApp myApp;

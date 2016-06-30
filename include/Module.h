@@ -28,6 +28,9 @@ namespace ChimeraTK {
       /** Execute the module. */
       virtual void run() {};
 
+      /** Terminate the module. Must be called before destruction, if run() was called previously. */
+      virtual void terminate() {};
+
   };
 
 } /* namespace ChimeraTK */

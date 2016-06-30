@@ -40,12 +40,12 @@ namespace ChimeraTK {
       : impl(nullptr), _direction(VariableDirection::feeding)
       {}
 
-      /** The destructor will terminate the internal thread, if running */
+      /** If activate() has been called on this FanOut, deactivate() must be called before destruction. Otherweise
+       *  an assertion will be raised.
+       *  Design note: stopping the thread inside the destructor may be too late, since the thread will be accessing
+       *  the object while it is being destroyed already! */
       ~FanOut() {
-        if(_thread.joinable()) {
-          requestTerminateThread = true;
-          _thread.join();
-        }
+        assert(!_thread.joinable());
       }
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
@@ -78,6 +78,14 @@ namespace ChimeraTK {
         assert(_direction == VariableDirection::consuming);
         assert(!_thread.joinable());
         _thread = std::thread([this] { this->run(); });
+      }
+
+      void deactivate() {
+        if(_thread.joinable()) {
+          requestTerminateThread = true;
+          _thread.join();
+        }
+        assert(!_thread.joinable());
       }
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */

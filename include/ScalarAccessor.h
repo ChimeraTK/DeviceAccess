@@ -11,6 +11,7 @@
 #include <string>
 
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
 #include "Accessor.h"
 
@@ -46,11 +47,15 @@ namespace ChimeraTK {
        *  already available before calling this function, the function will be non-blocking and lock-free. */
       void read() {
         if(Accessor<UserType>::_mode == UpdateMode::push) {
-          while(impl->receive() == false) usleep(1); /// @todo TODO proper blocking implementation
+          while(impl->receive() == false) { /// @todo TODO proper blocking implementation
+            boost::this_thread::yield();
+            boost::this_thread::interruption_point();
+          }
         }
         else {
           /// @todo TODO empty the queue to always receive the latest value
           impl->receive();
+          boost::this_thread::interruption_point();
         }
       }
 
@@ -63,6 +68,7 @@ namespace ChimeraTK {
        *  blocks and is always implemented in a lock-free manner. */
       void write() {
         impl->send();
+        boost::this_thread::interruption_point();
       }
 
       /** Implicit type conversion to user type T to access the first element (often the only element).

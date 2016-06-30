@@ -43,11 +43,15 @@ namespace ChimeraTK {
        *  function only. */
       Application(const std::string& name);
 
-      /** The destructor will remove the global pointer to the instance and allows creating another instance
+      /** The implementation of Application must call Application::shutdown() in its destructor. This destructor just
+       *  checks if Application::shutdown() was properly called and throws an exception otherwise. */
+      virtual ~Application();
+
+      /** This will remove the global pointer to the instance and allows creating another instance
        *  afterwards. This is mostly useful for writing tests, as it allows to run several applications sequentially
        *  in the same executable. Note that any ApplicationModules etc. owned by this Application are no longer
        *  valid after destroying the Application and must be destroyed as well (or at least no longer used). */
-      virtual ~Application();
+      void shutdown();
 
       /** Set the process variable manager. This will be called by the control system adapter initialisation code. */
       void setPVManager(boost::shared_ptr<mtca4u::DevicePVManager> const &processVariableManager) {
@@ -152,6 +156,9 @@ namespace ChimeraTK {
 
       /** Map of DeviceBackends used by this application. The map key is the alias name from the DMAP file */
       std::map<std::string, boost::shared_ptr<mtca4u::DeviceBackend>> deviceMap;
+
+      /** Flag if shutdown() has been called. */
+      bool hasBeenShutdown{false};
 
   };
 

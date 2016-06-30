@@ -5,15 +5,26 @@
  *      Author: Martin Hierholzer
  */
 
-#include <thread>
-
 #include "ApplicationModule.h"
+#include "Accessor.h"
 
 namespace ChimeraTK {
 
   void ApplicationModule::run() {
-    std::thread moduleThread(&ApplicationModule::mainLoop, this);
-    moduleThread.detach();
+    assert(!moduleThread.joinable());
+    moduleThread = boost::thread(&ApplicationModule::mainLoop, this);
+  }
+
+  void ApplicationModule::terminate() {
+    if(moduleThread.joinable()) {
+      moduleThread.interrupt();
+      moduleThread.join();
+    }
+    assert(!moduleThread.joinable());
+  }
+
+  ApplicationModule::~ApplicationModule() {
+    assert(!moduleThread.joinable());
   }
 
 } /* namespace ChimeraTK */

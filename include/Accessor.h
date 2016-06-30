@@ -9,6 +9,7 @@
 #define CHIMERATK_ACCESSOR_H
 
 #include <string>
+#include <atomic>
 
 #include <mtca4u/RegisterPath.h>
 
@@ -53,7 +54,11 @@ namespace ChimeraTK {
 
       /* Obtain the unit of the variable */
       virtual const std::string& getUnit() const = 0;
-};
+
+    protected:
+
+      friend class ApplicationModule;
+  };
 
   /*********************************************************************************************************************/
 
@@ -82,7 +87,9 @@ namespace ChimeraTK {
       Accessor(ApplicationModule *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode)
       : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), node{*this}
-      {}
+      {
+        owner->registerAccessor(this);
+      }
 
       virtual bool isFeeding();
 
@@ -121,6 +128,7 @@ namespace ChimeraTK {
       UpdateMode _mode;
 
       VariableNetworkNode node;
+
 
   };
 

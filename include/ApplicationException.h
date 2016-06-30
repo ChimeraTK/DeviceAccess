@@ -22,7 +22,8 @@ namespace ChimeraTK {
       illegalVariableNetwork,
 
       /** Functionality has been used which is not yet implemented, but will be implemented at a later time. */
-      notYetImplemented
+      notYetImplemented,
+
   };
 
   class ApplicationException : public std::exception {

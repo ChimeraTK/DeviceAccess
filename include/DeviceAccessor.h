@@ -25,14 +25,7 @@ namespace ChimeraTK {
       DeviceAccessor(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> ndRegisterAccessor, VariableDirection direction,
           UpdateMode mode)
       : impl(ndRegisterAccessor), _direction(direction), _mode(mode)
-      {
-        std::cout << "Creating DeviceAccessor: ";
-        if(direction == VariableDirection::consuming) std::cout << "consuming ";
-        if(direction == VariableDirection::feeding) std::cout << "feeding ";
-        if(mode == UpdateMode::poll) std::cout << "poll ";
-        if(mode == UpdateMode::push) std::cout << "push ";
-        std::cout << std::endl;
-      }
+      {}
 
     public:
 

@@ -22,6 +22,9 @@ namespace ChimeraTK {
 
       /** Activate synchronisation thread if needed */
       virtual void activate() {}
+
+      /** Deactivate synchronisation thread if running*/
+      virtual void deactivate() {}
   };
 
   /** Adapts two variable implementations (i.e. two ProcessVariables) so they can be connected together. This is needed

@@ -211,8 +211,12 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode& VariableNetworkNode::operator[](const VariableNetworkNode &trigger) {
+    // force direction of the node we are operating on to be feeding
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
     assert(pdata->direction == VariableDirection::feeding);
+    // force direction of the triggering node to be feeding
+    if(trigger.pdata->direction == VariableDirection::invalid) trigger.pdata->direction = VariableDirection::feeding;
+    assert(trigger.pdata->direction == VariableDirection::feeding);
     // if this node is not yet part of a network, we have to add ourselves to a new network
     if(pdata->network == nullptr) {
       Application::getInstance().createNetwork().addNode(*this);

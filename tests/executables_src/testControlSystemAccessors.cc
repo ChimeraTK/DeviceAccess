@@ -46,12 +46,17 @@ class TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
+template<typename T>
 class TestApplication : public ctk::Application {
   public:
     TestApplication() : Application("test suite") {}
+    ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void initialise() {}                    // the setup is done in the tests
+
+    TestModule<T> testModule;
+    ctk::ControlSystemModule cs;
 };
 
 /*********************************************************************************************************************/
@@ -59,29 +64,27 @@ class TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
-  ctk::ControlSystemModule cs;
+  TestApplication<T> app;
 
   auto pvManagers = mtca4u::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  testModule.feeder >> cs("myFeeder");
+  app.testModule.feeder >> app.cs("myFeeder");
   app.makeConnections();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myFeeder = pvManagers.first->getProcessScalar<T>("/myFeeder");
 
-  testModule.feeder = 42;
+  app.testModule.feeder = 42;
   BOOST_CHECK_EQUAL(myFeeder->receive(), false);
-  testModule.feeder.write();
+  app.testModule.feeder.write();
   BOOST_CHECK_EQUAL(myFeeder->receive(), true);
   BOOST_CHECK_EQUAL(myFeeder->receive(), false);
   BOOST_CHECK(*myFeeder == 42);
 
-  testModule.feeder = 120;
+  app.testModule.feeder = 120;
   BOOST_CHECK_EQUAL(myFeeder->receive(), false);
-  testModule.feeder.write();
+  app.testModule.feeder.write();
   BOOST_CHECK_EQUAL(myFeeder->receive(), true);
   BOOST_CHECK_EQUAL(myFeeder->receive(), false);
   BOOST_CHECK(*myFeeder == 120);
@@ -93,14 +96,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
-  ctk::ControlSystemModule cs;
+  TestApplication<T> app;
 
   auto pvManagers = mtca4u::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  cs("myConsumer") >> testModule.consumer;
+  app.cs("myConsumer") >> app.testModule.consumer;
   app.makeConnections();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
@@ -108,13 +109,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
   *myConsumer = 42;
   myConsumer->send();
-  testModule.consumer.read();
-  BOOST_CHECK(testModule.consumer == 42);
+  app.testModule.consumer.read();
+  BOOST_CHECK(app.testModule.consumer == 42);
 
   *myConsumer = 120;
   myConsumer->send();
-  testModule.consumer.read();
-  BOOST_CHECK(testModule.consumer == 120);
+  app.testModule.consumer.read();
+  BOOST_CHECK(app.testModule.consumer == 120);
 
 }
 
@@ -123,17 +124,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
-  ctk::ControlSystemModule cs;
+  TestApplication<T> app;
 
   auto pvManagers = mtca4u::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  testModule.feeder >> cs("myFeeder0");
-  testModule.feeder >> cs("myFeeder1");
-  testModule.feeder >> cs("myFeeder2");
-  testModule.feeder >> cs("myFeeder3");
+  app.testModule.feeder >> app.cs("myFeeder0");
+  app.testModule.feeder >> app.cs("myFeeder1");
+  app.testModule.feeder >> app.cs("myFeeder2");
+  app.testModule.feeder >> app.cs("myFeeder3");
   app.run();    // make the connections and start the FanOut threads
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 4);
@@ -142,12 +141,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
   auto myFeeder2 = pvManagers.first->getProcessScalar<T>("/myFeeder2");
   auto myFeeder3 = pvManagers.first->getProcessScalar<T>("/myFeeder3");
 
-  testModule.feeder = 42;
+  app.testModule.feeder = 42;
   BOOST_CHECK(myFeeder0->receive() == false);
   BOOST_CHECK(myFeeder1->receive() == false);
   BOOST_CHECK(myFeeder2->receive() == false);
   BOOST_CHECK(myFeeder3->receive() == false);
-  testModule.feeder.write();
+  app.testModule.feeder.write();
   usleep(200000);
   BOOST_CHECK(myFeeder0->receive() == true);
   BOOST_CHECK(myFeeder1->receive() == true);
@@ -162,12 +161,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
   BOOST_CHECK(myFeeder2->receive() == false);
   BOOST_CHECK(myFeeder3->receive() == false);
 
-  testModule.feeder = 120;
+  app.testModule.feeder = 120;
   BOOST_CHECK(myFeeder0->receive() == false);
   BOOST_CHECK(myFeeder1->receive() == false);
   BOOST_CHECK(myFeeder2->receive() == false);
   BOOST_CHECK(myFeeder3->receive() == false);
-  testModule.feeder.write();
+  app.testModule.feeder.write();
   usleep(200000);
   BOOST_CHECK(myFeeder0->receive() == true);
   BOOST_CHECK(myFeeder1->receive() == true);
@@ -187,7 +186,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
   BOOST_CHECK(myFeeder1->receive() == false);
   BOOST_CHECK(myFeeder2->receive() == false);
   BOOST_CHECK(myFeeder3->receive() == false);
-  testModule.feeder.write();
+  app.testModule.feeder.write();
   usleep(200000);
   BOOST_CHECK(myFeeder0->receive() == true);
   BOOST_CHECK(myFeeder1->receive() == true);
@@ -209,17 +208,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
 
-  TestApplication app;
-  TestModule<T> testModule;
-  ctk::ControlSystemModule cs;
+  TestApplication<T> app;
 
   auto pvManagers = mtca4u::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  cs("myConsumer") >> testModule.consumer;
-  testModule.consumer >> cs("myConsumer_copy1");
-  testModule.consumer >> cs("myConsumer_copy2");
-  testModule.consumer >> cs("myConsumer_copy3");
+  app.cs("myConsumer") >> app.testModule.consumer;
+  app.testModule.consumer >> app.cs("myConsumer_copy1");
+  app.testModule.consumer >> app.cs("myConsumer_copy2");
+  app.testModule.consumer >> app.cs("myConsumer_copy3");
   app.run();    // make the connections and start the FanOut threads
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 4);
@@ -243,8 +240,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   BOOST_CHECK(myConsumer_copy1->receive() == false);
   BOOST_CHECK(myConsumer_copy2->receive() == false);
   BOOST_CHECK(myConsumer_copy3->receive() == false);
-  testModule.consumer.read();
-  BOOST_CHECK(testModule.consumer == 42);
+  app.testModule.consumer.read();
+  BOOST_CHECK(app.testModule.consumer == 42);
 
   *myConsumer = 120;
   BOOST_CHECK(myConsumer_copy1->receive() == false);
@@ -261,8 +258,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   BOOST_CHECK(myConsumer_copy1->receive() == false);
   BOOST_CHECK(myConsumer_copy2->receive() == false);
   BOOST_CHECK(myConsumer_copy3->receive() == false);
-  testModule.consumer.read();
-  BOOST_CHECK(testModule.consumer == 120);
+  app.testModule.consumer.read();
+  BOOST_CHECK(app.testModule.consumer == 120);
 
   // resend same number
   BOOST_CHECK(myConsumer_copy1->receive() == false);
@@ -279,8 +276,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   BOOST_CHECK(myConsumer_copy1->receive() == false);
   BOOST_CHECK(myConsumer_copy2->receive() == false);
   BOOST_CHECK(myConsumer_copy3->receive() == false);
-  testModule.consumer.read();
-  BOOST_CHECK(testModule.consumer == 120);
+  app.testModule.consumer.read();
+  BOOST_CHECK(app.testModule.consumer == 120);
 
 }
 

@@ -117,14 +117,10 @@ namespace ChimeraTK {
     }
 
     // add ourselves as a trigger receiver to the other network
-    if(trigger.hasOwner()) {
-      trigger.getOwner().addTriggerReceiver(this);
+    if(!trigger.hasOwner()) {
+      Application::getInstance().createNetwork().addNode(trigger);
     }
-    else {
-      auto &network = Application::getInstance().createNetwork();
-      network.addNode(trigger);
-      network.addTriggerReceiver(this);
-    }
+    trigger.getOwner().addTriggerReceiver(this);
 
     // set flag and store pointer to other network
     hasExternalTrigger = true;
@@ -173,8 +169,6 @@ namespace ChimeraTK {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "No feeding node connected to this network!");
     }
-
-    dump();
 
     // the network's value type must be correctly set
     if(*valueType == typeid(AnyType)) {
