@@ -19,8 +19,5 @@
 coverage:
 	rm -f `find . -name "*\.gcda"`
 	make test
-	lcov --capture --directory . --output-file coverage_all.info
-	#lcov capture also includes external stuff like glibc, boost etc.
-	#only extract the reports for this project
-	lcov --extract coverage_all.info "@CMAKE_SOURCE_DIR@*" -o coverage.info
+	lcov --capture --directory . --output-file coverage.info --no-external --base-directory "@CMAKE_SOURCE_DIR@"
 	genhtml coverage.info --output-directory coverage_html
