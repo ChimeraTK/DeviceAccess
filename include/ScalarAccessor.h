@@ -115,8 +115,12 @@ namespace ChimeraTK {
 
       void useProcessVariable(const boost::shared_ptr<ProcessVariable> &var) {
         impl = boost::dynamic_pointer_cast< ProcessScalar<UserType> >(var);
-        if(!impl) {
-          throw std::string("ProcessVariable of the wrong type provided, cannot be used as the implementation!"); // @todo TODO throw proper exception
+        assert(impl);
+        if(Accessor<UserType>::getDirection() == VariableDirection::consuming) {
+          assert(impl->isReceiver());
+        }
+        else {
+          assert(impl->isSender());
         }
       }
 
