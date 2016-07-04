@@ -80,6 +80,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
   }
 
 }
@@ -97,6 +98,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
   }
 
 }
@@ -113,6 +115,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
   }
 
 }
@@ -132,6 +135,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
   }
 
 }
