@@ -57,7 +57,7 @@ namespace ChimeraTK {
           impl->receive();
           boost::this_thread::interruption_point();
         }
-      }
+      } // LCOV_EXCL_LINE this line somehow ends up having a negative counter in the coverage report, which leads to a failure
 
       /** Check if an input variable has new data. In case of an output variable, an exception will be thrown. If the
        *  wait_for_new_data access mode flag was not provided when creating the accessor, this function will return
