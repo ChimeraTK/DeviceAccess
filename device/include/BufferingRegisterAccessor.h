@@ -184,6 +184,24 @@ namespace mtca4u {
        *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      bool isReadable() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
+      }
+
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
+      bool isWriteable() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
+      }
+
+      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  \deprecated
+       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
+       *  @todo Add printed runtime warning after release of version 0.9
+       */
       bool isInitialised() const {
         return NDRegisterAccessorBridge<UserType>::_impl != NULL;
       }

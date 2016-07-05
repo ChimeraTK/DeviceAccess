@@ -79,6 +79,14 @@ namespace mtca4u {
         return true;
       }
 
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return false;
+      }
+
       virtual FixedPointConverter getFixedPointConverter() const {
         throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
       }

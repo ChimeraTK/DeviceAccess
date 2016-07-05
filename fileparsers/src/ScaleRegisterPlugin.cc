@@ -75,7 +75,15 @@ namespace mtca4u {
         return _accessor->isReadOnly();
       }
 
-      virtual FixedPointConverter getFixedPointConverter() const {
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return true;
+      }
+
+     virtual FixedPointConverter getFixedPointConverter() const {
         return _accessor->getFixedPointConverter();
       }
 

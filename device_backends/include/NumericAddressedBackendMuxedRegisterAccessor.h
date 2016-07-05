@@ -49,6 +49,14 @@ namespace mtca4u {
         return false;
       }
 
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return true;
+      }
+
       virtual FixedPointConverter getFixedPointConverter() const {
         throw DeviceException("getFixedPointConverter is not implemented for 2D registers (and deprecated for all "
             "registers).", DeviceException::NOT_IMPLEMENTED);

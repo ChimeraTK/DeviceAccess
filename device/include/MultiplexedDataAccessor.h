@@ -93,6 +93,14 @@ namespace mtca4u {
         return accessor->isReadOnly();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
+      virtual bool isReadable() const {// LCOV_EXCL_LINE
+        return accessor->isReadable();// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
+
+      virtual bool isWriteable() const {// LCOV_EXCL_LINE
+        return accessor->isWriteable();// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
+
     protected:
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {// LCOV_EXCL_LINE

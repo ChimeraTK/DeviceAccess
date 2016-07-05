@@ -105,6 +105,14 @@ namespace mtca4u {
         return false;
       }
 
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return true;
+      }
+
       virtual FixedPointConverter getFixedPointConverter() const {
         return _fixedPointConverter;
       }

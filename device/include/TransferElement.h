@@ -14,6 +14,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include "DeviceException.h"
+#include "TimeStamp.h"
+
 namespace mtca4u {
 
   // forward declaration to make a friend
@@ -35,6 +38,11 @@ namespace mtca4u {
 	return _name;
       }
 
+      /** Returns the \c std::type_info for the value type of this transfer element.
+       *  This can be used to determine the type at runtime.
+       */
+      virtual const std::type_info& getValueType() const = 0;
+
       /** Read the data from the device. */
       virtual void read() = 0;
 
@@ -55,8 +63,29 @@ namespace mtca4u {
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
 
-      /** Check if transfer element is read only */
+      /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
       virtual bool isReadOnly() const = 0;
+
+      /** Check if transfer element is readable. It throws an acception if you try to read and 
+       *  isReadable() is not true.*/
+      virtual bool isReadable() const = 0;
+      
+      /** Check if transfer element is writeable. It throws an acception if you try to write and 
+       *  isWriteable() is not true.*/
+      virtual bool isWriteable() const = 0;
+      
+      /** Deprecated: The time stamp will be replaced with a unique counter.
+       *  Only used for backward compatibility with the control system adapter. All implementations
+       *  in DeviceAccess will throw an exception with DeviceException::NOT_IMPLEMENTED.
+       *
+       *  Returns the time stamp associated with the current value of the transfer element.
+       *  Typically, this is the time when the value was updated.
+       */
+      virtual TimeStamp getTimeStamp() const{
+        throw DeviceException("getTimeStamp is not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
+      }
+
+      
 
       /** Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing

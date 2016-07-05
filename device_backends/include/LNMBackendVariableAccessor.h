@@ -84,6 +84,14 @@ namespace mtca4u {
         return _info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
+      }
+
     protected:
 
       /// register and module name

@@ -89,6 +89,13 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
       }
 
+      bool isReadable() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
+      }
+
+      bool isWriteable() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
+      }
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
        *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
        *  placeholder constructor without arguments. */

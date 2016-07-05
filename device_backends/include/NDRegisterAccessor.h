@@ -81,6 +81,10 @@ namespace mtca4u {
         throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
       }
 
+      virtual const std::type_info& getValueType() const{
+	return typeid(UserType);
+      }
+
     protected:
 
       /** Buffer of converted data elements. The buffer is always two dimensional. If a register with a single
