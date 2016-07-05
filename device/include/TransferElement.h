@@ -9,6 +9,8 @@
 #define MTCA4U_TRANSFER_ELEMENT_H
 
 #include <vector>
+#include <string>
+#include <typeinfo>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -18,12 +20,20 @@ namespace mtca4u {
   class TransferGroup;
 
   /** Base class for register accessors which can be part of a TransferGroup */
-  class TransferElement : public boost::enable_shared_from_this<TransferElement> {
+  class TransferElement : public boost::enable_shared_from_this<TransferElement>{
 
     public:
+      /** Creates a transfer element with the specified name. */
+      TransferElement(std::string const & name = std::string()) : _name(name) {
+      }
 
-      /** Abstract base classes need a virtual destructor */
+      /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
+
+      /** Returns the name that identifies the process variable. */
+      const std::string& getName() const{
+	return _name;
+      }
 
       /** Read the data from the device. */
       virtual void read() = 0;
@@ -69,6 +79,9 @@ namespace mtca4u {
 
       friend class TransferGroup;
 
+    protected:
+      /** Identifier uniquely identifying the TransferElement */
+      std::string _name;      
   };
 
 } /* namespace mtca4u */
