@@ -77,7 +77,7 @@ namespace mtca4u {
        *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException. */
       template<typename UserType>
       ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(const RegisterPath &registerPathName,
-          size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
+          size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** Get a OneDRegisterAccessor object for the given register.
        *
@@ -96,7 +96,7 @@ namespace mtca4u {
        *  "AccessModeFlags", e.g.: getOneDRegisterAccessor<int32_t>("reg",0,0,{AccessMode::raw}) */
       template<typename UserType>
       OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
-          size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags={}) const;
+          size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
        *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor. */
