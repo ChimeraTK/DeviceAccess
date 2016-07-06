@@ -40,6 +40,7 @@ typedef boost::mpl::list<int8_t,uint8_t,
         bool timeout_reached = (std::chrono::steady_clock::now()-t0) > std::chrono::milliseconds(maxMilliseconds);  \
         BOOST_CHECK( !timeout_reached );                                                                            \
         if(timeout_reached) break;                                                                                  \
+        usleep(1000);                                                                                               \
       }                                                                                                             \
     }
 
