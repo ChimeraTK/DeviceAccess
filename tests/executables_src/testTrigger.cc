@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(myCSVar->receive() == false);
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->receive() == true, 2000);
+  CHECK_TIMEOUT(myCSVar->receive() == true, 30000);
   BOOST_CHECK(*myCSVar == 42);
 
   BOOST_CHECK(myCSVar->receive() == false);
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(myCSVar->receive() == false);
   app.testModule.theTrigger.write();
-  CHECK_TIMEOUT(myCSVar->receive() == true, 2000);
+  CHECK_TIMEOUT(myCSVar->receive() == true, 30000);
   BOOST_CHECK(*myCSVar == 120);
 
   BOOST_CHECK(myCSVar->receive() == false);
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   BOOST_CHECK(myCSVar->receive() == false);
   *theTrigger = 0;
   theTrigger->send();
-  CHECK_TIMEOUT(myCSVar->receive() == true, 2000);
+  CHECK_TIMEOUT(myCSVar->receive() == true, 30000);
   BOOST_CHECK(*myCSVar == 42);
 
   BOOST_CHECK(myCSVar->receive() == false);
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   BOOST_CHECK(myCSVar->receive() == false);
   *theTrigger = 0;
   theTrigger->send();
-  CHECK_TIMEOUT(myCSVar->receive() == true, 2000);
+  CHECK_TIMEOUT(myCSVar->receive() == true, 30000);
   BOOST_CHECK(*myCSVar == 120);
 
   BOOST_CHECK(myCSVar->receive() == false);
