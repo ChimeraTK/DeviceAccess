@@ -22,5 +22,13 @@ coverage:
 	lcov --capture --directory . --output-file coverage_all.info
 	#lcov capture also includes external stuff like glibc, boost etc.
 	#only extract the reports for this project
-	lcov --extract coverage_all.info "@CMAKE_SOURCE_DIR@*" -o coverage.info
+	lcov --extract coverage_all.info "@CMAKE_SOURCE_DIR@*" -o coverage_incl_build.info
+	#Some projects install the library and its headers for testing in the build directory
+	#and compile tests and examples against it. This leads to double
+	#counting and untested lines in the coverage report. That's why we
+	#exclude the build directory from the coverage report (needed if the
+	#build directory is in the source tree).
+	#Attention: If you make an 'in sorce build' the coverage report will
+	#be empty!
+	lcov --remove coverage_incl_build.info "@PROJECT_BINARY_DIR@/*" -o coverage.info
 	genhtml coverage.info --output-directory coverage_html
