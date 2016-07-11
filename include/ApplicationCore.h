@@ -27,6 +27,8 @@
 #include <ControlSystemAdapter-DoocsAdapter/DoocsAdapter.h>
 
   BEGIN_DOOCS_SERVER("Control System Adapter", 10)
+     // set the DOOCS server name to the application name
+     object_name = ChimeraTK::Application::getInstance().getName().c_str();
      // Create static instances for all applications cores. They must not have overlapping
      // process variable names ("location/protery" must be unique).
      ChimeraTK::Application::getInstance().setPVManager(doocsAdapter.getDevicePVManager());

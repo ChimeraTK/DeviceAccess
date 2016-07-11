@@ -80,6 +80,9 @@ namespace ChimeraTK {
        *  makeConnections() has been called. */
       void dumpConnections();
 
+      /** Return the name of the application */
+      const std::string& getName() {return applicationName;}
+
     protected:
 
       friend class Module;
