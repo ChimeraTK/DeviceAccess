@@ -55,11 +55,11 @@ set(DOOCS_LINK_FLAGS "-Wl,--no-as-needed")
 
 # extract DOOCS version from librar so symlink. Note: This is platform dependent and only works
 # if DOOCS was installed from the Debian pagackes. Find a better version detection scheme!
-execute_process(COMMAND bash -c "readlink ${DOOCS_DIR}/libDOOCSapi.so | sed -e 's/^.*libDOOCSapi.so.//' -e 's/-.*$//'" OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE DOOCS_VERSION)
+execute_process(COMMAND bash -c "readelf -d ${DOOCS_DIR}/libDOOCSapi.so | grep SONAME | sed -e 's/^.*Library soname: \\[libDOOCSapi\\.so\\.//' -e 's/\\]$//'"
+                OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE DOOCS_VERSION)
 
 # use a macro provided by CMake to check if all the listed arguments are valid and set DOOCS_FOUND accordingly
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOOCS
         REQUIRED_VARS DOOCS_DIR
-	    VERSION_VAR DOOCS_VERSION )
-
+        VERSION_VAR DOOCS_VERSION )
