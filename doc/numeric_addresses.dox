@@ -1,0 +1,13 @@
+/**
+\page numeric_addresses Accessing numeric-addressed registers without a map file
+
+During firmware development one might need to access registers without having a map file. This is only supported by
+backends based on the NumericAddressedBackend: the PcieBackend, the RebotBackend and the DummyBackend. The access can be
+realised through specifying the register address and length in a special register name. Inside the C++ code, the
+NumericAddress::BAR constant can be used. This notation can be used in any context where a RegisterPath name is
+expected. Outside C++, e.g. when using the command line tools, a "#" character has to be used instead of the BAR
+constant, e.g.: #/0/32*4
+
+\include numeric_address.cpp
+
+*/

@@ -15,6 +15,7 @@ are complete and fully functional.
 \li \ref basic_example
 \li \ref accessor1d
 \li \ref accessor2d
+\li \ref numeric_addresses
 \li Logical name mapping
 \li Transfer groups
 \li Firmware debugging without map/dmap file
