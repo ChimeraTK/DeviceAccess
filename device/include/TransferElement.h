@@ -74,7 +74,8 @@ namespace mtca4u {
        *  isWriteable() is not true.*/
       virtual bool isWriteable() const = 0;
       
-      /** Deprecated: The time stamp will be replaced with a unique counter.
+      /** @brief Deprecated, do not use
+       *  @deprecated The time stamp will be replaced with a unique counter.
        *  Only used for backward compatibility with the control system adapter. All implementations
        *  in DeviceAccess will throw an exception with DeviceException::NOT_IMPLEMENTED.
        *
@@ -85,7 +86,13 @@ namespace mtca4u {
         throw DeviceException("getTimeStamp is not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
       }
 
-      
+      /** @brief Deprecated, do not use
+       *  @deprecated Only used for backward compatibility with the control system adapter.
+       *  This feature will be removed soon, maybe even before the next tag. DO NOT USE IT!!
+       */
+      virtual bool isArray() {
+        throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
+      }
 
       /** Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing
