@@ -90,7 +90,10 @@ namespace mtca4u {
        *
        *  The last optional argument flags allows to control certain details how the register is accessed. It allows
        *  e.g. to enable raw access. See AccessMode documentation for more details. Passing an access mode flag which
-       *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException. */
+       *  is not supported by the backend or the given register will raise a NOT_IMPLEMENTED DeviceException.
+       *
+       *  Hint: when passing the AccessModeFlags, just enclose the wanted flags in a brace initialiser list without
+       *  "AccessModeFlags", e.g.: getOneDRegisterAccessor<int32_t>("reg",0,0,{AccessMode::raw}) */
       template<typename UserType>
       OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
@@ -510,12 +513,12 @@ namespace mtca4u {
     if(!enforceRawAccess) {
       return OneDRegisterAccessor<UserType>(
           _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
-              wordOffsetInRegister) );
+              wordOffsetInRegister, {} ));
     }
     else {
       return OneDRegisterAccessor<UserType>(
           _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, numberOfWords,
-              wordOffsetInRegister, AccessModeFlags({AccessMode::raw}) ));
+              wordOffsetInRegister, {AccessMode::raw} ));
     }
   }
 

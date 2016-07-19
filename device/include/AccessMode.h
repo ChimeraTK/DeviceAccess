@@ -45,7 +45,9 @@ namespace mtca4u {
       : _flags(flags)
       {}
 
-      /** Constructor initialises from a brace initialiser list (e.g. "{AccessMode::raw}") */
+      /** Constructor initialises from a brace initialiser list (e.g. "{AccessMode::raw}"). Hint: You can use the
+       *  brace initialiser list also without explicitly using the class name, when calling a function which has
+       *  an argument of the type AccessModeFlags. */
       AccessModeFlags(const std::initializer_list<AccessMode> &flags)
       : _flags(flags)
       {}

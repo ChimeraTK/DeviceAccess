@@ -45,10 +45,14 @@ namespace mtca4u {
 
         // check number of words
         if(_numberOfWords == 0) {
-          _numberOfWords = _registerInfo->getNumberOfElements();
+          _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
         }
         if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
-          throw DeviceException("Requested number of words exceed the size of the register!",
+          throw DeviceException("Requested number of words exceeds the size of the register!",
+              DeviceException::WRONG_PARAMETER);
+        }
+        if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
+          throw DeviceException("Requested offset exceeds the size of the register!",
               DeviceException::WRONG_PARAMETER);
         }
 
