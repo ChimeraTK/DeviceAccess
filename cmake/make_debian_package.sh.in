@@ -6,23 +6,30 @@ if [ -z "$mtca4u_deviceaccess_BUILDVERSION" ]; then
     exit 1
 fi
 
+#drop out of the script if anything goes wrong (e.g. non-existen git tag)
+set -e
+
 #Create a working directory in order not to merge with the rest in the build directory
+rm -rf debian_package
 mkdir debian_package
 cd debian_package
 
-#Check out the correct tag from the svn repository.
+#Check out the correct tag from the master git repository.
 #The local directory name has to follow the debian convention
 # lowecasepackagenname_package.ver.sion
-#As we have to make a tar-file, and tags don't change anyway, we use export
-#instead of checkout.
-svn export https://svnsrv.desy.de/public/mtca4u/deviceaccess/tags/@mtca4u-deviceaccess_VERSION@ libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@
+BUILD_DIR_NAME=libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@
+#svn export https://svnsrv.desy.de/public/mtca4u/deviceaccess/tags/@mtca4u-deviceaccess_VERSION@ libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@
+git clone https://github.com/ChimeraTK/DeviceAccess.git ${BUILD_DIR_NAME}
+( cd  ${BUILD_DIR_NAME} &&\
+  git checkout /@mtca4u-deviceaccess_VERSION@ &&\
+  rm -rf .git )
 #Debian convention: file has to end on .orig.tar.gz
-tar -czf libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@.orig.tar.gz  libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@
+tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
 
 #Copy the prepared debian packaging config files to the source code 
 #directroy
-cp -r ../debian_from_template  libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@/debian
-cd libmtca4u-deviceaccess_@mtca4u-deviceaccess_FULL_LIBRARY_VERSION@
+cp -r ../debian_from_template  ${BUILD_DIR_NAME}/debian
+cd ${BUILD_DIR_NAME}
 
 #The package versions for doocs / Ubuntu contain the codename of the distribution. Get it from the system.
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
