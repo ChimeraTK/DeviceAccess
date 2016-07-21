@@ -46,7 +46,7 @@ cd debian_package
 BUILD_DIR_NAME=@PACKAGE_BASE_NAME@_@PACKAGE_FULL_LIBRARY_VERSION@
 git clone @PACKAGE_GIT_URI@ ${BUILD_DIR_NAME}
 ( cd  ${BUILD_DIR_NAME} &&\
-  git checkout /@PACKAGE_TAG_VERSION@ &&\
+  git checkout @PACKAGE_TAG_VERSION@ &&\
   rm -rf .git )
 #Debian convention: file has to end on .orig.tar.gz
 tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
