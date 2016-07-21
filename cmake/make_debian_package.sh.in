@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# Shell script to generate a debian package from a particular tag (configured during the cmake configuration).
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
 # This cmake.in file requires the following variables to be set:
 # PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME Environment variable which contains the build version.
 #   Must not contain any hyphens.
