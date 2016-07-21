@@ -52,9 +52,10 @@ include(FindPackageHandleStandardArgs)
 # The FOUND_VAR option in FIND_PACKAGE_HANDLE_STANDARD_ARGS was introduced in cmake-2.8.11, but Ubuntu 12.04 has cmake-2.8.7 only.
 # Thus we use a work around here for older cmake versions.
 if("${CMAKE_VERSION}" VERSION_LESS 2.8.11)
+  # The old version always provides a variable with upper case project name, so we just copy that
   FIND_PACKAGE_HANDLE_STANDARD_ARGS(@PROJECT_NAME@ REQUIRED_VARS @PROJECT_NAME@_PREFIX VERSION_VAR @PROJECT_NAME@_VERSION)
   STRING(TOUPPER "@PROJECT_NAME@" PROJECT_NAME_UPPERCASE)
-  set(@PROJECT_NAME@_VERSION ${PROJECT_NAME_UPPERCASE})
+  set(@PROJECT_NAME@_FOUND ${${PROJECT_NAME_UPPERCASE}_FOUND})
 else()
   FIND_PACKAGE_HANDLE_STANDARD_ARGS(@PROJECT_NAME@ REQUIRED_VARS @PROJECT_NAME@_PREFIX VERSION_VAR @PROJECT_NAME@_VERSION FOUND_VAR @PROJECT_NAME@_FOUND)
 endif()
