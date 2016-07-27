@@ -1,0 +1,7 @@
+This project uses the ChimeraTK project-template.
+
+It contains some files (like this one) which should not be changed
+inside the project. The files should be improved in a generic way in the
+project-template and are afterwards merged into all projects which use the
+project-template. Like this it is easier to improve the build scripts and
+keep them consistent across projects.
