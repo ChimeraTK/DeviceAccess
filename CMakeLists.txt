@@ -147,7 +147,7 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_static
   )
 
 #all include files go into include/PROJECT_NAME
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include/mtca4u/ DESTINATION include/mtca4u)
 
 #Create the config files by filling the correct variables into the template (*.cmake.in).
 #All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
