@@ -1,10 +1,11 @@
+namespace mtca4u{
 /**
 \page q_and_a Questions and Answers
 
 This page is answering questions which users have asked when working with the
 DeviceAccess Library.
 
-## Why do RegisterAccessors not have an assignment operator for other RegisterAccessors?
+\section why_no_accessor_assignment Why do RegisterAccessors not have an assignment operator for other RegisterAccessors?
 We decided to explicitly disable the assignmet of one accessor to another
 because it is ambiguous what the excpected behaviour is:
 - Assign the data values of the other accessor?
@@ -12,8 +13,8 @@ because it is ambiguous what the excpected behaviour is:
 Depending on the contect where you use it you might expect either, so we
 decided to disable it to avoid unexpected behaviour.
 
-Use explicit conversion and replace() (defined in the NDRegisterAccessor base
-class) to disctinguish which functionalitily to have:
+Use explicit conversion and replace() (defined in the NDRegisterAccessorBridge base
+class) to disctinguish which functionalitily you want:
 
 \code
     // Note: This is calling the copy constructor, not the assignment operator.
@@ -56,7 +57,7 @@ With the assignment operator, however, this leads to unexpected behaviour:
 \endcode
 
 If we would have designed the assignment operator to only replace the value,
-the initialisation of the variable would be have unintuitively:
+the initialisation of the variable would behave unintuitively:
 
 \code
     // This works as expected because in fact the copy constructor is called, 
@@ -65,11 +66,13 @@ the initialisation of the variable would be have unintuitively:
     
     // This does not work. 'd' is not initialised yet and the value assignment
     // is called, which leads to an assertion because of null pointer
-    // dereferencing.
+    // dereferencing at run time.
     ScalarRegisterAccessor<int> d;
     d = _device->getScalarRegisterAccessor<int>("REG_D");
 \endcode
 
 Hence, we decided that there is no intuitive implementation for the assigment
-operator and explicitly deactivated it.
+operator and explicitly deactivated it. The last example assigning to \c d will
+already fail at compile time.
 */
+}// end of namespace

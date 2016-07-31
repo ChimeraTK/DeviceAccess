@@ -52,6 +52,20 @@ would be really inefficient in case of large data arrays), but just use the acce
 
 \include basic.cpp
 
+### Side note
+Although the initialisation syntax of \c _temperatureSetPoint in the example
+above uses the equals sign, this is calling the copy constructor. Accessors
+intentionally don't have assignment operators (see \ref why_no_accessor_assignment).
+
+If you want to initialise an accessor which is already created, use \c
+replace(). You need this for instance if the accessor is a class member and
+has already been instantiated before you call devcie.getXXXAccessor() in the constructor.
+\code
+    mtca4u::ScalarRegisterAccessor<float> temperatureSetPoint;
+    temperatureSetPoint.replace(myDevice.getScalarRegisterAccessor<float>("TEMPERATURE_CONTROLLER/SET_POINT"));
+\endcode
+
+
 Next topic: \ref accessor1d
 */
 
