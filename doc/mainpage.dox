@@ -24,6 +24,8 @@ are complete and fully functional.
 \li \ref dmap
 \li \ref mapping 
 
+\li \ref q_and_a
+
 \page basic_example Basic Example
 
 To use the mtca4u::Device class you need a so called "device map" file (dmap file).
