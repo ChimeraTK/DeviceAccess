@@ -171,6 +171,9 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK( device->someMuxedRegister.getNumberOfElements() == 4096 );
   BOOST_CHECK( device->someMuxedRegister.getNumberOfSequences() == 16 );
 
+  // the area offset is 1000 bytes. When addressing the index of the 32 bit word in the bar, we have to divide by 4
+  static const int areaIndexOffset = 1000 / 4;
+
   // since our register does not have a fixed type, we use this union/struct to fill the bar content directly
   // the packed attribute prevents the compiler from adding a padding between the struct fields
   union _mixedReg {
@@ -214,16 +217,16 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 13;
   mixedReg.cooked.r14 = 14;
   mixedReg.cooked.r15 = 15;
-  for(int i=0; i<13; i++) device->_barContents[0xD][i] = mixedReg.raw[i];
+  for(int i=0; i<13; i++) device->_barContents[0xD][areaIndexOffset+i] = mixedReg.raw[i];
 
   // test the test, to be sure the union is not going wrong
   BOOST_CHECK( (int)((char*)&(mixedReg.cooked.r5) - (char*)&(mixedReg.cooked.r0)) == 10);
   BOOST_CHECK( (int)((char*)&(mixedReg.cooked.r10) - (char*)&(mixedReg.cooked.r0)) == 28);
   BOOST_CHECK( (int)((char*)&(mixedReg.cooked.r15) - (char*)&(mixedReg.cooked.r0)) == pitch-4);
-  BOOST_CHECK( device->_barContents[0xD][0] == 42 );
-  BOOST_CHECK( device->_barContents[0xD][1] == 120 + 0x10000 * 222 );
-  BOOST_CHECK( device->_barContents[0xD][9] == 12 );
-  BOOST_CHECK( device->_barContents[0xD][12] == 15 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+0] == 42 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+1] == 120 + 0x10000 * 222 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+9] == 12 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+12] == 15 );
 
   mixedReg.cooked.r0 = 1;
   mixedReg.cooked.r1 = 11;
@@ -241,13 +244,13 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 333;
   mixedReg.cooked.r14 = 444;
   mixedReg.cooked.r15 = 555;
-  for(int i=0; i<13; i++) device->_barContents[0xD][pitch/4+i] = mixedReg.raw[i];
+  for(int i=0; i<13; i++) device->_barContents[0xD][areaIndexOffset+pitch/4+i] = mixedReg.raw[i];
 
   // test the test, to be sure the union is not going wrong
-  BOOST_CHECK( device->_barContents[0xD][pitch/4+0] == 1 );
-  BOOST_CHECK( device->_barContents[0xD][pitch/4+1] == 11 + 0x10000 * 22 );
-  BOOST_CHECK( device->_barContents[0xD][pitch/4+9] == 222 );
-  BOOST_CHECK( device->_barContents[0xD][pitch/4+12] == 555 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+pitch/4+0] == 1 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+pitch/4+1] == 11 + 0x10000 * 22 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+pitch/4+9] == 222 );
+  BOOST_CHECK( device->_barContents[0xD][areaIndexOffset+pitch/4+12] == 555 );
 
   // fill the rest of the register (has 4096 samples per channel)
   for(int i = 2; i < 4096; i++) {
@@ -267,7 +270,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     mixedReg.cooked.r13 = i + 13;
     mixedReg.cooked.r14 = i + 14;
     mixedReg.cooked.r15 = i + 15;
-    for(int k=0; k<13; k++) device->_barContents[0xD][i*(pitch/4)+k] = mixedReg.raw[k];
+    for(int k=0; k<13; k++) device->_barContents[0xD][areaIndexOffset+i*(pitch/4)+k] = mixedReg.raw[k];
   }
 
   // test reading by [][] operator
@@ -351,7 +354,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     }
   }
 
-  for(int k=0; k<13; k++) mixedReg.raw[k] = device->_barContents[0xD][k];
+  for(int k=0; k<13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset+k];
   BOOST_CHECK( mixedReg.cooked.r0 == 666 );
   BOOST_CHECK( mixedReg.cooked.r1 == 999 );
   BOOST_CHECK( mixedReg.cooked.r2 == 222 );
@@ -371,7 +374,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
 
 
   for(int i=1; i<65536/16; i++) {
-    for(int k=0; k<13; k++) mixedReg.raw[k] = device->_barContents[0xD][i*(pitch/4)+k];
+    for(int k=0; k<13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset+i*(pitch/4)+k];
     BOOST_CHECK( mixedReg.cooked.r0 == 10*0 + i );
     BOOST_CHECK( mixedReg.cooked.r1 == std::min( 10*1 + i, 32767) );
     BOOST_CHECK( mixedReg.cooked.r2 == std::min( 10*2 + i, 32767) );
@@ -396,7 +399,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
 
 /**********************************************************************************************************************/
 void DummyRegisterTest::testDummyRegisterAddressChecker() {
-  std::cout << "testMuxedRegisterAccessor" << std::endl;
+  std::cout << "testDummyRegisterAddressChecker" << std::endl;
 
   // first test class directly
   RegisterInfoMap::RegisterInfo info;

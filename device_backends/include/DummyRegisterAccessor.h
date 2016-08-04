@@ -286,7 +286,7 @@ namespace mtca4u {
       inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence)
       {
         int8_t *basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.bar].data());
-        uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + (registerInfo.address + offsets[sequence]));
+        uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + offsets[sequence]);
         return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
       }
 
