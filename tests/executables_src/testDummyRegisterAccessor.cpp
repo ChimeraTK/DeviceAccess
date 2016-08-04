@@ -168,7 +168,7 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   device->open();
 
   // check number of elements getter
-  BOOST_CHECK( device->someMuxedRegister.getNumberOfElements() == 65536/16 );
+  BOOST_CHECK( device->someMuxedRegister.getNumberOfElements() == 4096 );
   BOOST_CHECK( device->someMuxedRegister.getNumberOfSequences() == 16 );
 
   // since our register does not have a fixed type, we use this union/struct to fill the bar content directly
@@ -249,8 +249,8 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK( device->_barContents[0xD][pitch/4+9] == 222 );
   BOOST_CHECK( device->_barContents[0xD][pitch/4+12] == 555 );
 
-  // fill the rest of the register (has 65536 elements in total in the mapp file, thus 65536/16 per channel)
-  for(int i = 2; i < 65536/16; i++) {
+  // fill the rest of the register (has 4096 samples per channel)
+  for(int i = 2; i < 4096; i++) {
     mixedReg.cooked.r0 = i + 0;
     mixedReg.cooked.r1 = i + 1;
     mixedReg.cooked.r2 = i + 2;

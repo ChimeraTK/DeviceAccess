@@ -264,7 +264,7 @@ namespace mtca4u {
         }
 
         // compute number of elements per sequence
-        nElements = registerInfo.nElements/fpc.size();
+        nElements = registerInfo.nBytes/pitch;
       }
 
       /// return number of elements per sequence
