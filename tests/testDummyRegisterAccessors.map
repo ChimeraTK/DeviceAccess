@@ -2,7 +2,13 @@
 APP0.SOME_REGISTER                                         10            0           40      1     32      0    0
 APP0.ANOTHER_REGISTER                                       1           40            4      1     32      0    0
 
-APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA                65536            0      1048576     13     32      0    0
+#An area with 16 sequences of mixed types. It is supposed to have 4096 samples in each sequence.
+#There are 52 bytes in the sum of all sequences, so there are 212992 bytes (size).
+#The number of elements in the AREA field is just 212992 / 4, because it is just the instruction for the
+#transport layer how many bytes/32-bit words to transfer. The ratio always must be 4 with all current numerically
+#addressed backends.
+#The area is intentionally starting at an offset to test this.
+APP0.AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA                53248         1024       212992     13     32      0    0
 APP0.SEQUENCE_DAQ0_ADCA_0                                   1            0            4     13     32      0    1
 APP0.SEQUENCE_DAQ0_ADCA_1                                   1            4            2     13     16      0    1
 APP0.SEQUENCE_DAQ0_ADCA_2                                   1            6            2     13     16      0    1
