@@ -93,8 +93,6 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
-add_library( ${PROJECT_NAME}_static STATIC ${SOURCE} ${HEADERS} )
-
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
 target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread) 
@@ -140,7 +138,7 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 #Install the library and the executables
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_static
+install(TARGETS ${PROJECT_NAME}
             RUNTIME DESTINATION bin
 	    LIBRARY DESTINATION lib
 	    ARCHIVE DESTINATION lib
