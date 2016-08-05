@@ -24,6 +24,8 @@ are complete and fully functional.
 \li \ref dmap
 \li \ref mapping 
 
+\li \ref q_and_a
+
 \page basic_example Basic Example
 
 To use the mtca4u::Device class you need a so called "device map" file (dmap file).
@@ -49,6 +51,20 @@ Usually you don't allocate a variable and copy the accessor content to it (which
 would be really inefficient in case of large data arrays), but just use the accessor.
 
 \include basic.cpp
+
+### Side note
+Although the initialisation syntax of \c _temperatureSetPoint in the example
+above uses the equals sign, this is calling the copy constructor. Accessors
+intentionally don't have assignment operators (see \ref why_no_accessor_assignment).
+
+If you want to initialise an accessor which is already created, use \c
+replace(). You need this for instance if the accessor is a class member and
+has already been instantiated before you call devcie.getXXXAccessor() in the constructor.
+\code
+    mtca4u::ScalarRegisterAccessor<float> temperatureSetPoint;
+    temperatureSetPoint.replace(myDevice.getScalarRegisterAccessor<float>("TEMPERATURE_CONTROLLER/SET_POINT"));
+\endcode
+
 
 Next topic: \ref accessor1d
 */
