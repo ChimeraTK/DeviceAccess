@@ -9,6 +9,7 @@ FAKE3     sdm://./fake:fakeDevice mtcadummy_withoutModules.map
 DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.map
 DUMMYD1   sdm://./dummy=goodMapFile.map goodMapFile.map
 DUMMYD2   sdm://./dummy:DummyD2 goodMapFile.map
+DUMMYD3   sdm://./dummy:DummyD3=mtcadummy.map mtcadummy.map
 example   sdm://./exx:examp=bus,1  ./mtcadummy_withoutModules.map
 DUMMYD9   sdm://./dummy=goodMapFile.map goodMapFile.map
 mskrebot  sdm://./rebot=127.0.0.1,5001 mtcadummy_rebot.map

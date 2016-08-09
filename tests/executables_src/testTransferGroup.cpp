@@ -50,7 +50,7 @@ void TransferGroupTest::testSimpleCase() {
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
   mtca4u::Device device;
 
-  device.open("PCIE2");
+  device.open("DUMMYD3");
 
   BufferingRegisterAccessor<int> a1 = device.getBufferingRegisterAccessor<int>("ADC","AREA_DMAABLE");
   BufferingRegisterAccessor<int> a2 = device.getBufferingRegisterAccessor<int>("ADC","AREA_DMAABLE");
