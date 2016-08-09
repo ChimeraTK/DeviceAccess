@@ -81,11 +81,19 @@ namespace mtca4u {
       virtual ~NumericAddressedBackendRegisterAccessor() {};
 
       virtual void read() {
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
         _rawAccessor->read();
         postRead();
       }
 
       virtual void write() {
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
         preWrite();
         _rawAccessor->write();
       }

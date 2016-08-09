@@ -104,6 +104,36 @@ void TransferGroupTest::testSimpleCase() {
     BOOST_CHECK(e.getID() == DeviceException::WRONG_PARAMETER);
   }
 
+  // check that reading and writing the accessors which are part of the group throws
+  try {
+    a1.read();
+    BOOST_ERROR("Exception expected!");
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
+  }
+  try {
+    a1.write();
+    BOOST_ERROR("Exception expected!");
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
+  }
+  try {
+    a3.read();
+    BOOST_ERROR("Exception expected!");
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
+  }
+  try {
+    a4.write();
+    BOOST_ERROR("Exception expected!");
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
+  }
+
   // since we are using a NumericAddressedBackend, only raw buffers are shared. Thus writing to the register accessor
   // (cooked) buffers should not influence the other accessors in the group.
   a1[0] = 333;
