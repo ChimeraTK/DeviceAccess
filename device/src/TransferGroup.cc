@@ -51,29 +51,37 @@ namespace mtca4u {
   void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor) {
     auto newElements = accessor.getHardwareAccessingElements();
 
-    // iterate over all new elements
+    // Iterate over all new hardware-accessing elements and add them to the list
     for(unsigned int i=0; i<newElements.size(); i++) {
+      elements.push_back(newElements[i]);
+    }
 
-      // iterate over all elements already in the list and check if element is already in there
-      bool foundDuplicate = false;
-      for(unsigned int k=0; k<elements.size(); k++) {
-        if(newElements[i]->isSameRegister(elements[k])) {
-          // replace the TransferElement inside the accessor with the version already in the list
-          accessor.replaceTransferElement(elements[k]);
-          // set flag and stop the loop (the list is already unique, so no further match is possible)
-          foundDuplicate = true;
+    // Iterate over all hardware-accessing elements and merge any potential duplicates
+    // Note: This cannot be done only for the newly added elements, since e.g. in NumericAddressedBackend the new
+    // accessor might fill the gap (in the address space) between to already added accessors, in which case also the
+    // already added accessors must be merged.
+    std::vector< std::vector< boost::shared_ptr<TransferElement> >::iterator > eraseList;
+    for(auto i = elements.begin(); i != elements.end(); ++i) {
+      for(auto k = i; k != elements.end(); ++k) {
+        if(k == i) continue;
+        if((*i)->isSameRegister(*k)) {
+          // replace the TransferElement inside any high-level accessor with the merged version
+          for(auto &m : highLevelElements) {
+            m->replaceTransferElement(*k);
+          }
+          eraseList.push_back(i);
           break;
         }
       }
-
-      // if not a duplicate, add to the list
-      if(!foundDuplicate) elements.push_back(newElements[i]);
     }
 
-    // update read-only flag
+    // Erase the duplicates (cannot do this inside the loop since it would invalidate the iterators)
+    for(auto &e : eraseList) elements.erase(e);
+
+    // Update read-only flag
     if(accessor.isReadOnly()) readOnly = true;
 
-    // store the accessor itself in the high-level list
+    // Store the accessor itself in the high-level list
     highLevelElements.push_back(accessor.getHighLevelImplElement());
   }
 

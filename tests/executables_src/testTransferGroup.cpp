@@ -283,11 +283,12 @@ void TransferGroupTest::testMergeNumericRegisters() {
   BOOST_CHECK( mux1i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux2i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
 
-  // add accessors to the transfer group
+  // add accessors to the transfer group. The accessors are intentionally added out of order to check if the behaviour
+  // is also correct in that case
   TransferGroup group;
   group.addAccessor(mux0);
-  group.addAccessor(mux1);
   group.addAccessor(mux2);
+  group.addAccessor(mux1);
   group.addAccessor(mux3);
 
   // check that all underlying raw accessors are now all the same
