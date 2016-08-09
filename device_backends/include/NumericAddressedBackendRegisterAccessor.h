@@ -9,7 +9,7 @@
 #define MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessor.h"
-#include "NumericAddressedBackend.h"
+#include "NumericAddressedBackendRawAccessor.h"
 #include "FixedPointConverter.h"
 
 namespace mtca4u {
@@ -30,6 +30,7 @@ namespace mtca4u {
       {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});
+
         // check device backend
         _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
         if(!_dev) {
@@ -56,13 +57,12 @@ namespace mtca4u {
               DeviceException::WRONG_PARAMETER);
         }
 
+        // create raw accessor
+        _rawAccessor.reset(new NumericAddressedBackendRawAccessor(_dev,_bar,_startAddress,_numberOfWords));
+
         // allocated the buffers
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
-        rawDataBuffer.resize(_numberOfWords);
-
-        // compute number of bytes
-        _numberOfBytes = _numberOfWords*sizeof(int32_t);
 
         // configure fixed point converter
         if(!flags.has(AccessMode::raw)) {
@@ -81,18 +81,27 @@ namespace mtca4u {
       virtual ~NumericAddressedBackendRegisterAccessor() {};
 
       virtual void read() {
-        _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
-        for(size_t i=0; i < _numberOfWords; ++i){
-          NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(rawDataBuffer[i]);
-        }
+        _rawAccessor->read();
+        postRead();
       }
 
       virtual void write() {
-        for(size_t i=0; i < _numberOfWords; ++i){
-          rawDataBuffer[i] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
-        }
-        _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+        preWrite();
+        _rawAccessor->write();
       }
+
+      virtual void postRead() {
+        for(size_t i=0; i < _numberOfWords; ++i){
+          NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(_rawAccessor->rawDataBuffer[i]);
+        }
+      };
+
+      virtual void preWrite() {
+        for(size_t i=0; i < _numberOfWords; ++i){
+          _rawAccessor->rawDataBuffer[i] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
+        }
+      };
+
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRegisterAccessor<UserType> >(other);
@@ -133,20 +142,25 @@ namespace mtca4u {
       /** number of 4-byte words to access */
       size_t _numberOfWords;
 
-      /** number of bytes to access */
-      size_t _numberOfBytes;
-
-      /** raw buffer */
-      std::vector<int32_t> rawDataBuffer;
+      /** raw accessor */
+      boost::shared_ptr<NumericAddressedBackendRawAccessor> _rawAccessor;
 
       /** the backend to use for the actual hardware access */
       boost::shared_ptr<NumericAddressedBackend> _dev;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+        return _rawAccessor->getHardwareAccessingElements();
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {} // LCOV_EXCL_LINE
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        auto casted = boost::dynamic_pointer_cast< NumericAddressedBackendRawAccessor >(newElement);
+        if(newElement->isSameRegister(_rawAccessor) && casted) {
+          _rawAccessor = casted;
+        }
+        else {
+          _rawAccessor->replaceTransferElement(newElement);
+        }
+      }
 
   };
 

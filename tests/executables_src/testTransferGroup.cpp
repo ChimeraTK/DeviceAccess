@@ -92,31 +92,32 @@ void TransferGroupTest::testSimpleCase() {
   group.addAccessor(a3);
   group.addAccessor(a4);
 
-  // check if a1 and a2 now share the same buffer, and the others not
+  // since we are using a NumericAddressedBackend, only raw buffers are shared. Thus writing to the register accessor
+  // (cooked) buffers should not influence the other accessors in the group.
   a1[0] = 333;
   BOOST_CHECK(a1[0] == 333);
-  BOOST_CHECK(a2[0] == 333);
+  BOOST_CHECK(a2[0] == 42);
   BOOST_CHECK(a3[0] == 123);
   BOOST_CHECK(a4[0] == 42);
   a2[0] = 666;
-  BOOST_CHECK(a1[0] == 666);
+  BOOST_CHECK(a1[0] == 333);
   BOOST_CHECK(a2[0] == 666);
   BOOST_CHECK(a3[0] == 123);
   BOOST_CHECK(a4[0] == 42);
   a3[0] = 999;
-  BOOST_CHECK(a1[0] == 666);
+  BOOST_CHECK(a1[0] == 333);
   BOOST_CHECK(a2[0] == 666);
   BOOST_CHECK(a3[0] == 999);
   BOOST_CHECK(a4[0] == 42);
   a4[0] = 111;
-  BOOST_CHECK(a1[0] == 666);
+  BOOST_CHECK(a1[0] == 333);
   BOOST_CHECK(a2[0] == 666);
   BOOST_CHECK(a3[0] == 999);
   BOOST_CHECK(a4[0] == 111);
 
  // write will trigger writes of the underlying accessors in sequence, so a4 will write at last
   group.write();
-  BOOST_CHECK(a1[0] == 666);
+  BOOST_CHECK(a1[0] == 333);
   BOOST_CHECK(a2[0] == 666);
   BOOST_CHECK(a3[0] == 999);
   BOOST_CHECK(a4[0] == 111);
