@@ -22,6 +22,8 @@ namespace mtca4u {
 
     public:
 
+      TransferElement() : isInTransferGroup(false) {}
+
       /** Abstract base classes need a virtual destructor */
       virtual ~TransferElement() {}
 
@@ -68,6 +70,10 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
 
       friend class TransferGroup;
+
+    protected:
+
+      bool isInTransferGroup;
 
   };
 

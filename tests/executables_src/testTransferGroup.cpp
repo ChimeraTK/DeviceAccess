@@ -94,6 +94,16 @@ void TransferGroupTest::testSimpleCase() {
   group.addAccessor(a3);
   group.addAccessor(a4);
 
+  // check if adding an accessor to another group throws an exception
+  TransferGroup group2;
+  try {
+    group2.addAccessor(a1);
+    BOOST_ERROR("Exception expected!");
+  }
+  catch(DeviceException &e) {
+    BOOST_CHECK(e.getID() == DeviceException::WRONG_PARAMETER);
+  }
+
   // since we are using a NumericAddressedBackend, only raw buffers are shared. Thus writing to the register accessor
   // (cooked) buffers should not influence the other accessors in the group.
   a1[0] = 333;

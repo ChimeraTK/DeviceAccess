@@ -49,9 +49,16 @@ namespace mtca4u {
 
   template<>
   void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor) {
-    auto newElements = accessor.getHardwareAccessingElements();
+
+    // check if accessor is already in a transfer group
+    if(accessor.getHighLevelImplElement()->isInTransferGroup) {
+      throw DeviceException("The given accessor is already in a TransferGroup and cannot be added to another.",
+          DeviceException::WRONG_PARAMETER);
+    }
+    accessor.getHighLevelImplElement()->isInTransferGroup = true;
 
     // Iterate over all new hardware-accessing elements and add them to the list
+    auto newElements = accessor.getHardwareAccessingElements();
     for(unsigned int i=0; i<newElements.size(); i++) {
       elements.push_back(newElements[i]);
     }
