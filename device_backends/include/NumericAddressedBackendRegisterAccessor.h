@@ -92,13 +92,15 @@ namespace mtca4u {
 
       virtual void postRead() {
         for(size_t i=0; i < _numberOfWords; ++i){
-          NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(_rawAccessor->rawDataBuffer[i]);
+          NDRegisterAccessor<UserType>::buffer_2D[0][i] =
+              _fixedPointConverter.toCooked<UserType>(_rawAccessor->getData(_startAddress+sizeof(int32_t)*i));
         }
       };
 
       virtual void preWrite() {
         for(size_t i=0; i < _numberOfWords; ++i){
-          _rawAccessor->rawDataBuffer[i] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
+          _rawAccessor->getData(_startAddress+sizeof(int32_t)*i) =
+              _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
         }
       };
 
@@ -155,10 +157,12 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         auto casted = boost::dynamic_pointer_cast< NumericAddressedBackendRawAccessor >(newElement);
         if(newElement->isSameRegister(_rawAccessor) && casted) {
+          size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);
+          size_t newStopAddress = std::max(casted->_startAddress+casted->_numberOfWords,
+                                           _rawAccessor->_startAddress+_rawAccessor->_numberOfWords);
+          size_t newNumberOfWords = newStopAddress-newStartAddress;
+          casted->changeAddress(newStartAddress,newNumberOfWords);
           _rawAccessor = casted;
-        }
-        else {
-          _rawAccessor->replaceTransferElement(newElement);
         }
       }
 

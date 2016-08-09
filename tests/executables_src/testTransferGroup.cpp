@@ -173,12 +173,12 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
 
   // now some accessors share the same underlying accessor
   BOOST_CHECK( impl[3]->getHardwareAccessingElements()[0] == impl[4]->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] == impl[2]->getHardwareAccessingElements()[0] );
 
   // the others are still different
   BOOST_CHECK( impl[0]->getHardwareAccessingElements()[0] != impl[1]->getHardwareAccessingElements()[0] );
   BOOST_CHECK( impl[0]->getHardwareAccessingElements()[0] != impl[3]->getHardwareAccessingElements()[0] );
   BOOST_CHECK( impl[0]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0] );
-  BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] != impl[2]->getHardwareAccessingElements()[0] );
   BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] != impl[3]->getHardwareAccessingElements()[0] );
   BOOST_CHECK( impl[1]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0] );
   BOOST_CHECK( impl[3]->getHardwareAccessingElements()[0] != impl[5]->getHardwareAccessingElements()[0] );

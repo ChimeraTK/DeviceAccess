@@ -14,8 +14,6 @@
 
 namespace mtca4u {
 
-  class DeviceBackend;
-
   template<typename UserType>
   class NumericAddressedBackendRegisterAccessor;
 
@@ -31,13 +29,9 @@ namespace mtca4u {
 
       NumericAddressedBackendRawAccessor(boost::shared_ptr<NumericAddressedBackend> dev,
           size_t bar, size_t startAddress, size_t numberOfWords)
-      : _dev(dev), _bar(bar), _startAddress(startAddress), _numberOfWords(numberOfWords)
+      : _dev(dev), _bar(bar)
       {
-        // allocated the buffer
-        rawDataBuffer.resize(_numberOfWords);
-
-        // compute number of bytes
-        _numberOfBytes = _numberOfWords*sizeof(int32_t);
+        changeAddress(startAddress, numberOfWords);
       }
 
       virtual ~NumericAddressedBackendRawAccessor() {};
@@ -50,18 +44,47 @@ namespace mtca4u {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
+      /** Check if the two TransferElements are identical, i.e. accessing the same hardware register. In the special
+       *  case of the NumericAddressedBackendRawAccessor, this function returns also true if the address areas
+       *  are adjacent and/or overlapping. NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes
+       *  care of replacing the NumericAddressedBackendRawAccessors with a single NumericAddressedBackendRawAccessor
+       *  covering the address space of both accessors. */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+        // accessor type, device and bar must be the same
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRawAccessor >(other);
         if(!rhsCasted) return false;
         if(_dev != rhsCasted->_dev) return false;
         if(_bar != rhsCasted->_bar) return false;
-        if(_startAddress != rhsCasted->_startAddress) return false;
-        if(_numberOfWords != rhsCasted->_numberOfWords) return false;
+
+        // only allow adjacent and overlapping address areas to be merged
+        if(_startAddress + _numberOfBytes < rhsCasted->_startAddress) return false;
+        if(_startAddress > rhsCasted->_startAddress + rhsCasted->_numberOfBytes) return false;
         return true;
       }
 
       virtual bool isReadOnly() const {
         return false;
+      }
+
+      /** Return a reference to the raw buffer matching the given address. Only addresses within the range specified in
+       *  the constructor may be passed. The address must also have an integer multiple of the word size as an offset
+       *  w.r.t. the start address specified in the constructor. Otherwise an undefined behaviour will occur! */
+      int32_t& getData(size_t addressInBar) {
+        return rawDataBuffer[ (addressInBar - _startAddress)/sizeof(int32_t) ];
+      }
+
+      /** Change the start address (inside the bar given in the constructor) and number of words of this accessor. */
+      void changeAddress(size_t startAddress, size_t numberOfWords) {
+
+        // change address
+        _startAddress = startAddress;
+        _numberOfWords = numberOfWords;
+
+        // allocated the buffer
+        rawDataBuffer.resize(_numberOfWords);
+
+        // compute number of bytes
+        _numberOfBytes = _numberOfWords*sizeof(int32_t);
       }
 
     protected:
