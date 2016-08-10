@@ -55,6 +55,9 @@ namespace mtca4u {
       throw DeviceException("The given accessor is already in a TransferGroup and cannot be added to another.",
           DeviceException::WRONG_PARAMETER);
     }
+
+    // Store the accessor itself in the high-level list
+    highLevelElements.push_back(accessor.getHighLevelImplElement());
     accessor.getHighLevelImplElement()->isInTransferGroup = true;
 
     // Iterate over all new hardware-accessing elements and add them to the list
@@ -67,16 +70,20 @@ namespace mtca4u {
     // Note: This cannot be done only for the newly added elements, since e.g. in NumericAddressedBackend the new
     // accessor might fill the gap (in the address space) between to already added accessors, in which case also the
     // already added accessors must be merged.
+    // We go backwards through the list, since the latest element is the recently added accessor, for which we still
+    // have the original pimpl frontend (variable "accessor"). In cases were we need to replace the entire accessor
+    // implementation we need to do this on the pimpl frontent instead of the implementation stored in the
+    // highLevelElements list.
     std::vector< std::vector< boost::shared_ptr<TransferElement> >::iterator > eraseList;
-    for(auto i = elements.begin(); i != elements.end(); ++i) {
-      for(auto k = i; k != elements.end(); ++k) {
-        if(k == i) continue;
-        if((*i)->isSameRegister(*k)) {
+    for(int i=elements.size()-1; i>0; --i) {
+      for(int k=i-1; k>=0; --k) {
+        if(elements[i]->isSameRegister(elements[k])) {
           // replace the TransferElement inside any high-level accessor with the merged version
+          accessor.replaceTransferElement(elements[k]);  // might need to replace the implementation of the pimpl accessor frontend
           for(auto &m : highLevelElements) {
-            m->replaceTransferElement(*k);
+            m->replaceTransferElement(elements[k]);
           }
-          eraseList.push_back(i);
+          eraseList.push_back(elements.begin() + i); // store iterator to element to be deleted
           break;
         }
       }
@@ -87,9 +94,6 @@ namespace mtca4u {
 
     // Update read-only flag
     if(accessor.isReadOnly()) readOnly = true;
-
-    // Store the accessor itself in the high-level list
-    highLevelElements.push_back(accessor.getHighLevelImplElement());
   }
 
 } /* namespace mtca4u */
