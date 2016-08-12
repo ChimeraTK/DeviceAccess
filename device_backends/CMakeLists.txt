@@ -4,6 +4,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackendImpl.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackend.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackendRegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc

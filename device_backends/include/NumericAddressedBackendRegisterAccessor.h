@@ -25,7 +25,8 @@ namespace mtca4u {
 
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : _registerPathName(registerPathName),
+      : isRaw(false),
+        _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
       {
         // check for unknown flags
@@ -75,6 +76,7 @@ namespace mtca4u {
                 "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
           }
           _fixedPointConverter = FixedPointConverter(32, 0, true);
+          isRaw = true;
         }
       }
 
@@ -112,6 +114,8 @@ namespace mtca4u {
         }
       };
 
+      virtual void postWrite() {
+      };
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRegisterAccessor<UserType> >(other);
@@ -139,6 +143,7 @@ namespace mtca4u {
 
       /** Fixed point converter to interpret the data */
       FixedPointConverter _fixedPointConverter;
+      bool isRaw;
 
       /** register and module name */
       RegisterPath _registerPathName;
@@ -175,6 +180,15 @@ namespace mtca4u {
       }
 
   };
+
+  template<>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::postRead();
+
+  template<>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::preWrite();
+
+  template<>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::postWrite();
 
 }    // namespace mtca4u
 
