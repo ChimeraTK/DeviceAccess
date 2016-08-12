@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_NUMERIC_ADDRESSED_BACKEND_RAW_ACCESSOR_H
-#define MTCA4U_NUMERIC_ADDRESSED_BACKEND_RAW_ACCESSOR_H
+#ifndef MTCA4U_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H
+#define MTCA4U_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H
 
 #include "TransferElement.h"
 #include "NumericAddressedBackend.h"
@@ -120,4 +120,4 @@ namespace mtca4u {
 
 }    // namespace mtca4u
 
-#endif /* MTCA4U_NUMERIC_ADDRESSED_BACKEND_RAW_ACCESSOR_H */
+#endif /* MTCA4U_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H */
