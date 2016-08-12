@@ -1,5 +1,5 @@
 /*
- * NumericAddressedBackendRawAccessor.h
+ * NumericAddressedLowLevelTransferElement.h
  *
  *  Created on: Aug 8, 2016
  *      Author: Martin Hierholzer
@@ -24,17 +24,17 @@ namespace mtca4u {
    *  NumericAddressBackends. The reason for introducing this class is that it allows the TransferGroup to replace
    *  the raw accessor used by other accessors to merge data transfers of neighbouring registers.
    */
-  class NumericAddressedBackendRawAccessor : public TransferElement {
+  class NumericAddressedLowLevelTransferElement : public TransferElement {
     public:
 
-      NumericAddressedBackendRawAccessor(boost::shared_ptr<NumericAddressedBackend> dev,
+      NumericAddressedLowLevelTransferElement(boost::shared_ptr<NumericAddressedBackend> dev,
           size_t bar, size_t startAddress, size_t numberOfWords)
       : _dev(dev), _bar(bar)
       {
         changeAddress(startAddress, numberOfWords);
       }
 
-      virtual ~NumericAddressedBackendRawAccessor() {};
+      virtual ~NumericAddressedLowLevelTransferElement() {};
 
       virtual void read() {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
@@ -51,7 +51,7 @@ namespace mtca4u {
        *  covering the address space of both accessors. */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         // accessor type, device and bar must be the same
-        auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRawAccessor >(other);
+        auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedLowLevelTransferElement >(other);
         if(!rhsCasted) return false;
         if(_dev != rhsCasted->_dev) return false;
         if(_bar != rhsCasted->_bar) return false;

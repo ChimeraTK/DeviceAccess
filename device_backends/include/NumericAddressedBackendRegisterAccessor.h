@@ -1,5 +1,5 @@
 /*
- * MemoryAddressedBackendBufferingRegisterAccessor.h
+ * NumericAddressedBackendRegisterAccessor.h
  *
  *  Created on: Mar 15, 2016
  *      Author: Martin Hierholzer
@@ -57,8 +57,8 @@ namespace mtca4u {
               DeviceException::WRONG_PARAMETER);
         }
 
-        // create raw accessor
-        _rawAccessor.reset(new NumericAddressedBackendRawAccessor(_dev,_bar,_startAddress,_numberOfWords));
+        // create low-level transfer element handling the actual data transfer to the hardware with raw data
+        _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev,_bar,_startAddress,_numberOfWords));
 
         // allocated the buffers
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
@@ -153,7 +153,7 @@ namespace mtca4u {
       size_t _numberOfWords;
 
       /** raw accessor */
-      boost::shared_ptr<NumericAddressedBackendRawAccessor> _rawAccessor;
+      boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
 
       /** the backend to use for the actual hardware access */
       boost::shared_ptr<NumericAddressedBackend> _dev;
@@ -163,7 +163,7 @@ namespace mtca4u {
       }
 
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        auto casted = boost::dynamic_pointer_cast< NumericAddressedBackendRawAccessor >(newElement);
+        auto casted = boost::dynamic_pointer_cast< NumericAddressedLowLevelTransferElement >(newElement);
         if(newElement->isSameRegister(_rawAccessor) && casted) {
           size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);
           size_t newStopAddress = std::max(casted->_startAddress+casted->_numberOfWords,
