@@ -9,7 +9,7 @@
 #define MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessor.h"
-#include "NumericAddressedBackendRawAccessor.h"
+#include "NumericAddressedLowLevelTransferElement.h"
 #include "FixedPointConverter.h"
 
 namespace mtca4u {
