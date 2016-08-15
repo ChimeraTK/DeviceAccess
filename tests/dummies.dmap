@@ -3,7 +3,7 @@ PCIE0     sdm://./pci:pcieunidummys6;pcie  ./mtcadummy_withoutModules.map
 PCIE2     sdm://./pci:mtcadummys0; mtcadummy.map
 PCIE3     sdm://./pci:mtcadummys0; muxedDataAcessor.map
 PCIE0     sdm://./pci:pcieunidummys6;pcie  ./mtcadummy_withoutModules.map
-FAKE0 	  sdm://./fake:Reference_Device ./mtcadummy_withoutModules.map
+FAKE0	  sdm://./fake:Reference_Device ./mtcadummy_withoutModules.map
 FAKE1     sdm://./fake:DummyDevice mtcadummy_withoutModules.map
 FAKE3     sdm://./fake:fakeDevice mtcadummy_withoutModules.map
 DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.map
@@ -12,6 +12,7 @@ DUMMYD2   sdm://./dummy:DummyD2 goodMapFile.map
 DUMMYD3   sdm://./dummy:DummyD3=mtcadummy.map mtcadummy.map
 example   sdm://./exx:examp=bus,1  ./mtcadummy_withoutModules.map
 DUMMYD9   sdm://./dummy=goodMapFile.map goodMapFile.map
+PERFTEST  sdm://./dummy=performanceTest.map performanceTest.map
 mskrebot  sdm://./rebot=127.0.0.1,5001 mtcadummy_rebot.map
 mskrebot1  sdm://./rebot=localhost,5001 mtcadummy_rebot.map
 #an entry with the old /dev/ syntax for compatibility tests
