@@ -63,7 +63,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS system chrono REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -159,7 +159,7 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/include/mtca4u/ DESTINATION include/mtca
 #Only the reference header is needed. The other variables are for dependencies of this library,
 #but there are none.
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS}")
-set(${PROJECT_NAME}_LIBRARIES "${Boost_CHRONO_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY}")
+set(${PROJECT_NAME}_LIBRARIES "${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
 set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
