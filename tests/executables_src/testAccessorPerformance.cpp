@@ -1,18 +1,21 @@
-#include <chrono>
+#include <iostream>
+#include <fstream>
+
+#include <boost/chrono.hpp>
+using namespace boost::chrono;
 
 #include "Device.h"
 #include "Utilities.h"
 
 using namespace mtca4u;
-using namespace std::chrono;
 
 /**
  *
  * Usage: ( cd tests ; ../bin/testAccessorPerformance [<NumberOfIterations>] )
  *
- * <NumberOfIterations> is the number of iterations used for single word tests. Block access tests will use 1/100th
- * of the given number of iterations. If omitted, the number of iterations defaults to 1000 (which is acceptable
- * also on slower machines in debug build mode).
+ * <NumberOfIterations> is the number of iterations used for block access tests. Single word access tests will use
+ * 100000 times the given number of iterations. If omitted, the number of iterations defaults to 10 (which is
+ * acceptable also on slower machines in debug build mode).
  *
 */
 int main(int argc, char **argv){
@@ -24,16 +27,18 @@ int main(int argc, char **argv){
   Device device;
   device.open("PERFTEST");
 
-  int niter;
+  int niterBlock;
   if(argc <= 1) {
-    niter = 1000;
+    niterBlock = 10;
   }
   else {
-    niter = atoi(argv[1]);
+    niterBlock = atoi(argv[1]);
   }
-  int niterBlock = niter/100;
+  int niter = niterBlock*100000;
 
   int64_t sum = 0;
+
+  std::ofstream fresult("performance_test.txt", std::ofstream::out);
 
   std::cout <<" ***************************************************************************" << std::endl;
   std::cout <<" Tests with the OneDRegisterAccessor:" << std::endl;
@@ -47,6 +52,7 @@ int main(int argc, char **argv){
   }
   tdur = steady_clock::now()-t0;
   std::cout << "took " << tdur.count()*1000./niterBlock << " ms per block" << std::endl;
+  fresult << "1D_COOKEDus=" << std::round(tdur.count()*1000000./niterBlock) << std::endl;
 
   auto acc1Draw = device.getOneDRegisterAccessor<int>("ADC/AREA_DMA_VIA_DMA",0,0, {AccessMode::raw});
   t0 = steady_clock::now();
@@ -56,9 +62,8 @@ int main(int argc, char **argv){
       sum += acc1Draw[i];
   }
   tdur = steady_clock::now()-t0;
-  std::cout << "took " << tdur.count()*1000./niterBlock << " ms per block" << std::endl;\
-
-  return 0;
+  std::cout << "took " << tdur.count()*1000./niterBlock << " ms per block" << std::endl;
+  fresult << "1D_RAWus=" << std::round(tdur.count()*1000000./niterBlock) << std::endl;
 
   std::cout <<" ***************************************************************************" << std::endl;
   std::cout <<" Tests with the compatibility RegisterAccessor:" << std::endl;
@@ -73,6 +78,7 @@ int main(int argc, char **argv){
   }
   tdur = steady_clock::now()-t0;
   std::cout << "took " << tdur.count()*1000000./niter << " us per word" << std::endl;
+  fresult << "RACOMPAT_READns=" << std::round(tdur.count()*1000000000./niter) << std::endl;
 
   std::cout <<" writing ";
   t0 = steady_clock::now();
@@ -81,6 +87,7 @@ int main(int argc, char **argv){
   }
   tdur = steady_clock::now()-t0;
   std::cout << "took " << tdur.count()*1000000./niter << " us per word" << std::endl;
+  fresult << "RACOMPAT_WRITEns=" << std::round(tdur.count()*1000000000./niter) << std::endl;
 
   std::cout <<" reading raw ";
   t0 = steady_clock::now();
@@ -91,6 +98,7 @@ int main(int argc, char **argv){
   }
   tdur = steady_clock::now()-t0;
   std::cout << "took " << tdur.count()*1000000./niter << " us per word" << std::endl;
+  fresult << "RACOMPAT_READRAWns=" << std::round(tdur.count()*1000000000./niter) << std::endl;
 
   std::cout <<" writing raw ";
   t0 = steady_clock::now();
@@ -99,6 +107,7 @@ int main(int argc, char **argv){
   }
   tdur = steady_clock::now()-t0;
   std::cout << "took " << tdur.count()*1000000./niter << " us per word" << std::endl;
+  fresult << "RACOMPAT_WRITERAWns=" << std::round(tdur.count()*1000000000./niter) << std::endl;
 
   auto accessor2 = device.getRegisterAccessor("AREA_DMAABLE","ADC");
   t0 = steady_clock::now();
@@ -110,6 +119,7 @@ int main(int argc, char **argv){
   }
   tdur = steady_clock::now()-t0;
   std::cout << "took " << tdur.count()*1000./niterBlock << " ms per transfer" << std::endl;
+  fresult << "RACOMPAT_READMOVINGWORDus=" << std::round(tdur.count()*1000000./niterBlock) << std::endl;
 
 
   std::cout <<" ***************************************************************************" << std::endl;
@@ -118,6 +128,8 @@ int main(int argc, char **argv){
   tdur = steady_clock::now()-t0;
   std::cout << " Printing the sum took " << tdur.count()*1000. << " ms" << std::endl;
   std::cout <<" ***************************************************************************" << std::endl;
+
+  fresult.close();
 
   return 0;
 }
