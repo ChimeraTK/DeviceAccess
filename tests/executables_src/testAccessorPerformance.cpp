@@ -6,7 +6,16 @@
 using namespace mtca4u;
 using namespace std::chrono;
 
-int main(){
+/**
+ *
+ * Usage: ( cd tests ; ../bin/testAccessorPerformance [<NumberOfIterations>] )
+ *
+ * <NumberOfIterations> is the number of iterations used for single word tests. Block access tests will use 1/100th
+ * of the given number of iterations. If omitted, the number of iterations defaults to 1000 (which is acceptable
+ * also on slower machines in debug build mode).
+ *
+*/
+int main(int argc, char **argv){
   steady_clock::time_point t0;
   duration<double> tdur;
 
@@ -15,8 +24,14 @@ int main(){
   Device device;
   device.open("PERFTEST");
 
-  int niter = 100000;
-  int niterBlock = 1000;
+  int niter;
+  if(argc <= 1) {
+    niter = 1000;
+  }
+  else {
+    niter = atoi(argv[1]);
+  }
+  int niterBlock = niter/100;
 
   int64_t sum = 0;
 
