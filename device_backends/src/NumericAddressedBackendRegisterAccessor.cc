@@ -12,9 +12,12 @@ namespace mtca4u {
   template<>
   void NumericAddressedBackendRegisterAccessor<int32_t>::postRead() {
     if(!isRaw) {
-      for(size_t i=0; i < _numberOfWords; ++i){
-        NDRegisterAccessor<int32_t>::buffer_2D[0][i] =
-            _fixedPointConverter.toCooked<int32_t>(_rawAccessor->getData(_startAddress+sizeof(int32_t)*i));
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      for(auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
+               itdst != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
+             ++itdst) {
+        *itdst = _fixedPointConverter.toCooked<int32_t>(*itsrc);
+        ++itsrc;
       }
     }
     else {
@@ -25,9 +28,12 @@ namespace mtca4u {
   template<>
   void NumericAddressedBackendRegisterAccessor<int32_t>::preWrite() {
     if(!isRaw) {
-      for(size_t i=0; i < _numberOfWords; ++i){
-        _rawAccessor->getData(_startAddress+sizeof(int32_t)*i) =
-            _fixedPointConverter.toRaw(NDRegisterAccessor<int32_t>::buffer_2D[0][i]);
+      auto itsrc = _rawAccessor->begin(_startAddress);
+      for(auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
+               itdst != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
+             ++itdst) {
+        *itsrc = _fixedPointConverter.toRaw<int32_t>(*itdst);
+        ++itsrc;
       }
     }
     else {

@@ -66,11 +66,13 @@ namespace mtca4u {
         return false;
       }
 
-      /** Return a reference to the raw buffer matching the given address. Only addresses within the range specified in
-       *  the constructor may be passed. The address must also have an integer multiple of the word size as an offset
-       *  w.r.t. the start address specified in the constructor. Otherwise an undefined behaviour will occur! */
-      int32_t& getData(size_t addressInBar) {
-        return rawDataBuffer[ (addressInBar - _startAddress)/sizeof(int32_t) ];
+      /** Return accessor to the begin of the raw buffer matching the given address. No end() is provided, since the
+       *  NumericAddressedBackendRegisterAccessor using this functionality uses the cooked buffer for this check.
+       *  Only addresses within the range specified in the constructor may be passed. The address must also have an
+       *  integer multiple of the word size as an offset w.r.t. the start address specified in the constructor.
+       *  Otherwise an undefined behaviour will occur! */
+      std::vector<int32_t>::iterator begin(size_t addressInBar) {
+        return rawDataBuffer.begin() + addressInBar/sizeof(int32_t);
       }
 
       /** Change the start address (inside the bar given in the constructor) and number of words of this accessor. */

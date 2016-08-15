@@ -101,16 +101,22 @@ namespace mtca4u {
       }
 
       virtual void postRead() {
-        for(size_t i=0; i < _numberOfWords; ++i){
-          NDRegisterAccessor<UserType>::buffer_2D[0][i] =
-              _fixedPointConverter.toCooked<UserType>(_rawAccessor->getData(_startAddress+sizeof(int32_t)*i));
+        auto itsrc = _rawAccessor->begin(_startAddress);
+        for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
+                 itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
+               ++itdst) {
+          *itdst = _fixedPointConverter.toCooked<UserType>(*itsrc);
+          ++itsrc;
         }
       };
 
       virtual void preWrite() {
-        for(size_t i=0; i < _numberOfWords; ++i){
-          _rawAccessor->getData(_startAddress+sizeof(int32_t)*i) =
-              _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
+        auto itsrc = _rawAccessor->begin(_startAddress);
+        for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
+                 itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
+               ++itdst) {
+          *itsrc = _fixedPointConverter.toRaw<UserType>(*itdst);
+          ++itsrc;
         }
       };
 
