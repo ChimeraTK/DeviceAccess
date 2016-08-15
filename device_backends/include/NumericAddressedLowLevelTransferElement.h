@@ -72,7 +72,7 @@ namespace mtca4u {
        *  integer multiple of the word size as an offset w.r.t. the start address specified in the constructor.
        *  Otherwise an undefined behaviour will occur! */
       std::vector<int32_t>::iterator begin(size_t addressInBar) {
-        return rawDataBuffer.begin() + addressInBar/sizeof(int32_t);
+        return rawDataBuffer.begin() + (addressInBar-_startAddress)/sizeof(int32_t);
       }
 
       /** Change the start address (inside the bar given in the constructor) and number of words of this accessor. */
