@@ -4,7 +4,7 @@ Project(mtca4u-deviceaccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
 set(${PROJECT_NAME}_MINOR_VERSION 15)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -26,11 +26,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Set the build type to Release if none is specified
-if(NOT CMAKE_BUILD_TYPE)
+# Force it into Release if "None" is specified (needed to overrule dkpg_buildpackage)
+if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
       "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
       FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
 
 # C++ compiler flags needed to compile this project and against this project
 set(${PROJECT_NAME}_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
