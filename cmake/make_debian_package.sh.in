@@ -47,7 +47,7 @@ export PROJECT_BUILDVERSION="${CODENAME}${BUILD_NUMBER}"
 # lowecasepackagenname_package.ver.sion
 #Note, we first clone and then checkout the tag because the old git version on
 #Ubuntu12.4 does not support to do it in one go.
-BUILD_DIR_NAME="@PACKAGE_BASE_NAME@_@PACKAGE_MAJORMINOR_VERSION@-${PROJECT_BUILDVERSION}-@PACKAGE_PATCH_VERSION@"
+BUILD_DIR_NAME="@PACKAGE_BASE_NAME@_@PACKAGE_MAJORMINOR_VERSION@-${PROJECT_BUILDVERSION}"
 git clone @CMAKE_SOURCE_DIR@ ${BUILD_DIR_NAME}
 ( cd  ${BUILD_DIR_NAME} &&\
   git checkout @PACKAGE_TAG_VERSION@ &&\
