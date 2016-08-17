@@ -35,6 +35,13 @@ rm -rf debian_package
 mkdir debian_package
 cd debian_package
 
+#The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
+CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
+
+#Obtain build version
+BUILD_NUMBER=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
+export PROJECT_BUILDVERSION="${CODENAME}${BUILD_NUMBER}"
+
 #Check out the correct tag from the master git repository.
 #The local directory name has to follow the debian convention
 # lowecasepackagenname_package.ver.sion
@@ -52,13 +59,6 @@ tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
 #directroy
 cp -r ../debian_from_template  ${BUILD_DIR_NAME}/debian
 cd ${BUILD_DIR_NAME}
-
-#The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
-CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
-
-#Obtain build version
-BUILD_NUMBER=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
-export PROJECT_BUILDVERSION="${CODENAME}${BUILD_NUMBER}"
 
 #Before building the package we will update the changelog. This is easier from a shell script
 #because debchange does the right format and the current date, user name and email automatically for us.
