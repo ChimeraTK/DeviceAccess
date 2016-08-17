@@ -57,7 +57,7 @@ cd ${BUILD_DIR_NAME}
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 
 #Obtain build version
-BUILD_VERSION=`"$(dirname \"$0\")/getDebianBuildVersion"` || exit 1
+BUILD_VERSION=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion"` || exit 1
 
 #Before building the package we will update the changelog. This is easier from a shell script
 #because debchange does the right format and the current date, user name and email automatically for us.
