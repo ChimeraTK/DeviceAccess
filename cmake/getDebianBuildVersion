@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# obtain configuration
+source "$(dirname \"$0\")/DebianPackaging.config"
+
+# check minimum number of command line parameters
+if [ $# -lt 3 ]; then
+  echo "Usage:"
+  echo "./getDebianBuildVersion <PACKAGE_NAME> <PACKAGE_VERSION> <DEBIAN_CODENAME> [<DEPENDENCY1_NAME_WITH_VERSION>] [<DEPENDENCY2_NAME_WITH_VERSION>] [...]"
+  echo ""
+  echo "Example:"
+  echo "./getDebianBuildVersion DeviceAccess-DoocsBackend 0.1 xenial DeviceAccess-0.14 DOOCS-18.10.5 DoocsServerTestHelper-0.1"
+  echo ""
+  echo "Important note:"
+  echo "If you change the order of dependencies passed to this script, the build version will be unnecessarily increased!"
+  exit 1
+fi
+
+# parse mandatory command line parameters
+PACKAGE_NAME="$1"
+PACKAGE_VERSION="$2"
+DEBIAN_CODENAME="$3"
+shift ; shift ; shift
+
+# build sub-directory name for dependency versions (will start and end with a /)
+DEPENDENCY_STRING="/"
+while (( "$#" )); do
+  DEPENDENCY_STRING="${DEPENDENCY_STRING}${1}/"
+  shift
+done
+
+# output information extracted from command line:
+echo "PACKAGE_NAME=${PACKAGE_NAME}" >&2
+echo "PACKAGE_VERSION=${PACKAGE_VERSION}" >&2
+echo "DEBIAN_CODENAME=${DEBIAN_CODENAME}" >&2
+echo "DEPENDENCY_STRING=${DEPENDENCY_STRING}" >&2
+
+# create temporary directory for checking out the DebianBuildVersions repository and modifying it
+WDIR=`mktemp --tmpdir -d DebianBuildVersions.XXXXXXXX`
+echo Temporary directory to work in: $WDIR >&2
+echo Git repository containing the build versions: $DEBIAN_BUILD_VERSIONS_REPO >&2
+
+# check out the DebianBuildVersions repository
+cd $WDIR || exit 1
+git clone "$DEBIAN_BUILD_VERSIONS_REPO" . >&2 || exit 1
+
+# go to the directory for the specific package version and debian codename (create it if not yet existing)
+mkdir -p "${PACKAGE_NAME}/${PACKAGE_VERSION}/${DEBIAN_CODENAME}"
+cd "${PACKAGE_NAME}/${PACKAGE_VERSION}/${DEBIAN_CODENAME}"
+
+# if LATEST_BUILD file is not there, this is the first build of this package version on this debian codename
+if [ ! -f "LATEST_BUILD" ]; then
+  echo "The package ${PACKAGE_NAME} in version ${PACKAGE_VERSION} has never been build on ${DEBIAN_CODENAME} before." >&2
+  # start with build number 1 and create the necessary control structure
+  BUILD_NUMBER=1
+  echo ".${DEPENDENCY_STRING}BUILD_NUMBER" > LATEST_BUILD
+  mkdir -p ".${DEPENDENCY_STRING}"
+  echo ${BUILD_NUMBER} > ".${DEPENDENCY_STRING}BUILD_NUMBER"
+else
+  # if the file BUILD_NUMBER exists in the dependency sub-directory, this is a patch build and we re-use the build number
+  if [ -f ".${DEPENDENCY_STRING}BUILD_NUMBER" ]; then
+    echo "The package ${PACKAGE_NAME} in version ${PACKAGE_VERSION} has been build on ${DEBIAN_CODENAME} before against the SAME dependency versions." >&2
+    BUILD_NUMBER=`cat ".${DEPENDENCY_STRING}BUILD_NUMBER"`
+  else
+    # no build number has been assigned yet, so we have to increase the build number from the latest build
+    echo "The package ${PACKAGE_NAME} in version ${PACKAGE_VERSION} has been build on ${DEBIAN_CODENAME} before against DIFFERENT dependency versions." >&2
+    BUILD_NUMBER=$(( `cat $(cat LATEST_BUILD)` + 1 ))
+    echo ".${DEPENDENCY_STRING}BUILD_NUMBER" > LATEST_BUILD
+    mkdir -p ".${DEPENDENCY_STRING}"
+    echo ${BUILD_NUMBER} > ".${DEPENDENCY_STRING}BUILD_NUMBER"
+  fi
+fi
+
+# commit the changes to the repository
+git add -A . >&2 || exit 1
+git commit -m "Update by getDebianBuildVersion: ${PACKAGE_NAME}/${PACKAGE_VERSION}/${DEBIAN_CODENAME}${DEPENDENCY_STRING} -> ${BUILD_NUMBER}" >&2
+git push >&2 || exit 1
+
+# output the build number to stderr in human readable form and to stdout in plain form for further script processing
+echo Build number: ${BUILD_NUMBER} >&2
+echo ${BUILD_NUMBER}
+
+rm -rf $WDIR
