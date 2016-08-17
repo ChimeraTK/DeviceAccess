@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # obtain configuration
-source "$(dirname \"$0\")/DebianPackaging.config"
+source "$(dirname $0)/DebianPackaging.config"
 
 # check minimum number of command line parameters
 if [ $# -lt 3 ]; then
