@@ -19,15 +19,15 @@
 #   all lower case, no underscore)
 # PACKAGE_FULL_LIBRARY_VERSION The full version, incl. build version and patch version
 # PACKAGE_TAG_VERSION The tag for which the package is build
+# PACKAGE_MAJORMINOR_VERSION The library version without the patch level (i.e. just "MAJOR.MINOR")
 # PACKAGE_MESSAGE The message for the debian package log
+# PACKAGE_DEPENDENCY_VERSIONS A space-separated list of dependency names and versions, each connected by a dash, e.g.:
+#                             "DeviceAccess-0.15 ControlSystemAdapter-0.1"
+# Also the following standard cmake variables are used (should be always correctly set):
+# CMAKE_SOURCE_DIR
+# PROJECT_NAME
 
-#Check that the @PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@ variable is set, otherwise reject creating a package
-if [ -z "$@PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@" ]; then
-    echo Environment variable '@PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@' not set or empty. You need it to make a debian package!
-    exit 1
-fi
-
-#drop out of the script if anything goes wrong (e.g. non-existen git tag)
+#drop out of the script if anything goes wrong (e.g. non-existing git tag)
 set -e
 
 #Create a working directory in order not to merge with the rest in the build directory
@@ -57,7 +57,7 @@ cd ${BUILD_DIR_NAME}
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 
 #Obtain build version
-BUILD_VERSION=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion"` || exit 1
+BUILD_VERSION=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
 
 #Before building the package we will update the changelog. This is easier from a shell script
 #because debchange does the right format and the current date, user name and email automatically for us.
