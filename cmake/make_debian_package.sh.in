@@ -17,9 +17,9 @@
 # This cmake.in file requires the following variables to be set:
 # PACKAGE_BASE_NAME This is the debian package name, not the project name (e.g. libraries must start with lib,
 #   all lower case, no underscore)
-# PACKAGE_FULL_LIBRARY_VERSION The full version, incl. build version and patch version
 # PACKAGE_TAG_VERSION The tag for which the package is build
 # PACKAGE_MAJORMINOR_VERSION The library version without the patch level (i.e. just "MAJOR.MINOR")
+# PACKAGE_PATCH_VERSION The patch level
 # PACKAGE_MESSAGE The message for the debian package log
 # PACKAGE_DEPENDENCY_VERSIONS A space-separated list of dependency names and versions, each connected by a dash, e.g.:
 #                             "DeviceAccess-0.15 ControlSystemAdapter-0.1"
@@ -53,17 +53,18 @@ tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
 cp -r ../debian_from_template  ${BUILD_DIR_NAME}/debian
 cd ${BUILD_DIR_NAME}
 
-#The package versions for doocs / Ubuntu contain the codename of the distribution. Get it from the system.
+#The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 
 #Obtain build version
-BUILD_VERSION=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
+BUILD_NUMBER=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
+export PROJECT_BUILDVERSION="${CODENAME}${BUILD_NUMBER}"
 
 #Before building the package we will update the changelog. This is easier from a shell script
 #because debchange does the right format and the current date, user name and email automatically for us.
 #Use the NAME and EMAIL environment variables to get correct values if needed (usually the email is
 # user@host instead of first.last@institute, for instance killenb@mskpcx18571.desy.de instead of martin.killenberg@desy.de).
-debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_FULL_LIBRARY_VERSION@-${BUILD_VERSION} --distribution ${CODENAME} @PACKAGE_MESSAGE@
+debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_MAJORMINOR_VERSION@-${PROJECT_BUILDVERSION}-@PACKAGE_PATCH_VERSION@ --distribution ${CODENAME} @PACKAGE_MESSAGE@
 
 #Now everything is prepared and we can actually build the package.
 #If you have a gpg signature you can remove the -us and -uc flags and sign the package.
