@@ -35,8 +35,36 @@ rm -rf debian_package
 mkdir debian_package
 cd debian_package
 
-# The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
-CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
+# Parse command line argument
+if [ -z "$1" ]; then
+  # build on host system
+  USE_PBUILDER=0
+  CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
+else
+  USE_PBUILDER=1
+  CODENAME=$1
+fi
+
+# Print warning if not using pbuilder
+if [ "$USE_PBUILDER" == "0" ]; then
+  echo "WARNING: You are building on your host system for ${CODENAME}."
+  echo ""
+  echo "It is strongly recommended to build in a chroot environment using pbuilder. This can be simply enabled by calling the make_debian_package.sh script with the codename as command line argument, i.e.:"
+  echo " ./make_debian_package.sh ${CODENAME}"
+  echo ""
+  echo "This will require root permissons and a previously setup pbuilder environment, but you can build for any target on every host system with pbuilder installed."
+  echo ""
+  echo "To setup the pbuilder environment, use the following command:"
+  echo 'sudo pbuilder --update --distribution ${CODENAME} --override-config --components "main universe" --othermirror "deb [trusted=yes] http://doocspkgs.desy.de/pub/doocs xenial main|deb [trusted=yes] http://doocs.desy.de/pub/doocs xenial main"'
+  echo ""
+  echo -n "Continuing in 5 seconds. Press Ctrl+C to abort."
+  sleep 1 ; echo -n "."
+  sleep 1 ; echo -n "."
+  sleep 1 ; echo -n "."
+  sleep 1 ; echo -n "."
+  sleep 1 ; echo "."
+fi
+
 
 # Obtain build version and the derived so-file and debian versions
 BUILD_NUMBER=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJOR_VERSION@.@PACKAGE_MINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
@@ -85,4 +113,8 @@ debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_MAJOR_VERSION@.@PAC
 
 # Now everything is prepared and we can actually build the package.
 # If you have a gpg signature you can remove the -us and -uc flags and sign the package.
-dpkg-buildpackage -rfakeroot -us -uc
+if [ "$USE_PBUILDER" == "0" ]; then
+  dpkg-buildpackage -rfakeroot -us -uc
+else
+  pdebuild -- --distribution ${CODENAME}
+fi
