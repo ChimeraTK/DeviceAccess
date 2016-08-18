@@ -1,3 +1,25 @@
+#######################################################################################################################
+# prepare_debian_package.cmake
+#
+# Prepares all files needed to build Debian packages for this project (by running "make debian_package").
+#
+# The script uses a number of common variables provided by the project-template, especially it requires that
+# previously the script set_version_numbers.cmake has been included.
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
 # Prepare the debian control files from the template.
 # Basically this is setting the correct version number in most of the files
 

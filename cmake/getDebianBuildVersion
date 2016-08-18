@@ -1,4 +1,33 @@
 #!/bin/bash
+#######################################################################################################################
+# getDebianBuildVersion
+#
+# Determine the Debian build version from the git repository specified in the DebianPackaging.config file.
+#
+# Usage:
+# ./getDebianBuildVersion <PACKAGE_NAME> <PACKAGE_VERSION> <DEBIAN_CODENAME> [<DEPENDENCY1_NAME_WITH_VERSION>]  \
+#                         [<DEPENDENCY2_NAME_WITH_VERSION>] [...]
+#
+# Example:
+# ./getDebianBuildVersion DeviceAccess-DoocsBackend 0.1 xenial DeviceAccess-0.14 DOOCS-18.10.5 DoocsServerTestHelper-0.1
+#
+# IMPORTANT NOTES:
+# If you change the order of dependencies passed to this script, the build version will be unnecessarily increased!
+# Running this script requires access to the git repository and WILL eventually MAKE COMMITS to it!
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
 
 # obtain configuration
 source "$(dirname $0)/DebianPackaging.config"
@@ -11,8 +40,9 @@ if [ $# -lt 3 ]; then
   echo "Example:"
   echo "./getDebianBuildVersion DeviceAccess-DoocsBackend 0.1 xenial DeviceAccess-0.14 DOOCS-18.10.5 DoocsServerTestHelper-0.1"
   echo ""
-  echo "Important note:"
+  echo "IMPORTANT NOTES:"
   echo "If you change the order of dependencies passed to this script, the build version will be unnecessarily increased!"
+  echo "Running this script requires access to the git repository and WILL eventually MAKE COMMITS to it!"
   exit 1
 fi
 
