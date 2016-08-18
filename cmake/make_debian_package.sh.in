@@ -36,10 +36,17 @@ mkdir debian_package
 cd debian_package
 
 # Parse command line argument
-if [ -z "$1" ]; then
+if [ -z "$1" ] ; then
   # build on host system
   USE_PBUILDER=0
   CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
+elif [ "$1" == "--setup" ] ; then
+  if [ -z "$2" ] ; then
+    echo "Missing parameter to --setup"
+    exit 1
+  fi
+  sudo pbuilder --create --distribution $2
+  exit $?
 else
   USE_PBUILDER=1
   CODENAME=$1
@@ -52,10 +59,10 @@ if [ "$USE_PBUILDER" == "0" ]; then
   echo "It is strongly recommended to build in a chroot environment using pbuilder. This can be simply enabled by calling the make_debian_package.sh script with the codename as command line argument, i.e.:"
   echo " ./make_debian_package.sh ${CODENAME}"
   echo ""
-  echo "This will require root permissons and a previously setup pbuilder environment, but you can build for any target on every host system with pbuilder installed."
+  echo "This will require root permissons (script will ask for password via sudo) and a previously setup pbuilder environment, but you can build for any target on every host system with pbuilder installed."
   echo ""
   echo "To setup the pbuilder environment, use the following command:"
-  echo 'sudo pbuilder --update --distribution ${CODENAME} --override-config --components "main universe" --othermirror "deb [trusted=yes] http://doocspkgs.desy.de/pub/doocs xenial main|deb [trusted=yes] http://doocs.desy.de/pub/doocs xenial main"'
+  echo " ./make_debian_package.sh --setup ${CODENAME}"
   echo ""
   echo -n "Continuing in 5 seconds. Press Ctrl+C to abort."
   sleep 1 ; echo -n "."
@@ -116,5 +123,13 @@ debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_MAJOR_VERSION@.@PAC
 if [ "$USE_PBUILDER" == "0" ]; then
   dpkg-buildpackage -rfakeroot -us -uc
 else
-  pdebuild -- --distribution ${CODENAME}
+  MIRRORLIST="deb [trusted=yes] http://doocspkgs.desy.de/pub/doocs xenial main|deb [trusted=yes] http://doocs.desy.de/pub/doocs xenial main|deb [trusted=yes] file:///var/cache/pbuilder/result ./"
+  sudo bash -c "cd /var/cache/pbuilder/result ; apt-ftparchive packages . > Packages"                   || exit 1
+  sudo pbuilder --update --distribution ${CODENAME} --override-config --components "main universe" \
+                --othermirror "$MIRRORLIST" --buildresult "/var/cache/pbuilder/result"             \
+                --bindmounts "/var/cache/pbuilder/result"                                               || exit 1
+  pdebuild -- --distribution ${CODENAME} --buildresult "/var/cache/pbuilder/result"                \
+              --bindmounts "/var/cache/pbuilder/result"                                                 || exit 1
+  echo ""
+  echo "You can find the resulting debian packages in this directory: /var/cache/pbuilder/result"
 fi
