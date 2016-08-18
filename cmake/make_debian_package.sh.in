@@ -27,45 +27,61 @@
 # CMAKE_SOURCE_DIR
 # PROJECT_NAME
 
-#drop out of the script if anything goes wrong (e.g. non-existing git tag)
+# drop out of the script if anything goes wrong (e.g. non-existing git tag)
 set -e
 
-#Create a working directory in order not to merge with the rest in the build directory
+# Create a working directory in order not to merge with the rest in the build directory
 rm -rf debian_package
 mkdir debian_package
 cd debian_package
 
-#The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
+# The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 
-#Obtain build version
+# Obtain build version and the derived debian version
 BUILD_NUMBER=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
 export PROJECT_BUILDVERSION="${CODENAME}${BUILD_NUMBER}"
 
-#Check out the correct tag from the master git repository.
-#The local directory name has to follow the debian convention
-# lowecasepackagenname_package.ver.sion
-#Note, we first clone and then checkout the tag because the old git version on
-#Ubuntu12.4 does not support to do it in one go.
-BUILD_DIR_NAME="@PACKAGE_BASE_NAME@_@PACKAGE_MAJORMINOR_VERSION@-${PROJECT_BUILDVERSION}"
+DEBVERSION="@PACKAGE_MAJOR_VERSION@-@PACKAGE_MINOR_VERSION@-${PROJECT_BUILDVERSION}"
+
+# replace #DEBVERSION# inside the template files in the debian_from_template directory, also replace DEBVERSION in the
+# file names
+for file_source in debian_from_template/* ; do
+  file_target=`echo ${file_source} | sed -e "s|DEBVERSION|${DEBVERSION}|g" -e "s|.template$||" `
+  
+  echo "$file_source -> $file_target"
+
+  # perform operation, if source and target file names are not identical
+  if [ "$file_source" != "$file_target" ] ; then
+    sed "$file_source" -e "s|#DEBVERSION#|${DEBVERSION}|" > "$file_target"
+  fi
+
+done
+
+# Check out the correct tag from the master git repository.
+# The local directory name has to follow the debian convention
+#  lowecasepackagenname_package.ver.sion
+# Note, we first clone and then checkout the tag because the old git version on
+# Ubuntu12.4 does not support to do it in one go.
+BUILD_DIR_NAME="@PACKAGE_BASE_NAME@_@PACKAGE_MAJOR_VERSION@.@PACKAGE_MINOR_VERSION@-${PROJECT_BUILDVERSION}"
 git clone @CMAKE_SOURCE_DIR@ ${BUILD_DIR_NAME}
 ( cd  ${BUILD_DIR_NAME} &&\
   git checkout @PACKAGE_TAG_VERSION@ &&\
   rm -rf .git )
-#Debian convention: file has to end on .orig.tar.gz
+# Debian convention: file has to end on .orig.tar.gz
 tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
 
-#Copy the prepared debian packaging config files to the source code
-#directroy
+# Copy the prepared debian packaging config files to the source code
+# directroy
 cp -r ../debian_from_template  ${BUILD_DIR_NAME}/debian
 cd ${BUILD_DIR_NAME}
 
-#Before building the package we will update the changelog. This is easier from a shell script
-#because debchange does the right format and the current date, user name and email automatically for us.
-#Use the NAME and EMAIL environment variables to get correct values if needed (usually the email is
-# user@host instead of first.last@institute, for instance killenb@mskpcx18571.desy.de instead of martin.killenberg@desy.de).
-debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_MAJORMINOR_VERSION@-${PROJECT_BUILDVERSION}-@PACKAGE_PATCH_VERSION@ --distribution ${CODENAME} @PACKAGE_MESSAGE@
+# Before building the package we will update the changelog. This is easier from a shell script
+# because debchange does the right format and the current date, user name and email automatically for us.
+# Use the NAME and EMAIL environment variables to get correct values if needed (usually the email is
+#  user@host instead of first.last@institute, for instance killenb@mskpcx18571.desy.de instead of martin.killenberg@desy.de).
+debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_MAJOR_VERSION@.@PACKAGE_MINOR_VERSION@-${PROJECT_BUILDVERSION}-@PACKAGE_PATCH_VERSION@ --distribution ${CODENAME} @PACKAGE_MESSAGE@
 
-#Now everything is prepared and we can actually build the package.
-#If you have a gpg signature you can remove the -us and -uc flags and sign the package.
+# Now everything is prepared and we can actually build the package.
+# If you have a gpg signature you can remove the -us and -uc flags and sign the package.
 dpkg-buildpackage -rfakeroot -us -uc
