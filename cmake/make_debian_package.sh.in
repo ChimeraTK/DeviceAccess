@@ -38,11 +38,12 @@ cd debian_package
 # The package versions for doocs / Ubuntu contain the codenamePROJECT_BUILDVERSION of the distribution. Get it from the system.
 CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
 
-# Obtain build version and the derived debian version
+# Obtain build version and the derived so-file and debian versions
 BUILD_NUMBER=`"@CMAKE_SOURCE_DIR@/cmake/getDebianBuildVersion" @PROJECT_NAME@ @PACKAGE_MAJORMINOR_VERSION@ ${CODENAME} @PACKAGE_DEPENDENCY_VERSIONS@` || exit 1
 export PROJECT_BUILDVERSION="${CODENAME}${BUILD_NUMBER}"
 
 DEBVERSION="@PACKAGE_MAJOR_VERSION@-@PACKAGE_MINOR_VERSION@-${PROJECT_BUILDVERSION}"
+SOVERSION="@PACKAGE_MAJOR_VERSION@.@PACKAGE_MINOR_VERSION@${PROJECT_BUILDVERSION}"
 
 # replace #DEBVERSION# inside the template files in the debian_from_template directory, also replace DEBVERSION in the
 # file names
@@ -53,7 +54,7 @@ for file_source in debian_from_template/* ; do
 
   # perform operation, if source and target file names are not identical
   if [ "$file_source" != "$file_target" ] ; then
-    sed "$file_source" -e "s|#DEBVERSION#|${DEBVERSION}|" > "$file_target"
+    sed "$file_source" -e "s|#DEBVERSION#|${DEBVERSION}|g" -e "s|#SOVERSION#|${SOVERSION}|g" > "$file_target"
   fi
 
 done
