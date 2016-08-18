@@ -47,7 +47,7 @@ SOVERSION="@PACKAGE_MAJOR_VERSION@.@PACKAGE_MINOR_VERSION@${PROJECT_BUILDVERSION
 
 # replace #DEBVERSION# inside the template files in the debian_from_template directory, also replace DEBVERSION in the
 # file names
-for file_source in debian_from_template/* ; do
+for file_source in ../debian_from_template/* ; do
   file_target=`echo ${file_source} | sed -e "s|DEBVERSION|${DEBVERSION}|g" -e "s|.template$||" `
   
   echo "$file_source -> $file_target"
