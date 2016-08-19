@@ -22,7 +22,7 @@ namespace mtca4u {
    *  functions before reading from resp. after writing to the buffer using the operators.
    */
   template<typename UserType>
-  class OneDRegisterAccessor : public  NDRegisterAccessorBridge<UserType> {
+  class OneDRegisterAccessor : public NDRegisterAccessorBridge<UserType> {
     public:
 
       /** Constructer. @attention Do not normally use directly.
@@ -85,6 +85,10 @@ namespace mtca4u {
 
       /* Swap content of (cooked) buffer with std::vector */
       void swap(std::vector<UserType> &x) {
+        if(x.size() != NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).size()) {
+          throw DeviceException("Swapping with a buffer of a different size is not allowed.",
+              DeviceException::WRONG_PARAMETER);
+        }
         NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).swap(x);
       }
 
