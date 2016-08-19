@@ -8,7 +8,6 @@ namespace mtca4u {
 
 bool volatile sigterm_caught = false;
 
-
 RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
                                    std::string& mapFile)
     : _registerSpace(mapFile),
@@ -18,49 +17,57 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
       _connectionAcceptor(_io, _serverEndpoint),
       _currentClientConnection() {
   // set the acceptor backlog to 1
-/*  _connectionAcceptor.open(_serverEndpoint.protocol());
-  _connectionAcceptor.bind(_serverEndpoint);*/
+  /*  _connectionAcceptor.open(_serverEndpoint.protocol());
+    _connectionAcceptor.bind(_serverEndpoint);*/
   _connectionAcceptor.listen(1);
 
   // The first address of the register space is set to a reference value. This
   // would be used to test the rebot client.
   uint32_t registerAddress = 0x04;
-  int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized later (eg FW version ..)
+  int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized
+                                    // later (eg FW version ..)
   uint8_t bar = 0;
-    _registerSpace.write(bar, registerAddress, &wordToWrite,
-                         sizeof(wordToWrite));
+  _registerSpace.write(bar, registerAddress, &wordToWrite, sizeof(wordToWrite));
 }
 
 void RebotDummyServer::start() {
 
-  while (sigterm_caught == false) { // loop accepts client connections - one at a time
+  while (sigterm_caught ==
+         false) { // loop accepts client connections - one at a time
 
-    boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
-    try{
+    boost::shared_ptr<ip::tcp::socket> incomingConnection(
+        new ip::tcp::socket(_io));
+    try {
       _connectionAcceptor.accept(*incomingConnection);
-    }catch( boost::system::system_error &e){
-	if (sigterm_caught){
-         break; // exit gracefully
-       }else{
-         throw; // something else went wrong, rethrow the exception
-       }
+    }
+    catch (boost::system::system_error& e) {
+      if (sigterm_caught) {
+        break; // exit gracefully
+      } else {
+        throw; // something else went wrong, rethrow the exception
+      }
     }
 
     // http://www.boost.org/doc/libs/1_46_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
     RebotDummyServer::handleAcceptedConnection(incomingConnection);
-    //boost::asio::detail::thread t(boost::bind(&RebotDummyServer::handleAcceptedConnection, this, incomingConnection));
+    // boost::asio::detail::thread
+    // t(boost::bind(&RebotDummyServer::handleAcceptedConnection, this,
+    // incomingConnection));
   }
 }
 
-void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
+void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
+
+  // FIXME: this whole method is a hack. The whole data handling part of the server
+  // needs a  redesign
 
   uint32_t requestedAction = buffer.at(0);
-
   switch (requestedAction) {
 
     case 1: { // Write one word to a register
       writeWordToRequestedAddress(buffer);
-      // if  writeWordToRequestedAddress dosent throw, we can safely assume write was a success	
+      // if  writeWordToRequestedAddress dosent throw, we can safely assume
+      // write was a success
       sendResponseForWriteCommand(true);
       break;
     }
@@ -71,37 +78,44 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t> &buffer) {
         std::vector<int32_t> dataToSend(1);
         dataToSend.at(0) = TOO_MUCH_DATA_REQUESTED;
 
-        boost::asio::write(*_currentClientConnection, boost::asio::buffer(dataToSend));
+        boost::asio::write(*_currentClientConnection,
+                           boost::asio::buffer(dataToSend));
       } else {
         readRegisterAndSendData(buffer);
       }
       break;
     }
+    default: {
+      std::vector<int32_t> unknownInstruction{ -1040 };
+      boost::asio::write(*_currentClientConnection,
+                         boost::asio::buffer(unknownInstruction));
+    }
   }
 }
 
-void RebotDummyServer::writeWordToRequestedAddress(std::vector<uint32_t> &buffer) {
+void RebotDummyServer::writeWordToRequestedAddress(
+    std::vector<uint32_t>& buffer) {
   uint32_t registerAddress = buffer.at(1); // This is the word offset; since
                                            // dummy device deals with byte
                                            // addresses convert to bytes FIXME
   registerAddress = registerAddress * 4;
   int32_t wordToWrite = buffer.at(2);
   uint8_t bar = 0;
-    _registerSpace.write(bar, registerAddress, &wordToWrite,
-                         sizeof(wordToWrite));
+  _registerSpace.write(bar, registerAddress, &wordToWrite, sizeof(wordToWrite));
 }
 
-void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
-  uint32_t registerAddress = buffer.at(1); // This is a word offset. convert to bytes before use. FIXME
+void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
+  uint32_t registerAddress =
+      buffer.at(1); // This is a word offset. convert to bytes before use. FIXME
   registerAddress = registerAddress * 4;
   uint32_t numberOfWordsToRead = buffer.at(2);
-
 
   // send data in two packets instead of one; this is done for test coverage.
   // Let READ_SUCCESS_INDICATION go in the first write and data in the second.
   std::vector<int32_t> readSuccessIndication(1);
   readSuccessIndication.at(0) = READ_SUCCESS_INDICATION;
-  boost::asio::write(*_currentClientConnection, boost::asio::buffer(readSuccessIndication));
+  boost::asio::write(*_currentClientConnection,
+                     boost::asio::buffer(readSuccessIndication));
 
   std::vector<int32_t> dataToSend(numberOfWordsToRead);
   uint8_t bar = 0;
@@ -111,7 +125,8 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t> &buffer) {
                       numberOfWordsToRead * sizeof(int32_t));
 
   // FIXME: Nothing in protocol to indicate read failure.
-  boost::asio::write(*_currentClientConnection, boost::asio::buffer(dataToSend));
+  boost::asio::write(*_currentClientConnection,
+                     boost::asio::buffer(dataToSend));
 }
 
 void RebotDummyServer::sendResponseForWriteCommand(bool status) {
@@ -127,13 +142,13 @@ RebotDummyServer::~RebotDummyServer() {
 
   // if the terminate signal is caught while waiting for a connection
   // there is no client connection, so we have to check the pointer here
-  if ( _currentClientConnection ){
+  if (_currentClientConnection) {
     _currentClientConnection->close();
   }
 }
 
 void RebotDummyServer::handleAcceptedConnection(
-     boost::shared_ptr<ip::tcp::socket>& incomingSocket) {
+    boost::shared_ptr<ip::tcp::socket>& incomingSocket) {
   boost::asio::ip::tcp::no_delay option(true);
   incomingSocket->set_option(option);
   _currentClientConnection = incomingSocket;
@@ -142,21 +157,24 @@ void RebotDummyServer::handleAcceptedConnection(
 
     std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
     boost::system::error_code errorCode;
-    _currentClientConnection->read_some(boost::asio::buffer(dataBuffer), errorCode);
-   // FIXME: Will fail if the command is sent in two successive tcp packets
+    _currentClientConnection->read_some(boost::asio::buffer(dataBuffer),
+                                        errorCode);
+    // FIXME: Will fail if the command is sent in two successive tcp packets
 
     if (errorCode == boost::asio::error::eof) { // The client has closed the
                                                 // connection; move to the
                                                 // outer  loop to accept new
                                                 // connections
       _currentClientConnection->close();
-      std::cout << "connection closed" << std::endl;
+      //std::cout << "connection closed" << std::endl;
       break;
-    } else if (errorCode && sigterm_caught) { // reading was interrupted by a terminate signal;
-                                              // move to the outer loop which will also quit
-	                                      // and end the server gracefully
+    } else if (errorCode && sigterm_caught) { // reading was interrupted by a
+                                              // terminate signal;
+      // move to the outer loop which will also quit
+      // and end the server gracefully
       _currentClientConnection->close();
-      std::cout << "Terminate signal detected while reading. Connection closed, will exit now." << std::endl;
+      std::cout << "Terminate signal detected while reading. Connection "
+                   "closed, will exit now." << std::endl;
       break;
     } else if (errorCode) {
       throw boost::system::system_error(errorCode);
@@ -167,4 +185,3 @@ void RebotDummyServer::handleAcceptedConnection(
 }
 
 } /* namespace mtca4u */
-
