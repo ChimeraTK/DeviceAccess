@@ -10,7 +10,7 @@
 #   - a list of components used by this project including the REQUIRED keyword etc.
 #
 # The macro will call FIND_PACKAGE, add the returned include directories to the system list, add the library directories
-# to the list of link directories, and update the CMAKE_CXX_FLAGS and the PACKAGE_DEPENDENCY_VERSIONS variables.
+# to the list of link directories, and update the CMAKE_CXX_FLAGS variable.
 #
 #######################################################################################################################
 
@@ -32,8 +32,6 @@ MACRO(add_dependency dependency_project_name required_version components)
   include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}")
-
-  set(PACKAGE_DEPENDENCY_VERSIONS "${PACKAGE_DEPENDENCY_VERSIONS} ${dependency_project_name}-${${dependency_project_name}_VERSION}")
 
 ENDMACRO(add_dependency)
 
