@@ -167,6 +167,10 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       void swap(std::vector<UserType> &x) {
+        if(x.size() != NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).size()) {
+          throw DeviceException("Swapping with a buffer of a different size is not allowed.",
+              DeviceException::WRONG_PARAMETER);
+        }
         NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).swap(x);
       }
 
