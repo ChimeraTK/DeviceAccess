@@ -13,7 +13,7 @@ set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}
 #We add a build version to the version number to be able to install
 #the same software version of the library linked against different versions
 #of boost.
-set(${PROJECT_NAME}_BUILDVERSION $ENV{mtca4u_deviceaccess_BUILDVERSION})
+set(${PROJECT_NAME}_BUILDVERSION $ENV{PROJECT_BUILDVERSION}$ENV{mtca4u_deviceaccess_BUILDVERSION})
 if( ${PROJECT_NAME}_BUILDVERSION )
   set(${PROJECT_NAME}_SOVERSION "${${PROJECT_NAME}_SOVERSION}${${PROJECT_NAME}_BUILDVERSION}")
 endif( ${PROJECT_NAME}_BUILDVERSION )
