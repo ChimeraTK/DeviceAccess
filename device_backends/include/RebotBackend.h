@@ -27,7 +27,7 @@ namespace mtca4u {
       std::string _boardAddr;
       int _port;
       boost::shared_ptr<TcpCtrl> _tcpObject;
-
+      uint32_t _serverProtocolVersion;
     public:
       RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
       ~RebotBackend();
@@ -84,6 +84,10 @@ namespace mtca4u {
        */
       void fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords,
           int32_t* dataLocation);
+
+      uint32_t getServerProtocolVersion();
+      std::vector<uint32_t> frameClientHello();
+      uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
   };
 
 } // namespace mtca4u
