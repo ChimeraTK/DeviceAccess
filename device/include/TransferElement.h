@@ -46,6 +46,15 @@ namespace mtca4u {
       /** Read the data from the device. */
       virtual void read() = 0;
 
+      /** Read the next value, if available in the input buffer.
+       *  This function returns immediately and the return value indicated
+       *  if a new value was available (<true>) or not (<code>false</code>).
+       *
+       *  This function throws a DeviceException with ID NOT_AVAILABLE if 
+       *  the backend does not support non-blocking reads.
+       */
+      virtual bool readNonBlocking() = 0;
+
       /** Write the data to device. */
       virtual void write() = 0;
 

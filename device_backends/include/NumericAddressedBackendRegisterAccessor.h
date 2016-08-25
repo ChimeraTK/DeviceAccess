@@ -94,6 +94,11 @@ namespace mtca4u {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
+      virtual bool readNonBlocking(){
+            throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
+				  DeviceException::NOT_AVAILABLE);
+      }
+
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;

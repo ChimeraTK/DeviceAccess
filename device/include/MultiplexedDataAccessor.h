@@ -70,6 +70,16 @@ namespace mtca4u {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
+      virtual bool readNonBlocking(){
+	if (accessor->readNonBlocking()){
+	  accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+	  return true;
+	}else{
+	  //  Don't swap, just return false (no new data).
+	  return false;
+	}
+      }
+
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,
        * using the fixed point converters, and write it to the device. Can be used
        * to write to DMA memory Areas, but this functionality has not been

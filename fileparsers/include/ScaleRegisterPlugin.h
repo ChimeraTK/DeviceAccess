@@ -30,6 +30,11 @@ namespace mtca4u {
           boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const;
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ScaleRegisterPlugin, decorateRegisterAccessor_impl, 1);
 
+      // Helper function to apply scaling factor while copying buffer
+      // from underlying accessor to our buffer.
+      // Put into separate function to avouid code duplication 
+      void applyScalingFactorUnderlyingToThisBuffer();
+      
       /** The scaling factor to multiply the data with */
       DynamicValue<double> scalingFactor;
   
