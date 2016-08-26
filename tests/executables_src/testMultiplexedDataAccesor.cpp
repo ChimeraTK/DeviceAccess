@@ -113,6 +113,8 @@ void testDeMultiplexing(std::string areaName) {
     TwoDRegisterAccessor<SequenceWordType> deMultiplexer = device.getTwoDRegisterAccessor<SequenceWordType>(TEST_MODULE_PATH/areaName);
 
     BOOST_CHECK( deMultiplexer.isReadOnly() == false );
+    BOOST_CHECK( deMultiplexer.isReadable() );
+    BOOST_CHECK( deMultiplexer.isWriteable() );
 
     deMultiplexer.read();
 
@@ -137,6 +139,9 @@ void testDeMultiplexing(std::string areaName) {
         deMultiplexer[sequenceIndex][i]+=5;
       }
     }
+
+    // currently the non-blocking read is not implemented in NumericAddressed accessors
+    BOOST_CHECK_THROW( deMultiplexer.readNonBlocking(), DeviceException );
 
     deMultiplexer.write();
     device.readArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
@@ -228,6 +233,8 @@ void testWithConversion(std::string multiplexedSequenceName) {
       BOOST_CHECK_MESSAGE( ioBuffer[i] == static_cast< SequenceWordType>(i+addedValue) , message.str());
     }
 
+    // currently the non-blocking read is not implemented in NumericAddressed accessors
+    BOOST_CHECK_THROW( accessor.readNonBlocking(), DeviceException );
 }
 
 BOOST_AUTO_TEST_CASE(testWithConversion32) {
@@ -346,6 +353,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
   boost::shared_ptr< mtca4u::MultiplexedDataAccessor<unsigned int> > acc =
       device.getCustomAccessor< mtca4u::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
 
+  BOOST_CHECK_THROW( acc->getFixedPointConverter(), DeviceException );
+
   BOOST_CHECK(acc->getNumberOfDataSequences() == 16);
   BOOST_CHECK((*acc)[0].size() == 4);
 
@@ -355,6 +364,10 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
       (*acc)[i][k] = i+3*k;
     }
   }
+
+  // non blocking read currently throws in the underlying layer, not much to test
+  BOOST_CHECK_THROW( acc->readNonBlocking(), DeviceException );
+
 
   acc->write();
 

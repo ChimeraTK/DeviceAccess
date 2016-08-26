@@ -69,7 +69,7 @@ namespace mtca4u {
 
       virtual bool readNonBlocking(){
          throw DeviceException("Non-blocking read is not implemented yet for the LNMBackendChannelAccessor",
-			       DeviceException::NOT_AVAILABLE);
+			       DeviceException::NOT_IMPLEMENTED);
       }
 
 
@@ -94,7 +94,8 @@ namespace mtca4u {
       }
 
       virtual FixedPointConverter getFixedPointConverter() const {
-        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+        throw DeviceException("FixedPointConverterse are not available in Logical Name Mapping",
+			      DeviceException::NOT_AVAILABLE);
       }
 
     protected:

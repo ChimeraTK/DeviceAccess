@@ -51,6 +51,17 @@ BOOST_AUTO_TEST_CASE( testCreation ){
   
 }
 
+BOOST_AUTO_TEST_CASE( testReadWrite ){
+  Device device;
+  device.open("sdm://./dummy=goodMapFile.map");
+  
+  auto accessor = device.getScalarRegisterAccessor<int>("MODULE0/WORD_USER1");
+
+  // FIXME: systematically test reading and writing. Currently is scattered all over the place...
+  
+  // currently the non-blocking read is not implemented in NumericAddressed accessors
+  BOOST_CHECK_THROW( accessor.readNonBlocking(), DeviceException );
+}
 
 // After you finished all test you have to end the test suite.
 BOOST_AUTO_TEST_SUITE_END()
