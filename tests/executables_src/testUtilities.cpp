@@ -130,8 +130,8 @@ void UtilitiesTest::testgetAliasList() {
   // entries in dummies.dmap when this was written
   std::vector<std::string> expectedListOfAliases{
     "PCIE1",   "PCIE0",   "PCIE2",    "PCIE3",     "PCIE0",
-    "FAKE0",   "FAKE1",   "FAKE3",    "DUMMYD0",   "DUMMYD1",  "DUMMYD2",
-    "example", "DUMMYD9", "mskrebot", "mskrebot1", "OLD_PCIE",
+    "FAKE0",   "FAKE1",   "FAKE3",    "DUMMYD0",   "DUMMYD1",  "DUMMYD2",  "DUMMYD3",
+    "example", "DUMMYD9", "PERFTEST", "mskrebot", "mskrebot1", "OLD_PCIE",
     "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES", "PCIE_DOUBLEMAP",
     "REBOT_DOUBLEMAP"
   };

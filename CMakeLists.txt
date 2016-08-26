@@ -3,8 +3,8 @@ cmake_minimum_required (VERSION 2.8.7)
 Project(mtca4u-deviceaccess) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 13)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 15)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 
 set(${PROJECT_NAME}_VERSION
   ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
@@ -13,7 +13,7 @@ set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}
 #We add a build version to the version number to be able to install
 #the same software version of the library linked against different versions
 #of boost.
-set(${PROJECT_NAME}_BUILDVERSION $ENV{mtca4u_deviceaccess_BUILDVERSION})
+set(${PROJECT_NAME}_BUILDVERSION $ENV{PROJECT_BUILDVERSION}$ENV{mtca4u_deviceaccess_BUILDVERSION})
 if( ${PROJECT_NAME}_BUILDVERSION )
   set(${PROJECT_NAME}_SOVERSION "${${PROJECT_NAME}_SOVERSION}${${PROJECT_NAME}_BUILDVERSION}")
 endif( ${PROJECT_NAME}_BUILDVERSION )
@@ -24,6 +24,14 @@ set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJEC
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Set the build type to Release if none is specified
+# Force it into Release if "None" is specified (needed to overrule dkpg_buildpackage)
+if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+      FORCE)
+endif(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
 
 # C++ compiler flags needed to compile this project and against this project
 set(${PROJECT_NAME}_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30")
@@ -93,8 +101,6 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
-add_library( ${PROJECT_NAME}_static STATIC ${SOURCE} ${HEADERS} )
-
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
 target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread) 
@@ -140,21 +146,21 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 #Install the library and the executables
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_static
+install(TARGETS ${PROJECT_NAME}
             RUNTIME DESTINATION bin
 	    LIBRARY DESTINATION lib
 	    ARCHIVE DESTINATION lib
   )
 
 #all include files go into include/PROJECT_NAME
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include/mtca4u/ DESTINATION include/mtca4u)
 
 #Create the config files by filling the correct variables into the template (*.cmake.in).
 #All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
 #Only the reference header is needed. The other variables are for dependencies of this library,
 #but there are none.
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS}")
-set(${PROJECT_NAME}_LIBRARIES "${Boost_CHRONO_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY}")
+set(${PROJECT_NAME}_LIBRARIES "${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
 set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")

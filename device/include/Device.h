@@ -547,7 +547,7 @@ namespace mtca4u {
       size_t wordOffsetInRegister, const AccessModeFlags &flags) const {
     auto acc = getOneDRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     acc.read();
-    std::vector<UserType> vector;
+    std::vector<UserType> vector(acc.getNElements());
     acc.swap(vector);
     return vector;
   }

@@ -258,7 +258,9 @@ namespace mtca4u {
       }
     }
     _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
-    _deviceBackendPointer->open();
+    if(!_deviceBackendPointer->isOpen()) {      // createBackend may return an already opened instance for some backends
+      _deviceBackendPointer->open();
+    }
   }
 
   /********************************************************************************************************************/

@@ -1,15 +1,15 @@
 /*
- * MemoryAddressedBackendBufferingRegisterAccessor.h
+ * NumericAddressedBackendRegisterAccessor.h
  *
  *  Created on: Mar 15, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
-#define MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H
+#ifndef MTCA4U_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
+#define MTCA4U_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessor.h"
-#include "NumericAddressedBackend.h"
+#include "NumericAddressedLowLevelTransferElement.h"
 #include "FixedPointConverter.h"
 
 namespace mtca4u {
@@ -25,11 +25,13 @@ namespace mtca4u {
 
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : _registerPathName(registerPathName),
+      : isRaw(false),
+        _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
       {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});
+
         // check device backend
         _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
         if(!_dev) {
@@ -56,13 +58,12 @@ namespace mtca4u {
               DeviceException::WRONG_PARAMETER);
         }
 
+        // create low-level transfer element handling the actual data transfer to the hardware with raw data
+        _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev,_bar,_startAddress,_numberOfWords));
+
         // allocated the buffers
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
-        rawDataBuffer.resize(_numberOfWords);
-
-        // compute number of bytes
-        _numberOfBytes = _numberOfWords*sizeof(int32_t);
 
         // configure fixed point converter
         if(!flags.has(AccessMode::raw)) {
@@ -75,24 +76,52 @@ namespace mtca4u {
                 "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
           }
           _fixedPointConverter = FixedPointConverter(32, 0, true);
+          isRaw = true;
         }
       }
 
       virtual ~NumericAddressedBackendRegisterAccessor() {};
 
       virtual void read() {
-        _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
-        for(size_t i=0; i < _numberOfWords; ++i){
-          NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(rawDataBuffer[i]);
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
         }
+        _rawAccessor->read();
+        postRead();
       }
 
       virtual void write() {
-        for(size_t i=0; i < _numberOfWords; ++i){
-          rawDataBuffer[i] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
         }
-        _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+        preWrite();
+        _rawAccessor->write();
       }
+
+      virtual void postRead() {
+        auto itsrc = _rawAccessor->begin(_startAddress);
+        for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
+                 itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
+               ++itdst) {
+          *itdst = _fixedPointConverter.toCooked<UserType>(*itsrc);
+          ++itsrc;
+        }
+      };
+
+      virtual void preWrite() {
+        auto itsrc = _rawAccessor->begin(_startAddress);
+        for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
+                 itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
+               ++itdst) {
+          *itsrc = _fixedPointConverter.toRaw<UserType>(*itdst);
+          ++itsrc;
+        }
+      };
+
+      virtual void postWrite() {
+      };
 
       virtual bool readNonBlocking(){
             throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
@@ -133,6 +162,7 @@ namespace mtca4u {
 
       /** Fixed point converter to interpret the data */
       FixedPointConverter _fixedPointConverter;
+      bool isRaw;
 
       /** register and module name */
       RegisterPath _registerPathName;
@@ -146,23 +176,39 @@ namespace mtca4u {
       /** number of 4-byte words to access */
       size_t _numberOfWords;
 
-      /** number of bytes to access */
-      size_t _numberOfBytes;
-
-      /** raw buffer */
-      std::vector<int32_t> rawDataBuffer;
+      /** raw accessor */
+      boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
 
       /** the backend to use for the actual hardware access */
       boost::shared_ptr<NumericAddressedBackend> _dev;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+        return _rawAccessor->getHardwareAccessingElements();
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {} // LCOV_EXCL_LINE
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        auto casted = boost::dynamic_pointer_cast< NumericAddressedLowLevelTransferElement >(newElement);
+        if(newElement->isSameRegister(_rawAccessor) && casted) {
+          size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);
+          size_t newStopAddress = std::max(casted->_startAddress+casted->_numberOfWords,
+                                           _rawAccessor->_startAddress+_rawAccessor->_numberOfWords);
+          size_t newNumberOfWords = newStopAddress-newStartAddress;
+          casted->changeAddress(newStartAddress,newNumberOfWords);
+          _rawAccessor = casted;
+        }
+      }
 
   };
 
+  template<>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::postRead();
+
+  template<>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::preWrite();
+
+  template<>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::postWrite();
+
 }    // namespace mtca4u
 
-#endif /* MTCA4U_MEMORY_ADDRESSED_BACKEND_BUFFERING_REGISTER_ACCESSOR_H */
+#endif /* MTCA4U_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H */

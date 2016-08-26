@@ -27,9 +27,9 @@ namespace mtca4u {
 
     public:
       /** Creates a transfer element with the specified name. */
-      TransferElement(std::string const & name = std::string()) : _name(name) {
-      }
-
+      TransferElement(std::string const & name = std::string()) 
+        : _name(name), isInTransferGroup(false) {}
+      
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
 
@@ -127,6 +127,8 @@ namespace mtca4u {
     protected:
       /** Identifier uniquely identifying the TransferElement */
       std::string _name;      
+
+      bool isInTransferGroup;
   };
 
 } /* namespace mtca4u */

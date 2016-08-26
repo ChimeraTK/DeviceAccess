@@ -58,6 +58,10 @@ namespace mtca4u {
       virtual ~LNMBackendChannelAccessor() {};
 
       virtual void read() {
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
         _accessor->read();
         postRead();
       }

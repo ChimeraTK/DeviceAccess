@@ -42,6 +42,7 @@ class TcpCtrl {
     void receiveData(boost::array<char, 4>& receivedArray);
     ///Sends a std::vector of bytes to the socket.
     void sendData(const std::vector<char> &data);
+    void sendData(const std::vector<uint32_t> &data);
     ///Returns an IP address associated with an object of the class.
     std::string getAddress();
     ///Sets an IP address in an object. Can be done when connection is closed.

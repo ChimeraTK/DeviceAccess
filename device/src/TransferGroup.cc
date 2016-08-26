@@ -49,32 +49,51 @@ namespace mtca4u {
 
   template<>
   void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor) {
+
+    // check if accessor is already in a transfer group
+    if(accessor.getHighLevelImplElement()->isInTransferGroup) {
+      throw DeviceException("The given accessor is already in a TransferGroup and cannot be added to another.",
+          DeviceException::WRONG_PARAMETER);
+    }
+
+    // Store the accessor itself in the high-level list
+    highLevelElements.push_back(accessor.getHighLevelImplElement());
+    accessor.getHighLevelImplElement()->isInTransferGroup = true;
+
+    // Iterate over all new hardware-accessing elements and add them to the list
     auto newElements = accessor.getHardwareAccessingElements();
-
-    // iterate over all new elements
     for(unsigned int i=0; i<newElements.size(); i++) {
+      elements.push_back(newElements[i]);
+    }
 
-      // iterate over all elements already in the list and check if element is already in there
-      bool foundDuplicate = false;
-      for(unsigned int k=0; k<elements.size(); k++) {
-        if(newElements[i]->isSameRegister(elements[k])) {
-          // replace the TransferElement inside the accessor with the version already in the list
-          accessor.replaceTransferElement(elements[k]);
-          // set flag and stop the loop (the list is already unique, so no further match is possible)
-          foundDuplicate = true;
+    // Iterate over all hardware-accessing elements and merge any potential duplicates
+    // Note: This cannot be done only for the newly added elements, since e.g. in NumericAddressedBackend the new
+    // accessor might fill the gap (in the address space) between to already added accessors, in which case also the
+    // already added accessors must be merged.
+    // We go backwards through the list, since the latest element is the recently added accessor, for which we still
+    // have the original pimpl frontend (variable "accessor"). In cases were we need to replace the entire accessor
+    // implementation we need to do this on the pimpl frontent instead of the implementation stored in the
+    // highLevelElements list.
+    std::vector< std::vector< boost::shared_ptr<TransferElement> >::iterator > eraseList;
+    for(int i=elements.size()-1; i>0; --i) {
+      for(int k=i-1; k>=0; --k) {
+        if(elements[i]->isSameRegister(elements[k])) {
+          // replace the TransferElement inside any high-level accessor with the merged version
+          accessor.replaceTransferElement(elements[k]);  // might need to replace the implementation of the pimpl accessor frontend
+          for(auto &m : highLevelElements) {
+            m->replaceTransferElement(elements[k]);
+          }
+          eraseList.push_back(elements.begin() + i); // store iterator to element to be deleted
           break;
         }
       }
-
-      // if not a duplicate, add to the list
-      if(!foundDuplicate) elements.push_back(newElements[i]);
     }
 
-    // update read-only flag
-    if(accessor.isReadOnly()) readOnly = true;
+    // Erase the duplicates (cannot do this inside the loop since it would invalidate the iterators)
+    for(auto &e : eraseList) elements.erase(e);
 
-    // store the accessor itself in the high-level list
-    highLevelElements.push_back(accessor.getHighLevelImplElement());
+    // Update read-only flag
+    if(accessor.isReadOnly()) readOnly = true;
   }
 
 } /* namespace mtca4u */

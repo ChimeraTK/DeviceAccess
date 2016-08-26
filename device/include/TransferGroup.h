@@ -19,11 +19,18 @@ namespace mtca4u {
    *  This happens in particular, if accessing the data of one accessor requires transfer of a bigger block of
    *  data containing also data of another accessor (e.g. channel accessors for multiplexed 2D registers).
    *
+   *  Note that read() and write() of the accessors put into the group can no longer be used. Instead, read() and
+   *  write() of the TransferGroup should be called.
+   *
    *  Grouping accessors can only work with accessors that internally buffer the transferred data. Therefore the
-   *  standard RegisterAccessor is not supported, as its read() and write() functions always directly read from/write to
-   *  the hardware. Note that read() and write() of the accessors put into the group should no longer be used, since
-   *  they would perform the hardware access directly. Instead, read() and write() of the TransferGroup should be
-   *  called.
+   *  deprecated RegisterAccessor is not supported, as its read() and write() functions always directly read from/write
+   *  to the hardware.
+   *
+   *  Important note: If accessors pointing to the same values are added to the TransferGroup, the behaviour will be
+   *  when writing. Depending on the backend and on the exact scenario, the accessors might appear like a copy sharing
+   *  the internal buffers, thus writing to one accessor may (or may not) change the content of the other. Also calling
+   *  write() has then undefined behaviour, since it is not defined from which accessor the values will be written to
+   *  the device (maybe both in an undefined order).
    */
   class TransferGroup {
 

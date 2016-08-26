@@ -60,6 +60,7 @@ ADD_SCRIPTS_AS_TESTS( "${location_of_script_files}" )
 
 
 MACRO( COPY_MAPPING_FILES )
+  # run_performance_test.sh is not a map file but should be copied also into the tests directory
   FILE( COPY mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
     mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp
     MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
@@ -67,6 +68,7 @@ MACRO( COPY_MAPPING_FILES )
     dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map invalidSequences.map muxedDataAcessor.map
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
     invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap logicalnamemap.dmap 
+    performanceTest.map run_performance_test.sh
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.
