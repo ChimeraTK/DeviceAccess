@@ -33,6 +33,9 @@ namespace mtca4u {
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
 
+      /** A typedef for more compact syntax */
+      typedef boost::shared_ptr<TransferElement> SharedPtr;
+
       /** Returns the name that identifies the process variable. */
       const std::string& getName() const{
 	return _name;
@@ -99,7 +102,7 @@ namespace mtca4u {
        *  @deprecated Only used for backward compatibility with the control system adapter.
        *  This feature will be removed soon, maybe even before the next tag. DO NOT USE IT!!
        */
-      virtual bool isArray() {
+      virtual bool isArray() const{
         throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
       }
 
