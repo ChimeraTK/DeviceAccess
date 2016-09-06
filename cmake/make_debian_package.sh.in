@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Shell script to generate a debian package from a particular tag (configured during the cmake configuration).
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
+# This cmake.in file requires the following variables to be set:
+# PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME Environment variable which contains the build version.
+#   Must not contain any hyphens.
+# PACKAGE_BASE_NAME This is the debian package name, not the project name (e.g. libraries must start with lib,
+#   all lover case, no underscore)
+# PACKAGE_FULL_LIBRARY_VERSION The full version, incl. build version and patch version
+# PACKAGE_GIT_URI The URI where to check out the source code
+# PACKAGE_TAG_VERSION The tag for which the package is build
+# PACKAGE_MESSAGE The message for the debian package log
+
+#Check that the @PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@ variable is set, otherwise reject creating a package
+if [ -z "$@PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@" ]; then
+    echo Environment variable '@PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@' not set or empty. You need it to make a debian package!
+    exit 1
+fi
+
+#drop out of the script if anything goes wrong (e.g. non-existen git tag)
+set -e
+
+#Create a working directory in order not to merge with the rest in the build directory
+rm -rf debian_package
+mkdir debian_package
+cd debian_package
+
+#Check out the correct tag from the master git repository.
+#The local directory name has to follow the debian convention
+# lowecasepackagenname_package.ver.sion
+#Note, we first clone and then checkout the tag because the old git version on
+#Ubuntu12.4 does not support to do it in one go.
+BUILD_DIR_NAME=@PACKAGE_BASE_NAME@_@PACKAGE_FULL_LIBRARY_VERSION@
+git clone @CMAKE_SOURCE_DIR@ ${BUILD_DIR_NAME}
+( cd  ${BUILD_DIR_NAME} &&\
+  git checkout @PACKAGE_TAG_VERSION@ &&\
+  rm -rf .git )
+#Debian convention: file has to end on .orig.tar.gz
+tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
+
+#Copy the prepared debian packaging config files to the source code
+#directroy
+cp -r ../debian_from_template  ${BUILD_DIR_NAME}/debian
+cd ${BUILD_DIR_NAME}
+
+#The package versions for doocs / Ubuntu contain the codename of the distribution. Get it from the system.
+CODENAME=`lsb_release -c | sed "{s/Codename:\s*//}"`
+
+#Before building the package we will update the changelog. This is easier from a shell script
+#because debchange does the right format and the current date, user name and email automatically for us.
+#Use the NAME and EMAIL environment variables to get correct values if needed (usually the email is
+# user@host instead of first.last@institute, for instance killenb@mskpcx18571.desy.de instead of martin.killenberg@desy.de).
+debchange --create --package @PACKAGE_BASE_NAME@ -v @PACKAGE_FULL_LIBRARY_VERSION@-${@PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME@} --distribution ${CODENAME} @PACKAGE_MESSAGE@
+
+#Now everything is prepared and we can actually build the package.
+#If you have a gpg signature you can remove the -us and -uc flags and sign the package.
+dpkg-buildpackage -rfakeroot -us -uc
