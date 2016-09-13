@@ -198,7 +198,7 @@ namespace mtca4u {
       }
 
       // allocate the raw io buffer
-      _ioBuffer.resize(_nBytes);
+      _ioBuffer.resize(_nBytes/sizeof(int32_t));
   }
 
   /********************************************************************************************************************/
