@@ -36,7 +36,9 @@ FUNCTION(add_dependency dependency_project_name required_version)
   include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS} ${${dependency_project_name}_INCLUDE_DIR})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
   link_directories(${${dependency_project_name}_LIBRARY_DIR})
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}" PARENT_SCOPE)
+  SET(${dependency_project_name}_LIBRARIES ${${dependency_project_name}_LIBRARIES} PARENT_SCOPE)
+  SET(${dependency_project_name}_LINK_FLAGS ${${dependency_project_name}_LINK_FLAGS} PARENT_SCOPE)
 
 ENDFUNCTION(add_dependency)
 
