@@ -26,13 +26,17 @@
 #
 #######################################################################################################################
 
-MACRO(add_dependency dependency_project_name required_version components)
-
+FUNCTION(add_dependency dependency_project_name required_version)
+  # collect additional arguments and put into the list of components
+  SET(components "")
+  foreach(arg IN LISTS ARGN)
+    SET(components ${components} ${arg})
+  endforeach()
   FIND_PACKAGE(${dependency_project_name} ${required_version} COMPONENTS ${components})
   include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS} ${${dependency_project_name}_INCLUDE_DIR})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
   link_directories(${${dependency_project_name}_LIBRARY_DIR})
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}")
 
-ENDMACRO(add_dependency)
+ENDFUNCTION(add_dependency)
 
