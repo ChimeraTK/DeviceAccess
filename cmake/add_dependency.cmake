@@ -29,8 +29,9 @@
 MACRO(add_dependency dependency_project_name required_version components)
 
   FIND_PACKAGE(${dependency_project_name} ${required_version} COMPONENTS ${components})
-  include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS})
+  include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS} ${${dependency_project_name}_INCLUDE_DIR})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
+  link_directories(${${dependency_project_name}_LIBRARY_DIR})
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}")
 
 ENDMACRO(add_dependency)
