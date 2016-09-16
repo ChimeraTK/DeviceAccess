@@ -9,6 +9,7 @@
 
 #include "TransferGroup.h"
 #include "BufferingRegisterAccessor.h"
+#include "NumericAddressedLowLevelTransferElement.h"
 #include "Device.h"
 
 #include "accessPrivateData.h"
@@ -36,6 +37,19 @@ struct BufferingRegisterAccessor_int64_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<int64_t> >(NDRegisterAccessorBridge<int64_t>::*type);
 };
 template class accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorBridge<int64_t>::_impl>;
+
+struct NumericAddressedLowLevelTransferElement_startAddress {
+    typedef size_t (NumericAddressedLowLevelTransferElement::*type);
+};
+template class accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
+        &mtca4u::NumericAddressedLowLevelTransferElement::_startAddress>;
+
+struct NumericAddressedLowLevelTransferElement_numberOfBytes {
+    typedef size_t (NumericAddressedLowLevelTransferElement::*type);
+};
+template class accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
+        &mtca4u::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
+
 
 class TransferGroupTest {
   public:
@@ -340,6 +354,21 @@ void TransferGroupTest::testMergeNumericRegisters() {
   BOOST_CHECK( mux1i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux2i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
 
+  // check that the underlying raw accessors have the right address range
+  NumericAddressedLowLevelTransferElement *llelem;  // operator ->* does not work on a shared_ptr
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux0i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x20);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux1i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x24);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux2i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x28);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux3i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x2C);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+
   // add accessors to the transfer group. The accessors are intentionally added out of order to check if the behaviour
   // is also correct in that case
   TransferGroup group;
@@ -352,6 +381,11 @@ void TransferGroupTest::testMergeNumericRegisters() {
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux1i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux2i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux3i->getHardwareAccessingElements()[0] );
+
+  // check that the underlying raw accessor have the right address range
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux0i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x20);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 16);
 
   // check that reading and writing works
   mux0 = 42;
