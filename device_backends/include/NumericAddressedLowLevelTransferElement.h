@@ -29,7 +29,7 @@ namespace mtca4u {
 
       NumericAddressedLowLevelTransferElement(boost::shared_ptr<NumericAddressedBackend> dev,
           size_t bar, size_t startAddress, size_t numberOfWords)
-      : _dev(dev), _bar(bar)
+      : _dev(dev), _bar(bar), isShared(false)
       {
         changeAddress(startAddress, numberOfWords);
       }
@@ -87,6 +87,9 @@ namespace mtca4u {
 
         // compute number of bytes
         _numberOfBytes = _numberOfWords*sizeof(int32_t);
+
+        // set shared flag
+        isShared = true;
       }
 
     protected:
@@ -105,6 +108,10 @@ namespace mtca4u {
 
       /** number of bytes to access */
       size_t _numberOfBytes;
+
+      /** flag if changeAddress() has been called, which is this low-level transfer element is shared between multiple
+       *  accessors */
+      bool isShared;
 
       /** raw buffer */
       std::vector<int32_t> rawDataBuffer;
