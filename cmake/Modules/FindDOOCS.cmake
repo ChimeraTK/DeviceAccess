@@ -39,7 +39,7 @@ FIND_PATH(DOOCS_DIR libDOOCSapi.so
 set(DOOCS_LIBRARIES DOOCSapi nsl dl pthread m rt ldap)
 
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
-  FIND_PATH(DOOCS_DIR libEqServer.so
+  FIND_PATH(DOOCS_DIR_SERVER libEqServer.so
     ${CMAKE_CURRENT_LIST_DIR}
     /export/doocs/lib
   )
@@ -47,7 +47,7 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
 endif()
 
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
-  FIND_PATH(DOOCS_DIR libDOOCSdzmq.so
+  FIND_PATH(DOOCS_DIR_ZMQ libDOOCSdzmq.so
     ${CMAKE_CURRENT_LIST_DIR}
     /export/doocs/lib
   )
@@ -67,7 +67,11 @@ execute_process(COMMAND bash -c "readlink ${DOOCS_DIR}/libDOOCSapi.so | sed -e '
 
 # use a macro provided by CMake to check if all the listed arguments are valid and set DOOCS_FOUND accordingly
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOOCS
-        REQUIRED_VARS DOOCS_DIR
-	    VERSION_VAR DOOCS_VERSION )
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOOCS REQUIRED_VARS DOOCS_DIR VERSION_VAR DOOCS_VERSION )
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOOCS REQUIRED_VARS DOOCS_DIR_SERVER VERSION_VAR DOOCS_VERSION )
+endif()
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOOCS REQUIRED_VARS DOOCS_DIR_ZMQ VERSION_VAR DOOCS_VERSION )
+endif()
 
