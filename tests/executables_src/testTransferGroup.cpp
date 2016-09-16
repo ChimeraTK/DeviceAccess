@@ -439,15 +439,21 @@ void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
   // add accessors to the transfer group. The accessors are intentionally added out of order to check if the behaviour
   // is also correct in that case
   TransferGroup group;
-  group.addAccessor(mux0);
   group.addAccessor(mux2);
   group.addAccessor(mux1);
   group.addAccessor(mux3);
+  group.addAccessor(mux0);
 
   // check that all underlying raw accessors are now all the same
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux1i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux2i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux3i->getHardwareAccessingElements()[0] );
+
+  // also check that all high-level implementations are still the same as previously
+  BOOST_CHECK( mux0i == mux0.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value );
+  BOOST_CHECK( mux1i == mux1.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value );
+  BOOST_CHECK( mux2i == mux2.*accessPrivateData::stowed<BufferingRegisterAccessor_int32_impl>::value );
+  BOOST_CHECK( mux3i == mux3.*accessPrivateData::stowed<BufferingRegisterAccessor_int64_impl>::value );
 
   // check that reading and writing works
   mux0 = 42;
