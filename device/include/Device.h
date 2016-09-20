@@ -119,6 +119,9 @@ namespace mtca4u {
       /** Return a device information string. Format depends on the backend, use for display only. */
       virtual std::string readDeviceInfo() const;
 
+      /** Check if the device is currently opened. */
+      bool isOpened() const;
+
       /** \brief <b>Inefficient convenience function</b> to read a single-word register without obtaining an accessor.
        *
        *  \warning This function is inefficient as it creates and discards a register accessor in each call of the
