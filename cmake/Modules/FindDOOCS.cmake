@@ -32,23 +32,21 @@
 
 SET(DOOCS_FOUND 0)
 
+
 FIND_PATH(DOOCS_DIR libDOOCSapi.so
   ${CMAKE_CURRENT_LIST_DIR}
   /export/doocs/lib
 )
-
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
   FIND_PATH(DOOCS_DIR_ZMQ libDOOCSdzmq.so
-    ${CMAKE_CURRENT_LIST_DIR}
-    /export/doocs/lib
+    ${DOOCS_DIR}
   )
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdzmq)
 endif()
 
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
   FIND_PATH(DOOCS_DIR_SERVER libEqServer.so
-    ${CMAKE_CURRENT_LIST_DIR}
-    /export/doocs/lib
+    ${DOOCS_DIR}
   )
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} EqServer)
 endif()
