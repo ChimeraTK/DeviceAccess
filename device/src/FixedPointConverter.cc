@@ -27,10 +27,6 @@ namespace mtca4u {
       throw DeviceException(errorMessage.str(), DeviceException::WRONG_PARAMETER);
     }
 
-    if (nBits == 0){
-      throw DeviceException("A word with zero significant bits is not valid.", DeviceException::WRONG_PARAMETER);
-    }
-
     // For floating-point types: check if number of fractional bits are complying with the dynamic range
     // Note: positive fractional bits give us smaller numbers and thus correspond to negative exponents!
     if ( (fractionalBits > -std::numeric_limits<double>::min_exponent-static_cast<int>(nBits)) ||
@@ -43,10 +39,15 @@ namespace mtca4u {
 
     // compute mask for the signed bit
     // keep the mask at 0 if unsigned to simplify further calculations
-    _signBitMask = ( _isSigned ? 1<<(nBits-1) : 0x0 ); // the highest valid bit is the sign
+    if (nBits > 0) {
+      _signBitMask = ( _isSigned ? 1<<(nBits-1) : 0x0 ); // the highest valid bit is the sign
+    }
+    else {
+      _signBitMask = 0;
+    }
 
     // compute masks of used and unused bits
-    _usedBitsMask = (1L << nBits) -1L; // by using 1L (64 bit) this also works for 32 bits
+    _usedBitsMask = (1L << nBits) - 1L; // by using 1L (64 bit) this also works for 32 bits
     _unusedBitsMask = ~_usedBitsMask;
 
     // compute bit shift mask, used to test if bit shifting for fractional bits leads to an overflow
