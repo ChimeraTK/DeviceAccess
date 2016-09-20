@@ -32,11 +32,13 @@
 
 SET(DOOCS_FOUND 0)
 
-FIND_PATH(DOOCS_DIR libDOOCSapi.so
-  ${CMAKE_CURRENT_LIST_DIR}
-  /export/doocs/lib
-)
-set(DOOCS_LIBRARIES DOOCSapi nsl dl pthread m rt ldap)
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
+  FIND_PATH(DOOCS_DIR_ZMQ libDOOCSdzmq.so
+    ${CMAKE_CURRENT_LIST_DIR}
+    /export/doocs/lib
+  )
+  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdzmq)
+endif()
 
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
   FIND_PATH(DOOCS_DIR_SERVER libEqServer.so
@@ -46,13 +48,11 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} EqServer)
 endif()
 
-if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
-  FIND_PATH(DOOCS_DIR_ZMQ libDOOCSdzmq.so
-    ${CMAKE_CURRENT_LIST_DIR}
-    /export/doocs/lib
-  )
-  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdzmq)
-endif()
+FIND_PATH(DOOCS_DIR libDOOCSapi.so
+  ${CMAKE_CURRENT_LIST_DIR}
+  /export/doocs/lib
+)
+set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap)
 
 # now set the required variables based on the determined DOOCS_DIR
 set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
