@@ -122,6 +122,12 @@ namespace mtca4u {
 
         /// reference to the raw buffer (first word of the sequence)
         uint32_t *buffer;
+
+    private:
+
+      /** prevent copying by operator=, since it will be confusing */
+      void operator=(const DummyRegisterSequence& rightHandSide) const;
+
     };
   }     // namespace proxies
 
@@ -214,6 +220,11 @@ namespace mtca4u {
       inline proxies::DummyRegisterElement<T> getProxy(int index) {
         return proxies::DummyRegisterElement<T>(&fpc, sizeof(uint32_t), getElement(index));
       }
+
+    private:
+
+      /** prevent copying by operator=, since it will be confusing */
+      void operator=(const DummyRegisterAccessor& rightHandSide) const;
 
   };
 
@@ -309,6 +320,11 @@ namespace mtca4u {
 
       /// number of elements per sequence
       unsigned  int nElements;
+
+    private:
+
+      /** prevent copying by operator=, since it will be confusing */
+      void operator=(const DummyMultiplexedRegisterAccessor& rightHandSide) const;
 
   };
 
