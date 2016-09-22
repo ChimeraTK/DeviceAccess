@@ -130,7 +130,6 @@ BOOST_AUTO_TEST_CASE( testConstructor ){
 
   // number of significant bits
   BOOST_CHECK_THROW( FixedPointConverter(33), DeviceException);
-  BOOST_CHECK_THROW( FixedPointConverter(0) , DeviceException);
 
   // dynamic range of sufficient for bit shift
   BOOST_CHECK_THROW( FixedPointConverter(2, 1021-1) , DeviceException);
@@ -1431,6 +1430,66 @@ BOOST_AUTO_TEST_CASE( testInt17SignedToInt16Unsigned ){
   checkToRaw( converter, (uint16_t) 0x7FFF, 0x7FFF );
   checkToRaw( converter, (uint16_t) 0x8000, 0x8000 );
   checkToRaw( converter, (uint16_t) 0xFFFF, 0xFFFF );
+}
+
+BOOST_AUTO_TEST_CASE( testInt0unsigned ){   // test with 0 significant bits (unsigned, no fractional bits)
+  FixedPointConverter converter(0,0,false);
+
+  checkToCooked( converter, 0, 0);
+  checkToCooked( converter, 1, 0);
+  checkToCooked( converter, 0x0000FFFF, 0);
+  checkToCooked( converter, 0xFFFF0000, 0);
+  checkToCooked( converter, 0xFFFFFFFF, 0);
+
+  checkToRaw( converter, 0, 0 );
+  checkToRaw( converter, 1, 0 );
+  checkToRaw( converter, 0xFFFF, 0 );
+  checkToRaw( converter, -1, 0 );
+}
+
+BOOST_AUTO_TEST_CASE( testInt0signed ){   // test with 0 significant bits (signed, no fractional bits)
+  FixedPointConverter converter(0,0,true);
+
+  checkToCooked( converter, 0, 0);
+  checkToCooked( converter, 1, 0);
+  checkToCooked( converter, 0x0000FFFF, 0);
+  checkToCooked( converter, 0xFFFF0000, 0);
+  checkToCooked( converter, 0xFFFFFFFF, 0);
+
+  checkToRaw( converter, 0, 0 );
+  checkToRaw( converter, 1, 0 );
+  checkToRaw( converter, 0xFFFF, 0 );
+  checkToRaw( converter, -1, 0 );
+}
+
+BOOST_AUTO_TEST_CASE( testInt0unsignedFractional ){   // test with 0 significant bits (unsigned, with fractional bits)
+  FixedPointConverter converter(0,5,false);
+
+  checkToCooked( converter, 0, 0);
+  checkToCooked( converter, 1, 0);
+  checkToCooked( converter, 0x0000FFFF, 0);
+  checkToCooked( converter, 0xFFFF0000, 0);
+  checkToCooked( converter, 0xFFFFFFFF, 0);
+
+  checkToRaw( converter, 0, 0 );
+  checkToRaw( converter, 1, 0 );
+  checkToRaw( converter, 0xFFFF, 0 );
+  checkToRaw( converter, -1, 0 );
+}
+
+BOOST_AUTO_TEST_CASE( testInt0signedFractional ){   // test with 0 significant bits (signed, with negative fractional bits)
+  FixedPointConverter converter(0,-5,true);
+
+  checkToCooked( converter, 0, 0);
+  checkToCooked( converter, 1, 0);
+  checkToCooked( converter, 0x0000FFFF, 0);
+  checkToCooked( converter, 0xFFFF0000, 0);
+  checkToCooked( converter, 0xFFFFFFFF, 0);
+
+  checkToRaw( converter, 0, 0 );
+  checkToRaw( converter, 1, 0 );
+  checkToRaw( converter, 0xFFFF, 0 );
+  checkToRaw( converter, -1, 0 );
 }
 
 BOOST_AUTO_TEST_CASE( testDynamicRangePos ){

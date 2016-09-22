@@ -545,39 +545,56 @@ void DeviceTest::testDeviceCreation() {
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dMapDir/testRelativePaths.dmap");
 
   mtca4u::Device device1;
+  BOOST_CHECK( device1.isOpened() == false );
   device1.open("PCIE0");
+  BOOST_CHECK( device1.isOpened() == true );
   BOOST_CHECK_NO_THROW(device1.open("PCIE0"));
   mtca4u::Device device2;
+  BOOST_CHECK( device2.isOpened() == false );
   device2.open("PCIE1");
+  BOOST_CHECK( device2.isOpened() == true );
   BOOST_CHECK_NO_THROW(device2.open("PCIE1"));
+  BOOST_CHECK( device2.isOpened() == true );
 
   mtca4u::Device device3;
+  BOOST_CHECK( device3.isOpened() == false );
   BOOST_CHECK_NO_THROW(device3.open("DUMMYD0"));
+  BOOST_CHECK( device3.isOpened() == true );
   mtca4u::Device device4;
+  BOOST_CHECK( device4.isOpened() == false );
   BOOST_CHECK_NO_THROW(device4.open("DUMMYD1"));
+  BOOST_CHECK( device4.isOpened() == true );
 
   // check if opening without alias name fails
   TestableDevice device5;
+  BOOST_CHECK( device5.isOpened() == false );
   BOOST_CHECK_THROW( device5.open(), mtca4u::DeviceException );
+  BOOST_CHECK( device5.isOpened() == false );
   try {
     device5.open();
   }
   catch(mtca4u::DeviceException &e) {
     BOOST_CHECK(e.getID() == mtca4u::DeviceException::NOT_OPENED);
   }
+  BOOST_CHECK( device5.isOpened() == false );
 
   // check if opening another device closes the old backend
   BOOST_CHECK_NO_THROW(device5.open("DUMMYD0"));
+  BOOST_CHECK( device5.isOpened() == true );
   auto backend5 = device5.getBackend();
   BOOST_CHECK_NO_THROW(device5.open("DUMMYD1"));
-  BOOST_CHECK( ! backend5->isOpen() );
+  BOOST_CHECK( ! backend5->isOpen() );    // backend5 is no longer the current backend of device5
+  BOOST_CHECK( device5.isOpened() == true );
 
   // check closing and opening again
   backend5 = device5.getBackend();
   BOOST_CHECK( backend5->isOpen() );
+  BOOST_CHECK( device5.isOpened() == true );
   device5.close();
+  BOOST_CHECK( device5.isOpened() == false );
   BOOST_CHECK( !backend5->isOpen() );
   device5.open();
+  BOOST_CHECK( device5.isOpened() == true );
   BOOST_CHECK( backend5->isOpen() );
 
   //Now that we are done with the tests, move the factory to the state it was in

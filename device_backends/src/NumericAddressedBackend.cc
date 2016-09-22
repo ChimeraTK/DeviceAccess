@@ -138,12 +138,9 @@ namespace mtca4u {
     }
     // 2D multiplexed register
     else {
-      if( wordOffsetInRegister != 0 || ( numberOfWords != 0 && numberOfWords != info->getNumberOfElements() ) ) {
-        throw DeviceException("Creating accessors for parts of a multiplexed register is not supported by the "
-            "MemoryAddressedBackend.",DeviceException::NOT_IMPLEMENTED);
-      }
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-          new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName,shared_from_this()) );
+          new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister,
+              numberOfWords, shared_from_this()) );
     }
     // allow plugins to decorate the accessor and return it
     return decorateRegisterAccessor(registerPathName, accessor);

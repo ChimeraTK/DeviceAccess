@@ -190,9 +190,9 @@ namespace mtca4u {
         auto casted = boost::dynamic_pointer_cast< NumericAddressedLowLevelTransferElement >(newElement);
         if(newElement->isSameRegister(_rawAccessor) && casted) {
           size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);
-          size_t newStopAddress = std::max(casted->_startAddress+casted->_numberOfWords,
-                                           _rawAccessor->_startAddress+_rawAccessor->_numberOfWords);
-          size_t newNumberOfWords = newStopAddress-newStartAddress;
+          size_t newStopAddress = std::max(casted->_startAddress+casted->_numberOfBytes,
+                                           _rawAccessor->_startAddress+_rawAccessor->_numberOfBytes);
+          size_t newNumberOfWords = (newStopAddress-newStartAddress)/sizeof(int32_t);
           casted->changeAddress(newStartAddress,newNumberOfWords);
           _rawAccessor = casted;
         }

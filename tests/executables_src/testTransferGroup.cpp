@@ -9,6 +9,7 @@
 
 #include "TransferGroup.h"
 #include "BufferingRegisterAccessor.h"
+#include "NumericAddressedLowLevelTransferElement.h"
 #include "Device.h"
 
 #include "accessPrivateData.h"
@@ -22,11 +23,40 @@ struct BufferingRegisterAccessor_int_impl {
 };
 template class accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorBridge<int>::_impl>;
 
+struct BufferingRegisterAccessor_int32_impl {
+    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorBridge<int32_t>::*type);
+};
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_int32_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
+
+struct BufferingRegisterAccessor_uint16_impl {
+    typedef boost::shared_ptr< NDRegisterAccessor<uint16_t> >(NDRegisterAccessorBridge<uint16_t>::*type);
+};
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_uint16_impl, &mtca4u::NDRegisterAccessorBridge<uint16_t>::_impl>;
+
+struct BufferingRegisterAccessor_int64_impl {
+    typedef boost::shared_ptr< NDRegisterAccessor<int64_t> >(NDRegisterAccessorBridge<int64_t>::*type);
+};
+template class accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorBridge<int64_t>::_impl>;
+
+struct NumericAddressedLowLevelTransferElement_startAddress {
+    typedef size_t (NumericAddressedLowLevelTransferElement::*type);
+};
+template class accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
+        &mtca4u::NumericAddressedLowLevelTransferElement::_startAddress>;
+
+struct NumericAddressedLowLevelTransferElement_numberOfBytes {
+    typedef size_t (NumericAddressedLowLevelTransferElement::*type);
+};
+template class accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
+        &mtca4u::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
+
+
 class TransferGroupTest {
   public:
     void testSimpleCase();
     void testLogicalNameMappedRegister();
     void testMergeNumericRegisters();
+    void testMergeNumericRegistersDifferentTypes();
 };
 
 class TransferGroupTestSuite : public test_suite {
@@ -37,6 +67,7 @@ class TransferGroupTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testSimpleCase, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testLogicalNameMappedRegister, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegisters, transferGroupTest) );
+      add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegistersDifferentTypes, transferGroupTest) );
     }
 };
 
@@ -323,6 +354,21 @@ void TransferGroupTest::testMergeNumericRegisters() {
   BOOST_CHECK( mux1i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux2i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
 
+  // check that the underlying raw accessors have the right address range
+  NumericAddressedLowLevelTransferElement *llelem;  // operator ->* does not work on a shared_ptr
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux0i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x20);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux1i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x24);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux2i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x28);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux3i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x2C);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 4);
+
   // add accessors to the transfer group. The accessors are intentionally added out of order to check if the behaviour
   // is also correct in that case
   TransferGroup group;
@@ -335,6 +381,113 @@ void TransferGroupTest::testMergeNumericRegisters() {
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux1i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux2i->getHardwareAccessingElements()[0] );
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux3i->getHardwareAccessingElements()[0] );
+
+  // check that the underlying raw accessor have the right address range
+  llelem = boost::static_pointer_cast<NumericAddressedLowLevelTransferElement>(mux0i->getHardwareAccessingElements()[0]).get();
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_startAddress>::value == 0x20);
+  BOOST_CHECK( llelem->*accessPrivateData::stowed<NumericAddressedLowLevelTransferElement_numberOfBytes>::value == 16);
+
+  // check that reading and writing works
+  mux0 = 42;
+  mux1 = 120;
+  mux2 = 84;
+  mux3 = 240;
+  group.write();
+
+  mux0b.read();
+  BOOST_CHECK(mux0b == 42);
+  mux1b.read();
+  BOOST_CHECK(mux1b == 120);
+  mux2b.read();
+  BOOST_CHECK(mux2b == 84);
+  mux3b.read();
+  BOOST_CHECK(mux3b == 240);
+
+  mux0b = 123;
+  mux0b.write();
+  group.read();
+  BOOST_CHECK( mux0 == 123 );
+  BOOST_CHECK( mux1 == 120 );
+  BOOST_CHECK( mux2 == 84 );
+  BOOST_CHECK( mux3 == 240 );
+
+  mux1b = 234;
+  mux1b.write();
+  group.read();
+  BOOST_CHECK( mux0 == 123 );
+  BOOST_CHECK( mux1 == 234 );
+  BOOST_CHECK( mux2 == 84 );
+  BOOST_CHECK( mux3 == 240 );
+
+  mux2b = 345;
+  mux2b.write();
+  group.read();
+  BOOST_CHECK( mux0 == 123 );
+  BOOST_CHECK( mux1 == 234 );
+  BOOST_CHECK( mux2 == 345 );
+  BOOST_CHECK( mux3 == 240 );
+
+  mux3b = 456;
+  mux3b.write();
+  group.read();
+  BOOST_CHECK( mux0 == 123 );
+  BOOST_CHECK( mux1 == 234 );
+  BOOST_CHECK( mux2 == 345 );
+  BOOST_CHECK( mux3 == 456 );
+
+}
+
+void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
+
+  BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  mtca4u::Device device;
+
+  device.open("DUMMYD3");
+
+  // create register accessors of four registers with adjecent addresses
+  auto mux0 = device.getScalarRegisterAccessor<uint16_t>("/ADC/WORD_CLK_MUX_0");
+  auto mux1 = device.getScalarRegisterAccessor<uint16_t>("/ADC/WORD_CLK_MUX_1");
+  auto mux2 = device.getScalarRegisterAccessor<int32_t>("/ADC/WORD_CLK_MUX_2",0,{AccessMode::raw});
+  auto mux3 = device.getScalarRegisterAccessor<int64_t>("/ADC/WORD_CLK_MUX_3");
+
+  // create the same register accessors again, so we have a second set not part of the transfer group
+  auto mux0b = device.getScalarRegisterAccessor<uint16_t>("/ADC/WORD_CLK_MUX_0");
+  auto mux1b = device.getScalarRegisterAccessor<uint16_t>("/ADC/WORD_CLK_MUX_1");
+  auto mux2b = device.getScalarRegisterAccessor<int32_t>("/ADC/WORD_CLK_MUX_2",0,{AccessMode::raw});
+  auto mux3b = device.getScalarRegisterAccessor<int64_t>("/ADC/WORD_CLK_MUX_3");
+
+  // obtain the private pointers to the implementation of the accessor
+  auto mux0i = mux0.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value;
+  auto mux1i = mux1.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value;
+  auto mux2i = mux2.*accessPrivateData::stowed<BufferingRegisterAccessor_int32_impl>::value;
+  auto mux3i = mux3.*accessPrivateData::stowed<BufferingRegisterAccessor_int64_impl>::value;
+
+  // check that all underlying raw accessors are still different
+  BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] != mux1i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] != mux2i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux1i->getHardwareAccessingElements()[0] != mux2i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux1i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux2i->getHardwareAccessingElements()[0] != mux3i->getHardwareAccessingElements()[0] );
+
+  // add accessors to the transfer group. The accessors are intentionally added out of order to check if the behaviour
+  // is also correct in that case
+  TransferGroup group;
+  group.addAccessor(mux2);
+  group.addAccessor(mux1);
+  group.addAccessor(mux3);
+  group.addAccessor(mux0);
+
+  // check that all underlying raw accessors are now all the same
+  BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux1i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux2i->getHardwareAccessingElements()[0] );
+  BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux3i->getHardwareAccessingElements()[0] );
+
+  // also check that all high-level implementations are still the same as previously
+  BOOST_CHECK( mux0i == mux0.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value );
+  BOOST_CHECK( mux1i == mux1.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value );
+  BOOST_CHECK( mux2i == mux2.*accessPrivateData::stowed<BufferingRegisterAccessor_int32_impl>::value );
+  BOOST_CHECK( mux3i == mux3.*accessPrivateData::stowed<BufferingRegisterAccessor_int64_impl>::value );
 
   // check that reading and writing works
   mux0 = 42;

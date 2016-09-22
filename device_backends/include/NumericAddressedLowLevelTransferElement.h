@@ -29,7 +29,7 @@ namespace mtca4u {
 
       NumericAddressedLowLevelTransferElement(boost::shared_ptr<NumericAddressedBackend> dev,
           size_t bar, size_t startAddress, size_t numberOfWords)
-      : _dev(dev), _bar(bar)
+      : _dev(dev), _bar(bar), isShared(false)
       {
         changeAddress(startAddress, numberOfWords);
       }
@@ -87,9 +87,9 @@ namespace mtca4u {
 
       /** Return accessor to the begin of the raw buffer matching the given address. No end() is provided, since the
        *  NumericAddressedBackendRegisterAccessor using this functionality uses the cooked buffer for this check.
-       *  Only addresses within the range specified in the constructor may be passed. The address must also have an
-       *  integer multiple of the word size as an offset w.r.t. the start address specified in the constructor.
-       *  Otherwise an undefined behaviour will occur! */
+       *  Only addresses within the range specified in the constructor or changeAddress() may be passed. The address
+       *  must also have an integer multiple of the word size as an offset w.r.t. the start address specified in the
+       *  constructor. Otherwise an undefined behaviour will occur! */
       std::vector<int32_t>::iterator begin(size_t addressInBar) {
         return rawDataBuffer.begin() + (addressInBar-_startAddress)/sizeof(int32_t);
       }
@@ -106,6 +106,9 @@ namespace mtca4u {
 
         // compute number of bytes
         _numberOfBytes = _numberOfWords*sizeof(int32_t);
+
+        // set shared flag
+        isShared = true;
       }
 
     protected:
@@ -124,6 +127,10 @@ namespace mtca4u {
 
       /** number of bytes to access */
       size_t _numberOfBytes;
+
+      /** flag if changeAddress() has been called, which is this low-level transfer element is shared between multiple
+       *  accessors */
+      bool isShared;
 
       /** raw buffer */
       std::vector<int32_t> rawDataBuffer;

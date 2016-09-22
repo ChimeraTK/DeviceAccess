@@ -88,7 +88,7 @@ void testDeMultiplexing(std::string areaName) {
 
     //get the sequence info from the map file
     boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
-    SequenceInfo sequenceInfo;
+    RegisterInfoMap::RegisterInfo sequenceInfo;
     registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_"+areaName, sequenceInfo, TEST_MODULE_NAME);
 
     std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/sizeof(SequenceWordType) );
@@ -185,7 +185,7 @@ void testWithConversion(std::string multiplexedSequenceName) {
 
     //get the sequence info from the map file
     boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
-    SequenceInfo sequenceInfo;
+    RegisterInfoMap::RegisterInfo sequenceInfo;
     registerMap->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName, sequenceInfo, TEST_MODULE_NAME);
 
     std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/sizeof(SequenceWordType) );
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
   Device device;
   device.open(DEVICE_ALIAS);
 
-  SequenceInfo sequenceInfo;
+  RegisterInfoMap::RegisterInfo sequenceInfo;
   registerMap->getRegisterInfo( MULTIPLEXED_SEQUENCE_PREFIX + "DMA", sequenceInfo, TEST_MODULE_NAME);
 
 
@@ -387,6 +387,191 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
 
 }
 
+
+BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
+
+  // open a dummy device with the sequence map file
+  BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+  Device device;
+  device.open(DEVICE_MIXED_ALIAS);
+
+  const size_t nWordsPerBlock = 44/sizeof(int32_t);
+
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 0, 42);
+  BufferingRegisterAccessor<int32_t> myRawData = device.getBufferingRegisterAccessor<int32_t>(
+      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,42*nWordsPerBlock,true);
+
+  BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
+  BOOST_CHECK(myMixedData.getNumberOfSamples() == 372-42);
+  BOOST_CHECK(myMixedData[0].size() == 372-42);
+
+  for(unsigned int i=0; i<myMixedData.getNumberOfSamples(); ++i) {
+    myMixedData[0][i] = -24673; //1001 1111 1001 1111
+    myMixedData[1][i] = -13724; //1100 1010 0110 0100
+    myMixedData[2][i] =  130495;
+    myMixedData[3][i] =  513;
+    myMixedData[4][i] =  1027;
+    myMixedData[5][i] = -56.4;
+    myMixedData[6][i] =  78;
+    myMixedData[7][i] =  45.2;
+    myMixedData[8][i] = -23.9;
+    myMixedData[9][i] =  61.3;
+    myMixedData[10][i] = -12;
+
+    myMixedData.write();
+
+    myRawData.read();
+    BOOST_CHECK(myRawData[0+i*nWordsPerBlock] == -899375201);
+    BOOST_CHECK(myRawData[1+i*nWordsPerBlock] ==  130495);
+    BOOST_CHECK(myRawData[2+i*nWordsPerBlock] ==  67305985);
+    BOOST_CHECK(myRawData[3+i*nWordsPerBlock] ==  5112008);
+    BOOST_CHECK(myRawData[4+i*nWordsPerBlock] == -197269459);
+
+    myMixedData.read();
+
+    BOOST_CHECK(myMixedData[0][i] == -24673);
+    BOOST_CHECK(myMixedData[1][i] == -13724);
+    BOOST_CHECK(myMixedData[2][i] ==  130495);
+    BOOST_CHECK(myMixedData[3][i] ==  513);
+    BOOST_CHECK(myMixedData[4][i] ==  1027);
+    BOOST_CHECK(myMixedData[5][i] == -56);
+    BOOST_CHECK(myMixedData[6][i] ==  78);
+    BOOST_CHECK(myMixedData[7][i] ==  45);
+    BOOST_CHECK(myMixedData[8][i] == -24);
+    BOOST_CHECK(myMixedData[9][i] ==  61);
+    BOOST_CHECK(myMixedData[10][i] == -12);
+
+
+    myMixedData[0][i] = i;
+    myMixedData[1][i] = 0;
+    myMixedData[2][i] = 0;
+    myMixedData[3][i] = 0;
+    myMixedData[4][i] = 0;
+    myMixedData[5][i] = 0;
+    myMixedData[6][i] = 0;
+    myMixedData[7][i] = 0;
+    myMixedData[8][i] = 0;
+    myMixedData[9][i] = 0;
+    myMixedData[10][i] = 0;
+
+    myMixedData.write();
+
+    myRawData.read();
+    BOOST_CHECK(myRawData[0+i*nWordsPerBlock] == (int)i);
+    BOOST_CHECK(myRawData[1+i*nWordsPerBlock] == 0);
+    BOOST_CHECK(myRawData[2+i*nWordsPerBlock] == 0);
+    BOOST_CHECK(myRawData[3+i*nWordsPerBlock] == 0);
+    BOOST_CHECK(myRawData[4+i*nWordsPerBlock] == 0);
+
+    myMixedData.read();
+
+    BOOST_CHECK(myMixedData[0][i] == i);
+    BOOST_CHECK(myMixedData[1][i] == 0);
+    BOOST_CHECK(myMixedData[2][i] == 0);
+    BOOST_CHECK(myMixedData[3][i] == 0);
+    BOOST_CHECK(myMixedData[4][i] == 0);
+    BOOST_CHECK(myMixedData[5][i] == 0);
+    BOOST_CHECK(myMixedData[6][i] == 0);
+    BOOST_CHECK(myMixedData[7][i] == 0);
+    BOOST_CHECK(myMixedData[8][i] == 0);
+    BOOST_CHECK(myMixedData[9][i] == 0);
+    BOOST_CHECK(myMixedData[10][i] == 0);
+
+  }
+
+}
+
+BOOST_AUTO_TEST_CASE(testAreaOfInterestLength) {
+
+  // open a dummy device with the sequence map file
+  BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
+  Device device;
+  device.open(DEVICE_MIXED_ALIAS);
+
+  const size_t nWordsPerBlock = 44/sizeof(int32_t);
+
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 120);
+  BufferingRegisterAccessor<int32_t> myRawData = device.getBufferingRegisterAccessor<int32_t>(
+      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,true);
+
+  BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
+  BOOST_CHECK(myMixedData.getNumberOfSamples() == 120);
+  BOOST_CHECK(myMixedData[0].size() == 120);
+
+  for(unsigned int i=0; i<myMixedData.getNumberOfSamples(); ++i) {
+    myMixedData[0][i] = -24673; //1001 1111 1001 1111
+    myMixedData[1][i] = -13724; //1100 1010 0110 0100
+    myMixedData[2][i] =  130495;
+    myMixedData[3][i] =  513;
+    myMixedData[4][i] =  1027;
+    myMixedData[5][i] = -56.4;
+    myMixedData[6][i] =  78;
+    myMixedData[7][i] =  45.2;
+    myMixedData[8][i] = -23.9;
+    myMixedData[9][i] =  61.3;
+    myMixedData[10][i] = -12;
+
+    myMixedData.write();
+
+    myRawData.read();
+    BOOST_CHECK(myRawData[0+i*nWordsPerBlock] == -899375201);
+    BOOST_CHECK(myRawData[1+i*nWordsPerBlock] ==  130495);
+    BOOST_CHECK(myRawData[2+i*nWordsPerBlock] ==  67305985);
+    BOOST_CHECK(myRawData[3+i*nWordsPerBlock] ==  5112008);
+    BOOST_CHECK(myRawData[4+i*nWordsPerBlock] == -197269459);
+
+    myMixedData.read();
+
+    BOOST_CHECK(myMixedData[0][i] == -24673);
+    BOOST_CHECK(myMixedData[1][i] == -13724);
+    BOOST_CHECK(myMixedData[2][i] ==  130495);
+    BOOST_CHECK(myMixedData[3][i] ==  513);
+    BOOST_CHECK(myMixedData[4][i] ==  1027);
+    BOOST_CHECK(myMixedData[5][i] == -56);
+    BOOST_CHECK(myMixedData[6][i] ==  78);
+    BOOST_CHECK(myMixedData[7][i] ==  45);
+    BOOST_CHECK(myMixedData[8][i] == -24);
+    BOOST_CHECK(myMixedData[9][i] ==  61);
+    BOOST_CHECK(myMixedData[10][i] == -12);
+
+
+    myMixedData[0][i] = i;
+    myMixedData[1][i] = 0;
+    myMixedData[2][i] = 0;
+    myMixedData[3][i] = 0;
+    myMixedData[4][i] = 0;
+    myMixedData[5][i] = 0;
+    myMixedData[6][i] = 0;
+    myMixedData[7][i] = 0;
+    myMixedData[8][i] = 0;
+    myMixedData[9][i] = 0;
+    myMixedData[10][i] = 0;
+
+    myMixedData.write();
+
+    myRawData.read();
+    BOOST_CHECK(myRawData[0+i*nWordsPerBlock] == (int)i);
+    BOOST_CHECK(myRawData[1+i*nWordsPerBlock] == 0);
+    BOOST_CHECK(myRawData[2+i*nWordsPerBlock] == 0);
+    BOOST_CHECK(myRawData[3+i*nWordsPerBlock] == 0);
+    BOOST_CHECK(myRawData[4+i*nWordsPerBlock] == 0);
+
+    myMixedData.read();
+
+    BOOST_CHECK(myMixedData[0][i] == i);
+    BOOST_CHECK(myMixedData[1][i] == 0);
+    BOOST_CHECK(myMixedData[2][i] == 0);
+    BOOST_CHECK(myMixedData[3][i] == 0);
+    BOOST_CHECK(myMixedData[4][i] == 0);
+    BOOST_CHECK(myMixedData[5][i] == 0);
+    BOOST_CHECK(myMixedData[6][i] == 0);
+    BOOST_CHECK(myMixedData[7][i] == 0);
+    BOOST_CHECK(myMixedData[8][i] == 0);
+    BOOST_CHECK(myMixedData[9][i] == 0);
+    BOOST_CHECK(myMixedData[10][i] == 0);
+
+  }
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()

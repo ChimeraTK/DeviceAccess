@@ -99,15 +99,28 @@ namespace mtca4u {
           size_t numberOfWords=0, size_t wordOffsetInRegister=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** Get a TwoDRegisterAccessor object for the given register. This allows to read and write transparently
-       *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor. */
+       *  2-dimensional registers. The register accessor is similar to the 1-dimensional BufferingRegisterAccessor.
+       *
+       *  The optional arguments allow to restrict the accessor to a region of interest in the 2D register:
+       *  numberOfElements specifies the number of elements per channel to read from the register. elementsOffset is
+       *  the first element index for each channel to read.
+       *
+       *  TODO: Currently only the restriction to a smaller region of interest is only possible in one dimension.
+       *  Support for the second dimension should be added as well, but it will involve an internal interface change.
+       *  Since all current backends will not be able to optimise the performance when reducing the number of channels,
+       *  this change is postponed. */
       template<typename UserType>
-      TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(const RegisterPath &registerPathName) const;
+      TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(const RegisterPath &registerPathName,
+          size_t numberOfElements=0, size_t elementsOffset=0) const;
 
       /** Return the register catalogue with detailed information on all registers. */
       const RegisterCatalogue& getRegisterCatalogue() const;
 
       /** Return a device information string. Format depends on the backend, use for display only. */
       virtual std::string readDeviceInfo() const;
+
+      /** Check if the device is currently opened. */
+      bool isOpened() const;
 
       /** \brief <b>Inefficient convenience function</b> to read a single-word register without obtaining an accessor.
        *
@@ -525,10 +538,11 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(const RegisterPath &registerPathName) const {
+  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(const RegisterPath &registerPathName,
+      size_t numberOfElements, size_t elementsOffset) const {
     checkPointersAreNotNull();
     return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
-        registerPathName, 0,0, false));
+        registerPathName, numberOfElements, elementsOffset, false));
   }
 
   /********************************************************************************************************************/

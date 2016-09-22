@@ -282,4 +282,15 @@ namespace mtca4u {
     open(deviceBackend);// LCOV_EXCL_LINE
   }// LCOV_EXCL_LINE
 
+  /********************************************************************************************************************/
+
+  bool Device::isOpened() const {
+    if(_deviceBackendPointer != false) {
+      return _deviceBackendPointer->isOpen();
+    }
+    return false;   // no backend is assigned: the device is not opened
+  }
+
+  /********************************************************************************************************************/
+
 }// namespace mtca4u

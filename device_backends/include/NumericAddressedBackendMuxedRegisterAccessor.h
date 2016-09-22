@@ -15,8 +15,6 @@
 
 namespace mtca4u {
 
-  typedef RegisterInfoMap::RegisterInfo SequenceInfo;
-
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
 
@@ -29,7 +27,7 @@ namespace mtca4u {
     public:
 
       NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath &registerPathName,
-          boost::shared_ptr<DeviceBackend> _backend );
+          size_t numberOfElements, size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend );
 
       virtual ~NumericAddressedBackendMuxedRegisterAccessor() {}
 
@@ -84,15 +82,20 @@ namespace mtca4u {
 
       std::vector<int32_t> _ioBuffer;
 
-      SequenceInfo _areaInfo;
-
-      std::vector<SequenceInfo> _sequenceInfos;
+      std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
 
       uint32_t bytesPerBlock;
 
       /// register and module name
       std::string _moduleName, _registerName;
       RegisterPath _registerPathName;
+
+      /// register address (after restricting to area of interes)
+      size_t _bar, _address, _nBytes;
+
+      /// area of interest
+      size_t _numberOfElements;
+      size_t _elementsOffset;
 
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
@@ -106,8 +109,12 @@ namespace mtca4u {
 
   template <class UserType>
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
-      const RegisterPath &registerPathName, boost::shared_ptr<DeviceBackend> _backend )
-  : _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName)
+        const RegisterPath &registerPathName, size_t numberOfElements, size_t elementsOffset,
+        boost::shared_ptr<DeviceBackend> _backend )
+  : _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)),
+    _registerPathName(registerPathName),
+    _numberOfElements(numberOfElements),
+    _elementsOffset(elementsOffset)
   {
       // re-split register and module after merging names by the last dot (to allow module.register in the register name)
       _registerPathName.setAltSeparator(".");
@@ -120,7 +127,8 @@ namespace mtca4u {
 
       // Obtain information about the area
       auto registerMapping = _ioDevice->getRegisterMap();
-      registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
+      RegisterInfoMap::RegisterInfo areaInfo;
+      registerMapping->getRegisterInfo(areaName, areaInfo, _moduleName);
 
       // Obtain information for each sequence (= channel) in the area:
       // Create a fixed point converter for each sequence and store the sequence information in a vector
@@ -128,7 +136,7 @@ namespace mtca4u {
       while(true) {
 
         // build name of the next sequence as written in the map file
-        SequenceInfo sequenceInfo;
+        RegisterInfoMap::RegisterInfo sequenceInfo;
         std::stringstream sequenceNameStream;
         sequenceNameStream << SEQUENCE_PREFIX << _registerName << "_" << iSeq++;
 
@@ -170,7 +178,31 @@ namespace mtca4u {
       }
 
       // compute number of blocks (number of samples for each channel)
-      _nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
+      _nBlocks = std::floor(areaInfo.nBytes / bytesPerBlock);
+
+      // check number of words
+      if(_elementsOffset >= _nBlocks) {
+        throw DeviceException("Requested element offset exceeds the size of the register!",
+            DeviceException::WRONG_PARAMETER);
+      }
+      if(_numberOfElements == 0) {
+        _numberOfElements = _nBlocks - _elementsOffset;
+      }
+      if(_numberOfElements + _elementsOffset > _nBlocks) {
+        throw DeviceException("Requested number of elements exceeds the size of the register!",
+            DeviceException::WRONG_PARAMETER);
+      }
+
+      // compute the address taking into account the selected area of interest
+      _bar = areaInfo.bar;
+      _address = areaInfo.address + bytesPerBlock*_elementsOffset;
+      _nBytes = bytesPerBlock * _numberOfElements;
+      if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
+      if(_nBytes > areaInfo.nBytes) {
+        throw DeviceException("Requested number of elements exceeds the size of the register (late, redundant safety check)!",
+            DeviceException::WRONG_PARAMETER);
+      }
+      _nBlocks = _numberOfElements;
 
       // allocate the buffer for the converted data
       NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
@@ -179,14 +211,14 @@ namespace mtca4u {
       }
 
       // allocate the raw io buffer
-      _ioBuffer.resize(_areaInfo.nBytes);
+      _ioBuffer.resize(_nBytes/sizeof(int32_t));
   }
 
   /********************************************************************************************************************/
 
   template <class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::read() {
-      _ioDevice->read(_areaInfo.bar, _areaInfo.address, _ioBuffer.data(), _areaInfo.nBytes);
+      _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
       fillSequences();
   }
 
@@ -223,7 +255,7 @@ namespace mtca4u {
   template <class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::write() {
       fillIO_Buffer();
-      _ioDevice->write(_areaInfo.bar, _areaInfo.address, &(_ioBuffer[0]), _areaInfo.nBytes);
+      _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
   }
 
   /********************************************************************************************************************/
