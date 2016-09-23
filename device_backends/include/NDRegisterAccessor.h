@@ -22,9 +22,13 @@ namespace mtca4u {
   class NDRegisterAccessor : public TransferElement {
 
     public:
-
+      /** Creates an NDRegisterAccessor with the specified name (passed on to the 
+       *  transfer element). */
+      NDRegisterAccessor(std::string const & name = std::string())
+	: TransferElement(name){}
+        
       /** A virtual base class needs a virtual destructor */
-      virtual ~NDRegisterAccessor() {};
+      virtual ~NDRegisterAccessor() {}
 
       /** Read the data from the device, convert it and store in buffer. */
       virtual void read() = 0;
