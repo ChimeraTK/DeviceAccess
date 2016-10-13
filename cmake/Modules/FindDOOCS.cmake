@@ -44,6 +44,13 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";zmq;")
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdzmq)
 endif()
 
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";dapi;")
+  FIND_PATH(DOOCS_DIR_DAPI libDOOCSdapi.so
+    ${DOOCS_DIR}
+  )
+  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSdapi)
+endif()
+
 if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
   FIND_PATH(DOOCS_DIR_SERVER libEqServer.so
     ${DOOCS_DIR}
