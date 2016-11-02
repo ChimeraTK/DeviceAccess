@@ -363,6 +363,11 @@ class MainWindow(QMainWindow):
         
         # create open device dialog
         dlg = QFileDialog(self)
+        dlg.setOption(QFileDialog.DontUseNativeDialog, True)
+        dlg.layout().addWidget(QLabel("Device alias:"),4,0,1,1)
+        deviceAliasWidged = QLineEdit()
+        deviceAliasWidged.setText("DEV0")
+        dlg.layout().addWidget(deviceAliasWidged,4,1,1,1)
         dlg.setAcceptMode(QFileDialog.AcceptOpen)
         dlg.setWindowTitle('Import MAP file')
         dlg.setViewMode( QFileDialog.Detail )
@@ -376,11 +381,11 @@ class MainWindow(QMainWindow):
             # file name must be converted into standard python string
             name = str(dlg.selectedFiles()[0])
             # open the file
-            self.importMapFile(name)
+            self.importMapFile(name, str(deviceAliasWidged.text()))
 
 #######################################################################################################################
 # open lmap file
-    def importMapFile(self, fileName):
+    def importMapFile(self, fileName, deviceAlias):
         # read file
         with open(fileName) as f:
           mapFileContent = f.readlines()
@@ -422,9 +427,9 @@ class MainWindow(QMainWindow):
             
           # add item to tree
           if not isChannel:
-            data = [ registerName, "redirectedRegister" , "DEV0", moduleName+registerName, "", "", "", "" ]
+            data = [ registerName, "redirectedRegister" , deviceAlias, moduleName+registerName, "", "", "", "" ]
           else:
-            data = [ registerName, "redirectedChannel" , "DEV0", moduleName+registerName, "", "", channelIndex, "" ]
+            data = [ registerName, "redirectedChannel" , deviceAlias, moduleName+registerName, "", "", channelIndex, "" ]
             
           # create item
           item = QTreeWidgetItem(moduleItem, data)
