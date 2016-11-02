@@ -2,103 +2,59 @@
 
 import os
 import sys
+import re
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+import lxml.etree as ET
 
 class MainWindow(QMainWindow):
 
 #######################################################################################################################
 # constructor: create main window
     def __init__(self):
-    
-        super(MainWindow, self).__init__()
-        self.grid = QGridLayout()
-        
-        # create empty XML tree
-        self.theData = ET.Element("logicalNameMap")
-
-        # create main list
-        self.listWidget = QListWidget()
-        self.listWidget.currentItemChanged.connect(self.selectListItem)
-        self.grid.addWidget(self.listWidget,1,1,1,5)
 
         # initialise current file name
         self.fileName = ""
 
-        #
-        # editing fields
-        #
-        
-        # name
-        self.grid.addWidget(QLabel('Name:'),2,1)
-        self.edName = QLineEdit()
-        self.grid.addWidget(self.edName,2,2,1,4)
-        self.edName.textChanged.connect(self.changeName)
-        
-        # target type
-        self.grid.addWidget(QLabel('Target type:'),3,1)
-        self.edType = QComboBox()
-        self.edType.setEditable(False)
-        self.edType.addItem("- select -", "")
-        self.edType.addItem("full register", "register")
-        self.edType.addItem("range of 1D register", "range")
-        self.edType.addItem("channel of 2D register","channel")
-        self.edType.addItem("integer constant","int_constant")
-        self.grid.addWidget(self.edType,3,2)
-        self.edType.currentIndexChanged.connect(self.changeTargetType)
-        
-        # target device
-        self.grid.addWidget(QLabel('Target device alias:'),4,1)
-        self.edDevice = QLineEdit()
-        self.edDevice.setEnabled(False)
-        self.grid.addWidget(self.edDevice,4,2,1,4)
-        
-        # target register
-        self.grid.addWidget(QLabel('Target register name:'),5,1)
-        self.edRegister = QLineEdit()
-        self.edRegister.setEnabled(False)
-        self.grid.addWidget(self.edRegister,5,2,1,4)
-        
-        # first index
-        self.grid.addWidget(QLabel('First index:'),6,1)
-        self.edFirstIndex = QSpinBox()
-        self.edFirstIndex.setEnabled(False)
-        self.grid.addWidget(self.edFirstIndex,6,2,1,1)
-        
-        # length (number of indices)
-        self.grid.addWidget(QLabel('Length (nb. of indices):'),7,1)
-        self.edLength = QSpinBox()
-        self.edLength.setEnabled(False)
-        self.grid.addWidget(self.edLength,7,2,1,1)
-        
-        # channel
-        self.grid.addWidget(QLabel('Channel:'),8,1)
-        self.edChannel = QSpinBox()
-        self.edChannel.setEnabled(False)
-        self.grid.addWidget(self.edChannel,8,2,1,1)
-        
-        # value
-        self.grid.addWidget(QLabel('Value:'),9,1)
-        self.edValue = QSpinBox()
-        self.edValue.setEnabled(False)
-        self.grid.addWidget(self.edValue,9,2,1,1)
-        
-        # buttons
-        self.edAdd = QPushButton('Save as new entry')
-        self.edAdd.setEnabled(False)
-        self.grid.addWidget(self.edAdd,10,1)
-        self.edAdd.clicked.connect(self.saveNewEntry)
+        # create grid layout    
+        super(MainWindow, self).__init__()
+        self.grid = QGridLayout()
 
-        self.edUpdate = QPushButton('Update entry')
-        self.edUpdate.setEnabled(False)
-        self.grid.addWidget(self.edUpdate,10,2)
-        self.edUpdate.clicked.connect(self.updateEntry)
+        # create main tree widget
+        self.listWidget = QTreeWidget()
+        header = QTreeWidgetItem(["Name","Target Type","Target Device","Target Register", "First Index", "Length", "Channel", "Value"])
+        self.listWidget.setHeaderItem(header)
+        self.listWidget.currentItemChanged.connect(self.selectListItem)
+        self.grid.addWidget(self.listWidget,1,1,1,3)
+        
+        # enable drag&drop, but not on the top-level
+        self.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
+        self.listWidget.invisibleRootItem().setFlags(Qt.ItemIsEnabled)
 
-        self.edDelete = QPushButton('Delete entry')
-        self.edDelete.setEnabled(False)
-        self.grid.addWidget(self.edDelete,10,3)
-        self.edDelete.clicked.connect(self.deleteEntry)
+        # set column sizes of tree
+        self.listWidget.setColumnWidth(0, 350)
+        self.listWidget.setColumnWidth(1, 180)
+        self.listWidget.setColumnWidth(2, 110)
+        self.listWidget.setColumnWidth(3, 250)
+        self.listWidget.setColumnWidth(4, 80)
+        self.listWidget.setColumnWidth(5, 70)
+        self.listWidget.setColumnWidth(6, 70)
+        self.listWidget.setColumnWidth(7, 70)
+        
+        # buttons for adding and deleting items
+        self.buttonAddReg = QPushButton()
+        self.buttonAddReg.setText('Add Register')
+        self.grid.addWidget(self.buttonAddReg,2,1,1,1)
+        self.buttonAddReg.clicked.connect(self.addRegister)
+        self.buttonAddMod = QPushButton()
+        self.buttonAddMod.setText('Add Module')
+        self.grid.addWidget(self.buttonAddMod,2,2,1,1)
+        self.buttonAddMod.clicked.connect(self.addModule)
+        self.buttonDel = QPushButton()
+        self.buttonDel.setText('Delete Item')
+        self.grid.addWidget(self.buttonDel,2,3,1,1)
+        self.buttonDel.clicked.connect(self.deleteItem)
 
         # add the menu
         self.makeMenu()
@@ -115,7 +71,7 @@ class MainWindow(QMainWindow):
 
         # set window title and size
         self.setWindowTitle("mtca4u Logical Name Mapping editor")
-        self.resize(800, 800)
+        self.resize(1200, 800)
 
 #######################################################################################################################
 # create the menu
@@ -142,189 +98,74 @@ class MainWindow(QMainWindow):
         fileMenu.addAction(self._exitAction)
 
 #######################################################################################################################
-# save new entry to the list
-    def saveNewEntry(self):
-        
-        # create new entry element (with name attribute)
-        entry = ET.SubElement(self.theData,"entry")
-        entry.set("name", str(self.edName.text()) )
-        
-        # fill element with data
-        self.fillElement(entry)
-        
-        # add list entry
-        item = QListWidgetItem(self.edName.text())
-        self.listWidget.addItem(item)
+# add new register to the tree
+    def addRegister(self):
+            
+        # create item
+        item = QTreeWidgetItem(self.listWidget.currentItem(), ["newRegister"])
+            
+        # make the target type column a combo box
+        self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox("redirectedRegister") )
+            
+        # make item editable
+        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
         
         # select the new entry in list
         self.listWidget.setCurrentItem(item)
 
 #######################################################################################################################
-# update existing entry in the list
-    def updateEntry(self):
+# add new module to the tree
+    def addModule(self):
+            
+        # create item
+        item = QTreeWidgetItem(self.listWidget.currentItem(), ["newModule"])
+            
+        # make item editable
+        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled )
         
-        # get name of selected item
-        name = str(self.listWidget.currentItem().text())
-        
-        # find element
-        entry = self.theData.find("entry[@name='"+name+"']")
-        
-        # update name
-        entry.set("name", str(self.edName.text()) )
-        self.listWidget.currentItem().setText(self.edName.text())
-        
-        # strip content
-        for elem in entry: 
-            entry.remove(elem)
-        
-        # fill with new data
-        self.fillElement(entry)
+        # select the new entry in list
+        self.listWidget.setCurrentItem(item)
 
 #######################################################################################################################
-# delete existing entry from the list
-    def deleteEntry(self):
-        
-        # get name of selected item
-        name = str(self.listWidget.currentItem().text())
-        
-        # find element
-        entry = self.theData.find("entry[@name='"+name+"']")
-        
-        # remove from root
-        self.theData.remove(entry)
-        
-        # remove from list
-        self.listWidget.takeItem(self.listWidget.currentRow())
+# delete item from the tree
+    def deleteItem(self):
+    
+        # if module, ask first
+        if self.listWidget.itemWidget(self.listWidget.currentItem(), 1) is None:
+          msg = "Are you sure you want to delete the selected module with all registers and sub-modules inside?"
+          reply = QMessageBox.question(self, 'Delete Item', msg, QMessageBox.Yes, QMessageBox.No)
+          if reply != QMessageBox.Yes:
+            return
+
+        self.listWidget.currentItem().parent().removeChild(self.listWidget.currentItem())
 
 #######################################################################################################################
-# fill XML element with data from editor
-    def fillElement(self, entry):
-        
-        # add sub-element for the type
-        elem = ET.SubElement(entry, "type")
-        type = str( self.edType.itemData( self.edType.currentIndex() ).toString() )
-        elem.text = type
-        
-        # add type-dependent sub-elements
-        if type == "register":
-            elem = ET.SubElement(entry, "device")
-            elem.text = str( self.edDevice.text() )
-            elem = ET.SubElement(entry, "register")
-            elem.text = str( self.edRegister.text() )
-        elif type == "range":
-            elem = ET.SubElement(entry, "device")
-            elem.text = str( self.edDevice.text() )
-            elem = ET.SubElement(entry, "register")
-            elem.text = str( self.edRegister.text() )
-            elem = ET.SubElement(entry, "index")
-            elem.text = str( self.edFirstIndex.value() )
-            elem = ET.SubElement(entry, "length")
-            elem.text = str( self.edLength.value() )
-        elif type == "channel":
-            elem = ET.SubElement(entry, "device")
-            elem.text = str( self.edDevice.text() )
-            elem = ET.SubElement(entry, "register")
-            elem.text = str( self.edRegister.text() )
-            elem = ET.SubElement(entry, "channel")
-            elem.text = str( self.edChannel.value() )
-        elif type == "int_constant":
-            elem = ET.SubElement(entry, "value")
-            elem.text = str( self.edValue.value() )
+# create a combo box to select the target type
+    def createTargetTypeComboBox(self, selectedItem):
+        box = QComboBox()
+        box.setEditable(False)
+        box.addItem("redirected register", "redirectedRegister")
+        box.addItem("channel of 2D register","redirectedChannel")
+        box.addItem("constant","constant")
+        box.addItem("variable","variable")
+        box.setCurrentIndex( box.findData(selectedItem) )
+        return box
+
 
 #######################################################################################################################
 # select a different list item
     def selectListItem(self):
-        name = str(self.listWidget.currentItem().text())
-        
-        # find xml element "entry" with the given name
-        elem = self.theData.find("entry[@name='"+name+"']")
-        
-        # set editor fields
-        self.edName.setText(name)
-        type = elem.find("type").text
-        self.edType.setCurrentIndex( self.edType.findData(type) )
-        if type == "register":
-            self.edDevice.setText(elem.find("device").text)
-            self.edRegister.setText(elem.find("register").text)
-        elif type == "range":
-            self.edDevice.setText(elem.find("device").text)
-            self.edRegister.setText(elem.find("register").text)
-            self.edFirstIndex.setValue(int(elem.find("index").text))
-            self.edLength.setValue(int(elem.find("length").text))
-        elif type == "channel":
-            self.edDevice.setText(elem.find("device").text)
-            self.edRegister.setText(elem.find("register").text)
-            self.edChannel.setValue(int(elem.find("channel").text))
-        elif type == "int_constant":
-            self.edValue.setValue(int(elem.find("value").text))
-
-        # enable buttons
-        self.edAdd.setEnabled(False)
-        self.edUpdate.setEnabled(True)
-        self.edDelete.setEnabled(True)
-
-#######################################################################################################################
-# update existing entry in the list
-    def changeName(self):
-        name = str(self.edName.text())
-        if name == "":
-            self.edAdd.setEnabled(False)
-            self.edUpdate.setEnabled(False)
-            self.edDelete.setEnabled(False)
-        elif self.theData.find("entry[@name='"+name+"']") is not None:
-            self.edAdd.setEnabled(False)
-            self.edUpdate.setEnabled(True)
-            self.edDelete.setEnabled(True)
-        elif self.listWidget.currentItem():
-            self.edAdd.setEnabled(True)
-            self.edUpdate.setEnabled(True)
-            self.edDelete.setEnabled(True)
+        if self.listWidget.itemWidget(self.listWidget.currentItem(), 1) is None:
+          self.buttonAddReg.setEnabled(True)
+          self.buttonAddMod.setEnabled(True)
         else:
-            self.edAdd.setEnabled(True)
-            self.edUpdate.setEnabled(False)
-            self.edDelete.setEnabled(False)
-
-
-#######################################################################################################################
-# change target type: update disabled and enabled fields
-    def changeTargetType(self):
-        type = self.edType.itemData( self.edType.currentIndex() )
-        if type == "register":
-            self.edDevice.setEnabled(True)
-            self.edRegister.setEnabled(True)
-            self.edFirstIndex.setEnabled(False)
-            self.edLength.setEnabled(False)
-            self.edChannel.setEnabled(False)
-            self.edValue.setEnabled(False)
-        elif type == "range":
-            self.edDevice.setEnabled(True)
-            self.edRegister.setEnabled(True)
-            self.edFirstIndex.setEnabled(True)
-            self.edLength.setEnabled(True)
-            self.edChannel.setEnabled(False)
-            self.edValue.setEnabled(False)
-        elif type == "channel":
-            self.edDevice.setEnabled(True)
-            self.edRegister.setEnabled(True)
-            self.edFirstIndex.setEnabled(False)
-            self.edLength.setEnabled(False)
-            self.edChannel.setEnabled(True)
-            self.edValue.setEnabled(False)
-        elif type == "int_constant":
-            self.edDevice.setEnabled(False)
-            self.edRegister.setEnabled(False)
-            self.edFirstIndex.setEnabled(False)
-            self.edLength.setEnabled(False)
-            self.edChannel.setEnabled(False)
-            self.edValue.setEnabled(True)
+          self.buttonAddReg.setEnabled(False)
+          self.buttonAddMod.setEnabled(False)
+          
+        if self.listWidget.currentItem() == self.listWidget.topLevelItem(0):
+          self.buttonDel.setEnabled(False)
         else:
-            self.edDevice.setEnabled(False)
-            self.edRegister.setEnabled(False)
-            self.edFirstIndex.setEnabled(False)
-            self.edLength.setEnabled(False)
-            self.edChannel.setEnabled(False)
-            self.edValue.setEnabled(False)
-             
+          self.buttonDel.setEnabled(True)
 
 #######################################################################################################################
 # show open lmap file dialogue
@@ -348,15 +189,67 @@ class MainWindow(QMainWindow):
             self.openFile(name)
 
 #######################################################################################################################
+# recusively populate the list widget with entries from the XML tree
+    def updateList(self, theData):
+        # clear the list first and create the top-level element
+        self.listWidget.clear()
+        toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"] )
+        toplevelItem.setExpanded(True)
+        # start with the root element, interate through the entire tree
+        self.updateListInternal(toplevelItem, theData)
+
+#######################################################################################################################
+# internally called by updateList()
+    def updateListInternal(self, parentItem, entry):
+        for child in entry:
+
+            # create entry for module
+            if(child.tag == "module"):
+              data = [ child.get("name"), "", "", "", "", "", "", "" ]
+              item = QTreeWidgetItem(parentItem, data)
+              item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled )
+              item.setExpanded(True)
+
+               # recures into module
+              self.updateListInternal(item, child)
+
+            # create entry for register
+            else:
+
+              # collect item data        
+              data = [ child.get("name"), child.tag, "", "", "", "", "", "" ]
+              if child.find("targetDevice") is not None:
+                data[2] = child.find("targetDevice").text
+              if child.find("targetRegister") is not None:
+                data[3] = child.find("targetRegister").text
+              if child.find("targetStartIndex") is not None:
+                data[4] = child.find("targetStartIndex").text
+              if child.find("numberOfElements") is not None:
+                data[5] = child.find("numberOfElements").text
+              if child.find("targetChannel") is not None:
+                data[6] = child.find("targetChannel").text
+              if child.find("value") is not None:
+                data[7] = child.find("value").text
+            
+              # create item
+              item = QTreeWidgetItem(parentItem, data)
+            
+              # make the target type column a combo box
+              self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(child.tag) )
+            
+              # make item editable
+              item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
+
+                
+
+#######################################################################################################################
 # open lmap file
     def openFile(self, fileName):
         # parse xml file
-        tree = ET.parse(fileName)
-        self.theData = tree.getroot()
-        # populate list
-        self.listWidget.clear()
-        for entry in self.theData.findall("entry"):
-            self.listWidget.addItem(QListWidgetItem(entry.get("name")))
+        theData = ET.parse(fileName).getroot()
+        
+        # populate list (recusively through all modules)
+        self.updateList(theData)
             
         # store file name and change window title
         self.fileName = os.path.abspath(fileName)
@@ -383,13 +276,72 @@ class MainWindow(QMainWindow):
             # save the file
             self.saveFile(name)
 
+#######################################################################################################################
+# show open lmap file dialogue
+    def createXmlData(self):
+             
+        # create root element
+        theData = ET.Element("logicalNameMap")
+        
+        # recursively iterate through the tree
+        self.createXmlDataInternal(theData, self.listWidget.topLevelItem(0))
+        
+        return theData
+
+#######################################################################################################################
+# internally called by createXmlData
+    def createXmlDataInternal(self, xmlElement, treeElement):
+             
+        for index in range(0,treeElement.childCount()):
+          child = treeElement.child(index)
+          
+          # registers
+          if(child.childCount() == 0):
+            wg = self.listWidget.itemWidget(child, 1)
+            targetType = str(wg.itemData(wg.currentIndex()).toString())
+            if targetType == "redirectedRegister":
+              xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
+              ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
+              ET.SubElement(xmlChild, "targetRegister").text = str(child.text(3))
+              if str(child.text(4)) != "":
+                ET.SubElement(xmlChild, "targetStartIndex").text = str(child.text(4))
+              if str(child.text(5)) != "":
+                ET.SubElement(xmlChild, "numberOfElements").text = str(child.text(5))
+            elif targetType == "redirectedChannel":
+              xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
+              ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
+              ET.SubElement(xmlChild, "targetRegister").text = str(child.text(3))
+              ET.SubElement(xmlChild, "targetChannel").text = str(child.text(6))
+            elif targetType == "constant" or targetType == "variable":
+              xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
+              ET.SubElement(xmlChild, "value").text = str(child.text(7))
+              ET.SubElement(xmlChild, "type").text = "integer"
+            else:
+              QMessageBox.information(self, 'Error', 'Unknown target type: "'+targetType+'".')
+
+          # modules
+          else:
+              xmlChild = ET.SubElement(xmlElement, "module", name=str(child.text(0)))
+              self.createXmlDataInternal(xmlChild, child)
+
 #########################################################################################
 # save lmap file
     def saveFile(self, fileName):
-        # create element tree
+        
+        # iterate through tree data
+        theData = self.createXmlData()
+        
+        # format XML properly (with indentation, but without adding spaces and new lines to the text nodes)
         tree = ET.ElementTree()
-        tree._setroot(self.theData)
-        tree.write(fileName)
+        tree._setroot(theData)
+        uglyXml = ET.tostring(tree, pretty_print = True)
+        text_re = re.compile('>\n\s+([^<>\s].*?)\n\s+</', re.DOTALL)    
+        prettyXml = text_re.sub('>\g<1></', uglyXml)
+        
+        # safe to file
+        with open(fileName, "w") as text_file:
+          text_file.write(prettyXml)
+
         # show message of success
         QMessageBox.information(self, 'Map saved', 'Logical name mapping has been saved to file "'+fileName+'".')
         
@@ -404,7 +356,7 @@ class MainWindow(QMainWindow):
         self.saveFile(self.fileName)
 
 #######################################################################################################################
-# open lmap file
+# close the editor
     def exit(self):
         self.close()
 
