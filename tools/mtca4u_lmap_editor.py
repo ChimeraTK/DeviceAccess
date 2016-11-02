@@ -168,27 +168,6 @@ class MainWindow(QMainWindow):
           self.buttonDel.setEnabled(True)
 
 #######################################################################################################################
-# show open lmap file dialogue
-    def openFileDialog(self):
-        
-        # create open device dialog
-        dlg = QFileDialog(self)
-        dlg.setAcceptMode(QFileDialog.AcceptOpen)
-        dlg.setWindowTitle('Open XML logical map file')
-        dlg.setViewMode( QFileDialog.Detail )
-        dlg.setNameFilters( [self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')] )
-        dlg.setDefaultSuffix('xlmap')
-        if self.fileName != "":
-            dlg.setDirectory( os.path.dirname(self.fileName) )
-        
-        # show dialog, open only if user did not cancel
-        if dlg.exec_() :
-            # file name must be converted into standard python string
-            name = str(dlg.selectedFiles()[0])
-            # open the file
-            self.openFile(name)
-
-#######################################################################################################################
 # recusively populate the list widget with entries from the XML tree
     def updateList(self, theData):
         # clear the list first and create the top-level element
@@ -240,7 +219,26 @@ class MainWindow(QMainWindow):
               # make item editable
               item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
 
-                
+#######################################################################################################################
+# show open lmap file dialogue
+    def openFileDialog(self):
+        
+        # create open device dialog
+        dlg = QFileDialog(self)
+        dlg.setAcceptMode(QFileDialog.AcceptOpen)
+        dlg.setWindowTitle('Open XML logical map file')
+        dlg.setViewMode( QFileDialog.Detail )
+        dlg.setNameFilters( [self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')] )
+        dlg.setDefaultSuffix('xlmap')
+        if self.fileName != "":
+            dlg.setDirectory( os.path.dirname(self.fileName) )
+        
+        # show dialog, open only if user did not cancel
+        if dlg.exec_() :
+            # file name must be converted into standard python string
+            name = str(dlg.selectedFiles()[0])
+            # open the file
+            self.openFile(name)
 
 #######################################################################################################################
 # open lmap file
@@ -255,26 +253,6 @@ class MainWindow(QMainWindow):
         self.fileName = os.path.abspath(fileName)
         self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - mtca4u Logical Name Mapping editor")
         self._fileSaveAgainAction.setEnabled(True)
-        
-#######################################################################################################################
-# show save lmap file dialogue
-    def saveFileDialog(self):
-        # create file-save dialog
-        dlg = QFileDialog(self)
-        dlg.setAcceptMode(QFileDialog.AcceptSave)
-        dlg.setWindowTitle('Save XML logical map file')
-        dlg.setViewMode( QFileDialog.Detail )
-        dlg.setNameFilters( [self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')] )
-        dlg.setDefaultSuffix('xlmap')
-        if self.fileName != "":
-            dlg.setDirectory( os.path.dirname(self.fileName) )
-        
-        # show dialog, save only if user did not cancel
-        if dlg.exec_() :
-            # file name must be converted into standard python string
-            name = str(dlg.selectedFiles()[0])
-            # save the file
-            self.saveFile(name)
 
 #######################################################################################################################
 # show open lmap file dialogue
@@ -323,6 +301,26 @@ class MainWindow(QMainWindow):
           else:
               xmlChild = ET.SubElement(xmlElement, "module", name=str(child.text(0)))
               self.createXmlDataInternal(xmlChild, child)
+        
+#######################################################################################################################
+# show save lmap file dialogue
+    def saveFileDialog(self):
+        # create file-save dialog
+        dlg = QFileDialog(self)
+        dlg.setAcceptMode(QFileDialog.AcceptSave)
+        dlg.setWindowTitle('Save XML logical map file')
+        dlg.setViewMode( QFileDialog.Detail )
+        dlg.setNameFilters( [self.tr('XML Logical Map Files (*.xlmap)'), self.tr('All Files (*)')] )
+        dlg.setDefaultSuffix('xlmap')
+        if self.fileName != "":
+            dlg.setDirectory( os.path.dirname(self.fileName) )
+        
+        # show dialog, save only if user did not cancel
+        if dlg.exec_() :
+            # file name must be converted into standard python string
+            name = str(dlg.selectedFiles()[0])
+            # save the file
+            self.saveFile(name)
 
 #########################################################################################
 # save lmap file
@@ -358,7 +356,21 @@ class MainWindow(QMainWindow):
 #######################################################################################################################
 # close the editor
     def exit(self):
+        msg = "Are you sure you want to close the editor?"
+        reply = QMessageBox.question(self, 'mtca4u Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
+        if reply != QMessageBox.Yes:
+          return
         self.close()
+
+#######################################################################################################################
+# close the editor
+    def closeEvent(self, event):
+        msg = "Are you sure you want to close the editor?"
+        reply = QMessageBox.question(self, 'mtca4u Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
+        if reply != QMessageBox.Yes:
+          event.ignore()
+        else:
+          event.accept()
 
 #######################################################################################################################
 # main function: initialise app
