@@ -93,6 +93,10 @@ class MainWindow(QMainWindow):
         self.connect(self._fileSaveAgainAction, SIGNAL('triggered()'), self.saveFileAgain)
         fileMenu.addAction(self._fileSaveAgainAction)
 
+        self._fileImportMapAction = QAction("&Import map file...", None)
+        self.connect(self._fileImportMapAction, SIGNAL('triggered()'), self.importMapFileDialog)
+        fileMenu.addAction(self._fileImportMapAction)
+
         self._exitAction = QAction("&Quit", None)
         self.connect(self._exitAction, SIGNAL('triggered()'), self.exit)
         fileMenu.addAction(self._exitAction)
@@ -352,6 +356,85 @@ class MainWindow(QMainWindow):
 # save lmap file with same name
     def saveFileAgain(self):
         self.saveFile(self.fileName)
+
+#######################################################################################################################
+# show import map file dialogue
+    def importMapFileDialog(self):
+        
+        # create open device dialog
+        dlg = QFileDialog(self)
+        dlg.setAcceptMode(QFileDialog.AcceptOpen)
+        dlg.setWindowTitle('Import MAP file')
+        dlg.setViewMode( QFileDialog.Detail )
+        dlg.setNameFilters( [self.tr('Map Files (*.map *.mapp)'), self.tr('All Files (*)')] )
+        dlg.setDefaultSuffix('map')
+        if self.fileName != "":
+            dlg.setDirectory( os.path.dirname(self.fileName) )
+        
+        # show dialog, open only if user did not cancel
+        if dlg.exec_() :
+            # file name must be converted into standard python string
+            name = str(dlg.selectedFiles()[0])
+            # open the file
+            self.importMapFile(name)
+
+#######################################################################################################################
+# open lmap file
+    def importMapFile(self, fileName):
+        # read file
+        with open(fileName) as f:
+          mapFileContent = f.readlines()
+          
+        # create module in the tree for the file
+        data = [ "importedFromMapFile", "", "", "", "", "", "", "" ]
+        moduleItem = QTreeWidgetItem(self.listWidget.topLevelItem(0), data)
+        moduleItem.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled )
+        moduleItem.setExpanded(True)
+        
+        # parse line by line
+        for line in mapFileContent:
+          line = line.strip()
+          
+          # ignore comment and empty lines
+          if line[0:1] == "#" or line == "":
+            continue
+            
+          # extract name
+          [fullName,x] = line.split(" ",1)
+          
+          # split name by components (modules and register name)
+          names = fullName.split(".")
+          registerName = names[len(names)-1]
+          
+          # merge module name
+          moduleName = ""
+          for i in range(0,len(names)-1):
+            moduleName = moduleName+names[i]+"/"
+          
+          # check for special cases: 2D registers and their sequences
+          isChannel = False
+          channelIndex = ""
+          if registerName[0:len("AREA_MULTIPLEXED_SEQUENCE_")] == "AREA_MULTIPLEXED_SEQUENCE_":
+            registerName = registerName[len("AREA_MULTIPLEXED_SEQUENCE_"):]
+          elif registerName[0:len("SEQUENCE_")] == "SEQUENCE_":
+            isChannel = True
+            [ registerName, channelIndex] = registerName[len("SEQUENCE_"):].rsplit("_",1)
+            
+          # add item to tree
+          if not isChannel:
+            data = [ registerName, "redirectedRegister" , "DEV0", moduleName+registerName, "", "", "", "" ]
+          else:
+            data = [ registerName, "redirectedChannel" , "DEV0", moduleName+registerName, "", "", channelIndex, "" ]
+            
+          # create item
+          item = QTreeWidgetItem(moduleItem, data)
+            
+          # make the target type column a combo box
+          self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(data[1]) )
+           
+          # make item editable
+          item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
+          
 
 #######################################################################################################################
 # close the editor
