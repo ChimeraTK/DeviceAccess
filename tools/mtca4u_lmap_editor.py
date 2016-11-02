@@ -42,6 +42,10 @@ class MainWindow(QMainWindow):
         self.listWidget.setColumnWidth(6, 70)
         self.listWidget.setColumnWidth(7, 70)
         
+        # add top level element
+        toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"] )
+        toplevelItem.setExpanded(True)
+        
         # buttons for adding and deleting items
         self.buttonAddReg = QPushButton()
         self.buttonAddReg.setText('Add Register')
