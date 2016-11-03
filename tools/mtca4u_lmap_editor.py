@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
 #######################################################################################################################
 # constructor: create main window
     def __init__(self):
+        super(MainWindow, self).__init__()
 
         # initialise current file name
         self.fileName = ""
@@ -33,7 +34,6 @@ class MainWindow(QMainWindow):
         self.noWheelFilter = NoWheelFilter()
 
         # create grid layout    
-        super(MainWindow, self).__init__()
         self.grid = QGridLayout()
 
         # create main tree widget
@@ -47,6 +47,8 @@ class MainWindow(QMainWindow):
         self.listWidget.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.listWidget.setVerticalStepsPerItem(20)
         self.grid.addWidget(self.listWidget,1,1,1,3)
+        self.connect(self.listWidget.model(), SIGNAL ("rowsInserted(const QModelIndex &, int, int)"), self.onInsertRows)
+
         
         # enable drag&drop, but not on the top-level
         self.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
@@ -98,6 +100,17 @@ class MainWindow(QMainWindow):
         self.resize(1200, 800)
 
 #######################################################################################################################
+# insert a row in the tree view (e.g. on drag&drop)
+    def onInsertRows(self, modelIndex, row1, row2):
+        item = self.listWidget.itemFromIndex(modelIndex.child(row1,0))
+        if(item is not None and item.text(1) != "") :
+          self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(modelIndex.child(row1,0), item) )
+          # update geometries to prevent misaligned combo boxes (only if visible, to speed up application start)
+          if self.listWidget.isVisible():
+            self.listWidget.updateGeometries()
+        
+
+#######################################################################################################################
 # create the menu
     def makeMenu(self):
 
@@ -130,10 +143,7 @@ class MainWindow(QMainWindow):
     def addRegister(self):
             
         # create item
-        item = QTreeWidgetItem(self.listWidget.currentItem(), ["newRegister"])
-            
-        # make the target type column a combo box
-        self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox("redirectedRegister") )
+        item = QTreeWidgetItem(self.listWidget.currentItem(), ["newRegister", "redirectedRegister"])
             
         # make item editable
         item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
@@ -169,16 +179,24 @@ class MainWindow(QMainWindow):
 
 #######################################################################################################################
 # create a combo box to select the target type
-    def createTargetTypeComboBox(self, selectedItem):
+
+    def updateComboBox(self, index, text):
+        item =  self.listWidget.itemFromIndex(index)
+        item.setText(1,text)
+
+#######################################################################################################################
+# create a combo box to select the target type
+    def createTargetTypeComboBox(self, index, item):
         box = QComboBox()
         box.setEditable(False)
         box.addItem("redirected register", "redirectedRegister")
         box.addItem("channel of 2D register","redirectedChannel")
         box.addItem("constant","constant")
         box.addItem("variable","variable")
-        box.setCurrentIndex( box.findData(selectedItem) )
+        box.setCurrentIndex( box.findData(item.text(1)) )
         box.setFocusPolicy( Qt.ClickFocus )
         box.installEventFilter(self.noWheelFilter)
+        self.connect(box, SIGNAL("currentIndexChanged(const QString&)"), lambda text: self.updateComboBox(index, text))
         return box
 
 
@@ -242,9 +260,6 @@ class MainWindow(QMainWindow):
             
               # create item
               item = QTreeWidgetItem(parentItem, data)
-            
-              # make the target type column a combo box
-              self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(child.tag) )
             
               # make item editable
               item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
@@ -459,9 +474,6 @@ class MainWindow(QMainWindow):
             
           # create item
           item = QTreeWidgetItem(moduleItem, data)
-            
-          # make the target type column a combo box
-          self.listWidget.setItemWidget(item, 1, self.createTargetTypeComboBox(data[1]) )
            
           # make item editable
           item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
