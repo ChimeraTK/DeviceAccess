@@ -8,6 +8,18 @@ from PyQt4.QtGui import *
 #import xml.etree.ElementTree as ET
 import lxml.etree as ET
 
+#######################################################################################################################
+#######################################################################################################################
+# event filter to disable the mous wheel on combo boxes
+class NoWheelFilter(QObject):
+    def eventFilter(self,  obj,  event):
+      if event.type() == QEvent.Wheel:
+        return True
+      return False
+
+#######################################################################################################################
+#######################################################################################################################
+# Main application class
 class MainWindow(QMainWindow):
 
 #######################################################################################################################
@@ -16,6 +28,9 @@ class MainWindow(QMainWindow):
 
         # initialise current file name
         self.fileName = ""
+        
+        # create the mouse wheel filter for the combo boxes
+        self.noWheelFilter = NoWheelFilter()
 
         # create grid layout    
         super(MainWindow, self).__init__()
@@ -26,6 +41,11 @@ class MainWindow(QMainWindow):
         header = QTreeWidgetItem(["Name","Target Type","Target Device","Target Register", "First Index", "Length", "Channel", "Value"])
         self.listWidget.setHeaderItem(header)
         self.listWidget.currentItemChanged.connect(self.selectListItem)
+        self.listWidget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.listWidget.setAutoScroll(True)
+        self.listWidget.setAutoScrollMargin(10)
+        self.listWidget.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.listWidget.setVerticalStepsPerItem(20)
         self.grid.addWidget(self.listWidget,1,1,1,3)
         
         # enable drag&drop, but not on the top-level
@@ -157,6 +177,8 @@ class MainWindow(QMainWindow):
         box.addItem("constant","constant")
         box.addItem("variable","variable")
         box.setCurrentIndex( box.findData(selectedItem) )
+        box.setFocusPolicy( Qt.ClickFocus )
+        box.installEventFilter(self.noWheelFilter)
         return box
 
 
