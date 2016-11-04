@@ -24,77 +24,63 @@ namespace ChimeraTK {
       /**  */
       DeviceAccessor(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> ndRegisterAccessor, VariableDirection direction,
           UpdateMode mode)
-      : impl(ndRegisterAccessor), _direction(direction), _mode(mode)
-      {}
-
-    public:
-
-      void set(ChimeraTK::ProcessScalar<UserType> const & other) {
-        impl->accessData(0) = other.get();
-      }
-
-      void set(UserType const & t) {
-        impl->accessData(0) = t;
-      }
-
-      operator UserType() const {
-        return impl->accessData(0);
-      }
-
-      UserType get() const {
-        return impl->accessData(0);
-      }
-
-      const std::type_info& getValueType() const {
-        return typeid(UserType);
-      }
-
-      bool isReadable() const {
-        return _direction == VariableDirection::consuming;
+      : mtca4u::NDRegisterAccessor<UserType>(ndRegisterAccessor->getName()),
+        impl(ndRegisterAccessor),
+        _direction(direction),
+        _mode(mode)
+      {
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( impl->getNumberOfChannels() );
+        for(size_t i=0; i<impl->getNumberOfChannels(); i++) {
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( impl->getNumberOfSamples() );
+        }
       }
       
-      bool isReadOnly() const {
-        return _direction == VariableDirection::consuming;
-      }
-      
-      bool isWriteable() const {
-        return _direction == VariableDirection::feeding;
-      }
-
-      TimeStamp getTimeStamp() const {
-        return TimeStamp();
-      }
-
-      bool readNonBlocking() {
-        assert(_direction == VariableDirection::consuming);
-        if(impl->getNInputQueueElements() == 0) return false;
+      void read() {
         impl->read();
-        return true;
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
       }
       
-      void read(){
-        throw std::logic_error("Blocking read is not supported by process array.");
+      bool readNonBlocking() {
+        bool ret = impl->readNonBlocking();
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
+        return ret;
       }
       
       void write() {
-        assert(_direction == VariableDirection::feeding);
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
         impl->write();
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
       }
       
-      bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const{
-        // only true if the very instance of the transfer element is the same
-        return e.get() == this;
+      unsigned int getNInputQueueElements() const {
+        return impl->getNInputQueueElements();
       }
       
-      std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements(){
-        return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() };
+      bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& other) const {
+        return impl->isSameRegister(other);
       }
       
-      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>){
-        // You can't replace anything here. Just do nothing.
+      bool isReadOnly() const {
+        return impl->isReadOnly();
       }
       
-    protected:
+      bool isReadable() const {
+        return impl->isReadable();
+      }
+      
+      bool isWriteable() const {
+        return impl->isWriteable();
+      }
+      
+      std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() {
+        return impl->getHardwareAccessingElements();
+      }
+      
+      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement> other) {
+        impl->replaceTransferElement(other);
+      }
+      
+  protected:
 
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;
       VariableDirection _direction;

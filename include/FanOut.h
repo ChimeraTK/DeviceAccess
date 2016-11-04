@@ -33,6 +33,10 @@ namespace ChimeraTK {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "The FanOut has been constructed with a wrong output implementation type!");
         }
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( impl->getNumberOfChannels() );
+        for(size_t i=0; i<impl->getNumberOfChannels(); i++) {
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( impl->getNumberOfSamples() );
+        }
       }
 
       /** Use this constructor if the FanOut should be a feeding implementation. */
@@ -61,6 +65,10 @@ namespace ChimeraTK {
         }
         if(impl == nullptr) {       // the first slave will be used as a "main" implementation, if
           impl = castedSlave;       // none was specified at construction
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( impl->getNumberOfChannels() );
+          for(size_t i=0; i<impl->getNumberOfChannels(); i++) {
+            mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( impl->getNumberOfSamples() );
+          }
         }
         else {
           slaves.push_back(castedSlave);
