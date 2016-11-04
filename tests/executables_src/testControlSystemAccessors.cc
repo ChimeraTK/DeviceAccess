@@ -13,9 +13,9 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include <ControlSystemAdapter/PVManager.h>
-#include <ControlSystemAdapter/ControlSystemPVManager.h>
-#include <ControlSystemAdapter/DevicePVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/PVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
 
   TestApplication<T> app;
 
-  auto pvManagers = mtca4u::createPVManager();
+  auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
   app.testModule.feeder >> app.cs("myFeeder");
@@ -76,17 +76,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
   auto myFeeder = pvManagers.first->getProcessScalar<T>("/myFeeder");
 
   app.testModule.feeder = 42;
-  BOOST_CHECK_EQUAL(myFeeder->receive(), false);
+  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
   app.testModule.feeder.write();
-  BOOST_CHECK_EQUAL(myFeeder->receive(), true);
-  BOOST_CHECK_EQUAL(myFeeder->receive(), false);
+  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), true);
+  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
   BOOST_CHECK(*myFeeder == 42);
 
   app.testModule.feeder = 120;
-  BOOST_CHECK_EQUAL(myFeeder->receive(), false);
+  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
   app.testModule.feeder.write();
-  BOOST_CHECK_EQUAL(myFeeder->receive(), true);
-  BOOST_CHECK_EQUAL(myFeeder->receive(), false);
+  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), true);
+  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
   BOOST_CHECK(*myFeeder == 120);
 
 }
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
   TestApplication<T> app;
 
-  auto pvManagers = mtca4u::createPVManager();
+  auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
   app.cs("myConsumer") >> app.testModule.consumer;
@@ -108,12 +108,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
   auto myConsumer = pvManagers.first->getProcessScalar<T>("/myConsumer");
 
   *myConsumer = 42;
-  myConsumer->send();
+  myConsumer->write();
   app.testModule.consumer.read();
   BOOST_CHECK(app.testModule.consumer == 42);
 
   *myConsumer = 120;
-  myConsumer->send();
+  myConsumer->write();
   app.testModule.consumer.read();
   BOOST_CHECK(app.testModule.consumer == 120);
 
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
 
   TestApplication<T> app;
 
-  auto pvManagers = mtca4u::createPVManager();
+  auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
   app.testModule.feeder >> app.cs("myFeeder0");
@@ -142,64 +142,64 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
   auto myFeeder3 = pvManagers.first->getProcessScalar<T>("/myFeeder3");
 
   app.testModule.feeder = 42;
-  BOOST_CHECK(myFeeder0->receive() == false);
-  BOOST_CHECK(myFeeder1->receive() == false);
-  BOOST_CHECK(myFeeder2->receive() == false);
-  BOOST_CHECK(myFeeder3->receive() == false);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == false);
   app.testModule.feeder.write();
   usleep(200000);
-  BOOST_CHECK(myFeeder0->receive() == true);
-  BOOST_CHECK(myFeeder1->receive() == true);
-  BOOST_CHECK(myFeeder2->receive() == true);
-  BOOST_CHECK(myFeeder3->receive() == true);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == true);
   BOOST_CHECK(*myFeeder0 == 42);
   BOOST_CHECK(*myFeeder1 == 42);
   BOOST_CHECK(*myFeeder2 == 42);
   BOOST_CHECK(*myFeeder3 == 42);
-  BOOST_CHECK(myFeeder0->receive() == false);
-  BOOST_CHECK(myFeeder1->receive() == false);
-  BOOST_CHECK(myFeeder2->receive() == false);
-  BOOST_CHECK(myFeeder3->receive() == false);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == false);
 
   app.testModule.feeder = 120;
-  BOOST_CHECK(myFeeder0->receive() == false);
-  BOOST_CHECK(myFeeder1->receive() == false);
-  BOOST_CHECK(myFeeder2->receive() == false);
-  BOOST_CHECK(myFeeder3->receive() == false);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == false);
   app.testModule.feeder.write();
   usleep(200000);
-  BOOST_CHECK(myFeeder0->receive() == true);
-  BOOST_CHECK(myFeeder1->receive() == true);
-  BOOST_CHECK(myFeeder2->receive() == true);
-  BOOST_CHECK(myFeeder3->receive() == true);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == true);
   BOOST_CHECK(*myFeeder0 == 120);
   BOOST_CHECK(*myFeeder1 == 120);
   BOOST_CHECK(*myFeeder2 == 120);
   BOOST_CHECK(*myFeeder3 == 120);
-  BOOST_CHECK(myFeeder0->receive() == false);
-  BOOST_CHECK(myFeeder1->receive() == false);
-  BOOST_CHECK(myFeeder2->receive() == false);
-  BOOST_CHECK(myFeeder3->receive() == false);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == false);
 
   // resend same number
-  BOOST_CHECK(myFeeder0->receive() == false);
-  BOOST_CHECK(myFeeder1->receive() == false);
-  BOOST_CHECK(myFeeder2->receive() == false);
-  BOOST_CHECK(myFeeder3->receive() == false);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == false);
   app.testModule.feeder.write();
   usleep(200000);
-  BOOST_CHECK(myFeeder0->receive() == true);
-  BOOST_CHECK(myFeeder1->receive() == true);
-  BOOST_CHECK(myFeeder2->receive() == true);
-  BOOST_CHECK(myFeeder3->receive() == true);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == true);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == true);
   BOOST_CHECK(*myFeeder0 == 120);
   BOOST_CHECK(*myFeeder1 == 120);
   BOOST_CHECK(*myFeeder2 == 120);
   BOOST_CHECK(*myFeeder3 == 120);
-  BOOST_CHECK(myFeeder0->receive() == false);
-  BOOST_CHECK(myFeeder1->receive() == false);
-  BOOST_CHECK(myFeeder2->receive() == false);
-  BOOST_CHECK(myFeeder3->receive() == false);
+  BOOST_CHECK(myFeeder0->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder1->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder2->readNonBlocking() == false);
+  BOOST_CHECK(myFeeder3->readNonBlocking() == false);
 
 }
 
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
 
   TestApplication<T> app;
 
-  auto pvManagers = mtca4u::createPVManager();
+  auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
   app.cs("myConsumer") >> app.testModule.consumer;
@@ -226,56 +226,56 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   auto myConsumer_copy3 = pvManagers.first->getProcessScalar<T>("/myConsumer_copy3");
 
   *myConsumer = 42;
-  BOOST_CHECK(myConsumer_copy1->receive() == false);
-  BOOST_CHECK(myConsumer_copy2->receive() == false);
-  BOOST_CHECK(myConsumer_copy3->receive() == false);
-  myConsumer->send();
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
+  myConsumer->write();
   usleep(200000);
-  BOOST_CHECK(myConsumer_copy1->receive() == true);
-  BOOST_CHECK(myConsumer_copy2->receive() == true);
-  BOOST_CHECK(myConsumer_copy3->receive() == true);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == true);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == true);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == true);
   BOOST_CHECK(*myConsumer_copy1 == 42);
   BOOST_CHECK(*myConsumer_copy2 == 42);
   BOOST_CHECK(*myConsumer_copy3 == 42);
-  BOOST_CHECK(myConsumer_copy1->receive() == false);
-  BOOST_CHECK(myConsumer_copy2->receive() == false);
-  BOOST_CHECK(myConsumer_copy3->receive() == false);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
   app.testModule.consumer.read();
   BOOST_CHECK(app.testModule.consumer == 42);
 
   *myConsumer = 120;
-  BOOST_CHECK(myConsumer_copy1->receive() == false);
-  BOOST_CHECK(myConsumer_copy2->receive() == false);
-  BOOST_CHECK(myConsumer_copy3->receive() == false);
-  myConsumer->send();
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
+  myConsumer->write();
   usleep(200000);
-  BOOST_CHECK(myConsumer_copy1->receive() == true);
-  BOOST_CHECK(myConsumer_copy2->receive() == true);
-  BOOST_CHECK(myConsumer_copy3->receive() == true);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == true);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == true);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == true);
   BOOST_CHECK(*myConsumer_copy1 == 120);
   BOOST_CHECK(*myConsumer_copy2 == 120);
   BOOST_CHECK(*myConsumer_copy3 == 120);
-  BOOST_CHECK(myConsumer_copy1->receive() == false);
-  BOOST_CHECK(myConsumer_copy2->receive() == false);
-  BOOST_CHECK(myConsumer_copy3->receive() == false);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
   app.testModule.consumer.read();
   BOOST_CHECK(app.testModule.consumer == 120);
 
   // resend same number
-  BOOST_CHECK(myConsumer_copy1->receive() == false);
-  BOOST_CHECK(myConsumer_copy2->receive() == false);
-  BOOST_CHECK(myConsumer_copy3->receive() == false);
-  myConsumer->send();
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
+  myConsumer->write();
   usleep(200000);
-  BOOST_CHECK(myConsumer_copy1->receive() == true);
-  BOOST_CHECK(myConsumer_copy2->receive() == true);
-  BOOST_CHECK(myConsumer_copy3->receive() == true);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == true);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == true);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == true);
   BOOST_CHECK(*myConsumer_copy1 == 120);
   BOOST_CHECK(*myConsumer_copy2 == 120);
   BOOST_CHECK(*myConsumer_copy3 == 120);
-  BOOST_CHECK(myConsumer_copy1->receive() == false);
-  BOOST_CHECK(myConsumer_copy2->receive() == false);
-  BOOST_CHECK(myConsumer_copy3->receive() == false);
+  BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy2->readNonBlocking() == false);
+  BOOST_CHECK(myConsumer_copy3->readNonBlocking() == false);
   app.testModule.consumer.read();
   BOOST_CHECK(app.testModule.consumer == 120);
 

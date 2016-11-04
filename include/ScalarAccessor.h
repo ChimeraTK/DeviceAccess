@@ -47,14 +47,14 @@ namespace ChimeraTK {
        *  already available before calling this function, the function will be non-blocking and lock-free. */
       void read() {
         if(Accessor<UserType>::_mode == UpdateMode::push) {
-          while(impl->receive() == false) { /// @todo TODO proper blocking implementation
+          while(impl->readNonBlocking() == false) { /// @todo TODO proper blocking implementation
             boost::this_thread::yield();
             boost::this_thread::interruption_point();
           }
         }
         else {
           /// @todo TODO empty the queue to always receive the latest value
-          impl->receive();
+          impl->readNonBlocking();
           boost::this_thread::interruption_point();
         }
       } // LCOV_EXCL_LINE this line somehow ends up having a negative counter in the coverage report, which leads to a failure
@@ -67,45 +67,45 @@ namespace ChimeraTK {
       /** Write an output variable. In case of an input variable, an exception will be thrown. This function never
        *  blocks and is always implemented in a lock-free manner. */
       void write() {
-        impl->send();
+        impl->write();
         boost::this_thread::interruption_point();
       }
 
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
       operator UserType() {
-        return impl->get();
+        return impl->accessData(0);
       }
 
       /** Assignment operator */
       ScalarAccessor<UserType>& operator=(UserType rightHandSide) {
-        impl->set(rightHandSide);
+        impl->accessData(0) = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator */
       ScalarAccessor<UserType>& operator++() {
-        impl->set(++(impl->get()));
+        impl->accessData(0) = ++(impl->accessData(0));
         return *this;
       }
 
       /** Pre-decrement operator */
       ScalarAccessor<UserType>& operator--() {
-        impl->set(--(impl->get()));
+        impl->accessData(0) = --(impl->accessData(0));
         return *this;
       }
 
       /** Post-increment operator */
       UserType operator++(int) {
-        UserType temp = impl->get();
-        impl->set(temp+1);
+        UserType temp = impl->accessData(0);
+        impl->accessData(0) = temp+1;
         return temp;
       }
 
       /** Post-decrement operator */
       UserType operator--(int) {
-        UserType temp = impl->get();
-        impl->set(temp-1);
+        UserType temp = impl->accessData(0);
+        impl->accessData(0) = temp-1;
         return temp;
       }
 
@@ -113,20 +113,20 @@ namespace ChimeraTK {
         return impl != nullptr;
       }
 
-      void useProcessVariable(const boost::shared_ptr<ProcessVariable> &var) {
-        impl = boost::dynamic_pointer_cast< ProcessScalar<UserType> >(var);
+      void useProcessVariable(const boost::shared_ptr<TransferElement > &var) {
+        impl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(var);
         assert(impl);
         if(Accessor<UserType>::getDirection() == VariableDirection::consuming) {
-          assert(impl->isReceiver());
+          assert(impl->isReadable());
         }
         else {
-          assert(impl->isSender());
+          assert(impl->isWriteable());
         }
       }
 
     protected:
 
-      boost::shared_ptr< ProcessScalar<UserType> > impl;
+      boost::shared_ptr< NDRegisterAccessor<UserType> > impl;
 
   };
 

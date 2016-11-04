@@ -36,7 +36,7 @@ namespace ChimeraTK {
       virtual bool isInitialised() const = 0;
 
       /** Use a ProcessVariable as implementation. */
-      virtual void useProcessVariable(const boost::shared_ptr<ProcessVariable> &var) = 0;
+      virtual void useProcessVariable(const boost::shared_ptr<TransferElement> &var) = 0;
 
       /* Obtain the type info of the UserType */
       virtual const std::type_info& getValueType() const = 0;
