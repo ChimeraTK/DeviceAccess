@@ -22,15 +22,13 @@ set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJEC
 
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-set(mtca4u-deviceaccess_MIN_VERSION 00.12)
-FIND_PACKAGE(mtca4u-deviceaccess ${mtca4u-deviceaccess_MIN_VERSION} REQUIRED)
+FIND_PACKAGE(mtca4u-deviceaccess 00.18 REQUIRED)
 include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-set(ControlSystemAdapter_MIN_VERSION 00.00)
-FIND_PACKAGE(ControlSystemAdapter ${ControlSystemAdapter_MIN_VERSION} REQUIRED)
-include_directories(SYSTEM ${ControlSystemAdapter_INCLUDE_DIRS})
+FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 00.02 REQUIRED)
+include_directories(SYSTEM ${ChimeraTK_ControlSystemAdapter_INCLUDE_DIRS})
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -41,15 +39,14 @@ include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}" ${glib_I
 
 # optional dependency: if finding the DOOCS server library, the example and tests will be built
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-set(DOOCS_MIN_VERSION 18.10.5)
-FIND_PACKAGE(DOOCS ${DOOCS_MIN_VERSION} COMPONENTS server)
+FIND_PACKAGE(DOOCS 18.10.5 COMPONENTS server)
 include_directories(SYSTEM ${DOOCS_INCLUDE_DIRS})
 link_directories(${DOOCS_LIBRARY_DIRS})
 
 # optional dependency: the DoocsServerTestHelper is also needed for the tests
-FIND_PACKAGE(mtca4u-doocsServerTestHelper)
-include_directories(SYSTEM ${mtca4u-doocsServerTestHelper_INCLUDE_DIRS})
-link_directories(${mtca4u-doocsServerTestHelper_LIBRARY_DIRS})
+FIND_PACKAGE(doocs-server-test-helper)
+include_directories(SYSTEM ${doocs-server-test-helper_INCLUDE_DIRS})
+link_directories(${doocs-server-test-helper_LIBRARY_DIRS})
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter needed for tests and example
 FIND_PACKAGE(ControlSystemAdapter-DoocsAdapter)
@@ -58,7 +55,7 @@ link_directories(${ControlSystemAdapter-DoocsAdapter_LIBRARY_DIRS})
 
 # optional dependency: BOOST unit test framework needed for tests
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
-IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND DOOCS_FOUND AND mtca4u-doocsServerTestHelper_FOUND)
+IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND DOOCS_FOUND AND doocs-server-test-helper_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
 ELSE()

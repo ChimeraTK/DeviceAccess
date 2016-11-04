@@ -91,48 +91,27 @@ namespace ChimeraTK {
       std::cout << linePrefix << "    # " << ++count << ":";
       consumer.dump();
     }
-    if(hasExternalTrigger) {
-      std::cout << linePrefix << "  external trigger network:" << std::endl;;
-      assert(externalTrigger != nullptr);
-      externalTrigger->dump("    ");
+    if(getFeedingNode().hasExternalTrigger()) {
+      std::cout << linePrefix << "  external trigger node: ";
+      getFeedingNode().getExternalTrigger().dump();
     }
     std::cout << linePrefix << "}" << std::endl;
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addTriggerReceiver(VariableNetwork *network) {
-    VariableNetworkNode node(network);
+  void VariableNetwork::addTriggerReceiver(VariableNetworkNode& nodeToTrigger) {
+    VariableNetworkNode node(nodeToTrigger, 0);
     node.setOwner(this);
     nodeList.push_back(node);
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addTrigger(VariableNetworkNode trigger) {
-
-    if(hasExternalTrigger) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Only one external trigger per variable network is allowed.");
-    }
-
-    // add ourselves as a trigger receiver to the other network
-    if(!trigger.hasOwner()) {
-      Application::getInstance().createNetwork().addNode(trigger);
-    }
-    trigger.getOwner().addTriggerReceiver(this);
-
-    // set flag and store pointer to other network
-    hasExternalTrigger = true;
-    externalTrigger = &trigger.getOwner();
-
-  }
-  /*********************************************************************************************************************/
-
   VariableNetwork::TriggerType VariableNetwork::getTriggerType() const {
     const auto &feeder = getFeedingNode();
     // network has an external trigger
-    if(hasExternalTrigger) {
+    if(feeder.hasExternalTrigger()) {
       if(feeder.getMode() == UpdateMode::push) {
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
             "Providing an external trigger to a variable network which is fed by a pushing variable is not allowed.");
@@ -190,16 +169,6 @@ namespace ChimeraTK {
 
     // check if trigger is correctly defined (the return type doesn't matter, only the checks done in the function are needed)
     getTriggerType();
-  }
-
-  /*********************************************************************************************************************/
-
-  VariableNetwork& VariableNetwork::getExternalTrigger() {
-    if(getTriggerType() != TriggerType::external) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-          "VariableNetwork::getExternalTrigger() may only be called if the trigger type is external.");
-    }
-    return *externalTrigger;
   }
 
   /*********************************************************************************************************************/

@@ -105,10 +105,10 @@ namespace ChimeraTK {
       }
 
       /** Connect with node */
-      VariableNetworkNode& operator<<(const VariableNetworkNode &other) {
+/*      VariableNetworkNode& operator<<(const VariableNetworkNode &other) {
         return node.operator<<(other);
-      }
-      VariableNetworkNode& operator>>(const VariableNetworkNode &other) {
+      } */
+      VariableNetworkNode operator>>(VariableNetworkNode other) {
         return node.operator>>(other);
       }
 

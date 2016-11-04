@@ -15,9 +15,9 @@
 #include <boost/mpl/list.hpp>
 
 #include <mtca4u/BackendFactory.h>
-#include <ControlSystemAdapter/PVManager.h>
-#include <ControlSystemAdapter/ControlSystemPVManager.h>
-#include <ControlSystemAdapter/DevicePVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/PVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"

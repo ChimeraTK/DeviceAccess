@@ -48,8 +48,9 @@ namespace ChimeraTK {
       VariableNetworkNode(std::string publicName, VariableDirection direction,
           const std::type_info &valTyp=typeid(AnyType));
 
-      /** Constructor for a TriggerReceiver node triggering the data transfer of another network */
-      VariableNetworkNode(VariableNetwork *networkToTrigger);
+      /** Constructor for a TriggerReceiver node triggering the data transfer of another network. The additional dummy
+       *  argument is only there to discriminate the signature from the copy constructor and will be ignored. */
+      VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
 
       /** Default constructor for an invalid node */
       VariableNetworkNode() : pdata(new data) {}
@@ -71,11 +72,17 @@ namespace ChimeraTK {
       bool operator!=(const VariableNetworkNode& other) const;
 
       /** Connect two nodes */
-      VariableNetworkNode& operator<<(const VariableNetworkNode &other);
-      VariableNetworkNode& operator>>(const VariableNetworkNode &other);
+//      VariableNetworkNode& operator<<(const VariableNetworkNode &other);
+      VariableNetworkNode operator>>(VariableNetworkNode other);
 
       /** Add a trigger */
-      VariableNetworkNode& operator[](const VariableNetworkNode &trigger);
+      VariableNetworkNode operator[](VariableNetworkNode trigger);
+
+      /** Check for presence of an external trigger */
+      bool hasExternalTrigger() const { return pdata->externalTrigger != nullptr; }
+
+      /** Return the external trigger node. if no external trigger is present, an assertion will be raised. */
+      VariableNetworkNode& getExternalTrigger() const { assert(pdata->externalTrigger != nullptr); return *(pdata->externalTrigger); }
 
       /** Print node information to std::cout */
       void dump() const;
@@ -97,21 +104,18 @@ namespace ChimeraTK {
       const std::string& getUnit() const { return pdata->unit; }
       VariableNetwork& getOwner() const { assert(pdata->network != nullptr); return *(pdata->network); }
       AccessorBase& getAppAccessor() const { assert(pdata->appNode != nullptr); return *(pdata->appNode); }
-      VariableNetwork& getTriggerReceiver() const { assert(pdata->triggerReceiver != nullptr); return *(pdata->triggerReceiver); }
+      VariableNetworkNode& getTriggerReceiver() const { assert(pdata->triggerReceiver != nullptr); return *(pdata->triggerReceiver); }
       const std::string& getPublicName() const { assert(pdata->type == NodeType::ControlSystem); return pdata->publicName; }
       const std::string& getDeviceAlias() const { assert(pdata->type == NodeType::Device); return pdata->deviceAlias; }
       const std::string& getRegisterName() const { assert(pdata->type == NodeType::Device); return pdata->registerName; }
 
     protected:
 
+      /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to the same instance of the data
+       *  structure and thus stay consistent all the time. */
       struct data {
 
         data() {}
-
-        /** prevent copies of the data container */
-        data(data const &) = delete;
-        data(data const &&) = delete;
-        data& operator=(data const &) = delete;
 
         /** Type of the node (Application, Device, ControlSystem, Trigger) */
         NodeType type{NodeType::invalid};
@@ -136,7 +140,11 @@ namespace ChimeraTK {
         AccessorBase *appNode{nullptr};
 
         /** Pointer to network which should be triggered by this node */
-        VariableNetwork *triggerReceiver{nullptr};
+        VariableNetworkNode *triggerReceiver{nullptr};
+
+        /** Pointer to the network providing the external trigger. May only be used for feeding nodes with an
+         *  update mode poll. When enabled, the update mode will be converted into push. */
+        VariableNetworkNode *externalTrigger{nullptr};
 
         /** Public name if type == ControlSystem */
         std::string publicName;

@@ -11,7 +11,7 @@
 #include <mutex>
 
 #include <mtca4u/DeviceBackend.h>
-#include <ControlSystemAdapter/DevicePVManager.h>
+#include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
 
 #include "ApplicationException.h"
 #include "VariableNetwork.h"
@@ -54,12 +54,12 @@ namespace ChimeraTK {
       void shutdown();
 
       /** Set the process variable manager. This will be called by the control system adapter initialisation code. */
-      void setPVManager(boost::shared_ptr<mtca4u::DevicePVManager> const &processVariableManager) {
+      void setPVManager(boost::shared_ptr<ChimeraTK::DevicePVManager> const &processVariableManager) {
         _processVariableManager = processVariableManager;
       }
 
       /** Obtain the process variable manager. */
-      boost::shared_ptr<mtca4u::DevicePVManager> getPVManager() {
+      boost::shared_ptr<ChimeraTK::DevicePVManager> getPVManager() {
         return _processVariableManager;
       }
 
@@ -110,18 +110,18 @@ namespace ChimeraTK {
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::ProcessVariable> createDeviceAccessor(const std::string &deviceAlias,
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createDeviceAccessor(const std::string &deviceAlias,
           const std::string &registerName, VariableDirection direction, UpdateMode mode);
 
       /** Create a process variable with the PVManager, which is exported to the control system adapter */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::ProcessVariable> createProcessScalar(VariableDirection direction,
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessScalar(VariableDirection direction,
           const std::string &name);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
        *  sender, the second the receiver. */
       template<typename UserType>
-      std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u::ProcessVariable> >
+      std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
         createProcessScalar();
 
       /** Register an application module with the application. Will be called automatically by all modules in their
@@ -149,7 +149,7 @@ namespace ChimeraTK {
       VariableNetwork invalidNetwork;
 
       /** Pointer to the process variable manager used to create variables exported to the control system */
-      boost::shared_ptr<mtca4u::DevicePVManager> _processVariableManager;
+      boost::shared_ptr<ChimeraTK::DevicePVManager> _processVariableManager;
 
       /** Pointer to the only instance of the Application */
       static Application *instance;

@@ -10,7 +10,7 @@
 
 #include <thread>
 
-#include <ControlSystemAdapter/ProcessScalar.h>
+#include <ChimeraTK/ControlSystemAdapter/ProcessScalar.h>
 
 namespace ChimeraTK {
 
@@ -37,11 +37,11 @@ namespace ChimeraTK {
 
     public:
 
-      ImplementationAdapter(boost::shared_ptr<mtca4u::ProcessVariable> sender,
-          boost::shared_ptr<mtca4u::ProcessVariable> receiver)
+      ImplementationAdapter(boost::shared_ptr<ChimeraTK::ProcessVariable> sender,
+          boost::shared_ptr<ChimeraTK::ProcessVariable> receiver)
       {
-        _sender = boost::dynamic_pointer_cast<mtca4u::ProcessScalar<UserType>>(sender);
-        _receiver = boost::dynamic_pointer_cast<mtca4u::ProcessScalar<UserType>>(receiver);
+        _sender = boost::dynamic_pointer_cast<ChimeraTK::ProcessScalar<UserType>>(sender);
+        _receiver = boost::dynamic_pointer_cast<ChimeraTK::ProcessScalar<UserType>>(receiver);
         assert(_sender && _receiver);
         _thread = std::thread([this] { this->run(); });
       }
@@ -51,15 +51,15 @@ namespace ChimeraTK {
       /** Synchronise sender and receiver. This function is executed in the separate thread. */
       void run() {
         while(true) {
-          while(!_receiver->receive()) std::this_thread::yield();
+          while(!_receiver->readNonBlocking()) std::this_thread::yield();
           _sender->set(_receiver->get());
-          _sender->send();
+          _sender->write();
         }
       }
 
       /** Sender and receiver process variables */
-      boost::shared_ptr<mtca4u::ProcessScalar<UserType>> _sender;
-      boost::shared_ptr<mtca4u::ProcessScalar<UserType>> _receiver;
+      boost::shared_ptr<ChimeraTK::ProcessScalar<UserType>> _sender;
+      boost::shared_ptr<ChimeraTK::ProcessScalar<UserType>> _receiver;
 
       /** Thread handling the synchronisation */
       std::thread _thread;

@@ -69,12 +69,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(VariableNetwork *networkToTrigger)
+  VariableNetworkNode::VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int)
   : pdata(new data)
   {
     pdata->type = NodeType::TriggerReceiver;
     pdata->direction = VariableDirection::consuming;
-    pdata->triggerReceiver = networkToTrigger;
+    pdata->triggerReceiver = &nodeToTrigger;
   }
 
   /*********************************************************************************************************************/
@@ -191,17 +191,17 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-
+/*
   VariableNetworkNode& VariableNetworkNode::operator<<(const VariableNetworkNode &other) {
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::consuming;
     if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::feeding;
     Application::getInstance().connect(*this, other);
     return *this;
   }
-
+*/
   /*********************************************************************************************************************/
 
-  VariableNetworkNode& VariableNetworkNode::operator>>(const VariableNetworkNode &other) {
+  VariableNetworkNode VariableNetworkNode::operator>>(VariableNetworkNode other) {
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
     if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::consuming;
     Application::getInstance().connect(*this, other);
@@ -210,19 +210,37 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode& VariableNetworkNode::operator[](const VariableNetworkNode &trigger) {
+  VariableNetworkNode VariableNetworkNode::operator[](VariableNetworkNode trigger) {
+
+    // check if node already has a trigger
+    if(pdata->externalTrigger != nullptr) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "Only one external trigger per variable network is allowed.");
+    }
+
     // force direction of the node we are operating on to be feeding
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
     assert(pdata->direction == VariableDirection::feeding);
+
     // force direction of the triggering node to be feeding
     if(trigger.pdata->direction == VariableDirection::invalid) trigger.pdata->direction = VariableDirection::feeding;
     assert(trigger.pdata->direction == VariableDirection::feeding);
-    // if this node is not yet part of a network, we have to add ourselves to a new network
-    if(pdata->network == nullptr) {
-      Application::getInstance().createNetwork().addNode(*this);
+
+    // create copy of the node
+    VariableNetworkNode nodeWithTrigger;
+    nodeWithTrigger.pdata.reset(new data(*pdata));
+
+    // add ourselves as a trigger receiver to the other network
+    if(!trigger.hasOwner()) {
+      Application::getInstance().createNetwork().addNode(trigger);
     }
-    pdata->network->addTrigger(trigger);
-    return *this;
+    trigger.getOwner().addTriggerReceiver(nodeWithTrigger);
+
+    // set flag and store pointer to other network
+    nodeWithTrigger.pdata->externalTrigger = &trigger;
+
+    // return the new node
+    return nodeWithTrigger;
   }
 
 }

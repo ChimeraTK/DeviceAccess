@@ -174,7 +174,7 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(const std::string &deviceAlias,
+boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDeviceAccessor(const std::string &deviceAlias,
     const std::string &registerName, VariableDirection direction, UpdateMode mode) {
 
   // open device if needed
@@ -188,7 +188,7 @@ boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(con
   if(mode == UpdateMode::push && direction == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
   // create DeviceAccessor for the proper UserType
-  boost::shared_ptr<mtca4u::ProcessVariable> impl;
+  boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;
   auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, 1, 0, flags);
   impl.reset(new DeviceAccessor<UserType>(regacc, direction, mode));
 
@@ -198,7 +198,7 @@ boost::shared_ptr<mtca4u::ProcessVariable> Application::createDeviceAccessor(con
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::ProcessVariable> Application::createProcessScalar(VariableDirection direction,
+boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProcessScalar(VariableDirection direction,
     const std::string &name) {
 
   // determine the SynchronizationDirection
@@ -211,19 +211,17 @@ boost::shared_ptr<mtca4u::ProcessVariable> Application::createProcessScalar(Vari
   }
 
   // create the ProcessScalar for the proper UserType
-  boost::shared_ptr<mtca4u::ProcessVariable> impl;
-  impl = _processVariableManager->createProcessScalar<UserType>(dir, name);
-  return impl;
+  return _processVariableManager->createProcessArray<UserType>(dir, name, 1);
 }
 
 /*********************************************************************************************************************/
 
 template<typename UserType>
-std::pair< boost::shared_ptr<mtca4u::ProcessVariable>, boost::shared_ptr<mtca4u::ProcessVariable> >
+std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
   Application::createProcessScalar() {
 
   // create the ProcessScalar for the proper UserType
-  return createSynchronizedProcessScalar<UserType>();
+  return createSynchronizedProcessArray<UserType>(1);
 }
 
 /*********************************************************************************************************************/
@@ -255,8 +253,8 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
   network.check();
 
   // if the trigger type is external, create the trigger first
-  if(network.getTriggerType() == VariableNetwork::TriggerType::external) {
-    VariableNetwork &dependency = network.getExternalTrigger();
+  if(network.getFeedingNode().hasExternalTrigger()) {
+    VariableNetwork &dependency = network.getFeedingNode().getExternalTrigger().getOwner();
     if(!dependency.isCreated()) makeConnectionsForNetwork(dependency);
   }
 
@@ -313,7 +311,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     // implementations (sender and receiver), but in this case the feeder already has a fixed implementation pair.
     // So our feedingImpl will contain the consumer-end of the implementation pair. This is the reason why the
     // functions createProcessScalar() and createDeviceAccessor() get the VariableDirection::consuming.
-    boost::shared_ptr<mtca4u::ProcessVariable> feedingImpl;
+    boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl;
     if(feeder.getType() == NodeType::Device) {
       feedingImpl = createDeviceAccessor<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
           VariableDirection::consuming, feeder.getMode());
@@ -345,7 +343,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        consumer.getTriggerReceiver().setExternalTriggerImpl(feedingImpl);
+        consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(feedingImpl);
         connectionMade = true;
       }
       else {
@@ -393,7 +391,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           auto impls = createProcessScalar<UserType>();
           fanOut->addSlave(impls.first);
-          consumer.getTriggerReceiver().setExternalTriggerImpl(impls.second);
+          consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
@@ -435,7 +433,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       else if(consumer.getType() == NodeType::TriggerReceiver) {
         auto impls = createProcessScalar<UserType>();
         feeder.getAppAccessor().useProcessVariable(impls.first);
-        consumer.getTriggerReceiver().setExternalTriggerImpl(impls.second);
+        consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
       }
       else {
@@ -465,7 +463,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           auto impls = createProcessScalar<UserType>();
           fanOut->addSlave(impls.first);
-          consumer.getTriggerReceiver().setExternalTriggerImpl(impls.second);
+          consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");

@@ -14,7 +14,7 @@
 #include <typeinfo>
 #include <boost/mpl/for_each.hpp>
 
-#include <ControlSystemAdapter/ProcessVariable.h>
+#include <ChimeraTK/ControlSystemAdapter/ProcessVariable.h>
 
 #include "Flags.h"
 #include "VariableNetworkNode.h"
@@ -45,7 +45,7 @@ namespace ChimeraTK {
       void addNode(VariableNetworkNode &a);
 
       /** Add a trigger receiver node */
-      void addTriggerReceiver(VariableNetwork *network);
+      void addTriggerReceiver(VariableNetworkNode& nodeToTrigger);
 
       /** Check if the network already has a feeding node connected to it. */
       bool hasFeedingNode() const;
@@ -87,12 +87,12 @@ namespace ChimeraTK {
 
       /** Return the network providing the external trigger to this network, if TriggerType::external. If the network
        *  has another trigger type, an exception will be thrown. */
-      VariableNetwork& getExternalTrigger();
+      //VariableNetwork& getExternalTrigger();
 
       /** Add an accessor belonging to another node as an external trigger to this network. Whenever the
        *  VariableNetwork of the given node will be fed with a new value, feeding of this network will be
        *  triggered as well. */
-      void addTrigger(VariableNetworkNode trigger);
+      //void addTrigger(VariableNetworkNode trigger);
 
       /** Check if the network is legally configured */
       void check();
@@ -104,12 +104,12 @@ namespace ChimeraTK {
       void markCreated() { flagIsCreated = true; }
 
       /** Assign a ProcessVariable as implementation for the external trigger */
-      void setExternalTriggerImpl(boost::shared_ptr< mtca4u::ProcessVariable > impl) {
+      void setExternalTriggerImpl(boost::shared_ptr< ChimeraTK::ProcessVariable > impl) {
         externalTriggerImpl = impl;
       }
 
       /** */
-      boost::shared_ptr< mtca4u::ProcessVariable > getExternalTriggerImpl() const {
+      boost::shared_ptr< ChimeraTK::ProcessVariable > getExternalTriggerImpl() const {
         return externalTriggerImpl;
       }
 
@@ -126,13 +126,13 @@ namespace ChimeraTK {
       std::string engineeringUnit;
 
       /** Flag if an external trigger has been added to this network */
-      bool hasExternalTrigger{false};
+      //bool hasExternalTrigger{false};
 
       /** Pointer to the network providing the external trigger */
-      VariableNetwork *externalTrigger{nullptr};
+      //VariableNetwork *externalTrigger{nullptr};
 
       /** Pointer to ProcessVariable providing the trigger (if external trigger is enabled) */
-      boost::shared_ptr< mtca4u::ProcessVariable > externalTriggerImpl;
+      boost::shared_ptr< ChimeraTK::ProcessVariable > externalTriggerImpl;
 
       /** Flag if the network connections have been created already */
       bool flagIsCreated{false};
