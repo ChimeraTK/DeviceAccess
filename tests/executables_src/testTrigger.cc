@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
-  auto myCSVar = pvManagers.first->getProcessScalar<T>("/myCSVar");
+  auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
 
   // single theaded test only, since the receiving process scalar does not support blocking
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.theTrigger.write();
   CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(*myCSVar == 42);
+  BOOST_CHECK(myCSVar->accessData(0) == 42);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.feedingToDevice = 120;
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.theTrigger.write();
   CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(*myCSVar == 120);
+  BOOST_CHECK(myCSVar->accessData(0) == 120);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
 }
@@ -198,29 +198,29 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);
-  auto myCSVar = pvManagers.first->getProcessScalar<T>("/myCSVar");
-  auto theTrigger = pvManagers.first->getProcessScalar<T>("/theTrigger");
-
+  auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
+  auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
+  
   // single theaded test only, since the receiving process scalar does not support blocking
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.feedingToDevice = 42;
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  *theTrigger = 0;
+  myCSVar->accessData(0) = 0;
   theTrigger->write();
   CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(*myCSVar == 42);
+  BOOST_CHECK(myCSVar->accessData(0) == 42);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.feedingToDevice = 120;
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.feedingToDevice.write();
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
-  *theTrigger = 0;
+  myCSVar->accessData(0) = 0;
   theTrigger->write();
   CHECK_TIMEOUT(myCSVar->readNonBlocking() == true, 30000);
-  BOOST_CHECK(*myCSVar == 120);
+  BOOST_CHECK(myCSVar->accessData(0) == 120);
 
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
 }

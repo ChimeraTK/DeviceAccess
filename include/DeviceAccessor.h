@@ -41,9 +41,9 @@ namespace ChimeraTK {
       }
       
       bool readNonBlocking() {
-        bool ret = impl->readNonBlocking();
+        impl->read();           /// @todo FIXME this is wrong, but otherwise DeviceAccess fails to work properly right now
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
-        return ret;
+        return true;
       }
       
       void write() {
