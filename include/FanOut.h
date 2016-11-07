@@ -166,8 +166,8 @@ namespace ChimeraTK {
       
       bool readNonBlocking() {
         bool ret = impl->readNonBlocking();
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
         if(ret) {
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
           for(auto &slave : slaves) {     // send out copies to slaves
             slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
             slave->write();
