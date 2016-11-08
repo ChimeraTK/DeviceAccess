@@ -9,6 +9,11 @@
 #include "Accessor.h"
 
 namespace ChimeraTK {
+
+  VariableGroup::~VariableGroup() {
+  }
+
+/*********************************************************************************************************************/
   
   void VariableGroup::readAny() {
     bool gotUpdate = false;
@@ -16,7 +21,7 @@ namespace ChimeraTK {
       boost::this_thread::yield();
       boost::this_thread::interruption_point();
       for(auto accessor : accessorList) {
-        if(accessor->getUpdateMode() == UpdateMode::poll) {
+        if(accessor->getUpdateMode() == UpdateMode::push) {
           if(accessor->readNonBlocking()) gotUpdate = true;
         }
       }
