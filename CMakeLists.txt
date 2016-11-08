@@ -164,7 +164,7 @@ install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib
 # all include files go into include/PROJECT_NAME
 # The exclusion of ${PROJECT_NAME} prevents the recursive installation of the files just being installed.
 # The original headers are in include/*.h, the installed ones in include/PROJECT_NAME/*.h.
-install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/mtca4u/InstaCoSADev
+install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/ApplicationCore
         FILES_MATCHING PATTERN "*.h" PATTERN ".svn" EXCLUDE PATTERN "${PROJECT_NAME}" EXCLUDE )
 
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
