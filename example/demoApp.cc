@@ -107,9 +107,10 @@ class MyApp : public ctk::Application {
 
       controlLoop.actuator >> dev("Variable") >> cs("actuatorLoop");
 
-      dev("Variable") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
-
-      dev("Variable", typeid(double)) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
+      // TODO Reading back from the device register is not working. Should it work, or should it throw an error? FIXME
+      //dev("Variable") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
+      //dev("Variable", typeid(double)) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
+      controlLoop.actuator >> simulator.actuator >> cs("actuatorSimulator");
 
       simulator.readback >> controlLoop.readback >> cs("readback") >> cs("readback_another_time");
 
