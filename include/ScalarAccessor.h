@@ -16,7 +16,7 @@
 #include "Accessor.h"
 
 /** Macros to declare a scalar variable/accessor more easily. The call to this macro must be placed inside the
- *  class definiton of an ApplicationModule.
+ *  class definiton of a Module (e.g. ApplicationModule or VariableGroup).
  *
  *  UserType is the data type of the variable.
  *  name will be the C++ symbol name of the variable accessor. It will be of the type ChimeraTK::ScalarAccessor<UserType>
@@ -36,15 +36,11 @@ namespace ChimeraTK {
   template< typename UserType >
   class ScalarAccessor : public Accessor<UserType> {
     public:
-      ScalarAccessor(ApplicationModule *owner, const std::string &name, VariableDirection direction, std::string unit,
+      ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode)
       : Accessor<UserType>(owner, name, direction, unit, mode)
       {}
 
-      /** Read an input variable. In case of an output variable, an exception will be thrown. This function will block
-       *  the calling thread until the variable has been read. If the UpdateMode::push flag has been set when creating
-       *  the accessor, this function will wait until a new value has been provided to the variable. If a new value is
-       *  already available before calling this function, the function will be non-blocking and lock-free. */
       void read() {
         if(Accessor<UserType>::_mode == UpdateMode::push) {
           while(impl->readNonBlocking() == false) { /// @todo TODO proper blocking implementation
@@ -59,18 +55,15 @@ namespace ChimeraTK {
         }
       } // LCOV_EXCL_LINE this line somehow ends up having a negative counter in the coverage report, which leads to a failure
 
-      /** Check if an input variable has new data. In case of an output variable, an exception will be thrown. If the
-       *  wait_for_new_data access mode flag was not provided when creating the accessor, this function will return
-       *  always false. */
-      //bool hasNewData();  /// @todo TODO right now impossible to implement...
-
-      /** Write an output variable. In case of an input variable, an exception will be thrown. This function never
-       *  blocks and is always implemented in a lock-free manner. */
       void write() {
         impl->write();
         boost::this_thread::interruption_point();
       }
-
+      
+      bool readNonBlocking() {
+        return impl->readNonBlocking();
+      }
+        
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
       operator UserType() {

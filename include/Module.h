@@ -9,7 +9,12 @@
 #define CHIMERATK_MODULE_H
 
 namespace ChimeraTK {
-
+  
+  template< typename UserType >
+  class Accessor;
+  
+  class AccessorBase;
+  
   /** Base class for ApplicationModule, DeviceModule and ControlSystemModule, to have a common interface for these
    *  module types. */
   class Module {
@@ -30,7 +35,22 @@ namespace ChimeraTK {
 
       /** Terminate the module. Must be called before destruction, if run() was called previously. */
       virtual void terminate() {};
-
+      
+  protected:
+      
+      template< typename UserType >
+      friend class Accessor;
+      
+      friend class AccessorBase;
+      
+      /** Called inside the constructor of Accessor: adds the accessor to the list */
+      void registerAccessor(AccessorBase* accessor) {
+        accessorList.push_back(accessor);
+      }
+      
+      /** List of accessors owned by this module */
+      std::list<AccessorBase*> accessorList;
+      
   };
 
 } /* namespace ChimeraTK */

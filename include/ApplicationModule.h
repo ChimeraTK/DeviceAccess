@@ -16,11 +16,6 @@
 
 namespace ChimeraTK {
 
-  template< typename UserType >
-  class Accessor;
-
-  class AccessorBase;
-
   class ApplicationModule : public Module {
 
     public:
@@ -37,21 +32,8 @@ namespace ChimeraTK {
 
     protected:
 
-      template< typename UserType >
-      friend class Accessor;
-
-      friend class AccessorBase;
-
-      /** Called inside the constructor of Accessor: adds the accessor to the list */
-      void registerAccessor(AccessorBase* accessor) {
-        accessorList.push_back(accessor);
-      }
-
       /** The thread executing mainLoop() */
       boost::thread moduleThread;
-
-      /** List of accessors owned by this module */
-      std::list<AccessorBase*> accessorList;
 
   };
 

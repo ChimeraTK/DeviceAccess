@@ -49,7 +49,20 @@ namespace ChimeraTK {
 
       /* Obtain the unit of the variable */
       virtual const std::string& getUnit() const = 0;
-
+      
+      /** Read an input variable. In case of an output variable, an exception will be thrown. This function will block
+       *  the calling thread until the variable has been read. If the UpdateMode::push flag has been set when creating
+       *  the accessor, this function will wait until a new value has been provided to the variable. If a new value is
+       *  already available before calling this function, the function will be non-blocking and lock-free. */
+      virtual void read() = 0;
+      
+      /** Non-blocking read. Will return whether a new value was obtained. For pull-type varibales, always true is
+       *  returned, independently whether the value was changed or not. */
+      virtual bool readNonBlocking() = 0;
+      
+      /** Write an output variable. In case of an input variable, an exception will be thrown. */
+      virtual void write() = 0;
+      
     protected:
 
       friend class ApplicationModule;
@@ -79,8 +92,7 @@ namespace ChimeraTK {
 
       /** The default accessor takes no arguments and leaves the accessor uninitialised. It will be dysfunctional
        *  until it is properly initialised using connectTo(). */
-      Accessor(ApplicationModule *owner, const std::string &name, VariableDirection direction, std::string unit,
-          UpdateMode mode)
+      Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, UpdateMode mode)
       : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), node{*this}
       {
         owner->registerAccessor(this);
@@ -114,7 +126,7 @@ namespace ChimeraTK {
 
     protected:
 
-      ApplicationModule *_owner;
+      Module *_owner;
       std::string _name;
       VariableDirection _direction;
       std::string _unit;
