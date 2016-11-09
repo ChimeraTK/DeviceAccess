@@ -24,9 +24,9 @@
  *  mode can be either ChimeraTK::UpdateMode::push or ChimeraTK::UpdateMode::poll, deciding whether a call to read()
  *  will block until new data is available (push) or just return the latest value (poll, might not be fully realtime
  *  capable). */
-#define SCALAR_INPUT(UserType, name, unit, mode)                                                                    \
+#define CTK_SCALAR_INPUT(UserType, name, unit, mode)                                                                \
     ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit, mode}
-#define SCALAR_OUTPUT(UserType, name, unit)                                                                         \
+#define CTK_SCALAR_OUTPUT(UserType, name, unit)                                                                     \
     ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::feeding, unit,              \
                                              ChimeraTK::UpdateMode::push}
 

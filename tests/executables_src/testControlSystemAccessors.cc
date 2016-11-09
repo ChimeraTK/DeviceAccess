@@ -37,8 +37,8 @@ template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_INPUT(T, consumer, "MV/m", ctk::UpdateMode::push);
-    SCALAR_OUTPUT(T, feeder, "MV/m");
+    CTK_SCALAR_INPUT(T, consumer, "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_OUTPUT(T, feeder, "MV/m");
 
     void mainLoop() {}
 };

@@ -16,8 +16,8 @@ namespace ctk = ChimeraTK;
 class AutomationModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_INPUT(double, operatorSetpoint, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_OUTPUT(double, loopSetpoint, "MV/m");
+    CTK_SCALAR_INPUT(double, operatorSetpoint, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_OUTPUT(double, loopSetpoint, "MV/m");
 
     void mainLoop() {
       loopSetpoint = 0;
@@ -40,9 +40,9 @@ class AutomationModule : public ctk::ApplicationModule {
 class ControlLoopModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_INPUT(double, setpoint, "MV/m", ctk::UpdateMode::push);
-    SCALAR_INPUT(double, readback, "MV/m", ctk::UpdateMode::push);
-    SCALAR_OUTPUT(double, actuator, "MV/m");
+    CTK_SCALAR_INPUT(double, setpoint, "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_INPUT(double, readback, "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_OUTPUT(double, actuator, "MV/m");
 
     void mainLoop() {
 
@@ -67,8 +67,8 @@ class ControlLoopModule : public ctk::ApplicationModule {
 class SimulatorModule : public ctk::ApplicationModule {
   public:
 
-    SCALAR_INPUT(double, actuator, "MV/m", ctk::UpdateMode::push);
-    SCALAR_OUTPUT(double, readback, "MV/m");
+    CTK_SCALAR_INPUT(double, actuator, "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_OUTPUT(double, readback, "MV/m");
 
     double lastValue{0};
 

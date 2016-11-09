@@ -33,14 +33,14 @@ typedef boost::mpl::list<int8_t,uint8_t,
 template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
-    SCALAR_OUTPUT(T, feedingPush, "MV/m");
-    SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push);
-    SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push);
-    SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_OUTPUT(T, feedingPush, "MV/m");
+    CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push);
 
-    SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
-    SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
 
     void mainLoop() {}
 };
