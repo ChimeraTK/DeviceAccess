@@ -64,6 +64,11 @@ namespace mtca4u {
         postRead();
       }
 
+      virtual bool readNonBlocking(){
+         throw DeviceException("Non-blocking read is not implemented yet for the LNMBackendVariableAccessor",
+			       DeviceException::NOT_AVAILABLE);
+      }
+
       virtual void write() {
         if(isReadOnly()) {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
@@ -82,6 +87,14 @@ namespace mtca4u {
 
       virtual bool isReadOnly() const {
         return _info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
+      }
+
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
     protected:

@@ -246,6 +246,9 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( acc[0] == 3 );
     BOOST_CHECK( acc2[0] == 3 );
 
+    // currently the non-blocking read is not implemented in the LNMBackend accessors
+    BOOST_CHECK_THROW( acc.readNonBlocking(), DeviceException );
+
     device.close();
 
   }
@@ -375,6 +378,8 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
   BOOST_CHECK( !acc.isReadOnly() );
+  BOOST_CHECK( acc.isReadable() );
+  BOOST_CHECK( acc.isWriteable () );
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
 
@@ -470,6 +475,8 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
   BOOST_CHECK( acc.isReadOnly() == false );
+  BOOST_CHECK( acc.isReadable() );
+  BOOST_CHECK( acc.isWriteable() );
 
   const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
@@ -580,6 +587,9 @@ void LMapBackendTest::testRegisterAccessorForRange() {
     BOOST_CHECK( acc4[i] == (signed) (4000-i) );
   }
 
+  // currently the non-blocking read is not implemented in the LNMBackend accessors
+  BOOST_CHECK_THROW( acc4.readNonBlocking(), DeviceException );
+
   // read via iterators
   unsigned int idx=0;
   for(BufferingRegisterAccessor<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
@@ -622,7 +632,13 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // write channel registers fails
   BOOST_CHECK( acc3.isReadOnly() );
+  BOOST_CHECK( acc3.isReadable() );
+  BOOST_CHECK( acc3.isWriteable() == false);
+
   BOOST_CHECK( acc4.isReadOnly() );
+  BOOST_CHECK( acc4.isReadable() );
+  BOOST_CHECK( acc4.isWriteable() == false);
+
   BOOST_CHECK_THROW( acc3.write(), DeviceException );
   try {
     acc3.write();
@@ -778,6 +794,13 @@ void LMapBackendTest::testPlugin() {
 
   accDirect.read();
   BOOST_CHECK( accDirect == 22 );
+
+  BOOST_CHECK(accScaled.isWriteable());
+  BOOST_CHECK(accScaled.isReadable());
+  BOOST_CHECK(accScaled.isReadOnly()==false);
+  
+  // currently not supported yet
+  BOOST_CHECK_THROW( accScaled.readNonBlocking(), DeviceException);
 
   // scaled area
   auto accDirect2 = device.getBufferingRegisterAccessor<int>("","FullArea");

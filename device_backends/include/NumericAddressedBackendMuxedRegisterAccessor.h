@@ -35,6 +35,11 @@ namespace mtca4u {
 
       void write();
 
+      virtual bool readNonBlocking(){
+            throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
+				  DeviceException::NOT_AVAILABLE);
+      }
+
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendMuxedRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
@@ -45,6 +50,14 @@ namespace mtca4u {
 
       virtual bool isReadOnly() const {
         return false;
+      }
+
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return true;
       }
 
       virtual FixedPointConverter getFixedPointConverter() const {

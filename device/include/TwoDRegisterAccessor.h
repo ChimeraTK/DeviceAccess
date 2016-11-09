@@ -47,7 +47,11 @@ namespace mtca4u {
         NDRegisterAccessorBridge<UserType>::_impl->read();
       }
 
-      /** Convert data from the buffer and write to device. */
+      bool readNonBlocking(){
+	return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
+      }
+
+     /** Convert data from the buffer and write to device. */
       void write() {
         NDRegisterAccessorBridge<UserType>::_impl->write();
       }
@@ -65,6 +69,14 @@ namespace mtca4u {
       /** Return if the register accessor allows only reading */
       bool isReadOnly() const {
         return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
+      }
+
+      bool isReadable() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
+      }
+
+      bool isWriteable() const {
+        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
       }
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer

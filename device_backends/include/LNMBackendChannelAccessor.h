@@ -71,6 +71,12 @@ namespace mtca4u {
             DeviceException::REGISTER_IS_READ_ONLY);
       }
 
+      virtual bool readNonBlocking(){
+         throw DeviceException("Non-blocking read is not implemented yet for the LNMBackendChannelAccessor",
+			       DeviceException::NOT_IMPLEMENTED);
+      }
+
+
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
         auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendChannelAccessor<UserType> >(other);
         if(!rhsCasted) return false;
@@ -83,8 +89,17 @@ namespace mtca4u {
         return true;
       }
 
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return false;
+      }
+
       virtual FixedPointConverter getFixedPointConverter() const {
-        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+        throw DeviceException("FixedPointConverterse are not available in Logical Name Mapping",
+			      DeviceException::NOT_AVAILABLE);
       }
 
     protected:

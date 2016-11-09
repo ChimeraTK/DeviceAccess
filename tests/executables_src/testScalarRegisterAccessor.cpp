@@ -90,6 +90,10 @@ void ScalarRegisterTest::testIntRegisterAccessor() {
 
   // obtain register accessor with integral type
   ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  BOOST_CHECK( accessor.isReadOnly() == false );
+  BOOST_CHECK( accessor.isReadable() );
+  BOOST_CHECK( accessor.isWriteable() );
+  
 
   // dummy register accessor for comparison
   DummyRegisterAccessor<int> dummy(backend.get(),"APP0","WORD_STATUS");
@@ -161,6 +165,9 @@ void ScalarRegisterTest::testIntRegisterAccessor() {
   BOOST_CHECK( dummy == 43 );
   accessor.write();
   BOOST_CHECK( dummy == 119 );
+
+  // currently the non-blocking read is not implemented  in NumericAddressed accessors
+  BOOST_CHECK_THROW( accessor.readNonBlocking(), DeviceException );
 
   device.close();
 

@@ -41,15 +41,30 @@ namespace mtca4u {
 
       virtual ~ScaleRegisterPluginRegisterAccessor() {};
 
-      virtual void read() {
-        // read from hardware
-        _accessor->read();
+      void applyScalingFactorUnderlyingToThisBuffer(){
         // apply scaling factor while copying buffer from underlying accessor to our buffer
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
             NDRegisterAccessor<UserType>::buffer_2D[i][k] = _accessor->accessData(i,k) * _scalingFactor;
           }
         }
+      }
+    
+      virtual void read() {
+        // read from hardware
+        _accessor->read();
+	applyScalingFactorUnderlyingToThisBuffer();
+      }
+
+      virtual bool readNonBlocking(){
+	if (_accessor->readNonBlocking()){
+	  // only apply the scaling if there is new data.
+	  applyScalingFactorUnderlyingToThisBuffer();
+	  return true;
+	}else{
+	  //  Don't recalculate what we have, just return false (no new data).
+	  return false;
+	}
       }
 
       virtual void write() {
@@ -75,7 +90,15 @@ namespace mtca4u {
         return _accessor->isReadOnly();
       }
 
-      virtual FixedPointConverter getFixedPointConverter() const {
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return true;
+      }
+
+     virtual FixedPointConverter getFixedPointConverter() const {
         return _accessor->getFixedPointConverter();
       }
 

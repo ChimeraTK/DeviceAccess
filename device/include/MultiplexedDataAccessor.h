@@ -70,6 +70,16 @@ namespace mtca4u {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
+      virtual bool readNonBlocking(){
+	if (accessor->readNonBlocking()){
+	  accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+	  return true;
+	}else{
+	  //  Don't swap, just return false (no new data).
+	  return false;
+	}
+      }
+
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,
        * using the fixed point converters, and write it to the device. Can be used
        * to write to DMA memory Areas, but this functionality has not been
@@ -91,6 +101,14 @@ namespace mtca4u {
 
       virtual bool isReadOnly() const {// LCOV_EXCL_LINE
         return accessor->isReadOnly();// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
+
+      virtual bool isReadable() const {// LCOV_EXCL_LINE
+        return accessor->isReadable();// LCOV_EXCL_LINE
+      }// LCOV_EXCL_LINE
+
+      virtual bool isWriteable() const {// LCOV_EXCL_LINE
+        return accessor->isWriteable();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
     protected:

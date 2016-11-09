@@ -10,7 +10,11 @@ namespace mtca4u{
     public:
 
       enum {
-        /** The function called is not implemented in this context, e.g.\ for the used backend */
+        /** The function called is not implemented yet, e.g.\ for the used backend.
+	 *  Inprinciple it can be implemented and might be available in future (in 
+	 *  contrast to NOT_AVAILABLE, which indicates that a function cannot be 
+	 *  implemented and will never be available in this context).
+	 */
         NOT_IMPLEMENTED = 0,
 
         /** A parameter (function argument, value in a map file etc.) is not valid */
@@ -39,6 +43,13 @@ namespace mtca4u{
 
         /** There has been an error (logical or parse error) in the dmap file*/
         DMAP_FILE_ERROR,
+
+        /** A function or requested functionality is not available, e.g.\ for a particular backend.
+	 *  The functionality conceptually does not make sense in this context
+	 *  and cannot be implemented (in constrast to NOT_IMPLEMENTED, which means the function
+	 *  has not been implemented yet but might be available in future releases).
+	 */
+        NOT_AVAILABLE,
 
         /** Deprecated, for compatibility with MultiplexedDataAccessorException (mapfile contains error) */
         EMPTY_AREA = CANNOT_OPEN_MAP_FILE,

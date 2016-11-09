@@ -44,6 +44,11 @@ namespace mtca4u {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
+      virtual bool readNonBlocking(){
+	throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
+			      DeviceException::NOT_AVAILABLE);
+      }
+
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register. In the special
        *  case of the NumericAddressedBackendRawAccessor, this function returns also true if the address areas
        *  are adjacent and/or overlapping. NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes
@@ -62,8 +67,22 @@ namespace mtca4u {
         return true;
       }
 
+      virtual const std::type_info& getValueType() const{
+	// This implementation is for int32_t only (as all numerically addressed backends under the
+	// hood.
+	return typeid(int32_t);
+      }
+
       virtual bool isReadOnly() const {
         return false;
+      }
+
+      virtual bool isReadable() const {
+        return true;
+      }
+
+      virtual bool isWriteable() const {
+        return true;
       }
 
       /** Return accessor to the begin of the raw buffer matching the given address. No end() is provided, since the

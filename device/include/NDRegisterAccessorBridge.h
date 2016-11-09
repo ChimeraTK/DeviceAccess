@@ -73,6 +73,10 @@ namespace mtca4u {
 
       friend class TransferGroup;
 
+      virtual const std::type_info& getValueType() const{
+	return typeid(UserType);
+      }
+
     private:
 
       /** prevent copying by operator=, since it will be confusing (operator= may also be overloaded to access the

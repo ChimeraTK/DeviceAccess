@@ -67,6 +67,9 @@ void OneDRegisterTest::testRegisterAccessor() {
 
   // obtain register accessor with integral type
   OneDRegisterAccessor<int> intRegister = device->getOneDRegisterAccessor<int>("APP0/MODULE0");
+  BOOST_CHECK( intRegister.isReadOnly() == false );
+  BOOST_CHECK( intRegister.isReadable() );
+  BOOST_CHECK( intRegister.isWriteable() );
 
   // variable to read to for comparison
   int compare;
@@ -167,5 +170,7 @@ void OneDRegisterTest::testRegisterAccessor() {
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 42 );
-
+  
+  // currently the non-blocking read is not implemented in NumericAddressed accessors
+  BOOST_CHECK_THROW( floatRegister.readNonBlocking(), DeviceException );
 }
