@@ -50,16 +50,16 @@ typedef boost::mpl::list<int8_t,uint8_t,
 template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
-    CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
 
-    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
-    CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
-    CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll, "Descrption");
 
-    CTK_SCALAR_OUTPUT(T, theTrigger, "MV/m");
-    CTK_SCALAR_OUTPUT(T, feedingToDevice, "MV/m");
+    CTK_SCALAR_OUTPUT(T, theTrigger, "MV/m", "Descrption");
+    CTK_SCALAR_OUTPUT(T, feedingToDevice, "MV/m", "Descrption");
 
     void mainLoop() {}
 };

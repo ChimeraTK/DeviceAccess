@@ -24,11 +24,12 @@
  *  mode can be either ChimeraTK::UpdateMode::push or ChimeraTK::UpdateMode::poll, deciding whether a call to read()
  *  will block until new data is available (push) or just return the latest value (poll, might not be fully realtime
  *  capable). */
-#define CTK_SCALAR_INPUT(UserType, name, unit, mode)                                                                \
-    ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit, mode}
-#define CTK_SCALAR_OUTPUT(UserType, name, unit)                                                                     \
+#define CTK_SCALAR_INPUT(UserType, name, unit, mode, description)                                                   \
+    ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit, mode,      \
+                                             description}
+#define CTK_SCALAR_OUTPUT(UserType, name, unit, description)                                                        \
     ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::feeding, unit,              \
-                                             ChimeraTK::UpdateMode::push}
+                                             ChimeraTK::UpdateMode::push, description}
 
 namespace ChimeraTK {
 
@@ -37,8 +38,8 @@ namespace ChimeraTK {
   class ScalarAccessor : public Accessor<UserType> {
     public:
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
-          UpdateMode mode)
-      : Accessor<UserType>(owner, name, direction, unit, 1, mode)
+          UpdateMode mode, const std::string &description)
+      : Accessor<UserType>(owner, name, direction, unit, 1, mode, description)
       {}
 
       void read() {

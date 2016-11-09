@@ -25,12 +25,12 @@
  *  mode can be either ChimeraTK::UpdateMode::push or ChimeraTK::UpdateMode::poll, deciding whether a call to read()
  *  will block until new data is available (push) or just return the latest value (poll, might not be fully realtime
  *  capable). */
-#define CTK_ARRAY_INPUT(UserType, name, unit, nElements, mode)                                                      \
+#define CTK_ARRAY_INPUT(UserType, name, unit, nElements, mode, description)                                         \
     ChimeraTK::ArrayAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit,             \
-                                            nElements, mode}
-#define CTK_ARRAY_OUTPUT(UserType, name, unit, nElements)                                                           \
+                                            nElements, mode, description}
+#define CTK_ARRAY_OUTPUT(UserType, name, unit, nElements, description)                                              \
     ChimeraTK::ArrayAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::feeding, unit,               \
-                                            nElements, ChimeraTK::UpdateMode::push}
+                                            nElements, ChimeraTK::UpdateMode::push, description}
 
 namespace ChimeraTK {
 
@@ -39,8 +39,8 @@ namespace ChimeraTK {
   class ArrayAccessor : public Accessor<UserType> {
     public:
       ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
-          size_t nElements, UpdateMode mode)
-      : Accessor<UserType>(owner, name, direction, unit, nElements, mode)
+          size_t nElements, UpdateMode mode, const std::string &description)
+      : Accessor<UserType>(owner, name, direction, unit, nElements, mode, description)
       {}
 
       void read() {

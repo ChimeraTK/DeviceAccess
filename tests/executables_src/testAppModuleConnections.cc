@@ -34,19 +34,19 @@ typedef boost::mpl::list<int8_t,uint8_t,
 template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
-    CTK_SCALAR_OUTPUT(T, feedingPush, "MV/m");
-    CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push);
+    CTK_SCALAR_OUTPUT(T, feedingPush, "MV/m", "Some output scalar");
+    CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
 
-    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
-    CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
-    CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll, "Descrption");
     
-    CTK_ARRAY_INPUT(T, consumingPollArray, "m", 10, ctk::UpdateMode::poll);
-    CTK_ARRAY_INPUT(T, consumingPushArray, "m", 10, ctk::UpdateMode::push);
+    CTK_ARRAY_INPUT(T, consumingPollArray, "m", 10, ctk::UpdateMode::poll, "Descrption");
+    CTK_ARRAY_INPUT(T, consumingPushArray, "m", 10, ctk::UpdateMode::push, "Descrption");
     
-    CTK_ARRAY_OUTPUT(T, feedingArray, "m", 10);
+    CTK_ARRAY_OUTPUT(T, feedingArray, "m", 10, "Descrption");
 
     void mainLoop() {}
 };

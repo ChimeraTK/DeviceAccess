@@ -36,9 +36,9 @@ template<typename T>
 class TestModule : public ctk::ApplicationModule {
   public:
 
-    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
 
-    CTK_SCALAR_OUTPUT(T, feedingToDevice, "MV/m");
+    CTK_SCALAR_OUTPUT(T, feedingToDevice, "MV/m", "Descrption");
 
     void mainLoop() {}
 };

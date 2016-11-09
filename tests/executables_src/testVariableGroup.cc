@@ -27,21 +27,21 @@ namespace ctk = ChimeraTK;
 struct TestModule : public ctk::ApplicationModule {
   
   struct MixedGroup : public ctk::VariableGroup {
-    CTK_SCALAR_INPUT(int, consumingPush, "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(int, consumingPush2, "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(int, consumingPush3,  "MV/m", ctk::UpdateMode::push);
-    CTK_SCALAR_INPUT(int, consumingPoll, "MV/m", ctk::UpdateMode::poll);
-    CTK_SCALAR_INPUT(int, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
-    CTK_SCALAR_INPUT(int, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
+    CTK_SCALAR_INPUT(int, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(int, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(int, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
+    CTK_SCALAR_INPUT(int, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    CTK_SCALAR_INPUT(int, consumingPoll2, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    CTK_SCALAR_INPUT(int, consumingPoll3, "MV/m", ctk::UpdateMode::poll, "Descrption");
   };
   MixedGroup mixedGroup;
 
-  CTK_SCALAR_OUTPUT(int, feedingPush, "MV/m");
-  CTK_SCALAR_OUTPUT(int, feedingPush2, "MV/m");
-  CTK_SCALAR_OUTPUT(int, feedingPush3,  "MV/m");
-  CTK_SCALAR_OUTPUT(int, feedingPoll, "MV/m");
-  CTK_SCALAR_OUTPUT(int, feedingPoll2, "MV/m");
-  CTK_SCALAR_OUTPUT(int, feedingPoll3, "MV/m");
+  CTK_SCALAR_OUTPUT(int, feedingPush, "MV/m", "Descrption");
+  CTK_SCALAR_OUTPUT(int, feedingPush2, "MV/m", "Descrption");
+  CTK_SCALAR_OUTPUT(int, feedingPush3,  "MV/m", "Descrption");
+  CTK_SCALAR_OUTPUT(int, feedingPoll, "MV/m", "Descrption");
+  CTK_SCALAR_OUTPUT(int, feedingPoll2, "MV/m", "Descrption");
+  CTK_SCALAR_OUTPUT(int, feedingPoll3, "MV/m", "Descrption");
   
   void mainLoop() {}
 };

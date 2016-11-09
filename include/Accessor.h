@@ -49,6 +49,9 @@ namespace ChimeraTK {
 
       /* Obtain the unit of the variable */
       virtual const std::string& getUnit() const = 0;
+
+      /* Obtain the description of the variable */
+      virtual const std::string& getDescription() const = 0;
       
       /** Read an input variable. In case of an output variable, an exception will be thrown. This function will block
        *  the calling thread until the variable has been read. If the UpdateMode::push flag has been set when creating
@@ -88,6 +91,8 @@ namespace ChimeraTK {
       VariableDirection getDirection() const {std::terminate();}
       UpdateMode getUpdateMode() const {std::terminate();}
       size_t getNumberOfElements() {std::terminate();}
+      const std::string&  getUnit() const {std::terminate();}
+      const std::string&  getDescription() const {std::terminate();}
   };
 
   /*********************************************************************************************************************/
@@ -99,8 +104,10 @@ namespace ChimeraTK {
 
       /** The default accessor takes no arguments and leaves the accessor uninitialised. It will be dysfunctional
        *  until it is properly initialised using connectTo(). */
-      Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode)
-      : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), _nElements{nElements}, node{*this}
+      Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, size_t nElements,
+               UpdateMode mode, const std::string &description)
+      : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), _description(description),
+        _nElements{nElements}, node{*this}
       {
         owner->registerAccessor(this);
       }
@@ -110,6 +117,8 @@ namespace ChimeraTK {
       UpdateMode getUpdateMode() const {return _mode;}
 
       const std::string& getUnit() const {return _unit;}
+
+      const std::string& getDescription() const {return _description;}
 
       const std::type_info& getValueType() const {
         return typeid(UserType);
@@ -140,6 +149,7 @@ namespace ChimeraTK {
       VariableDirection _direction;
       std::string _unit;
       UpdateMode _mode;
+      std::string _description;
       
       size_t _nElements;
 
