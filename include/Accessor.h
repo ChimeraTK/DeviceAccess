@@ -63,6 +63,12 @@ namespace ChimeraTK {
       /** Write an output variable. In case of an input variable, an exception will be thrown. */
       virtual void write() = 0;
       
+      /** Return number of elements in the variable (array size, or 1 for scalars)
+       *  @todo TODO FIXME This function is not needed like this. It is only used during the setup phase while making
+       *  the connections. There we should instead just obtain the number of elements from the VariableNetworkNode.
+       *  Like this, this function might easily be confused with the getNElements() function! */
+      virtual size_t getNumberOfElements() const = 0;
+      
     protected:
 
       friend class ApplicationModule;
@@ -81,6 +87,7 @@ namespace ChimeraTK {
       const std::type_info& getValueType() const {std::terminate();}
       VariableDirection getDirection() const {std::terminate();}
       UpdateMode getUpdateMode() const {std::terminate();}
+      size_t getNumberOfElements() {std::terminate();}
   };
 
   /*********************************************************************************************************************/
@@ -92,8 +99,8 @@ namespace ChimeraTK {
 
       /** The default accessor takes no arguments and leaves the accessor uninitialised. It will be dysfunctional
        *  until it is properly initialised using connectTo(). */
-      Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, UpdateMode mode)
-      : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), node{*this}
+      Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode)
+      : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), _nElements{nElements}, node{*this}
       {
         owner->registerAccessor(this);
       }
@@ -123,6 +130,8 @@ namespace ChimeraTK {
       VariableNetworkNode operator>>(VariableNetworkNode other) {
         return node.operator>>(other);
       }
+      
+      size_t getNumberOfElements() const { return _nElements; }
 
     protected:
 
@@ -131,6 +140,8 @@ namespace ChimeraTK {
       VariableDirection _direction;
       std::string _unit;
       UpdateMode _mode;
+      
+      size_t _nElements;
 
       VariableNetworkNode node;
 

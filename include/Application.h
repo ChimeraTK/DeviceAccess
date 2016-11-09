@@ -110,19 +110,20 @@ namespace ChimeraTK {
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createDeviceAccessor(const std::string &deviceAlias,
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createDeviceVariable(const std::string &deviceAlias,
           const std::string &registerName, VariableDirection direction, UpdateMode mode);
 
-      /** Create a process variable with the PVManager, which is exported to the control system adapter */
+      /** Create a process variable with the PVManager, which is exported to the control system adapter. nElements will
+          be the array size of the created variable. */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessScalar(VariableDirection direction,
-          const std::string &name);
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessVariable(VariableDirection direction,
+          const std::string &name, size_t nElements);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
-       *  sender, the second the receiver. */
+       *  sender, the second the receiver. nElements will be the array size of the created variable. */
       template<typename UserType>
       std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-        createProcessScalar();
+            createApplicationVariable(size_t nElements);
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */

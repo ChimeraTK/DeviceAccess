@@ -38,7 +38,7 @@ namespace ChimeraTK {
     public:
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode)
-      : Accessor<UserType>(owner, name, direction, unit, mode)
+      : Accessor<UserType>(owner, name, direction, unit, 1, mode)
       {}
 
       void read() {

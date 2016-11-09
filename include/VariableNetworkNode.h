@@ -108,6 +108,8 @@ namespace ChimeraTK {
       const std::string& getPublicName() const { assert(pdata->type == NodeType::ControlSystem); return pdata->publicName; }
       const std::string& getDeviceAlias() const { assert(pdata->type == NodeType::Device); return pdata->deviceAlias; }
       const std::string& getRegisterName() const { assert(pdata->type == NodeType::Device); return pdata->registerName; }
+      void setNumberOfElements(size_t nElements) { pdata->nElements = nElements; }
+      size_t getNumberOfElements() const { return pdata->nElements; }
 
     protected:
 
@@ -152,6 +154,9 @@ namespace ChimeraTK {
         /** Device information if type == Device */
         std::string deviceAlias;
         std::string registerName;
+        
+        /** Number of elements in the variable. 0 means not yet decided. */
+        size_t nElements{0};
 
       };
 

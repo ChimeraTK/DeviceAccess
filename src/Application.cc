@@ -140,13 +140,26 @@ void Application::generateXML() {
 
 VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode b) {
 
-  // if one of the nodes as the value type AnyType, set it to the type of the other
+  // if one of the nodes has the value type AnyType, set it to the type of the other
   // if both are AnyType, nothing changes.
   if(a.getValueType() == typeid(AnyType)) {
     a.setValueType(b.getValueType());
   }
   else if(b.getValueType() == typeid(AnyType)) {
     b.setValueType(a.getValueType());
+  }
+
+  // if one of the nodes has not yet a defined number of elements, set it to the number of elements of the other.
+  // if both are undefined, nothing changes.
+  if(a.getNumberOfElements() == 0) {
+    a.setNumberOfElements(b.getNumberOfElements());
+  }
+  else if(b.getNumberOfElements() == 0) {
+    b.setNumberOfElements(a.getNumberOfElements());
+  }
+  if(a.getNumberOfElements() != b.getNumberOfElements()) {
+    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+          "Error: Cannot connect array variables with difference number of elements!");
   }
 
   // if both nodes already have an owner, we are done
@@ -174,7 +187,7 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDeviceAccessor(const std::string &deviceAlias,
+boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDeviceVariable(const std::string &deviceAlias,
     const std::string &registerName, VariableDirection direction, UpdateMode mode) {
 
   // open device if needed
@@ -198,8 +211,8 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProcessScalar(VariableDirection direction,
-    const std::string &name) {
+boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProcessVariable(VariableDirection direction,
+    const std::string &name, size_t nElements) {
 
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
@@ -211,17 +224,17 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   }
 
   // create the ProcessScalar for the proper UserType
-  return _processVariableManager->createProcessArray<UserType>(dir, name, 1);
+  return _processVariableManager->createProcessArray<UserType>(dir, name, nElements);
 }
 
 /*********************************************************************************************************************/
 
 template<typename UserType>
 std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-  Application::createProcessScalar() {
+  Application::createApplicationVariable(size_t nElements) {
 
   // create the ProcessScalar for the proper UserType
-  return createSynchronizedProcessArray<UserType>(1);
+  return createSynchronizedProcessArray<UserType>(nElements);
 }
 
 /*********************************************************************************************************************/
@@ -313,11 +326,11 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     // functions createProcessScalar() and createDeviceAccessor() get the VariableDirection::consuming.
     boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl;
     if(feeder.getType() == NodeType::Device) {
-      feedingImpl = createDeviceAccessor<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
+      feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
           VariableDirection::consuming, feeder.getMode());
     }
     else if(feeder.getType() == NodeType::ControlSystem) {
-      feedingImpl = createProcessScalar<UserType>(VariableDirection::consuming, feeder.getPublicName());
+      feedingImpl = createProcessVariable<UserType>(VariableDirection::consuming, feeder.getPublicName(), feeder.getNumberOfElements());
     }
 
     // if we just have two nodes, directly connect them
@@ -328,7 +341,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Device) {
-        auto consumingImpl = createDeviceAccessor<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+        auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             VariableDirection::feeding, consumer.getMode());
         // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
         adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
@@ -336,7 +349,8 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
-        auto consumingImpl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.getPublicName());
+        auto consumingImpl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
+                                                             consumer.getNumberOfElements());
         // connect the ControlSystem with e.g. a Device node via an ImplementationAdapter
         adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
             new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
@@ -374,22 +388,23 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             isFirst = false;
           }
           else {
-            auto impls = createProcessScalar<UserType>();
+            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
             fanOut->addSlave(impls.first);
             consumer.getAppAccessor().useProcessVariable(impls.second);
           }
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
-          auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.getPublicName());
+          auto impl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
+                                                      consumer.getNumberOfElements());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::Device) {
-          auto impl = createDeviceAccessor<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               VariableDirection::feeding, consumer.getMode());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createProcessScalar<UserType>();
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
@@ -414,24 +429,26 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        auto impls = createProcessScalar<UserType>();
+        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
         feeder.getAppAccessor().useProcessVariable(impls.first);
         consumer.getAppAccessor().useProcessVariable(impls.second);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
-        auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.getPublicName());
+        auto impl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
+                                                    consumer.getNumberOfElements()
+        );
         feeder.getAppAccessor().useProcessVariable(impl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Device) {
-        auto impl = createDeviceAccessor<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+        auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             VariableDirection::feeding, consumer.getMode());
         feeder.getAppAccessor().useProcessVariable(impl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createProcessScalar<UserType>();
+        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
         feeder.getAppAccessor().useProcessVariable(impls.first);
         consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
@@ -447,21 +464,22 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          auto impls = createProcessScalar<UserType>();
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
           fanOut->addSlave(impls.first);
           consumer.getAppAccessor().useProcessVariable(impls.second);
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
-          auto impl = createProcessScalar<UserType>(VariableDirection::feeding, consumer.getPublicName());
+          auto impl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
+                                                      consumer.getNumberOfElements());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::Device) {
-          auto impl = createDeviceAccessor<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               VariableDirection::feeding, consumer.getMode());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createProcessScalar<UserType>();
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }

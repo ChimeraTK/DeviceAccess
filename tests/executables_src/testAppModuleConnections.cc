@@ -16,6 +16,7 @@
 #include <mtca4u/BackendFactory.h>
 
 #include "ScalarAccessor.h"
+#include "ArrayAccessor.h"
 #include "ApplicationModule.h"
 
 using namespace boost::unit_test_framework;
@@ -41,6 +42,11 @@ class TestModule : public ctk::ApplicationModule {
     CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll);
     CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll);
     CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll);
+    
+    CTK_ARRAY_INPUT(T, consumingPollArray, "m", 10, ctk::UpdateMode::poll);
+    CTK_ARRAY_INPUT(T, consumingPushArray, "m", 10, ctk::UpdateMode::push);
+    
+    CTK_ARRAY_OUTPUT(T, feedingArray, "m", 10);
 
     void mainLoop() {}
 };
@@ -64,6 +70,7 @@ class TestApplication : public ctk::Application {
 /* test case for two scalar accessors in push mode */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
+  std::cout << "*** testTwoScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
 
@@ -99,6 +106,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
 /* test case for four scalar accessors in push mode: one feeder and three consumers */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
+  std::cout << "*** testFourScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
 
@@ -162,6 +170,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
 /* test case for two scalar accessors, feeder in push mode and consumer in poll mode */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
+  std::cout << "*** testTwoScalarPushPollAccessors<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
 
@@ -190,5 +199,46 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
   app.testModule.consumingPoll.read();
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test case for two array accessors in push mode */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoArrayAccessors, T, test_types ) {
+  std::cout << "*** testTwoArrayAccessors<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+  
+  app.testModule.feedingArray >> app.testModule.consumingPushArray;
+  app.makeConnections();
+  
+  BOOST_CHECK(app.testModule.feedingArray.getNumberOfElements() == 10);
+  BOOST_CHECK(app.testModule.consumingPushArray.getNumberOfElements() == 10);
+  BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
+  BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
+
+  // single theaded test
+  for(auto &val : app.testModule.consumingPushArray) val = 0;
+  for(unsigned int i=0; i<10; ++i) app.testModule.feedingArray[i] = 99+(T)i;
+  for(auto &val : app.testModule.consumingPushArray) BOOST_CHECK(val == 0);
+  app.testModule.feedingArray.write();
+  for(auto &val : app.testModule.consumingPushArray) BOOST_CHECK(val == 0);
+  app.testModule.consumingPushArray.read();
+  for(unsigned int i=0; i<10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 99+(T)i);
+
+  // launch read() on the consumer asynchronously and make sure it does not yet receive anything
+  auto futRead = std::async(std::launch::async, [&app]{ app.testModule.consumingPushArray.read(); });
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+
+  for(unsigned int i=0; i<10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 99+(T)i);
+
+  // write to the feeder
+  for(unsigned int i=0; i<10; ++i) app.testModule.feedingArray[i] = 42-(T)i;
+  app.testModule.feedingArray.write();
+
+  // check that the consumer now receives the just written value
+  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  for(unsigned int i=0; i<10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 42-(T)i);
 
 }

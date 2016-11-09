@@ -39,6 +39,7 @@ namespace ChimeraTK {
     pdata->valueType = &(accessor.getValueType());
     pdata->unit = accessor.getUnit();
     pdata->appNode = &accessor;
+    pdata->nElements = accessor.getNumberOfElements();
   }
 
   /*********************************************************************************************************************/
