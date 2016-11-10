@@ -52,6 +52,9 @@ namespace ChimeraTK {
 
       /* Obtain the description of the variable */
       virtual const std::string& getDescription() const = 0;
+
+      /* Obtain the name of the accessor */
+      virtual const std::string& getName() const = 0;
       
       /** Read an input variable. In case of an output variable, an exception will be thrown. This function will block
        *  the calling thread until the variable has been read. If the UpdateMode::push flag has been set when creating
@@ -91,8 +94,9 @@ namespace ChimeraTK {
       VariableDirection getDirection() const {std::terminate();}
       UpdateMode getUpdateMode() const {std::terminate();}
       size_t getNumberOfElements() {std::terminate();}
-      const std::string&  getUnit() const {std::terminate();}
-      const std::string&  getDescription() const {std::terminate();}
+      const std::string& getUnit() const {std::terminate();}
+      const std::string& getDescription() const {std::terminate();}
+      const std::string& getName() const {std::terminate();}
   };
 
   /*********************************************************************************************************************/
@@ -119,6 +123,8 @@ namespace ChimeraTK {
       const std::string& getUnit() const {return _unit;}
 
       const std::string& getDescription() const {return _description;}
+
+      const std::string& getName() const {return _name;}
 
       const std::type_info& getValueType() const {
         return typeid(UserType);
