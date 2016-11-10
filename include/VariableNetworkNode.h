@@ -102,6 +102,7 @@ namespace ChimeraTK {
       VariableDirection getDirection() const { return pdata->direction; }
       const std::type_info& getValueType() const { return *(pdata->valueType); }
       const std::string& getUnit() const { return pdata->unit; }
+      const std::string& getDescription() const { return pdata->description; }
       VariableNetwork& getOwner() const { assert(pdata->network != nullptr); return *(pdata->network); }
       AccessorBase& getAppAccessor() const { assert(pdata->appNode != nullptr); return *(pdata->appNode); }
       VariableNetworkNode& getTriggerReceiver() const { assert(pdata->triggerReceiver != nullptr); return *(pdata->triggerReceiver); }
@@ -134,6 +135,9 @@ namespace ChimeraTK {
 
         /** Engineering unit. If "arbitrary", no unit has been defined (and any unit is allowed). */
         std::string unit{"arbitrary"};
+
+        /** Description */
+        std::string description{""};
 
         /** The network this node belongs to */
         VariableNetwork *network{nullptr};

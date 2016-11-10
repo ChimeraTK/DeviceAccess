@@ -83,7 +83,10 @@ namespace ChimeraTK {
       TriggerType getTriggerType() const;
 
       /** Return the enginerring unit */
-      const std::string& getUnit() { return engineeringUnit; }
+      const std::string& getUnit() const { return engineeringUnit; }
+
+      /** Return the description */
+      const std::string& getDescription() const { return description; }
 
       /** Return the network providing the external trigger to this network, if TriggerType::external. If the network
        *  has another trigger type, an exception will be thrown. */
@@ -124,6 +127,9 @@ namespace ChimeraTK {
 
       /** Engineering unit */
       std::string engineeringUnit;
+
+      /** User-provided description */
+      std::string description;
 
       /** Flag if an external trigger has been added to this network */
       //bool hasExternalTrigger{false};

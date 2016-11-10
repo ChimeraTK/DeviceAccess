@@ -40,6 +40,7 @@ namespace ChimeraTK {
     pdata->unit = accessor.getUnit();
     pdata->appNode = &accessor;
     pdata->nElements = accessor.getNumberOfElements();
+    pdata->description = accessor.getDescription();
   }
 
   /*********************************************************************************************************************/
@@ -180,6 +181,10 @@ namespace ChimeraTK {
     // add sub-element containing the engineering unit
     xmlpp::Element *unitElement = variable->add_child("unit");
     unitElement->set_child_text(pdata->network->getUnit());
+
+    // add sub-element containing the description
+    xmlpp::Element *descriptionElement = variable->add_child("description");
+    descriptionElement->set_child_text(pdata->network->getDescription());
   }
 
   /*********************************************************************************************************************/
