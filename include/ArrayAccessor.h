@@ -106,6 +106,12 @@ namespace ChimeraTK {
         impl->accessChannel(0).swap(x);
       }        
 
+      /** Assignment operator */
+      ArrayAccessor<UserType>& operator=(const std::vector<UserType> &rightHandSide) {
+        impl->accessChannel(0) = rightHandSide;
+        return *this;
+      }
+
       bool isInitialised() const {
         return impl != nullptr;
       }
