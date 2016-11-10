@@ -16,8 +16,8 @@ namespace ctk = ChimeraTK;
 class AutomationModule : public ctk::ApplicationModule {
   public:
 
-    CTK_SCALAR_INPUT(double, operatorSetpoint, "MV/m", ctk::UpdateMode::poll, "Setpoint given by the operator");
-    CTK_SCALAR_OUTPUT(double, loopSetpoint, "MV/m", "Setpoint computed by the automation module");
+    CTK_SCALAR_INPUT(double, operatorSetpoint, "Celsius", ctk::UpdateMode::poll, "Setpoint given by the operator");
+    CTK_SCALAR_OUTPUT(double, loopSetpoint, "Celsius", "Setpoint computed by the automation module");
 
     void mainLoop() {
       loopSetpoint = 0;
@@ -40,9 +40,9 @@ class AutomationModule : public ctk::ApplicationModule {
 class ControlLoopModule : public ctk::ApplicationModule {
   public:
 
-    CTK_SCALAR_INPUT(double, setpoint, "MV/m", ctk::UpdateMode::push, "Setpoint for my control loop");
-    CTK_SCALAR_INPUT(double, readback, "MV/m", ctk::UpdateMode::push, "Control loop input value");
-    CTK_SCALAR_OUTPUT(double, actuator, "MV/m", "Actuator output of the control loop");
+    CTK_SCALAR_INPUT(double, setpoint, "Celsius", ctk::UpdateMode::push, "Setpoint for my control loop");
+    CTK_SCALAR_INPUT(double, readback, "Celsius", ctk::UpdateMode::push, "Control loop input value");
+    CTK_SCALAR_OUTPUT(double, actuator, "A", "Actuator output of the control loop");
 
     void mainLoop() {
 
@@ -67,8 +67,8 @@ class ControlLoopModule : public ctk::ApplicationModule {
 class SimulatorModule : public ctk::ApplicationModule {
   public:
 
-    CTK_SCALAR_INPUT(double, actuator, "MV/m", ctk::UpdateMode::push, "Actuator input for the simulation");
-    CTK_SCALAR_OUTPUT(double, readback, "MV/m", "Readback output value of the simulation");
+    CTK_SCALAR_INPUT(double, actuator, "A", ctk::UpdateMode::push, "Actuator input for the simulation");
+    CTK_SCALAR_OUTPUT(double, readback, "Celsius", "Readback output value of the simulation");
 
     double lastValue{0};
 
