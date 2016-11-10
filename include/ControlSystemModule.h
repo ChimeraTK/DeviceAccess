@@ -25,7 +25,8 @@ namespace ChimeraTK {
 
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the control system variable with another variable. */
-      VariableNetworkNode operator()(const std::string& variableName, const std::type_info &valueType=typeid(AnyType));
+      VariableNetworkNode operator()(const std::string& variableName, const std::type_info &valueType=typeid(AnyType),
+                                     size_t nElements=0);
 
     protected:
 

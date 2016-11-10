@@ -20,8 +20,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode DeviceModule::operator()(const std::string& registerName, UpdateMode mode,
-      const std::type_info &valueType) {
-    return{deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType};
+      const std::type_info &valueType, size_t nElements) {
+    return{deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType, nElements};
   }
 
   /*********************************************************************************************************************/

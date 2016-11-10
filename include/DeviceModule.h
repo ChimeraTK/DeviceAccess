@@ -29,10 +29,10 @@ namespace ChimeraTK {
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the register with another variable. */
       VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode=UpdateMode::poll,
-          const std::type_info &valueType=typeid(AnyType));
+          const std::type_info &valueType=typeid(AnyType), size_t nElements=0);
       VariableNetworkNode operator()(const std::string& registerName, const std::type_info &valueType,
-          UpdateMode mode=UpdateMode::poll) {
-        return operator()(registerName, mode, valueType);
+          size_t nElements=0, UpdateMode mode=UpdateMode::poll) {
+        return operator()(registerName, mode, valueType, nElements);
       }
 
       /** Prepare the device for usage (i.e. open it) */

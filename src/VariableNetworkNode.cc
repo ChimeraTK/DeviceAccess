@@ -45,7 +45,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod,
-      VariableDirection dir, const std::type_info &valTyp)
+      VariableDirection dir, const std::type_info &valTyp, size_t nElements)
   : pdata(new data)
   {
     pdata->type = NodeType::Device;
@@ -54,11 +54,13 @@ namespace ChimeraTK {
     pdata->valueType = &valTyp;
     pdata->deviceAlias = devAlias;
     pdata->registerName = regName;
+    pdata->nElements = nElements;
   }
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir, const std::type_info &valTyp)
+  VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir, const std::type_info &valTyp,
+      size_t nElements)
   : pdata(new data)
   {
     pdata->type = NodeType::ControlSystem;
@@ -66,6 +68,7 @@ namespace ChimeraTK {
     pdata->direction = dir;
     pdata->valueType = &valTyp;
     pdata->publicName = pubName;
+    pdata->nElements = nElements;
   }
 
   /*********************************************************************************************************************/
@@ -95,7 +98,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::dump() const {
-    if(pdata->type == NodeType::Application) std::cout << " type = Application";
+    if(pdata->type == NodeType::Application) std::cout << " type = Application ('" << pdata->appNode->getName() << "')";
     if(pdata->type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << pdata->publicName << "')";
     if(pdata->type == NodeType::Device) std::cout << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
     if(pdata->type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
@@ -105,6 +108,7 @@ namespace ChimeraTK {
     if(pdata->mode == UpdateMode::poll) std::cout << " polling";
 
     std::cout << " data type: " << pdata->valueType->name();
+    std::cout << " length: " << pdata->nElements;
 
     std::cout << std::endl;
 }

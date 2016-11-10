@@ -42,11 +42,11 @@ namespace ChimeraTK {
 
       /** Constructor for a Device node */
       VariableNetworkNode(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
-          VariableDirection direction, const std::type_info &valTyp=typeid(AnyType));
+          VariableDirection direction, const std::type_info &valTyp=typeid(AnyType), size_t nElements=0);
 
       /** Constructor for a ControlSystem node */
       VariableNetworkNode(std::string publicName, VariableDirection direction,
-          const std::type_info &valTyp=typeid(AnyType));
+          const std::type_info &valTyp=typeid(AnyType), size_t nElements=0);
 
       /** Constructor for a TriggerReceiver node triggering the data transfer of another network. The additional dummy
        *  argument is only there to discriminate the signature from the copy constructor and will be ignored. */

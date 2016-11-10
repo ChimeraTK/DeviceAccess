@@ -147,7 +147,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
 
   app.testModule.feedingToDevice >> dev("/MyModule/Variable");
 
-  dev("/MyModule/Variable", typeid(T)) [ app.testModule.theTrigger ] >> cs("myCSVar");
+  dev("/MyModule/Variable", typeid(T), 1) [ app.testModule.theTrigger ] >> cs("myCSVar");
+  
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
@@ -194,7 +195,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
 
   app.testModule.feedingToDevice >> dev("/MyModule/Variable");
 
-  dev("/MyModule/Variable", typeid(T)) [ cs("theTrigger", typeid(T)) ] >> cs("myCSVar");
+  dev("/MyModule/Variable", typeid(T), 1) [ cs("theTrigger", typeid(T), 1) ] >> cs("myCSVar");
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);
