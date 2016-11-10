@@ -10,9 +10,11 @@
 
 #include "Application.h"
 #include "ScalarAccessor.h"
+#include "ArrayAccessor.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 #include "ControlSystemModule.h"
+#include "VariableGroup.h"
 
 #ifndef CHIMERATK_APPLICATION_CORE_H
 #define CHIMERATK_APPLICATION_CORE_H
