@@ -154,6 +154,30 @@ namespace ChimeraTK {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "No data type specified for any of the nodes in this network!");
     }
+    
+    // the feeder node must have a non-zero length
+    size_t length = getFeedingNode().getNumberOfElements();
+    if(length == 0) {
+      getFeedingNode().dump();
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+          "The feeding node has zero (or undefined) length!");
+    }
+    
+    // all consumers must have the same length as the feeder or a zero length for trigger receivers
+    for(auto &node : nodeList) {
+      if(node.getType() != NodeType::TriggerReceiver) {
+        if(node.getNumberOfElements() != length) {
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+              "The network contains a node with a different length than the feeding node!");
+        }
+      }
+      else {
+        if(node.getNumberOfElements() != 0) {
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
+              "The network contains a trigger receiver node with a non-zero length!");
+        }
+      }
+    }
 
     // all nodes must have this network as the owner and a value type equal the network's value type
     for(auto &node : nodeList) {
