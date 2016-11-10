@@ -71,6 +71,13 @@ namespace ChimeraTK {
           }
         }
         else {
+          // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
+          if( castedSlave->getNumberOfSamples() != 0 && 
+              ( castedSlave->getNumberOfChannels() != impl->getNumberOfChannels() ||
+                castedSlave->getNumberOfSamples() != impl->getNumberOfSamples()      ) ) {
+            throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+                "FanOut::addSlave(): Trying to add a slave with incompatible array shape!");
+          }
           slaves.push_back(castedSlave);
         }
       }
@@ -118,7 +125,10 @@ namespace ChimeraTK {
             }
           }
           for(auto &slave : slaves) {     // send out copies to slaves
-            slave->accessData(0) = impl->accessData(0);
+            // do not send copy if no data is expected (e.g. trigger)
+            if(slave->getNumberOfSamples() != 0) {
+              slave->accessChannel(0) = impl->accessChannel(0);
+            }
             slave->write();
           }
         }
@@ -169,7 +179,10 @@ namespace ChimeraTK {
         if(ret) {
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
           for(auto &slave : slaves) {     // send out copies to slaves
-            slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
+            // do not send copy if no data is expected (e.g. trigger)
+            if(slave->getNumberOfSamples() != 0) {
+              slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
+            }
             slave->write();
           }
         }
@@ -179,7 +192,10 @@ namespace ChimeraTK {
       void write() {
         for(auto &slave : slaves) {     // send out copies to slaves
           slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
-          slave->write();
+          // do not send copy if no data is expected (e.g. trigger)
+          if(slave->getNumberOfSamples() != 0) {
+            slave->write();
+          }
         }
         impl->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
         impl->write();
