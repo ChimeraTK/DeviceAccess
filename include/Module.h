@@ -36,6 +36,9 @@ namespace ChimeraTK {
       /** Terminate the module. Must be called before destruction, if run() was called previously. */
       virtual void terminate() {};
       
+      /** Obtain the list of accessors/variables associated with this module */
+      const std::list<AccessorBase*>& getAccessorList() { return accessorList; }
+      
   protected:
       
       template< typename UserType >
