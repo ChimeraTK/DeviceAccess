@@ -7,6 +7,7 @@
 
 #include <string>
 #include <thread>
+#include <exception>
 
 #include <boost/fusion/container/map.hpp>
 
@@ -22,57 +23,6 @@
 #include "VariableNetworkNode.h"
 
 using namespace ChimeraTK;
-
-Application *Application::instance = nullptr;
-std::mutex Application::instance_mutex;
-
-/*********************************************************************************************************************/
-
-Application::Application(const std::string& name)
-: applicationName(name)
-{
-  std::lock_guard<std::mutex> lock(instance_mutex);
-  if(instance != nullptr) {
-    throw std::string("Multiple instances of ChimeraTK::Application cannot be created."); // @todo TODO throw proper exception
-  }
-  instance = this;
-}
-
-/*********************************************************************************************************************/
-
-Application::~Application() {
-  if(!hasBeenShutdown) {
-    std::cerr << "*****************************************************************************" << std::endl;
-    std::cerr << " BUG found in application " << applicationName << "!" << std::endl;
-    std::cerr << " Its implementation of the class Application must have a destructor which" << std::endl;
-    std::cerr << " calls Application::shutdown()." << std::endl;
-    std::cerr << " Since the application was not shutdown properly, we are now about to crash." << std::endl;
-    std::cerr << " Please fix your application!" << std::endl;
-    std::cerr << "*****************************************************************************" << std::endl;
-    std::terminate();
-  }
-}
-
-/*********************************************************************************************************************/
-
-void Application::shutdown() {
-  // deactivate the FanOuts first, since they have running threads inside accessing the modules etc.
-  // (note: the modules are members of the Application implementation and thus get destroyed after this destructor)
-  for(auto &adapter : adapterList) {
-    adapter->deactivate();
-  }
-
-  // next deactivate the modules, as they have running threads inside as well
-  for(auto &module : moduleList) {
-    module->terminate();
-  }
-
-  // finally clear the global instance pointer and mark this instance as shut down
-  std::lock_guard<std::mutex> lock(instance_mutex);
-  instance = nullptr;
-  hasBeenShutdown = true;
-
-}
 
 /*********************************************************************************************************************/
 
@@ -101,6 +51,24 @@ void Application::run() {
   }
 }
 
+/*********************************************************************************************************************/
+
+void Application::shutdown() {
+
+  // deactivate the FanOuts first, since they have running threads inside accessing the modules etc.
+  // (note: the modules are members of the Application implementation and thus get destroyed after this destructor)
+  for(auto &adapter : adapterList) {
+    adapter->deactivate();
+  }
+
+  // next deactivate the modules, as they have running threads inside as well
+  for(auto &module : moduleList) {
+    module->terminate();
+  }
+
+  ApplicationBase::shutdown();
+
+}
 /*********************************************************************************************************************/
 
 void Application::generateXML() {
@@ -505,3 +473,8 @@ VariableNetwork& Application::createNetwork() {
   return networkList.back();
 }
 
+/*********************************************************************************************************************/
+
+Application& Application::getInstance() {
+  return dynamic_cast<Application&>(ApplicationBase::getInstance());
+}

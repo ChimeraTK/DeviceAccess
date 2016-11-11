@@ -21,27 +21,10 @@
 
 /** Compile-time switch: two executables will be created. One will generate an XML file containing the
  *  application's variable list. The other will be the actual control system server running the
- *  application. */
-#ifndef GENERATE_XML
-
-/** @todo TODO This works for DOOCS only. We need a common interface for all control system adapter
- *  implementations to generate server executables! */
-#include <ControlSystemAdapter-DoocsAdapter/DoocsAdapter.h>
-
-  BEGIN_DOOCS_SERVER("Control System Adapter", 10)
-     static bool isInitialised = false;
-     if(!isInitialised) {
-       // set the DOOCS server name to the application name
-       object_name = ChimeraTK::Application::getInstance().getName().c_str();
-       // Create static instances for all applications cores. They must not have overlapping
-       // process variable names ("location/protery" must be unique).
-       ChimeraTK::Application::getInstance().setPVManager(doocsAdapter.getDevicePVManager());
-       ChimeraTK::Application::getInstance().run();
-       isInitialised = true;
-     }
-  END_DOOCS_SERVER()
-
-#else
+ *  application. The main function for the actual control system server is coming from the respective
+ *  ControlSystemAdapter implementation library, so inly the XML generator's main function is definde
+ *  here. */
+#ifdef GENERATE_XML
 
   int main(int, char **) {
     ChimeraTK::Application::getInstance().generateXML();
