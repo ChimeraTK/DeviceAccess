@@ -22,7 +22,6 @@ namespace ChimeraTK {
 
   class Module;
   class AccessorBase;
-  class InvalidAccessor;
   class VariableNetwork;
 
   template<typename UserType>
@@ -46,7 +45,6 @@ namespace ChimeraTK {
        *  valid after destroying the Application and must be destroyed as well (or at least no longer used). */
       void shutdown();
 
-      /** Initialise and run the application */
       void run();
 
       /** Instead of running the application, just initialise it and output the published variables to an XML file. */

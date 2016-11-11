@@ -74,29 +74,25 @@ namespace ChimeraTK {
        *  the connections. There we should instead just obtain the number of elements from the VariableNetworkNode.
        *  Like this, this function might easily be confused with the getNElements() function! */
       virtual size_t getNumberOfElements() const = 0;
-      
+
+      /** Convert into VariableNetworkNode */
+      operator const VariableNetworkNode&() const {
+        return node;
+      }
+      operator VariableNetworkNode&() {
+        return node;
+      }
+
+      /** Connect with another node */
+      VariableNetworkNode operator>>(VariableNetworkNode other) {
+        return node.operator>>(other);
+      }
+
     protected:
 
+      VariableNetworkNode node;
+
       friend class ApplicationModule;
-  };
-
-  /*********************************************************************************************************************/
-
-  /** An invalid instance which can be used e.g. for optional arguments passed by reference */
-  class InvalidAccessor : public AccessorBase {
-    public:
-      constexpr InvalidAccessor() {}
-      ~InvalidAccessor() {}
-      bool isFeeding() {std::terminate();}
-      bool isInitialised() const {std::terminate();}
-      void useProcessVariable(const boost::shared_ptr<ProcessVariable> &) {std::terminate();}
-      const std::type_info& getValueType() const {std::terminate();}
-      VariableDirection getDirection() const {std::terminate();}
-      UpdateMode getUpdateMode() const {std::terminate();}
-      size_t getNumberOfElements() {std::terminate();}
-      const std::string& getUnit() const {std::terminate();}
-      const std::string& getDescription() const {std::terminate();}
-      const std::string& getName() const {std::terminate();}
   };
 
   /*********************************************************************************************************************/
@@ -111,9 +107,10 @@ namespace ChimeraTK {
       Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, size_t nElements,
                UpdateMode mode, const std::string &description)
       : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), _description(description),
-        _nElements{nElements}, node{*this}
+        _nElements{nElements}
       {
         owner->registerAccessor(this);
+        node = VariableNetworkNode(*this);
       }
 
       VariableDirection getDirection() const {return _direction;}
@@ -129,22 +126,6 @@ namespace ChimeraTK {
       const std::type_info& getValueType() const {
         return typeid(UserType);
       }
-
-      operator const VariableNetworkNode&() const {
-        return node;
-      }
-
-      operator VariableNetworkNode&() {
-        return node;
-      }
-
-      /** Connect with node */
-/*      VariableNetworkNode& operator<<(const VariableNetworkNode &other) {
-        return node.operator<<(other);
-      } */
-      VariableNetworkNode operator>>(VariableNetworkNode other) {
-        return node.operator>>(other);
-      }
       
       size_t getNumberOfElements() const { return _nElements; }
 
@@ -158,8 +139,6 @@ namespace ChimeraTK {
       std::string _description;
       
       size_t _nElements;
-
-      VariableNetworkNode node;
 
 
   };
