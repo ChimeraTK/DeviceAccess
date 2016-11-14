@@ -12,12 +12,6 @@ namespace ChimeraTK {
 
   void ApplicationModule::run() {
 
-    // read all input variables once, to set the startup value e.g. coming from the config file
-    // (without triggering an action inside the application)
-    for(auto &variable : getAccessorList()) {
-      if(variable->getDirection() == VariableDirection::consuming) variable->readNonBlocking();
-    }
-
     // start the module thread
     assert(!moduleThread.joinable());
     moduleThread = boost::thread(&ApplicationModule::mainLoopWrapper, this);

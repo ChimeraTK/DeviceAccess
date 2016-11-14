@@ -125,6 +125,16 @@ void Application::run() {
     adapter->activate();
   }
 
+  // read all input variables once, to set the startup value e.g. coming from the config file
+  // (without triggering an action inside the application)
+  for(auto &module : moduleList) {
+    for(auto &variable : module->getAccessorList()) {
+      if(variable->getDirection() == VariableDirection::consuming) {
+        variable->readNonBlocking();
+      }
+    }
+  }
+
   // start the threads for the modules
   for(auto &module : moduleList) {
     module->run();
