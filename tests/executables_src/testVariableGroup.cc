@@ -76,6 +76,7 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   app.testModule.feedingPoll2 >> app.testModule.mixedGroup.consumingPoll2;
   app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
   
+  app.initialise();
   app.run();
   
   // single theaded test
