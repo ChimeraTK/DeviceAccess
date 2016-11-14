@@ -50,14 +50,14 @@ struct TestModule : public ctk::ApplicationModule {
 /* dummy application */
 
 class TestApplication : public ctk::Application {
-public:
-  TestApplication() : Application("test suite") {}
-  ~TestApplication() { shutdown(); }
-  
-  using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-  void initialise() {}                    // the setup is done in the tests
-  
-  TestModule testModule;
+  public:
+    TestApplication() : Application("test suite") {}
+    ~TestApplication() { shutdown(); }
+    
+    using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
+    void defineConnections() {}             // the setup is done in the tests
+    
+    TestModule testModule;
 };
 
 /*********************************************************************************************************************/

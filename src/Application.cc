@@ -21,15 +21,98 @@
 #include "DeviceAccessor.h"
 #include "FanOut.h"
 #include "VariableNetworkNode.h"
+#include "ScalarAccessor.h"
+#include "ArrayAccessor.h"
+#include "ConstantAccessor.h"
 
 using namespace ChimeraTK;
 
 /*********************************************************************************************************************/
 
-void Application::run() {
+void Application::initialise() {
 
-  // call the user-defined initialise() function which describes the structure of the application
-  initialise();
+  // call the user-defined defineConnections() function which describes the structure of the application
+  defineConnections();
+  
+  // connect any unconnected accessors with constant values
+  processUnconnectedNodes();
+
+  // realise the connections between variable accessors as described in the initialise() function
+  makeConnections();
+}
+
+/*********************************************************************************************************************/
+
+void Application::processUnconnectedNodes() {
+  for(auto &module : moduleList) {
+    for(auto &accessor : module->getAccessorList()) {
+      if(!accessor->getNode().hasOwner()) {
+        std::cerr << "*** Warning: Variable '" << accessor->getName() << "' is not connected. "
+                     "Reading will always result in 0, writing will be ignored." << std::endl;
+        networkList.emplace_back();
+        networkList.back().addNode(*accessor);
+        
+        bool makeFeeder = !(networkList.back().hasFeedingNode());
+        size_t length = accessor->getNumberOfElements();
+        
+        if(accessor->getNode().getValueType() == typeid(int8_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<int8_t>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(uint8_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<uint8_t>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(int16_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<int16_t>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(uint16_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<uint16_t>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(int32_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<int32_t>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(uint32_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<uint32_t>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(float)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<float>(makeFeeder, 0, length));
+        }
+        else if(accessor->getNode().getValueType() == typeid(double)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<double>(makeFeeder, 0, length));
+        }
+        else {
+          throw std::invalid_argument("Unknown value type.");
+        }
+
+        networkList.back().addNode(constantList.back());
+      }
+    }
+  }
+}
+
+/*********************************************************************************************************************/
+
+void Application::checkConnections() {
+
+  // check all networks for validity
+  for(auto &network : networkList) {
+    network.check();
+  }
+  
+  // check if all accessors are connected
+  for(auto &module : moduleList) {
+    for(auto &accessor : module->getAccessorList()) {
+      if(!accessor->getNode().hasOwner()) {
+        throw std::invalid_argument("The accessor '"+accessor->getName()+"' of the module '"+module->getName()+
+                                    "' was not connected!");
+      }
+    }
+  }
+  
+}
+
+/*********************************************************************************************************************/
+
+void Application::run() {
 
   // check if the application name has been set
   if(applicationName == "") {
@@ -37,16 +120,13 @@ void Application::run() {
         "Error: An instance of Application must have its applicationName set.");
   }
 
-  // realise the connections between variable accessors as described in the initialise() function
-  makeConnections();
-
   // start the necessary threads for the FanOuts etc.
   for(auto &adapter : adapterList) {
     adapter->activate();
   }
 
   // start the threads for the modules
-  for(auto module : moduleList) {
+  for(auto &module : moduleList) {
     module->run();
   }
 }
@@ -72,7 +152,12 @@ void Application::shutdown() {
 /*********************************************************************************************************************/
 
 void Application::generateXML() {
-  initialise();
+  
+  // define the connections
+  defineConnections();
+  
+  // also search for unconnected nodes - this is here only executed to print the warnings
+  processUnconnectedNodes();
 
   // check if the application name has been set
   if(applicationName == "") {
@@ -208,10 +293,15 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
+  
+  // run checks first
+  checkConnections();
+
   // make the connections for all networks
   for(auto &network : networkList) {
     makeConnectionsForNetwork(network);
   }
+
 }
 
 /*********************************************************************************************************************/
@@ -227,11 +317,9 @@ void Application::dumpConnections() {
 /*********************************************************************************************************************/
 
 void Application::makeConnectionsForNetwork(VariableNetwork &network) {
+
   // if the network has been created already, do nothing
   if(network.isCreated()) return;
-
-  // check if the network is legal
-  network.check();
 
   // if the trigger type is external, create the trigger first
   if(network.getFeedingNode().hasExternalTrigger()) {
@@ -299,6 +387,13 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else if(feeder.getType() == NodeType::ControlSystem) {
       feedingImpl = createProcessVariable<UserType>(VariableDirection::consuming, feeder.getPublicName(), feeder.getNumberOfElements());
+    }
+    else if(feeder.getType() == NodeType::Constant) {
+      feedingImpl = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(feeder.getConstAccessor());
+      assert(feedingImpl != nullptr);
+    }
+    else {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
     }
 
     // if we just have two nodes, directly connect them
@@ -419,6 +514,11 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
         feeder.getAppAccessor().useProcessVariable(impls.first);
         consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
+        connectionMade = true;
+      }
+      else if(consumer.getType() == NodeType::Constant) {
+        auto impl = consumer.getConstAccessor();
+        feeder.getAppAccessor().useProcessVariable(impl);
         connectionMade = true;
       }
       else {

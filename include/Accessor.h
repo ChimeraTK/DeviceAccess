@@ -82,6 +82,11 @@ namespace ChimeraTK {
       operator VariableNetworkNode&() {
         return node;
       }
+      
+      /** Explicitly return the node */
+      VariableNetworkNode& getNode() {
+        return node;
+      }
 
       /** Connect with another node */
       VariableNetworkNode operator>>(VariableNetworkNode other) {

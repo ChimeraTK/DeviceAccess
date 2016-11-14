@@ -44,8 +44,16 @@ namespace ChimeraTK {
        *  in the same executable. Note that any ApplicationModules etc. owned by this Application are no longer
        *  valid after destroying the Application and must be destroyed as well (or at least no longer used). */
       void shutdown();
+      
+      /** Define the connections between process variables. Must be implemented by the application developer. */
+      virtual void defineConnections() = 0;
+      
+      void initialise();
 
       void run();
+      
+      /** Check if all connections are valid. */
+      void checkConnections();
 
       /** Instead of running the application, just initialise it and output the published variables to an XML file. */
       void generateXML();
@@ -66,9 +74,9 @@ namespace ChimeraTK {
 
       template<typename UserType>
       friend class Accessor;
-
-      /** To be implemented by the user: Instantiate all application modules and connect the variables to each other */
-      virtual void initialise() = 0;
+      
+      /** Register the connections to constants for previously unconnected nodes. */
+      void processUnconnectedNodes();
 
       /** Make the connections between accessors as requested in the initialise() function. */
       void makeConnections();
@@ -114,6 +122,9 @@ namespace ChimeraTK {
 
       /** List of variable networks */
       std::list<VariableNetwork> networkList;
+
+      /** List of constant variable nodes */
+      std::list<VariableNetworkNode> constantList;
 
       /** Create a new, empty network */
       VariableNetwork& createNetwork();

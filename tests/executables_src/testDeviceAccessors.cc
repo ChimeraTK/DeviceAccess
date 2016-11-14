@@ -54,7 +54,7 @@ class TestApplication : public ctk::Application {
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     using Application::deviceMap;           // expose the device map for the tests
-    void initialise() {}                    // the setup is done in the tests
+    void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule;
     ctk::DeviceModule devMymodule{"Dummy0","MyModule"};
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.devMymodule("Variable");
-  app.makeConnections();
+  app.initialise();
 
   boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
   auto regacc = backend->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
   TestApplication<T> app;
 
   app.dev("/MyModule/Variable") >> app.testModule.consumingPoll;
-  app.makeConnections();
+  app.initialise();
 
   boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
   auto regacc = backend->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});

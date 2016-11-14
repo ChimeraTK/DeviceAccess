@@ -74,7 +74,7 @@ class TestApplication : public ctk::Application {
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-    void initialise() {}                    // the setup is done in the tests
+    void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule;
 };
@@ -95,6 +95,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToApp, T, test_types ) {
   app.testModule.feedingToDevice >> dev("/MyModule/Variable");
 
   dev("/MyModule/Variable") [ app.testModule.theTrigger ] >> app.testModule.consumingPush;
+  app.initialise();
   app.run();
 
   // single theaded test
@@ -149,6 +150,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
 
   dev("/MyModule/Variable", typeid(T), 1) [ app.testModule.theTrigger ] >> cs("myCSVar");
   
+  app.initialise();
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
@@ -196,6 +198,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   app.testModule.feedingToDevice >> dev("/MyModule/Variable");
 
   dev("/MyModule/Variable", typeid(T), 1) [ cs("theTrigger", typeid(T), 1) ] >> cs("myCSVar");
+  
+  app.initialise();
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);

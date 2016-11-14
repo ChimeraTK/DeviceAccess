@@ -99,7 +99,7 @@ class MyApp : public ctk::Application {
     ctk::DeviceModule dev{"Dummy0", "MyModule"};
     ctk::ControlSystemModule cs{"MyLocation"};
 
-    void initialise() {
+    void defineConnections() {
       mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
       cs("setpoint") >> automation.operatorSetpoint;

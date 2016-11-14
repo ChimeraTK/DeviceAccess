@@ -53,7 +53,7 @@ class TestApplication : public ctk::Application {
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-    void initialise() {}                    // the setup is done in the tests
+    void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule;
     ctk::ControlSystemModule cs;
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
   app.setPVManager(pvManagers.second);
 
   app.testModule.feeder >> app.cs("myFeeder");
-  app.makeConnections();
+  app.initialise();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
   app.setPVManager(pvManagers.second);
 
   app.cs("myConsumer") >> app.testModule.consumer;
-  app.makeConnections();
+  app.initialise();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
@@ -133,6 +133,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
   app.testModule.feeder >> app.cs("myFeeder1");
   app.testModule.feeder >> app.cs("myFeeder2");
   app.testModule.feeder >> app.cs("myFeeder3");
+  app.initialise();
   app.run();    // make the connections and start the FanOut threads
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 4);
@@ -217,6 +218,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   app.testModule.consumer >> app.cs("myConsumer_copy1");
   app.testModule.consumer >> app.cs("myConsumer_copy2");
   app.testModule.consumer >> app.cs("myConsumer_copy3");
+  app.initialise();
   app.run();    // make the connections and start the FanOut threads
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 4);

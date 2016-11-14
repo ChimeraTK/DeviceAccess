@@ -57,7 +57,7 @@ class TestApplication : public ctk::Application {
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-    void initialise() {}                    // the setup is done in the tests
+    void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule;
     ctk::DeviceModule dev{"Dummy0"};

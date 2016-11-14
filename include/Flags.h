@@ -23,7 +23,7 @@ namespace ChimeraTK {
 
   /** Enum to define types of VariableNetworkNode */
   enum class NodeType {
-      Device, ControlSystem, Application, TriggerReceiver, TriggerProvider, invalid
+      Device, ControlSystem, Application, TriggerReceiver, TriggerProvider, Constant, invalid
   };
 
 } /* namespace ChimeraTK */

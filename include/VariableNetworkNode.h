@@ -13,6 +13,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Flags.h"
+#include "ConstantAccessor.h"
 
 namespace xmlpp {
   class Element;
@@ -54,6 +55,10 @@ namespace ChimeraTK {
 
       /** Default constructor for an invalid node */
       VariableNetworkNode() : pdata(new data) {}
+      
+      /** Factory function for a constant (a constructor cannot be templated) */
+      template<typename UserType>
+      static VariableNetworkNode makeConstant(bool makeFeeder, UserType value=0, size_t length=1);
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
@@ -105,6 +110,7 @@ namespace ChimeraTK {
       const std::string& getDescription() const { return pdata->description; }
       VariableNetwork& getOwner() const { assert(pdata->network != nullptr); return *(pdata->network); }
       AccessorBase& getAppAccessor() const { assert(pdata->appNode != nullptr); return *(pdata->appNode); }
+      boost::shared_ptr<mtca4u::TransferElement> getConstAccessor() const { return pdata->constNode; }
       VariableNetworkNode& getTriggerReceiver() const { assert(pdata->triggerReceiver != nullptr); return *(pdata->triggerReceiver); }
       const std::string& getPublicName() const { assert(pdata->type == NodeType::ControlSystem); return pdata->publicName; }
       const std::string& getDeviceAlias() const { assert(pdata->type == NodeType::Device); return pdata->deviceAlias; }
@@ -145,6 +151,9 @@ namespace ChimeraTK {
         /** Pointer to Accessor if type == Application */
         AccessorBase *appNode{nullptr};
 
+        /** Pointer to implementation if type == Constant */
+        boost::shared_ptr<mtca4u::TransferElement> constNode;
+
         /** Pointer to network which should be triggered by this node */
         VariableNetworkNode *triggerReceiver{nullptr};
 
@@ -166,6 +175,24 @@ namespace ChimeraTK {
 
       boost::shared_ptr<data> pdata;
   };
+      
+  template<typename UserType>
+  VariableNetworkNode VariableNetworkNode::makeConstant(bool makeFeeder, UserType value, size_t length) {
+    VariableNetworkNode node;
+    node.pdata->constNode.reset(new ConstantAccessor<UserType>(value, length));
+    node.pdata->type = NodeType::Constant;
+    node.pdata->valueType = &typeid(UserType);
+    node.pdata->nElements = length;
+    if(makeFeeder) {
+      node.pdata->direction = VariableDirection::feeding;
+      node.pdata->mode = UpdateMode::push;
+    }
+    else {
+      node.pdata->direction = VariableDirection::consuming;
+      node.pdata->mode = UpdateMode::poll;
+    }
+    return node;
+  }
 
 } /* namespace ChimeraTK */
 

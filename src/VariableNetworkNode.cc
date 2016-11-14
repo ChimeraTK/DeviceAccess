@@ -93,7 +93,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::hasImplementation() const {
-    return pdata->type == NodeType::Device || pdata->type == NodeType::ControlSystem;
+    return pdata->type == NodeType::Device || pdata->type == NodeType::ControlSystem || pdata->type == NodeType::Constant;
   }
 
   /*********************************************************************************************************************/
@@ -103,6 +103,7 @@ namespace ChimeraTK {
     if(pdata->type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << pdata->publicName << "')";
     if(pdata->type == NodeType::Device) std::cout << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
     if(pdata->type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
+    if(pdata->type == NodeType::Constant) std::cout << " type = Constant";
     if(pdata->type == NodeType::invalid) std::cout << " type = **invalid**";
 
     if(pdata->mode == UpdateMode::push) std::cout << " pushing";

@@ -39,7 +39,13 @@ namespace ChimeraTK {
       /** Obtain the list of accessors/variables associated with this module */
       const std::list<AccessorBase*>& getAccessorList() { return accessorList; }
       
+      /** Get the name of the module instance */
+      const std::string& getName() const { return name; }
+      
   protected:
+    
+      /** The name of the module instance */
+      std::string name;
       
       template< typename UserType >
       friend class Accessor;

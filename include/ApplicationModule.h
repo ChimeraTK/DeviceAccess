@@ -32,6 +32,9 @@ namespace ChimeraTK {
 
     protected:
 
+      /** Wrapper around mainLoop(), to execute additional tasks in the thread before entering the main loop */
+      void mainLoopWrapper();
+
       /** The thread executing mainLoop() */
       boost::thread moduleThread;
 

@@ -12,7 +12,16 @@ namespace ChimeraTK {
 
   void ApplicationModule::run() {
     assert(!moduleThread.joinable());
-    moduleThread = boost::thread(&ApplicationModule::mainLoop, this);
+
+    // read all control system to application variables once, to set the startup value e.g. coming from the config file
+    // (without triggering an action inside the application)
+    for(auto &variable : getAccessorList()) {
+      if( variable->getNode().getOwner().getFeedingNode().getType() == NodeType::ControlSystem ) {
+        variable->readNonBlocking();
+      }
+    }
+
+    moduleThread = boost::thread(&ApplicationModule::mainLoopWrapper, this);
   }
 
   void ApplicationModule::terminate() {
@@ -25,6 +34,11 @@ namespace ChimeraTK {
 
   ApplicationModule::~ApplicationModule() {
     assert(!moduleThread.joinable());
+  }
+  
+  void ApplicationModule::mainLoopWrapper() {
+    // enter the main loop
+    mainLoop();
   }
 
 } /* namespace ChimeraTK */

@@ -61,7 +61,7 @@ class TestApplication : public ctk::Application {
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-    void initialise() {}                    // the setup is done in the tests
+    void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule;
 };
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushAccessors, T, test_types ) {
   TestApplication<T> app;
 
   app.testModule.feedingPush >> app.testModule.consumingPush;
-  app.makeConnections();
+  app.initialise();
 
   // single theaded test
   app.testModule.consumingPush = 0;
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
   app.testModule.feedingPush >> app.testModule.consumingPush;
   app.testModule.feedingPush >> app.testModule.consumingPush2;
   app.testModule.feedingPush >> app.testModule.consumingPush3;
-  app.makeConnections();
+  app.initialise();
 
   // single theaded test
   app.testModule.consumingPush = 0;
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPushPollAccessors, T, test_types ) {
   TestApplication<T> app;
 
   app.testModule.feedingPush >> app.testModule.consumingPoll;
-  app.makeConnections();
+  app.initialise();
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoArrayAccessors, T, test_types ) {
   TestApplication<T> app;
   
   app.testModule.feedingArray >> app.testModule.consumingPushArray;
-  app.makeConnections();
+  app.initialise();
   
   BOOST_CHECK(app.testModule.feedingArray.getNumberOfElements() == 10);
   BOOST_CHECK(app.testModule.consumingPushArray.getNumberOfElements() == 10);
