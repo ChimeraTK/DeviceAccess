@@ -48,8 +48,9 @@ typedef boost::mpl::list<int8_t,uint8_t,
 /* the ApplicationModule for the test is a template of the user type */
 
 template<typename T>
-class TestModule : public ctk::ApplicationModule {
-  public:
+struct TestModule : public ctk::ApplicationModule {
+    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+
     CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
     CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
     CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
@@ -68,15 +69,14 @@ class TestModule : public ctk::ApplicationModule {
 /* dummy application */
 
 template<typename T>
-class TestApplication : public ctk::Application {
-  public:
+struct TestApplication : public ctk::Application {
     TestApplication() : Application("test suite") {}
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
 
-    TestModule<T> testModule;
+    TestModule<T> testModule{this,"testModule"};
 };
 
 /*********************************************************************************************************************/

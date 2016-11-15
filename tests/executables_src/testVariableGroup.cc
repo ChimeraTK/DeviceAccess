@@ -25,8 +25,10 @@ namespace ctk = ChimeraTK;
 /* the ApplicationModule for the test is a template of the user type */
 
 struct TestModule : public ctk::ApplicationModule {
+    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
   
   struct MixedGroup : public ctk::VariableGroup {
+    MixedGroup(ctk::EntityOwner *owner, const std::string &name) : ctk::VariableGroup(owner,name) {}
     CTK_SCALAR_INPUT(int, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
     CTK_SCALAR_INPUT(int, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
     CTK_SCALAR_INPUT(int, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
@@ -34,7 +36,7 @@ struct TestModule : public ctk::ApplicationModule {
     CTK_SCALAR_INPUT(int, consumingPoll2, "MV/m", ctk::UpdateMode::poll, "Descrption");
     CTK_SCALAR_INPUT(int, consumingPoll3, "MV/m", ctk::UpdateMode::poll, "Descrption");
   };
-  MixedGroup mixedGroup;
+  MixedGroup mixedGroup{this, "mixedGroup"};
 
   CTK_SCALAR_OUTPUT(int, feedingPush, "MV/m", "Descrption");
   CTK_SCALAR_OUTPUT(int, feedingPush2, "MV/m", "Descrption");
@@ -49,15 +51,14 @@ struct TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
-class TestApplication : public ctk::Application {
-  public:
+struct TestApplication : public ctk::Application {
     TestApplication() : Application("test suite") {}
     ~TestApplication() { shutdown(); }
     
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
     
-    TestModule testModule;
+    TestModule testModule{this, "testModule"};
 };
 
 /*********************************************************************************************************************/

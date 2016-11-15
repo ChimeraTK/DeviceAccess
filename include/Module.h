@@ -8,21 +8,18 @@
 #ifndef CHIMERATK_MODULE_H
 #define CHIMERATK_MODULE_H
 
+#include "EntityOwner.h"
+
 namespace ChimeraTK {
-  
-  template< typename UserType >
-  class Accessor;
-  
-  class AccessorBase;
-  
+
   /** Base class for ApplicationModule, DeviceModule and ControlSystemModule, to have a common interface for these
    *  module types. */
-  class Module {
+  class Module : public EntityOwner {
 
     public:
 
-      /** Constructor: register the module with the Application */
-      Module();
+      /** Constructor: register the module with its owner */
+      Module(EntityOwner *owner, const std::string &name);
 
       /** Destructor */
       virtual ~Module() {}
@@ -35,30 +32,6 @@ namespace ChimeraTK {
 
       /** Terminate the module. Must be called before destruction, if run() was called previously. */
       virtual void terminate() {};
-      
-      /** Obtain the list of accessors/variables associated with this module */
-      const std::list<AccessorBase*>& getAccessorList() { return accessorList; }
-      
-      /** Get the name of the module instance */
-      const std::string& getName() const { return name; }
-      
-  protected:
-    
-      /** The name of the module instance */
-      std::string name;
-      
-      template< typename UserType >
-      friend class Accessor;
-      
-      friend class AccessorBase;
-      
-      /** Called inside the constructor of Accessor: adds the accessor to the list */
-      void registerAccessor(AccessorBase* accessor) {
-        accessorList.push_back(accessor);
-      }
-      
-      /** List of accessors owned by this module */
-      std::list<AccessorBase*> accessorList;
       
   };
 

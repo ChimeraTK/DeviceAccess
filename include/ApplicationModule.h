@@ -19,6 +19,8 @@ namespace ChimeraTK {
   class ApplicationModule : public Module {
 
     public:
+      
+      using Module::Module;
 
       /** Destructor */
       virtual ~ApplicationModule();

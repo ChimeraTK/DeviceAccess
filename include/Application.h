@@ -17,6 +17,7 @@
 #include "VariableNetwork.h"
 #include "Flags.h"
 #include "ImplementationAdapter.h"
+#include "EntityOwner.h"
 
 namespace ChimeraTK {
 
@@ -30,12 +31,12 @@ namespace ChimeraTK {
   template<typename UserType>
   class DeviceAccessor;
 
-  class Application : public ApplicationBase {
+  class Application : public ApplicationBase, public EntityOwner {
 
     public:
 
       Application(const std::string& name)
-      : ApplicationBase(name) {}
+      : ApplicationBase(name), EntityOwner(nullptr, name) {}
 
       ~Application() {}
 
@@ -110,12 +111,12 @@ namespace ChimeraTK {
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
-      void registerModule(Module &module) {
+      void overallRegisterModule(Module &module) {
         moduleList.push_back(&module);
       }
 
       /** List of application modules */
-      std::list<Module*> moduleList;
+      std::list<Module*> overallModuleList;   /// @todo TODO FIXME maybe recursing through all modules is better than having an additional overall list?
 
       /** List of ImplementationAdapters */
       std::list<boost::shared_ptr<ImplementationAdapterBase>> adapterList;

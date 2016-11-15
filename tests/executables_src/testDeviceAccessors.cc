@@ -33,8 +33,8 @@ typedef boost::mpl::list<int8_t,uint8_t,
 /* the ApplicationModule for the test is a template of the user type */
 
 template<typename T>
-class TestModule : public ctk::ApplicationModule {
-  public:
+struct TestModule : public ctk::ApplicationModule {
+    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
     CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
 
@@ -47,8 +47,7 @@ class TestModule : public ctk::ApplicationModule {
 /* dummy application */
 
 template<typename T>
-class TestApplication : public ctk::Application {
-  public:
+struct TestApplication : public ctk::Application {
     TestApplication() : Application("test suite") {}
     ~TestApplication() { shutdown(); }
 
@@ -56,7 +55,7 @@ class TestApplication : public ctk::Application {
     using Application::deviceMap;           // expose the device map for the tests
     void defineConnections() {}             // the setup is done in the tests
 
-    TestModule<T> testModule;
+    TestModule<T> testModule{this,"testModule"};
     ctk::DeviceModule devMymodule{"Dummy0","MyModule"};
     ctk::DeviceModule dev{"Dummy0"};
 };

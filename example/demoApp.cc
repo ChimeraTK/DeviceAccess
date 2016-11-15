@@ -13,8 +13,8 @@
 
 namespace ctk = ChimeraTK;
 
-class AutomationModule : public ctk::ApplicationModule {
-  public:
+struct AutomationModule : public ctk::ApplicationModule {
+    AutomationModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
     CTK_SCALAR_INPUT(double, operatorSetpoint, "Celsius", ctk::UpdateMode::poll, "Setpoint given by the operator");
     CTK_SCALAR_OUTPUT(double, loopSetpoint, "Celsius", "Setpoint computed by the automation module");
@@ -37,8 +37,8 @@ class AutomationModule : public ctk::ApplicationModule {
 };
 
 
-class ControlLoopModule : public ctk::ApplicationModule {
-  public:
+struct ControlLoopModule : public ctk::ApplicationModule {
+    ControlLoopModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
     CTK_SCALAR_INPUT(double, setpoint, "Celsius", ctk::UpdateMode::push, "Setpoint for my control loop");
     CTK_SCALAR_INPUT(double, readback, "Celsius", ctk::UpdateMode::push, "Control loop input value");
@@ -64,8 +64,8 @@ class ControlLoopModule : public ctk::ApplicationModule {
 };
 
 
-class SimulatorModule : public ctk::ApplicationModule {
-  public:
+struct SimulatorModule : public ctk::ApplicationModule {
+    SimulatorModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
     CTK_SCALAR_INPUT(double, actuator, "A", ctk::UpdateMode::push, "Actuator input for the simulation");
     CTK_SCALAR_OUTPUT(double, readback, "Celsius", "Readback output value of the simulation");
@@ -88,14 +88,13 @@ class SimulatorModule : public ctk::ApplicationModule {
 };
 
 
-class MyApp : public ctk::Application {
-  public:
+struct MyApp : public ctk::Application {
     MyApp() : Application("demoApp") {}
     ~MyApp() { shutdown(); }
 
-    AutomationModule automation;
-    ControlLoopModule controlLoop;
-    SimulatorModule simulator;
+    AutomationModule automation{this, "automation"};
+    ControlLoopModule controlLoop{this, "controlLoop"};
+    SimulatorModule simulator{this, "simulator"};
     ctk::DeviceModule dev{"Dummy0", "MyModule"};
     ctk::ControlSystemModule cs{"MyLocation"};
 
