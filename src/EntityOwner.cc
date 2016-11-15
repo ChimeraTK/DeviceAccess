@@ -23,6 +23,8 @@ namespace ChimeraTK {
     }
   }
 
+/*********************************************************************************************************************/
+
   void EntityOwner::registerModule(Module *module) {
     moduleList.push_back(module);
   }

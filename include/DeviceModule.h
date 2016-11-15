@@ -28,11 +28,19 @@ namespace ChimeraTK {
 
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the register with another variable. */
-      VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode=UpdateMode::poll,
+      VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
           const std::type_info &valueType=typeid(AnyType), size_t nElements=0);
       VariableNetworkNode operator()(const std::string& registerName, const std::type_info &valueType,
           size_t nElements=0, UpdateMode mode=UpdateMode::poll) {
         return operator()(registerName, mode, valueType, nElements);
+      }
+      VariableNetworkNode operator()(const std::string& variableName) {
+        return operator()(variableName, UpdateMode::poll);
+      }
+
+      Module& operator[](const std::string& moduleName) {
+        subModules.emplace_back(deviceAliasOrURI, registerNamePrefix/moduleName);
+        return subModules.back();
       }
 
       /** Prepare the device for usage (i.e. open it) */
@@ -45,6 +53,8 @@ namespace ChimeraTK {
 
       std::string deviceAliasOrURI;
       mtca4u::RegisterPath registerNamePrefix;
+      
+      std::list<DeviceModule> subModules;
 
   };
 

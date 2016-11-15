@@ -31,7 +31,11 @@ namespace ChimeraTK {
       void run();
 
       void terminate();
+      
+      VariableNetworkNode operator()(const std::string& variableName);
 
+      Module& operator[](const std::string& moduleName);
+    
     protected:
 
       /** Wrapper around mainLoop(), to execute additional tasks in the thread before entering the main loop */

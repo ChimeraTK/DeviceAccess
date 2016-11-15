@@ -32,7 +32,11 @@ namespace ChimeraTK {
        *  all variables. */
       void readAny();
 
-    protected:
+      VariableNetworkNode operator()(const std::string& variableName);
+
+      Module& operator[](const std::string& moduleName);
+
+  protected:
 
       /** The thread executing mainLoop() */
       boost::thread moduleThread;

@@ -8,6 +8,7 @@
 #ifndef CHIMERATK_MODULE_H
 #define CHIMERATK_MODULE_H
 
+#include "VariableNetworkNode.h"
 #include "EntityOwner.h"
 
 namespace ChimeraTK {
@@ -32,6 +33,19 @@ namespace ChimeraTK {
 
       /** Terminate the module. Must be called before destruction, if run() was called previously. */
       virtual void terminate() {};
+
+      /** Function call operator: Return VariableNetworkNode of the given variable name */
+      virtual VariableNetworkNode operator()(const std::string& variableName) = 0;
+
+      /** Subscript operator: Return sub-module of the given name */
+      virtual Module& operator[](const std::string& moduleName) = 0;
+      
+      /** ">=" operator: Connect the entire module into another module. All variables inside this module and all
+        * submodules are connected to the right-hand-side module. All variables and submodules must have an equally
+        * named and typed counterpart in the right-hand-side module (or the right-hand-side module allows creation of
+        * such entities, as in case of a ControlSystemModule). The right-hand-side module may contain additional
+        * variables or submodules, which are ignored. */
+      Module& operator>=(Module &rhs);
       
   };
 
