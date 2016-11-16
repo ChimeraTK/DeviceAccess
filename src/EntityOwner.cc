@@ -29,4 +29,18 @@ namespace ChimeraTK {
     moduleList.push_back(module);
   }
 
+/*********************************************************************************************************************/
+
+  const std::list<AccessorBase*> EntityOwner::getAccessorListRecursive() const {
+    // add accessors of this instance itself
+    std::list<AccessorBase*> list = getAccessorList();
+    
+    // iterate through submodules
+    for(auto submodule : getSubmoduleList()) {
+      auto sublist = submodule->getAccessorListRecursive();
+      list.insert(list.end(), sublist.begin(), sublist.end());
+    }
+    return list;
+  }
+  
 } /* namespace ChimeraTK */

@@ -30,11 +30,14 @@ namespace ChimeraTK {
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }
       
-      /** Obtain the list of accessors/variables associated with this instance */
-      const std::list<AccessorBase*>& getAccessorList() { return accessorList; }
+      /** Obtain the list of accessors/variables directly associated with this instance */
+      const std::list<AccessorBase*>& getAccessorList() const { return accessorList; }
       
       /** Obtain the list of submodules associated with this instance */
-      const std::list<Module*>& getSubmoduleList() { return moduleList; }
+      const std::list<Module*>& getSubmoduleList() const { return moduleList; }
+      
+      /** Obtain the list of accessors/variables associated with this instance and any submodules */
+      const std::list<AccessorBase*> getAccessorListRecursive() const;
       
       /** Called inside the constructor of Accessor: adds the accessor to the list */
       void registerAccessor(AccessorBase* accessor) {
