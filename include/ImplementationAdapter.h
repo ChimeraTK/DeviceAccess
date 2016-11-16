@@ -10,7 +10,7 @@
 
 #include <thread>
 
-#include <ChimeraTK/ControlSystemAdapter/ProcessScalar.h>
+#include <ChimeraTK/ControlSystemAdapter/ProcessArray.h>
 
 namespace ChimeraTK {
 
@@ -40,8 +40,8 @@ namespace ChimeraTK {
       ImplementationAdapter(boost::shared_ptr<ChimeraTK::ProcessVariable> sender,
           boost::shared_ptr<ChimeraTK::ProcessVariable> receiver)
       {
-        _sender = boost::dynamic_pointer_cast<ChimeraTK::ProcessScalar<UserType>>(sender);
-        _receiver = boost::dynamic_pointer_cast<ChimeraTK::ProcessScalar<UserType>>(receiver);
+        _sender = boost::dynamic_pointer_cast<ChimeraTK::ProcessArray<UserType>>(sender);
+        _receiver = boost::dynamic_pointer_cast<ChimeraTK::ProcessArray<UserType>>(receiver);
         assert(_sender && _receiver);
         _thread = std::thread([this] { this->run(); });
       }
@@ -58,8 +58,8 @@ namespace ChimeraTK {
       }
 
       /** Sender and receiver process variables */
-      boost::shared_ptr<ChimeraTK::ProcessScalar<UserType>> _sender;
-      boost::shared_ptr<ChimeraTK::ProcessScalar<UserType>> _receiver;
+      boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> _sender;
+      boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> _receiver;
 
       /** Thread handling the synchronisation */
       std::thread _thread;
