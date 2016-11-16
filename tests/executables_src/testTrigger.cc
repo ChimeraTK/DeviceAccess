@@ -77,6 +77,8 @@ struct TestApplication : public ctk::Application {
     void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule{this,"testModule"};
+    ctk::DeviceModule dev{"Dummy0"};
+    ctk::ControlSystemModule cs;
 };
 
 /*********************************************************************************************************************/
@@ -90,11 +92,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToApp, T, test_types ) {
 
   TestApplication<T> app;
 
-  ctk::DeviceModule dev{"Dummy0"};
+  app.testModule.feedingToDevice >> app.dev("/MyModule/Variable");
 
-  app.testModule.feedingToDevice >> dev("/MyModule/Variable");
-
-  dev("/MyModule/Variable") [ app.testModule.theTrigger ] >> app.testModule.consumingPush;
+  app.dev("/MyModule/Variable") [ app.testModule.theTrigger ] >> app.testModule.consumingPush;
   app.initialise();
   app.run();
 
@@ -143,12 +143,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  ctk::DeviceModule dev{"Dummy0"};
-  ctk::ControlSystemModule cs;
+  app.testModule.feedingToDevice >> app.dev("/MyModule/Variable");
 
-  app.testModule.feedingToDevice >> dev("/MyModule/Variable");
-
-  dev("/MyModule/Variable", typeid(T), 1) [ app.testModule.theTrigger ] >> cs("myCSVar");
+  app.dev("/MyModule/Variable", typeid(T), 1) [ app.testModule.theTrigger ] >> app.cs("myCSVar");
   
   app.initialise();
   app.run();
@@ -192,12 +189,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  ctk::DeviceModule dev{"Dummy0"};
-  ctk::ControlSystemModule cs;
+  app.testModule.feedingToDevice >> app.dev("/MyModule/Variable");
 
-  app.testModule.feedingToDevice >> dev("/MyModule/Variable");
-
-  dev("/MyModule/Variable", typeid(T), 1) [ cs("theTrigger", typeid(T), 1) ] >> cs("myCSVar");
+  app.dev("/MyModule/Variable", typeid(T), 1) [ app.cs("theTrigger", typeid(T), 1) ] >> app.cs("myCSVar");
   
   app.initialise();
   app.run();
