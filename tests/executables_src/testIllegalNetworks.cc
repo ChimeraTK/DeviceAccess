@@ -69,14 +69,11 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
-
   TestApplication<T> app;
 
-  ctk::DeviceModule dev{"Dummy0"};
-
-  dev("/MyModule/Variable") >> app.testModule.consumingPush;
+  app.dev("/MyModule/Variable") >> app.testModule.consumingPush;
   try {
-    app.makeConnections();
+    app.initialise();
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
@@ -94,7 +91,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
 
   app.testModule.consumingPush2 >> app.testModule.consumingPush;
   try {
-    app.makeConnections();
+    app.initialise();
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
@@ -131,7 +128,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
 
   app.dev("/MyModule/Variable") >> app.testModule.consumingPoll >> app.testModule.consumingPoll2;
   try {
-    app.makeConnections();
+    app.initialise();
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
