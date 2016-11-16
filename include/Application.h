@@ -112,7 +112,7 @@ namespace ChimeraTK {
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
       void overallRegisterModule(Module &module) {
-        moduleList.push_back(&module);
+        overallModuleList.push_back(&module);
       }
 
       /** List of application modules */
