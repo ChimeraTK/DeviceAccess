@@ -17,10 +17,12 @@ namespace ChimeraTK {
   
   void VariableGroup::readAny() {
     bool gotUpdate = false;
+    auto accessorList = getAccessorListRecursive();
     while(!gotUpdate) {     /// @todo TODO FIXME make proper blocking implementation
       boost::this_thread::yield();
       boost::this_thread::interruption_point();
-      for(auto accessor : accessorList) {
+      
+      for(auto accessor : accessorList) {       // @todo FIXME make sure no submodule is accessing the variables itself... (e.g. by forcing all submodules to be a VariablGroup and not e.g. an ApplicationModule)
         if(accessor->getUpdateMode() == UpdateMode::push) {
           if(accessor->readNonBlocking()) gotUpdate = true;
         }
