@@ -251,7 +251,7 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 
 template<typename UserType>
 boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDeviceVariable(const std::string &deviceAlias,
-    const std::string &registerName, VariableDirection direction, UpdateMode mode) {
+    const std::string &registerName, VariableDirection direction, UpdateMode mode, size_t nElements) {
 
   // open device if needed
   if(deviceMap.count(deviceAlias) == 0) {
@@ -265,7 +265,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
 
   // create DeviceAccessor for the proper UserType
   boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;
-  auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, 1, 0, flags);
+  auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
   impl.reset(new DeviceAccessor<UserType>(regacc, direction, mode));
 
   return impl;
@@ -393,7 +393,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl;
     if(feeder.getType() == NodeType::Device) {
       feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
-          VariableDirection::consuming, feeder.getMode());
+          VariableDirection::consuming, feeder.getMode(), feeder.getNumberOfElements());
     }
     else if(feeder.getType() == NodeType::ControlSystem) {
       feedingImpl = createProcessVariable<UserType>(VariableDirection::consuming, feeder.getPublicName(), feeder.getNumberOfElements());
@@ -415,7 +415,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       else if(consumer.getType() == NodeType::Device) {
         auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            VariableDirection::feeding, consumer.getMode());
+            VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
         // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
         adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
             new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
@@ -473,7 +473,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              VariableDirection::feeding, consumer.getMode());
+              VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -516,7 +516,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       else if(consumer.getType() == NodeType::Device) {
         auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            VariableDirection::feeding, consumer.getMode());
+            VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
         feeder.getAppAccessor().useProcessVariable(impl);
         connectionMade = true;
       }
@@ -553,7 +553,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              VariableDirection::feeding, consumer.getMode());
+              VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
