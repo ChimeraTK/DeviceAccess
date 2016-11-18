@@ -73,7 +73,7 @@ namespace mtca4u {
 
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackendInternal(const DeviceInfoMap::DeviceInfo &deviceInfo) {
 #ifdef _DEBUG
-    std::cout << "uri to parse" << uri << std::endl;
+    std::cout << "uri to parse" << deviceInfo.uri << std::endl;
     std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
     Sdm sdm;
@@ -110,7 +110,8 @@ namespace mtca4u {
         return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
     }
 
-    throw BackendFactoryException("Unregistered device.", BackendFactoryException::UNREGISTERED_DEVICE);
+    throw BackendFactoryException("Unregistered device: Interface = "+sdm._Interface+" Protocol = "+sdm._Protocol,
+                                  BackendFactoryException::UNREGISTERED_DEVICE);
       return boost::shared_ptr<DeviceBackend>(); //won't execute
     }
 
