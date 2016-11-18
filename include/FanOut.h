@@ -75,8 +75,11 @@ namespace ChimeraTK {
           if( castedSlave->getNumberOfSamples() != 0 && 
               ( castedSlave->getNumberOfChannels() != impl->getNumberOfChannels() ||
                 castedSlave->getNumberOfSamples() != impl->getNumberOfSamples()      ) ) {
-            throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-                "FanOut::addSlave(): Trying to add a slave with incompatible array shape!");
+            std::string what = "FanOut::addSlave(): Trying to add a slave '";
+            what += castedSlave->getName();
+            what += "' with incompatible array shape! Name of master: ";
+            what += impl->getName();
+            throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(what.c_str());
           }
           slaves.push_back(castedSlave);
         }
