@@ -27,6 +27,7 @@ RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
   int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized
                                     // later (eg FW version ..)
   uint8_t bar = 0;
+  _registerSpace.open();
   _registerSpace.write(bar, registerAddress, &wordToWrite, sizeof(wordToWrite));
 }
 

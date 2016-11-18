@@ -611,6 +611,7 @@ void MtcaDeviceTest::testRegisterAccessor_readWriteResize(){
   // Just check that the accessor is growing. That the correct offsets and data are accessed are
   // not part of this detail test and are checked above in an implementation-independent way, as it should be.
   // 1)
+  backend->open();
   accessor.write(buffer.data(), 4, 30);
   BOOST_REQUIRE( accessorHandler.accessor);
   BOOST_CHECK( accessorHandler.accessor->getNumberOfSamples() == 4);
