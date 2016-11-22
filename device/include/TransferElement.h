@@ -27,8 +27,9 @@ namespace mtca4u {
 
     public:
       /** Creates a transfer element with the specified name. */
-      TransferElement(std::string const & name = std::string()) 
-        : _name(name), isInTransferGroup(false) {}
+      TransferElement(std::string const &name = std::string(), std::string const &unit = std::string("n./a."),
+                      std::string const &description = std::string())
+      : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
       
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
@@ -37,8 +38,18 @@ namespace mtca4u {
       typedef boost::shared_ptr<TransferElement> SharedPtr;
 
       /** Returns the name that identifies the process variable. */
-      const std::string& getName() const{
+      const std::string& getName() const {
 	return _name;
+      }
+
+      /** Returns the engineering unit. If none was specified, it will default to "n./a." */
+      const std::string& getUnit() const {
+        return _unit;
+      }
+
+      /** Returns the description of this variable/register */
+      const std::string& getDescription() const {
+        return _description;
       }
 
       /** Returns the \c std::type_info for the value type of this transfer element.
@@ -128,8 +139,15 @@ namespace mtca4u {
       friend class TransferGroup;
 
     protected:
+
       /** Identifier uniquely identifying the TransferElement */
-      std::string _name;      
+      std::string _name;
+
+      /** Engineering unit. Defaults to "n./a.", if none was specified */
+      std::string _unit;
+
+      /** Description of this variable/register */
+      std::string _description;
 
       bool isInTransferGroup;
   };
