@@ -5,7 +5,7 @@
  *      @brief          Provides exception classess for libmap                
  */
 #ifndef MTCA4U_MAP_EXCEPTION_H
-#define	MTCA4U_MAP_EXCEPTION_H
+#define MTCA4U_MAP_EXCEPTION_H
 
 #include <string>
 
@@ -102,5 +102,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_MAP_EXCEPTION_H */
+#endif  /* MTCA4U_MAP_EXCEPTION_H */
 

@@ -1,5 +1,5 @@
 #ifndef MTCA4U_PCIE_BACKEND_H
-#define	MTCA4U_PCIE_BACKEND_H
+#define MTCA4U_PCIE_BACKEND_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -70,5 +70,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_PCIE_BACKEND_H */
+#endif  /* MTCA4U_PCIE_BACKEND_H */
 

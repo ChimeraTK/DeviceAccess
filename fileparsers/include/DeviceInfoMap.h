@@ -202,4 +202,4 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_DEVICE_INFO_MAP_H */
+#endif  /* MTCA4U_DEVICE_INFO_MAP_H */

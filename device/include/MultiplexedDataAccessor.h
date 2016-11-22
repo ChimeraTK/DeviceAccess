@@ -71,13 +71,13 @@ namespace mtca4u {
       }
 
       virtual bool readNonBlocking(){
-	if (accessor->readNonBlocking()){
-	  accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
-	  return true;
-	}else{
-	  //  Don't swap, just return false (no new data).
-	  return false;
-	}
+        if (accessor->readNonBlocking()){
+          accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+          return true;
+        }else{
+          //  Don't swap, just return false (no new data).
+          return false;
+        }
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,

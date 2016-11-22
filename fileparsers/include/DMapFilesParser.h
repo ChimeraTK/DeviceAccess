@@ -7,7 +7,7 @@
  *                      infomration taken from DMAP and MAP files.                 
  */
 #ifndef MTCA4U_DMAPFILESPARSER_H
-#define	MTCA4U_DMAPFILESPARSER_H
+#define MTCA4U_DMAPFILESPARSER_H
 
 #include "RegisterInfoMap.h"
 #include "MapFileParser.h"
@@ -190,5 +190,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/*  MTCA4U_DMAPFILESPARSER_H */
+#endif  /*  MTCA4U_DMAPFILESPARSER_H */
 

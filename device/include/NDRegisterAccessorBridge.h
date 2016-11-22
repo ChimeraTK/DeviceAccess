@@ -74,7 +74,7 @@ namespace mtca4u {
       friend class TransferGroup;
 
       virtual const std::type_info& getValueType() const{
-	return typeid(UserType);
+        return typeid(UserType);
       }
 
     private:

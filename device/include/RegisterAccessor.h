@@ -52,13 +52,13 @@ namespace mtca4u {
       void read(ConvertedDataType *convertedData, size_t nWords = 1, uint32_t wordOffsetInRegister = 0) const {
         if(nWords == 0) return;
         // obtain the accessor through the handler
-	auto & accessorHandler = boost::fusion::at_key<ConvertedDataType>(_convertingAccessorHandlers.table);
-	accessorHandler.checkAndResize(nWords, wordOffsetInRegister, false /*not raw*/,
-				       _backend, _registerPathName);
-	// now we can be sure that the accessor is valid and has enough memory to perform the memcpy
-	accessorHandler.accessor->read();
+        auto & accessorHandler = boost::fusion::at_key<ConvertedDataType>(_convertingAccessorHandlers.table);
+        accessorHandler.checkAndResize(nWords, wordOffsetInRegister, false /*not raw*/,
+                                       _backend, _registerPathName);
+        // now we can be sure that the accessor is valid and has enough memory to perform the memcpy
+        accessorHandler.accessor->read();
         // copy data to target buffer. The accessor might not start at index 0, so we have to calculate the correct
-	// offset inside the accessor
+        // offset inside the accessor
         memcpy(convertedData, accessorHandler.accessor->accessChannel(0).data() + wordOffsetInRegister-accessorHandler.beginIndex,
           nWords*sizeof(ConvertedDataType));
       }
@@ -84,14 +84,14 @@ namespace mtca4u {
       void write(ConvertedDataType const *convertedData, size_t nWords, uint32_t wordOffsetInRegister = 0) {
         if(nWords == 0) return;
         // obtain the accessor through the handler
-	auto & accessorHandler = boost::fusion::at_key<ConvertedDataType>(_convertingAccessorHandlers.table);
-	accessorHandler.checkAndResize(nWords, wordOffsetInRegister, false /*not raw*/,
-				       _backend, _registerPathName);
-	// now we can be sure that the accessor is valid and has enough memory to perform the memcpy
+        auto & accessorHandler = boost::fusion::at_key<ConvertedDataType>(_convertingAccessorHandlers.table);
+        accessorHandler.checkAndResize(nWords, wordOffsetInRegister, false /*not raw*/,
+                                       _backend, _registerPathName);
+        // now we can be sure that the accessor is valid and has enough memory to perform the memcpy
         // copy data from source buffer to the correct place in the accessor. The accessor does not necessarily
-	// start at the beginnig of the register, so we have to correct the offset for this.
+        // start at the beginnig of the register, so we have to correct the offset for this.
         memcpy(accessorHandler.accessor->accessChannel(0).data() + wordOffsetInRegister-accessorHandler.beginIndex,
-	       convertedData, nWords*sizeof(ConvertedDataType));
+               convertedData, nWords*sizeof(ConvertedDataType));
         // perform write
         accessorHandler.accessor->write();
       }
@@ -111,7 +111,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       unsigned int getNumberOfElements() const {
-	return _registerInfo->getNumberOfElements();
+        return _registerInfo->getNumberOfElements();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -136,13 +136,13 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.8
        */
       FixedPointConverter getFixedPointConverter() const {
- 	// We use the double accessor, which is the most likely to exist
-	auto & accessorHandler = boost::fusion::at_key<double>(_convertingAccessorHandlers.table);
-	//In case we have to allocate, use the smallest possible accessor to be memory and transfer efficient.
-	//(about the offset we can just guess that 0 is fine.)
-	accessorHandler.checkAndResize(1, 0, false /*not raw*/, _backend, _registerPathName);
+        // We use the double accessor, which is the most likely to exist
+        auto & accessorHandler = boost::fusion::at_key<double>(_convertingAccessorHandlers.table);
+        //In case we have to allocate, use the smallest possible accessor to be memory and transfer efficient.
+        //(about the offset we can just guess that 0 is fine.)
+        accessorHandler.checkAndResize(1, 0, false /*not raw*/, _backend, _registerPathName);
 
-	return accessorHandler.accessor->getFixedPointConverter();
+        return accessorHandler.accessor->getFixedPointConverter();
       }
 
       /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
@@ -158,10 +158,10 @@ namespace mtca4u {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
               "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
-	size_t nWords = dataSize/sizeof(int32_t);
-	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
+        size_t nWords = dataSize/sizeof(int32_t);
+        size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
 
-	_rawAccessorHandler.checkAndResize(nWords, wordOffsetInRegister, true /*raw*/,
+        _rawAccessorHandler.checkAndResize(nWords, wordOffsetInRegister, true /*raw*/,
                                            _backend, _registerPathName);
         // perform read
         _rawAccessorHandler.accessor->read();
@@ -182,10 +182,10 @@ namespace mtca4u {
           throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
               "dividable by 4)",DeviceException::WRONG_PARAMETER);
         }
-	size_t nWords = dataSize/sizeof(int32_t);
-	size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
+        size_t nWords = dataSize/sizeof(int32_t);
+        size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
 
-	_rawAccessorHandler.checkAndResize(nWords, wordOffsetInRegister, true /*raw*/,
+        _rawAccessorHandler.checkAndResize(nWords, wordOffsetInRegister, true /*raw*/,
                                            _backend, _registerPathName);
         // copy data from source buffer
         memcpy(_rawAccessorHandler.accessor->accessChannel(0).data() + wordOffsetInRegister-_rawAccessorHandler.beginIndex, data, dataSize);
@@ -221,7 +221,7 @@ namespace mtca4u {
       template<class UserType>
       class AccessorHandler{
       public:
-	AccessorHandler() : beginIndex(0),endIndex(0) {}
+        AccessorHandler() : beginIndex(0),endIndex(0) {}
 
         boost::shared_ptr<NDRegisterAccessor<UserType> > accessor;
         size_t beginIndex; // the first index of the accessor;
@@ -232,26 +232,26 @@ namespace mtca4u {
               // we have to (re)allocate
               size_t newBeginIndex;
               if (!accessor){
-        	  newBeginIndex = wordOffsetInRegister;
+                  newBeginIndex = wordOffsetInRegister;
               }else{
-        	  newBeginIndex = std::min(wordOffsetInRegister, beginIndex);
+                  newBeginIndex = std::min(wordOffsetInRegister, beginIndex);
               }
             size_t newEndIndex = std::max(wordOffsetInRegister+nWords, endIndex);
             accessor = backend->getRegisterAccessor<UserType>(registerPathName, newEndIndex-newBeginIndex, newBeginIndex, isRaw); // 0 offset, raw
             // we have to update the accessor with the current hardware information. It might be that a partial write is going to happen.
             accessor->read();
             // only if creating the new accessor succeeds we change the index bookkeeping variables
-	    beginIndex = newBeginIndex;
-	    endIndex = newEndIndex;
-	  }
-	}
+            beginIndex = newBeginIndex;
+            endIndex = newEndIndex;
+          }
+        }
       };
 
       /** The converting accessors used under the hood. 
-	  They are not initialised in the constructor but only when first used
-	  to safe memory. Usually you will not use read or write of all user
-	  data types. Thus the variable is mutable to allow initialisation 
-	  in the const read and write function.
+          They are not initialised in the constructor but only when first used
+          to safe memory. Usually you will not use read or write of all user
+          data types. Thus the variable is mutable to allow initialisation 
+          in the const read and write function.
       */
       mutable TemplateUserTypeMap<AccessorHandler> _convertingAccessorHandlers;
             

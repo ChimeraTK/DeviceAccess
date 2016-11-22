@@ -1,5 +1,5 @@
 #ifndef MTCA4U_PCIE_BACKEND_EXCEPTION_H
-#define	MTCA4U_PCIE_BACKEND_EXCEPTION_H
+#define MTCA4U_PCIE_BACKEND_EXCEPTION_H
 
 #include "DeviceBackend.h"
 
@@ -20,5 +20,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_PCIE_BACKEND_EXCEPTION_H */
+#endif  /* MTCA4U_PCIE_BACKEND_EXCEPTION_H */
 

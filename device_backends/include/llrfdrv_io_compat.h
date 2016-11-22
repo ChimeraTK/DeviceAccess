@@ -5,7 +5,7 @@
  */
 
 #ifndef LLRFDRV_IO_COMPAT_H
-#define	LLRFDRV_IO_COMPAT_H
+#define LLRFDRV_IO_COMPAT_H
 
 /* 
  * Put an extern "C" declaration when compiling with C++. Like this the structs can be used from the included
@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define LLRFDRV_IOC           			'0'
+#define LLRFDRV_IOC                             '0'
 #define LLRFDRV_PHYSICAL_SLOT       _IOWR(LLRFDRV_IOC, 20, int)
 #define LLRFDRV_DRIVER_VERSION      _IOWR(LLRFDRV_IOC, 21, int)
 #define LLRFDRV_FIRMWARE_VERSION    _IOWR(LLRFDRV_IOC, 22, int)
@@ -28,5 +28,5 @@ extern "C" {
 } /* closing the extern "C" { */
 #endif
 
-#endif	/* LLRFDRV_IO_COMPAT_H */
+#endif  /* LLRFDRV_IO_COMPAT_H */
 

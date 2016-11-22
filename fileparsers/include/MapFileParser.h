@@ -6,7 +6,7 @@
  */
 
 #ifndef MTCA4U_MAPFILEPARSER_H
-#define	MTCA4U_MAPFILEPARSER_H
+#define MTCA4U_MAPFILEPARSER_H
 
 
 #include "RegisterInfoMap.h"
@@ -40,8 +40,8 @@ namespace mtca4u {
       RegisterInfoMapPointer parse(const std::string &file_name);
 
       /** Split the string at the last dot. The part up to the last dot is the first returned argument,
-       *	the part after the last dot is the second. Hence, the first part can contain dots itself, the second
-       *	part cannot. If there is no dot, the first part is empty and the full string is returned as second
+       *        the part after the last dot is the second. Hence, the first part can contain dots itself, the second
+       *        part cannot. If there is no dot, the first part is empty and the full string is returned as second
        *  (the part up to the first dot is considered as prefix).
        */
       static std::pair<std::string, std::string> splitStringAtLastDot( std::string moduleDotName);
@@ -49,5 +49,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_MAPFILEPARSER_H */
+#endif  /* MTCA4U_MAPFILEPARSER_H */
 

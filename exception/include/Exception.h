@@ -5,7 +5,7 @@
  *      @brief          Provides base class for exception handling                
  */
 #ifndef MTCA4U_EXCEPTION_H
-#define	MTCA4U_EXCEPTION_H
+#define MTCA4U_EXCEPTION_H
 
 #include <exception>
 #include <string>
@@ -52,5 +52,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_EXCEPTION_H */
+#endif  /* MTCA4U_EXCEPTION_H */
 

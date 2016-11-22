@@ -39,7 +39,7 @@ namespace mtca4u {
 
       /** Returns the name that identifies the process variable. */
       const std::string& getName() const {
-	return _name;
+        return _name;
       }
 
       /** Returns the engineering unit. If none was specified, it will default to "n./a." */

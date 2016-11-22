@@ -43,7 +43,7 @@ namespace mtca4u {
       }
 
       bool readNonBlocking(){
-	return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
+        return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
       }
 
       /** Convert data from the buffer and write to device. */

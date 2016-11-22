@@ -6,7 +6,7 @@
  *                  
  */
 #ifndef MTCA4U_DMAP_FILE_PARSER_H
-#define	MTCA4U_DMAP_FILE_PARSER_H
+#define MTCA4U_DMAP_FILE_PARSER_H
 
 #include <stdint.h>
 #include <string>
@@ -38,5 +38,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_DMAP_FILE_PARSER_H */
+#endif  /* MTCA4U_DMAP_FILE_PARSER_H */
 

@@ -5,7 +5,7 @@
  *      @brief          Provides set of predicates for stl algorithms                
  */
 #ifndef MTCA4U_PREDICATES_H
-#define	MTCA4U_PREDICATES_H
+#define MTCA4U_PREDICATES_H
 
 #include "DeviceInfoMap.h"
 #include "RegisterInfoMap.h"
@@ -151,5 +151,5 @@ namespace mtca4u {
 
 }//namespace mtca4u
 
-#endif	/* MTCA4U_PREDICATES_H */
+#endif  /* MTCA4U_PREDICATES_H */
 

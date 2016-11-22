@@ -125,7 +125,7 @@ namespace mtca4u {
 
       virtual bool readNonBlocking(){
             throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
-				  DeviceException::NOT_AVAILABLE);
+                                  DeviceException::NOT_AVAILABLE);
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
