@@ -4,6 +4,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceException.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/FixedPointConverter.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferElement.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferGroup.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterCatalogue.cc
    PARENT_SCOPE

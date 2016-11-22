@@ -24,8 +24,10 @@ namespace mtca4u {
     public:
       /** Creates an NDRegisterAccessor with the specified name (passed on to the 
        *  transfer element). */
-      NDRegisterAccessor(std::string const & name = std::string())
-        : TransferElement(name){}
+      NDRegisterAccessor(std::string const &name = std::string(),
+                         std::string const &unit = std::string(TransferElement::unitNotSet),
+                         std::string const &description = std::string())
+      : TransferElement(name, unit, description) {}
         
       /** A virtual base class needs a virtual destructor */
       virtual ~NDRegisterAccessor() {}

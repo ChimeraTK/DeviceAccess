@@ -26,8 +26,9 @@ namespace mtca4u {
   class TransferElement : public boost::enable_shared_from_this<TransferElement>{
 
     public:
+
       /** Creates a transfer element with the specified name. */
-      TransferElement(std::string const &name = std::string(), std::string const &unit = std::string("n./a."),
+      TransferElement(std::string const &name = std::string(), std::string const &unit = std::string(unitNotSet),
                       std::string const &description = std::string())
       : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
       
@@ -137,6 +138,9 @@ namespace mtca4u {
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
 
       friend class TransferGroup;
+
+      /** Constant string to be used as a unit when the unit is not provided or known */
+      static constexpr char unitNotSet[] = "n./a.";
 
     protected:
 
