@@ -37,8 +37,8 @@ template<typename T>
 struct TestModule : public ctk::ApplicationModule {
     TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
-    CTK_SCALAR_INPUT(T, consumer, "MV/m", ctk::UpdateMode::push, "Descrption");
-    CTK_SCALAR_OUTPUT(T, feeder, "MV/m", "Descrption");
+    CTK_SCALAR_INPUT(T, consumer, "", ctk::UpdateMode::push, "No comment.");
+    CTK_SCALAR_OUTPUT(T, feeder, "MV/m", "Some fancy explanation about this variable");
 
     void mainLoop() {}
 };
@@ -73,6 +73,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
+  BOOST_CHECK( myFeeder->getName() == "/myFeeder" );
+  BOOST_CHECK( myFeeder->getUnit() == "MV/m" );
+  BOOST_CHECK( myFeeder->getDescription() == "Some fancy explanation about this variable" );
 
   app.testModule.feeder = 42;
   BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
@@ -105,6 +108,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
+  BOOST_CHECK( myConsumer->getName() == "/myConsumer" );
+  BOOST_CHECK( myConsumer->getUnit() == "" );
+  BOOST_CHECK( myConsumer->getDescription() == "No comment." );
 
   myConsumer->accessData(0) = 42;
   myConsumer->write();
@@ -140,6 +146,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
   auto myFeeder1 = pvManagers.first->getProcessArray<T>("/myFeeder1");
   auto myFeeder2 = pvManagers.first->getProcessArray<T>("/myFeeder2");
   auto myFeeder3 = pvManagers.first->getProcessArray<T>("/myFeeder3");
+
+  BOOST_CHECK( myFeeder0->getName() == "/myFeeder0" );
+  BOOST_CHECK( myFeeder0->getUnit() == "MV/m" );
+  BOOST_CHECK( myFeeder0->getDescription() == "Some fancy explanation about this variable" );
+
+  BOOST_CHECK( myFeeder1->getName() == "/myFeeder1" );
+  BOOST_CHECK( myFeeder1->getUnit() == "MV/m" );
+  BOOST_CHECK( myFeeder1->getDescription() == "Some fancy explanation about this variable" );
+
+  BOOST_CHECK( myFeeder2->getName() == "/myFeeder2" );
+  BOOST_CHECK( myFeeder2->getUnit() == "MV/m" );
+  BOOST_CHECK( myFeeder2->getDescription() == "Some fancy explanation about this variable" );
+
+  BOOST_CHECK( myFeeder3->getName() == "/myFeeder3" );
+  BOOST_CHECK( myFeeder3->getUnit() == "MV/m" );
+  BOOST_CHECK( myFeeder3->getDescription() == "Some fancy explanation about this variable" );
 
   app.testModule.feeder = 42;
   BOOST_CHECK(myFeeder0->readNonBlocking() == false);
@@ -225,6 +247,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   auto myConsumer_copy1 = pvManagers.first->getProcessArray<T>("/myConsumer_copy1");
   auto myConsumer_copy2 = pvManagers.first->getProcessArray<T>("/myConsumer_copy2");
   auto myConsumer_copy3 = pvManagers.first->getProcessArray<T>("/myConsumer_copy3");
+
+  BOOST_CHECK( myConsumer->getName() == "/myConsumer" );
+  BOOST_CHECK( myConsumer->getUnit() == "" );
+  BOOST_CHECK( myConsumer->getDescription() == "No comment." );
+  
+  BOOST_CHECK( myConsumer_copy1->getName() == "/myConsumer_copy1" );
+  BOOST_CHECK( myConsumer_copy1->getUnit() == "" );
+  BOOST_CHECK( myConsumer_copy1->getDescription() == "No comment." );
+  
+  BOOST_CHECK( myConsumer_copy2->getName() == "/myConsumer_copy2" );
+  BOOST_CHECK( myConsumer_copy2->getUnit() == "" );
+  BOOST_CHECK( myConsumer_copy2->getDescription() == "No comment." );
+  
+  BOOST_CHECK( myConsumer_copy3->getName() == "/myConsumer_copy3" );
+  BOOST_CHECK( myConsumer_copy3->getUnit() == "" );
+  BOOST_CHECK( myConsumer_copy3->getDescription() == "No comment." );
 
   myConsumer->accessData(0) = 42;
   BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);

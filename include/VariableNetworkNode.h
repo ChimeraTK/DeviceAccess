@@ -139,8 +139,8 @@ namespace ChimeraTK {
          *  the connections. */
         const std::type_info* valueType{&typeid(AnyType)};
 
-        /** Engineering unit. If "arbitrary", no unit has been defined (and any unit is allowed). */
-        std::string unit{"arbitrary"};
+        /** Engineering unit. If equal to mtca4u::TransferElement::unitNotSet, no unit has been defined (and any unit is allowed). */
+        std::string unit{mtca4u::TransferElement::unitNotSet};
 
         /** Description */
         std::string description{""};

@@ -274,12 +274,11 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProcessVariable(VariableDirection direction,
-    const std::string &name, size_t nElements) {
+boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProcessVariable(VariableNetworkNode const &node) {
 
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
-  if(direction == VariableDirection::consuming) {
+  if(node.getDirection() == VariableDirection::feeding) {
     dir = SynchronizationDirection::controlSystemToDevice;
   }
   else {
@@ -287,7 +286,8 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   }
 
   // create the ProcessScalar for the proper UserType
-  return _processVariableManager->createProcessArray<UserType>(dir, name, nElements);
+  return _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
+                                                               node.getOwner().getUnit(), node.getOwner().getDescription());
 }
 
 /*********************************************************************************************************************/
@@ -396,7 +396,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           VariableDirection::consuming, feeder.getMode(), feeder.getNumberOfElements());
     }
     else if(feeder.getType() == NodeType::ControlSystem) {
-      feedingImpl = createProcessVariable<UserType>(VariableDirection::consuming, feeder.getPublicName(), feeder.getNumberOfElements());
+      feedingImpl = createProcessVariable<UserType>(feeder);
     }
     else if(feeder.getType() == NodeType::Constant) {
       feedingImpl = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(feeder.getConstAccessor());
@@ -422,8 +422,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
-        auto consumingImpl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
-                                                             consumer.getNumberOfElements());
+        auto consumingImpl = createProcessVariable<UserType>(consumer);
         // connect the ControlSystem with e.g. a Device node via an ImplementationAdapter
         adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
             new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
@@ -467,8 +466,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           }
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
-          auto impl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
-                                                      consumer.getNumberOfElements());
+          auto impl = createProcessVariable<UserType>(consumer);
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::Device) {
@@ -508,9 +506,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
-        auto impl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
-                                                    consumer.getNumberOfElements()
-        );
+        auto impl = createProcessVariable<UserType>(consumer);
         feeder.getAppAccessor().useProcessVariable(impl);
         connectionMade = true;
       }
@@ -547,8 +543,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getAppAccessor().useProcessVariable(impls.second);
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
-          auto impl = createProcessVariable<UserType>(VariableDirection::feeding, consumer.getPublicName(),
-                                                      consumer.getNumberOfElements());
+          auto impl = createProcessVariable<UserType>(consumer);
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::Device) {

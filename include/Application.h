@@ -100,8 +100,7 @@ namespace ChimeraTK {
       /** Create a process variable with the PVManager, which is exported to the control system adapter. nElements will
           be the array size of the created variable. */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessVariable(VariableDirection direction,
-          const std::string &name, size_t nElements);
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessVariable(VariableNetworkNode const &node);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
        *  sender, the second the receiver. nElements will be the array size of the created variable. */

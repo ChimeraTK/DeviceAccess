@@ -126,7 +126,7 @@ namespace ChimeraTK {
       const std::type_info* valueType{&typeid(AnyType)};
 
       /** Engineering unit */
-      std::string engineeringUnit{"arbitrary"};
+      std::string engineeringUnit{mtca4u::TransferElement::unitNotSet};
 
       /** User-provided description */
       std::string description;
