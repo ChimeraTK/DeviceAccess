@@ -64,7 +64,7 @@ set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap)
 set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
 set(DOOCS_LIBRARY_DIRS ${DOOCS_DIR}/)
 
-set(DOOCS_CXX_FLAGS "-Wall -fPIC -D_REENTRANT -DLINUX -D__LINUX__ -DDMSG")
+set(DOOCS_CXX_FLAGS "-Wall -fPIC -D_REENTRANT -DLINUX -D__LINUX__ -DDMSG -DTINE_EXPORT")
 set(DOOCS_LINK_FLAGS "-Wl,--no-as-needed")
 
 # extract DOOCS version from librar so symlink. Note: This is platform dependent and only works
