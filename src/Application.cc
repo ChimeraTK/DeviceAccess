@@ -195,7 +195,6 @@ void Application::generateXML() {
     }
 
   }
-  /// @todo TODO don't write to stdout but to a file...
   doc.write_to_file_formatted(applicationName+".xml");
 }
 
