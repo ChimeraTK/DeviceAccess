@@ -40,8 +40,8 @@ namespace ChimeraTK {
       ImplementationAdapter(boost::shared_ptr<ChimeraTK::ProcessVariable> sender,
           boost::shared_ptr<ChimeraTK::ProcessVariable> receiver)
       {
-        _sender = boost::dynamic_pointer_cast<ChimeraTK::ProcessArray<UserType>>(sender);
-        _receiver = boost::dynamic_pointer_cast<ChimeraTK::ProcessArray<UserType>>(receiver);
+        _sender = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(sender);
+        _receiver = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(receiver);
         assert(_sender && _receiver);
         _thread = std::thread([this] { this->run(); });
       }
@@ -52,14 +52,14 @@ namespace ChimeraTK {
       void run() {
         while(true) {
           while(!_receiver->readNonBlocking()) std::this_thread::yield();
-          _sender->set(_receiver->get());
+          _sender->accessChannel(0) = _receiver->accessChannel(0);
           _sender->write();
         }
       }
 
       /** Sender and receiver process variables */
-      boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> _sender;
-      boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> _receiver;
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _sender;
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _receiver;
 
       /** Thread handling the synchronisation */
       std::thread _thread;
