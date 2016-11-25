@@ -17,9 +17,12 @@
 #include "DeviceException.h"
 #include "TimeStamp.h"
 
+namespace ChimeraTK {
+  class PersistentDataStorage;
+}
+
 namespace mtca4u {
 
-  // forward declaration to make a friend
   class TransferGroup;
 
   /** Base class for register accessors which can be part of a TransferGroup */
@@ -141,6 +144,16 @@ namespace mtca4u {
 
       /** Constant string to be used as a unit when the unit is not provided or known */
       static constexpr char unitNotSet[] = "n./a.";
+
+      /** 
+      *  Associate a persistent data storage object to be updated on each write operation of this ProcessArray. If no
+      *  persistent data storage as associated previously, the value from the persistent storage is read and send to
+      *  the receiver.
+      * 
+      *  Note: A call to this function will be ignored, if the TransferElement does not support persistent data
+      *  storage (e.g. read-only variables or device registers) @todo TODO does this make sense?
+      */
+      virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {};
 
     protected:
 

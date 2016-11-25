@@ -33,9 +33,8 @@ namespace mtca4u {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});
         // check for illegal parameter combinations
-        if(wordOffsetInRegister != 0 || numberOfWords > 1 || flags.has(AccessMode::raw)) {
-          throw DeviceException("LNMBackendBufferingChannelAccessor: raw access, offset and number of words not yet "
-              "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
+        if(flags.has(AccessMode::raw)) {
+          throw DeviceException("LNMBackendChannelAccessor: raw access not yet supported!", DeviceException::NOT_IMPLEMENTED);
         }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // copy the register info and create the internal accessors, if needed
@@ -44,12 +43,12 @@ namespace mtca4u {
         _info.createInternalAccessors(dev);
         // check for incorrect usage of this accessor
         if( _info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL ) {
-          throw DeviceException("LNMBackendBufferingChannelAccessor used for wrong register type.",
+          throw DeviceException("LNMBackendChannelAccessor used for wrong register type.",
               DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         // get target device and accessor
         _targetDevice = _dev->_devices[_info.deviceName];
-        _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), 0,0, false);
+        _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
         // allocate the buffer
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
