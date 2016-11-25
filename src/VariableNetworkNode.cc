@@ -31,7 +31,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
-  : pdata(new data)
+  : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::Application;
     pdata->mode = accessor.getUpdateMode();
@@ -47,7 +47,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod,
       VariableDirection dir, const std::type_info &valTyp, size_t nElements)
-  : pdata(new data)
+  : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::Device;
     pdata->mode = mod;
@@ -62,7 +62,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir, const std::type_info &valTyp,
       size_t nElements)
-  : pdata(new data)
+  : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::ControlSystem;
     pdata->mode = UpdateMode::push;
@@ -75,11 +75,11 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int)
-  : pdata(new data)
+  : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::TriggerReceiver;
     pdata->direction = VariableDirection::consuming;
-    pdata->triggerReceiver = &nodeToTrigger;
+    pdata->triggerReceiver = nodeToTrigger;
   }
 
   /*********************************************************************************************************************/
@@ -112,6 +112,8 @@ namespace ChimeraTK {
     std::cout << " data type: " << pdata->valueType->name();
     std::cout << " length: " << pdata->nElements;
 
+    std::cout << " [ptr: " << &(*pdata) << "]";
+    
     std::cout << std::endl;
 }
 
@@ -224,7 +226,7 @@ namespace ChimeraTK {
   VariableNetworkNode VariableNetworkNode::operator[](VariableNetworkNode trigger) {
 
     // check if node already has a trigger
-    if(pdata->externalTrigger != nullptr) {
+    if(pdata->externalTrigger.getType() != NodeType::invalid) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
           "Only one external trigger per variable network is allowed.");
     }
@@ -239,7 +241,7 @@ namespace ChimeraTK {
 
     // create copy of the node
     VariableNetworkNode nodeWithTrigger;
-    nodeWithTrigger.pdata.reset(new data(*pdata));
+    nodeWithTrigger.pdata.reset(new VariableNetworkNode_data(*pdata));
 
     // add ourselves as a trigger receiver to the other network
     if(!trigger.hasOwner()) {
@@ -248,10 +250,137 @@ namespace ChimeraTK {
     trigger.getOwner().addTriggerReceiver(nodeWithTrigger);
 
     // set flag and store pointer to other network
-    nodeWithTrigger.pdata->externalTrigger = &trigger;
+    nodeWithTrigger.pdata->externalTrigger = trigger;
 
     // return the new node
     return nodeWithTrigger;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode() {}
+
+  /*********************************************************************************************************************/
+  
+  void VariableNetworkNode::setValueType(const std::type_info& newType) const {
+    assert(*pdata->valueType == typeid(AnyType));
+    pdata->valueType = &newType;
+  }
+  
+  /*********************************************************************************************************************/
+
+  bool VariableNetworkNode::hasExternalTrigger() const {
+    return pdata->externalTrigger.getType() != NodeType::invalid;
+  }
+      
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode VariableNetworkNode::getExternalTrigger() {
+    assert(pdata->externalTrigger.getType() != NodeType::invalid);
+    return pdata->externalTrigger;
+  }
+
+  /*********************************************************************************************************************/
+
+  bool VariableNetworkNode::hasOwner() const {
+    return pdata->network != nullptr;
+  }
+
+  /*********************************************************************************************************************/
+
+  NodeType VariableNetworkNode::getType() const {
+    if(!pdata) return NodeType::invalid;
+    return pdata->type;
+  }
+
+  /*********************************************************************************************************************/
+
+  UpdateMode VariableNetworkNode::getMode() const {
+    return pdata->mode;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableDirection VariableNetworkNode::getDirection() const {
+    return pdata->direction;
+  }
+
+  /*********************************************************************************************************************/
+
+  const std::type_info& VariableNetworkNode::getValueType() const {
+    return *(pdata->valueType);
+  }
+
+  /*********************************************************************************************************************/
+
+  const std::string& VariableNetworkNode::getUnit() const {
+    return pdata->unit;
+  }
+
+  /*********************************************************************************************************************/
+
+  const std::string& VariableNetworkNode::getDescription() const {
+    return pdata->description;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetwork& VariableNetworkNode::getOwner() const {
+    assert(pdata->network != nullptr);
+    return *(pdata->network);
+  }
+
+  /*********************************************************************************************************************/
+
+  AccessorBase& VariableNetworkNode::getAppAccessor() const {
+    assert(pdata->appNode != nullptr);
+    return *(pdata->appNode);
+  }
+
+  /*********************************************************************************************************************/
+
+  boost::shared_ptr<mtca4u::TransferElement> VariableNetworkNode::getConstAccessor() const {
+    return pdata->constNode;
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode VariableNetworkNode::getTriggerReceiver() {
+    assert(pdata->triggerReceiver.getType() != NodeType::invalid);
+    return pdata->triggerReceiver;
+  }
+
+  /*********************************************************************************************************************/
+
+  const std::string& VariableNetworkNode::getPublicName() const {
+    assert(pdata->type == NodeType::ControlSystem);
+    return pdata->publicName;
+  }
+
+  /*********************************************************************************************************************/
+
+  const std::string& VariableNetworkNode::getDeviceAlias() const {
+    assert(pdata->type == NodeType::Device);
+    return pdata->deviceAlias;
+  }
+
+  /*********************************************************************************************************************/
+
+  const std::string& VariableNetworkNode::getRegisterName() const {
+    assert(pdata->type == NodeType::Device);
+    return pdata->registerName;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setNumberOfElements(size_t nElements) {
+    pdata->nElements = nElements;
+  }
+
+  /*********************************************************************************************************************/
+
+  size_t VariableNetworkNode::getNumberOfElements() const {
+    return pdata->nElements;
   }
 
 }

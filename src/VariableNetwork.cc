@@ -66,7 +66,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::dump(const std::string& linePrefix) const {
-    std::cout << linePrefix << "VariableNetwork {" << std::endl;
+    std::cout << linePrefix << "VariableNetwork";
+    std::cout << " [ptr: " << this << "]";
+    std::cout << " {" << std::endl;
     std::cout << linePrefix << "  value type = " << valueType->name() << ", engineering unit = " << engineeringUnit << std::endl;
     std::cout << linePrefix << "  trigger type = ";
     try {

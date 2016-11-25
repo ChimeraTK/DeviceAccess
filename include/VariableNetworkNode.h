@@ -23,6 +23,7 @@ namespace ChimeraTK {
 
   class VariableNetwork;
   class AccessorBase;
+  struct VariableNetworkNode_data;
 
   /** Pseudo type to identify nodes which can have arbitrary types */
   class AnyType {};
@@ -54,7 +55,7 @@ namespace ChimeraTK {
       VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
 
       /** Default constructor for an invalid node */
-      VariableNetworkNode() : pdata(new data) {}
+      VariableNetworkNode();
       
       /** Factory function for a constant (a constructor cannot be templated) */
       template<typename UserType>
@@ -64,10 +65,7 @@ namespace ChimeraTK {
       void setOwner(VariableNetwork *network);
 
       /** Set the value type for this node. Only possible of the current value type is undecided (i.e. AnyType). */
-      void setValueType(const std::type_info& newType) const {
-        assert(*pdata->valueType == typeid(AnyType));
-        pdata->valueType = &newType;
-      }
+      void setValueType(const std::type_info& newType) const;
 
       /** Function checking if the node requires a fixed implementation */
       bool hasImplementation() const;
@@ -84,10 +82,10 @@ namespace ChimeraTK {
       VariableNetworkNode operator[](VariableNetworkNode trigger);
 
       /** Check for presence of an external trigger */
-      bool hasExternalTrigger() const { return pdata->externalTrigger != nullptr; }
+      bool hasExternalTrigger() const;
 
       /** Return the external trigger node. if no external trigger is present, an assertion will be raised. */
-      VariableNetworkNode& getExternalTrigger() const { assert(pdata->externalTrigger != nullptr); return *(pdata->externalTrigger); }
+      VariableNetworkNode getExternalTrigger();
 
       /** Print node information to std::cout */
       void dump() const;
@@ -99,86 +97,93 @@ namespace ChimeraTK {
       void createXML(xmlpp::Element *rootElement) const;
 
       /** Check if the node already has an owner */
-      bool hasOwner() const { return pdata->network != nullptr; }
+      bool hasOwner() const;
 
       /** Getter for the properties */
-      NodeType getType() const { return pdata->type; }
-      UpdateMode getMode() const { return pdata->mode; }
-      VariableDirection getDirection() const { return pdata->direction; }
-      const std::type_info& getValueType() const { return *(pdata->valueType); }
-      const std::string& getUnit() const { return pdata->unit; }
-      const std::string& getDescription() const { return pdata->description; }
-      VariableNetwork& getOwner() const { assert(pdata->network != nullptr); return *(pdata->network); }
-      AccessorBase& getAppAccessor() const { assert(pdata->appNode != nullptr); return *(pdata->appNode); }
-      boost::shared_ptr<mtca4u::TransferElement> getConstAccessor() const { return pdata->constNode; }
-      VariableNetworkNode& getTriggerReceiver() const { assert(pdata->triggerReceiver != nullptr); return *(pdata->triggerReceiver); }
-      const std::string& getPublicName() const { assert(pdata->type == NodeType::ControlSystem); return pdata->publicName; }
-      const std::string& getDeviceAlias() const { assert(pdata->type == NodeType::Device); return pdata->deviceAlias; }
-      const std::string& getRegisterName() const { assert(pdata->type == NodeType::Device); return pdata->registerName; }
-      void setNumberOfElements(size_t nElements) { pdata->nElements = nElements; }
-      size_t getNumberOfElements() const { return pdata->nElements; }
+      NodeType getType() const;
+      UpdateMode getMode() const;
+      VariableDirection getDirection() const;
+      const std::type_info& getValueType() const;
+      const std::string& getUnit() const;
+      const std::string& getDescription() const;
+      VariableNetwork& getOwner() const;
+      AccessorBase& getAppAccessor() const;
+      boost::shared_ptr<mtca4u::TransferElement> getConstAccessor() const;
+      VariableNetworkNode getTriggerReceiver();
+      const std::string& getPublicName() const;
+      const std::string& getDeviceAlias() const;
+      const std::string& getRegisterName() const;
+      void setNumberOfElements(size_t nElements);
+      size_t getNumberOfElements() const;
 
     protected:
 
-      /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to the same instance of the data
-       *  structure and thus stay consistent all the time. */
-      struct data {
-
-        data() {}
-
-        /** Type of the node (Application, Device, ControlSystem, Trigger) */
-        NodeType type{NodeType::invalid};
-
-        /** Update mode: poll or push */
-        UpdateMode mode{UpdateMode::invalid};
-
-        /** Node direction: feeding or consuming */
-        VariableDirection direction{VariableDirection::invalid};
-
-        /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
-         *  the connections. */
-        const std::type_info* valueType{&typeid(AnyType)};
-
-        /** Engineering unit. If equal to mtca4u::TransferElement::unitNotSet, no unit has been defined (and any unit is allowed). */
-        std::string unit{mtca4u::TransferElement::unitNotSet};
-
-        /** Description */
-        std::string description{""};
-
-        /** The network this node belongs to */
-        VariableNetwork *network{nullptr};
-
-        /** Pointer to Accessor if type == Application */
-        AccessorBase *appNode{nullptr};
-
-        /** Pointer to implementation if type == Constant */
-        boost::shared_ptr<mtca4u::TransferElement> constNode;
-
-        /** Pointer to network which should be triggered by this node */
-        VariableNetworkNode *triggerReceiver{nullptr};
-
-        /** Pointer to the network providing the external trigger. May only be used for feeding nodes with an
-         *  update mode poll. When enabled, the update mode will be converted into push. */
-        VariableNetworkNode *externalTrigger{nullptr};
-
-        /** Public name if type == ControlSystem */
-        std::string publicName;
-
-        /** Device information if type == Device */
-        std::string deviceAlias;
-        std::string registerName;
-        
-        /** Number of elements in the variable. 0 means not yet decided. */
-        size_t nElements{0};
-
-      };
-
-      boost::shared_ptr<data> pdata;
+      boost::shared_ptr<VariableNetworkNode_data> pdata;
   };
-      
+
+  /*********************************************************************************************************************/
+
+  /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to the same instance of the data
+    *  structure and thus stay consistent all the time. */
+  struct VariableNetworkNode_data {
+
+    VariableNetworkNode_data() {}
+
+    /** Type of the node (Application, Device, ControlSystem, Trigger) */
+    NodeType type{NodeType::invalid};
+
+    /** Update mode: poll or push */
+    UpdateMode mode{UpdateMode::invalid};
+
+    /** Node direction: feeding or consuming */
+    VariableDirection direction{VariableDirection::invalid};
+
+    /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
+      *  the connections. */
+    const std::type_info* valueType{&typeid(AnyType)};
+
+    /** Engineering unit. If equal to mtca4u::TransferElement::unitNotSet, no unit has been defined (and any unit is allowed). */
+    std::string unit{mtca4u::TransferElement::unitNotSet};
+
+    /** Description */
+    std::string description{""};
+
+    /** The network this node belongs to */
+    VariableNetwork *network{nullptr};
+
+    /** Pointer to Accessor if type == Application */
+    AccessorBase *appNode{nullptr};
+
+    /** Pointer to implementation if type == Constant */
+    boost::shared_ptr<mtca4u::TransferElement> constNode;
+
+    /** Pointer to network which should be triggered by this node */
+    VariableNetworkNode triggerReceiver;
+
+    /** Pointer to the network providing the external trigger. May only be used for feeding nodes with an
+      *  update mode poll. When enabled, the update mode will be converted into push. */
+    VariableNetworkNode externalTrigger;
+
+    /** Public name if type == ControlSystem */
+    std::string publicName;
+
+    /** Device information if type == Device */
+    std::string deviceAlias;
+    std::string registerName;
+    
+    /** Number of elements in the variable. 0 means not yet decided. */
+    size_t nElements{0};
+
+  };
+
+  /*********************************************************************************************************************/
+  /*** Implementations *************************************************************************************************/
+  /*********************************************************************************************************************/
+
   template<typename UserType>
   VariableNetworkNode VariableNetworkNode::makeConstant(bool makeFeeder, UserType value, size_t length) {
     VariableNetworkNode node;
+    node.pdata.reset(new VariableNetworkNode_data);
     node.pdata->constNode.reset(new ConstantAccessor<UserType>(value, length));
     node.pdata->type = NodeType::Constant;
     node.pdata->valueType = &typeid(UserType);
