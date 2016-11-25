@@ -55,6 +55,8 @@ namespace mtca4u {
 
     /** Internal function to return a DeviceBackend */
     boost::shared_ptr<DeviceBackend> createBackendInternal(const DeviceInfoMap::DeviceInfo &deviceInfo);
+    
+    std::map< std::string, boost::shared_ptr<DeviceBackend> > _existingBackends;
 
   public:
     /** This function sets the _DMapFilePath. This dmap file path is the
