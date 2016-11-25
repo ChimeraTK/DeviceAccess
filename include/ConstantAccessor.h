@@ -32,7 +32,11 @@ namespace ChimeraTK {
       
       bool readNonBlocking() {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
-        return true;
+        if(firstRead) {
+          firstRead = false;
+          return true;
+        }
+        return false;
       }
       
       void write() {
@@ -53,6 +57,8 @@ namespace ChimeraTK {
     protected:
       
       std::vector<UserType> _value;
+      
+      bool firstRead{true};
 
   };
 
