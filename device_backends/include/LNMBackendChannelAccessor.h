@@ -28,7 +28,8 @@ namespace mtca4u {
 
       LNMBackendChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : _registerPathName(registerPathName)
+      : NDRegisterAccessor<UserType>(registerPathName),
+        _registerPathName(registerPathName)
       {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});

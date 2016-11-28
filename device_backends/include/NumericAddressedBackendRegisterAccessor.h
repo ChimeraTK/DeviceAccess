@@ -25,7 +25,8 @@ namespace mtca4u {
 
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : isRaw(false),
+      : NDRegisterAccessor<UserType>(registerPathName),
+        isRaw(false),
         _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
       {
