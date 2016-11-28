@@ -166,9 +166,6 @@ void ScalarRegisterTest::testIntRegisterAccessor() {
   accessor.write();
   BOOST_CHECK( dummy == 119 );
 
-  // currently the non-blocking read is not implemented  in NumericAddressed accessors
-  BOOST_CHECK_THROW( accessor.readNonBlocking(), DeviceException );
-
   device.close();
 
 }
