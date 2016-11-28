@@ -76,6 +76,12 @@ namespace mtca4u {
     std::cout << "uri to parse" << deviceInfo.uri << std::endl;
     std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
+    auto iterator = _existingBackends.find(deviceInfo.uri);
+    if (iterator != _existingBackends.end())
+    {
+      //backend could be closed by the time it is recieved.  
+      return iterator->second;
+    }
     Sdm sdm;
     try {
       sdm = Utilities::parseSdm(deviceInfo.uri);
@@ -107,7 +113,12 @@ namespace mtca4u {
       std::cout<<"Pair:"<<iter->first.first<<"+"<<iter->first.second<<std::endl;
 #endif
       if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
-        return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
+      {
+        auto backend = (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
+        _existingBackends.insert({deviceInfo.uri, backend});
+        return backend;
+      }
+        //return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
     }
 
     throw BackendFactoryException("Unregistered device: Interface = "+sdm._Interface+" Protocol = "+sdm._Protocol,

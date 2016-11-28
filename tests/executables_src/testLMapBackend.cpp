@@ -70,7 +70,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 /********************************************************************************************************************/
 
 void LMapBackendTest::testExceptions() {
-
+  
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device;
   device.open("LMAP0");
@@ -115,7 +115,8 @@ void LMapBackendTest::testExceptions() {
   catch(mtca4u::DeviceException &e) {
     BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
   }
-
+  device.close();
+  
 }
 
 /********************************************************************************************************************/
@@ -169,7 +170,7 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( info->getNumberOfElements() == 1 );
     BOOST_CHECK( info->getNumberOfChannels() == 1 );
     BOOST_CHECK( info->getNumberOfDimensions() == 0 );
-
+    target1.close();
     device.close();
 
   }
@@ -248,7 +249,7 @@ void LMapBackendTest::testExceptions() {
 
     // currently the non-blocking read is not implemented in the LNMBackend accessors
     BOOST_CHECK_THROW( acc.readNonBlocking(), DeviceException );
-
+    
     device.close();
 
   }
@@ -256,14 +257,14 @@ void LMapBackendTest::testExceptions() {
 /********************************************************************************************************************/
 
 void LMapBackendTest::testReadWriteRegister() {
+
   int res;
   std::vector<int> area(1024);
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
-
-  target1.open("PCIE2");
   device.open("LMAP0");
+  target1.open("PCIE2");
 
   // single word
   res = 120;
@@ -317,6 +318,7 @@ void LMapBackendTest::testReadWriteRegister() {
 
   device.close();
   target1.close();
+  
 
 }
 
@@ -328,8 +330,9 @@ void LMapBackendTest::testReadWriteRange() {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
 
-  target1.open("PCIE2");
   device.open("LMAP0");
+  target1.open("PCIE2");
+
 
   for(int i=0; i<1024; i++) area[i] = 0;
   for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
@@ -367,14 +370,16 @@ void LMapBackendTest::testReadWriteRange() {
 /********************************************************************************************************************/
 
 void LMapBackendTest::testRegisterAccessorForRegister() {
+  
   std::vector<int> area(1024);
   int index;
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
 
-  target1.open("PCIE2");
   device.open("LMAP0");
+  target1.open("PCIE2");
+  
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
   BOOST_CHECK( !acc.isReadOnly() );
@@ -458,7 +463,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   device.close();
   target1.close();
-
+  
 }
 
 /********************************************************************************************************************/
@@ -470,8 +475,9 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
 
-  target1.open("PCIE2");
   device.open("LMAP0");
+  target1.open("PCIE2");
+  
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
   BOOST_CHECK( acc.isReadOnly() == false );
@@ -541,8 +547,8 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
 
-  target1.open("PCIE3");
   device.open("LMAP0");
+  target1.open("PCIE3");
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
   mtca4u::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
@@ -667,8 +673,9 @@ void LMapBackendTest::testNonBufferingAccessor() {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
 
-  target1.open("PCIE2");
   device.open("LMAP0");
+  target1.open("PCIE2");
+  
 
   boost::shared_ptr<mtca4u::RegisterAccessor> acc;
 
@@ -769,7 +776,8 @@ void LMapBackendTest::testVariableChannelNumber() {
     }
 
   }
-
+  device.close();
+  target.close();
 }
 
 /********************************************************************************************************************/
@@ -855,7 +863,7 @@ void LMapBackendTest::testPlugin() {
   for(unsigned int i=0; i<bufferDirect.size(); i++) {
     BOOST_CHECK( bufferDirect[i] == (signed)i+30 );
   }
-
+  device.close();
 }
 
 /********************************************************************************************************************/
@@ -867,5 +875,5 @@ void LMapBackendTest::testOther() {
   device.open("LMAP0");
 
   BOOST_CHECK( device.readDeviceInfo().find("Logical name mapping file:") == 0 );
-
+  device.close();
 }

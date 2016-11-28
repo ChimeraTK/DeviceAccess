@@ -1,5 +1,5 @@
 PCIE2     sdm://./pci:mtcadummys0; mtcadummy.map
-PCIE3     sdm://./pci:mtcadummys0; muxedDataAcessor.map
+PCIE3     sdm://./pci:mtcadummys1; muxedDataAcessor.map
 DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.map
 DUMMYD1   sdm://./dummy=goodMapFile.map goodMapFile.map
 LMAP0     sdm://./logicalNameMap valid.xlmap

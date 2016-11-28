@@ -36,6 +36,12 @@ BOOST_AUTO_TEST_CASE( testFactoryForRebotDeviceCreation ){
   mtca4u::Device rebotDevice;
   rebotDevice.open("mskrebot");
   checkWriteReadFromRegister(rebotDevice);
+  
+  mtca4u::Device rebotDevice2;
+  // create another mskrebot
+  rebotDevice2.open("mskrebot");
+  checkWriteReadFromRegister(rebotDevice2);
+  
   rebotDevice.write<double>("BOARD/WORD_USER", 48 );
   rebotDevice.close(); // we have to close this because
 

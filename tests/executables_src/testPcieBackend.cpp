@@ -449,6 +449,11 @@ void PcieBackendTest::testCreateBackend(){
   Device secondDevice;
   secondDevice.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
   BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
+  
+  Device secondDevice2;
+  //try opening same device again. 
+  secondDevice2.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
+  BOOST_CHECK( secondDevice2.read<double>("BOARD/WORD_USER")== 48 );
 
   // 3. We don't have a map file, so we have to use numerical addressing
   Device thirdDevice;
