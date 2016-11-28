@@ -71,9 +71,9 @@ namespace mtca4u {
             DeviceException::REGISTER_IS_READ_ONLY);
       }
 
-      virtual bool readNonBlocking(){
-         throw DeviceException("Non-blocking read is not implemented yet for the LNMBackendChannelAccessor",
-                               DeviceException::NOT_IMPLEMENTED);
+      virtual bool readNonBlocking() {
+        read();
+        return true;
       }
 
 

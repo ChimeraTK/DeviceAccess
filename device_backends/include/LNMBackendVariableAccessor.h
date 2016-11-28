@@ -66,9 +66,9 @@ namespace mtca4u {
         postRead();
       }
 
-      virtual bool readNonBlocking(){
-         throw DeviceException("Non-blocking read is not implemented yet for the LNMBackendVariableAccessor",
-                               DeviceException::NOT_AVAILABLE);
+      virtual bool readNonBlocking() {
+        read();
+        return isWriteable();
       }
 
       virtual void write() {
