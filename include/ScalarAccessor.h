@@ -62,6 +62,7 @@ namespace ChimeraTK {
       }
       
       bool readNonBlocking() {
+        boost::this_thread::interruption_point();
         return impl->readNonBlocking();
       }
         
