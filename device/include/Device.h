@@ -46,8 +46,6 @@ namespace mtca4u {
    *      as there are RegisterAccessors pointing to it.
    */
   class Device {
-    private:
-      mutable std::mutex _deviceMutex;
     public:
 
       /** Destructor */
@@ -551,7 +549,6 @@ namespace mtca4u {
 
   template<typename UserType>
   UserType Device::read(const RegisterPath &registerPathName, const AccessModeFlags &flags) const {
-    std::lock_guard<std::mutex> lock(_deviceMutex);
     auto acc = getScalarRegisterAccessor<UserType>(registerPathName, 0, flags);
     acc.read();
     return acc;
@@ -562,7 +559,6 @@ namespace mtca4u {
   template<typename UserType>
   std::vector<UserType> Device::read(const RegisterPath &registerPathName, size_t numberOfWords,
       size_t wordOffsetInRegister, const AccessModeFlags &flags) const {
-    std::lock_guard<std::mutex> lock(_deviceMutex);
     auto acc = getOneDRegisterAccessor<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     acc.read();
     std::vector<UserType> vector(acc.getNElements());
@@ -574,7 +570,6 @@ namespace mtca4u {
 
   template<typename UserType>
   void Device::write(const RegisterPath &registerPathName, UserType value, const AccessModeFlags &flags) {
-    std::lock_guard<std::mutex> lock(_deviceMutex);
     auto acc = getScalarRegisterAccessor<UserType>(registerPathName, 0, flags);
     acc = value;
     acc.write();
@@ -585,8 +580,6 @@ namespace mtca4u {
   template<typename UserType>
   void Device::write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
       const AccessModeFlags &flags) {
-
-     std::lock_guard<std::mutex> lock(_deviceMutex);   
      auto acc = getOneDRegisterAccessor<UserType>(registerPathName, vector.size(), wordOffsetInRegister, flags);
      acc.swap(vector);
      acc.write();
