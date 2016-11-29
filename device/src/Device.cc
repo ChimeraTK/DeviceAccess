@@ -238,14 +238,18 @@ namespace mtca4u {
     std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     _deviceBackendPointer = deviceBackend;
-    _deviceBackendPointer->open();
+    if(!_deviceBackendPointer->isOpen()) { 
+      _deviceBackendPointer->open();
+    }
   }
 
   /********************************************************************************************************************/
 
   void Device::open() {
     checkPointersAreNotNull();
-    _deviceBackendPointer->open();
+    if(!_deviceBackendPointer->isOpen()) { 
+      _deviceBackendPointer->open();
+    }
   }
 
   /********************************************************************************************************************/
