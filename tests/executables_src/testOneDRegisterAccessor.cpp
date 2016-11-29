@@ -170,7 +170,4 @@ void OneDRegisterTest::testRegisterAccessor() {
   floatRegister.write();
   device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK( compare == 42 );
-  
-  // currently the non-blocking read is not implemented in NumericAddressed accessors
-  BOOST_CHECK_THROW( floatRegister.readNonBlocking(), DeviceException );
 }

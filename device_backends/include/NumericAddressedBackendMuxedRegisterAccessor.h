@@ -35,9 +35,9 @@ namespace mtca4u {
 
       void write();
 
-      virtual bool readNonBlocking(){
-            throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
-                                  DeviceException::NOT_AVAILABLE);
+      virtual bool readNonBlocking() {
+        read();
+        return true;
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
@@ -111,7 +111,8 @@ namespace mtca4u {
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
         const RegisterPath &registerPathName, size_t numberOfElements, size_t elementsOffset,
         boost::shared_ptr<DeviceBackend> _backend )
-  : _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)),
+  : NDRegisterAccessor<UserType>(registerPathName),
+    _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)),
     _registerPathName(registerPathName),
     _numberOfElements(numberOfElements),
     _elementsOffset(elementsOffset)

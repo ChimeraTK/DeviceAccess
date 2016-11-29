@@ -246,9 +246,6 @@ void LMapBackendTest::testExceptions() {
     acc2.read();
     BOOST_CHECK( acc[0] == 3 );
     BOOST_CHECK( acc2[0] == 3 );
-
-    // currently the non-blocking read is not implemented in the LNMBackend accessors
-    BOOST_CHECK_THROW( acc.readNonBlocking(), DeviceException );
     
     device.close();
 
@@ -593,9 +590,6 @@ void LMapBackendTest::testRegisterAccessorForRange() {
     BOOST_CHECK( acc4[i] == (signed) (4000-i) );
   }
 
-  // currently the non-blocking read is not implemented in the LNMBackend accessors
-  BOOST_CHECK_THROW( acc4.readNonBlocking(), DeviceException );
-
   // read via iterators
   unsigned int idx=0;
   for(BufferingRegisterAccessor<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
@@ -806,9 +800,6 @@ void LMapBackendTest::testPlugin() {
   BOOST_CHECK(accScaled.isWriteable());
   BOOST_CHECK(accScaled.isReadable());
   BOOST_CHECK(accScaled.isReadOnly()==false);
-  
-  // currently not supported yet
-  BOOST_CHECK_THROW( accScaled.readNonBlocking(), DeviceException);
 
   // scaled area
   auto accDirect2 = device.getBufferingRegisterAccessor<int>("","FullArea");

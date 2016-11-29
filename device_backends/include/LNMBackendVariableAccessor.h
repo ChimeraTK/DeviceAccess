@@ -28,7 +28,9 @@ namespace mtca4u {
 
       LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : _registerPathName(registerPathName), _fixedPointConverter(32, 0, 1)
+      : NDRegisterAccessor<UserType>(registerPathName),
+        _registerPathName(registerPathName),
+        _fixedPointConverter(32, 0, 1)
       {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});
@@ -64,9 +66,9 @@ namespace mtca4u {
         postRead();
       }
 
-      virtual bool readNonBlocking(){
-         throw DeviceException("Non-blocking read is not implemented yet for the LNMBackendVariableAccessor",
-                               DeviceException::NOT_AVAILABLE);
+      virtual bool readNonBlocking() {
+        read();
+        return isWriteable();
       }
 
       virtual void write() {
