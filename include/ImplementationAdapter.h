@@ -43,7 +43,7 @@ namespace ChimeraTK {
         _sender = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(sender);
         _receiver = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(receiver);
         assert(_sender && _receiver);
-        _thread = std::thread([this] { this->run(); });
+        _thread = boost::thread([this] { this->run(); });
       }
 
     protected:
@@ -51,10 +51,21 @@ namespace ChimeraTK {
       /** Synchronise sender and receiver. This function is executed in the separate thread. */
       void run() {
         while(true) {
-          while(!_receiver->readNonBlocking()) std::this_thread::yield();
+          while(!_receiver->readNonBlocking()) {
+            boost::this_thread::yield();
+            boost::this_thread::interruption_point();
+          }
           _sender->accessChannel(0) = _receiver->accessChannel(0);
           _sender->write();
         }
+      }
+
+      void deactivate() {
+        if(_thread.joinable()) {
+          _thread.interrupt();
+          _thread.join();
+        }
+        assert(!_thread.joinable());
       }
 
       /** Sender and receiver process variables */
@@ -62,7 +73,7 @@ namespace ChimeraTK {
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _receiver;
 
       /** Thread handling the synchronisation */
-      std::thread _thread;
+      boost::thread _thread;
 
   };
 

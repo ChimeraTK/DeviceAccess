@@ -95,12 +95,12 @@ namespace ChimeraTK {
       void activate() {
         assert(_direction == VariableDirection::consuming);
         assert(!_thread.joinable());
-        _thread = std::thread([this] { this->run(); });
+        _thread = boost::thread([this] { this->run(); });
       }
 
       void deactivate() {
         if(_thread.joinable()) {
-          requestTerminateThread = true;
+          _thread.interrupt();
           _thread.join();
         }
         assert(!_thread.joinable());
@@ -110,12 +110,14 @@ namespace ChimeraTK {
       void run() {
         assert(_direction == VariableDirection::consuming);
         while(true) {
+          boost::this_thread::yield();
+          boost::this_thread::interruption_point();
           if(hasExternalTrigger) {
             // wait for external trigger (if present)
             /// @todo TODO replace with proper blocking implementation when supported by the CSA
             while(externalTrigger->readNonBlocking() == false) {
-              if(requestTerminateThread) return;
-              std::this_thread::yield();
+              boost::this_thread::yield();
+              boost::this_thread::interruption_point();
             }
             // receive data
             impl->readNonBlocking();
@@ -123,15 +125,19 @@ namespace ChimeraTK {
           else {
             // receive data
             while(impl->readNonBlocking() == false) {
-              if(requestTerminateThread) return;
-              std::this_thread::yield();
+              boost::this_thread::yield();
+              boost::this_thread::interruption_point();
             }
           }
+          boost::this_thread::yield();
+          boost::this_thread::interruption_point();
           for(auto &slave : slaves) {     // send out copies to slaves
             // do not send copy if no data is expected (e.g. trigger)
             if(slave->getNumberOfSamples() != 0) {
               slave->accessChannel(0) = impl->accessChannel(0);
             }
+            boost::this_thread::yield();
+            boost::this_thread::interruption_point();
             slave->write();
           }
         }
@@ -231,10 +237,7 @@ namespace ChimeraTK {
       boost::shared_ptr<mtca4u::TransferElement> externalTrigger;
 
       /** Thread handling the synchronisation, if needed */
-      std::thread _thread;
-
-      /** Flag to request termination of the synchronisation thread. */
-      bool requestTerminateThread{false};
+      boost::thread _thread;
 
   };
 
