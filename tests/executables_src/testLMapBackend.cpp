@@ -263,9 +263,9 @@ void LMapBackendTest::testReadWriteRegister() {
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
-  device.open("LMAP0");
+  
   target1.open("PCIE2");
-
+  device.open("LMAP0");
   // single word
   res = 120;
   target1.writeReg("BOARD.WORD_USER", &res, 4);
