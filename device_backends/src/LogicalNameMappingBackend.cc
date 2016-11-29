@@ -58,7 +58,8 @@ namespace mtca4u {
     parse();
     // open all referenced devices
     for(auto device = _devices.begin(); device != _devices.end(); ++device) {
-      device->second->open();
+      if (!device->second->isOpen())
+        device->second->open();
     }
   }
 
@@ -68,7 +69,8 @@ namespace mtca4u {
   {
     // close all referenced devices
     for(auto device = _devices.begin(); device != _devices.end(); ++device) {
-      device->second->close();
+      if (device->second->isOpen())
+        device->second->close();
     }
   }
 
