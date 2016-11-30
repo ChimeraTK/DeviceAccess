@@ -3,8 +3,9 @@
 using namespace boost::unit_test_framework;
 
 #include <cstdio>
+#include <boost/make_shared.hpp>
 
-#include "BackendFactory.h"
+  #include "BackendFactory.h"
 #include "MapException.h"
 using namespace mtca4u;
 
@@ -38,12 +39,16 @@ BOOST_AUTO_TEST_CASE( testCreateBackend ){
   BOOST_CHECK_NO_THROW(testPtr = BackendFactory::getInstance().createBackend("DUMMYD9")); //entry in dummies.dmap
   BOOST_CHECK(testPtr);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("FAKE1"),BackendFactoryException); //entry in dummies.dmap for unregistered device
+  boost::shared_ptr<DeviceBackend> testPtr2;
+  BOOST_CHECK_NO_THROW(testPtr2 = BackendFactory::getInstance().createBackend("DUMMYD9")); //open existing backend again
+  BOOST_CHECK(testPtr2 == testPtr); // must be same
+    
 }
 
 BOOST_AUTO_TEST_CASE( testCreateFromUri ){
   // this has to work without dmap file
   BackendFactory::getInstance().setDMapFilePath("");
-
+  
   boost::shared_ptr<DeviceBackend> testPtr;
   testPtr = BackendFactory::getInstance().createBackend("sdm://./dummy=mtcadummy.map"); //get some dummy
   // just check that something has been created. That it's the correct thing is another test.

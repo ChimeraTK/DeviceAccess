@@ -513,7 +513,7 @@ void DeviceTest::testGetRegistersInModule() {
   ++registerInfo;
   BOOST_CHECK(registerInfo->name == "WORD_STATUS");
   BOOST_CHECK(registerInfo->module == "APP0");
-
+ 
 }
 
 void DeviceTest::testGetRegisterAccessorsInModule() {
@@ -523,6 +523,7 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
   //std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
+  
   std::list< boost::shared_ptr<mtca4u::Device::RegisterAccessor> > accessorList = device->getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
 
@@ -578,12 +579,12 @@ void DeviceTest::testDeviceCreation() {
   }
   BOOST_CHECK( device5.isOpened() == false );
 
-  // check if opening another device closes the old backend
+  // check if opening device with different backend keeps old backend open.
   BOOST_CHECK_NO_THROW(device5.open("DUMMYD0"));
   BOOST_CHECK( device5.isOpened() == true );
   auto backend5 = device5.getBackend();
   BOOST_CHECK_NO_THROW(device5.open("DUMMYD1"));
-  BOOST_CHECK( ! backend5->isOpen() );    // backend5 is no longer the current backend of device5
+  BOOST_CHECK( backend5->isOpen() );    // backend5 is still the current backend of device5
   BOOST_CHECK( device5.isOpened() == true );
 
   // check closing and opening again
