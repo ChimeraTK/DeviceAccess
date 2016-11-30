@@ -8,6 +8,7 @@
 #include "DummyBackend.h"
 #include "PcieBackend.h"
 #include "DeviceInfoMap.h"
+#include <mutex>
 
 /* For test purposes; if a dummies.dmap file is found in the folder from where the
  * program is being executed it would be used as dmap file. The default dmap file
@@ -56,8 +57,10 @@ namespace mtca4u {
     /** Internal function to return a DeviceBackend */
     boost::shared_ptr<DeviceBackend> createBackendInternal(const DeviceInfoMap::DeviceInfo &deviceInfo);
     
-    std::map< std::string, boost::shared_ptr<DeviceBackend> > _existingBackends;
-
+    std::map< std::string, boost::weak_ptr<DeviceBackend> > _existingBackends;
+    
+    std::mutex _mutex;
+    
   public:
     /** This function sets the _DMapFilePath. This dmap file path is the
      *  second path where factory looks for dmap file. The first location

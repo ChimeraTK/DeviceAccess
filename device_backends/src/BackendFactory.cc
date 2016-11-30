@@ -55,6 +55,9 @@ namespace mtca4u {
 
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(
       std::string aliasOrUri) {
+    
+    std::lock_guard<std::mutex> lock(_mutex);
+    
     if(aliasOrUri.substr(0, 6) == "sdm://"){
       // it is a URI, directly create a deviceinfo and call the internal creator function
       DeviceInfoMap::DeviceInfo deviceInfo;
@@ -79,8 +82,10 @@ namespace mtca4u {
     auto iterator = _existingBackends.find(deviceInfo.uri);
     if (iterator != _existingBackends.end())
     {
-      //backend could be closed by the time it is recieved.  
-      return iterator->second;
+      if(!iterator->second.expired())
+      {
+        return iterator->second.lock();
+      }
     }
     Sdm sdm;
     try {
@@ -115,8 +120,9 @@ namespace mtca4u {
       if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
       {
         auto backend = (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
-        _existingBackends.insert({deviceInfo.uri, backend});
-        return backend;
+        boost::weak_ptr<DeviceBackend>  weakBackend = backend;
+        _existingBackends[deviceInfo.uri] = weakBackend;
+        return weakBackend.lock();
       }
         //return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
     }
@@ -125,5 +131,5 @@ namespace mtca4u {
                                   BackendFactoryException::UNREGISTERED_DEVICE);
       return boost::shared_ptr<DeviceBackend>(); //won't execute
     }
-
+  
 } // namespace mtca4u
