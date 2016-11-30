@@ -256,11 +256,6 @@ namespace mtca4u {
 
   void Device::open(std::string const & aliasName) {
     BackendFactory &factoryInstance = BackendFactory::getInstance();
-    if(_deviceBackendPointer != false) {        // Some backend is already assigned: close it if opened.
-      if(_deviceBackendPointer->isOpen()) {     // This prevents any existing register accessor of this device to be
-        _deviceBackendPointer->close();         // used after this device was assigned to a new backend.
-      }
-    }
     _deviceBackendPointer =  factoryInstance.createBackend(aliasName);
     if(!_deviceBackendPointer->isOpen()) {      // createBackend may return an already opened instance for some backends
       _deviceBackendPointer->open();
