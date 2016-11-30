@@ -20,15 +20,22 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
       _boardAddr(boardAddr),
       _port(port),
       _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
-      _serverProtocolVersion(0) {}
+      _serverProtocolVersion(0), 
+      _mutex(){}
 
 RebotBackend::~RebotBackend() {
+  
+  std::lock_guard<std::mutex> lock(_mutex);
+  
   if (isOpen()) {
     _tcpObject->closeConnection();
   }
 }
 
 void RebotBackend::open() {
+   
+   std::lock_guard<std::mutex> lock(_mutex);
+   
   _tcpObject->openConnection();
   _serverProtocolVersion = getServerProtocolVersion();
   _opened = true;
@@ -36,6 +43,9 @@ void RebotBackend::open() {
 
 void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
                         size_t sizeInBytes) {
+  
+  std::lock_guard<std::mutex> lock(_mutex);                          
+                          
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
                                 RebotBackendException::EX_DEVICE_CLOSED);
@@ -77,6 +87,9 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t address, int32_t* data,
 
 void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
                          size_t sizeInBytes) {
+  
+  std::lock_guard<std::mutex> lock(_mutex);
+  
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
                                 RebotBackendException::EX_DEVICE_CLOSED);
@@ -132,6 +145,9 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
 }
 
 void RebotBackend::close() {
+  
+  std::lock_guard<std::mutex> lock(_mutex);
+  
   _opened = false;
   _tcpObject->closeConnection();
 }

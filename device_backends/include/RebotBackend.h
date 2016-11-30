@@ -14,7 +14,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
-
+#include <mutex>
 #include "NumericAddressedBackend.h"
 
 class TcpCtrl;
@@ -28,6 +28,7 @@ namespace mtca4u {
       int _port;
       boost::shared_ptr<TcpCtrl> _tcpObject;
       uint32_t _serverProtocolVersion;
+      std::mutex _mutex;
     public:
       RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
       ~RebotBackend();
@@ -49,7 +50,6 @@ namespace mtca4u {
       static boost::shared_ptr<DeviceBackend> createInstance(
           std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
-
     private:
       /*!
        * @brief Frame a rebot 'n' word read request and send it over the socket.
