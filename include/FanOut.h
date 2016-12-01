@@ -200,11 +200,11 @@ namespace ChimeraTK {
 
       void write() {
         for(auto &slave : slaves) {     // send out copies to slaves
-          slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
           // do not send copy if no data is expected (e.g. trigger)
           if(slave->getNumberOfSamples() != 0) {
-            slave->write();
+            slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
           }
+          slave->write();
         }
         impl->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
         impl->write();
