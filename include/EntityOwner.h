@@ -38,10 +38,15 @@ namespace ChimeraTK {
       
       /** Obtain the list of accessors/variables associated with this instance and any submodules */
       const std::list<AccessorBase*> getAccessorListRecursive() const;
-      
+
       /** Called inside the constructor of Accessor: adds the accessor to the list */
       void registerAccessor(AccessorBase* accessor) {
         accessorList.push_back(accessor);
+      }
+
+      /** Called inside the destructor of Accessor: removes the accessor from the list */
+      void unregisterAccessor(AccessorBase* accessor) {
+        accessorList.remove(accessor);
       }
       
       /** Register another module as a sub-mdoule. Will be called automatically by all modules in their constructors. */

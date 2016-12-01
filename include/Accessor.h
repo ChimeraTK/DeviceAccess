@@ -107,15 +107,25 @@ namespace ChimeraTK {
 
     public:
 
-      /** The default accessor takes no arguments and leaves the accessor uninitialised. It will be dysfunctional
-       *  until it is properly initialised using connectTo(). */
       Accessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit, size_t nElements,
                UpdateMode mode, const std::string &description)
       : _owner(owner), _name(name), _direction(direction), _unit(unit), _mode(mode), _description(description),
         _nElements{nElements}
       {
-        owner->registerAccessor(this);
+        _owner->registerAccessor(this);
         node = VariableNetworkNode(*this);
+      }
+
+      /** The default constructor takes no arguments and leaves the accessor uninitialised. It will be dysfunctional
+       *  until it is properly initialised using connectTo(). */
+      Accessor()
+      : _owner(nullptr), _name("dysfunctional"), _direction(VariableDirection::invalid), _unit("invalid"),
+        _mode(UpdateMode::invalid), _description("dysfunctional accessor"), _nElements{0}
+      {}
+      
+      /** The destructor unregisters the accessor from the owner module */
+      ~Accessor() {
+        _owner->unregisterAccessor(this);
       }
 
       VariableDirection getDirection() const {return _direction;}
@@ -134,6 +144,20 @@ namespace ChimeraTK {
       
       size_t getNumberOfElements() const { return _nElements; }
 
+      /** Assign a new accessor to this accessor. */
+      void replace(const Accessor<UserType> &newAccessor) {
+        _owner = newAccessor._owner;
+        _name = newAccessor._name;
+        _direction = newAccessor._direction;
+        _unit = newAccessor._unit;
+        _mode = newAccessor._mode;
+        _description = newAccessor._description;
+        _nElements = newAccessor._nElements;
+        impl = newAccessor.impl;
+        _owner->registerAccessor(this);
+        node = VariableNetworkNode(*this);
+      }
+
     protected:
 
       Module *_owner;
@@ -142,8 +166,15 @@ namespace ChimeraTK {
       std::string _unit;
       UpdateMode _mode;
       std::string _description;
-      
       size_t _nElements;
+
+      boost::shared_ptr< NDRegisterAccessor<UserType> > impl;
+
+    private:
+
+      /** prevent copying by operator=, since it will be confusing (operator= may also be overloaded to access the
+       *  content of the buffer!) */
+      const Accessor<UserType>& operator=(const Accessor<UserType>& rightHandSide) const;
 
 
   };

@@ -43,6 +43,9 @@ namespace ChimeraTK {
       : Accessor<UserType>(owner, name, direction, unit, nElements, mode, description)
       {}
 
+      /** Default constructor creates a dysfunction accessor (to be assigned with a real accessor later) */
+      ArrayAccessor() {}
+
       void read() {
         if(Accessor<UserType>::_mode == UpdateMode::push) {
           while(impl->readNonBlocking() == false) { /// @todo TODO proper blocking implementation
@@ -127,10 +130,8 @@ namespace ChimeraTK {
           assert(impl->isWriteable());
         }
       }
-
-    protected:
-
-      boost::shared_ptr< NDRegisterAccessor<UserType> > impl;
+      
+      using Accessor<UserType>::impl;
 
   };
 
