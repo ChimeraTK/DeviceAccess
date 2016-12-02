@@ -14,7 +14,7 @@
 namespace ctk = ChimeraTK;
 
 struct AutomationModule : public ctk::ApplicationModule {
-    AutomationModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     CTK_SCALAR_INPUT(double, operatorSetpoint, "Celsius", ctk::UpdateMode::poll, "Setpoint given by the operator");
     CTK_SCALAR_OUTPUT(double, loopSetpoint, "Celsius", "Setpoint computed by the automation module");
@@ -38,7 +38,7 @@ struct AutomationModule : public ctk::ApplicationModule {
 
 
 struct ControlLoopModule : public ctk::ApplicationModule {
-    ControlLoopModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     CTK_SCALAR_INPUT(double, setpoint, "Celsius", ctk::UpdateMode::push, "Setpoint for my control loop");
     CTK_SCALAR_INPUT(double, readback, "Celsius", ctk::UpdateMode::push, "Control loop input value");
@@ -65,7 +65,7 @@ struct ControlLoopModule : public ctk::ApplicationModule {
 
 
 struct SimulatorModule : public ctk::ApplicationModule {
-    SimulatorModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     CTK_SCALAR_INPUT(double, actuator, "A", ctk::UpdateMode::push, "Actuator input for the simulation");
     CTK_SCALAR_OUTPUT(double, readback, "Celsius", "Readback output value of the simulation");
@@ -106,10 +106,8 @@ struct MyApp : public ctk::Application {
 
       controlLoop.actuator >> dev("Variable") >> cs("actuatorLoop");
 
-      // TODO Reading back from the device register is not working. Should it work, or should it throw an error? FIXME
-      //dev("Variable") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
-      //dev("Variable", typeid(double)) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
-      controlLoop.actuator >> simulator.actuator >> cs("actuatorSimulator");
+      dev("Variable") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
+      dev("Variable", typeid(double), 1) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
 
       simulator.readback >> controlLoop.readback >> cs("readback") >> cs("readback_another_time");
 
