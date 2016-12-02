@@ -35,19 +35,19 @@ template<typename T>
 struct TestModule : public ctk::ApplicationModule {
     TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
-    CTK_SCALAR_OUTPUT(T, feedingPush, "MV/m", "Some output scalar");
-    CTK_SCALAR_INPUT(T, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
-    CTK_SCALAR_INPUT(T, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
-    CTK_SCALAR_INPUT(T, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
+    ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Some output scalar"};
+    ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
+    ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Descrption"};
+    ctk::ScalarPushInput<T> consumingPush3{this, "consumingPush3", "MV/m", "Descrption"};
 
-    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
-    CTK_SCALAR_INPUT(T, consumingPoll2, "MV/m", ctk::UpdateMode::poll, "Descrption");
-    CTK_SCALAR_INPUT(T, consumingPoll3, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
     
-    CTK_ARRAY_INPUT(T, consumingPollArray, "m", 10, ctk::UpdateMode::poll, "Descrption");
-    CTK_ARRAY_INPUT(T, consumingPushArray, "m", 10, ctk::UpdateMode::push, "Descrption");
+    ctk::ArrayPollInput<T> consumingPollArray{this, "consumingPollArray", "m", 10, "Descrption"};
+    ctk::ArrayPushInput<T> consumingPushArray{this, "consumingPushArray", "m", 10, "Descrption"};
     
-    CTK_ARRAY_OUTPUT(T, feedingArray, "m", 10, "Descrption");
+    ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Descrption"};
 
     void mainLoop() {}
 };

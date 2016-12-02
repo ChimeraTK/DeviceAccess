@@ -16,8 +16,8 @@ namespace ctk = ChimeraTK;
 struct AutomationModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    CTK_SCALAR_INPUT(double, operatorSetpoint, "Celsius", ctk::UpdateMode::poll, "Setpoint given by the operator");
-    CTK_SCALAR_OUTPUT(double, loopSetpoint, "Celsius", "Setpoint computed by the automation module");
+    ctk::ScalarPollInput<double> operatorSetpoint{this, "operatorSetpoint", "Celsius", "Setpoint given by the operator"};
+    ctk::ScalarOutput<double> loopSetpoint{this, "loopSetpoint", "Celsius", "Setpoint computed by the automation module"};
 
     void mainLoop() {
       loopSetpoint = 0;
@@ -40,9 +40,9 @@ struct AutomationModule : public ctk::ApplicationModule {
 struct ControlLoopModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    CTK_SCALAR_INPUT(double, setpoint, "Celsius", ctk::UpdateMode::push, "Setpoint for my control loop");
-    CTK_SCALAR_INPUT(double, readback, "Celsius", ctk::UpdateMode::push, "Control loop input value");
-    CTK_SCALAR_OUTPUT(double, actuator, "A", "Actuator output of the control loop");
+    ctk::ScalarPushInput<double> setpoint{this, "setpoint", "Celsius", "Setpoint for my control loop"};
+    ctk::ScalarPushInput<double> readback{this, "readback", "Celsius", "Control loop input value"};
+    ctk::ScalarOutput<double> actuator{this, "actuator", "A", "Actuator output of the control loop"};
 
     void mainLoop() {
 
@@ -67,8 +67,8 @@ struct ControlLoopModule : public ctk::ApplicationModule {
 struct SimulatorModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    CTK_SCALAR_INPUT(double, actuator, "A", ctk::UpdateMode::push, "Actuator input for the simulation");
-    CTK_SCALAR_OUTPUT(double, readback, "Celsius", "Readback output value of the simulation");
+    ctk::ScalarPushInput<double> actuator{this, "actuator", "A", "Actuator input for the simulation"};
+    ctk::ScalarOutput<double> readback{this, "readback", "Celsius", "Readback output value of the simulation"};
 
     double lastValue{0};
 

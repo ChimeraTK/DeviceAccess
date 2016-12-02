@@ -25,25 +25,25 @@ namespace ctk = ChimeraTK;
 /* the ApplicationModule for the test is a template of the user type */
 
 struct TestModule : public ctk::ApplicationModule {
-    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+  using ctk::ApplicationModule::ApplicationModule;
   
   struct MixedGroup : public ctk::VariableGroup {
-    MixedGroup(ctk::EntityOwner *owner, const std::string &name) : ctk::VariableGroup(owner,name) {}
-    CTK_SCALAR_INPUT(int, consumingPush, "MV/m", ctk::UpdateMode::push, "Descrption");
-    CTK_SCALAR_INPUT(int, consumingPush2, "MV/m", ctk::UpdateMode::push, "Descrption");
-    CTK_SCALAR_INPUT(int, consumingPush3,  "MV/m", ctk::UpdateMode::push, "Descrption");
-    CTK_SCALAR_INPUT(int, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
-    CTK_SCALAR_INPUT(int, consumingPoll2, "MV/m", ctk::UpdateMode::poll, "Descrption");
-    CTK_SCALAR_INPUT(int, consumingPoll3, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<int> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
+    ctk::ScalarPushInput<int> consumingPush2{this, "consumingPush2", "MV/m", "Descrption"};
+    ctk::ScalarPushInput<int> consumingPush3{this, "consumingPush3", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<int> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<int> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<int> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
   };
   MixedGroup mixedGroup{this, "mixedGroup"};
 
-  CTK_SCALAR_OUTPUT(int, feedingPush, "MV/m", "Descrption");
-  CTK_SCALAR_OUTPUT(int, feedingPush2, "MV/m", "Descrption");
-  CTK_SCALAR_OUTPUT(int, feedingPush3,  "MV/m", "Descrption");
-  CTK_SCALAR_OUTPUT(int, feedingPoll, "MV/m", "Descrption");
-  CTK_SCALAR_OUTPUT(int, feedingPoll2, "MV/m", "Descrption");
-  CTK_SCALAR_OUTPUT(int, feedingPoll3, "MV/m", "Descrption");
+  ctk::ScalarOutput<int> feedingPush{this, "feedingPush", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPush2{this, "feedingPush2", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPush3{this, "feedingPush3", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPoll{this, "feedingPoll", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m", "Descrption"};
   
   void mainLoop() {}
 };

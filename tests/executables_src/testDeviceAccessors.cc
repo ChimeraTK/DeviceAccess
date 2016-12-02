@@ -36,9 +36,9 @@ template<typename T>
 struct TestModule : public ctk::ApplicationModule {
     TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
-    CTK_SCALAR_INPUT(T, consumingPoll, "MV/m", ctk::UpdateMode::poll, "Descrption");
+    ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
 
-    CTK_SCALAR_OUTPUT(T, feedingToDevice, "MV/m", "Descrption");
+    ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Descrption"};
 
     void mainLoop() {}
 };

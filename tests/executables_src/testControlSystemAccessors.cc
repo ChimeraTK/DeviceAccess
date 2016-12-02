@@ -37,8 +37,8 @@ template<typename T>
 struct TestModule : public ctk::ApplicationModule {
     TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
-    CTK_SCALAR_INPUT(T, consumer, "", ctk::UpdateMode::push, "No comment.");
-    CTK_SCALAR_OUTPUT(T, feeder, "MV/m", "Some fancy explanation about this variable");
+    ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
+    ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
 
     void mainLoop() {}
 };

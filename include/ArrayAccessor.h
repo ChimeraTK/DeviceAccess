@@ -15,26 +15,10 @@
 
 #include "Accessor.h"
 
-/** Macros to declare an array variable/accessor more easily. The call to this macro must be placed inside the
- *  class definiton of a Module (e.g. ApplicationModule or VariableGroup).
- *
- *  UserType is the data type of the variable.
- *  name will be the C++ symbol name of the variable accessor. It will be of the type ChimeraTK::ScalarAccessor<UserType>
- *  unit is the engineering unit as a character constant.
- *  nElements is the size of the array (number of elements)
- *  mode can be either ChimeraTK::UpdateMode::push or ChimeraTK::UpdateMode::poll, deciding whether a call to read()
- *  will block until new data is available (push) or just return the latest value (poll, might not be fully realtime
- *  capable). */
-#define CTK_ARRAY_INPUT(UserType, name, unit, nElements, mode, description)                                         \
-    ChimeraTK::ArrayAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit,             \
-                                            nElements, mode, description}
-#define CTK_ARRAY_OUTPUT(UserType, name, unit, nElements, description)                                              \
-    ChimeraTK::ArrayAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::feeding, unit,               \
-                                            nElements, ChimeraTK::UpdateMode::push, description}
-
 namespace ChimeraTK {
 
-  /** Accessor for array variables (i.e. vectors). */
+  /** Accessor for array variables (i.e. vectors). Note for users: Preferrably use the convenience classes
+   *  ArrayPollInput, ArrayPushInput, ArrayOutput instead of this class directly. */
   template< typename UserType >
   class ArrayAccessor : public Accessor<UserType> {
     public:
@@ -133,6 +117,36 @@ namespace ChimeraTK {
       
       using Accessor<UserType>::impl;
 
+  };
+
+  /** Convenience class for input array accessors with UpdateMode::push */
+  template< typename UserType >
+  struct ArrayPushInput : public ArrayAccessor<UserType> {
+    ArrayPushInput(Module *owner, const std::string &name, std::string unit, size_t nElements, const std::string &description)
+    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::push, description)
+    {}
+    ArrayPushInput() : ArrayAccessor<UserType>() {}
+    using ArrayAccessor<UserType>::operator=;
+  };
+
+  /** Convenience class for input array accessors with UpdateMode::poll */
+  template< typename UserType >
+  struct ArrayPollInput : public ArrayAccessor<UserType> {
+    ArrayPollInput(Module *owner, const std::string &name, std::string unit, size_t nElements, const std::string &description)
+    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::poll, description)
+    {}
+    ArrayPollInput() : ArrayAccessor<UserType>() {}
+    using ArrayAccessor<UserType>::operator=;
+  };
+
+  /** Convenience class for output array accessors (always UpdateMode::push) */
+  template< typename UserType >
+  struct ArrayOutput : public ArrayAccessor<UserType> {
+    ArrayOutput(Module *owner, const std::string &name, std::string unit, size_t nElements, const std::string &description)
+    : ArrayAccessor<UserType>(owner, name, VariableDirection::feeding, unit, nElements, UpdateMode::push, description)
+    {}
+    ArrayOutput() : ArrayAccessor<UserType>() {}
+    using ArrayAccessor<UserType>::operator=;
   };
 
 } /* namespace ChimeraTK */

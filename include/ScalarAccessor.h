@@ -15,25 +15,10 @@
 
 #include "Accessor.h"
 
-/** Macros to declare a scalar variable/accessor more easily. The call to this macro must be placed inside the
- *  class definiton of a Module (e.g. ApplicationModule or VariableGroup).
- *
- *  UserType is the data type of the variable.
- *  name will be the C++ symbol name of the variable accessor. It will be of the type ChimeraTK::ScalarAccessor<UserType>
- *  unit is the engineering unit as a character constant.
- *  mode can be either ChimeraTK::UpdateMode::push or ChimeraTK::UpdateMode::poll, deciding whether a call to read()
- *  will block until new data is available (push) or just return the latest value (poll, might not be fully realtime
- *  capable). */
-#define CTK_SCALAR_INPUT(UserType, name, unit, mode, description)                                                   \
-    ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::consuming, unit, mode,      \
-                                             description}
-#define CTK_SCALAR_OUTPUT(UserType, name, unit, description)                                                        \
-    ChimeraTK::ScalarAccessor<UserType> name{this, #name, ChimeraTK::VariableDirection::feeding, unit,              \
-                                             ChimeraTK::UpdateMode::push, description}
-
 namespace ChimeraTK {
 
-  /** Accessor for scalar variables (i.e. single values). */
+  /** Accessor for scalar variables (i.e. single values). Note for users: Preferrably use the convenience classes
+   *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
   template< typename UserType >
   class ScalarAccessor : public Accessor<UserType> {
     public:
@@ -124,6 +109,36 @@ namespace ChimeraTK {
       
       using Accessor<UserType>::impl;
 
+  };
+
+  /** Convenience class for input scalar accessors with UpdateMode::push */
+  template< typename UserType >
+  struct ScalarPushInput : public ScalarAccessor<UserType> {
+    ScalarPushInput(Module *owner, const std::string &name, std::string unit, const std::string &description)
+    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::push, description)
+    {}
+    ScalarPushInput() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
+  };
+
+  /** Convenience class for input scalar accessors with UpdateMode::poll */
+  template< typename UserType >
+  struct ScalarPollInput : public ScalarAccessor<UserType> {
+    ScalarPollInput(Module *owner, const std::string &name, std::string unit, const std::string &description)
+    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::poll, description)
+    {}
+    ScalarPollInput() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
+  };
+
+  /** Convenience class for output scalar accessors (always UpdateMode::push) */
+  template< typename UserType >
+  struct ScalarOutput : public ScalarAccessor<UserType> {
+    ScalarOutput(Module *owner, const std::string &name, std::string unit, const std::string &description)
+    : ScalarAccessor<UserType>(owner, name, VariableDirection::feeding, unit, UpdateMode::push, description)
+    {}
+    ScalarOutput() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
   };
 
 } /* namespace ChimeraTK */
