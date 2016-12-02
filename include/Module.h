@@ -21,6 +21,19 @@ namespace ChimeraTK {
 
       /** Constructor: register the module with its owner */
       Module(EntityOwner *owner, const std::string &name);
+      
+      /** Default constructor: This is only here to mitigate a bug in gcc. It is needed to allow constructor
+       *  inheritance of modules owning other modules. This constructor will not actually be called and thus
+       *  just throws an exception. See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
+      Module() : EntityOwner(nullptr, "invalid") {
+        struct wrong_constructor_called_error : std::exception {
+          const char* what() const noexcept {
+            return "The default constructor of ChimeraTK::Module() was called. This constructor should not exist "
+                   "and was only added to mitigate a bug in gcc.";
+          }
+        };
+        throw wrong_constructor_called_error();
+      }
 
       /** Destructor */
       virtual ~Module() {}
