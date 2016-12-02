@@ -16,7 +16,11 @@ namespace ChimeraTK {
   class AccessorBase;
   class Module;
 
-  /** Base class for owners of other EntityOwners (e.g. Modules) and Accessors. */
+  /** Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
+    * @todo Rename this class to "Owner" and make it more generic. It should basically just implement the
+    * "Composite Pattern". The classes AccessorBase, Module and Owner should have a common base class called
+    * "Component".
+    */
   class EntityOwner {
 
     public:
