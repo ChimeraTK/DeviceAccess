@@ -19,10 +19,8 @@ namespace ChimeraTK {
   class VariableGroup : public Module {
 
     public:
-
-      /** Constructor: register with another module as owner */
-      VariableGroup(EntityOwner *owner, const std::string &name)
-      : Module(owner,name) {}
+      
+      using Module::Module;
 
       /** Destructor */
       virtual ~VariableGroup();
