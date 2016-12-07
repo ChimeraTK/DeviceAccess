@@ -188,6 +188,10 @@ namespace ChimeraTK {
     // add sub-element containing the description
     xmlpp::Element *descriptionElement = variable->add_child("description");
     descriptionElement->set_child_text(pdata->network->getDescription());
+
+    // add sub-element containing the description
+    xmlpp::Element *nElementsElement = variable->add_child("numberOfElements");
+    nElementsElement->set_child_text(std::to_string(pdata->network->getFeedingNode().getNumberOfElements()));
   }
 
   /*********************************************************************************************************************/
