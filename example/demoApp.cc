@@ -7,8 +7,6 @@
 
 #include <iostream>
 
-#include <mtca4u/BackendFactory.h>
-
 #include "ApplicationCore.h"
 
 namespace ctk = ChimeraTK;
@@ -99,7 +97,7 @@ struct MyApp : public ctk::Application {
     ctk::ControlSystemModule cs{"MyLocation"};
 
     void defineConnections() {
-      mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+      mtca4u::setDMapFilePath("dummy.dmap");
 
       cs("setpoint") >> automation.operatorSetpoint;
       automation.loopSetpoint >> controlLoop.setpoint >> cs("setpoint_automation");

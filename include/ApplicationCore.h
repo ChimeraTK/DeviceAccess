@@ -8,6 +8,8 @@
  *  for writing an application.
  */
 
+#include <mtca4u/Utilities.h>   // for mtca4u::setDMapFilePath(), which is used by all applications
+
 #include "Application.h"
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
