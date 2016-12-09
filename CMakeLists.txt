@@ -27,7 +27,7 @@ include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 00.02 REQUIRED)
+FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 00.03 REQUIRED)
 include_directories(SYSTEM ${ChimeraTK-ControlSystemAdapter_INCLUDE_DIRS})
 
 # Find the XML parser library libxml++
