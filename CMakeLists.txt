@@ -1,6 +1,8 @@
 PROJECT(ChimeraTK-ApplicationCore)
 cmake_minimum_required(VERSION 2.8)
 
+include(cmake/add_dependency.cmake)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
@@ -22,13 +24,11 @@ set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJEC
 
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-FIND_PACKAGE(mtca4u-deviceaccess 00.18 REQUIRED)
-include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
+add_dependency(mtca4u-deviceaccess 00.18 REQUIRED)
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 00.03 REQUIRED)
-include_directories(SYSTEM ${ChimeraTK-ControlSystemAdapter_INCLUDE_DIRS})
+add_dependency(ChimeraTK-ControlSystemAdapter 00.03 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -39,19 +39,13 @@ include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}" ${glib_I
 
 # optional dependency: if finding the DOOCS server library, the example and tests will be built
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-FIND_PACKAGE(DOOCS 18.10.5 COMPONENTS server)
-include_directories(SYSTEM ${DOOCS_INCLUDE_DIRS})
-link_directories(${DOOCS_LIBRARY_DIRS})
+##add_dependency(DOOCS 18.10.5 COMPONENTS server) ## should not be needed since it will be brought in by the DoocsAdapter
 
 # optional dependency: the DoocsServerTestHelper is also needed for the tests
-FIND_PACKAGE(doocs-server-test-helper)
-include_directories(SYSTEM ${doocs-server-test-helper_INCLUDE_DIRS})
-link_directories(${doocs-server-test-helper_LIBRARY_DIRS})
+add_dependency(doocs-server-test-helper 00.04)
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter needed for tests and example
-FIND_PACKAGE(ControlSystemAdapter-DoocsAdapter)
-include_directories(SYSTEM ${ControlSystemAdapter-DoocsAdapter_INCLUDE_DIRS})
-link_directories(${ControlSystemAdapter-DoocsAdapter_LIBRARY_DIRS})
+add_dependency(ControlSystemAdapter-DoocsAdapter 00.01)
 
 # optional dependency: BOOST unit test framework needed for tests
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework )
@@ -72,7 +66,7 @@ ELSE()
 ENDIF()
 
 # Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CXX_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -Wuninitialized -O3")
 
 # use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
@@ -174,5 +168,3 @@ set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}")
 set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
-# The instructions to create a debian package are loaded from a separate file
-include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
