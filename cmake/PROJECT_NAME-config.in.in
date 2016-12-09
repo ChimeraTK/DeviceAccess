@@ -37,16 +37,16 @@ fi
 while [ $# -gt 0 ]; do
     case "$1" in
       --cppflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_CXX_FLAGS_MAKEFILE@"
+        OUTPUT="${OUTPUT} @@PROJECT_NAME@_CXX_FLAGS_MAKEFILE@"
         shift;;
       --ldflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_LINKER_FLAGS_MAKEFILE@"
+        OUTPUT="${OUTPUT} @@PROJECT_NAME@_LINKER_FLAGS_MAKEFILE@"
         shift;;
       --version)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_SOVERSION@"
+        OUTPUT="${OUTPUT} @@PROJECT_NAME@_SOVERSION@"
         shift;;
       --mexflags)
-        OUTPUT="${OUTPUT}@@PROJECT_NAME@_MEXFLAGS@"
+        OUTPUT="${OUTPUT} @@PROJECT_NAME@_MEXFLAGS@"
         shift;;
       *)
         echo "invalid option: $1" 1>&2
