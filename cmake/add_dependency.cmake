@@ -40,6 +40,7 @@ FUNCTION(add_dependency dependency_project_name required_version)
   SET(${dependency_project_name}_LIBRARIES ${${dependency_project_name}_LIBRARIES} PARENT_SCOPE)
   SET(${dependency_project_name}_LINK_FLAGS ${${dependency_project_name}_LINK_FLAGS} PARENT_SCOPE)
   SET(${dependency_project_name}_CXX_FLAGS ${${dependency_project_name}_CXX_FLAGS} PARENT_SCOPE)
+  SET(${dependency_project_name}_FOUND ${${dependency_project_name}_FOUND} PARENT_SCOPE)
 
 ENDFUNCTION(add_dependency)
 
