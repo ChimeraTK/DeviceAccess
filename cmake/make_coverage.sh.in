@@ -1,0 +1,53 @@
+#!/bin/bash -e
+#######################################################################################################################
+#
+# Shell script for generating a code coverage report.
+#
+# Parameter to be set inside the CMake project:
+# EXCLUDE_FROM_COVERAGE (optional) Space separated list of directories in you source code which are excluded from the
+#                                  coverage report.
+#
+# CMAKE_SOURCE_DIR and PROJECT_BINARY_DIR are always automatically there.
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
+rm -f `find . -name "*\.gcda"`
+make test
+lcov --capture --directory . --output-file coverage_all.info
+
+#lcov capture also includes external stuff like glibc, boost etc.
+#only extract the reports for this project
+lcov --extract coverage_all.info "@CMAKE_SOURCE_DIR@*" -o coverage_only_source_tree.info
+
+#Some parts of the source code might be excluded. Set EXCLUDE_FROM_COVERAGE to contain 
+# a list of directories to be excluded from the coverage report.
+# Don't worry if this is empty. It just means there is nothing to exclude (the normal case).
+for exclude_dir in @EXCLUDE_FROM_COVERAGE@; do 
+    echo lcov --remove coverage_only_source_tree.info "@CMAKE_SOURCE_DIR@/${exclude_dir}*" -o tmp.info
+    lcov --remove coverage_only_source_tree.info "@CMAKE_SOURCE_DIR@/${exclude_dir}*" -o tmp.info
+    mv tmp.info coverage_only_source_tree.info
+done
+
+#Some projects install the library and its headers for testing in the build directory
+#and compile tests and examples against it. This leads to double
+#counting and untested lines in the coverage report. That's why we
+#exclude the build directory from the coverage report (needed if the
+#build directory is in the source tree).
+#Attention: If you make an 'in sorce build' the coverage report will
+#be empty!
+lcov --remove coverage_only_source_tree.info "@PROJECT_BINARY_DIR@/*" -o coverage.info
+
+#finally generate the html page
+genhtml coverage.info --output-directory coverage_html
