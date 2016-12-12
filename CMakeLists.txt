@@ -101,6 +101,10 @@ if(TESTING_IS_ENABLED)
       )
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
+  # copy config files
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.xlmap DESTINATION ${PROJECT_BINARY_DIR})
+
 endif(TESTING_IS_ENABLED)
 
 # build example
@@ -117,7 +121,7 @@ if(DEMO_IS_ENABLED)
   
   add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
-  # copy config file
+  # copy config files
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.xlmap DESTINATION ${PROJECT_BINARY_DIR})
