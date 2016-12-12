@@ -92,7 +92,7 @@ namespace mtca4u {
 
   void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
     if (!_opened){
-      throw DummyBackendException("Device is closed.", DummyBackendException::ALREADY_CLOSED);
+      throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
@@ -103,7 +103,7 @@ namespace mtca4u {
 
   void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
     if (!_opened){
-      throw DummyBackendException("Device is closed.", DummyBackendException::ALREADY_CLOSED);
+      throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
