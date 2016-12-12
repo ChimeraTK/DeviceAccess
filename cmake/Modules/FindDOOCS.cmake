@@ -64,13 +64,14 @@ set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap)
 set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
 set(DOOCS_LIBRARY_DIRS ${DOOCS_DIR}/)
 
-set(DOOCS_CXX_FLAGS "-Wall -fPIC -D_REENTRANT -DLINUX -D__LINUX__ -DDMSG -DTINE_EXPORT=\" \"")
+set(DOOCS_CXX_FLAGS "-Wall -fPIC -D_REENTRANT -DLINUX -D__LINUX__ -DDMSG -DTINE_EXPORT=' '")
 set(DOOCS_LINKER_FLAGS "-Wl,--no-as-needed")
 set(DOOCS_LINK_FLAGS "${DOOCS_LINKER_FLAGS}")
 
 # extract DOOCS version from librar so symlink. Note: This is platform dependent and only works
 # if DOOCS was installed from the Debian pagackes. Find a better version detection scheme!
-execute_process(COMMAND bash -c "readlink ${DOOCS_DIR}/libDOOCSapi.so | sed -e 's/^.*libDOOCSapi.so.//' -e 's/-.*$//'" OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE DOOCS_VERSION)
+execute_process(COMMAND bash -c "readelf -d ${DOOCS_DIR}/libDOOCSapi.so | grep SONAME | sed -e 's/^.*Library soname: \\[libDOOCSapi\\.so\\.//' -e 's/\\]$//'"
+                OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE DOOCS_VERSION)
 
 # use a macro provided by CMake to check if all the listed arguments are valid and set DOOCS_FOUND accordingly
 include(FindPackageHandleStandardArgs)
