@@ -44,14 +44,14 @@ cd debian_package
 #Note, we first clone and then checkout the tag because the old git version on
 #Ubuntu12.4 does not support to do it in one go.
 BUILD_DIR_NAME=@PACKAGE_BASE_NAME@_@PACKAGE_FULL_LIBRARY_VERSION@
-git clone @PACKAGE_GIT_URI@ ${BUILD_DIR_NAME}
+git clone @CMAKE_SOURCE_DIR@ ${BUILD_DIR_NAME}
 ( cd  ${BUILD_DIR_NAME} &&\
   git checkout @PACKAGE_TAG_VERSION@ &&\
   rm -rf .git )
 #Debian convention: file has to end on .orig.tar.gz
 tar -czf  ${BUILD_DIR_NAME}.orig.tar.gz  ${BUILD_DIR_NAME}
 
-#Copy the prepared debian packaging config files to the source code 
+#Copy the prepared debian packaging config files to the source code
 #directroy
 cp -r ../debian_from_template  ${BUILD_DIR_NAME}/debian
 cd ${BUILD_DIR_NAME}
