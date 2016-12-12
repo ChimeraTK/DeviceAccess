@@ -122,7 +122,8 @@ namespace mtca4u {
         auto backend = (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
         boost::weak_ptr<DeviceBackend>  weakBackend = backend;
         _existingBackends[deviceInfo.uri] = weakBackend;
-        return weakBackend.lock();
+	// return the shared pointer, not the weak pointer
+        return backend;
       }
         //return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
     }
