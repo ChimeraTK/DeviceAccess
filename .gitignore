@@ -5,6 +5,8 @@
 ######################
 build
 .project
+.kdev4
+*.kdev4
 #files ending with ~ are emacs backups
 *~
 #files ending with .swp might show up when using vi
