@@ -49,7 +49,7 @@ add_dependency(ControlSystemAdapter-DoocsAdapter 00.01)
 
 # optional dependency: BOOST unit test framework needed for tests
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework )
-IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND DOOCS_FOUND AND doocs-server-test-helper_FOUND)
+IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND ControlSystemAdapter-DoocsAdapter_FOUND AND doocs-server-test-helper_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
 ELSE()
