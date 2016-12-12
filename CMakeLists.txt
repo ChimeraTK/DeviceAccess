@@ -37,10 +37,6 @@ PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}" ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
-# optional dependency: if finding the DOOCS server library, the example and tests will be built
-# put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-##add_dependency(DOOCS 18.10.5 COMPONENTS server) ## should not be needed since it will be brought in by the DoocsAdapter
-
 # optional dependency: the DoocsServerTestHelper is also needed for the tests
 add_dependency(doocs-server-test-helper 00.04)
 
@@ -113,9 +109,9 @@ endif(TESTING_IS_ENABLED)
 if(TESTING_IS_ENABLED)
 
   add_executable(demoApp example/demoApp.cc)
-  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${DOOCS_CXX_FLAGS}")
-  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${DOOCS_LINK_FLAGS}")
-  target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
+  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
+  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
 
   add_executable(demoApp-xmlGenerator example/demoApp.cc)
   set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} -DGENERATE_XML")
@@ -164,7 +160,7 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
-set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}")
-set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
