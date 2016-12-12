@@ -37,27 +37,25 @@ PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}" ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
-# optional dependency: the DoocsServerTestHelper is also needed for the tests
-add_dependency(doocs-server-test-helper 00.04)
-
-# optional dependency: the ControlSystemAdapter-DoocsAdapter needed for tests and example
-add_dependency(ControlSystemAdapter-DoocsAdapter 00.01)
-
 # optional dependency: BOOST unit test framework needed for tests
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework )
-IF(Boost_UNIT_TEST_FRAMEWORK_FOUND AND ControlSystemAdapter-DoocsAdapter_FOUND AND doocs-server-test-helper_FOUND)
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
+IF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
 ELSE()
   message(" The following packages were not found, so testing will be disabled:")
-  IF(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
-    message("  * BOOST unit_test_framework")
-  ENDIF()
+  message("  * BOOST unit_test_framework")
+ENDIF()
+
+# optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
+add_dependency(ControlSystemAdapter-DoocsAdapter 00.01)
+IF(ControlSystemAdapter-DoocsAdapter_FOUND)
+  set(DEMO_IS_ENABLED "true")
+  ENABLE_TESTING()
+ELSE()
+  message(" The following packages were not found, so the example will be disabled:")
   IF(NOT ControlSystemAdapter-DoocsAdapter_FOUND)
     message("  * ControlSystemAdapter-DoocsAdapter")
-  ENDIF()
-  IF(NOT doocs-server-test-helper_FOUND)
-    message("  * doocs-server-test-helper")
   ENDIF()
 ENDIF()
 
@@ -106,7 +104,7 @@ if(TESTING_IS_ENABLED)
 endif(TESTING_IS_ENABLED)
 
 # build example
-if(TESTING_IS_ENABLED)
+if(DEMO_IS_ENABLED)
 
   add_executable(demoApp example/demoApp.cc)
   set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
@@ -124,7 +122,7 @@ if(TESTING_IS_ENABLED)
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.xlmap DESTINATION ${PROJECT_BINARY_DIR})
 
-endif(TESTING_IS_ENABLED)
+endif(DEMO_IS_ENABLED)
 
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
