@@ -65,7 +65,8 @@ set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
 set(DOOCS_LIBRARY_DIRS ${DOOCS_DIR}/)
 
 set(DOOCS_CXX_FLAGS "-Wall -fPIC -D_REENTRANT -DLINUX -D__LINUX__ -DDMSG -DTINE_EXPORT=\" \"")
-set(DOOCS_LINK_FLAGS "-Wl,--no-as-needed")
+set(DOOCS_LINKER_FLAGS "-Wl,--no-as-needed")
+set(DOOCS_LINK_FLAGS "${DOOCS_LINKER_FLAGS}")
 
 # extract DOOCS version from librar so symlink. Note: This is platform dependent and only works
 # if DOOCS was installed from the Debian pagackes. Find a better version detection scheme!
