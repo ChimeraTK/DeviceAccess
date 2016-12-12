@@ -114,7 +114,7 @@ if(TESTING_IS_ENABLED)
 
   add_executable(demoApp example/demoApp.cc)
   set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${DOOCS_CXX_FLAGS}")
-  set_target_properties(demoApp PROPERTIES LINK_FLAGS ${DOOCS_LINK_FLAGS})
+  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${DOOCS_LINK_FLAGS}")
   target_link_libraries(demoApp ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${DOOCS_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
 
   add_executable(demoApp-xmlGenerator example/demoApp.cc)
