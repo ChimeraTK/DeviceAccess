@@ -20,7 +20,7 @@ In addition to the read and write functions of DeviceBackend it provides read
 functions which take register and module name instead of its address and bar.
 To open the device, you give the name of the map file in addition.
 
-\include mapped.cpp
+FIXME: Here was an example which has been removed.
 
 \section accessors Register accessors
 
@@ -56,7 +56,7 @@ floating point representation in the user code.
 \endcode
 
 Complete example:
-\include accessor.cpp
+FIXME: Here was an example which has been removed.
 
  \ref dmap
 */

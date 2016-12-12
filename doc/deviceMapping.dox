@@ -34,7 +34,7 @@ right board by function and not which slot was used in this particular crate.
 The dmapFilesParser allows to conveniently read all dmap files in a given directory.
 It allows to get the device information (called dmapElem) for a specific alias.
 
-\include dmap.cpp
+FIXME: Here was an example which has been removed.
 
 \note This multi-step approach will change, probably using a device factory.
 \note The correlation to the map file will be automated in future.

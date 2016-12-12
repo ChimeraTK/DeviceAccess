@@ -37,7 +37,7 @@ For the beinning all you need is the alias which identifies the device. In the
 
 Registers are accessed by so called \c accessors. The accessors contain a buffer
 which stores the data which is read from or written to the hardware using
-\c read() and \write() functions. When not reading or writing you can 
+\c read() and \c write() functions. When not reading or writing you can 
 efficiently access or modify the content at will, because it is modifying the
 internal buffer and not talking to the hardware.
   
