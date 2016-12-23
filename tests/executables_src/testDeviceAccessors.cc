@@ -64,6 +64,7 @@ struct TestApplication : public ctk::Application {
 /* test feeding a scalar to a device */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
+  std::cout << "testFeedToDevice" << std::endl;
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
@@ -93,6 +94,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 /* test consuming a scalar from a device */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
+  std::cout << "testConsumeFromDevice" << std::endl;
 
   mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
 
