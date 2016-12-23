@@ -32,10 +32,8 @@ namespace ChimeraTK {
 
       void read() {
         if(Accessor<UserType>::_mode == UpdateMode::push) {
-          while(impl->readNonBlocking() == false) { /// @todo TODO proper blocking implementation
-            boost::this_thread::yield();
-            boost::this_thread::interruption_point();
-          }
+          impl->read();
+          boost::this_thread::interruption_point();
         }
         else {
           /// @todo TODO empty the queue to always receive the latest value

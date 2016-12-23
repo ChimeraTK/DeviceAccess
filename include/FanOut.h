@@ -110,34 +110,22 @@ namespace ChimeraTK {
       void run() {
         assert(_direction == VariableDirection::consuming);
         while(true) {
-          boost::this_thread::yield();
           boost::this_thread::interruption_point();
           if(hasExternalTrigger) {
             // wait for external trigger (if present)
-            /// @todo TODO replace with proper blocking implementation when supported by the CSA
-            while(externalTrigger->readNonBlocking() == false) {
-              boost::this_thread::yield();
-              boost::this_thread::interruption_point();
-            }
+            externalTrigger->read();
             // receive data
             impl->readNonBlocking();
           }
           else {
             // receive data
-            while(impl->readNonBlocking() == false) {
-              boost::this_thread::yield();
-              boost::this_thread::interruption_point();
-            }
+            impl->read();
           }
-          boost::this_thread::yield();
-          boost::this_thread::interruption_point();
           for(auto &slave : slaves) {     // send out copies to slaves
             // do not send copy if no data is expected (e.g. trigger)
             if(slave->getNumberOfSamples() != 0) {
               slave->accessChannel(0) = impl->accessChannel(0);
             }
-            boost::this_thread::yield();
-            boost::this_thread::interruption_point();
             slave->write();
           }
         }
@@ -180,7 +168,15 @@ namespace ChimeraTK {
       }
       
       void read() {
-        throw std::logic_error("Blocking read is not supported by process array.");
+        impl->read();
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
+        for(auto &slave : slaves) {     // send out copies to slaves
+          // do not send copy if no data is expected (e.g. trigger)
+          if(slave->getNumberOfSamples() != 0) {
+            slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
+          }
+          slave->write();
+        }
       }
       
       bool readNonBlocking() {

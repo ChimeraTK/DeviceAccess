@@ -51,10 +51,7 @@ namespace ChimeraTK {
       /** Synchronise sender and receiver. This function is executed in the separate thread. */
       void run() {
         while(true) {
-          while(!_receiver->readNonBlocking()) {
-            boost::this_thread::yield();
-            boost::this_thread::interruption_point();
-          }
+          _receiver->read();
           _sender->accessChannel(0) = _receiver->accessChannel(0);
           _sender->write();
         }
