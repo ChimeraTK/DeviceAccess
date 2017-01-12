@@ -221,7 +221,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   void Device::checkPointersAreNotNull() const {
-    if ((_deviceBackendPointer == false)) {
+    if (static_cast<bool>(_deviceBackendPointer) == false) {
       throw DeviceException("Device has not been opened correctly", DeviceException::NOT_OPENED);
     }
   }
@@ -284,7 +284,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   bool Device::isOpened() const {
-    if(_deviceBackendPointer != false) {
+    if(static_cast<bool>(_deviceBackendPointer) != false) {
       return _deviceBackendPointer->isOpen();
     }
     return false;   // no backend is assigned: the device is not opened
