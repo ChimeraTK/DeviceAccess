@@ -1,5 +1,5 @@
-#ifndef MTCA4U_REBOT_BACKEND_H
-#define MTCA4U_REBOT_BACKEND_H
+#ifndef CHIMERATK_REBOT_BACKEND_H
+#define CHIMERATK_REBOT_BACKEND_H
 
 #include <iostream>
 #include <iomanip>
@@ -19,7 +19,8 @@
 
 class TcpCtrl;
 
-namespace mtca4u {
+namespace ChimeraTK {
+  using namespace mtca4u;
 
   class RebotBackend : public NumericAddressedBackend {
 
@@ -90,6 +91,11 @@ namespace mtca4u {
       uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
-#endif /*MTCA4U_REBOT_BACKEND_H*/
+// backward compartibility definition
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
+
+#endif /*CHIMERATK_REBOT_BACKEND_H*/

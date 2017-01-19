@@ -1,7 +1,7 @@
 #include "RebotBackend.h"
 #include "TcpCtrl.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
 static const int READ_BLOCK_SIZE = 361;
 static const uint32_t HELLO_TOKEN = 0x00000004;
@@ -278,4 +278,4 @@ uint32_t RebotBackend::parseRxServerHello(
   return serverHello.at(2);
 }
 
-} // namespace mtca4u
+} // namespace ChimeraTK
