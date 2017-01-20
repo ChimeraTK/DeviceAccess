@@ -1,9 +1,11 @@
 
 #include "RebotDummyServer.h"
+#include "DummyProtocol1.h" // the latest version includes all predecessors in the include
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-
+#include <stdexcept>
+ 
 namespace ChimeraTK {
 
 bool volatile sigterm_caught = false;
@@ -18,7 +20,13 @@ bool volatile sigterm_caught = false;
       _connectionAcceptor(_io, _serverEndpoint),
       _currentClientConnection() {
 
-    _protocolImplementor.reset(new DummyProtocol0(*this));
+    if (protocolVersion == 0){
+      _protocolImplementor.reset(new DummyProtocol0(*this));
+    }else if (protocolVersion == 1){
+      _protocolImplementor.reset(new DummyProtocol0(*this));
+    }else{
+      throw std::invalid_argument("RebotDummyServer: unknown protocol version");
+    }
       
   // set the acceptor backlog to 1
   /*  _connectionAcceptor.open(_serverEndpoint.protocol());

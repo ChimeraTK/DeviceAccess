@@ -4,7 +4,7 @@
 #include <string>
 #include "DummyBackend.h"
 #include <boost/asio.hpp>
-#include "DummyProtocol0.h"
+#include "DummyProtocolImplementor.h"
 
 namespace ip = boost::asio::ip;
 
