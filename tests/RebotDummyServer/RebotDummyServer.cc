@@ -69,17 +69,12 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
   uint32_t requestedAction = buffer.at(0);
   switch (requestedAction) {
 
-    case SINGLE_WORD_WRITE: {
-      writeWordToRequestedAddress(buffer);
-      // if  writeWordToRequestedAddress dosent throw, we can safely assume
-      // write was a success
-      sendSingleWord(WRITE_SUCCESS_INDICATION);
+    case SINGLE_WORD_WRITE: 
+      _protocolImplementor->singleWordWrite(buffer);
       break;
-    }
-    case  MULTI_WORD_READ: {
+    case  MULTI_WORD_READ:
       _protocolImplementor->multiWordRead(buffer);
       break;
-    }
     default:
       sendSingleWord(UNKNOWN_INSTRUCTION);
   }

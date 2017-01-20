@@ -6,6 +6,7 @@
 
 /// Only put commands which don't exist in all versions, or behave differently
 struct DummyProtocolImplementor{
+  virtual void singleWordWrite(std::vector<uint32_t>& buffer)=0;
   virtual void multiWordRead(std::vector<uint32_t>& buffer)=0;
 };
 

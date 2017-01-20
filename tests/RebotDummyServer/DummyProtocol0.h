@@ -11,6 +11,7 @@ class RebotDummyServer;
 struct DummyProtocol0: public DummyProtocolImplementor{
   DummyProtocol0(RebotDummyServer & parent);
 
+  virtual void singleWordWrite(std::vector<uint32_t>& buffer);
   virtual void multiWordRead(std::vector<uint32_t>& buffer);
   
   RebotDummyServer & _parent;
