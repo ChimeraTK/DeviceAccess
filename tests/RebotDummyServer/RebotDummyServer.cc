@@ -4,7 +4,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
 bool volatile sigterm_caught = false;
 
@@ -17,6 +17,9 @@ bool volatile sigterm_caught = false;
       _serverEndpoint(ip::tcp::v4(), _serverPort),
       _connectionAcceptor(_io, _serverEndpoint),
       _currentClientConnection() {
+
+    _protocolImplementor.reset(new DummyProtocol0(*this));
+      
   // set the acceptor backlog to 1
   /*  _connectionAcceptor.open(_serverEndpoint.protocol());
     _connectionAcceptor.bind(_serverEndpoint);*/
@@ -74,13 +77,7 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
       break;
     }
     case  MULTI_WORD_READ: {
-      uint32_t numberOfWordsToRead = buffer.at(2);
-
-      if (numberOfWordsToRead > 361) { // not supported
-        sendSingleWord(TOO_MUCH_DATA_REQUESTED);
-      } else {
-        readRegisterAndSendData(buffer);
-      }
+      _protocolImplementor->multiWordRead(buffer);
       break;
     }
     default:
@@ -173,4 +170,4 @@ void RebotDummyServer::handleAcceptedConnection(
   }
 }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

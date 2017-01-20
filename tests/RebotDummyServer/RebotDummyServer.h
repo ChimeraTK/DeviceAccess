@@ -4,11 +4,13 @@
 #include <string>
 #include "DummyBackend.h"
 #include <boost/asio.hpp>
+#include "DummyProtocol0.h"
 
 namespace ip = boost::asio::ip;
 
-namespace mtca4u {
-
+namespace ChimeraTK {
+  using namespace mtca4u;
+  
 extern bool volatile sigterm_caught;
 
 /*
@@ -43,7 +45,8 @@ class RebotDummyServer {
   ip::tcp::endpoint _serverEndpoint;
   ip::tcp::acceptor _connectionAcceptor;
   boost::shared_ptr<ip::tcp::socket> _currentClientConnection;
-
+  std::unique_ptr<DummyProtocolImplementor> _protocolImplementor;
+  
   void processReceivedCommand(std::vector<uint32_t> &buffer);
   void writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
@@ -52,6 +55,6 @@ class RebotDummyServer {
   void sendSingleWord(int32_t response);
 };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* SOURCE_DIRECTORY__TESTS_REBOTDUMMYSERVER_REBOTDUMMYSERVER_H_ */

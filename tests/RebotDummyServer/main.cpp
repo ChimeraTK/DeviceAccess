@@ -9,7 +9,7 @@ void setSigtemIndicator(int /*signalNumber*/) {
   // should handle signal numbers according to what is received; Letting this
   // slide for now as we would only receive the term signal, the way we are
   // testing currently
-  mtca4u::sigterm_caught = true;
+  ChimeraTK::sigterm_caught = true;
 }
 
 int main(int, char** argv) {
@@ -24,7 +24,7 @@ int main(int, char** argv) {
   std::string mapFileLocation = getMapFileLocation(argv);
   unsigned int protocolVersion = getProtocolVersion(argv);
   
-  mtca4u::RebotDummyServer testServer(portNumber, mapFileLocation, protocolVersion);
+  ChimeraTK::RebotDummyServer testServer(portNumber, mapFileLocation, protocolVersion);
   testServer.start();
 
   return 0;
