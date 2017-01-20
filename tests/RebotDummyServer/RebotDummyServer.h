@@ -17,20 +17,20 @@ extern bool volatile sigterm_caught;
  */
 class RebotDummyServer {
 
-public:
+  // everything is public so all protocol implementors can reach it. They are only called from
+  // within the server
+ public:
   RebotDummyServer(unsigned int &portNumber, std::string &mapFile, unsigned int protocolVersion);
   void start();
   virtual ~RebotDummyServer();
 
-private:
+  // The following stuff is only intended for the protocol implementors and the server itself
 
   static const int BUFFER_SIZE_IN_WORDS = 256;
   static const int32_t READ_SUCCESS_INDICATION = 1000;
   static const int32_t WRITE_SUCCESS_INDICATION = 1001;
   static const int32_t TOO_MUCH_DATA_REQUESTED = -1010;
   static const int32_t UNKNOWN_INSTRUCTION = -1040;
-
-
 
   DummyBackend _registerSpace;
   unsigned int _serverPort;
@@ -45,6 +45,8 @@ private:
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
   void sendResponseForWriteCommand(bool status);
   void handleAcceptedConnection(boost::shared_ptr<ip::tcp::socket>& );
+  // most commands have a singe work as response. Avoid code duplication.
+  void sendSingleWord(int32_t response);
 };
 
 } /* namespace mtca4u */

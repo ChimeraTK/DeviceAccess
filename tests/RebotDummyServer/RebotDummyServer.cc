@@ -77,21 +77,14 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
       uint32_t numberOfWordsToRead = buffer.at(2);
 
       if (numberOfWordsToRead > 361) { // not supported
-        std::vector<int32_t> dataToSend(1);
-        dataToSend.at(0) = TOO_MUCH_DATA_REQUESTED;
-
-        boost::asio::write(*_currentClientConnection,
-                           boost::asio::buffer(dataToSend));
+        sendSingleWord(TOO_MUCH_DATA_REQUESTED);
       } else {
         readRegisterAndSendData(buffer);
       }
       break;
     }
-    default: {
-      std::vector<int32_t> unknownInstruction{ -1040 };
-      boost::asio::write(*_currentClientConnection,
-                         boost::asio::buffer(unknownInstruction));
-    }
+    default:
+      sendSingleWord(UNKNOWN_INSTRUCTION);
   }
 }
 
@@ -114,10 +107,7 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
 
   // send data in two packets instead of one; this is done for test coverage.
   // Let READ_SUCCESS_INDICATION go in the first write and data in the second.
-  std::vector<int32_t> readSuccessIndication(1);
-  readSuccessIndication.at(0) = READ_SUCCESS_INDICATION;
-  boost::asio::write(*_currentClientConnection,
-                     boost::asio::buffer(readSuccessIndication));
+  sendSingleWord(READ_SUCCESS_INDICATION);
 
   std::vector<int32_t> dataToSend(numberOfWordsToRead);
   uint8_t bar = 0;
@@ -133,10 +123,13 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
 
 void RebotDummyServer::sendResponseForWriteCommand(bool status) {
   if (status == true) { // WriteSuccessful
-    std::vector<int32_t> data(1);
-    data.at(0) = WRITE_SUCCESS_INDICATION;
-    boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
+    sendSingleWord(WRITE_SUCCESS_INDICATION);
   }
+}
+  
+void RebotDummyServer::sendSingleWord(int32_t response) {
+  std::vector<int32_t> data{ response };
+  boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
 }
 
 RebotDummyServer::~RebotDummyServer() {
