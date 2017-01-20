@@ -29,6 +29,7 @@ namespace rebot{
   static const uint32_t TOO_MUCH_DATA = -1010; // FIXME: use unsigned
   static const uint32_t UNKNOWN_INSTRUCTION = -1040; // FIXME: use unsigned
   
+  static const unsigned int DEFAULT_SERVER_PORT = 5001;
 
 }//namespace rebot
 

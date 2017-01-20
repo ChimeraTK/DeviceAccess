@@ -1,8 +1,10 @@
 #include <string>
 #include "argumentParser.h"
 
+
 static const unsigned int DEFAULT_SERVER_PORT = 5001;
 static const std::string DEFAULT_MAP_FILE = "./testFile.map";
+static const unsigned int DEFAULT_PROTOCOL_VERSION = 0x0;
 
 
 /**************************************************************************/
@@ -39,6 +41,19 @@ std::string getMapFileLocation(char** argumentArray) {
     return DEFAULT_MAP_FILE;
   } else {
     return mapFileLocation;
+  }
+}
+
+unsigned int getProtocolVersion(char** argumentArray) {
+
+  Argument protocolVersionFlag("-V", "--protocol-version");
+  std::string protocolVersion = getArgumentValue(protocolVersionFlag, argumentArray);
+
+  try {
+    return std::stoul(protocolVersion);
+  }
+  catch (...) {
+    return DEFAULT_PROTOCOL_VERSION;
   }
 }
 

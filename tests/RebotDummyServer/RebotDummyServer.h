@@ -18,7 +18,7 @@ extern bool volatile sigterm_caught;
 class RebotDummyServer {
 
 public:
-  RebotDummyServer(unsigned int &portNumber, std::string &mapFile);
+  RebotDummyServer(unsigned int &portNumber, std::string &mapFile, unsigned int protocolVersion);
   void start();
   virtual ~RebotDummyServer();
 
@@ -34,6 +34,7 @@ private:
 
   DummyBackend _registerSpace;
   unsigned int _serverPort;
+  unsigned int _protocolVersion;
   boost::asio::io_service _io;
   ip::tcp::endpoint _serverEndpoint;
   ip::tcp::acceptor _connectionAcceptor;

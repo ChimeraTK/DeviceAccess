@@ -22,8 +22,9 @@ int main(int, char** argv) {
 
   unsigned int portNumber = getPortNumber(argv);
   std::string mapFileLocation = getMapFileLocation(argv);
-
-  mtca4u::RebotDummyServer testServer(portNumber, mapFileLocation);
+  unsigned int protocolVersion = getProtocolVersion(argv);
+  
+  mtca4u::RebotDummyServer testServer(portNumber, mapFileLocation, protocolVersion);
   testServer.start();
 
   return 0;

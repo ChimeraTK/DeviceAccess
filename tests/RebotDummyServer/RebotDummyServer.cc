@@ -8,10 +8,11 @@ namespace mtca4u {
 
 bool volatile sigterm_caught = false;
 
-RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
-                                   std::string& mapFile)
+  RebotDummyServer::RebotDummyServer(unsigned int& portNumber, std::string& mapFile,
+                                     unsigned int protocolVersion)
     : _registerSpace(mapFile),
       _serverPort(portNumber),
+      _protocolVersion(protocolVersion),
       _io(),
       _serverEndpoint(ip::tcp::v4(), _serverPort),
       _connectionAcceptor(_io, _serverEndpoint),
