@@ -11,7 +11,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TcpCtrl.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackendException.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol0.cc
    PARENT_SCOPE
 )
 

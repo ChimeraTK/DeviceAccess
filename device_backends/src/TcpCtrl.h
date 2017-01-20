@@ -1,12 +1,5 @@
-/*
- * TcpCtrl.h
- *
- *  Created on: May 27, 2015
- *      Author: adagio
- */
-
-#ifndef MTCA4U_TCPCTRL_H
-#define MTCA4U_TCPCTRL_H
+#ifndef CHIMERATK_TCPCTRL_H
+#define CHIMERATK_TCPCTRL_H
 
 #include <memory>
 #include <chrono>
@@ -19,6 +12,8 @@
 #include <boost/make_shared.hpp>
 
 #include "RebotBackendException.h"
+
+namespace ChimeraTK{
 
 ///Handles the communication over TCP protocol with RebotDevice-based devices
 class TcpCtrl {
@@ -66,4 +61,6 @@ class TcpCtrl {
         boost::asio::ip::tcp::resolver::iterator endpointIterator);
 };
 
-#endif /* MTCA4U_TCPCTRL_H */
+}//namespace ChimeraTK
+
+#endif /* CHIMERATK_TCPCTRL_H */

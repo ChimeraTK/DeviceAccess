@@ -18,12 +18,13 @@
 #include "NumericAddressedBackend.h"
 #include "NotImplementedException.h"
 
-class TcpCtrl;
 
 namespace ChimeraTK {
   using namespace mtca4u;
 
-  class RebotBackend : public NumericAddressedBackend {
+  class TcpCtrl;
+
+ class RebotBackend : public NumericAddressedBackend {
 
     private:
       std::string _boardAddr;
