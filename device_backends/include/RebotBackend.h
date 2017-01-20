@@ -16,6 +16,7 @@
 #include <boost/algorithm/string.hpp>
 #include <mutex>
 #include "NumericAddressedBackend.h"
+#include "NotImplementedException.h"
 
 class TcpCtrl;
 
@@ -36,18 +37,24 @@ namespace ChimeraTK {
       /// The function opens the connection to the device
       virtual void open();
       virtual void close();
-      virtual void read(uint8_t bar, uint32_t address, int32_t* data,
+      virtual void read(uint8_t bar, uint32_t addressInBytes, int32_t* data,
           size_t sizeInBytes);
-      virtual void write(uint8_t bar, uint32_t address, int32_t const* data,
+      virtual void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data,
           size_t sizeInBytes);
-      /// Not implemented
       virtual std::string readDeviceInfo() { return std::string("RebotDevice"); }
-      /// Not implemented
+      // Don't include deprecated, throwing functions in the coverage report:
+      // LCOV_EXCL_START 
+      /// Deprecated and not implemented. Always throws NotImplmentedException
       virtual void readDMA(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,
-          size_t /*sizeInBytes*/) {};
-      /// Not implemented
+			   size_t /*sizeInBytes*/) {
+	throw NotImplementedException("Deprecated function RebotBackend::readDMA is not implemented!");
+      };
+      /// Deprecated and not implemented. Always throws NotImplmentedException
       virtual void writeDMA(uint8_t /*bar*/, uint32_t /*address*/,
-          int32_t const* /*data*/, size_t /*sizeInBytes*/) {};
+          int32_t const* /*data*/, size_t /*sizeInBytes*/) {
+	throw NotImplementedException("Deprecated function RebotBackend::writeDMA is not implemented!");
+      };
+      // LCOV_EXCL_STOP      
       static boost::shared_ptr<DeviceBackend> createInstance(
           std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
