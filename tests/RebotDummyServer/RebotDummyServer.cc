@@ -66,14 +66,14 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
   uint32_t requestedAction = buffer.at(0);
   switch (requestedAction) {
 
-    case 1: { // Write one word to a register
+    case SINGLE_WORD_WRITE: {
       writeWordToRequestedAddress(buffer);
       // if  writeWordToRequestedAddress dosent throw, we can safely assume
       // write was a success
-      sendResponseForWriteCommand(true);
+      sendSingleWord(WRITE_SUCCESS_INDICATION);
       break;
     }
-    case 3: { // multi word read
+    case  MULTI_WORD_READ: {
       uint32_t numberOfWordsToRead = buffer.at(2);
 
       if (numberOfWordsToRead > 361) { // not supported
@@ -119,12 +119,6 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
   // FIXME: Nothing in protocol to indicate read failure.
   boost::asio::write(*_currentClientConnection,
                      boost::asio::buffer(dataToSend));
-}
-
-void RebotDummyServer::sendResponseForWriteCommand(bool status) {
-  if (status == true) { // WriteSuccessful
-    sendSingleWord(WRITE_SUCCESS_INDICATION);
-  }
 }
   
 void RebotDummyServer::sendSingleWord(int32_t response) {

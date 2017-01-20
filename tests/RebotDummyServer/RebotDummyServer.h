@@ -32,6 +32,10 @@ class RebotDummyServer {
   static const int32_t TOO_MUCH_DATA_REQUESTED = -1010;
   static const int32_t UNKNOWN_INSTRUCTION = -1040;
 
+  static const uint32_t SINGLE_WORD_WRITE = 1;
+  static const uint32_t MULTI_WORD_READ = 3;
+  
+
   DummyBackend _registerSpace;
   unsigned int _serverPort;
   unsigned int _protocolVersion;
@@ -43,7 +47,6 @@ class RebotDummyServer {
   void processReceivedCommand(std::vector<uint32_t> &buffer);
   void writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
-  void sendResponseForWriteCommand(bool status);
   void handleAcceptedConnection(boost::shared_ptr<ip::tcp::socket>& );
   // most commands have a singe work as response. Avoid code duplication.
   void sendSingleWord(int32_t response);
