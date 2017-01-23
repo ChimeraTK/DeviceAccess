@@ -61,23 +61,16 @@ namespace mtca4u {
         throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
       }
 
-      /** Read the data from the device, de-multiplex the hardware IO buffer and
-       *  fill the sequence buffers using the fixed point converters. The read
-       *  method will handle reads into the DMA regions as well
-       */
-      virtual void read() {
-        accessor->read();
-        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+      void doReadTransfer() override {
+        accessor->doReadTransfer();
       }
 
-      virtual bool readNonBlocking(){
-        if (accessor->readNonBlocking()){
-          accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
-          return true;
-        }else{
-          //  Don't swap, just return false (no new data).
-          return false;
-        }
+      bool doReadTransferNonBlocking() override {
+        return accessor->doReadTransferNonBlocking();
+      }
+      
+      void postRead() override {
+        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,

@@ -41,7 +41,7 @@ namespace mtca4u {
 
       virtual ~ScaleRegisterPluginRegisterAccessor() {};
 
-      void applyScalingFactorUnderlyingToThisBuffer(){
+      void postRead() {
         // apply scaling factor while copying buffer from underlying accessor to our buffer
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
@@ -50,31 +50,25 @@ namespace mtca4u {
         }
       }
     
-      virtual void read() {
-        // read from hardware
+      virtual void doReadTransfer() {
         _accessor->read();
-	applyScalingFactorUnderlyingToThisBuffer();
       }
 
-      virtual bool readNonBlocking(){
-	if (_accessor->readNonBlocking()){
-	  // only apply the scaling if there is new data.
-	  applyScalingFactorUnderlyingToThisBuffer();
-	  return true;
-	}else{
-	  //  Don't recalculate what we have, just return false (no new data).
-	  return false;
-	}
+      virtual bool doReadTransferNonBlocking() {
+	return _accessor->readNonBlocking();
       }
 
-      virtual void write() {
+      virtual void preWrite() {
         // apply scaling factor while copying buffer from our buffer to underlying accessor
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
             _accessor->accessData(i,k) = NDRegisterAccessor<UserType>::buffer_2D[i][k] / _scalingFactor;
           }
         }
-        // write to hardware
+      }
+
+      virtual void write() {
+        preWrite();
         _accessor->write();
       }
 
@@ -123,10 +117,10 @@ namespace mtca4u {
   };
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::read();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::postRead();
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::write();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::preWrite();
 
   /********************************************************************************************************************/
 
@@ -159,9 +153,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::read() {
-    // read from hardware
-    _accessor->read();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::postRead() {
     // apply scaling factor while copying buffer from underlying accessor to our buffer
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {
@@ -174,7 +166,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::write() {
+  void ScaleRegisterPluginRegisterAccessor<std::string>::preWrite() {
     // apply scaling factor while copying buffer from our buffer to underlying accessor
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {
@@ -182,8 +174,6 @@ namespace mtca4u {
             std::to_string(std::stod(NDRegisterAccessor<std::string>::buffer_2D[i][k]) / _scalingFactor);
       }
     }
-    // write to hardware
-    _accessor->write();
   }
 
 } /* namespace mtca4u */

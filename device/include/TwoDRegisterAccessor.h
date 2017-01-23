@@ -42,20 +42,6 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(channel);
       }
 
-      /** Read the data from the device, convert it and store in buffer. */
-      void read() {
-        NDRegisterAccessorBridge<UserType>::_impl->read();
-      }
-
-      bool readNonBlocking(){
-        return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
-      }
-
-     /** Convert data from the buffer and write to device. */
-      void write() {
-        NDRegisterAccessorBridge<UserType>::_impl->write();
-      }
-
       /** Return the number of channels (formerly called sequences) */
       size_t getNChannels() const {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
@@ -64,26 +50,6 @@ namespace mtca4u {
       /** Return number of elements/samples per channel */
       size_t getNElementsPerChannel() const {
         return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
-      }
-
-      /** Return if the register accessor allows only reading */
-      bool isReadOnly() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
-      }
-
-      bool isReadable() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
-      }
-
-      bool isWriteable() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
-      }
-
-      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
-       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
-       *  placeholder constructor without arguments. */
-      bool isInitialised() const {
-        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
       }
 
       /** DEPRECATED DO NOT USE

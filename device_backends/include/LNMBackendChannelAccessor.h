@@ -57,27 +57,26 @@ namespace mtca4u {
 
       virtual ~LNMBackendChannelAccessor() {};
 
-      virtual void read() {
-        if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
-        }
+      void doReadTransfer() override {
         _accessor->read();
-        postRead();
       }
 
-      virtual void write() {
+      void write() override {
         throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
             DeviceException::REGISTER_IS_READ_ONLY);
       }
 
-      virtual bool readNonBlocking() {
-        read();
+      bool doReadTransferNonBlocking() override {
+        doReadTransfer();
         return true;
       }
 
+      void postRead() override {
+        _accessor->postRead();
+        _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
+      };
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendChannelAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -85,19 +84,19 @@ namespace mtca4u {
         return true;
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const override {
         return true;
       }
 
-      virtual bool isReadable() const {
+      bool isReadable() const override {
         return true;
       }
 
-      virtual bool isWriteable() const {
+      bool isWriteable() const override {
         return false;
       }
 
-      virtual FixedPointConverter getFixedPointConverter() const {
+      FixedPointConverter getFixedPointConverter() const override {
         throw DeviceException("FixedPointConverterse are not available in Logical Name Mapping",
                               DeviceException::NOT_AVAILABLE);
       }
@@ -120,11 +119,11 @@ namespace mtca4u {
       /// target device
       boost::shared_ptr<DeviceBackend> _targetDevice;
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return _accessor->getHardwareAccessingElements();
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
         auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
         if(newElement->isSameRegister(_accessor) && casted) {
           _accessor = casted;
@@ -133,11 +132,6 @@ namespace mtca4u {
           _accessor->replaceTransferElement(newElement);
         }
       }
-
-      virtual void postRead() {
-        _accessor->postRead();
-        _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
-      };
 
   };
 

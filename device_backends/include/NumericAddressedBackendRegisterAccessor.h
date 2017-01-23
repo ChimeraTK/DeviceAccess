@@ -83,16 +83,16 @@ namespace mtca4u {
 
       virtual ~NumericAddressedBackendRegisterAccessor() {};
 
-      virtual void read() {
-        if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
-        }
+      void doReadTransfer() override {
         _rawAccessor->read();
-        postRead();
       }
 
-      virtual void write() {
+      bool doReadTransferNonBlocking() override {
+        _rawAccessor->read();
+        return true;
+      }
+
+      void write() override {
         if(TransferElement::isInTransferGroup) {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);
@@ -101,7 +101,7 @@ namespace mtca4u {
         _rawAccessor->write();
       }
 
-      virtual void postRead() {
+      void postRead() override {
         auto itsrc = _rawAccessor->begin(_startAddress);
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
@@ -111,7 +111,7 @@ namespace mtca4u {
         }
       };
 
-      virtual void preWrite() {
+      void preWrite() override {
         auto itsrc = _rawAccessor->begin(_startAddress);
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
@@ -121,15 +121,10 @@ namespace mtca4u {
         }
       };
 
-      virtual void postWrite() {
+      void postWrite() override {
       };
 
-      virtual bool readNonBlocking() {
-        read();
-        return true;
-      }
-
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -140,19 +135,19 @@ namespace mtca4u {
         return true;
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const override {
         return false;
       }
 
-      virtual bool isReadable() const {
+      bool isReadable() const override {
         return true;
       }
 
-      virtual bool isWriteable() const {
+      bool isWriteable() const override {
         return true;
       }
 
-      virtual FixedPointConverter getFixedPointConverter() const {
+      FixedPointConverter getFixedPointConverter() const override {
         return _fixedPointConverter;
       }
 
@@ -183,11 +178,11 @@ namespace mtca4u {
       /** the backend to use for the actual hardware access */
       boost::shared_ptr<NumericAddressedBackend> _dev;
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return _rawAccessor->getHardwareAccessingElements();
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
         auto casted = boost::dynamic_pointer_cast< NumericAddressedLowLevelTransferElement >(newElement);
         if(newElement->isSameRegister(_rawAccessor) && casted) {
           size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);

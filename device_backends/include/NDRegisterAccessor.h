@@ -32,12 +32,6 @@ namespace mtca4u {
       /** A virtual base class needs a virtual destructor */
       virtual ~NDRegisterAccessor() {}
 
-      /** Read the data from the device, convert it and store in buffer. */
-      virtual void read() = 0;
-
-      /** Convert data from the buffer and write to device. */
-      virtual void write() = 0;
-
       /** Get or set register accessor's buffer content (1D version).
        *  @attention No bounds checking is performed, use getNumberOfSamples() to obtain the number of elements in
        *  the register. */

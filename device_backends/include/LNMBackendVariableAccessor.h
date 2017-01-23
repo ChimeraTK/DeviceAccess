@@ -62,16 +62,13 @@ namespace mtca4u {
 
       virtual ~LNMBackendVariableAccessor() {};
 
-      virtual void read() {
-        postRead();
+      void doReadTransfer() override {}
+
+      bool doReadTransferNonBlocking() override {
+        return true;
       }
 
-      virtual bool readNonBlocking() {
-        read();
-        return isWriteable();
-      }
-
-      virtual void write() {
+      void write() override {
         if(isReadOnly()) {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
               DeviceException::REGISTER_IS_READ_ONLY);
@@ -79,7 +76,7 @@ namespace mtca4u {
         preWrite();
       }
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendVariableAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -87,15 +84,15 @@ namespace mtca4u {
         return true;
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const override {
         return _info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
-      virtual bool isReadable() const {
+      bool isReadable() const override {
         return true;
       }
 
-      virtual bool isWriteable() const {
+      bool isWriteable() const override {
         return _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
@@ -115,17 +112,17 @@ namespace mtca4u {
       /// Note: no actual fixed point conversion is done, it is just used for the type conversion!
       FixedPointConverter _fixedPointConverter;
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}  // LCOV_EXCL_LINE
+      void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}  // LCOV_EXCL_LINE
 
-      virtual void postRead() {
+      void postRead() override {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
       }
 
-      virtual void preWrite() {
+      void preWrite() override {
         _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
       }
 

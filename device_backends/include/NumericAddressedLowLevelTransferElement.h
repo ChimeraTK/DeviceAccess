@@ -36,17 +36,17 @@ namespace mtca4u {
 
       virtual ~NumericAddressedLowLevelTransferElement() {};
 
-      virtual void read() {
+      void doReadTransfer() override {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
-      virtual void write() {
+      void write() override {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
-      virtual bool readNonBlocking(){
-        throw DeviceException("Non-blocking read is not available for NumericAddressedBackends",
-                              DeviceException::NOT_AVAILABLE);
+      bool doReadTransferNonBlocking() override {
+        doReadTransfer();
+        return true;
       }
 
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register. In the special
@@ -54,7 +54,7 @@ namespace mtca4u {
        *  are adjacent and/or overlapping. NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes
        *  care of replacing the NumericAddressedBackendRawAccessors with a single NumericAddressedBackendRawAccessor
        *  covering the address space of both accessors. */
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         // accessor type, device and bar must be the same
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedLowLevelTransferElement >(other);
         if(!rhsCasted) return false;
@@ -67,21 +67,21 @@ namespace mtca4u {
         return true;
       }
 
-      virtual const std::type_info& getValueType() const{
+      const std::type_info& getValueType() const override {
         // This implementation is for int32_t only (as all numerically addressed backends under the
         // hood.
         return typeid(int32_t);
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const override {
         return false;
       }
 
-      virtual bool isReadable() const {
+      bool isReadable() const override {
         return true;
       }
 
-      virtual bool isWriteable() const {
+      bool isWriteable() const override {
         return true;
       }
 
@@ -135,11 +135,11 @@ namespace mtca4u {
       /** raw buffer */
       std::vector<int32_t> rawDataBuffer;
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {} // LCOV_EXCL_LINE
+      void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
       template<typename UserType>
       friend class NumericAddressedBackendRegisterAccessor;
