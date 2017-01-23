@@ -1,19 +1,13 @@
-/*
- * RebotBackendException.h
- *
- *  Created on: May 29, 2015
- *      Author: adagio
- */
-
-#ifndef MTCA4U_REBOT_BACKEND_EXCEPTION_H
-#define MTCA4U_REBOT_BACKEND_EXCEPTION_H
+#ifndef CHIMERATK_REBOT_BACKEND_EXCEPTION_H
+#define CHIMERATK_REBOT_BACKEND_EXCEPTION_H
 
 #include <string>
 
 #include "DeviceBackendException.h"
 
-namespace mtca4u {
-
+namespace ChimeraTK {
+  using namespace mtca4u;
+  
   /// Provides class for exceptions related to RebotDevice
   class RebotBackendException : public DeviceBackendException {
     public:
@@ -30,9 +24,16 @@ namespace mtca4u {
         EX_INVALID_PARAMETERS,
         EX_INVALID_REGISTER_ADDRESS
       };
-      RebotBackendException(const std::string &_exMessage, unsigned int _exID);
+      RebotBackendException(const std::string &_exMessage, unsigned int _exID)
+        : DeviceBackendException(_exMessage, _exID) {
+      }
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
-#endif /* MTCA4U_REBOT_BACKEND_EXCEPTION_H */
+// backward compatibility
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
+
+#endif /* CHIMERATK_REBOT_BACKEND_EXCEPTION_H */

@@ -1,21 +1,33 @@
 
 #include "RebotDummyServer.h"
+#include "DummyProtocol1.h" // the latest version includes all predecessors in the include
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-
-namespace mtca4u {
+#include <stdexcept>
+ 
+namespace ChimeraTK {
 
 bool volatile sigterm_caught = false;
 
-RebotDummyServer::RebotDummyServer(unsigned int& portNumber,
-                                   std::string& mapFile)
+  RebotDummyServer::RebotDummyServer(unsigned int& portNumber, std::string& mapFile,
+                                     unsigned int protocolVersion)
     : _registerSpace(mapFile),
       _serverPort(portNumber),
+      _protocolVersion(protocolVersion),
       _io(),
       _serverEndpoint(ip::tcp::v4(), _serverPort),
       _connectionAcceptor(_io, _serverEndpoint),
       _currentClientConnection() {
+
+    if (protocolVersion == 0){
+      _protocolImplementor.reset(new DummyProtocol0(*this));
+    }else if (protocolVersion == 1){
+      _protocolImplementor.reset(new DummyProtocol0(*this));
+    }else{
+      throw std::invalid_argument("RebotDummyServer: unknown protocol version");
+    }
+      
   // set the acceptor backlog to 1
   /*  _connectionAcceptor.open(_serverEndpoint.protocol());
     _connectionAcceptor.bind(_serverEndpoint);*/
@@ -65,32 +77,14 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
   uint32_t requestedAction = buffer.at(0);
   switch (requestedAction) {
 
-    case 1: { // Write one word to a register
-      writeWordToRequestedAddress(buffer);
-      // if  writeWordToRequestedAddress dosent throw, we can safely assume
-      // write was a success
-      sendResponseForWriteCommand(true);
+    case SINGLE_WORD_WRITE: 
+      _protocolImplementor->singleWordWrite(buffer);
       break;
-    }
-    case 3: { // multi word read
-      uint32_t numberOfWordsToRead = buffer.at(2);
-
-      if (numberOfWordsToRead > 361) { // not supported
-        std::vector<int32_t> dataToSend(1);
-        dataToSend.at(0) = TOO_MUCH_DATA_REQUESTED;
-
-        boost::asio::write(*_currentClientConnection,
-                           boost::asio::buffer(dataToSend));
-      } else {
-        readRegisterAndSendData(buffer);
-      }
+    case  MULTI_WORD_READ:
+      _protocolImplementor->multiWordRead(buffer);
       break;
-    }
-    default: {
-      std::vector<int32_t> unknownInstruction{ -1040 };
-      boost::asio::write(*_currentClientConnection,
-                         boost::asio::buffer(unknownInstruction));
-    }
+    default:
+      sendSingleWord(UNKNOWN_INSTRUCTION);
   }
 }
 
@@ -113,10 +107,7 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
 
   // send data in two packets instead of one; this is done for test coverage.
   // Let READ_SUCCESS_INDICATION go in the first write and data in the second.
-  std::vector<int32_t> readSuccessIndication(1);
-  readSuccessIndication.at(0) = READ_SUCCESS_INDICATION;
-  boost::asio::write(*_currentClientConnection,
-                     boost::asio::buffer(readSuccessIndication));
+  sendSingleWord(READ_SUCCESS_INDICATION);
 
   std::vector<int32_t> dataToSend(numberOfWordsToRead);
   uint8_t bar = 0;
@@ -129,13 +120,10 @@ void RebotDummyServer::readRegisterAndSendData(std::vector<uint32_t>& buffer) {
   boost::asio::write(*_currentClientConnection,
                      boost::asio::buffer(dataToSend));
 }
-
-void RebotDummyServer::sendResponseForWriteCommand(bool status) {
-  if (status == true) { // WriteSuccessful
-    std::vector<int32_t> data(1);
-    data.at(0) = WRITE_SUCCESS_INDICATION;
-    boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
-  }
+  
+void RebotDummyServer::sendSingleWord(int32_t response) {
+  std::vector<int32_t> data{ response };
+  boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
 }
 
 RebotDummyServer::~RebotDummyServer() {
@@ -185,4 +173,4 @@ void RebotDummyServer::handleAcceptedConnection(
   }
 }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
