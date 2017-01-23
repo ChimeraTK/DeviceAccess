@@ -13,7 +13,10 @@ struct DummyProtocol0: public DummyProtocolImplementor{
 
   virtual void singleWordWrite(std::vector<uint32_t>& buffer);
   virtual void multiWordRead(std::vector<uint32_t>& buffer);
-  
+  virtual void hello(std::vector<uint32_t>& buffer);
+
+  virtual uint32_t protocolVersion(){return 0;}
+ 
   RebotDummyServer & _parent;
 };
 

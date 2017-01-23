@@ -36,6 +36,9 @@ class RebotDummyServer {
 
   static const uint32_t SINGLE_WORD_WRITE = 1;
   static const uint32_t MULTI_WORD_READ = 3;
+  static const uint32_t HELLO = 4;
+  static const uint32_t REBOT_MAGIC_WORD = 0x72626f74; // ascii code 'rbot'
+  
   
 
   DummyBackend _registerSpace;

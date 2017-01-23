@@ -1,5 +1,6 @@
 #include "RebotBackend.h"
 #include "TcpCtrl.h"
+#include "RebotProtocolDefinitions.h"
 
 namespace ChimeraTK {
 
@@ -198,13 +199,18 @@ void RebotBackend::fetchFromRebotServer(uint32_t wordAddress,
                                         uint32_t numberOfWords,
                                         int32_t* dataLocation) {
   sendRebotReadRequest(wordAddress, numberOfWords);
-  // read wordsToRead + 1. The extra byte is the read status indicator. The
-  // returned status indicator from the server should be handled FIXME
-  std::vector<int32_t> readData = _tcpObject->receiveData(numberOfWords + 1);
 
-  // remove the first byte form the read in data; this will be the read status
-  // indicator returned from the server. We do not handle it for now.
-  readData.erase(readData.begin());
+  //first check that the response starts with READ_ACK. If it is an error code there might be just
+  //one word in the response.
+  std::vector<int32_t> responseCode = _tcpObject->receiveData(1);  
+  if (responseCode[0] != rebot::READ_ACK){
+    // FIXME: can we do somwthing more clever here?
+    throw RebotBackendException("Reading via ReboT failed",
+                                RebotBackendException::EX_SOCKET_READ_FAILED);
+  }
+
+  // now that we know that the command worked on the server side we can read the rest of the data
+  std::vector<int32_t> readData = _tcpObject->receiveData(numberOfWords);
 
   transferVectorToDataPtr(readData, dataLocation);
 }

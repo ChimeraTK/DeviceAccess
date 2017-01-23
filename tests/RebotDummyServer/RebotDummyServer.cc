@@ -83,6 +83,9 @@ void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
     case  MULTI_WORD_READ:
       _protocolImplementor->multiWordRead(buffer);
       break;
+    case  HELLO:
+      _protocolImplementor->hello(buffer);
+      break;
     default:
       sendSingleWord(UNKNOWN_INSTRUCTION);
   }

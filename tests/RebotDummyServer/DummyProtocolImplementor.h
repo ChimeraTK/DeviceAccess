@@ -8,6 +8,9 @@
 struct DummyProtocolImplementor{
   virtual void singleWordWrite(std::vector<uint32_t>& buffer)=0;
   virtual void multiWordRead(std::vector<uint32_t>& buffer)=0;
+  virtual void hello(std::vector<uint32_t>& buffer)=0;
+  /// implement this for EVERY protocol version
+  virtual uint32_t protocolVersion()=0;
 };
 
 #endif //DUMMY_PROTOCOL_IMPLEMENTOR_H

@@ -14,6 +14,11 @@ struct DummyProtocol1: public DummyProtocol0{
   /// The multi word read is not limited in the size any more
   virtual void multiWordRead(std::vector<uint32_t>& buffer);
 
+  /// First protocol version that implements hello
+  virtual void hello(std::vector<uint32_t>& buffer);
+
+  virtual uint32_t protocolVersion(){return 1;}
+
 };
 
 }//  namespace ChimeraTK
