@@ -148,12 +148,17 @@ namespace mtca4u {
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
        *  without launching a thread. */
       virtual TransferFuture readAync() {
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        std::cerr << "You are using an experimental feature but do not have ENABLE_EXPERIMENTAL_FEATURES set!" << std::endl;
+        std::terminate();
+#else
         if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
         auto boostFuture = boost::async( boost::bind(&TransferElement::doReadTransfer, this) ).share();
         TransferFuture future(boostFuture, this);
         activeFuture = future;
         hasActiveFuture = true;
         return future;
+#endif
       }
 
       /** Write the data to device. */
