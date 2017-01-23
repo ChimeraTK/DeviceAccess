@@ -23,7 +23,7 @@ bool volatile sigterm_caught = false;
     if (protocolVersion == 0){
       _protocolImplementor.reset(new DummyProtocol0(*this));
     }else if (protocolVersion == 1){
-      _protocolImplementor.reset(new DummyProtocol0(*this));
+      _protocolImplementor.reset(new DummyProtocol1(*this));
     }else{
       throw std::invalid_argument("RebotDummyServer: unknown protocol version");
     }
