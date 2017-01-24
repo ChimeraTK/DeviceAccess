@@ -20,7 +20,7 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
     : NumericAddressedBackend(mapFileName),
       _boardAddr(boardAddr),
       _port(port),
-      _tcpObject(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
+      _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
       _serverProtocolVersion(0), 
       _mutex(){}
 
@@ -29,7 +29,7 @@ RebotBackend::~RebotBackend() {
   std::lock_guard<std::mutex> lock(_mutex);
   
   if (isOpen()) {
-    _tcpObject->closeConnection();
+    _tcpCommunicator->closeConnection();
   }
 }
 
@@ -37,7 +37,7 @@ void RebotBackend::open() {
    
    std::lock_guard<std::mutex> lock(_mutex);
    
-  _tcpObject->openConnection();
+  _tcpCommunicator->openConnection();
   _serverProtocolVersion = getServerProtocolVersion();
   _opened = true;
 }
@@ -126,8 +126,8 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
       }
 
       boost::array<char, 4> receivedData;
-      _tcpObject->sendData(datasend);
-      _tcpObject->receiveData(receivedData);
+      _tcpCommunicator->sendData(datasend);
+      _tcpCommunicator->receiveData(receivedData);
     }
   } else {
     int mode = 2; // server supports multi word write
@@ -140,8 +140,8 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t address, int32_t const* data,
       writeCommandPacket.push_back(data[i]);
     }
     boost::array<char, 4> receivedData;
-    _tcpObject->sendData(writeCommandPacket);
-    _tcpObject->receiveData(receivedData);
+    _tcpCommunicator->sendData(writeCommandPacket);
+    _tcpCommunicator->receiveData(receivedData);
   }
 }
 
@@ -150,7 +150,7 @@ void RebotBackend::close() {
   std::lock_guard<std::mutex> lock(_mutex);
   
   _opened = false;
-  _tcpObject->closeConnection();
+  _tcpCommunicator->closeConnection();
 }
 
 boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
@@ -202,7 +202,7 @@ void RebotBackend::fetchFromRebotServer(uint32_t wordAddress,
 
   //first check that the response starts with READ_ACK. If it is an error code there might be just
   //one word in the response.
-  std::vector<int32_t> responseCode = _tcpObject->receiveData(1);  
+  std::vector<int32_t> responseCode = _tcpCommunicator->receiveData(1);  
   if (responseCode[0] != rebot::READ_ACK){
     std::cout << "response code is " << responseCode[0] << std::endl;
     // FIXME: can we do somwthing more clever here?
@@ -211,7 +211,7 @@ void RebotBackend::fetchFromRebotServer(uint32_t wordAddress,
   }
 
   // now that we know that the command worked on the server side we can read the rest of the data
-  std::vector<int32_t> readData = _tcpObject->receiveData(numberOfWords);
+  std::vector<int32_t> readData = _tcpCommunicator->receiveData(numberOfWords);
 
   transferVectorToDataPtr(readData, dataLocation);
 }
@@ -235,7 +235,7 @@ void RebotBackend::sendRebotReadRequest(const uint32_t wordAddress,
     datasend[j] = ((wordsToRead) >> (8 * (j - 8))) & 0xFF;
   }
 
-  _tcpObject->sendData(datasend);
+  _tcpCommunicator->sendData(datasend);
 }
 
 void RebotBackend::transferVectorToDataPtr(std::vector<int32_t> source,
@@ -251,19 +251,19 @@ uint32_t RebotBackend::getServerProtocolVersion() {
   // send a negotiation to the server:
   // sendClientProtocolVersion
   std::vector<uint32_t> clientHelloMessage = frameClientHello();
-  _tcpObject->sendData(clientHelloMessage);
+  _tcpCommunicator->sendData(clientHelloMessage);
 
   // Kludge is needed to work around server bug.
   // We have a bug with the old version were only one word is returned for multiple
   // unrecognized command. Fetching one word for the 3 words send is a workaround.
-  auto serverHello = _tcpObject->receiveData(1);
+  auto serverHello = _tcpCommunicator->receiveData(1);
 
   if (serverHello.at(0) == (int32_t) UNKNOWN_INSTRUCTION) {
     return 0; // initial protocol version 0.0
   }
 
   auto remainingBytesOfAValidServerHello =
-      _tcpObject->receiveData(LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
+      _tcpCommunicator->receiveData(LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
 
   serverHello.insert(serverHello.end(),
                      remainingBytesOfAValidServerHello.begin(),

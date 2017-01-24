@@ -29,7 +29,7 @@ namespace ChimeraTK {
     private:
       std::string _boardAddr;
       int _port;
-      boost::shared_ptr<TcpCtrl> _tcpObject;
+      boost::shared_ptr<TcpCtrl> _tcpCommunicator;
       uint32_t _serverProtocolVersion;
       std::mutex _mutex;
     public:
