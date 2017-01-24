@@ -26,8 +26,7 @@ namespace ChimeraTK{
     nWords = sizeInBytes/4;
   }
   
-  void RebotProtocol0::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
-                            size_t sizeInBytes) {
+  void RebotProtocol0::read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) {
     //locking is happening in the backend
     //check for isOpen() is happening in the backend which does the bookkeeping
 
@@ -51,8 +50,7 @@ namespace ChimeraTK{
 
   }
 
-  void RebotProtocol0::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const* data,
-                         size_t sizeInBytes) {
+  void RebotProtocol0::write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) {
   
   RegisterInfo registerInfo(addressInBytes, sizeInBytes);
 

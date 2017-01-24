@@ -11,9 +11,9 @@ namespace ChimeraTK{
    *  reuse code from previous versions, or replace the implementation.
    */
   struct RebotProtocolImplementor{
-    virtual void read(uint8_t bar, uint32_t addressInBytes, int32_t* data,
+    virtual void read(uint32_t addressInBytes, int32_t* data,
                       size_t sizeInBytes) = 0;
-    virtual void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data,
+    virtual void write(uint32_t addressInBytes, int32_t const* data,
                        size_t sizeInBytes) = 0;
     virtual ~RebotProtocolImplementor(){};
   };

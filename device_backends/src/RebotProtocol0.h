@@ -11,8 +11,8 @@ namespace ChimeraTK{
     RebotProtocol0(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
     virtual ~RebotProtocol0(){};
 
-    virtual void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes);
-    virtual void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes);
+    virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes);
+    virtual void write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes);
 
     struct RegisterInfo{
       uint32_t addressInWords;

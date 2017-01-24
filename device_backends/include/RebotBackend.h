@@ -23,15 +23,17 @@ namespace ChimeraTK {
   using namespace mtca4u;
 
   class TcpCtrl;
+  class RebotProtocolImplementor;
 
  class RebotBackend : public NumericAddressedBackend {
 
-    private:
+    protected:
       std::string _boardAddr;
       int _port;
       boost::shared_ptr<TcpCtrl> _tcpCommunicator;
-      uint32_t _serverProtocolVersion;
       std::mutex _mutex;
+      std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
+                           
     public:
       RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
       ~RebotBackend();
@@ -59,7 +61,7 @@ namespace ChimeraTK {
       static boost::shared_ptr<DeviceBackend> createInstance(
           std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
-    private:
+    protected:
       /*!
        * @brief Frame a rebot 'n' word read request and send it over the socket.
        *
