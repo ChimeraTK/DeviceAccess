@@ -146,7 +146,9 @@ namespace mtca4u {
        *
        *  Design note: A special type of future has to be returned to allow an abstraction from the implementation
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
-       *  without launching a thread. */
+       *  without launching a thread.
+       *
+       *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture readAync() {
 #ifndef ENABLE_EXPERIMENTAL_FEATURES
         std::cerr << "You are using an experimental feature but do not have ENABLE_EXPERIMENTAL_FEATURES set!" << std::endl;
