@@ -204,6 +204,7 @@ void RebotBackend::fetchFromRebotServer(uint32_t wordAddress,
   //one word in the response.
   std::vector<int32_t> responseCode = _tcpObject->receiveData(1);  
   if (responseCode[0] != rebot::READ_ACK){
+    std::cout << "response code is " << responseCode[0] << std::endl;
     // FIXME: can we do somwthing more clever here?
     throw RebotBackendException("Reading via ReboT failed",
                                 RebotBackendException::EX_SOCKET_READ_FAILED);

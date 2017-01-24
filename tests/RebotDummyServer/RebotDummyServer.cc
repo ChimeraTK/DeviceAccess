@@ -12,7 +12,8 @@ bool volatile sigterm_caught = false;
 
   RebotDummyServer::RebotDummyServer(unsigned int& portNumber, std::string& mapFile,
                                      unsigned int protocolVersion)
-    : _registerSpace(mapFile),
+    :  _state(ACCEPT_NEW_COMMAND),
+       _registerSpace(mapFile),
       _serverPort(portNumber),
       _protocolVersion(protocolVersion),
       _io(),
@@ -69,25 +70,33 @@ void RebotDummyServer::start() {
   }
 }
 
-void RebotDummyServer::processReceivedCommand(std::vector<uint32_t>& buffer) {
+void RebotDummyServer::processReceivedPackage(std::vector<uint32_t>& buffer) {
 
   // FIXME: this whole method is a hack. The whole data handling part of the server
   // needs a  redesign
+  if (_state == INSIDE_MULTI_WORD_WRITE){
+    _state = _protocolImplementor->continueMultiWordWrite(buffer);
+  }else{// has to be ACCEPT_NEW_COMMAND
 
-  uint32_t requestedAction = buffer.at(0);
-  switch (requestedAction) {
-
-    case SINGLE_WORD_WRITE: 
-      _protocolImplementor->singleWordWrite(buffer);
-      break;
-    case  MULTI_WORD_READ:
-      _protocolImplementor->multiWordRead(buffer);
-      break;
-    case  HELLO:
-      _protocolImplementor->hello(buffer);
-      break;
-    default:
-      sendSingleWord(UNKNOWN_INSTRUCTION);
+    uint32_t requestedAction = buffer.at(0);
+    switch (requestedAction) {
+      
+      case SINGLE_WORD_WRITE: 
+        _protocolImplementor->singleWordWrite(buffer);
+        break;
+      case  MULTI_WORD_WRITE:
+        _state = _protocolImplementor->multiWordWrite(buffer);
+        break;
+      case  MULTI_WORD_READ:
+        _protocolImplementor->multiWordRead(buffer);
+        break;
+      case  HELLO:
+        _protocolImplementor->hello(buffer);
+        break;
+      default:
+        std::cout << "Instruction unknown in all protocol versions " << requestedAction << std::endl;
+        sendSingleWord(UNKNOWN_INSTRUCTION);
+    }
   }
 }
 
@@ -172,7 +181,7 @@ void RebotDummyServer::handleAcceptedConnection(
       throw boost::system::system_error(errorCode);
     }
 
-    processReceivedCommand(dataBuffer);
+    processReceivedPackage(dataBuffer);
   }
 }
 

@@ -35,11 +35,18 @@ class RebotDummyServer {
   static const int32_t UNKNOWN_INSTRUCTION = -1040;
 
   static const uint32_t SINGLE_WORD_WRITE = 1;
+  static const uint32_t MULTI_WORD_WRITE = 2;
   static const uint32_t MULTI_WORD_READ = 3;
   static const uint32_t HELLO = 4;
   static const uint32_t REBOT_MAGIC_WORD = 0x72626f74; // ascii code 'rbot'
   
-  
+  // internal states. Currently there are only two when the connection is open
+  static const uint32_t ACCEPT_NEW_COMMAND = 1;
+  // a multi word write can be so large that it needs more than one package
+  static const uint32_t INSIDE_MULTI_WORD_WRITE = 2;
+
+  // The actual state: ready for new command or not
+  uint32_t _state;
 
   DummyBackend _registerSpace;
   unsigned int _serverPort;
@@ -50,7 +57,7 @@ class RebotDummyServer {
   boost::shared_ptr<ip::tcp::socket> _currentClientConnection;
   std::unique_ptr<DummyProtocolImplementor> _protocolImplementor;
   
-  void processReceivedCommand(std::vector<uint32_t> &buffer);
+  void processReceivedPackage(std::vector<uint32_t> &buffer);
   void writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
   void handleAcceptedConnection(boost::shared_ptr<ip::tcp::socket>& );
