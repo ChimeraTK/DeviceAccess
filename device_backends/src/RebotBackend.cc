@@ -132,58 +132,6 @@ boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
       new RebotBackend(tmcbIP, portNumber, mapFileName));
 }
 
-void RebotBackend::fetchFromRebotServer(uint32_t wordAddress,
-                                        uint32_t numberOfWords,
-                                        int32_t* dataLocation) {
-  sendRebotReadRequest(wordAddress, numberOfWords);
-
-  //first check that the response starts with READ_ACK. If it is an error code there might be just
-  //one word in the response.
-  std::vector<int32_t> responseCode = _tcpCommunicator->receiveData(1);  
-  if (responseCode[0] != rebot::READ_ACK){
-    std::cout << "response code is " << responseCode[0] << std::endl;
-    // FIXME: can we do somwthing more clever here?
-    throw RebotBackendException("Reading via ReboT failed",
-                                RebotBackendException::EX_SOCKET_READ_FAILED);
-  }
-
-  // now that we know that the command worked on the server side we can read the rest of the data
-  std::vector<int32_t> readData = _tcpCommunicator->receiveData(numberOfWords);
-
-  transferVectorToDataPtr(readData, dataLocation);
-}
-
-void RebotBackend::sendRebotReadRequest(const uint32_t wordAddress,
-                                        const uint32_t wordsToRead) {
-  int mode = 3;
-
-  unsigned int datasendSize = 3 * sizeof(int);
-  std::vector<char> datasend(datasendSize);
-  datasend[0] = mode;
-
-  // send out an n word read request
-  for (int j = 1; j < 4; ++j) {
-    datasend[j] = 0;
-  }
-  for (int j = 4; j < 8; ++j) {
-    datasend[j] = (wordAddress >> (8 * (j - 4))) & 0xFF;
-  }
-  for (int j = 8; j < 12; ++j) {
-    datasend[j] = ((wordsToRead) >> (8 * (j - 8))) & 0xFF;
-  }
-
-  _tcpCommunicator->sendData(datasend);
-}
-
-void RebotBackend::transferVectorToDataPtr(std::vector<int32_t> source,
-                                           int32_t* destination) {
-  for (auto& i : source) {
-    *destination = i;
-    ++destination; // this will not change the destination ptr value outside the
-                   // scope of this function (signature pass by value)
-  }
-}
-
 uint32_t RebotBackend::getServerProtocolVersion() {
   // send a negotiation to the server:
   // sendClientProtocolVersion
