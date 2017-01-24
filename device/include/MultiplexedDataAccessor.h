@@ -62,11 +62,11 @@ namespace mtca4u {
       }
 
       void doReadTransfer() override {
-        accessor->doReadTransfer();
+        accessor->read();
       }
 
       bool doReadTransferNonBlocking() override {
-        return accessor->doReadTransferNonBlocking();
+        return accessor->readNonBlocking();
       }
       
       void postRead() override {
