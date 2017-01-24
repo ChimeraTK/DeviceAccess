@@ -23,7 +23,7 @@ namespace rebot{
   // Least Significant 16 bits == minor version
   static const uint32_t CLIENT_PROTOCOL_VERSION = 0x00000001;
 
-  static const uint32_t READE_ACK = 1000;
+  static const uint32_t READ_ACK = 1000;
   static const uint32_t WRITE_ACK = 1001;
   static const uint32_t PONG = 1005;
   static const uint32_t TOO_MUCH_DATA = -1010; // FIXME: use unsigned

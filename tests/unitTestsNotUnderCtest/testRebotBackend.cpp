@@ -1,3 +1,7 @@
+/******************************************************************************
+ * Keep this file in a way that the tests also run with real hardware.
+ ******************************************************************************/
+
 #include <boost/test/included/unit_test.hpp>
 #include "BackendFactory.h"
 #include "RebotBackend.h"

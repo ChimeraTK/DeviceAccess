@@ -25,4 +25,19 @@ namespace ChimeraTK{
     }
   }
 
+  uint32_t DummyProtocol0::multiWordWrite(std::vector<uint32_t>& /*buffer*/){
+    _parent.sendSingleWord(RebotDummyServer::UNKNOWN_INSTRUCTION);
+    return RebotDummyServer::ACCEPT_NEW_COMMAND;
+  }
+
+  uint32_t DummyProtocol0::continueMultiWordWrite(std::vector<uint32_t>& /*buffer*/){
+    // we never should end here. Don't do anything
+    return RebotDummyServer::ACCEPT_NEW_COMMAND;
+  }
+
+  void DummyProtocol0::hello(std::vector<uint32_t>& /*buffer*/){
+    _parent.sendSingleWord(RebotDummyServer::UNKNOWN_INSTRUCTION);
+  }
+
+  
 }//namespace ChimeraTK
