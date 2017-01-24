@@ -26,33 +26,35 @@ namespace ChimeraTK {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
       }
       
-      void read() {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+      void doReadTransfer() override {
       }
-      
-      bool readNonBlocking() {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+            
+      bool doReadTransferNonBlocking() override {
         if(firstRead) {
           firstRead = false;
           return true;
         }
         return false;
       }
+
+      void postRead() override {
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+      }
       
-      void write() {
+      void write() override {
       }
 
-      bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const>&) const {return false;}
+      bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const>&) const override {return false;}
 
-      bool isReadOnly() const {return false;}
+      bool isReadOnly() const override {return false;}
 
-      bool isReadable() const {return true;}
+      bool isReadable() const override {return true;}
       
-      bool isWriteable() const {return true;}
+      bool isWriteable() const override {return true;}
 
-      std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() {return{};}
+      std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {return{};}
 
-      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) {}
+      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {}
       
     protected:
       

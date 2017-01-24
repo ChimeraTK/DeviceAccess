@@ -92,13 +92,13 @@ namespace ChimeraTK {
         hasExternalTrigger = true;
       }
 
-      void activate() {
+      void activate() override {
         assert(_direction == VariableDirection::consuming);
         assert(!_thread.joinable());
         _thread = boost::thread([this] { this->run(); });
       }
 
-      void deactivate() {
+      void deactivate() override {
         if(_thread.joinable()) {
           _thread.interrupt();
           _thread.join();
@@ -147,28 +147,35 @@ namespace ChimeraTK {
         return impl->get();
       }
 
-      const std::type_info& getValueType() const {
+      const std::type_info& getValueType() const override {
         return typeid(UserType);
       }
 
-      bool isReadable() const {
+      bool isReadable() const override {
         return _direction == VariableDirection::consuming;
       }
       
-      bool isReadOnly() const {
+      bool isReadOnly() const override {
         return _direction == VariableDirection::consuming;
       }
       
-      bool isWriteable() const {
+      bool isWriteable() const override {
         return _direction == VariableDirection::feeding;
       }
 
-      TimeStamp getTimeStamp() const {
+      TimeStamp getTimeStamp() const override {
         return impl->getTimeStamp();
       }
       
-      void read() {
+      void doReadTransfer() override {
         impl->read();
+      }
+      
+      bool doReadTransferNonBlocking() override {
+        return impl->readNonBlocking();
+      }
+      
+      void postRead() override {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
         for(auto &slave : slaves) {     // send out copies to slaves
           // do not send copy if no data is expected (e.g. trigger)
@@ -178,23 +185,8 @@ namespace ChimeraTK {
           slave->write();
         }
       }
-      
-      bool readNonBlocking() {
-        bool ret = impl->readNonBlocking();
-        if(ret) {
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
-          for(auto &slave : slaves) {     // send out copies to slaves
-            // do not send copy if no data is expected (e.g. trigger)
-            if(slave->getNumberOfSamples() != 0) {
-              slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
-            }
-            slave->write();
-          }
-        }
-        return ret;
-      }
 
-      void write() {
+      void write() override {
         for(auto &slave : slaves) {     // send out copies to slaves
           // do not send copy if no data is expected (e.g. trigger)
           if(slave->getNumberOfSamples() != 0) {
@@ -208,16 +200,16 @@ namespace ChimeraTK {
         return;
       }
       
-      virtual bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const{
+      bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {
         // only true if the very instance of the transfer element is the same
         return e.get() == this;
       }
       
-      virtual std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements(){
+      std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() };
       }
       
-      virtual void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>){
+      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {
         // You can't replace anything here. Just do nothing.
       }
       

@@ -6,8 +6,8 @@ include(cmake/add_dependency.cmake)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 01)
-set(${PROJECT_NAME}_PATCH_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 02)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
 
@@ -24,11 +24,11 @@ set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJEC
 
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(mtca4u-deviceaccess 00.18 REQUIRED)
+add_dependency(mtca4u-deviceaccess 00.19 REQUIRED)
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(ChimeraTK-ControlSystemAdapter 00.03 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 00.04 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)

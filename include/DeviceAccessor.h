@@ -35,48 +35,49 @@ namespace ChimeraTK {
         }
       }
       
-      void read() {
+      void doReadTransfer() override {
         impl->read();
+      }
+      
+      bool doReadTransferNonBlocking() override {
+        return impl->readNonBlocking();
+      }
+      
+      void postRead() override {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
       }
       
-      bool readNonBlocking() {
-        bool ret = impl->readNonBlocking();
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
-        return ret;
-      }
-      
-      void write() {
+      void write() override {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
         impl->write();
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(impl->accessChannel(0));
       }
       
-      unsigned int getNInputQueueElements() const {
+      unsigned int getNInputQueueElements() const override {
         return impl->getNInputQueueElements();
       }
       
-      bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& other) const {
+      bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& other) const override {
         return impl->isSameRegister(other);
       }
       
-      bool isReadOnly() const {
+      bool isReadOnly() const override {
         return impl->isReadOnly();
       }
       
-      bool isReadable() const {
+      bool isReadable() const override {
         return impl->isReadable();
       }
       
-      bool isWriteable() const {
+      bool isWriteable() const override {
         return impl->isWriteable();
       }
       
-      std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() {
+      std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
         return impl->getHardwareAccessingElements();
       }
       
-      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement> other) {
+      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement> other) override {
         impl->replaceTransferElement(other);
       }
       
