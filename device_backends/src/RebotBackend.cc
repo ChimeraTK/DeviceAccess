@@ -1,7 +1,7 @@
 #include "RebotBackend.h"
 #include "TcpCtrl.h"
 #include "RebotProtocolDefinitions.h"
-#include "RebotProtocol0.h"
+#include "RebotProtocol1.h"
 #include <sstream>
 
 namespace ChimeraTK {
@@ -44,8 +44,7 @@ void RebotBackend::open() {
   if (serverVersion == 0){
     _protocolImplementor.reset(new RebotProtocol0(_tcpCommunicator));
   }else if (serverVersion == 1){
-    _protocolImplementor.reset(0);    
-    //    _protocolImplementor.reset(new RebotProtocol1(_tcpCommunicator));    
+    _protocolImplementor.reset(new RebotProtocol1(_tcpCommunicator));    
   }else{
     _tcpCommunicator->closeConnection();
     std::stringstream errorMessage;
@@ -66,25 +65,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
-  if (sizeInBytes % 4 != 0) {
-    throw RebotBackendException("\"size\" argument must be a multiplicity of 4",
-                                RebotBackendException::EX_SIZE_INVALID);
-  }
-  // address == byte address; This should be converted into word address
-  if (addressInBytes % 4 != 0) {
-    throw RebotBackendException(
-        "Register address is not valid",
-        RebotBackendException::EX_INVALID_REGISTER_ADDRESS);
-  }
-
-  unsigned int totalWordsToFetch = sizeInBytes / 4;
-
-  // TODO: move logic for different versions to different classes
-  if ( _protocolImplementor ) {
-    _protocolImplementor->read(addressInBytes, data, sizeInBytes);
-  } else {
-    fetchFromRebotServer(addressInBytes/4, totalWordsToFetch, data);
-  }
+  _protocolImplementor->read(addressInBytes, data, sizeInBytes);
 }
 
 void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const* data,
@@ -96,33 +77,8 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
     throw RebotBackendException("Device is closed",
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
-  if (sizeInBytes % 4 != 0) {
-    throw RebotBackendException("\"size\" argument must be a multiplicity of 4",
-                                RebotBackendException::EX_SIZE_INVALID);
-  }
-  // address == byte address; This should be converted into word address
-  if (addressInBytes % 4 != 0) {
-    throw RebotBackendException(
-        "Register address is not valid",
-        RebotBackendException::EX_INVALID_REGISTER_ADDRESS);
-  }
-  // TODO: move logic for different versions to different classes
-  if ( _protocolImplementor) {
-    _protocolImplementor->write(addressInBytes, data, sizeInBytes);
-  } else {
-    int mode = 2; // server supports multi word write
-    unsigned int wordsToWrite = sizeInBytes / 4;
-    std::vector<uint32_t> writeCommandPacket;
-    writeCommandPacket.push_back(mode);
-    writeCommandPacket.push_back(addressInBytes/4);
-    writeCommandPacket.push_back(wordsToWrite);
-    for (unsigned int i = 0; i < wordsToWrite; ++i) {
-      writeCommandPacket.push_back(data[i]);
-    }
-    boost::array<char, 4> receivedData;
-    _tcpCommunicator->sendData(writeCommandPacket);
-    _tcpCommunicator->receiveData(receivedData);
-  }
+
+  _protocolImplementor->write(addressInBytes, data, sizeInBytes);
 }
 
 void RebotBackend::close() {
