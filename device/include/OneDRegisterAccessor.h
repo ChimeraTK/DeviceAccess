@@ -41,23 +41,6 @@ namespace mtca4u {
        *  will throw an exception (by the boost::shared_ptr)! */
       OneDRegisterAccessor() {}
 
-
-      /** Read the data from the device, convert it and store in buffer. */
-      void read() {
-        NDRegisterAccessorBridge<UserType>::_impl->read();
-      }
-
-      bool readNonBlocking(){
-        return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
-      }
-
-      /** Convert data from the buffer and write to device. */
-      void write() {
-        NDRegisterAccessorBridge<UserType>::_impl->write();
-      }
-
-      
-      
       /** Get or set buffer content by [] operator.
        *  @attention No bounds checking is performed, use getNumberOfElements() to obtain the number of elements in
        *  the register.
@@ -104,26 +87,6 @@ namespace mtca4u {
        *  TransferGroup itself may invalidate the pointer! */
       UserType* data() {
         return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).data();
-      }
-
-      /** Return if the register accessor allows only reading */
-      bool isReadOnly() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
-      }
-
-      bool isReadable() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
-      }
-
-      bool isWriteable() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
-      }
-
-      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
-       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
-       *  placeholder constructor without arguments. */
-      bool isInitialised() const {
-        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
       }
 
       friend class TransferGroup;

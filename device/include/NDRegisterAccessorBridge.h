@@ -18,7 +18,7 @@ namespace mtca4u {
    *  TwoDRegisterAccessor). Provides a private implementation of the TransferElement interface to allow the bridges
    *  to be added to a TransferGroup. Also stores the shared pointer to the NDRegisterAccessor implementation. */
   template<typename UserType>
-  class NDRegisterAccessorBridge : protected TransferElement {
+  class NDRegisterAccessorBridge : public TransferElement {
 
     public:
 
@@ -39,6 +39,42 @@ namespace mtca4u {
         _impl = newAccessor._impl;
       }
 
+      void doReadTransfer() override {
+        NDRegisterAccessorBridge<UserType>::_impl->doReadTransfer();
+      }
+
+      bool doReadTransferNonBlocking() override {
+        return NDRegisterAccessorBridge<UserType>::_impl->doReadTransferNonBlocking();
+      }
+
+      void postRead() override {
+        NDRegisterAccessorBridge<UserType>::_impl->postRead();
+      }
+
+      void write() override {
+        NDRegisterAccessorBridge<UserType>::_impl->write();
+      }
+
+      /** Return if the register accessor allows only reading */
+      bool isReadOnly() const override {
+        return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
+      }
+
+      bool isReadable() const override {
+        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
+      }
+
+      bool isWriteable() const override {
+        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
+      }
+
+      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
+       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
+       *  placeholder constructor without arguments. */
+      bool isInitialised() const {
+        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
+      }
+
     protected:
 
       NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
@@ -50,15 +86,15 @@ namespace mtca4u {
       /** pointer to the implementation */
       boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         return _impl->isSameRegister(other);
       }
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return _impl->getHardwareAccessingElements();
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
         if(_impl->isSameRegister(newElement)) {
           _impl = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
         }
@@ -67,13 +103,13 @@ namespace mtca4u {
         }
       }
 
-      virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
+      boost::shared_ptr<TransferElement> getHighLevelImplElement() override {
         return _impl;
       }
 
       friend class TransferGroup;
 
-      virtual const std::type_info& getValueType() const{
+      const std::type_info& getValueType() const override {
         return typeid(UserType);
       }
 

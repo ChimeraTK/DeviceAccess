@@ -31,16 +31,20 @@ namespace mtca4u {
 
       virtual ~NumericAddressedBackendMuxedRegisterAccessor() {}
 
-      void read();
+      void doReadTransfer() override;
 
-      void write();
-
-      virtual bool readNonBlocking() {
-        read();
+      bool doReadTransferNonBlocking() override {
+        doReadTransfer();
         return true;
       }
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      void postRead() override;
+
+      void write() override;
+
+      void preWrite() override;
+
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendMuxedRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -48,19 +52,19 @@ namespace mtca4u {
         return true;
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const override {
         return false;
       }
 
-      virtual bool isReadable() const {
+      bool isReadable() const override {
         return true;
       }
 
-      virtual bool isWriteable() const {
+      bool isWriteable() const override {
         return true;
       }
 
-      virtual FixedPointConverter getFixedPointConverter() const {
+      FixedPointConverter getFixedPointConverter() const override {
         throw DeviceException("getFixedPointConverter is not implemented for 2D registers (and deprecated for all "
             "registers).", DeviceException::NOT_IMPLEMENTED);
       }
@@ -75,10 +79,6 @@ namespace mtca4u {
 
       /** number of data blocks / samples */
       size_t _nBlocks;
-
-      void fillSequences();
-
-      void fillIO_Buffer();
 
       std::vector<int32_t> _ioBuffer;
 
@@ -97,11 +97,11 @@ namespace mtca4u {
       size_t _numberOfElements;
       size_t _elementsOffset;
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) {}   // LCOV_EXCL_LINE
+      void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}   // LCOV_EXCL_LINE
 
   };
 
@@ -218,15 +218,14 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::read() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransfer() {
       _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
-      fillSequences();
   }
 
   /********************************************************************************************************************/
 
   template <class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::fillSequences() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::postRead() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
@@ -255,14 +254,14 @@ namespace mtca4u {
 
   template <class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::write() {
-      fillIO_Buffer();
+      preWrite();
       _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
   }
 
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::fillIO_Buffer() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::preWrite() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
