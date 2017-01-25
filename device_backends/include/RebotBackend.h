@@ -22,15 +22,17 @@ namespace ChimeraTK {
   using namespace mtca4u;
 
   class TcpCtrl;
+  class RebotProtocolImplementor;
 
  class RebotBackend : public NumericAddressedBackend {
 
-    private:
+    protected:
       std::string _boardAddr;
       int _port;
-      boost::shared_ptr<TcpCtrl> _tcpObject;
-      uint32_t _serverProtocolVersion;
+      boost::shared_ptr<TcpCtrl> _tcpCommunicator;
       std::mutex _mutex;
+      std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
+                           
     public:
       RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
       ~RebotBackend();
@@ -43,41 +45,10 @@ namespace ChimeraTK {
       static boost::shared_ptr<DeviceBackend> createInstance(
           std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
-    private:
-      /*!
-       * @brief Frame a rebot 'n' word read request and send it over the socket.
-       *
-       * @param wordAddress The start address to read from. Method expects this
-       *                    address to be byte aligned to the register address
-       *                    space.
-       * @param wordsToRead Number of 32 bit words that should be returned from the
-       *                    start address (value at start address inclusive).
-       */
-      void sendRebotReadRequest(uint32_t const wordAddress,
-          uint32_t const wordsToRead);
 
-      /*!
-       * @brief Copy contents of a vector to a preallocated memory region.
-       *
-       * @param source      int32_t vector with data to be copied
-       * @param destination Pointer to allocated memory region with sufficient space
-       *                    to accommodate all elements of source.
-       */
-      void transferVectorToDataPtr(std::vector<int32_t> source,
-          int32_t* destination);
-
-      /*!
-       * @brief read and put contents in dataLocation
-       *
-       * @param wordAddress   Address Of the register to read from (assumes provided
-       *                      address is word aligned).
-       * @param numberOfWords Number of words to return.
-       * @param dataLocation  Location to copy the words into. Assumes has space to
-       *                      accommodate the returned values.
-       */
-      void fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords,
-          int32_t* dataLocation);
-
+   protected:
+      // This is not in the protocol implementor. Only the result of the hello tells us
+      // which implementor to instantiate.
       uint32_t getServerProtocolVersion();
       std::vector<uint32_t> frameClientHello();
       uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);

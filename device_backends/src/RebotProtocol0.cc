@@ -2,6 +2,7 @@
 #include "TcpCtrl.h"
 #include "RebotProtocolDefinitions.h"
 #include "RebotBackendException.h"
+#include <iostream>
 
 namespace ChimeraTK{
   using namespace rebot;
@@ -26,8 +27,7 @@ namespace ChimeraTK{
     nWords = sizeInBytes/4;
   }
   
-  void RebotProtocol0::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
-                            size_t sizeInBytes) {
+  void RebotProtocol0::read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) {
     //locking is happening in the backend
     //check for isOpen() is happening in the backend which does the bookkeeping
 
@@ -51,8 +51,7 @@ namespace ChimeraTK{
 
   }
 
-  void RebotProtocol0::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const* data,
-                         size_t sizeInBytes) {
+  void RebotProtocol0::write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) {
   
   RegisterInfo registerInfo(addressInBytes, sizeInBytes);
 
@@ -83,14 +82,19 @@ void RebotProtocol0::fetchFromRebotServer(uint32_t wordAddress,
                                           uint32_t numberOfWords,
                                           int32_t* dataLocation) {
   sendRebotReadRequest(wordAddress, numberOfWords);
-  // read wordsToRead + 1. The extra byte is the read status indicator. The
-  // returned status indicator from the server should be handled FIXME
-  std::vector<int32_t> readData = _tcpCommunicator->receiveData(numberOfWords + 1);
 
-  // remove the first byte form the read in data; this will be the read status
-  // indicator returned from the server. We do not handle it for now.
-  //FIXME: Do error handling of the return status!
-  readData.erase(readData.begin());
+  //first check that the response starts with READ_ACK. If it is an error code there might be just
+  //one word in the response.
+  std::vector<int32_t> responseCode = _tcpCommunicator->receiveData(1);  
+  if (responseCode[0] != rebot::READ_ACK){
+    std::cout << "response code is " << responseCode[0] << std::endl;
+    // FIXME: can we do somwthing more clever here?
+    throw RebotBackendException("Reading via ReboT failed",
+                                RebotBackendException::EX_SOCKET_READ_FAILED);
+  }
+
+  // now that we know that the command worked on the server side we can read the rest of the data
+  std::vector<int32_t> readData = _tcpCommunicator->receiveData(numberOfWords);
 
   transferVectorToDataPtr(readData, dataLocation);
 }
@@ -116,6 +120,7 @@ void RebotProtocol0::sendRebotReadRequest(const uint32_t wordAddress, const uint
 }
 
 void RebotProtocol0::transferVectorToDataPtr(std::vector<int32_t> source, int32_t* destination) {
+  // FIXME: just use memcopy
   for (auto& i : source) {
     *destination = i;
     ++destination; // this will not change the destination ptr value outside the
