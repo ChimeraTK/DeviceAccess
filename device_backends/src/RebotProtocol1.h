@@ -10,8 +10,9 @@ namespace ChimeraTK{
     RebotProtocol1(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
     virtual ~RebotProtocol1(){};
 
-    virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes);
-    virtual void write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes);
+    virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
+    virtual void write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
+    virtual void sendHeartbeat() override;
 
     /** No need to make it atomic (time_points cannot be because they are not trivially copyable).
      * It is protected by the hardware accessing mutex in the

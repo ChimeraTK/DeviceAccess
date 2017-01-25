@@ -93,6 +93,9 @@ void RebotDummyServer::processReceivedPackage(std::vector<uint32_t>& buffer) {
       case  HELLO:
         _protocolImplementor->hello(buffer);
         break;
+      case  PING:
+        _protocolImplementor->ping(buffer);
+        break;
       default:
         std::cout << "Instruction unknown in all protocol versions " << requestedAction << std::endl;
         sendSingleWord(UNKNOWN_INSTRUCTION);

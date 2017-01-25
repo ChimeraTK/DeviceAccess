@@ -16,6 +16,7 @@
 #include <boost/algorithm/string.hpp>
 #include <mutex>
 #include <thread>
+#include <boost/thread.hpp>
 #include "NumericAddressedBackend.h"
 
 
@@ -67,7 +68,7 @@ namespace ChimeraTK {
       uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
 
       void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
-      std::thread _heartbeatThread;
+      boost::thread _heartbeatThread;
   };
 
 } // namespace ChimeraTK

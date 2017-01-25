@@ -15,6 +15,7 @@ namespace ChimeraTK{
                       size_t sizeInBytes) = 0;
     virtual void write(uint32_t addressInBytes, int32_t const* data,
                        size_t sizeInBytes) = 0;
+    virtual void sendHeartbeat() = 0;
     virtual ~RebotProtocolImplementor(){};
   };
   

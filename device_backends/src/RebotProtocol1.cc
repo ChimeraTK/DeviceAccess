@@ -42,5 +42,11 @@ namespace ChimeraTK{
     // FIXME: this returns std::vector<int32_t> of length 1. Do error handling!
     (void) _tcpCommunicator->receiveData(1);
   }
-  
+
+  void RebotProtocol1::sendHeartbeat(){
+    _tcpCommunicator->sendData(std::vector<uint32_t>({PING}));
+    // don't evaluate. The other side is sending an error anyway in this protocol version
+    _tcpCommunicator->receiveData(1);
+  }
+
 } // namespace ChimeraTK

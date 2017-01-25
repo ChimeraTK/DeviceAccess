@@ -128,4 +128,8 @@ void RebotProtocol0::transferVectorToDataPtr(std::vector<int32_t> source, int32_
   }
 }
 
+void RebotProtocol0::sendHeartbeat(){
+  //just do nothing in v0
+}
+  
 } // namespace ChimeraTK

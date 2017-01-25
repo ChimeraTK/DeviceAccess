@@ -36,12 +36,13 @@ RebotBackend::~RebotBackend() {
   { //extra scope for the lock guard
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
-    _threadInformerMutex->quitThread=true;
+    //    _threadInformerMutex->quitThread=true;
     if (isOpen()) {
       _tcpCommunicator->closeConnection();
     }
   }// end of the lock guard scope. We have to release the lock before waiting for the thread to join
-  _heartbeatThread.detach();
+  _heartbeatThread.interrupt();
+  _heartbeatThread.join();
 }
   
 
@@ -185,13 +186,17 @@ uint32_t RebotBackend::parseRxServerHello(
     while (true){
       {// extra scope for the lock guard
         std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+        //FIXME: not needed with the boost thread. keeping it in case I decide to swich back to std.
         if (threadInformerMutex->quitThread){
           break;
+        }
+        if (_protocolImplementor){
+          _protocolImplementor->sendHeartbeat();
         }
         std::cout << "heartbeat: beat " << beatcount++ << std::endl;
       }
       // sleep without holding the lock
-      std::this_thread::sleep_for( std::chrono::milliseconds(5000) );
+      boost::this_thread::sleep_for( boost::chrono::milliseconds(5000) );
     }
   }
   

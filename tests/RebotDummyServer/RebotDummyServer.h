@@ -31,6 +31,7 @@ class RebotDummyServer {
   static const int BUFFER_SIZE_IN_WORDS = 256;
   static const int32_t READ_SUCCESS_INDICATION = 1000;
   static const int32_t WRITE_SUCCESS_INDICATION = 1001;
+  static const uint32_t PONG = 1005;
   static const int32_t TOO_MUCH_DATA_REQUESTED = -1010;
   static const int32_t UNKNOWN_INSTRUCTION = -1040;
 
@@ -38,6 +39,7 @@ class RebotDummyServer {
   static const uint32_t MULTI_WORD_WRITE = 2;
   static const uint32_t MULTI_WORD_READ = 3;
   static const uint32_t HELLO = 4;
+  static const uint32_t PING = 5;
   static const uint32_t REBOT_MAGIC_WORD = 0x72626f74; // ascii code 'rbot'
   
   // internal states. Currently there are only two when the connection is open
