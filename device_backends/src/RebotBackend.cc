@@ -3,6 +3,7 @@
 #include "RebotProtocolDefinitions.h"
 #include "RebotProtocol1.h"
 #include <sstream>
+#include <boost/bind.hpp>
 
 namespace ChimeraTK {
 
@@ -23,21 +24,30 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
       _boardAddr(boardAddr),
       _port(port),
       _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
-      _mutex(),
-      _protocolImplementor(){}
+      _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
+      _protocolImplementor(),
+      _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex) ){
+  std::cout << ":RebotBackend( " << boardAddr<<", "<< port<< ", "<< mapFileName << std::endl;
+}
 
 RebotBackend::~RebotBackend() {
   
-  std::lock_guard<std::mutex> lock(_mutex);
-  
-  if (isOpen()) {
-    _tcpCommunicator->closeConnection();
-  }
+  std::cout << "~RebotBackend() getting lock" << std::endl;
+  { //extra scope for the lock guard
+    std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+
+    _threadInformerMutex->quitThread=true;
+    if (isOpen()) {
+      _tcpCommunicator->closeConnection();
+    }
+  }// end of the lock guard scope. We have to release the lock before waiting for the thread to join
+  _heartbeatThread.detach();
 }
+  
 
 void RebotBackend::open() {
    
-   std::lock_guard<std::mutex> lock(_mutex);
+   std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
    
   _tcpCommunicator->openConnection();
   auto serverVersion = getServerProtocolVersion();
@@ -58,7 +68,7 @@ void RebotBackend::open() {
 void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
                         size_t sizeInBytes) {
   
-  std::lock_guard<std::mutex> lock(_mutex);                          
+  std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);                          
                           
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
@@ -71,7 +81,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
 void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const* data,
                          size_t sizeInBytes) {
   
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
   
   if (!isOpen()) {
     throw RebotBackendException("Device is closed",
@@ -83,7 +93,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
 
 void RebotBackend::close() {
   
-  std::lock_guard<std::mutex> lock(_mutex);
+  std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
   
   _opened = false;
   _tcpCommunicator->closeConnection();
@@ -170,4 +180,19 @@ uint32_t RebotBackend::parseRxServerHello(
   return serverHello.at(2);
 }
 
+  void RebotBackend::heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex){
+    int beatcount = 0;
+    while (true){
+      {// extra scope for the lock guard
+        std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+        if (threadInformerMutex->quitThread){
+          break;
+        }
+        std::cout << "heartbeat: beat " << beatcount++ << std::endl;
+      }
+      // sleep without holding the lock
+      std::this_thread::sleep_for( std::chrono::milliseconds(5000) );
+    }
+  }
+  
 } // namespace ChimeraTK

@@ -15,6 +15,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 #include <mutex>
+#include <thread>
 #include "NumericAddressedBackend.h"
 
 
@@ -24,13 +25,25 @@ namespace ChimeraTK {
   class TcpCtrl;
   class RebotProtocolImplementor;
 
- class RebotBackend : public NumericAddressedBackend {
+  // A helper class that contains a mutex and a flag.
+  // The idea is to put it into a shared pointer and hand it to a thread which is sleeping a long
+  // time. You can then detach the thread, tell it to finish and continue with the constructor
+  // without having to wait for the tread to wake up and finish before you can join it.
+  // The thread locks the mutex and checks if it should finish when it wakes up, which it
+  // can do because the mutex and flag still exist thanks to the shared pointer.
+  struct ThreadInformerMutex{
+    std::mutex mutex;
+    bool quitThread;
+    ThreadInformerMutex() : quitThread(false){}
+  };
+
+  class RebotBackend : public NumericAddressedBackend {
 
     protected:
       std::string _boardAddr;
       int _port;
       boost::shared_ptr<TcpCtrl> _tcpCommunicator;
-      std::mutex _mutex;
+      boost::shared_ptr<ThreadInformerMutex> _threadInformerMutex;
       std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
                            
     public:
@@ -52,6 +65,9 @@ namespace ChimeraTK {
       uint32_t getServerProtocolVersion();
       std::vector<uint32_t> frameClientHello();
       uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
+
+      void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
+      std::thread _heartbeatThread;
   };
 
 } // namespace ChimeraTK
