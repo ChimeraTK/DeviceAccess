@@ -10,7 +10,7 @@ namespace ChimeraTK {
 
 bool volatile sigterm_caught = false;
 
-  RebotDummyServer::RebotDummyServer(unsigned int& portNumber, std::string& mapFile,
+  RebotDummyServer::RebotDummyServer(unsigned int portNumber, std::string mapFile,
                                      unsigned int protocolVersion)
     :  _state(ACCEPT_NEW_COMMAND),
        _heartbeatCount(0),

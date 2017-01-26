@@ -22,7 +22,7 @@ class RebotDummyServer {
   // everything is public so all protocol implementors can reach it. They are only called from
   // within the server
  public:
-  RebotDummyServer(unsigned int &portNumber, std::string &mapFile, unsigned int protocolVersion);
+  RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion);
   void start();
   virtual ~RebotDummyServer();
 
