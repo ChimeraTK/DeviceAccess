@@ -40,7 +40,6 @@ namespace ChimeraTK{
   }
 
   void DummyProtocol0::ping(std::vector<uint32_t>& /*buffer*/){
-    std::cout << "Ping was send. Sending unknown instruction" << std::endl;
     _parent.sendSingleWord(RebotDummyServer::UNKNOWN_INSTRUCTION);
   }
 

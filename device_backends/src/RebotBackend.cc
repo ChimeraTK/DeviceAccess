@@ -27,16 +27,16 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
       _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
       _protocolImplementor(),
       _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex) ){
-  std::cout << ":RebotBackend( " << boardAddr<<", "<< port<< ", "<< mapFileName << std::endl;
 }
 
 RebotBackend::~RebotBackend() {
   
-  std::cout << "~RebotBackend() getting lock" << std::endl;
   { //extra scope for the lock guard
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
-    //    _threadInformerMutex->quitThread=true;
+    // make sure the thread does not access any hardware when it gets the lock
+    _threadInformerMutex->quitThread=true;
+
     if (isOpen()) {
       _tcpCommunicator->closeConnection();
     }
@@ -186,13 +186,15 @@ uint32_t RebotBackend::parseRxServerHello(
     while (true){
       {// extra scope for the lock guard
         std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-        //FIXME: not needed with the boost thread. keeping it in case I decide to swich back to std.
+        //To handle the race condition that the thread woke up while the desructor was holding the lock
+        //and closes the socket: Check the flag and quit if set
         if (threadInformerMutex->quitThread){
           break;
         }
         if (_protocolImplementor){
           _protocolImplementor->sendHeartbeat();
         }
+        // FIXE: remove debug output
         std::cout << "heartbeat: beat " << beatcount++ << std::endl;
       }
       // sleep without holding the lock
