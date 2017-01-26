@@ -5,6 +5,7 @@
 #include "DummyBackend.h"
 #include <boost/asio.hpp>
 #include "DummyProtocolImplementor.h"
+#include <atomic>
 
 namespace ip = boost::asio::ip;
 
@@ -52,7 +53,7 @@ class RebotDummyServer {
   // The actual state: ready for new command or not
   uint32_t _state;
 
-  uint32_t _heartbeatCount;
+  std::atomic<uint32_t> _heartbeatCount;
   
   DummyBackend _registerSpace;
   unsigned int _serverPort;
