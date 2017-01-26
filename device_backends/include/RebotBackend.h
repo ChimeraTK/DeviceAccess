@@ -15,8 +15,8 @@
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 #include <mutex>
-#include <thread>
 #include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 #include "NumericAddressedBackend.h"
 
 
@@ -43,9 +43,15 @@ namespace ChimeraTK {
     protected:
       std::string _boardAddr;
       int _port;
-      boost::shared_ptr<TcpCtrl> _tcpCommunicator;
+
       boost::shared_ptr<ThreadInformerMutex> _threadInformerMutex;
+      // Only access the following membergs when holding the mutex. They are
+      // also accessed by the heartbeat thread
+      boost::shared_ptr<TcpCtrl> _tcpCommunicator;
       std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
+      /// The time when the last command (read/write/heartbeat) was send
+      boost::chrono::steady_clock::time_point _lastSendTime;
+      unsigned int _connectionTimeout;
                            
     public:
       RebotBackend(std::string boardAddr, int port, std::string mapFileName="");

@@ -7,25 +7,16 @@
 
 namespace ChimeraTK {
 
-static const int READ_BLOCK_SIZE = 361;
-static const uint32_t HELLO_TOKEN = 0x00000004;
-static const uint32_t LENGTH_OF_HELLO_TOKEN_MESSAGE = 3; // 3 words
-static const uint32_t MAGIC_WORD = 0x72626f74; // rbot in ascii.. start from
-                                               // msb
-
-// Most Significant 16 bits ==  major version
-// Least Significant 16 bits == minor version
-static const uint32_t CLIENT_PROTOCOL_VERSION = 0x00000001;
-static const uint32_t UNKNOWN_INSTRUCTION = -1040; // FIXME: use unsigned
-
 RebotBackend::RebotBackend(std::string boardAddr, int port,
                            std::string mapFileName)
     : NumericAddressedBackend(mapFileName),
       _boardAddr(boardAddr),
       _port(port),
-      _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
       _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
+      _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
       _protocolImplementor(),
+      _lastSendTime(boost::chrono::steady_clock::now()),
+      _connectionTimeout(rebot::DEFAULT_CONNECTION_TIMEOUT),
       _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex) ){
 }
 
@@ -76,6 +67,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
+  _lastSendTime=boost::chrono::steady_clock::now();
   _protocolImplementor->read(addressInBytes, data, sizeInBytes);
 }
 
@@ -89,6 +81,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
+  _lastSendTime=boost::chrono::steady_clock::now();
   _protocolImplementor->write(addressInBytes, data, sizeInBytes);
 }
 
@@ -146,6 +139,7 @@ boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
 uint32_t RebotBackend::getServerProtocolVersion() {
   // send a negotiation to the server:
   // sendClientProtocolVersion
+  _lastSendTime=boost::chrono::steady_clock::now();
   std::vector<uint32_t> clientHelloMessage = frameClientHello();
   _tcpCommunicator->sendData(clientHelloMessage);
 
@@ -154,12 +148,12 @@ uint32_t RebotBackend::getServerProtocolVersion() {
   // unrecognized command. Fetching one word for the 3 words send is a workaround.
   auto serverHello = _tcpCommunicator->receiveData(1);
 
-  if (serverHello.at(0) == (int32_t) UNKNOWN_INSTRUCTION) {
+  if (serverHello.at(0) == rebot::UNKNOWN_INSTRUCTION) {
     return 0; // initial protocol version 0.0
   }
 
   auto remainingBytesOfAValidServerHello =
-      _tcpCommunicator->receiveData(LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
+    _tcpCommunicator->receiveData(rebot::LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
 
   serverHello.insert(serverHello.end(),
                      remainingBytesOfAValidServerHello.begin(),
@@ -169,9 +163,9 @@ uint32_t RebotBackend::getServerProtocolVersion() {
 
 std::vector<uint32_t> RebotBackend::frameClientHello() {
   std::vector<uint32_t> clientHello;
-  clientHello.push_back(HELLO_TOKEN);
-  clientHello.push_back(MAGIC_WORD);
-  clientHello.push_back(CLIENT_PROTOCOL_VERSION);
+  clientHello.push_back(rebot::HELLO_TOKEN);
+  clientHello.push_back(rebot::MAGIC_WORD);
+  clientHello.push_back(rebot::CLIENT_PROTOCOL_VERSION);
   return std::move(clientHello);
 }
 
@@ -184,21 +178,27 @@ uint32_t RebotBackend::parseRxServerHello(
   void RebotBackend::heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex){
     int beatcount = 0;
     while (true){
-      {// extra scope for the lock guard
+      // only send a heartbeat if the connection was inactive for half of the timeout period
+      if ( (boost::chrono::steady_clock::now() - _lastSendTime) >
+           boost::chrono::milliseconds(_connectionTimeout/2) ){
+        // scope for the lock guard is in the if statement
         std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
         //To handle the race condition that the thread woke up while the desructor was holding the lock
         //and closes the socket: Check the flag and quit if set
         if (threadInformerMutex->quitThread){
           break;
         }
+        // always update the last send time. Otherwise the sleep will be ineffective for a closed
+        // connection and go to 100 & CPU load
+        _lastSendTime=boost::chrono::steady_clock::now();
         if (_protocolImplementor){
           _protocolImplementor->sendHeartbeat();
+          // FIXE: remove debug output
+          std::cout << "heartbeat: beat " << beatcount++ << std::endl;
         }
-        // FIXE: remove debug output
-        std::cout << "heartbeat: beat " << beatcount++ << std::endl;
       }
-      // sleep without holding the lock
-      boost::this_thread::sleep_for( boost::chrono::milliseconds(5000) );
+      // sleep without holding the lock. Sleep for half of the connection timeout (plus 1 ms)
+      boost::this_thread::sleep_until( _lastSendTime + boost::chrono::milliseconds(_connectionTimeout/2 +1 ) );
     }
   }
   

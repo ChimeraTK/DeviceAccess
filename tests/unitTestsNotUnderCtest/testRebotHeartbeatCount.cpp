@@ -28,26 +28,26 @@ BOOST_AUTO_TEST_CASE( testHeartbeat ){
   Device d;
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
 
-  for (uint32_t i=0; i<10;++i){
+  for (uint32_t i=0; i<5;++i){
     d.write("BOARD.WORD_USER",42);
     boost::this_thread::sleep_for(boost::chrono::milliseconds(2500));
   }
 
   BOOST_CHECK(rebotServer._heartbeatCount == 0 );
 
-  for (uint32_t i=0; i <5; ++i){
+  for (uint32_t i=1; i <5; ++i){
     boost::this_thread::sleep_for(boost::chrono::milliseconds(5000));
     BOOST_CHECK(rebotServer._heartbeatCount == i );
   }
   
-  for (uint32_t i=0; i<10;++i){
+  for (uint32_t i=0; i<5;++i){
     d.read<int>("BOARD.WORD_USER");
     boost::this_thread::sleep_for(boost::chrono::milliseconds(2500));
   }
 
-  BOOST_CHECK(rebotServer._heartbeatCount == 5 );
+  BOOST_CHECK(rebotServer._heartbeatCount == 4 );
 
-  for (uint32_t i=6; i <10; ++i){
+  for (uint32_t i=5; i <8; ++i){
     boost::this_thread::sleep_for(boost::chrono::milliseconds(5000));
     BOOST_CHECK(rebotServer._heartbeatCount == i );
   }
