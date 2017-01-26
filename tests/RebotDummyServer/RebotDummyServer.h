@@ -50,6 +50,8 @@ class RebotDummyServer {
   // The actual state: ready for new command or not
   uint32_t _state;
 
+  uint32_t _heartbeatCount;
+  
   DummyBackend _registerSpace;
   unsigned int _serverPort;
   unsigned int _protocolVersion;

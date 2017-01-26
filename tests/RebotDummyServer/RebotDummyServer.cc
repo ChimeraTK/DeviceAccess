@@ -13,6 +13,7 @@ bool volatile sigterm_caught = false;
   RebotDummyServer::RebotDummyServer(unsigned int& portNumber, std::string& mapFile,
                                      unsigned int protocolVersion)
     :  _state(ACCEPT_NEW_COMMAND),
+       _heartbeatCount(0),
        _registerSpace(mapFile),
       _serverPort(portNumber),
       _protocolVersion(protocolVersion),
@@ -94,6 +95,7 @@ void RebotDummyServer::processReceivedPackage(std::vector<uint32_t>& buffer) {
         _protocolImplementor->hello(buffer);
         break;
       case  PING:
+        ++_heartbeatCount;
         _protocolImplementor->ping(buffer);
         break;
       default:
