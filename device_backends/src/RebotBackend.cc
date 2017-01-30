@@ -4,6 +4,7 @@
 #include "RebotProtocol1.h"
 #include <sstream>
 #include <boost/bind.hpp>
+#include "testableRebotSleep.h"
 
 namespace ChimeraTK {
 
@@ -15,7 +16,7 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
       _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
       _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
       _protocolImplementor(),
-      _lastSendTime(boost::chrono::steady_clock::now()),
+      _lastSendTime(RebotTestableClock::now()),
       _connectionTimeout(rebot::DEFAULT_CONNECTION_TIMEOUT),
       _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex) ){
 }
@@ -67,7 +68,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
-  _lastSendTime=boost::chrono::steady_clock::now();
+  _lastSendTime=RebotTestableClock::now();
   _protocolImplementor->read(addressInBytes, data, sizeInBytes);
 }
 
@@ -81,7 +82,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
-  _lastSendTime=boost::chrono::steady_clock::now();
+  _lastSendTime=RebotTestableClock::now();
   _protocolImplementor->write(addressInBytes, data, sizeInBytes);
 }
 
@@ -179,7 +180,7 @@ uint32_t RebotBackend::parseRxServerHello(
     int beatcount = 0;
     while (true){
       // only send a heartbeat if the connection was inactive for half of the timeout period
-      if ( (boost::chrono::steady_clock::now() - _lastSendTime) >
+      if ( (RebotTestableClock::now() - _lastSendTime) >
            boost::chrono::milliseconds(_connectionTimeout/2) ){
         // scope for the lock guard is in the if statement
         std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
@@ -190,7 +191,7 @@ uint32_t RebotBackend::parseRxServerHello(
         }
         // always update the last send time. Otherwise the sleep will be ineffective for a closed
         // connection and go to 100 & CPU load
-        _lastSendTime=boost::chrono::steady_clock::now();
+        _lastSendTime=RebotTestableClock::now();
         if (_protocolImplementor){
           _protocolImplementor->sendHeartbeat();
           // FIXE: remove debug output
@@ -198,7 +199,7 @@ uint32_t RebotBackend::parseRxServerHello(
         }
       }
       // sleep without holding the lock. Sleep for half of the connection timeout (plus 1 ms)
-      boost::this_thread::sleep_until( _lastSendTime + boost::chrono::milliseconds(_connectionTimeout/2 +1 ) );
+      testable_rebot_sleep::sleep_until( _lastSendTime + boost::chrono::milliseconds(_connectionTimeout/2 +1 ) );
     }
   }
   
