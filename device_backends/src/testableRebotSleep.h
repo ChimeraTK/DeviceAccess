@@ -6,14 +6,12 @@
 
 
 namespace ChimeraTK{
-  class RebotTestableClock{
-  public:
-    static boost::chrono::steady_clock::time_point now(){
+  namespace testable_rebot_sleep{
+     boost::chrono::steady_clock::time_point now(){
+      std::cout << "Real IMPL function accessing steady clock" << std::endl;
       return  boost::chrono::steady_clock::now();
     }
-  };
-
-  namespace testable_rebot_sleep{
+   
 
     /** There are two implementations with the same signature:
      *  One that calls boost::thread::this_thread::sleep_until, which is used in the application.

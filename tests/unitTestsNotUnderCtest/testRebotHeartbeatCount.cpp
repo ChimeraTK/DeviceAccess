@@ -12,6 +12,7 @@ using namespace boost::unit_test_framework;
 #include "RebotDummyServer.h"
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include "testableRebotSleep_testingImpl.h"
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
@@ -28,30 +29,39 @@ BOOST_AUTO_TEST_CASE( testHeartbeat ){
   Device d;
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
 
-  for (uint32_t i=0; i<5;++i){
+  // startup of the sleeping: get the lock, then tell the application it can try to get the lock
+  // The app will continue once we free the lock
+  RebotSleepSynchroniser::_lock.lock();
+  RebotSleepSynchroniser::_clientMayGetLock = true;
+  std::cout << "test locked manually , mayget is true" << std::endl;
+
+  for (uint32_t i=1; i<5 ; ++i){
     d.write("BOARD.WORD_USER",42);
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(2500));
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*2500));
   }
 
   BOOST_CHECK(rebotServer._heartbeatCount == 0 );
-
+  
   for (uint32_t i=1; i <5; ++i){
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(5000));
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*5000+10000));
     BOOST_CHECK(rebotServer._heartbeatCount == i );
   }
   
-  for (uint32_t i=0; i<5;++i){
+  for (uint32_t i=1; i<5;++i){
     d.read<int>("BOARD.WORD_USER");
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(2500));
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*2500+30000));
   }
 
   BOOST_CHECK(rebotServer._heartbeatCount == 4 );
 
-  for (uint32_t i=5; i <8; ++i){
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(5000));
-    BOOST_CHECK(rebotServer._heartbeatCount == i );
+  for (uint32_t i=1; i <5; ++i){
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*5000+40000));
+    BOOST_CHECK(rebotServer._heartbeatCount == i+4 );
   }
   
+  std::cout << "test done" << std::endl;
+  RebotSleepSynchroniser::_lock.unlock();
+
   //This is taking some time to run into a timeout.
   //So as long as we don't need multiple servers tries we
   //just let the server be killed on programme termination. Not clean, but faster in executsion.

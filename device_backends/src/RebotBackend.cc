@@ -16,7 +16,7 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
       _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
       _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)),
       _protocolImplementor(),
-      _lastSendTime(RebotTestableClock::now()),
+      _lastSendTime(testable_rebot_sleep::now()),
       _connectionTimeout(rebot::DEFAULT_CONNECTION_TIMEOUT),
       _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex) ){
 }
@@ -68,7 +68,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
-  _lastSendTime=RebotTestableClock::now();
+  _lastSendTime=testable_rebot_sleep::now();
   _protocolImplementor->read(addressInBytes, data, sizeInBytes);
 }
 
@@ -82,7 +82,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
                                 RebotBackendException::EX_DEVICE_CLOSED);
   }
 
-  _lastSendTime=RebotTestableClock::now();
+  _lastSendTime=testable_rebot_sleep::now();
   _protocolImplementor->write(addressInBytes, data, sizeInBytes);
 }
 
@@ -140,7 +140,7 @@ boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
 uint32_t RebotBackend::getServerProtocolVersion() {
   // send a negotiation to the server:
   // sendClientProtocolVersion
-  _lastSendTime=boost::chrono::steady_clock::now();
+  _lastSendTime=testable_rebot_sleep::now();
   std::vector<uint32_t> clientHelloMessage = frameClientHello();
   _tcpCommunicator->sendData(clientHelloMessage);
 
@@ -180,7 +180,7 @@ uint32_t RebotBackend::parseRxServerHello(
     int beatcount = 0;
     while (true){
       // only send a heartbeat if the connection was inactive for half of the timeout period
-      if ( (RebotTestableClock::now() - _lastSendTime) >
+      if ( (testable_rebot_sleep::now() - _lastSendTime) >
            boost::chrono::milliseconds(_connectionTimeout/2) ){
         // scope for the lock guard is in the if statement
         std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
@@ -191,7 +191,7 @@ uint32_t RebotBackend::parseRxServerHello(
         }
         // always update the last send time. Otherwise the sleep will be ineffective for a closed
         // connection and go to 100 & CPU load
-        _lastSendTime=RebotTestableClock::now();
+        _lastSendTime=testable_rebot_sleep::now();
         if (_protocolImplementor){
           _protocolImplementor->sendHeartbeat();
           // FIXE: remove debug output
