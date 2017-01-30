@@ -33,6 +33,8 @@ add_library(RebotDummyServerLib ${srcFilesForDummyServerLib})
 add_executable(RebotDummyServer ${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/main.cpp)
 target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME} ${BOOST_LIBRARIES})
 
+target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
+
 # 
 # Introduced directory unitTestsNotUnderCtest; This contains the boost unit
 # tests (currently for the rebot backend). The tests in this directory should
@@ -44,7 +46,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/unitTestsNotUnderCtest  executa
 foreach( executablesrc ${executables})
   get_filename_component(exename ${executablesrc} NAME_WE)
   add_executable(${exename} ${executablesrc})
-  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES} RebotDummyServerLib)
+  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES})
 endforeach(executablesrc)
 
 
