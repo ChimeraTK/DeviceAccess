@@ -54,9 +54,6 @@ namespace ChimeraTK{
     if ( buffer.size() < _nWordsLeft ){
       uint32_t nWordsInThisBuffer = buffer.size();
 
-      std::cout << "multiWordWrite is not in one packet. only writing " << nWordsInThisBuffer
-                << " out of " << _nWordsLeft  << " words." << std::endl;
-
       _parent._registerSpace.write(BAR, _nextAddressInWords*4,
                                    reinterpret_cast<int32_t *>(buffer.data()),
                                    4*nWordsInThisBuffer);

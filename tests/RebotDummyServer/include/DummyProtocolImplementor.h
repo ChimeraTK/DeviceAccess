@@ -14,6 +14,7 @@ struct DummyProtocolImplementor{
   virtual uint32_t continueMultiWordWrite(std::vector<uint32_t>& buffer)=0;
 
   virtual void hello(std::vector<uint32_t>& buffer)=0;
+  virtual void ping(std::vector<uint32_t>& buffer)=0;
   /// implement this for EVERY protocol version
   virtual uint32_t protocolVersion()=0;
 };

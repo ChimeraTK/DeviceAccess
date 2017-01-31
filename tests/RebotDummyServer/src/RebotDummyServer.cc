@@ -8,11 +8,12 @@
  
 namespace ChimeraTK {
 
-bool volatile sigterm_caught = false;
+bool volatile stop_rebot_server = false;
 
-  RebotDummyServer::RebotDummyServer(unsigned int& portNumber, std::string& mapFile,
+  RebotDummyServer::RebotDummyServer(unsigned int portNumber, std::string mapFile,
                                      unsigned int protocolVersion)
     :  _state(ACCEPT_NEW_COMMAND),
+       _heartbeatCount(0),
        _registerSpace(mapFile),
       _serverPort(portNumber),
       _protocolVersion(protocolVersion),
@@ -45,8 +46,9 @@ bool volatile sigterm_caught = false;
 }
 
 void RebotDummyServer::start() {
-
-  while (sigterm_caught ==
+  stop_rebot_server = false; // might have been stopped before
+  
+  while (stop_rebot_server ==
          false) { // loop accepts client connections - one at a time
 
     boost::shared_ptr<ip::tcp::socket> incomingConnection(
@@ -55,7 +57,7 @@ void RebotDummyServer::start() {
       _connectionAcceptor.accept(*incomingConnection);
     }
     catch (boost::system::system_error& e) {
-      if (sigterm_caught) {
+      if (stop_rebot_server) {
         break; // exit gracefully
       } else {
         throw; // something else went wrong, rethrow the exception
@@ -92,6 +94,10 @@ void RebotDummyServer::processReceivedPackage(std::vector<uint32_t>& buffer) {
         break;
       case  HELLO:
         _protocolImplementor->hello(buffer);
+        break;
+      case  PING:
+        ++_heartbeatCount;
+        _protocolImplementor->ping(buffer);
         break;
       default:
         std::cout << "Instruction unknown in all protocol versions " << requestedAction << std::endl;
@@ -154,13 +160,12 @@ void RebotDummyServer::handleAcceptedConnection(
   incomingSocket->set_option(option);
   _currentClientConnection = incomingSocket;
 
-  while (sigterm_caught == false) { // This loop handles the accepted connection
+  while (stop_rebot_server == false) { // This loop handles the accepted connection
 
     std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
     boost::system::error_code errorCode;
     _currentClientConnection->read_some(boost::asio::buffer(dataBuffer),
                                         errorCode);
-    // FIXME: Will fail if the command is sent in two successive tcp packets
 
     if (errorCode == boost::asio::error::eof) { // The client has closed the
                                                 // connection; move to the
@@ -169,7 +174,7 @@ void RebotDummyServer::handleAcceptedConnection(
       _currentClientConnection->close();
       //std::cout << "connection closed" << std::endl;
       break;
-    } else if (errorCode && sigterm_caught) { // reading was interrupted by a
+    } else if (errorCode && stop_rebot_server) { // reading was interrupted by a
                                               // terminate signal;
       // move to the outer loop which will also quit
       // and end the server gracefully
@@ -183,6 +188,10 @@ void RebotDummyServer::handleAcceptedConnection(
 
     processReceivedPackage(dataBuffer);
   }
+}
+
+void RebotDummyServer::stop(){
+  stop_rebot_server=true;
 }
 
 } /* namespace ChimeraTK */

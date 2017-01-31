@@ -5,13 +5,14 @@
 #include "DummyBackend.h"
 #include <boost/asio.hpp>
 #include "DummyProtocolImplementor.h"
+#include <atomic>
 
 namespace ip = boost::asio::ip;
 
 namespace ChimeraTK {
   using namespace mtca4u;
   
-extern bool volatile sigterm_caught;
+extern bool volatile stop_rebot_server;
 
 /*
  * starts a blocking Rebot server on localhost:port. where port is the
@@ -22,8 +23,10 @@ class RebotDummyServer {
   // everything is public so all protocol implementors can reach it. They are only called from
   // within the server
  public:
-  RebotDummyServer(unsigned int &portNumber, std::string &mapFile, unsigned int protocolVersion);
+  RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion);
   void start();
+  // stop is thread safe to stop a server which is executed in another thread
+  void stop();
   virtual ~RebotDummyServer();
 
   // The following stuff is only intended for the protocol implementors and the server itself
@@ -31,6 +34,7 @@ class RebotDummyServer {
   static const int BUFFER_SIZE_IN_WORDS = 256;
   static const int32_t READ_SUCCESS_INDICATION = 1000;
   static const int32_t WRITE_SUCCESS_INDICATION = 1001;
+  static const uint32_t PONG = 1005;
   static const int32_t TOO_MUCH_DATA_REQUESTED = -1010;
   static const int32_t UNKNOWN_INSTRUCTION = -1040;
 
@@ -38,6 +42,7 @@ class RebotDummyServer {
   static const uint32_t MULTI_WORD_WRITE = 2;
   static const uint32_t MULTI_WORD_READ = 3;
   static const uint32_t HELLO = 4;
+  static const uint32_t PING = 5;
   static const uint32_t REBOT_MAGIC_WORD = 0x72626f74; // ascii code 'rbot'
   
   // internal states. Currently there are only two when the connection is open
@@ -48,6 +53,8 @@ class RebotDummyServer {
   // The actual state: ready for new command or not
   uint32_t _state;
 
+  std::atomic<uint32_t> _heartbeatCount;
+  
   DummyBackend _registerSpace;
   unsigned int _serverPort;
   unsigned int _protocolVersion;

@@ -7,6 +7,7 @@ include(helperMacros)
 
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/include")
 include_directories("${PROJECT_SOURCE_DIR}/plugin_example/include")
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src testSources)
 add_library( ${PROJECT_NAME}_TEST_LIBRARY ${testSources} )
@@ -27,9 +28,12 @@ endforeach(testExecutableSrcFile)
 
 #
 # Instructions for compiling the rebot dummy server
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer srcFilesForDummyServer)
-add_executable(RebotDummyServer ${srcFilesForDummyServer})
-target_link_libraries(RebotDummyServer ${PROJECT_NAME} ${BOOST_LIBRARIES})
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/src srcFilesForDummyServerLib)
+add_library(RebotDummyServerLib ${srcFilesForDummyServerLib})
+add_executable(RebotDummyServer ${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/main.cpp)
+target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME} ${BOOST_LIBRARIES})
+
+target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
 
 # 
 # Introduced directory unitTestsNotUnderCtest; This contains the boost unit

@@ -39,5 +39,9 @@ namespace ChimeraTK{
     _parent.sendSingleWord(RebotDummyServer::UNKNOWN_INSTRUCTION);
   }
 
+  void DummyProtocol0::ping(std::vector<uint32_t>& /*buffer*/){
+    _parent.sendSingleWord(RebotDummyServer::UNKNOWN_INSTRUCTION);
+  }
+
   
 }//namespace ChimeraTK
