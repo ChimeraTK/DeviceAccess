@@ -32,7 +32,11 @@ namespace mtca4u {
   class TransferGroup;
 
   /** Special future returned by TransferElement::readAsync(). See its function description for more details.
-  *   @todo TODO: Move into its own header file. */
+   * 
+   *  Implementation note: for efficiency reasons we keep this class in the same header file as the TransferElement, as
+   *  this allows us to make the implementation inline. This might not be really necessary and will not improve
+   *  performance any more if the class will have to be made virtual, but as long as there is no need for this
+   *  extra flexibility we can keep it like this. */
   class TransferFuture {
     public:
       
@@ -45,7 +49,7 @@ namespace mtca4u {
       /** TransferElement is allowed to construct TransferFutures */
       friend class TransferElement;
       
-      /** Default constructor to generate an already fulfilled future. */
+      /** Constructor to generate an already fulfilled future. */
       TransferFuture(TransferElement *transferElement)
       : _transferElement(transferElement) {
         boost::promise<void> prom;
