@@ -39,6 +39,10 @@ namespace mtca4u {
    *  extra flexibility we can keep it like this. */
   class TransferFuture {
     public:
+
+      /** Default constructor to generate a dysfunctional future (just for late initialisation) */
+      TransferFuture()
+      : _transferElement(nullptr) {}
       
       /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
        *  automatically executed before returning, so the new data is directly available in the buffer. */
@@ -48,7 +52,7 @@ namespace mtca4u {
       
       /** TransferElement is allowed to construct TransferFutures */
       friend class TransferElement;
-      
+
       /** Constructor to generate an already fulfilled future. */
       TransferFuture(TransferElement *transferElement)
       : _transferElement(transferElement) {
@@ -153,7 +157,7 @@ namespace mtca4u {
        *  without launching a thread.
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture readAync() {
+      virtual TransferFuture readAsync() {
 #ifndef ENABLE_EXPERIMENTAL_FEATURES
         std::cerr << "You are using an experimental feature but do not have ENABLE_EXPERIMENTAL_FEATURES set!" << std::endl;
         std::terminate();
