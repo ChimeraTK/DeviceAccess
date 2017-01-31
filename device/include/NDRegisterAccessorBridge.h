@@ -51,6 +51,18 @@ namespace mtca4u {
         NDRegisterAccessorBridge<UserType>::_impl->postRead();
       }
 
+      void read() {
+        NDRegisterAccessorBridge<UserType>::_impl->read();
+      }
+
+      bool readNonBlocking() {
+        return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
+      }
+
+      TransferFuture readAsync() override {
+        return NDRegisterAccessorBridge<UserType>::_impl->readAsync();
+      }
+
       void write() override {
         NDRegisterAccessorBridge<UserType>::_impl->write();
       }
