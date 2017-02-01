@@ -17,7 +17,8 @@
 #define TEST_DMAP_FILE_PATH  "./dummies.dmap"   // FIXME remove
 #define ENV_VAR_DMAP_FILE "DMAP_PATH_ENV"   // FIXME remove
 
-namespace mtca4u {
+namespace ChimeraTK{
+  using namespace mtca4u;
   
   /** A class to provide exception for BackendFactory.
    *
@@ -87,6 +88,10 @@ namespace mtca4u {
     static BackendFactory& getInstance();
   };
 
+}// namespace ChimeraTK
+
+namespace mtca4u{
+  using namespace ChimeraTK;
 } // namespace mtca4u
 
 #endif /* MTCA4U_BACKEND_FACTORY_H */

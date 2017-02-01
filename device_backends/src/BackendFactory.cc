@@ -16,7 +16,7 @@
 #include "DMapFileDefaults.h"
 #include "Exception.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   void BackendFactory::registerBackendType(std::string interface, std::string protocol,
       boost::shared_ptr<mtca4u::DeviceBackend> (*creatorFunction)(std::string host, std::string instance,std::list<std::string>parameters, std::string mapFileName))
