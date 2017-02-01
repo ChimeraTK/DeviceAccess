@@ -1,0 +1,10 @@
+#ifndef CHIMERATK_DEVICEACCESS_VERSION_H
+#define CHIMERATK_DEVICEACCESS_VERSION_H
+
+//This intentionally is a define. It is used by the plugin mechanism and we have to
+//force this being replaced literally during compilation, so each .so has a copy of the
+//version, not refering to a symbol that might or might not be replaced at runtime when loading
+//other .so files.
+#define CHIMERATK_DEVICEACCESS_VERSION "${${PROJECT_NAME}_SOVERSION}"
+
+#endif // CHIMERATK_DEVICEACCESS_VERSION_H

@@ -74,9 +74,13 @@ namespace ChimeraTK{
     std::string getDMapFilePath();
 
     /** This functions add new device using uri as a key. If a key already exist
-     * it replaces it*/
+     * it replaces it @todo FIXME don't replace. Check that if it is different (double
+     * registration of of the same creator function should be possibe) and throw if not the same.
+     * The version string has to match CHIMERATK_DEVICEACCESS_VERSION from DeviceAccessVersion.h,
+     * otherwise a DeviceException is thrown. This prevents incompatible plugins to be loaded.*/
     void registerBackendType(std::string interface, std::string protocol,
-        boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters, std::string));
+	boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance, std::list<std::string>parameters, std::string),
+	std::string version);
 
     /** Create a new backend and return the instance as a shared pointer.
      *  The input argument can either be an alias name from a dmap file, or

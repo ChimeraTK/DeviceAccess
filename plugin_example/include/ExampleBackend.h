@@ -14,6 +14,7 @@
 
 #include <mtca4u/DeviceBackendImpl.h>
 #include <mtca4u/BackendFactory.h>
+#include <mtca4u/DeviceAccessVersion.h>
 
 /** An Example to show how to write a backend device class and add it to the factory.
  *
@@ -48,7 +49,7 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
     class BackendRegisterer{
     public:
       BackendRegisterer(){
-        mtca4u::BackendFactory::getInstance().registerBackendType("exx","",&ExampleBackend::createInstance);
+        mtca4u::BackendFactory::getInstance().registerBackendType("exx","",&ExampleBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
       }
     };
     /** The one static instance of the registerer. Currently we keep it public so there is an object which

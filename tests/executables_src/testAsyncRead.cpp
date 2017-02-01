@@ -9,6 +9,7 @@
 #include "Device.h"
 #include "DummyRegisterAccessor.h"
 #include "DummyBackend.h"
+#include "DeviceAccessVersion.h"
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
@@ -56,7 +57,7 @@ class  AsyncReadTestSuite : public test_suite {
 /**********************************************************************************************************************/
 test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
-  BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance);
+  BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
   
   framework::master_test_suite().p_name.value = "Async read test suite";
   framework::master_test_suite().add(new AsyncReadTestSuite);

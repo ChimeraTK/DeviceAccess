@@ -77,6 +77,10 @@ include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/device_backends/include")
 include_directories("${PROJECT_SOURCE_DIR}/device/include")
+
+configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
+include_directories("${PROJECT_BINARY_DIR}/generated_include")
+
 # Only these include directories should be copied for examples. 
 get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 

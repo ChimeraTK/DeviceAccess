@@ -14,16 +14,24 @@
 #include "LogicalNameMappingBackend.h"
 #include "DMapFilesParser.h"
 #include "DMapFileDefaults.h"
-#include "Exception.h"
+#include "DeviceException.h"
+#include "DeviceAccessVersion.h"
 
 namespace ChimeraTK {
 
   void BackendFactory::registerBackendType(std::string interface, std::string protocol,
-      boost::shared_ptr<mtca4u::DeviceBackend> (*creatorFunction)(std::string host, std::string instance,std::list<std::string>parameters, std::string mapFileName))
+     boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance,std::list<std::string>parameters, std::string mapFileName),
+     std::string version)
   {
 #ifdef _DEBUG
     std::cout << "adding:" << interface << std::endl << std::flush;
 #endif
+    if (version != CHIMERATK_DEVICEACCESS_VERSION){
+      std::stringstream errorMessage;
+      errorMessage << "Backend plugin '"<< interface << "' compiled with wrong DeviceAccess version "
+		   << version <<". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
+      throw DeviceException(errorMessage.str(),DeviceException::WRONG_PARAMETER);
+    }
     creatorMap[make_pair(interface,protocol)] = creatorFunction;
   }
 
@@ -38,11 +46,11 @@ namespace ChimeraTK {
   }
 
   BackendFactory::BackendFactory(){
-    registerBackendType("pci","",&PcieBackend::createInstance);
-    registerBackendType("pci","pcie",&PcieBackend::createInstance);
-    registerBackendType("dummy","",&DummyBackend::createInstance);
-    registerBackendType("rebot","",&RebotBackend::createInstance); // FIXME: Do we use protocol for tmcb?
-    registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance);
+    registerBackendType("pci","",&PcieBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("pci","pcie",&PcieBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("dummy","",&DummyBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("rebot","",&RebotBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
   }
 
   BackendFactory & BackendFactory::getInstance(){
