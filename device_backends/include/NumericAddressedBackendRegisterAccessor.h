@@ -11,10 +11,9 @@
 #include "NDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "FixedPointConverter.h"
+#include "ForwardDeclarations.h"
 
 namespace mtca4u {
-
-  class DeviceBackend;
 
   /*********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.

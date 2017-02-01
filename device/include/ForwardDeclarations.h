@@ -10,10 +10,14 @@
 
 #include <vector>
 
-namespace mtca4u {
-
-  class Device;
+namespace ChimeraTK{
   class DeviceBackend;
+}
+
+namespace mtca4u {
+  using namespace ChimeraTK;
+  
+  class Device;
   class TransferGroup;
   class RegisterAccessor;
 

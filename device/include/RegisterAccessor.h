@@ -11,14 +11,12 @@
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
 #include "NumericAddressedBackend.h"
+#include "ForwardDeclarations.h"
 
 #include <typeinfo>
 #include <boost/fusion/include/at_key.hpp>
 
 namespace mtca4u {
-
-  /// forward declaration (only used as tempate arguments)
-  class DeviceBackend;
 
   /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
    *  \deprecated

@@ -1,5 +1,5 @@
-#ifndef MTCA4U_DEVICE_BACKEND_H
-#define MTCA4U_DEVICE_BACKEND_H
+#ifndef CHIMERATK_DEVICE_BACKEND_H
+#define CHIMERATK_DEVICE_BACKEND_H
 
 #include <string>
 #include <list>
@@ -17,7 +17,8 @@
 #include "VirtualFunctionTemplate.h"
 #include "AccessMode.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
+  using namespace mtca4u;
 
   /** The base class for backends providing IO functionality for the Device class. Note that most backends should
    *  actually be based on the DeviceBackendImpl class (unless it is a decorator backend).
@@ -161,6 +162,10 @@ namespace mtca4u {
     }
   }
 
+}// namespace ChimeraTK
+
+namespace mtca4u{
+  using namespace ChimeraTK;
 } // namespace mtca4u
 
-#endif /*MTCA4U_DEVICE_BACKEND_H*/
+#endif /*CHIMERATK_DEVICE_BACKEND_H*/

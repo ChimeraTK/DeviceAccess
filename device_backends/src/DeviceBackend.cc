@@ -4,7 +4,7 @@
 
 #include "DeviceBackend.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   DeviceBackend::~DeviceBackend() {
   }
@@ -23,4 +23,4 @@ namespace mtca4u {
     exit(1);
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
