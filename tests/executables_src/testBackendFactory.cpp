@@ -5,12 +5,24 @@ using namespace boost::unit_test_framework;
 #include <cstdio>
 #include <boost/make_shared.hpp>
 
-  #include "BackendFactory.h"
+#include "BackendFactory.h"
 #include "MapException.h"
 using namespace mtca4u;
 
+#include "DeviceAccessVersion.h"
+
 //#undef TEST_DMAP_FILE_PATH
 //#define TEST_DMAP_FILE_PATH "/testDummies.dmap"
+
+struct NewBackend : public DummyBackend{
+  using DummyBackend::DummyBackend;
+  
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/){
+    return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
+  }
+
+  // no registerer, we do it manually
+};
 
 BOOST_AUTO_TEST_SUITE(BackendFactoryTestSuite)
 
@@ -42,7 +54,13 @@ BOOST_AUTO_TEST_CASE( testCreateBackend ){
   boost::shared_ptr<DeviceBackend> testPtr2;
   BOOST_CHECK_NO_THROW(testPtr2 = BackendFactory::getInstance().createBackend("DUMMYD9")); //open existing backend again
   BOOST_CHECK(testPtr2 == testPtr); // must be same
-    
+
+  // check the registation of a new backed, called NewBackend ;-)
+  // Throws with the wrong version (00.18 did not have the feature yet, so its safe to use it)
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18"), DeviceException);
+  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION) );
+
+  BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
 }
 
 BOOST_AUTO_TEST_CASE( testCreateFromUri ){
