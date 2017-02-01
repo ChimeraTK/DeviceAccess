@@ -34,6 +34,11 @@ namespace mtca4u {
        * @return pointer to dmapFile object
        */
       DeviceInfoMapPointer parse(const std::string &file_name);
+
+    protected:
+      void parseForLoadLib(std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
+      void parseRegularLine(std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
+      void raiseException(std::string file_name, std::string line, uint32_t line_nr);
   };
 
 }//namespace mtca4u

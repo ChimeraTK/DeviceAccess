@@ -36,6 +36,20 @@ namespace mtca4u {
       if (line[0] == '#') {
         continue;
       }
+//      if (line[0] == '@'){
+//	// search for @LOAD_LIB
+//	if ( (line.size() >= 11) && // at least one character for the lib file. Check first so substr. does not throw
+//	     (line.substr(0, 9) == "@LOAD_LIB") ){
+//	  std::istringstream s;
+//	  std::string key, value;
+//	  s.str(line);
+//	  s >> key >> value;
+//	  if (is && (key == "@LOAD_LIB")){
+//	    dmap->addPluginLibrary(value)
+//	  }
+//	}
+//      }
+	  
       is.str(line);
       is >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
 
@@ -48,9 +62,7 @@ namespace mtca4u {
         deviceInfo.dmapFileLineNumber = line_nr;
         dmap->insert(deviceInfo);
       } else {
-        std::ostringstream os;
-        os << line_nr;
-        throw DMapFileParserException("Error in dmap file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_DMAP_FILE_PARSE_ERROR);
+	raiseException(file_name, line, line_nr);
       }
       is.clear();
     }
@@ -61,4 +73,12 @@ namespace mtca4u {
     return dmap;
   }
 
+  void DMapFileParser::raiseException(std::string file_name, std::string line, uint32_t line_nr){
+    std::stringstream errorMessage;
+    errorMessage << "Error in dmap file: \"" << file_name << "\" in line (" << line_nr
+		 << ") \"" << line << "\"";
+    throw DMapFileParserException(errorMessage.str(), LibMapException::EX_DMAP_FILE_PARSE_ERROR);
+  }
+
+  
 }//namespace mtca4u

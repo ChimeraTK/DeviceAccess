@@ -176,7 +176,15 @@ namespace mtca4u {
       iterator end();
       const_iterator end() const;
 
-    private:
+      /** You can define shared libraries with Backend plugins in the DMAP file.
+       */
+      std::vector<std::string> getPluginLibraries();
+
+      /** Add the name of a library to the list.
+       */
+      void addPluginLibrary(std::string soFile);
+      
+    protected:
       std::vector<DeviceInfo> _deviceInfoElements; /**< vector storing parsed contents of DMAP file*/
       std::string _dmapFileName; /**< name of DMAP file*/
 
