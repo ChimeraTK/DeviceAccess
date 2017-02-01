@@ -90,6 +90,11 @@ namespace ChimeraTK{
 
     /**Static function to get an instance of factory */
     static BackendFactory& getInstance();
+
+    /**Load a shared library (.so file) with a Backend at run time.
+     */
+    static void loadPluginLibrary(std::string soFile);
+    
   };
 
 }// namespace ChimeraTK

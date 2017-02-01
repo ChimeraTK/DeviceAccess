@@ -110,3 +110,14 @@ ADD_CUSTOM_TARGET(COPY_FAKE_DEVICE_REF_FILE ALL
       copy  ${CMAKE_SOURCE_DIR}/tests/._Reference_Device ${PROJECT_BINARY_DIR}/tests/._Reference_Device
       VERBATIM
   )
+
+####################################
+# Libraries for testing the backend plugin mechanism. Each file is converted to an so file
+
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/BackendTestLibs backendTestLibSources)
+
+foreach( backendTestLibSrcFile ${backendTestLibSources})
+  #NAME_WE means the base name without path and (longest) extension
+  get_filename_component(libName ${backendTestLibSrcFile} NAME_WE)
+  add_library(${libName} SHARED ${backendTestLibSrcFile})
+endforeach()

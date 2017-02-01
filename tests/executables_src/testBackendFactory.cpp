@@ -54,6 +54,9 @@ BOOST_AUTO_TEST_CASE( testCreateBackend ){
   boost::shared_ptr<DeviceBackend> testPtr2;
   BOOST_CHECK_NO_THROW(testPtr2 = BackendFactory::getInstance().createBackend("DUMMYD9")); //open existing backend again
   BOOST_CHECK(testPtr2 == testPtr); // must be same
+}
+
+BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 
   // check the registation of a new backed, called NewBackend ;-)
   // Throws with the wrong version (00.18 did not have the feature yet, so its safe to use it)
@@ -61,6 +64,19 @@ BOOST_AUTO_TEST_CASE( testCreateBackend ){
   BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION) );
 
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
+
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::loadPluginLibrary("notExisting.so"),
+		     DeviceException );
+
+  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::loadPluginLibrary("../lib/libWorkingBackend.so")  );
+  //check that the backend really is registered
+  BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map") );
+
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::loadPluginLibrary("libNoSymbolBackend.so"),
+  		     DeviceException );
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::loadPluginLibrary("libWrongVersionBackend.so"),
+  		     DeviceException );
+
 }
 
 BOOST_AUTO_TEST_CASE( testCreateFromUri ){

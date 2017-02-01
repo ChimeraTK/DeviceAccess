@@ -16,6 +16,7 @@
 #include "DMapFileDefaults.h"
 #include "DeviceException.h"
 #include "DeviceAccessVersion.h"
+#include <dlfcn.h>
 
 namespace ChimeraTK {
 
@@ -140,5 +141,39 @@ namespace ChimeraTK {
                                   BackendFactoryException::UNREGISTERED_DEVICE);
       return boost::shared_ptr<DeviceBackend>(); //won't execute
     }
+
+  void BackendFactory::loadPluginLibrary(std::string soFile){
+    // first do an open which does not load the symbols yet
+    // FIXME: Only works for functions, not for variables = registerer :-(
+    void *hndl = dlopen(soFile.c_str() , RTLD_LAZY );
+    if(hndl == NULL){
+      throw DeviceException( dlerror(), DeviceException::WRONG_PARAMETER);
+    }
+
+    // try to find the symbol for the version function.
+    std::string (*versionFunction)();
+    // We have to use an instance of the function pointer with the right signature
+    // and reinterpred cast it because dlsym is giving out a void pointer which in
+    // pedantic C++ cannot be casted directly to a function pointer.
+    *reinterpret_cast<void**>(&versionFunction) = dlsym(hndl, "versionUsedToCompile");
+
+    if (versionFunction == NULL){
+      dlclose(hndl);
+      std::stringstream errorMessage;
+      errorMessage << "Symbol 'versionUsedToCompile' not found in " <<soFile;
+      throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
+    }
+
+    if (versionFunction() != CHIMERATK_DEVICEACCESS_VERSION){
+      std::stringstream errorMessage;
+      errorMessage << soFile << " was compiled with the wrong DeviceAccess version " << versionFunction()
+		   << ". Recompile with DeviceAccess version " << CHIMERATK_DEVICEACCESS_VERSION;
+      dlclose(hndl);
+      throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
+    }
+
+    // it is a correct plugin, load all the symbols now
+    hndl = dlopen(soFile.c_str() , RTLD_NOW);
+  }
   
-} // namespace mtca4u
+} // namespace ChimeraTK
