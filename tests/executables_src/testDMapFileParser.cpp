@@ -73,6 +73,11 @@ void DMapFileParserTest::testErrorInDmapFile() {
     BOOST_CHECK(dMapFileParserException.getID() ==
         mtca4u::LibMapException::EX_DMAP_FILE_PARSE_ERROR);
   }
+  
+  BOOST_CHECK_THROW(fileParser.parse("badLoadlib.dmap"), mtca4u::LibMapException);
+  BOOST_CHECK_THROW(fileParser.parse("badLoadlib2.dmap"), mtca4u::LibMapException);
+  BOOST_CHECK_THROW(fileParser.parse("unkownKey.dmap"), mtca4u::LibMapException);
+
 }
 
 void DMapFileParserTest::testNoDataInDmapFile() {

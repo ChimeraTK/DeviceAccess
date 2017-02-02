@@ -73,6 +73,7 @@ MACRO( COPY_MAPPING_FILES )
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
     invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap logicalnamemap.dmap 
     performanceTest.map run_performance_test.sh
+    badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
   # They cannot just be copied.

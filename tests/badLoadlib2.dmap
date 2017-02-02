@@ -1,0 +1,6 @@
+#no space -> results in bad key
+@LOAD_LIBlibmylib.so
+
+#keep one card so the parser does not consider the file empty
+card1 /dev/dev1 goodMapFile_withoutModules.map
+
