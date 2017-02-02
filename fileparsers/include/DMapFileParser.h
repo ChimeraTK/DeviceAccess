@@ -36,8 +36,9 @@ namespace mtca4u {
       DeviceInfoMapPointer parse(const std::string &file_name);
 
     protected:
-      void parseForLoadLib(std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
-      void parseRegularLine(std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
+      // @todo FIXME passing the arguments C-style is super ugly
+      void parseForLoadLib(std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
+      void parseRegularLine(std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
       void raiseException(std::string file_name, std::string line, uint32_t line_nr);
   };
 

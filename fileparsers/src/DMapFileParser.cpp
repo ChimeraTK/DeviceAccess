@@ -15,8 +15,6 @@ namespace mtca4u {
   DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
     std::string line;
-    std::istringstream is;
-    DeviceInfoMap::DeviceInfo deviceInfo;
     uint32_t line_nr = 0;
 
     std::string absPathToDMapFile = utilities::convertToAbsolutePath(file_name);
@@ -49,22 +47,7 @@ namespace mtca4u {
 //	  }
 //	}
 //      }
-	  
-      is.str(line);
-      is >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
-
-      if (is) {
-        // deviceInfo.mapFileName should contain the absolute path to the mapfile:
-        std::string absPathToDmapDirectory = utilities::extractDirectory(absPathToDMapFile);
-        std::string absPathToMapFile = utilities::concatenatePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
-        deviceInfo.mapFileName = absPathToMapFile;
-        deviceInfo.dmapFileName = absPathToDMapFile;
-        deviceInfo.dmapFileLineNumber = line_nr;
-        dmap->insert(deviceInfo);
-      } else {
-	raiseException(file_name, line, line_nr);
-      }
-      is.clear();
+      parseRegularLine(file_name, line, line_nr, dmap);
     }
     file.close();
     if (dmap->getSize() == 0) {
@@ -72,6 +55,31 @@ namespace mtca4u {
     }
     return dmap;
   }
+
+  void DMapFileParser::parseRegularLine(std::string file_name, std::string line,
+					uint32_t line_nr, DeviceInfoMapPointer dmap){
+    std::istringstream inStream;
+    DeviceInfoMap::DeviceInfo deviceInfo;
+	
+    inStream.str(line);
+    inStream >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
+
+    if (inStream) {
+      // @todo FIXME: this can go up in the scope, never changes if file does not change
+      std::string absPathToDMapFile = utilities::convertToAbsolutePath(file_name);
+
+      // deviceInfo.mapFileName should contain the absolute path to the mapfile:
+      std::string absPathToDmapDirectory = utilities::extractDirectory(absPathToDMapFile);
+      std::string absPathToMapFile = utilities::concatenatePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
+      deviceInfo.mapFileName = absPathToMapFile;
+      deviceInfo.dmapFileName = absPathToDMapFile;
+      deviceInfo.dmapFileLineNumber = line_nr;
+      dmap->insert(deviceInfo);
+    } else {
+      raiseException(file_name, line, line_nr);
+    }
+  }
+
 
   void DMapFileParser::raiseException(std::string file_name, std::string line, uint32_t line_nr){
     std::stringstream errorMessage;
