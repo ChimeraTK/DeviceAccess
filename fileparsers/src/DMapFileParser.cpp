@@ -55,7 +55,7 @@ namespace mtca4u {
     s.str(line);
     s >> key >> value;
     if (s && (key == "@LOAD_LIB")){
-      dmap->addPluginLibrary(value);
+      dmap->addPluginLibrary(absPathOfDMapContent(value,file_name));
     }else{
       raiseException(file_name, line, line_nr);
     }
@@ -70,12 +70,8 @@ namespace mtca4u {
     inStream >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
 
     if (inStream) {
-      // @todo FIXME: this can go up in the scope, never changes if file does not change
       std::string absPathToDMapFile = utilities::convertToAbsolutePath(file_name);
-
-      // deviceInfo.mapFileName should contain the absolute path to the mapfile:
-      std::string absPathToDmapDirectory = utilities::extractDirectory(absPathToDMapFile);
-      std::string absPathToMapFile = utilities::concatenatePaths(absPathToDmapDirectory, deviceInfo.mapFileName);
+      std::string absPathToMapFile = absPathOfDMapContent(deviceInfo.mapFileName, file_name);
       deviceInfo.mapFileName = absPathToMapFile;
       deviceInfo.dmapFileName = absPathToDMapFile;
       deviceInfo.dmapFileLineNumber = line_nr;
@@ -85,6 +81,15 @@ namespace mtca4u {
     }
   }
 
+  std::string DMapFileParser::absPathOfDMapContent(std::string dmapContent, std::string dmapFileName){
+    // first determine the absolute path to the dmap file
+    std::string absPathToDMapFile = utilities::convertToAbsolutePath(dmapFileName);    
+    // then extract the directory
+    std::string absPathToDmapDirectory = utilities::extractDirectory(absPathToDMapFile);
+    // now concatenate the dmap diretory to the entry in the dmap file (if the latter
+    // is not absolute)
+    return utilities::concatenatePaths(absPathToDmapDirectory, dmapContent);
+  }
 
   void DMapFileParser::raiseException(std::string file_name, std::string line, uint32_t line_nr){
     std::stringstream errorMessage;

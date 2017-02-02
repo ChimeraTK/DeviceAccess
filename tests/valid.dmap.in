@@ -1,7 +1,7 @@
 # A good dmap file
 
 @LOAD_LIB libMyLib.so
-@LOAD_LIB libAnotherLib.so
+@LOAD_LIB /system/libAnotherLib.so
 
 card1 /dev/dev1 goodMapFile_withoutModules.map
 card2 /dev/dev2 ./goodMapFile_withoutModules.map

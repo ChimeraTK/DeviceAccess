@@ -12,7 +12,7 @@
 #include "MapFileParser.h"
 #include "RebotBackend.h"
 #include "LogicalNameMappingBackend.h"
-#include "DMapFilesParser.h"
+#include "DMapFileParser.h"
 #include "DMapFileDefaults.h"
 #include "DeviceException.h"
 #include "DeviceAccessVersion.h"
@@ -66,6 +66,8 @@ namespace ChimeraTK {
       std::string aliasOrUri) {
     
     std::lock_guard<std::mutex> lock(_mutex);
+
+    loadAllPluginsFromDMapFile();
     
     if(aliasOrUri.substr(0, 6) == "sdm://"){
       // it is a URI, directly create a deviceinfo and call the internal creator function
@@ -176,4 +178,16 @@ namespace ChimeraTK {
     hndl = dlopen(soFile.c_str() , RTLD_NOW);
   }
   
+  void BackendFactory::loadAllPluginsFromDMapFile(){
+    if (_dMapFile.empty()){
+      return;
+    }
+
+    auto dmap = DMapFileParser().parse(_dMapFile);
+
+    for ( auto lib : dmap->getPluginLibraries() ){
+      loadPluginLibrary(lib);
+    }
+  }
+
 } // namespace ChimeraTK

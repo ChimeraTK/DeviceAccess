@@ -130,6 +130,6 @@ void DMapFileParserTest::testParseFile() {
   auto pluginLibraries = mapFilePtr->getPluginLibraries();
   
   BOOST_CHECK( pluginLibraries.size() == 2 );
-  BOOST_CHECK( pluginLibraries[0]  == "libMyLib.so" );
-  BOOST_CHECK( pluginLibraries[1] == "libAnotherLib.so" );
+  BOOST_CHECK( pluginLibraries[0]  == absPathToDmapDir+"libMyLib.so" );
+  BOOST_CHECK( pluginLibraries[1] == "/system/libAnotherLib.so" );
 }

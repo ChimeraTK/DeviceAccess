@@ -40,6 +40,13 @@ namespace mtca4u {
       void parseForLoadLib(std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
       void parseRegularLine(std::string file_name, std::string line, uint32_t line_nr, DeviceInfoMapPointer dmap);
       void raiseException(std::string file_name, std::string line, uint32_t line_nr);
+
+      // Entries in the dmap file can be relative to the dmap file.
+      // The dmap file itself can be an absolute or relative path.
+      // This function return the absolute path of the dmap entry, correctly resolved with
+      // respect to the dmap file.
+      std::string absPathOfDMapContent(std::string dmapContent, std::string dmapFileName);
+
   };
 
 }//namespace mtca4u
