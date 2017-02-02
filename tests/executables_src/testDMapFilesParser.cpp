@@ -145,9 +145,9 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
   populateDummyDeviceInfo(expectedDeviceInfo3, absolutePathToDMapFile, "card3",
       "/dev/dev3", mtca4u::parserUtilities::concatenatePaths(absolutePathToDMapDir, path_to_map_file3));
 
-  expectedDeviceInfo1.dmapFileLineNumber = 3;
-  expectedDeviceInfo2.dmapFileLineNumber = 4;
-  expectedDeviceInfo3.dmapFileLineNumber = 5;
+  expectedDeviceInfo1.dmapFileLineNumber = 6;
+  expectedDeviceInfo2.dmapFileLineNumber = 7;
+  expectedDeviceInfo3.dmapFileLineNumber = 8;
 
   filesParser.getdMapFileElem(0, reterievedDeviceInfo1);
   BOOST_CHECK(compareDeviceInfos(expectedDeviceInfo1,
@@ -451,9 +451,9 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
   populateDummyDeviceInfo(deviceInfo3, absPathToDMapFile, "card3",
       "/dev/dev3", mtca4u::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
 
-  deviceInfo1.dmapFileLineNumber = 3;
-  deviceInfo2.dmapFileLineNumber = 4;
-  deviceInfo3.dmapFileLineNumber = 5;
+  deviceInfo1.dmapFileLineNumber = 6;
+  deviceInfo2.dmapFileLineNumber = 7;
+  deviceInfo3.dmapFileLineNumber = 8;
 
   std::stringstream expected_file_stream;
   expected_file_stream << deviceInfo1 << std::endl;
@@ -489,9 +489,9 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   populateDummyDeviceInfo(deviceInfo3, absPathToDMapFile, "card3",
       "/dev/dev3", mtca4u::parserUtilities::getCurrentWorkingDirectory() + "goodMapFile_withoutModules.map");
 
-  deviceInfo1.dmapFileLineNumber = 3;
-  deviceInfo2.dmapFileLineNumber = 4;
-  deviceInfo3.dmapFileLineNumber = 5;
+  deviceInfo1.dmapFileLineNumber = 6;
+  deviceInfo2.dmapFileLineNumber = 7;
+  deviceInfo3.dmapFileLineNumber = 8;
 
   mtca4u::DeviceInfoMap::DeviceInfo* tmpArray1[3];
   tmpArray1[0] = &deviceInfo1;
