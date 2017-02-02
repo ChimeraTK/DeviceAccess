@@ -187,6 +187,7 @@ namespace mtca4u {
     protected:
       std::vector<DeviceInfo> _deviceInfoElements; /**< vector storing parsed contents of DMAP file*/
       std::string _dmapFileName; /**< name of DMAP file*/
+      std::vector<std::string> _pluginLibraries; ///< Names of the so files with the plugins
 
     public:
       /**

@@ -141,4 +141,12 @@ namespace mtca4u {
     return _deviceInfoElements.end();
   }
 
+  void DeviceInfoMap::addPluginLibrary(std::string soFile){
+    _pluginLibraries.push_back(soFile);
+  }
+
+  std::vector<std::string> DeviceInfoMap::getPluginLibraries(){
+    return _pluginLibraries;
+  }
+
 }//namespace mtca4u

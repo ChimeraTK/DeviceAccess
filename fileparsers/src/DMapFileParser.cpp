@@ -34,19 +34,10 @@ namespace mtca4u {
       if (line[0] == '#') {
         continue;
       }
-//      if (line[0] == '@'){
-//	// search for @LOAD_LIB
-//	if ( (line.size() >= 11) && // at least one character for the lib file. Check first so substr. does not throw
-//	     (line.substr(0, 9) == "@LOAD_LIB") ){
-//	  std::istringstream s;
-//	  std::string key, value;
-//	  s.str(line);
-//	  s >> key >> value;
-//	  if (is && (key == "@LOAD_LIB")){
-//	    dmap->addPluginLibrary(value)
-//	  }
-//	}
-//      }
+      if (line[0] == '@'){
+	parseForLoadLib(file_name, line, line_nr, dmap);
+	continue;
+      }
       parseRegularLine(file_name, line, line_nr, dmap);
     }
     file.close();
@@ -54,6 +45,20 @@ namespace mtca4u {
       throw DMapFileParserException("No data in in dmap file: \"" + file_name + "\"", LibMapException::EX_NO_DMAP_DATA);
     }
     return dmap;
+  }
+
+  void DMapFileParser::parseForLoadLib(std::string file_name, std::string line,
+				       uint32_t line_nr, DeviceInfoMapPointer dmap){
+    // we expect at leat two tokens: the key and the value
+    std::istringstream s;
+    std::string key, value;
+    s.str(line);
+    s >> key >> value;
+    if (s && (key == "@LOAD_LIB")){
+      dmap->addPluginLibrary(value);
+    }else{
+      raiseException(file_name, line, line_nr);
+    }
   }
 
   void DMapFileParser::parseRegularLine(std::string file_name, std::string line,

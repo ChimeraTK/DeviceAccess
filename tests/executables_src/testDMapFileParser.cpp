@@ -109,9 +109,9 @@ void DMapFileParserTest::testParseFile() {
   populateDummyDeviceInfo(deviceInfo3, absPathToDmap, "card3", "/dev/dev3",
       mtca4u::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
 
-  deviceInfo1.dmapFileLineNumber = 3;
-  deviceInfo2.dmapFileLineNumber = 4;
-  deviceInfo3.dmapFileLineNumber = 5;
+  deviceInfo1.dmapFileLineNumber = 6;
+  deviceInfo2.dmapFileLineNumber = 7;
+  deviceInfo3.dmapFileLineNumber = 8;
 
   // we use require here so it is safe to increase and dereference the iterator below
   BOOST_REQUIRE( mapFilePtr->getSize() == 3);
@@ -121,4 +121,10 @@ void DMapFileParserTest::testParseFile() {
   BOOST_CHECK( compareDeviceInfos(deviceInfo1, *(it++)) == true);
   BOOST_CHECK( compareDeviceInfos(deviceInfo2, *(it++)) == true);
   BOOST_CHECK( compareDeviceInfos(deviceInfo3, *(it++)) == true);
+
+  auto pluginLibraries = mapFilePtr->getPluginLibraries();
+  
+  BOOST_CHECK( pluginLibraries.size() == 2 );
+  BOOST_CHECK( pluginLibraries[0]  == "libMyLib.so" );
+  BOOST_CHECK( pluginLibraries[1] == "libAnotherLib.so" );
 }
