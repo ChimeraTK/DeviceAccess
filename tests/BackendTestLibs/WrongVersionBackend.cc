@@ -12,14 +12,15 @@ struct WrongVersionBackend : public DummyBackend{
     return returnInstance<WrongVersionBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
   }
 
-  // No registerer here: It would already trigger an exception when trying to register
-  // the creator function with the wrong version, which is tested separately.
-  // Here we want to test the reaction of the loading function on the wrong version.
-  // @todo FIXME: If we cannot catch the exception as it is
-  // thrown inside the registerer, we never reach the point that we can cleanly prevent the loading
-  // of a bad plugin and react gracefully.
+  struct BackendRegisterer{
+    BackendRegisterer(){
+      mtca4u::BackendFactory::getInstance().registerBackendType("wrongVersionBackend","",&WrongVersionBackend::createInstance, WRONG_VERSION);
+    }
+  };
 
 };
+
+static WrongVersionBackend::BackendRegisterer gWrongVersionBackendRegisterer;
 
 
 extern "C"{
