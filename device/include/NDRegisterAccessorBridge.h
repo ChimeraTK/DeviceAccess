@@ -39,6 +39,13 @@ namespace mtca4u {
         _impl = newAccessor._impl;
       }
 
+      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
+       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
+       *  placeholder constructor without arguments. */
+      bool isInitialised() const {
+        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
+      }
+
       void doReadTransfer() override {
         NDRegisterAccessorBridge<UserType>::_impl->doReadTransfer();
       }
@@ -49,14 +56,6 @@ namespace mtca4u {
 
       void postRead() override {
         NDRegisterAccessorBridge<UserType>::_impl->postRead();
-      }
-
-      void read() {
-        NDRegisterAccessorBridge<UserType>::_impl->read();
-      }
-
-      bool readNonBlocking() {
-        return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
       }
 
       TransferFuture readAsync() override {
@@ -78,13 +77,6 @@ namespace mtca4u {
 
       bool isWriteable() const override {
         return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
-      }
-
-      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
-       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
-       *  placeholder constructor without arguments. */
-      bool isInitialised() const {
-        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
       }
 
     protected:
