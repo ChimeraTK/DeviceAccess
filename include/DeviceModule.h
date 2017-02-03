@@ -10,10 +10,7 @@
 
 #include "VariableNetworkNode.h"
 #include "Module.h"
-
-namespace mtca4u {
-  class DeviceBackend;
-}
+#include <mtca4u/ForwardDeclarations.h>
 
 namespace ChimeraTK {
 
