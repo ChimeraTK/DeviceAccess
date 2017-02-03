@@ -11,6 +11,8 @@
 #include <vector>
 #include <string>
 #include <typeinfo>
+#include <list>
+#include <functional>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -30,6 +32,7 @@ namespace mtca4u {
 
   class TransferGroup;
   class TransferElement;
+  class TransferFutureIterator;
 
   /** Special future returned by TransferElement::readAsync(). See its function description for more details.
    * 
@@ -62,6 +65,9 @@ namespace mtca4u {
       {}
 
     protected:
+      
+      friend class TransferElement;
+      friend class TransferFutureIterator;
 
       /** The plain boost future */
       boost::shared_future<void> _theFuture;
@@ -155,6 +161,13 @@ namespace mtca4u {
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture readAsync() = 0;
+      
+      /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
+       *  new data. The TransferElement which received new data is returned as a reference. When this function
+       *  returns, the all elements but the returned TransferElement still have a pending transfer, thus calling
+       *  read() or write() and similar functions on them is illegal. Only their current values may be accessed,
+       *  another readAny() or readAsync() may be called. */
+      static TransferElement& readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /** Write the data to device. */
       virtual void write() = 0;
@@ -286,6 +299,52 @@ namespace mtca4u {
     _theFuture.wait();
     _transferElement->hasActiveFuture = false;
     _transferElement->postRead();
+  }
+
+  /*******************************************************************************************************************/  
+
+  /** Internal class needed for TransferElement::readAny(): Provide a wrapper around the list iterator to effectivly
+   *  allow passing std::list<TransferFuture>::iterator to boost::wait_for_any() which otherwise expects e.g.
+   *  std::list<boost::shared_future<void>>::iterator. This class provides the same interface as an interator of
+   *  the expected type but adds the function getTransferFuture(), so we can obtain the TransferElement from the 
+   *  return value of boost::wait_for_any(). */
+  class TransferFutureIterator {
+    public:
+      TransferFutureIterator(const std::list<TransferFuture>::iterator &it) : _it(it) {}
+      TransferFutureIterator operator++() { TransferFutureIterator ret(_it); ++_it; return ret; }
+      TransferFutureIterator operator++(int) { ++_it; return *this; }
+      bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
+      bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
+      boost::shared_future<void>& operator*() {return _it->_theFuture;}
+      boost::shared_future<void>& operator->() {return _it->_theFuture;}
+      TransferFuture getTransferFuture() const {return *_it;}
+    private:
+      std::list<TransferFuture>::iterator _it;
+  };
+  
+} /* namespace mtca4u */
+namespace std {
+  template<>
+  struct iterator_traits<mtca4u::TransferFutureIterator> {
+      typedef boost::shared_future<void> value_type;
+      typedef size_t difference_type;
+      typedef std::forward_iterator_tag iterator_category;
+  };
+}
+namespace mtca4u {
+
+  /*******************************************************************************************************************/  
+  
+  inline TransferElement& TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+    std::list<TransferFuture> futureList;
+    for(auto elem : elementsToRead) {
+      auto future = elem.get().readAsync();
+      futureList.push_back(future);
+    }
+    // See class description of TransferFutureIterator. We need this trick to obtain the transfer element from the
+    // returned iterator.
+    auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
+    return *(iter.getTransferFuture()._transferElement);
   }
 
 } /* namespace mtca4u */
