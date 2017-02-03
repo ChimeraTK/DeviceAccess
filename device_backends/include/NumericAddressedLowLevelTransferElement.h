@@ -48,6 +48,13 @@ namespace mtca4u {
         doReadTransfer();
         return true;
       }
+      
+      TransferFuture readAsync() override {                                                                 // LCOV_EXCL_LINE
+        // This function is not needed and will never be called. If readAsync() is called on the high-level accessor,
+        // the transfer will be "backgrounded" already on that level.
+        throw DeviceException("NumericAddressedLowLevelTransferElement::readAsync() is not implemented",    // LCOV_EXCL_LINE
+                              DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
+      }                                                                                                     // LCOV_EXCL_LINE
 
       /** Check if the two TransferElements are identical, i.e. accessing the same hardware register. In the special
        *  case of the NumericAddressedBackendRawAccessor, this function returns also true if the address areas

@@ -1,5 +1,3 @@
-#define ENABLE_EXPERIMENTAL_FEATURES
-
 #include <algorithm>
 #include <thread>
 #include <atomic>
@@ -10,6 +8,7 @@
 #include "DummyRegisterAccessor.h"
 #include "DummyBackend.h"
 #include "DeviceAccessVersion.h"
+#include "ExperimentalFeatures.h"
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
@@ -58,6 +57,7 @@ class  AsyncReadTestSuite : public test_suite {
 test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
   BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+  ChimeraTK::ExperimentalFeatures::enable();
   
   framework::master_test_suite().p_name.value = "Async read test suite";
   framework::master_test_suite().add(new AsyncReadTestSuite);

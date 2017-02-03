@@ -12,9 +12,10 @@
 #include "TransferElement.h"
 #include "FixedPointConverter.h"
 #include "DeviceException.h"
+#include "ExperimentalFeatures.h"
 
 namespace mtca4u {
-
+  
   /** N-dimensional register accessor. Base class for all register accessor implementations. The user frontend classes
    *  BufferingRegisterAccessor and TwoDRegisterAccessor are using implementations based on this class to perform
    *  the actual IO. */
@@ -81,8 +82,18 @@ namespace mtca4u {
         throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
       }
 
-      virtual const std::type_info& getValueType() const{
+      virtual const std::type_info& getValueType() const {
         return typeid(UserType);
+      }
+
+      TransferFuture readAsync() override {
+        ChimeraTK::ExperimentalFeatures::check("asynchronous read");
+        if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
+        auto boostFuture = boost::async( boost::bind(&NDRegisterAccessor<UserType>::doReadTransfer, this) ).share();
+        TransferFuture future(boostFuture, static_cast<TransferElement*>(this));
+        activeFuture = future;
+        hasActiveFuture = true;
+        return future;
       }
 
     protected:

@@ -28,8 +28,8 @@ namespace ChimeraTK {
 
 namespace mtca4u {
 
-  class TransferElement;
   class TransferGroup;
+  class TransferElement;
 
   /** Special future returned by TransferElement::readAsync(). See its function description for more details.
    * 
@@ -39,19 +39,14 @@ namespace mtca4u {
    *  extra flexibility we can keep it like this. */
   class TransferFuture {
     public:
-
-      /** Default constructor to generate a dysfunctional future (just for late initialisation) */
-      TransferFuture()
-      : _transferElement(nullptr) {}
       
       /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
        *  automatically executed before returning, so the new data is directly available in the buffer. */
       void wait();
-      
-    protected:
-      
-      /** TransferElement is allowed to construct TransferFutures */
-      friend class TransferElement;
+
+      /** Default constructor to generate a dysfunctional future (just for late initialisation) */
+      TransferFuture()
+      : _transferElement(nullptr) {}
 
       /** Constructor to generate an already fulfilled future. */
       TransferFuture(TransferElement *transferElement)
@@ -65,6 +60,8 @@ namespace mtca4u {
       TransferFuture(boost::shared_future<void> plainFuture, TransferElement *transferElement)
       : _theFuture(plainFuture), _transferElement(transferElement)
       {}
+
+    protected:
 
       /** The plain boost future */
       boost::shared_future<void> _theFuture;
@@ -157,19 +154,7 @@ namespace mtca4u {
        *  without launching a thread.
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture readAsync() {
-#ifndef ENABLE_EXPERIMENTAL_FEATURES
-        std::cerr << "You are using an experimental feature but do not have ENABLE_EXPERIMENTAL_FEATURES set!" << std::endl;
-        std::terminate();
-#else
-        if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
-        auto boostFuture = boost::async( boost::bind(&TransferElement::doReadTransfer, this) ).share();
-        TransferFuture future(boostFuture, this);
-        activeFuture = future;
-        hasActiveFuture = true;
-        return future;
-#endif
-      }
+      virtual TransferFuture readAsync() = 0;
 
       /** Write the data to device. */
       virtual void write() = 0;
