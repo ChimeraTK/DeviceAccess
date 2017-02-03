@@ -344,6 +344,7 @@ namespace mtca4u {
     // See class description of TransferFutureIterator. We need this trick to obtain the transfer element from the
     // returned iterator.
     auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
+    iter.getTransferFuture().wait();    // complete the transfer (i.e. run postRead())
     return *(iter.getTransferFuture()._transferElement);
   }
 
