@@ -7,6 +7,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferElement.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferGroup.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterCatalogue.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExperimentalFeatures.cc
    PARENT_SCOPE
 )
 
