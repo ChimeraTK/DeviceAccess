@@ -73,16 +73,16 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
 
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::loadPluginLibrary("notExisting.so"),
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("notExisting.so"),
 		     DeviceException );
 
-  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::loadPluginLibrary("../lib/libWorkingBackend.so")  );
+  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("../lib/libWorkingBackend.so")  );
   //check that the backend really is registered
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map") );
 
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::loadPluginLibrary("libNoSymbolBackend.so"),
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"),
   		     DeviceException );
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::loadPluginLibrary("libWrongVersionBackend.so"),
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libWrongVersionBackend.so"),
   		     DeviceException );
 
 }

@@ -98,8 +98,9 @@ namespace ChimeraTK{
 
     /**Load a shared library (.so file) with a Backend at run time.
      */
-    static void loadPluginLibrary(std::string soFile);
+    void loadPluginLibrary(std::string soFile);
 
+  protected:
     /**Load all shared libraries specified in the dmap file.
      */
     void loadAllPluginsFromDMapFile();
