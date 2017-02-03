@@ -47,20 +47,25 @@ namespace ChimeraTK{
 
     void operator=(BackendFactory const&); /** To avoid making copies */
 
+  protected:
     /** Holds  device type and function pointer to the createInstance function of
      * plugin*/
-
-    std::map< std::pair<std::string, std::string>, boost::shared_ptr<DeviceBackend> (*)(std::string host, std::string instance, std::list<std::string>parameters, std::string mapFileName) > creatorMap;
+    std::map< std::pair<std::string, std::string>, boost::function< boost::shared_ptr<DeviceBackend> (std::string host, std::string instance, std::list<std::string>parameters, std::string mapFileName) > > creatorMap;
 
     /** Look for the alias and if found return a uri */
     std::string aliasLookUp(std::string aliasName, std::string dmapFilePath);
 
     /** Internal function to return a DeviceBackend */
     boost::shared_ptr<DeviceBackend> createBackendInternal(const DeviceInfoMap::DeviceInfo &deviceInfo);
-    
+     
     std::map< std::string, boost::weak_ptr<DeviceBackend> > _existingBackends;
     
     std::mutex _mutex;
+
+    // A function which has the signature of a creator function, plus one string 'exception_what'.
+    // If a plugins fails to register, this function is bound to an error string and stored in the creatorMap. It later it is tried to open the backend, an exception with this
+    // error message is thrown.
+    static boost::shared_ptr<DeviceBackend> failedRegistrationThrowerFunction(std::string host, std::string instance, std::list<std::string>parameters, std::string mapFileName, std::string exception_what);
     
   public:
     /** This function sets the _DMapFilePath. This dmap file path is the

@@ -60,7 +60,15 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 
   // check the registation of a new backed, called NewBackend ;-)
   // Throws with the wrong version (00.18 did not have the feature yet, so its safe to use it)
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18"), DeviceException);
+  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18") );
+
+  BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"), BackendFactoryException);
+  try{
+    BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map");
+  }catch(BackendFactoryException &e){
+    std::cout << "expected exception: " << e.what() << std::endl;
+  }
+  
   BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION) );
 
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));

@@ -17,6 +17,8 @@
 #include "DeviceException.h"
 #include "DeviceAccessVersion.h"
 #include <dlfcn.h>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 namespace ChimeraTK {
 
@@ -28,10 +30,13 @@ namespace ChimeraTK {
     std::cout << "adding:" << interface << std::endl << std::flush;
 #endif
     if (version != CHIMERATK_DEVICEACCESS_VERSION){
+      // register a function that throws an exception with the message when trying to create a backend
       std::stringstream errorMessage;
       errorMessage << "Backend plugin '"<< interface << "' compiled with wrong DeviceAccess version "
 		   << version <<". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
-      throw DeviceException(errorMessage.str(),DeviceException::WRONG_PARAMETER);
+      creatorMap[make_pair(interface,protocol)] =
+        boost::bind(BackendFactory::failedRegistrationThrowerFunction,_1,_2,_3,_4,errorMessage.str());
+      return;
     }
     creatorMap[make_pair(interface,protocol)] = creatorFunction;
   }
@@ -190,4 +195,8 @@ namespace ChimeraTK {
     }
   }
 
+   boost::shared_ptr<DeviceBackend> BackendFactory::failedRegistrationThrowerFunction(
+     std::string /*host*/, std::string /*instance*/, std::list<std::string> /*parameters*/, std::string /*mapFileName*/, std::string exception_what){
+     throw BackendFactoryException(exception_what, BackendFactoryException::UNREGISTERED_DEVICE);
+   }
 } // namespace ChimeraTK
