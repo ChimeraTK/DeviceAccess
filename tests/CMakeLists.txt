@@ -81,7 +81,7 @@ MACRO( COPY_MAPPING_FILES )
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/dMapDir/valid.dmap)
   
   configure_file( runtimeLoading.dmap.in ${PROJECT_BINARY_DIR}/tests/runtimeLoading/runtimeLoading.dmap)
-  FILE( COPY goodMapFile.map DESTINATION ${PROJECT_BINARY_DIR}/tests/runtimeLoading)
+  FILE( COPY goodMapFile.map wrongVersionPlugin.dmap DESTINATION ${PROJECT_BINARY_DIR}/tests/runtimeLoading)
   
 ENDMACRO( COPY_MAPPING_FILES )
 

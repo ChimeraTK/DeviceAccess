@@ -191,7 +191,11 @@ namespace ChimeraTK {
     auto dmap = DMapFileParser().parse(_dMapFile);
 
     for ( auto lib : dmap->getPluginLibraries() ){
-      loadPluginLibrary(lib);
+      try{
+        loadPluginLibrary(lib);
+      }catch(DeviceException &){
+        //ignore library loading errors when doing this automatically for all plugins in the dmap file
+      }
     }
   }
 

@@ -21,14 +21,25 @@ BOOST_AUTO_TEST_CASE( testBackendLoading ){
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map"),
 		     BackendFactoryException);
 
+  BackendFactory::getInstance().setDMapFilePath("runtimeLoading/wrongVersionPlugin.dmap");
+  // although a plugin with a wrong version was in the dmap file, the other backends can
+  // still be opended
+  BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("MY_DUMMY") );
+
+  // Only when we access the one where loading failed we get an error
+  // (not using boost throw to print excaption.what())
+  try{
+    BackendFactory::getInstance().createBackend("WRONG_VERSION");
+    // we should not reach this point if the test succeed. The line above should throw.
+    BOOST_ERROR("createBackend did not throw as expected.");
+  }catch( BackendFactoryException &e ){
+    std::cout << "exptected exception: " << e.what() << std::endl;
+  }
+
+  // Now try loading valid plugins
   BackendFactory::getInstance().setDMapFilePath("runtimeLoading/runtimeLoading.dmap");
   // Each call of createBackend is loading the plugins. Check that this is not causing problems.
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("WORKING") );
-  try{
-    BackendFactory::getInstance().createBackend("WORKING");
-  }catch(Exception &e){
-    std::cout << "exception " << e.what() << std::endl;
-  }
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("ANOTHER") );
 }
 
