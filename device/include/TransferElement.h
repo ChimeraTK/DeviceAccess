@@ -303,9 +303,11 @@ namespace mtca4u {
 
   /*******************************************************************************************************************/  
 
+  // Note: the %iterator in the third line prevents doxygen from creating a link which it cannot resolve.
+  // It reads: std::list<boost::shared_future<void>>::iterator
   /** Internal class needed for TransferElement::readAny(): Provide a wrapper around the list iterator to effectivly
    *  allow passing std::list<TransferFuture>::iterator to boost::wait_for_any() which otherwise expects e.g.
-   *  std::list<boost::shared_future<void>>::iterator. This class provides the same interface as an interator of
+   *  std::list<boost::shared_future<void>>::%iterator. This class provides the same interface as an interator of
    *  the expected type but adds the function getTransferFuture(), so we can obtain the TransferElement from the 
    *  return value of boost::wait_for_any(). */
   class TransferFutureIterator {
