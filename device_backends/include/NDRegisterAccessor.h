@@ -31,7 +31,12 @@ namespace mtca4u {
       : TransferElement(name, unit, description) {}
         
       /** A virtual base class needs a virtual destructor */
-      virtual ~NDRegisterAccessor() {}
+      virtual ~NDRegisterAccessor() {
+        if(readAsyncThread.joinable()) {
+          readAsyncThread.interrupt();
+          readAsyncThread.join();
+        }
+      }
 
       /** Get or set register accessor's buffer content (1D version).
        *  @attention No bounds checking is performed, use getNumberOfSamples() to obtain the number of elements in
@@ -89,11 +94,16 @@ namespace mtca4u {
       TransferFuture readAsync() override {
         ChimeraTK::ExperimentalFeatures::check("asynchronous read");
         if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
-        auto boostFuture = boost::async( boost::bind(&NDRegisterAccessor<UserType>::doReadTransfer, this) ).share();
-        TransferFuture future(boostFuture, static_cast<TransferElement*>(this));
-        activeFuture = future;
+        
+        // create promise future pair and launch doReadTransfer in separate thread
+        readAsyncPromise = boost::promise<void>();
+        auto boostFuture = readAsyncPromise.get_future().share();
+        readAsyncThread = boost::thread( [this] { doReadTransfer(); readAsyncPromise.set_value(); } );
+        
+        // form TransferFuture, store it for later re-used and return it
+        activeFuture = TransferFuture(boostFuture, static_cast<TransferElement*>(this));
         hasActiveFuture = true;
-        return future;
+        return activeFuture;
       }
 
     protected:
@@ -109,6 +119,12 @@ namespace mtca4u {
       /// the compatibility layers need access to the buffer_2D
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
+      
+      /// Thread which might be launched in readAsync()
+      boost::thread readAsyncThread;
+      
+      /// Promise used in readAsync()
+      boost::promise<void> readAsyncPromise;
 
   };
 

@@ -173,7 +173,10 @@ namespace mtca4u {
       virtual void write() = 0;
 
       /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
-       *  function followed by postRead() is exactly equivalent to a call to just read(). */
+       *  function followed by postRead() is exactly equivalent to a call to just read().
+       *
+       *  Implementation note: This function must return within ~1 second after boost::thread::interrupt() has been
+       *  called on the thread calling this function. */
       virtual void doReadTransfer() = 0;
 
       /** Read the data from the device without blocking but do not fill it into the user buffer of this
@@ -346,7 +349,9 @@ namespace mtca4u {
     // See class description of TransferFutureIterator. We need this trick to obtain the transfer element from the
     // returned iterator.
     auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
+    boost::this_thread::interruption_point();
     iter.getTransferFuture().wait();    // complete the transfer (i.e. run postRead())
+    boost::this_thread::interruption_point();
     return *(iter.getTransferFuture()._transferElement);
   }
 
