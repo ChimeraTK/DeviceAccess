@@ -6,6 +6,8 @@ using namespace boost::unit_test_framework;
 #include <boost/make_shared.hpp>
 
 #include "BackendFactory.h"
+#include "DeviceException.h"
+#include "DummyBackend.h"
 #include "MapException.h"
 using namespace mtca4u;
 

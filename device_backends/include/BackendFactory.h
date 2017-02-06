@@ -5,10 +5,12 @@
 #include <iostream>
 #endif
 
-#include "DummyBackend.h"
-#include "PcieBackend.h"
+#include "ForwardDeclarations.h"
 #include "DeviceInfoMap.h"
+#include "DeviceException.h"
+#include <map>
 #include <mutex>
+#include <boost/function.hpp>
 
 /* For test purposes; if a dummies.dmap file is found in the folder from where the
  * program is being executed it would be used as dmap file. The default dmap file
@@ -23,11 +25,11 @@ namespace ChimeraTK{
   /** A class to provide exception for BackendFactory.
    *
    */
-  class BackendFactoryException : public Exception {
+  class BackendFactoryException : public DeviceException {
    public:
     enum {UNKNOWN_ALIAS,UNREGISTERED_DEVICE,AMBIGUOUS_MAP_FILE_ENTRY};
     BackendFactoryException(const std::string &message, unsigned int exceptionID)
-      : Exception( message, exceptionID ){}
+      : DeviceException( message, exceptionID ){}
   };
 
   /** BackendFactory is a the factory class to create devices.
