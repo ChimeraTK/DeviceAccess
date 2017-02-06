@@ -8,7 +8,6 @@
 namespace ChimeraTK{
   namespace testable_rebot_sleep{
      boost::chrono::steady_clock::time_point now(){
-      std::cout << "Real IMPL function accessing steady clock" << std::endl;
       return  boost::chrono::steady_clock::now();
     }
    

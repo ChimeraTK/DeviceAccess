@@ -11,6 +11,8 @@
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "RebotBackend.h"
+#include "PcieBackend.h"
+#include "DummyBackend.h"
 #include "LogicalNameMappingBackend.h"
 #include "DMapFileParser.h"
 #include "DMapFileDefaults.h"
