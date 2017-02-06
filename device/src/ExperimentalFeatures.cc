@@ -2,5 +2,6 @@
 
 namespace ChimeraTK {
   bool ExperimentalFeatures::isEnabled{false};
+  ExperimentalFeatures::Reminder ExperimentalFeatures::reminder;
 }
 
