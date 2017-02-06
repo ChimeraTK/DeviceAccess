@@ -183,7 +183,7 @@ void AsyncReadTest::testReadAny() {
   {
     // launch the readAny in a background thread
     std::atomic<bool> flag{false};
-    std::thread thread([&backend, &a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+    std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
     
     // check that it doesn't return too soon
     usleep(100000);
