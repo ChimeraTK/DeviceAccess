@@ -16,18 +16,20 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
   
   void VariableGroup::readAny() {
-    bool gotUpdate = false;
     auto accessorList = getAccessorListRecursive();
-    while(!gotUpdate) {     /// @todo TODO FIXME make proper blocking implementation
-      boost::this_thread::yield();
-      boost::this_thread::interruption_point();
-      
-      for(auto accessor : accessorList) {       // @todo FIXME make sure no submodule is accessing the variables itself... (e.g. by forcing all submodules to be a VariablGroup and not e.g. an ApplicationModule)
-        if(accessor->getUpdateMode() == UpdateMode::push) {
-          if(accessor->readNonBlocking()) gotUpdate = true;
-        }
+
+    // put push-type transfer elements into a list suitable for TransferElement::readAny()
+    std::list<std::reference_wrapper<TransferElement>> transferElementList;
+    for(auto &accessor : accessorList) {
+      if(accessor->getUpdateMode() == UpdateMode::push) {
+        transferElementList.emplace_back(*(accessor->getTransferElement()));
       }
     }
+    
+    // wait until one of the push-type accessors receives an update
+    mtca4u::TransferElement::readAny(transferElementList);
+    
+    // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
       if(accessor->getUpdateMode() == UpdateMode::poll) {
         accessor->read();

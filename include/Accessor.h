@@ -83,6 +83,9 @@ namespace ChimeraTK {
         return node;
       }
       
+      /** Return the implementation as a TransferElement */
+      virtual boost::shared_ptr<TransferElement> getTransferElement() = 0;
+      
       /** Explicitly return the node */
       VariableNetworkNode& getNode() {
         return node;
@@ -156,6 +159,10 @@ namespace ChimeraTK {
         impl = newAccessor.impl;
         _owner->registerAccessor(this);
         node = VariableNetworkNode(*this);
+      }
+
+      boost::shared_ptr<TransferElement> getTransferElement() override {
+        return boost::static_pointer_cast<TransferElement>(impl);
       }
 
     protected:
