@@ -54,6 +54,7 @@ class RebotDummyServer {
   uint32_t _state;
 
   std::atomic<uint32_t> _heartbeatCount;
+  std::atomic<uint32_t> _helloCount; // in protocol version 1 we have to send hello instead of heartbeat
   std::atomic<bool> _dont_answer; // flag to cause an error condition
  
   DummyBackend _registerSpace;

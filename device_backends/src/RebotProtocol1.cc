@@ -44,9 +44,9 @@ namespace ChimeraTK{
   }
 
   void RebotProtocol1::sendHeartbeat(){
-    _tcpCommunicator->sendData(std::vector<uint32_t>({PING}));
+    _tcpCommunicator->sendData(std::vector<uint32_t>({HELLO_TOKEN, MAGIC_WORD, CLIENT_PROTOCOL_VERSION}));
     // don't evaluate. The other side is sending an error anyway in this protocol version
-    _tcpCommunicator->receiveData(1);
+    _tcpCommunicator->receiveData(3);
   }
 
 } // namespace ChimeraTK

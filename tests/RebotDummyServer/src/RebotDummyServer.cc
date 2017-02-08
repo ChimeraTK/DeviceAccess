@@ -14,6 +14,7 @@ bool volatile stop_rebot_server = false;
                                      unsigned int protocolVersion)
     :  _state(ACCEPT_NEW_COMMAND),
        _heartbeatCount(0),
+       _helloCount(0),
        _dont_answer(false),
        _registerSpace(mapFile),
       _serverPort(portNumber),
@@ -96,6 +97,7 @@ void RebotDummyServer::processReceivedPackage(std::vector<uint32_t>& buffer) {
         _protocolImplementor->multiWordRead(buffer);
         break;
       case  HELLO:
+        ++_helloCount;
         _protocolImplementor->hello(buffer);
         break;
       case  PING:

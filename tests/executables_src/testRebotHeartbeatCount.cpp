@@ -26,9 +26,13 @@ BOOST_AUTO_TEST_CASE( testHeartbeat1 ){
   RebotDummyServer rebotServer(5001 /*port*/, "./mtcadummy_rebot.map", 1 /*protocol version*/);
 
   boost::thread serverThread(boost::bind(&RebotDummyServer::start, boost::ref(rebotServer) ));
+
+  BOOST_CHECK(rebotServer._helloCount == 0 );
     
   Device d;
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+
+  BOOST_CHECK(rebotServer._helloCount == 1 );
 
   // startup of the sleeping: get the lock, then tell the application it can try to get the lock
   // The app will continue once we free the lock
@@ -41,11 +45,11 @@ BOOST_AUTO_TEST_CASE( testHeartbeat1 ){
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*2500));
   }
 
-  BOOST_CHECK(rebotServer._heartbeatCount == 0 );
+  BOOST_CHECK(rebotServer._helloCount == 1 );
   
   for (uint32_t i=1; i <5; ++i){
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*5000+10000));
-    BOOST_CHECK(rebotServer._heartbeatCount == i );
+    BOOST_CHECK(rebotServer._helloCount == i + 1 );
   }
   
   for (uint32_t i=1; i<5;++i){
@@ -53,11 +57,11 @@ BOOST_AUTO_TEST_CASE( testHeartbeat1 ){
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*2500+30000));
   }
 
-  BOOST_CHECK(rebotServer._heartbeatCount == 4 );
+  BOOST_CHECK(rebotServer._helloCount == 5 );
 
   for (uint32_t i=1; i <5; ++i){
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i*5000+40000));
-    BOOST_CHECK(rebotServer._heartbeatCount == i+4 );
+    BOOST_CHECK(rebotServer._helloCount == i+5 );
   }
 
   // ****************
