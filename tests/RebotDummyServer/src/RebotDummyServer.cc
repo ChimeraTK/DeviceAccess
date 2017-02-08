@@ -14,6 +14,7 @@ bool volatile stop_rebot_server = false;
                                      unsigned int protocolVersion)
     :  _state(ACCEPT_NEW_COMMAND),
        _heartbeatCount(0),
+       _dont_answer(false),
        _registerSpace(mapFile),
       _serverPort(portNumber),
       _protocolVersion(protocolVersion),
@@ -73,12 +74,14 @@ void RebotDummyServer::start() {
 }
 
 void RebotDummyServer::processReceivedPackage(std::vector<uint32_t>& buffer) {
-
-  // FIXME: this whole method is a hack. The whole data handling part of the server
-  // needs a  redesign
   if (_state == INSIDE_MULTI_WORD_WRITE){
     _state = _protocolImplementor->continueMultiWordWrite(buffer);
   }else{// has to be ACCEPT_NEW_COMMAND
+
+    // cause an error condition: just don't answer
+    if (_dont_answer){
+      return;
+    }
 
     uint32_t requestedAction = buffer.at(0);
     switch (requestedAction) {

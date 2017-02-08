@@ -179,28 +179,34 @@ uint32_t RebotBackend::parseRxServerHello(
   void RebotBackend::heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex){
     int beatcount = 0;
     while (true){
-      // only send a heartbeat if the connection was inactive for half of the timeout period
-      if ( (testable_rebot_sleep::now() - _lastSendTime) >
-           boost::chrono::milliseconds(_connectionTimeout/2) ){
-        // scope for the lock guard is in the if statement
-        std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-        //To handle the race condition that the thread woke up while the desructor was holding the lock
-        //and closes the socket: Check the flag and quit if set
-        if (threadInformerMutex->quitThread){
-          break;
+      try{
+        // only send a heartbeat if the connection was inactive for half of the timeout period
+        if ( (testable_rebot_sleep::now() - _lastSendTime) >
+             boost::chrono::milliseconds(_connectionTimeout/2) ){
+          // scope for the lock guard is in the if statement
+          std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+          //To handle the race condition that the thread woke up while the desructor was holding the lock
+          //and closes the socket: Check the flag and quit if set
+          if (threadInformerMutex->quitThread){
+            break;
+          }
+          // always update the last send time. Otherwise the sleep will be ineffective for a closed
+          // connection and go to 100 & CPU load
+          _lastSendTime=testable_rebot_sleep::now();
+          if (_protocolImplementor){
+            _protocolImplementor->sendHeartbeat();
+            // FIXE: remove debug output
+            std::cout << "heartbeat: beat " << beatcount++ << std::endl;
+          }
         }
-        // always update the last send time. Otherwise the sleep will be ineffective for a closed
-        // connection and go to 100 & CPU load
-        _lastSendTime=testable_rebot_sleep::now();
-        if (_protocolImplementor){
-          _protocolImplementor->sendHeartbeat();
-          // FIXE: remove debug output
-          std::cout << "heartbeat: beat " << beatcount++ << std::endl;
-        }
+        // sleep without holding the lock. Sleep for half of the connection timeout (plus 1 ms)
+        testable_rebot_sleep::sleep_until( _lastSendTime + boost::chrono::milliseconds(_connectionTimeout/2 +1 ) );
+      }catch(RebotBackendException &e){
+        std::cerr << "RebotBackend: Sending heartbeat failed. Caught exception: " << e.what() <<std::endl;
+        std::cerr << "Closing connection." << std::endl;
+        close();
       }
-      // sleep without holding the lock. Sleep for half of the connection timeout (plus 1 ms)
-      testable_rebot_sleep::sleep_until( _lastSendTime + boost::chrono::milliseconds(_connectionTimeout/2 +1 ) );
-    }
+    }//while true
   }
   
 } // namespace ChimeraTK
