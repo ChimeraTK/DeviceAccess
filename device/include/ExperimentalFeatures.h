@@ -5,11 +5,13 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_EXPERIMENTAL_FEATURES_H
-#define MTCA4U_EXPERIMENTAL_FEATURES_H
+#ifndef CHIMERATK_EXPERIMENTAL_FEATURES_H
+#define CHIMERATK_EXPERIMENTAL_FEATURES_H
 
 #include <string>
 #include <iostream>
+#include <map>
+#include <mutex>
 
 namespace ChimeraTK {
   
@@ -22,6 +24,9 @@ namespace ChimeraTK {
        *  features. Beware that your application is likely to break due to incompatible changes in those
        *  features! */
       static void enable() {
+        std::cerr << "*******************************************************************************" << std::endl;
+        std::cerr << " Experimental features are now enabled in ChimeraTK DeviceAccess" << std::endl;
+        std::cerr << "*******************************************************************************" << std::endl;
         isEnabled = true;
       }
       
@@ -35,12 +40,34 @@ namespace ChimeraTK {
                     << "' but do not have experimental features enabled!" << std::endl;
           std::terminate();
         }
+        std::lock_guard<std::mutex> guard(reminder.lock_useCount);
+        reminder.useCount[featureName]++;
       }
 
     private:
 
       static bool isEnabled;
+      
+      class Reminder {
+        friend class ExperimentalFeatures;
+        Reminder() {}
+        ~Reminder() {
+          if(ExperimentalFeatures::isEnabled) {
+            std::cerr << "*******************************************************************************" << std::endl;
+            std::cerr << " Experimental features were enabled in ChimeraTK DeviceAccess" << std::endl;
+            std::cerr << " The following features were used (use count):" << std::endl;
+            for(auto &uc : useCount) {
+              std::cerr << "  - " << uc.first << " (" << uc.second << ")" << std::endl;
+            }
+            std::cerr << "*******************************************************************************" << std::endl;
+          }
+        }
+        std::map<std::string, uint64_t> useCount;
+        std::mutex lock_useCount;
+      };
+      static Reminder reminder;
+      
   };
 }
 
-#endif /* MTCA4U_EXPERIMENTAL_FEATURES_H */
+#endif /* CHIMERATK_EXPERIMENTAL_FEATURES_H */

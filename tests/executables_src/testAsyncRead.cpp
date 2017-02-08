@@ -2,6 +2,7 @@
 #include <thread>
 #include <atomic>
 
+#include <boost/thread.hpp>
 #include <boost/test/included/unit_test.hpp>
 
 #include "Device.h"
@@ -27,13 +28,15 @@ class AsyncTestDummy : public DummyBackend {
     
     void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) override {
       std::cout << "BEGIN read " << address << std::endl;
-      readMutex.at(address).lock();
+      while(!readMutex.at(address).try_lock_for(std::chrono::milliseconds(100))) {
+        boost::this_thread::interruption_point();
+      }
       DummyBackend::read(bar,address,data,sizeInBytes);
       readMutex.at(address).unlock();
       std::cout << "END read " << address << std::endl;
     }
     
-    std::map<int, std::mutex> readMutex;
+    std::map<int, std::timed_mutex> readMutex;
 };
 
 /**********************************************************************************************************************/
