@@ -13,6 +13,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
+#include <boost/thread.hpp>
 
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
@@ -52,7 +53,7 @@ struct TestModule : public ctk::ApplicationModule {
 /* dummy application */
 
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("test suite") {}
+    TestApplication() : Application("test suite") {  ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApplication() { shutdown(); }
     
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
@@ -79,7 +80,7 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   
   app.initialise();
   app.run();
-  
+
   // single theaded test
   app.testModule.feedingPush = 0;
   app.testModule.feedingPush2 = 42;
@@ -113,13 +114,20 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
-
-  // two changes at a time
+  
+  // two more writes
   app.testModule.feedingPush2 = 666;
   app.testModule.feedingPush2.write();
-  app.testModule.feedingPush3.write();
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 42);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
+  app.testModule.mixedGroup.readAny();
+  app.testModule.feedingPush3.write();
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
@@ -133,8 +141,8 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
 
   // launch readAny() asynchronously and make sure it does not yet receive anything
-  auto futRead = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+  auto futureRead = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
+  BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -147,17 +155,17 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   app.testModule.feedingPush.write();
   
   // check that the group now receives the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
-  
+
   // launch another readAny() asynchronously and make sure it does not yet receive anything
-  auto futRead2 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
-  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+  auto futureRead2 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
+  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -172,9 +180,9 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   app.testModule.feedingPoll2.write();
   app.testModule.feedingPoll3 = 88;
   app.testModule.feedingPoll3.write();
-  
+
   // make sure readAny still does not receive anything
-  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -185,13 +193,46 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   // write something to the push-type variables
   app.testModule.feedingPush2 = 123;
   app.testModule.feedingPush2.write();
-  
+
   // check that the group now receives the just written values
-  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 123);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
+  
+  // two changes at a time
+  auto futureRead3 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
+  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+  app.testModule.feedingPush2 = 234;
+  app.testModule.feedingPush3 = 345;
+  app.testModule.feedingPush2.write();
+  app.testModule.feedingPush3.write();
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 123);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
+
+  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 234);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
+
+  auto futureRead4 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
+  BOOST_CHECK(futureRead4.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 234);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 345);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
+  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
+
+
 }
