@@ -106,7 +106,7 @@ namespace ChimeraTK {
        *  sender, the second the receiver. nElements will be the array size of the created variable. */
       template<typename UserType>
       std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-            createApplicationVariable(size_t nElements);
+            createApplicationVariable(size_t nElements, const std::string &name);
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */

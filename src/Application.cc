@@ -293,10 +293,10 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 
 template<typename UserType>
 std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-  Application::createApplicationVariable(size_t nElements) {
+  Application::createApplicationVariable(size_t nElements, const std::string &name) {
 
   // create the ProcessScalar for the proper UserType
-  return createSynchronizedProcessArray<UserType>(nElements);
+  return createSynchronizedProcessArray<UserType>(nElements, name);
 }
 
 /*********************************************************************************************************************/
@@ -459,7 +459,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             isFirst = false;
           }
           else {
-            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
+            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
             fanOut->addSlave(impls.first);
             consumer.getAppAccessor().useProcessVariable(impls.second);
           }
@@ -474,7 +474,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
@@ -499,7 +499,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
+        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
         feeder.getAppAccessor().useProcessVariable(impls.first);
         consumer.getAppAccessor().useProcessVariable(impls.second);
         connectionMade = true;
@@ -516,7 +516,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
+        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
         feeder.getAppAccessor().useProcessVariable(impls.first);
         consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
@@ -537,7 +537,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
           fanOut->addSlave(impls.first);
           consumer.getAppAccessor().useProcessVariable(impls.second);
         }
@@ -551,7 +551,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
