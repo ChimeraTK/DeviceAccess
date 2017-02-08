@@ -459,7 +459,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             isFirst = false;
           }
           else {
-            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
+            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getAppAccessor().getName());
             fanOut->addSlave(impls.first);
             consumer.getAppAccessor().useProcessVariable(impls.second);
           }
@@ -474,7 +474,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getAppAccessor().getName());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
