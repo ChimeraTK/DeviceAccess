@@ -27,6 +27,12 @@ namespace ChimeraTK {
       }
       
       void doReadTransfer() override {
+        if(firstRead) {
+          firstRead = false;
+          return;
+        }
+        // block forever
+        boost::promise<void>().get_future().wait();
       }
             
       bool doReadTransferNonBlocking() override {
