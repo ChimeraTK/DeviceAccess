@@ -15,7 +15,7 @@
 
 namespace ChimeraTK {
 
-
+  
   template<typename UserType>
   class FanOut : public mtca4u::NDRegisterAccessor<UserType>, public InternalModule {
 
@@ -23,7 +23,6 @@ namespace ChimeraTK {
 
       /** Use this constructor if the FanOut should be a consuming implementation. */
       FanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
-      : _direction(VariableDirection::consuming)
       {
         impl = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(feedingImpl);
         if(!impl) {
@@ -35,11 +34,6 @@ namespace ChimeraTK {
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( impl->getNumberOfSamples() );
         }
       }
-
-      /** Use this constructor if the FanOut should be a feeding implementation. */
-      FanOut()
-      : impl(nullptr), _direction(VariableDirection::feeding)
-      {}
 
       /** If activate() has been called on this FanOut, deactivate() must be called before destruction. Otherweise
        *  an assertion will be raised.
@@ -84,13 +78,11 @@ namespace ChimeraTK {
         
       /** Add an external trigger to allow poll-type feeders to be used for push-type consumers */
       void addExternalTrigger(const boost::shared_ptr<mtca4u::TransferElement>& externalTriggerImpl) {
-        assert(_direction == VariableDirection::consuming);
         externalTrigger = externalTriggerImpl;
         hasExternalTrigger = true;
       }
 
       void activate() override {
-        assert(_direction == VariableDirection::consuming);
         assert(!_thread.joinable());
         _thread = boost::thread([this] { this->run(); });
       }
@@ -105,7 +97,6 @@ namespace ChimeraTK {
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
-        assert(_direction == VariableDirection::consuming);
         while(true) {
           boost::this_thread::interruption_point();
           if(hasExternalTrigger) {
@@ -128,36 +119,16 @@ namespace ChimeraTK {
         }
       }
 
-      void set(mtca4u::NDRegisterAccessor<UserType> const & other) {
-        impl->set(other.get());
-      }
-
-      void set(UserType const & t) {
-        impl->set(t);
-      }
-
-      operator UserType() const {
-        return impl->get();
-      }
-
-      UserType get() const {
-        return impl->get();
-      }
-
-      const std::type_info& getValueType() const override {
-        return typeid(UserType);
-      }
-
       bool isReadable() const override {
-        return _direction == VariableDirection::consuming;
+        return false;
       }
       
       bool isReadOnly() const override {
-        return _direction == VariableDirection::consuming;
+        return false;
       }
       
       bool isWriteable() const override {
-        return _direction == VariableDirection::feeding;
+        return true;
       }
 
       TimeStamp getTimeStamp() const override {
@@ -184,17 +155,7 @@ namespace ChimeraTK {
       }
 
       void write() override {
-        for(auto &slave : slaves) {     // send out copies to slaves
-          // do not send copy if no data is expected (e.g. trigger)
-          if(slave->getNumberOfSamples() != 0) {
-            slave->accessChannel(0) = mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0];
-          }
-          slave->write();
-        }
-        impl->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
-        impl->write();
-        impl->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
-        return;
+        throw std::logic_error("Write operation called on read-only variable.");
       }
       
       bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {
@@ -215,8 +176,6 @@ namespace ChimeraTK {
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;
 
       std::list<boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>> slaves;
-
-      VariableDirection _direction;
 
       bool hasExternalTrigger{false};
       boost::shared_ptr<mtca4u::TransferElement> externalTrigger;

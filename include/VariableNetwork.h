@@ -64,6 +64,9 @@ namespace ChimeraTK {
 
       /** Return list of consuming nodes */
       std::list<VariableNetworkNode> getConsumingNodes() const;
+      
+      /** Check whether the network has a consuming application node */
+      bool hasApplicationConsumer() const;
 
       /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
       void dump(const std::string& linePrefix="") const;

@@ -20,6 +20,7 @@
 #include "Accessor.h"
 #include "DeviceAccessor.h"
 #include "FanOut.h"
+#include "FeedingFanOut.h"
 #include "VariableNetworkNode.h"
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
@@ -436,27 +437,38 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
     }
     else { /* !(nNodes == 2 && !useExternalTrigger) */
-      // create FanOut
-      auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
 
-      // use FanOut as implementation for the first application consumer node, add all others as slaves
-      // @todo TODO need a more sophisticated logic to take care of the UpdateMode
-      bool isFirst = true;
-      // if external trigger is enabled, add it to FanOut
+      // flag needed when the ConsumerFanOut is used
+      bool mayUseAsImplementation = false;
+
+      // create the right FanOut type
+      boost::shared_ptr<FanOut<UserType>> fanOut;
       if(useExternalTrigger) {
-        isFirst = false; // don't use the FanOut as an implementation if we have an external trigger
+        // if external trigger is enabled, use externally triggered threaded FanOut
+        fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
         fanOut->addExternalTrigger(network.getExternalTriggerImpl());
+        internalModuleList.push_back(fanOut);
       }
-      // if the trigger is provided by the pushing feeder, use the treaded version of the FanOut to distribute
-      // new values immediately to all consumers.
       else if(useFeederTrigger) {
-        isFirst = false;
+        // if the trigger is provided by the pushing feeder, use the treaded version of the FanOut to distribute
+        // new values immediately to all consumers.
+        fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+        internalModuleList.push_back(fanOut);
       }
+      else {
+        if(!network.hasApplicationConsumer()) {
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("No application node in the network but no trigger!");
+        }
+        mayUseAsImplementation = true;
+        fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+      }
+
+      // add all consumers to the FanOut
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          if(isFirst) {
+          if(mayUseAsImplementation) {
             consumer.getAppAccessor().useProcessVariable(fanOut);
-            isFirst = false;
+            mayUseAsImplementation = false;
           }
           else {
             auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getAppAccessor().getName());
@@ -481,9 +493,6 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
         }
-      }
-      if(isFirst || useExternalTrigger || useFeederTrigger) { // FanOut wasn't used as implementation: store in list to keep it alive
-        internalModuleList.push_back(fanOut);
       }
       connectionMade = true;
     }
@@ -532,7 +541,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else {
       // create FanOut and use it as the feeder implementation
-      auto fanOut = boost::make_shared<FanOut<UserType>>();
+      auto fanOut = boost::make_shared<FeedingFanOut<UserType>>();
       feeder.getAppAccessor().useProcessVariable(fanOut);
 
       for(auto &consumer : consumers) {

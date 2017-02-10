@@ -221,4 +221,13 @@ namespace ChimeraTK {
     return consumers;
   }
 
+  /*********************************************************************************************************************/
+  
+  bool VariableNetwork::hasApplicationConsumer() const {
+    for(auto &n : nodeList) {
+      if(n.getDirection() == VariableDirection::consuming && n.getType() == NodeType::Application) return true;
+    }
+    return false;
+  }
+
 }
