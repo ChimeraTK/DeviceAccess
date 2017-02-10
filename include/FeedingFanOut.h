@@ -20,13 +20,15 @@ namespace ChimeraTK {
 
     public:
 
-      /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
+      /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. The first slave added
+      *   must not be a trigger receiver, since it defines the shape of the data buffer. */
       void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) {
         if(!slave->isWriteable()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "FeedingFanOut::addSlave() has been called with a receiving implementation!");
         }
-        if(slaves.size() == 0) {    // first slave: initialise buffers  @todo TODO FIXME first slave could be a trigger receiver!
+        if(slaves.size() == 0) {    // first slave: initialise buffers
+          assert(slave->getNumberOfChannels() != 0 && slave->getNumberOfSamples() != 0);
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( slave->getNumberOfChannels() );
           for(size_t i=0; i<slave->getNumberOfChannels(); i++) {
             mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( slave->getNumberOfSamples() );
