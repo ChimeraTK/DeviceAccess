@@ -16,7 +16,7 @@
 #include "ApplicationException.h"
 #include "VariableNetwork.h"
 #include "Flags.h"
-#include "ImplementationAdapter.h"
+#include "InternalModule.h"
 #include "EntityOwner.h"
 
 namespace ChimeraTK {
@@ -117,8 +117,8 @@ namespace ChimeraTK {
       /** List of application modules */
       std::list<Module*> overallModuleList;   /// @todo TODO FIXME maybe recursing through all modules is better than having an additional overall list?
 
-      /** List of ImplementationAdapters */
-      std::list<boost::shared_ptr<ImplementationAdapterBase>> adapterList;
+      /** List of InternalModules */
+      std::list<boost::shared_ptr<InternalModule>> internalModuleList;
 
       /** List of variable networks */
       std::list<VariableNetwork> networkList;

@@ -121,8 +121,8 @@ void Application::run() {
   }
 
   // start the necessary threads for the FanOuts etc.
-  for(auto &adapter : adapterList) {
-    adapter->activate();
+  for(auto &internalModule : internalModuleList) {
+    internalModule->activate();
   }
 
   // read all input variables once, to set the startup value e.g. coming from the config file
@@ -147,8 +147,8 @@ void Application::shutdown() {
 
   // deactivate the FanOuts first, since they have running threads inside accessing the modules etc.
   // (note: the modules are members of the Application implementation and thus get destroyed after this destructor)
-  for(auto &adapter : adapterList) {
-    adapter->deactivate();
+  for(auto &internalModule : internalModuleList) {
+    internalModule->deactivate();
   }
 
   // next deactivate the modules, as they have running threads inside as well
@@ -413,18 +413,18 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       else if(consumer.getType() == NodeType::Device) {
         auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
-        // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
+        // connect the Device with e.g. a ControlSystem node via a threaded FanOut
         auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
         fanOut->addSlave(consumingImpl);
-        adapterList.push_back(fanOut);
+        internalModuleList.push_back(fanOut);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
         auto consumingImpl = createProcessVariable<UserType>(consumer);
-        // connect the ControlSystem with e.g. a Device node via an ImplementationAdapter
+        // connect the ControlSystem with e.g. a Device node via an threaded FanOut
         auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
         fanOut->addSlave(consumingImpl);
-        adapterList.push_back(fanOut);
+        internalModuleList.push_back(fanOut);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -482,8 +482,8 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
         }
       }
-      if(isFirst || useExternalTrigger || useFeederTrigger) { // FanOut wasn't used as implementation: store to list to keep it alive
-        adapterList.push_back(fanOut);
+      if(isFirst || useExternalTrigger || useFeederTrigger) { // FanOut wasn't used as implementation: store in list to keep it alive
+        internalModuleList.push_back(fanOut);
       }
       connectionMade = true;
     }

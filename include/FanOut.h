@@ -11,16 +11,13 @@
 #include <mtca4u/NDRegisterAccessor.h>
 
 #include "ApplicationException.h"
-#include "ImplementationAdapter.h"
+#include "InternalModule.h"
 
 namespace ChimeraTK {
 
 
-  /** @todo TODO This class should be split into two classes, one with a thread and the other without. The
-   *  threaded version doesn't have to be a NDRegisterAccessor! Instead it should be unified with the
-   *  ImplementationAdapter class... */
   template<typename UserType>
-  class FanOut : public mtca4u::NDRegisterAccessor<UserType>, public ImplementationAdapterBase {
+  class FanOut : public mtca4u::NDRegisterAccessor<UserType>, public InternalModule {
 
     public:
 
