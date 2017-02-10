@@ -19,7 +19,8 @@
 #include "ApplicationModule.h"
 #include "Accessor.h"
 #include "DeviceAccessor.h"
-#include "FanOut.h"
+#include "ThreadedFanOut.h"
+#include "ConsumingFanOut.h"
 #include "FeedingFanOut.h"
 #include "VariableNetworkNode.h"
 #include "ScalarAccessor.h"
@@ -414,16 +415,16 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       else if(consumer.getType() == NodeType::Device) {
         auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
-        // connect the Device with e.g. a ControlSystem node via a threaded FanOut
-        auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+        // connect the Device with e.g. a ControlSystem node via a ThreadedFanOut
+        auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
         fanOut->addSlave(consumingImpl);
         internalModuleList.push_back(fanOut);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
         auto consumingImpl = createProcessVariable<UserType>(consumer);
-        // connect the ControlSystem with e.g. a Device node via an threaded FanOut
-        auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+        // connect the ControlSystem with e.g. a Device node via an ThreadedFanOut
+        auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
         fanOut->addSlave(consumingImpl);
         internalModuleList.push_back(fanOut);
         connectionMade = true;
@@ -438,37 +439,37 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else { /* !(nNodes == 2 && !useExternalTrigger) */
 
-      // flag needed when the ConsumerFanOut is used
-      bool mayUseAsImplementation = false;
-
       // create the right FanOut type
       boost::shared_ptr<FanOut<UserType>> fanOut;
+      boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
       if(useExternalTrigger) {
         // if external trigger is enabled, use externally triggered threaded FanOut
-        fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
-        fanOut->addExternalTrigger(network.getExternalTriggerImpl());
-        internalModuleList.push_back(fanOut);
+        auto threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+        threadedFanOut->addExternalTrigger(network.getExternalTriggerImpl());
+        internalModuleList.push_back(threadedFanOut);
+        fanOut = threadedFanOut;
       }
       else if(useFeederTrigger) {
         // if the trigger is provided by the pushing feeder, use the treaded version of the FanOut to distribute
         // new values immediately to all consumers.
-        fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
-        internalModuleList.push_back(fanOut);
+        auto threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+        internalModuleList.push_back(threadedFanOut);
+        fanOut = threadedFanOut;
       }
       else {
         if(!network.hasApplicationConsumer()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("No application node in the network but no trigger!");
         }
-        mayUseAsImplementation = true;
-        fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+        consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl);
+        fanOut = consumingFanOut;
       }
 
       // add all consumers to the FanOut
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          if(mayUseAsImplementation) {
-            consumer.getAppAccessor().useProcessVariable(fanOut);
-            mayUseAsImplementation = false;
+          if(consumingFanOut) {
+            consumer.getAppAccessor().useProcessVariable(consumingFanOut);
+            consumingFanOut.reset();
           }
           else {
             auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getAppAccessor().getName());
