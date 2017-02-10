@@ -416,15 +416,17 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
         // connect the Device with e.g. a ControlSystem node via an ImplementationAdapter
-        adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
-            new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
+        auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+        fanOut->addSlave(consumingImpl);
+        adapterList.push_back(fanOut);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
         auto consumingImpl = createProcessVariable<UserType>(consumer);
         // connect the ControlSystem with e.g. a Device node via an ImplementationAdapter
-        adapterList.push_back(boost::shared_ptr<ImplementationAdapterBase>(
-            new ImplementationAdapter<UserType>(consumingImpl,feedingImpl)));
+        auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
+        fanOut->addSlave(consumingImpl);
+        adapterList.push_back(fanOut);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
