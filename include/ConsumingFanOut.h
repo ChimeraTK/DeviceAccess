@@ -14,7 +14,8 @@
 
 namespace ChimeraTK {
 
-  
+  /** FanOut implementation which acts as a read-only (i.e. consuming) NDRegisterAccessor. The values read through
+   *  this accessor will be obtained from the given feeding implementation and distributed to any number of slaves. */
   template<typename UserType>
   class ConsumingFanOut : public FanOut<UserType>, public mtca4u::NDRegisterAccessor<UserType> {
 
@@ -30,15 +31,15 @@ namespace ChimeraTK {
       }
 
       bool isReadable() const override {
-        return false;
+        return true;
       }
       
       bool isReadOnly() const override {
-        return false;
+        return true;
       }
       
       bool isWriteable() const override {
-        return true;
+        return false;
       }
       
       void doReadTransfer() override {

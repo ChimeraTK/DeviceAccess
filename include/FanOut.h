@@ -14,6 +14,7 @@
 
 namespace ChimeraTK {
 
+  /** Base class for several implementations which distribute values from one feeder to multiple consumers */
   template<typename UserType>
   class FanOut {
 

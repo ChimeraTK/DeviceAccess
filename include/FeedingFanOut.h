@@ -14,7 +14,9 @@
 
 namespace ChimeraTK {
 
-  
+  /** NDRegisterAccessor implementation which distributes values written to this accessor out to any number of slaves.
+   *  Note that this class is not actually based on the FanOut class, but has very similar functionality and interface
+   *  and thus is named like it were. */
   template<typename UserType>
   class FeedingFanOut : public mtca4u::NDRegisterAccessor<UserType> {
 

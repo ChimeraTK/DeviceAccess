@@ -15,6 +15,8 @@
 
 namespace ChimeraTK {
   
+  /** FanOut implementation with an internal thread which waits for new data which is read from the given feeding
+   *  implementation and distributed to any number of slaves. */
   template<typename UserType>
   class ThreadedFanOut : public FanOut<UserType>, public InternalModule {
 
