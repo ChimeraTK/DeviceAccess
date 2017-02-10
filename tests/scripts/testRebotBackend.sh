@@ -30,7 +30,10 @@ for PROTOCO_VERSION in 0 1; do
     fi 
 
     kill $SERVER_PID
-
+    #a small sleep so the port is actually freed for the next server which is
+    #starting in the next loop iteration
+    sleep .1
+    
 done
 
 
