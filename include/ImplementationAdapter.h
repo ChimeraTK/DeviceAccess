@@ -14,7 +14,7 @@
 
 namespace ChimeraTK {
 
-  /** Stupid base class just to be able to put the adapters into a list.
+  /** Simple base class just to be able to put the FanOuts into a list.
    *  @todo TODO find a better name! */
   class ImplementationAdapterBase {
     public:

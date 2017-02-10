@@ -379,8 +379,6 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
   bool useFeederTrigger = network.getTriggerType() == VariableNetwork::TriggerType::feeder;
 
-  boost::shared_ptr<FanOut<UserType>> fanOut;
-
   // 1st case: the feeder requires a fixed implementation
   if(feeder.hasImplementation()) {
 
@@ -439,7 +437,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else { /* !(nNodes == 2 && !useExternalTrigger) */
       // create FanOut
-      fanOut.reset(new FanOut<UserType>(feedingImpl));
+      auto fanOut = boost::make_shared<FanOut<UserType>>(feedingImpl);
 
       // use FanOut as implementation for the first application consumer node, add all others as slaves
       // @todo TODO need a more sophisticated logic to take care of the UpdateMode
@@ -534,7 +532,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else {
       // create FanOut and use it as the feeder implementation
-      fanOut.reset(new FanOut<UserType>());
+      auto fanOut = boost::make_shared<FanOut<UserType>>();
       feeder.getAppAccessor().useProcessVariable(fanOut);
 
       for(auto &consumer : consumers) {
