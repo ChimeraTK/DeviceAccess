@@ -10,26 +10,28 @@
 
 #include <mtca4u/NDRegisterAccessor.h>
 
-#include "ApplicationException.h"
+#include "FanOut.h"
 
 namespace ChimeraTK {
 
-  /** NDRegisterAccessor implementation which distributes values written to this accessor out to any number of slaves.
-   *  Note that this class is not actually based on the FanOut class, but has very similar functionality and interface
-   *  and thus is named like it were. */
+  /**
+   * NDRegisterAccessor implementation which distributes values written to this accessor out to any number of slaves.
+   */
   template<typename UserType>
-  class FeedingFanOut : public mtca4u::NDRegisterAccessor<UserType> {
+  class FeedingFanOut : public FanOut<UserType>, public mtca4u::NDRegisterAccessor<UserType> {
 
     public:
+      
+      FeedingFanOut() : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()) {}
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. The first slave added
       *   must not be a trigger receiver, since it defines the shape of the data buffer. */
-      void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) {
+      void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) override {
         if(!slave->isWriteable()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "FeedingFanOut::addSlave() has been called with a receiving implementation!");
         }
-        if(slaves.size() == 0) {    // first slave: initialise buffers
+        if(FanOut<UserType>::slaves.size() == 0) {    // first slave: initialise buffers
           assert(slave->getNumberOfChannels() != 0 && slave->getNumberOfSamples() != 0);
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( slave->getNumberOfChannels() );
           for(size_t i=0; i<slave->getNumberOfChannels(); i++) {
@@ -39,16 +41,16 @@ namespace ChimeraTK {
         else {
           // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
           if( slave->getNumberOfSamples() != 0 && 
-              ( slave->getNumberOfChannels() != slaves.front()->getNumberOfChannels() ||
-                slave->getNumberOfSamples() != slaves.front()->getNumberOfSamples()      ) ) {
+              ( slave->getNumberOfChannels() != FanOut<UserType>::slaves.front()->getNumberOfChannels() ||
+                slave->getNumberOfSamples() != FanOut<UserType>::slaves.front()->getNumberOfSamples()      ) ) {
             std::string what = "FeedingFanOut::addSlave(): Trying to add a slave '";
             what += slave->getName();
             what += "' with incompatible array shape! Name of first slave: ";
-            what += slaves.front()->getName();
+            what += FanOut<UserType>::slaves.front()->getName();
             throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(what.c_str());
           }
         }
-        slaves.push_back(slave);
+        FanOut<UserType>::slaves.push_back(slave);
       }
 
       bool isReadable() const override {
@@ -77,9 +79,9 @@ namespace ChimeraTK {
 
       void write() override {
         boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> firstSlave;   // will have the data for the other slaves after swapping
-        for(auto &slave : slaves) {               // send out copies to slaves
-          if(slave->getNumberOfSamples() != 0) {  // do not send copy if no data is expected (e.g. trigger)
-            if(!firstSlave) {                     // in case of first slave, swap instead of copy
+        for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
+          if(slave->getNumberOfSamples() != 0) {          // do not send copy if no data is expected (e.g. trigger)
+            if(!firstSlave) {                             // in case of first slave, swap instead of copy
               firstSlave = slave;
               firstSlave->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
             }
@@ -108,10 +110,6 @@ namespace ChimeraTK {
       void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {
         // You can't replace anything here. Just do nothing.
       }
-      
-    protected:
-
-      std::list<boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>> slaves;
 
   };
 

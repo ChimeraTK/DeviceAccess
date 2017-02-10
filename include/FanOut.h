@@ -23,9 +23,11 @@ namespace ChimeraTK {
       FanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
       : impl(feedingImpl)
       {}
+      
+      virtual ~FanOut() {}
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
-      void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) {
+      virtual void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) {
         if(!slave->isWriteable()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "FanOut::addSlave() has been called with a receiving implementation!");

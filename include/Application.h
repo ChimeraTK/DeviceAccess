@@ -18,6 +18,7 @@
 #include "Flags.h"
 #include "InternalModule.h"
 #include "EntityOwner.h"
+#include "TriggerFanOut.h"
 
 namespace ChimeraTK {
 
@@ -125,6 +126,9 @@ namespace ChimeraTK {
 
       /** List of constant variable nodes */
       std::list<VariableNetworkNode> constantList;
+      
+      /** Map of trigger sources to their corresponding TriggerFanOuts */
+      std::map<boost::shared_ptr<mtca4u::TransferElement>, boost::shared_ptr<TriggerFanOut>> triggerMap;
 
       /** Create a new, empty network */
       VariableNetwork& createNetwork();

@@ -27,18 +27,8 @@ namespace ChimeraTK {
       {}
       
 
-      /** If activate() has been called on this FanOut, deactivate() must be called before destruction. Otherweise
-       *  an assertion will be raised.
-       *  Design note: stopping the thread inside the destructor may be too late, since the thread will be accessing
-       *  the object while it is being destroyed already! */
       ~ThreadedFanOut() {
-        assert(!_thread.joinable());
-      }
-        
-      /** Add an external trigger to allow poll-type feeders to be used for push-type consumers */
-      void addExternalTrigger(const boost::shared_ptr<mtca4u::TransferElement>& externalTriggerImpl) {
-        externalTrigger = externalTriggerImpl;
-        hasExternalTrigger = true;
+        deactivate();
       }
 
       void activate() override {
@@ -57,18 +47,12 @@ namespace ChimeraTK {
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
         while(true) {
+          // receive data
           boost::this_thread::interruption_point();
-          if(hasExternalTrigger) {
-            // wait for external trigger (if present)
-            externalTrigger->read();
-            // receive data
-            FanOut<UserType>::impl->readNonBlocking();
-          }
-          else {
-            // receive data
-            FanOut<UserType>::impl->read();
-          }
-          for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
+          FanOut<UserType>::impl->read();
+          boost::this_thread::interruption_point();
+          // send out copies to slaves
+          for(auto &slave : FanOut<UserType>::slaves) {
             // do not send copy if no data is expected (e.g. trigger)
             if(slave->getNumberOfSamples() != 0) {
               slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
@@ -79,9 +63,6 @@ namespace ChimeraTK {
       }
       
     protected:
-
-      bool hasExternalTrigger{false};
-      boost::shared_ptr<mtca4u::TransferElement> externalTrigger;
 
       /** Thread handling the synchronisation, if needed */
       boost::thread _thread;

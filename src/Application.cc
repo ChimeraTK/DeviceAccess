@@ -22,6 +22,7 @@
 #include "ThreadedFanOut.h"
 #include "ConsumingFanOut.h"
 #include "FeedingFanOut.h"
+#include "TriggerFanOut.h"
 #include "VariableNetworkNode.h"
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
@@ -444,10 +445,13 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
       if(useExternalTrigger) {
         // if external trigger is enabled, use externally triggered threaded FanOut
-        auto threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
-        threadedFanOut->addExternalTrigger(network.getExternalTriggerImpl());
-        internalModuleList.push_back(threadedFanOut);
-        fanOut = threadedFanOut;
+        auto triggerNode = network.getExternalTriggerImpl();
+        auto triggerFanOut = triggerMap[triggerNode];
+        if(!triggerFanOut) {
+          triggerFanOut = boost::make_shared<TriggerFanOut>(triggerNode);
+          internalModuleList.push_back(triggerFanOut);
+        }
+        fanOut = triggerFanOut->addNetwork(feedingImpl);
       }
       else if(useFeederTrigger) {
         // if the trigger is provided by the pushing feeder, use the treaded version of the FanOut to distribute
