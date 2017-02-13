@@ -115,6 +115,9 @@ namespace ChimeraTK {
       const std::string& getRegisterName() const;
       void setNumberOfElements(size_t nElements);
       size_t getNumberOfElements() const;
+      
+      /** Return the unique ID of this node (will change every time the application is started). */
+      const void* getUniqueId() const {return pdata.get();}
 
     protected:
 
