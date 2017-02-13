@@ -127,8 +127,9 @@ namespace ChimeraTK {
       /** List of constant variable nodes */
       std::list<VariableNetworkNode> constantList;
       
-      /** Map of trigger sources to their corresponding TriggerFanOuts */
-      std::map<boost::shared_ptr<mtca4u::TransferElement>, boost::shared_ptr<TriggerFanOut>> triggerMap;
+      /** Map of trigger sources to their corresponding TriggerFanOuts. Note: we need to use the plain pointer as a
+       *  key, since the shared pointer objects would not be identical even when pointing to the same target. */
+      std::map<mtca4u::TransferElement*, boost::shared_ptr<TriggerFanOut>> triggerMap;
 
       /** Create a new, empty network */
       VariableNetwork& createNetwork();
