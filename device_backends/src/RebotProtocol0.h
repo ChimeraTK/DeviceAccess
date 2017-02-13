@@ -1,8 +1,10 @@
 #ifndef CHIMERATK_REBOT_PROTOCOL_0
 #define CHIMERATK_REBOT_PROTOCOL_0
 
-#include "RebotProtocolImplementor.h"
+#include <vector>
 #include <boost/shared_ptr.hpp>
+
+#include "RebotProtocolImplementor.h"
 
 namespace ChimeraTK{
   class TcpCtrl;
