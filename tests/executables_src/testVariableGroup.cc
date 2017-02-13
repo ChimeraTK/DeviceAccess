@@ -206,10 +206,6 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   // two changes at a time
   auto futureRead3 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
   BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
-  app.testModule.feedingPush2 = 234;
-  app.testModule.feedingPush3 = 345;
-  app.testModule.feedingPush2.write();
-  app.testModule.feedingPush3.write();
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 123);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -217,14 +213,12 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
 
-  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
-  BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 234);
-  BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
-  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
-  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
-  BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
+  app.testModule.feedingPush2 = 234;
+  app.testModule.feedingPush3 = 345;
+  app.testModule.feedingPush2.write();
+  app.testModule.feedingPush3.write();
 
+  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   auto futureRead4 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
   BOOST_CHECK(futureRead4.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
@@ -233,6 +227,5 @@ BOOST_AUTO_TEST_CASE( testMixedGroup ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
-
 
 }
