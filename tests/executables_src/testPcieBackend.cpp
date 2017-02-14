@@ -466,5 +466,7 @@ void PcieBackendTest::testCreateBackend(){
   fourthDevice.open("PCIE_DOUBLEMAP");
   BOOST_CHECK( fourthDevice.read<double>("BOARD/WORD_USER")== 48 );
 
+  // close the backend for the following tests. One of the Devices has opened it...
+  _pcieBackendInstance->close();
 }
 

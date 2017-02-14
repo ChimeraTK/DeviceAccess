@@ -1,5 +1,6 @@
 PCIE0     sdm://./pci:pcieunidummys6; ../mtcadummy_withoutModules.map
 PCIE1     sdm://./pci:pcieunidummys6; ./mapFile.map
+PCIE2     sdm://./pci:mtcadummys0; mapFile.map
 
 DUMMYD0   sdm://./dummy=../mtcadummy_withoutModules.map ../mtcadummy_withoutModules.map
 DUMMYD1   sdm://./dummy=mapFile.map mapFile.map

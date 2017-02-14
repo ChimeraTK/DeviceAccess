@@ -14,11 +14,8 @@ using mtca4u::numeric_address::BAR;
 namespace mtca4u {
 
   Device::~Device() {
-    if(static_cast<bool>(_deviceBackendPointer) != false) {     // Some backend is assigned: close it if opened.
-      if(_deviceBackendPointer->isOpen()) {                     // This prevents any existing register accessor of this device to be
-        _deviceBackendPointer->close();                         // used after this device was assigned to a new backend.
-      }
-    }
+    // Do NOT close the Backend here. Another device might be using the same
+    // backend.
   }
 
   /********************************************************************************************************************/

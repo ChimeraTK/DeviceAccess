@@ -550,6 +550,23 @@ void DeviceTest::testDeviceCreation() {
   device1.open("PCIE0");
   BOOST_CHECK( device1.isOpened() == true );
   BOOST_CHECK_NO_THROW(device1.open("PCIE0"));
+  {// scope to have a device which goes out of scope
+      mtca4u::Device device1a;
+      // open the same backend than device1
+      device1a.open("PCIE0");
+      BOOST_CHECK( device1a.isOpened() == true );
+  }
+  // check that device1 has not been closed by device 1a going out of scope
+  BOOST_CHECK( device1.isOpened() == true );
+
+  mtca4u::Device device1b;
+  // open the same backend than device1
+  device1b.open("PCIE0");
+  // open another backend with the same device //ugly, might be deprecated soon
+  device1b.open("PCIE2");
+  // check that device1 has not been closed by device 1b being reassigned
+  BOOST_CHECK( device1.isOpened() == true );
+   
   mtca4u::Device device2;
   BOOST_CHECK( device2.isOpened() == false );
   device2.open("PCIE1");
