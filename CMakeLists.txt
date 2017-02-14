@@ -95,11 +95,8 @@ endif(TESTING_IS_ENABLED)
 if(DEMO_IS_ENABLED)
 
   add_executable(demoApp example/demoApp.cc)
-  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}    \
-                                                          ${ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS}      \
-                                                       ${ControlSystemAdapter_LINK_FLAGS}     \
-                                                       ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
+  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
   target_link_libraries(demoApp ${PROJECT_NAME}
                                 ${mtca4u-deviceaccess_LIBRARIES}
                                 ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
@@ -156,10 +153,7 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
-set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}     \
-                               ${ControlSystemAdapter_CXX_FLAGS}")
-set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS}   \
-                                ${ControlSystemAdapter_LINK_FLAGS}  \
-                                ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
