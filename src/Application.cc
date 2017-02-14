@@ -444,12 +444,10 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       boost::shared_ptr<FanOut<UserType>> fanOut;
       boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
       if(useExternalTrigger) {
-        network.dump();
         // if external trigger is enabled, use externally triggered threaded FanOut
         auto triggerNode = feeder.getExternalTrigger();
         auto triggerFanOut = triggerMap[triggerNode.getUniqueId()];
         if(!triggerFanOut) {
-          triggerNode.dump();
           triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl());
           triggerMap[triggerNode.getUniqueId()] = triggerFanOut;
           internalModuleList.push_back(triggerFanOut);
