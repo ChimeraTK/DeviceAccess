@@ -300,8 +300,8 @@ namespace mtca4u {
   
   inline void TransferFuture::wait() {
     _theFuture.wait();
-    _transferElement->hasActiveFuture = false;
     _transferElement->postRead();
+    _transferElement->hasActiveFuture = false;
   }
 
   /*******************************************************************************************************************/  
