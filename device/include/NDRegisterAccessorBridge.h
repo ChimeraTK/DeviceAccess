@@ -35,8 +35,14 @@ namespace mtca4u {
        *  argument, both NDRegisterAccessorBridges will then point to the same accessor and thus are sharing the
        *  same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding
        *  getXXRegisterAccessor() function of Device must be called. */
-      void replace(const NDRegisterAccessorBridge &newAccessor) {
+      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) {
         _impl = newAccessor._impl;
+      }
+      
+      /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
+       *  has been obtained directly (instead of a NDRegisterAccessorBridge). */
+      void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
+        _impl = newImpl;
       }
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
