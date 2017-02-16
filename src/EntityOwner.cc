@@ -31,9 +31,9 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  const std::list<AccessorBase*> EntityOwner::getAccessorListRecursive() const {
+  std::list<VariableNetworkNode> EntityOwner::getAccessorListRecursive() {
     // add accessors of this instance itself
-    std::list<AccessorBase*> list = getAccessorList();
+    std::list<VariableNetworkNode> list = getAccessorList();
     
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {

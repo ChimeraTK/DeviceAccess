@@ -15,6 +15,7 @@
 #include <boost/mpl/list.hpp>
 #include <boost/thread.hpp>
 
+#include "Application.h"
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 #include "VariableGroup.h"

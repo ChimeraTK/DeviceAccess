@@ -9,7 +9,6 @@
 
 #include "VariableNetworkNode.h"
 #include "VariableNetwork.h"
-#include "Accessor.h"
 #include "Application.h"
 
 namespace ChimeraTK {
@@ -30,17 +29,20 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(AccessorBase &accessor)
+  VariableNetworkNode::VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name,
+                                  VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
+                                  const std::string &description, const std::type_info* valueType)
   : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::Application;
-    pdata->mode = accessor.getUpdateMode();
-    pdata->direction = accessor.getDirection();
-    pdata->valueType = &(accessor.getValueType());
-    pdata->unit = accessor.getUnit();
-    pdata->appNode = &accessor;
-    pdata->nElements = accessor.getNumberOfElements();
-    pdata->description = accessor.getDescription();
+    pdata->appNode = accessorBridge;
+    pdata->name = name;
+    pdata->mode = mode;
+    pdata->direction = direction;
+    pdata->valueType = valueType;
+    pdata->unit = unit;
+    pdata->nElements = nElements;
+    pdata->description = description;
   }
 
   /*********************************************************************************************************************/
@@ -99,7 +101,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::dump() const {
-    if(pdata->type == NodeType::Application) std::cout << " type = Application ('" << pdata->appNode->getName() << "')";
+    if(pdata->type == NodeType::Application) std::cout << " type = Application ('" << pdata->name << "')";
     if(pdata->type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << pdata->publicName << "')";
     if(pdata->type == NodeType::Device) std::cout << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
     if(pdata->type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
@@ -317,6 +319,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  const std::string& VariableNetworkNode::getName() const {
+    return pdata->name;
+  }
+
+  /*********************************************************************************************************************/
+
   const std::string& VariableNetworkNode::getUnit() const {
     return pdata->unit;
   }
@@ -332,19 +340,6 @@ namespace ChimeraTK {
   VariableNetwork& VariableNetworkNode::getOwner() const {
     assert(pdata->network != nullptr);
     return *(pdata->network);
-  }
-
-  /*********************************************************************************************************************/
-
-  AccessorBase& VariableNetworkNode::getAppAccessor() const {
-    assert(pdata->appNode != nullptr);
-    return *(pdata->appNode);
-  }
-
-  /*********************************************************************************************************************/
-
-  boost::shared_ptr<mtca4u::TransferElement> VariableNetworkNode::getConstAccessor() const {
-    return pdata->constNode;
   }
 
   /*********************************************************************************************************************/
@@ -385,6 +380,12 @@ namespace ChimeraTK {
 
   size_t VariableNetworkNode::getNumberOfElements() const {
     return pdata->nElements;
+  }
+
+  /*********************************************************************************************************************/
+
+  mtca4u::TransferElement& VariableNetworkNode::getAppAccessorNoType() {
+    return *(pdata->appNode);
   }
 
 }

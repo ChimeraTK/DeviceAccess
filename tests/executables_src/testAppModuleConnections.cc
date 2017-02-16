@@ -15,6 +15,7 @@
 
 #include <mtca4u/BackendFactory.h>
 
+#include "Application.h"
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
 #include "ApplicationModule.h"
@@ -214,8 +215,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoArrayAccessors, T, test_types ) {
   app.testModule.feedingArray >> app.testModule.consumingPushArray;
   app.initialise();
   
-  BOOST_CHECK(app.testModule.feedingArray.getNumberOfElements() == 10);
-  BOOST_CHECK(app.testModule.consumingPushArray.getNumberOfElements() == 10);
   BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
   BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
 

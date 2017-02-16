@@ -8,7 +8,6 @@
 #include <libxml++/libxml++.h>
 
 #include "VariableNetwork.h"
-#include "Accessor.h"
 #include "Application.h"
 
 namespace ChimeraTK {

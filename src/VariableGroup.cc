@@ -5,8 +5,9 @@
  *      Author: Martin Hierholzer
  */
 
+#include <mtca4u/TransferElement.h>
+
 #include "VariableGroup.h"
-#include "Accessor.h"
 
 namespace ChimeraTK {
 
@@ -19,10 +20,10 @@ namespace ChimeraTK {
     auto accessorList = getAccessorListRecursive();
 
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
-    std::list<std::reference_wrapper<TransferElement>> transferElementList;
+    std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
     for(auto &accessor : accessorList) {
-      if(accessor->getUpdateMode() == UpdateMode::push) {
-        transferElementList.emplace_back(*(accessor->getTransferElement()));
+      if(accessor.getMode() == UpdateMode::push) {
+        transferElementList.emplace_back(accessor.getAppAccessorNoType());
       }
     }
     
@@ -31,8 +32,8 @@ namespace ChimeraTK {
     
     // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
-      if(accessor->getUpdateMode() == UpdateMode::poll) {
-        accessor->read();
+      if(accessor.getMode() == UpdateMode::poll) {
+        accessor.getAppAccessorNoType().read();
       }
     }
   }
@@ -41,7 +42,7 @@ namespace ChimeraTK {
   
   VariableNetworkNode VariableGroup::operator()(const std::string& variableName) {
     for(auto variable : getAccessorList()) {
-      if(variable->getName() == variableName) return VariableNetworkNode(*variable);
+      if(variable.getName() == variableName) return VariableNetworkNode(variable);
     }
     throw std::logic_error("Variable '"+variableName+"' is not part of the variable group '"+_name+"'.");
   }

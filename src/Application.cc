@@ -17,7 +17,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "Accessor.h"
 #include "ThreadedFanOut.h"
 #include "ConsumingFanOut.h"
 #include "FeedingFanOut.h"
@@ -48,37 +47,37 @@ void Application::initialise() {
 void Application::processUnconnectedNodes() {
   for(auto &module : overallModuleList) {
     for(auto &accessor : module->getAccessorList()) {
-      if(!accessor->getNode().hasOwner()) {
-        std::cerr << "*** Warning: Variable '" << accessor->getName() << "' is not connected. "
+      if(!accessor.hasOwner()) {
+        std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "
                      "Reading will always result in 0, writing will be ignored." << std::endl;
         networkList.emplace_back();
-        networkList.back().addNode(*accessor);
+        networkList.back().addNode(accessor);
         
         bool makeFeeder = !(networkList.back().hasFeedingNode());
-        size_t length = accessor->getNumberOfElements();
+        size_t length = accessor.getNumberOfElements();
         
-        if(accessor->getNode().getValueType() == typeid(int8_t)) {
+        if(accessor.getValueType() == typeid(int8_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<int8_t>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(uint8_t)) {
+        else if(accessor.getValueType() == typeid(uint8_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<uint8_t>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(int16_t)) {
+        else if(accessor.getValueType() == typeid(int16_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<int16_t>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(uint16_t)) {
+        else if(accessor.getValueType() == typeid(uint16_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<uint16_t>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(int32_t)) {
+        else if(accessor.getValueType() == typeid(int32_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<int32_t>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(uint32_t)) {
+        else if(accessor.getValueType() == typeid(uint32_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<uint32_t>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(float)) {
+        else if(accessor.getValueType() == typeid(float)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<float>(makeFeeder, 0, length));
         }
-        else if(accessor->getNode().getValueType() == typeid(double)) {
+        else if(accessor.getValueType() == typeid(double)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<double>(makeFeeder, 0, length));
         }
         else {
@@ -103,8 +102,8 @@ void Application::checkConnections() {
   // check if all accessors are connected
   for(auto &module : overallModuleList) {
     for(auto &accessor : module->getAccessorList()) {
-      if(!accessor->getNode().hasOwner()) {
-        throw std::invalid_argument("The accessor '"+accessor->getName()+"' of the module '"+module->getName()+
+      if(!accessor.hasOwner()) {
+        throw std::invalid_argument("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+
                                     "' was not connected!");
       }
     }
@@ -131,8 +130,8 @@ void Application::run() {
   // (without triggering an action inside the application)
   for(auto &module : overallModuleList) {
     for(auto &variable : module->getAccessorList()) {
-      if(variable->getDirection() == VariableDirection::consuming) {
-        variable->readNonBlocking();
+      if(variable.getDirection() == VariableDirection::consuming) {
+        variable.getAppAccessorNoType().readNonBlocking();
       }
     }
   }
@@ -394,7 +393,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       feedingImpl = createProcessVariable<UserType>(feeder);
     }
     else if(feeder.getType() == NodeType::Constant) {
-      feedingImpl = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(feeder.getConstAccessor());
+      feedingImpl = feeder.getConstAccessor<UserType>();
       assert(feedingImpl != nullptr);
     }
     else {
@@ -405,7 +404,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2 && !useExternalTrigger) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        consumer.getAppAccessor().useProcessVariable(feedingImpl);
+        consumer.getAppAccessor<UserType>().replace(feedingImpl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Device) {
@@ -468,13 +467,13 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
           if(consumingFanOut) {
-            consumer.getAppAccessor().useProcessVariable(consumingFanOut);
+            consumer.getAppAccessor<UserType>().replace(consumingFanOut);
             consumingFanOut.reset();
           }
           else {
-            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getAppAccessor().getName());
+            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getName());
             fanOut->addSlave(impls.first);
-            consumer.getAppAccessor().useProcessVariable(impls.second);
+            consumer.getAppAccessor<UserType>().replace(impls.second);
           }
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
@@ -487,7 +486,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getAppAccessor().getName());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getName());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
@@ -509,31 +508,31 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
-        feeder.getAppAccessor().useProcessVariable(impls.first);
-        consumer.getAppAccessor().useProcessVariable(impls.second);
+        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
+        feeder.getAppAccessor<UserType>().replace(impls.first);
+        consumer.getAppAccessor<UserType>().replace(impls.second);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
         auto impl = createProcessVariable<UserType>(consumer);
-        feeder.getAppAccessor().useProcessVariable(impl);
+        feeder.getAppAccessor<UserType>().replace(impl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Device) {
         auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
-        feeder.getAppAccessor().useProcessVariable(impl);
+        feeder.getAppAccessor<UserType>().replace(impl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
-        feeder.getAppAccessor().useProcessVariable(impls.first);
+        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
+        feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Constant) {
-        auto impl = consumer.getConstAccessor();
-        feeder.getAppAccessor().useProcessVariable(impl);
+        auto impl = consumer.getConstAccessor<UserType>();
+        feeder.getAppAccessor<UserType>().replace(impl);
         connectionMade = true;
       }
       else {
@@ -542,15 +541,15 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else {
       // create FanOut and use it as the feeder implementation
-      auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getAppAccessor().getName(), feeder.getUnit(),
+      auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
                                                                 feeder.getDescription(), feeder.getNumberOfElements());
-      feeder.getAppAccessor().useProcessVariable(fanOut);
+      feeder.getAppAccessor<UserType>().replace(fanOut);
 
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
           fanOut->addSlave(impls.first);
-          consumer.getAppAccessor().useProcessVariable(impls.second);
+          consumer.getAppAccessor<UserType>().replace(impls.second);
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           auto impl = createProcessVariable<UserType>(consumer);
@@ -562,7 +561,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getAppAccessor().getName());
+          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }

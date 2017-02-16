@@ -8,9 +8,11 @@
 #ifndef CHIMERATK_DEVICE_MODULE_H
 #define CHIMERATK_DEVICE_MODULE_H
 
+#include <mtca4u/ForwardDeclarations.h>
+#include <mtca4u/RegisterPath.h>
+
 #include "VariableNetworkNode.h"
 #include "Module.h"
-#include <mtca4u/ForwardDeclarations.h>
 
 namespace ChimeraTK {
 

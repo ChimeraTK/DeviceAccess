@@ -16,6 +16,7 @@
 #include <mtca4u/BackendFactory.h>
 #include <mtca4u/NDRegisterAccessor.h>
 
+#include "Application.h"
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"

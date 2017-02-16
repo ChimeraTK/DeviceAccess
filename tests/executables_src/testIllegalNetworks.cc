@@ -15,6 +15,7 @@
 
 #include <mtca4u/BackendFactory.h>
 
+#include "Application.h"
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"

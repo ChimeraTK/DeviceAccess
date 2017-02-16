@@ -13,99 +13,43 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include "Accessor.h"
+#include <mtca4u/ScalarRegisterAccessor.h>
+
+#include "Module.h"
+#include "VariableNetworkNode.h"
 
 namespace ChimeraTK {
 
   /** Accessor for scalar variables (i.e. single values). Note for users: Preferrably use the convenience classes
    *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
   template< typename UserType >
-  class ScalarAccessor : public Accessor<UserType> {
+  class ScalarAccessor : public mtca4u::ScalarRegisterAccessor<UserType> {
     public:
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode, const std::string &description)
-      : Accessor<UserType>(owner, name, direction, unit, 1, mode, description)
-      {}
+      : node(this, name, direction, unit, 1, mode, description, &typeid(UserType))
+      {
+        owner->registerAccessor(*this);
+      }
 
       /** Default constructor creates a dysfunction accessor (to be assigned with a real accessor later) */
       ScalarAccessor() {}
 
-      void read() {
-        if(Accessor<UserType>::_mode == UpdateMode::push) {
-          impl->read();
-          boost::this_thread::interruption_point();
-        }
-        else {
-          /// @todo TODO empty the queue to always receive the latest value
-          impl->readNonBlocking();
-          boost::this_thread::interruption_point();
-        }
-      } // LCOV_EXCL_LINE this line somehow ends up having a negative counter in the coverage report, which leads to a failure
-
-      void write() {
-        impl->write();
-        boost::this_thread::interruption_point();
+      /** Convert into VariableNetworkNode */
+      operator VariableNetworkNode() {
+        return node;
       }
       
-      bool readNonBlocking() {
-        boost::this_thread::interruption_point();
-        return impl->readNonBlocking();
-      }
-        
-      /** Implicit type conversion to user type T to access the first element (often the only element).
-       *  This covers already a lot of operations like arithmetics and comparison */
-      operator UserType() {
-        return impl->accessData(0);
+      /** Connect with other node */
+      VariableNetworkNode operator>>(const VariableNetworkNode &otherNode) {
+        return node >> otherNode;
       }
 
-      /** Assignment operator */
-      ScalarAccessor<UserType>& operator=(UserType rightHandSide) {
-        impl->accessData(0) = rightHandSide;
-        return *this;
-      }
-
-      /** Pre-increment operator */
-      ScalarAccessor<UserType>& operator++() {
-        impl->accessData(0) = ++(impl->accessData(0));
-        return *this;
-      }
-
-      /** Pre-decrement operator */
-      ScalarAccessor<UserType>& operator--() {
-        impl->accessData(0) = --(impl->accessData(0));
-        return *this;
-      }
-
-      /** Post-increment operator */
-      UserType operator++(int) {
-        UserType temp = impl->accessData(0);
-        impl->accessData(0) = temp+1;
-        return temp;
-      }
-
-      /** Post-decrement operator */
-      UserType operator--(int) {
-        UserType temp = impl->accessData(0);
-        impl->accessData(0) = temp-1;
-        return temp;
-      }
-
-      bool isInitialised() const {
-        return impl != nullptr;
-      }
-
-      void useProcessVariable(const boost::shared_ptr<TransferElement > &var) {
-        impl = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(var);
-        assert(impl);
-        if(Accessor<UserType>::getDirection() == VariableDirection::consuming) {
-          assert(impl->isReadable());
-        }
-        else {
-          assert(impl->isWriteable());
-        }
-      }
+      using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
       
-      using Accessor<UserType>::impl;
+  protected:
+    
+      VariableNetworkNode node;
 
   };
 

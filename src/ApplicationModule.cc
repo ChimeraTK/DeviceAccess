@@ -6,7 +6,6 @@
  */
 
 #include "ApplicationModule.h"
-#include "Accessor.h"
 
 namespace ChimeraTK {
 
@@ -44,7 +43,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode ApplicationModule::operator()(const std::string& variableName) {
     for(auto variable : getAccessorList()) {
-      if(variable->getName() == variableName) return VariableNetworkNode(*variable);
+      if(variable.getName() == variableName) return VariableNetworkNode(variable);
     }
     throw std::logic_error("Variable '"+variableName+"' is not part of the module '"+_name+"'.");
   }

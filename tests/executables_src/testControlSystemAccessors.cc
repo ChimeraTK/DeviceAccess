@@ -17,6 +17,7 @@
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
 
+#include "Application.h"
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"

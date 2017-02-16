@@ -11,6 +11,8 @@
 #include <string>
 #include <list>
 
+#include "VariableNetworkNode.h"
+
 namespace ChimeraTK {
   
   class AccessorBase;
@@ -35,21 +37,21 @@ namespace ChimeraTK {
       const std::string& getName() const { return _name; }
       
       /** Obtain the list of accessors/variables directly associated with this instance */
-      const std::list<AccessorBase*>& getAccessorList() const { return accessorList; }
+      std::list<VariableNetworkNode>& getAccessorList() { return accessorList; }
       
       /** Obtain the list of submodules associated with this instance */
       const std::list<Module*>& getSubmoduleList() const { return moduleList; }
       
       /** Obtain the list of accessors/variables associated with this instance and any submodules */
-      const std::list<AccessorBase*> getAccessorListRecursive() const;
+      std::list<VariableNetworkNode> getAccessorListRecursive();
 
       /** Called inside the constructor of Accessor: adds the accessor to the list */
-      void registerAccessor(AccessorBase* accessor) {
+      void registerAccessor(VariableNetworkNode accessor) {
         accessorList.push_back(accessor);
       }
 
       /** Called inside the destructor of Accessor: removes the accessor from the list */
-      void unregisterAccessor(AccessorBase* accessor) {
+      void unregisterAccessor(VariableNetworkNode accessor) {
         accessorList.remove(accessor);
       }
       
@@ -65,7 +67,7 @@ namespace ChimeraTK {
       EntityOwner *_owner{nullptr};
       
       /** List of accessors owned by this instance */
-      std::list<AccessorBase*> accessorList;
+      std::list<VariableNetworkNode> accessorList;
 
       /** List of modules owned by this instance */
       std::list<Module*> moduleList;

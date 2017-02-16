@@ -7,7 +7,6 @@
 
 #include "Application.h"
 #include "Module.h"
-#include "Accessor.h"
 
 namespace ChimeraTK {
 
@@ -25,11 +24,11 @@ namespace ChimeraTK {
     
     // connect all direct variables of this module to their counter-parts in the right-hand-side module
     for(auto variable : getAccessorList()) {
-      if(variable->getDirection() == VariableDirection::feeding) {
-        variable->getNode() >> rhs(variable->getName());
+      if(variable.getDirection() == VariableDirection::feeding) {
+        variable >> rhs(variable.getName());
       }
       else {
-        rhs(variable->getName()) >> variable->getNode();
+        rhs(variable.getName()) >> variable;
       }
     }
     
