@@ -29,9 +29,6 @@ namespace ChimeraTK {
   template<typename UserType>
   class Accessor;
 
-  template<typename UserType>
-  class DeviceAccessor;
-
   class Application : public ApplicationBase, public EntityOwner {
 
     public:

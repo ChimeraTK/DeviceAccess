@@ -18,7 +18,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "Accessor.h"
-#include "DeviceAccessor.h"
 #include "ThreadedFanOut.h"
 #include "ConsumingFanOut.h"
 #include "FeedingFanOut.h"
@@ -265,12 +264,8 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
   mtca4u::AccessModeFlags flags{};
   if(mode == UpdateMode::push && direction == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
-  // create DeviceAccessor for the proper UserType
-  boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;
-  auto regacc = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
-  impl.reset(new DeviceAccessor<UserType>(regacc, direction, mode));
-
-  return impl;
+  // return the register accessor from the device
+  return deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 }
 
 /*********************************************************************************************************************/
