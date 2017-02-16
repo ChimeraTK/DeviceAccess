@@ -542,7 +542,8 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else {
       // create FanOut and use it as the feeder implementation
-      auto fanOut = boost::make_shared<FeedingFanOut<UserType>>();
+      auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getAppAccessor().getName(), feeder.getUnit(),
+                                                                feeder.getDescription(), feeder.getNumberOfElements());
       feeder.getAppAccessor().useProcessVariable(fanOut);
 
       for(auto &consumer : consumers) {

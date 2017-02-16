@@ -49,7 +49,8 @@ namespace ChimeraTK {
       template<typename UserType>
       boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingNode) {
         transferGroup.addAccessor(*feedingNode);
-        auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>();
+        auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>( feedingNode->getName(), feedingNode->getUnit(),
+            feedingNode->getDescription(), feedingNode->getNumberOfSamples() );
         boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
         return feedingFanOut;
       }

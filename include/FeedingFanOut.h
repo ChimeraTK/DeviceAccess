@@ -22,33 +22,27 @@ namespace ChimeraTK {
 
     public:
       
-      FeedingFanOut() : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()) {}
+      FeedingFanOut(std::string const &name, std::string const &unit, std::string const &description,
+                    size_t numberOfElements)
+      : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()),
+        mtca4u::NDRegisterAccessor<UserType>(name, unit, description)
+      {
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
+      }
 
-      /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. The first slave added
-      *   must not be a trigger receiver, since it defines the shape of the data buffer. */
+      /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
       void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) override {
         if(!slave->isWriteable()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "FeedingFanOut::addSlave() has been called with a receiving implementation!");
         }
-        if(FanOut<UserType>::slaves.size() == 0) {    // first slave: initialise buffers
-          assert(slave->getNumberOfChannels() != 0 && slave->getNumberOfSamples() != 0);
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( slave->getNumberOfChannels() );
-          for(size_t i=0; i<slave->getNumberOfChannels(); i++) {
-            mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( slave->getNumberOfSamples() );
-          }
-        }
-        else {
-          // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
-          if( slave->getNumberOfSamples() != 0 && 
-              ( slave->getNumberOfChannels() != FanOut<UserType>::slaves.front()->getNumberOfChannels() ||
-                slave->getNumberOfSamples() != FanOut<UserType>::slaves.front()->getNumberOfSamples()      ) ) {
-            std::string what = "FeedingFanOut::addSlave(): Trying to add a slave '";
-            what += slave->getName();
-            what += "' with incompatible array shape! Name of first slave: ";
-            what += FanOut<UserType>::slaves.front()->getName();
-            throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(what.c_str());
-          }
+        // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
+        if( slave->getNumberOfSamples() != 0 && 
+            ( slave->getNumberOfChannels() != 1 || slave->getNumberOfSamples() != this->getNumberOfSamples() ) ) {
+          std::string what = "FeedingFanOut::addSlave(): Trying to add a slave '" + slave->getName();
+          what += "' with incompatible array shape! Name of fan out: '" + this->getName() + "'";
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(what.c_str());
         }
         FanOut<UserType>::slaves.push_back(slave);
       }
