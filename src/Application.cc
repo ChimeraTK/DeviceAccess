@@ -258,7 +258,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
   // open device if needed
   if(deviceMap.count(deviceAlias) == 0) {
     deviceMap[deviceAlias] = mtca4u::BackendFactory::getInstance().createBackend(deviceAlias);
-    deviceMap[deviceAlias]->open();
+    if(!deviceMap[deviceAlias]->isOpen()) deviceMap[deviceAlias]->open();
   }
 
   // use wait_for_new_data mode if push update mode was requested
