@@ -45,9 +45,6 @@ namespace ChimeraTK {
 
     protected:
 
-      /** The backend used to access this device */
-      boost::shared_ptr<mtca4u::DeviceBackend> backend;
-
       std::string deviceAliasOrURI;
       mtca4u::RegisterPath registerNamePrefix;
       
