@@ -50,6 +50,14 @@ struct TestModule : public ctk::ApplicationModule {
     
     ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Descrption"};
 
+    ctk::ScalarPollInput<T> lateConstrScalarPollInput;
+    ctk::ScalarPushInput<T> lateConstrScalarPushInput;
+    ctk::ScalarOutput<T> lateConstrScalarOutput;
+
+    ctk::ArrayPollInput<T> lateConstrArrayPollInput;
+    ctk::ArrayPushInput<T> lateConstrArrayPushInput;
+    ctk::ArrayOutput<T> lateConstrArrayOutput;
+
     void mainLoop() {}
 };
 
@@ -240,5 +248,73 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoArrayAccessors, T, test_types ) {
   // check that the consumer now receives the just written value
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   for(unsigned int i=0; i<10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 42-(T)i);
+
+}
+
+/*********************************************************************************************************************/
+/* test case for late constructing accessors */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testLateConstruction, T, test_types ) {
+  std::cout << "*** testLateConstruction<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+
+  // create the scalars
+  app.testModule.lateConstrScalarPollInput.replace( ctk::ScalarPollInput<T>(&app.testModule, "LateName1", "", "") );
+  app.testModule.lateConstrScalarPushInput.replace( ctk::ScalarPushInput<T>(&app.testModule, "LateName2", "", "") );
+  app.testModule.lateConstrScalarOutput.replace( ctk::ScalarOutput<T>(&app.testModule, "LateName3", "", "") );
+
+  // connect the scalars
+  app.testModule.lateConstrScalarOutput >> app.testModule.lateConstrScalarPollInput;
+  app.testModule.feedingPush >> app.testModule.lateConstrScalarPushInput;
+
+  // create the arrays
+  app.testModule.lateConstrArrayPollInput.replace( ctk::ArrayPollInput<T>(&app.testModule, "LateName4", "", 10, "") );
+  app.testModule.lateConstrArrayPushInput.replace( ctk::ArrayPushInput<T>(&app.testModule, "LateName5", "", 10, "") );
+  app.testModule.lateConstrArrayOutput.replace( ctk::ArrayOutput<T>(&app.testModule, "LateName6", "", 10, "") );
+
+  // connect the arrays
+  app.testModule.lateConstrArrayOutput >> app.testModule.lateConstrArrayPollInput;
+  app.testModule.feedingArray >> app.testModule.lateConstrArrayPushInput;
+
+  // run the app
+  app.initialise();
+  app.run();
+
+  // test the scalars
+  app.testModule.feedingPush = 42;
+  app.testModule.feedingPush.write();
+  app.testModule.lateConstrScalarPushInput.read();
+  BOOST_CHECK(app.testModule.lateConstrScalarPushInput == 42);
+
+  app.testModule.feedingPush = 43;
+  app.testModule.feedingPush.write();
+  app.testModule.lateConstrScalarPushInput.read();
+  BOOST_CHECK(app.testModule.lateConstrScalarPushInput == 43);
+
+  app.testModule.lateConstrScalarOutput = 120;
+  app.testModule.lateConstrScalarOutput.write();
+  app.testModule.lateConstrScalarPollInput.read();
+  BOOST_CHECK(app.testModule.lateConstrScalarPollInput == 120);
+  app.testModule.lateConstrScalarPollInput.read();
+  BOOST_CHECK(app.testModule.lateConstrScalarPollInput == 120);
+
+  // test the arrays
+  app.testModule.feedingArray = {1,2,3,4,5,6,7,8,9,10};
+  app.testModule.feedingArray.write();
+  app.testModule.lateConstrArrayPushInput.read();
+  for(T i=0; i<10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPushInput[i] == i+1);
+
+  app.testModule.feedingArray = {10,20,30,40,50,60,70,80,90,100};
+  app.testModule.feedingArray.write();
+  app.testModule.lateConstrArrayPushInput.read();
+  for(T i=0; i<10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPushInput[i] == (i+1)*10);
+
+  app.testModule.lateConstrArrayOutput = {0,1,2,3,4,5,6,7,8,9};
+  app.testModule.lateConstrArrayOutput.write();
+  app.testModule.lateConstrArrayPollInput.read();
+  for(T i=0; i<10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPollInput[i] == i);
+  app.testModule.lateConstrArrayPollInput.read();
+  for(T i=0; i<10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPollInput[i] == i);
 
 }
