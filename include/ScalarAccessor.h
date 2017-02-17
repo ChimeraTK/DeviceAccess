@@ -20,20 +20,11 @@
 
 namespace ChimeraTK {
 
-  /** Accessor for scalar variables (i.e. single values). Note for users: Preferrably use the convenience classes
+  /** Accessor for scalar variables (i.e. single values). Note for users: Use the convenience classes
    *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
   template< typename UserType >
   class ScalarAccessor : public mtca4u::ScalarRegisterAccessor<UserType> {
     public:
-      ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
-          UpdateMode mode, const std::string &description)
-      : node(this, name, direction, unit, 1, mode, description, &typeid(UserType))
-      {
-        owner->registerAccessor(*this);
-      }
-
-      /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
-      ScalarAccessor() {}
 
       /** Convert into VariableNetworkNode */
       operator VariableNetworkNode() {
@@ -45,11 +36,42 @@ namespace ChimeraTK {
         return node >> otherNode;
       }
 
+      /** Replace with other ScalarRegisterAccessor */
+      void replace(const ScalarAccessor<UserType> &newAccessor) {
+	mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
+	node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
+				   newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
+				   &newAccessor.node.getValueType());
+	if(_owner != newAccessor._owner) {
+	  if(_owner != nullptr) _owner->unregisterAccessor(*this);
+          _owner = newAccessor._owner;
+	  _owner->registerAccessor(*this);
+	}
+      }
+
+      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
+
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
+
+      ~ScalarAccessor() {
+	if(_owner != nullptr) _owner->unregisterAccessor(*this);
+      }
       
   protected:
+
+      ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
+          UpdateMode mode, const std::string &description)
+	: node(this, name, direction, unit, 1, mode, description, &typeid(UserType)), _owner(owner)
+      {
+        owner->registerAccessor(*this);
+      }
+
+      /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
+      ScalarAccessor() {}
     
       VariableNetworkNode node;
+
+      Module *_owner{nullptr};
 
   };
 

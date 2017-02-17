@@ -19,20 +19,11 @@
 
 namespace ChimeraTK {
 
-  /** Accessor for array variables (i.e. vectors). Note for users: Preferrably use the convenience classes
+  /** Accessor for array variables (i.e. vectors). Note for users: Use the convenience classes
    *  ArrayPollInput, ArrayPushInput, ArrayOutput instead of this class directly. */
   template< typename UserType >
   class ArrayAccessor :  public mtca4u::OneDRegisterAccessor<UserType> {
     public:
-      ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
-          size_t nElements, UpdateMode mode, const std::string &description)
-      : node(this, name, direction, unit, nElements, mode, description, &typeid(UserType))
-      {
-        owner->registerAccessor(*this);
-      }
-      
-      /** Default constructor creates a dysfunction accessor (to be assigned with a real accessor later) */
-      ArrayAccessor() {}
 
       /** Convert into VariableNetworkNode */
       operator VariableNetworkNode() {
@@ -43,12 +34,41 @@ namespace ChimeraTK {
       VariableNetworkNode operator>>(const VariableNetworkNode &otherNode) {
         return node >> otherNode;
       }
+      /** Replace with other ScalarRegisterAccessor */
+      void replace(const ArrayAccessor<UserType> &newAccessor) {
+	mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
+	node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
+				   newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
+				   &newAccessor.node.getValueType());
+	if(_owner != newAccessor._owner) {
+	  if(_owner != nullptr) _owner->unregisterAccessor(*this);
+          _owner = newAccessor._owner;
+	  _owner->registerAccessor(*this);
+	}
+      }
+
+      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
 
       using mtca4u::OneDRegisterAccessor<UserType>::operator=;
+
+      ~ArrayAccessor() {
+	if(_owner != nullptr) _owner->unregisterAccessor(*this);
+      }
       
   protected:
+      ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
+          size_t nElements, UpdateMode mode, const std::string &description)
+	: node(this, name, direction, unit, nElements, mode, description, &typeid(UserType)), _owner(owner)
+      {
+        owner->registerAccessor(*this);
+      }
+      
+      /** Default constructor creates a dysfunction accessor (to be assigned with a real accessor later) */
+      ArrayAccessor() {}
     
       VariableNetworkNode node;
+
+      Module *_owner{nullptr};
 
   };
 
