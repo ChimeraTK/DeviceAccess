@@ -18,7 +18,6 @@ namespace ChimeraTK {
   
   void VariableGroup::readAny() {
     auto accessorList = getAccessorListRecursive();
-
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
     std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
     for(auto &accessor : accessorList) {
@@ -33,7 +32,7 @@ namespace ChimeraTK {
     // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
       if(accessor.getMode() == UpdateMode::poll) {
-        accessor.getAppAccessorNoType().read();
+        accessor.getAppAccessorNoType().readNonBlocking();
       }
     }
   }

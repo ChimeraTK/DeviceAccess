@@ -32,7 +32,7 @@ namespace ChimeraTK {
         owner->registerAccessor(*this);
       }
 
-      /** Default constructor creates a dysfunction accessor (to be assigned with a real accessor later) */
+      /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
       ScalarAccessor() {}
 
       /** Convert into VariableNetworkNode */
@@ -70,6 +70,8 @@ namespace ChimeraTK {
     : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::poll, description)
     {}
     ScalarPollInput() : ScalarAccessor<UserType>() {}
+    void doReadTransfer() override { this->doReadTransferNonBlocking(); }
+    void read() { this->readNonBlocking(); }
     using ScalarAccessor<UserType>::operator=;
   };
 
