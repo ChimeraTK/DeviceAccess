@@ -221,6 +221,7 @@ namespace ChimeraTK {
   template<typename UserType>
   mtca4u::NDRegisterAccessorBridge<UserType>& VariableNetworkNode::getAppAccessor() const {
     assert(typeid(UserType) == getValueType());
+    assert(pdata->type == NodeType::Application);
     auto accessor = dynamic_cast<mtca4u::NDRegisterAccessorBridge<UserType>*>(pdata->appNode);
     assert(accessor != nullptr);
     return *accessor;
