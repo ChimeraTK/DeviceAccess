@@ -81,6 +81,16 @@ namespace mtca4u {
         NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).swap(x);
       }
 
+      /* Copy content of (cooked) buffer from std::vector */
+      OneDRegisterAccessor<UserType>& operator=(const std::vector<UserType> &x) {
+        if(x.size() != NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).size()) {
+          throw DeviceException("Copying in a buffer of a different size is not allowed.",
+              DeviceException::WRONG_PARAMETER);
+        }
+        NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0) = x;
+	return *this;
+      }
+
       /** Return a direct pointer to the memory buffer storng the elements.
        *  @attention Note that this pointer will be invalidated during read(), write() and swap(). If this accessor is
        *  part of a TransferGroup, any call to one of these functions on any element of the TransferGroup or the
