@@ -69,7 +69,13 @@ namespace mtca4u {
         return buffer_2D.size();
       }
 
-      /** Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
+      /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
+       *  @todo This function is deprecated, remove it at some point!
+       * 
+       *  This function was deprecated since it cannot be implemented for lockfree implementations (like the
+       *  ControlSystemAdapter's ProcessVariable).
+       *  
+       *  Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
        *  AccessMode::wait_for_new_data to obtain the amount of data waiting for retrieval in this accessor. If the
        *  returned value is 0, the call to read() will block until new data has arrived. If the returned value is > 0,
        *  it is guaranteed that the next call to read() will not block. If the accessor was obtained without the
