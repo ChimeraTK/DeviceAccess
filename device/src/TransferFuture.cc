@@ -9,4 +9,4 @@ namespace ChimeraTK {
     _transferElement->hasActiveFuture = false;
   }
 
-};
+}
