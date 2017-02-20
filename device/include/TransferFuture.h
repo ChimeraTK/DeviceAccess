@@ -55,11 +55,16 @@ namespace ChimeraTK {
       TransferFuture(boost::shared_future<void> plainFuture, mtca4u::TransferElement *transferElement)
       : _theFuture(plainFuture), _transferElement(transferElement)
       {}
+      
+      /** Return the underlying BOOST future. Be caerful when using it. Simply waiting on that future is not sufficient
+       *  since the very purpose of this class is to add functionality. Always call TransferFuture::wait() before
+       *  accessing the TransferElement again! */
+      boost::shared_future<void>& getBoostFuture() { return _theFuture; }
+      
+      /** Return the corresponding TransferElement */
+      mtca4u::TransferElement& getTransferElement() { return *_transferElement; }
 
     protected:
-      
-      friend class mtca4u::TransferElement;
-      friend class mtca4u::TransferFutureIterator;
 
       /** The plain boost future */
       boost::shared_future<void> _theFuture;

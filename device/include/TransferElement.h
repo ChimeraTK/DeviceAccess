@@ -287,8 +287,8 @@ namespace mtca4u {
       TransferFutureIterator operator++(int) { ++_it; return *this; }
       bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
       bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
-      boost::shared_future<void>& operator*() {return _it->_theFuture;}
-      boost::shared_future<void>& operator->() {return _it->_theFuture;}
+      boost::shared_future<void>& operator*() {return _it->getBoostFuture();}
+      boost::shared_future<void>& operator->() {return _it->getBoostFuture();}
       TransferFuture getTransferFuture() const {return *_it;}
     private:
       std::list<TransferFuture>::iterator _it;
@@ -319,7 +319,7 @@ namespace mtca4u {
     boost::this_thread::interruption_point();
     iter.getTransferFuture().wait();    // complete the transfer (i.e. run postRead())
     boost::this_thread::interruption_point();
-    return *(iter.getTransferFuture()._transferElement);
+    return iter.getTransferFuture().getTransferElement();
   }
 
 } /* namespace mtca4u */
