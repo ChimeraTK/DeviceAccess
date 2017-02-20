@@ -10,8 +10,51 @@
 
 #include <mtca4u/NDRegisterAccessor.h>
 
+#include "Application.h"
+
 namespace ChimeraTK {
 
+  template<typename UserType>
+  class TestDecoratorRegisterAccessor;
+
+  /** Altered version of the TransferFuture since we need to deal with the lock in the wait() function. */
+  template<typename UserType>
+  class TestDecoratorTransferFuture : public TransferFuture {
+    public:
+      
+      TestDecoratorTransferFuture() : _originalFuture{nullptr} {}
+
+      TestDecoratorTransferFuture(TransferFuture &originalFuture,
+                                  boost::shared_ptr<TestDecoratorRegisterAccessor<UserType>> accessor)
+      : _originalFuture(&originalFuture), _accessor(accessor)
+      {
+        TransferFuture::_theFuture = _originalFuture->getBoostFuture();
+        TransferFuture::_transferElement = &(_originalFuture->getTransferElement());
+      }
+      
+      void wait() override {
+        if(!_accessor->firstReadTransfer) {
+          _accessor->application_lock.unlock();
+        }
+        else {
+          _accessor->firstReadTransfer = false;
+        }
+        _originalFuture->wait();
+        _accessor->postRead();
+        _accessor->hasActiveFuture = false;
+        _accessor->application_lock.lock();
+        ++Application::getInstance().testableMode_counter;
+      }
+
+    protected:
+      
+      TransferFuture *_originalFuture;
+      
+      boost::shared_ptr<TestDecoratorRegisterAccessor<UserType>> _accessor;
+  };
+
+  /*******************************************************************************************************************/
+  
   /** Decorator of the NDRegisterAccessor which facilitates tests of the application */
   template<typename UserType>
   class TestDecoratorRegisterAccessor : public mtca4u::NDRegisterAccessor<UserType> {
@@ -21,39 +64,49 @@ namespace ChimeraTK {
         _accessor(accessor) {
         buffer_2D.resize(_accessor->getNumberOfChannels());
         for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
-      }
-
-      mtca4u::TransferFuture readAsync() override {
-        return _accessor->readAsync();
+        assert(_accessor->isReadOnly());
+        application_lock = std::unique_lock<std::mutex>(Application::getInstance().testableMode_mutex, std::defer_lock);
       }
       
       void write() override {
-        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
-        _accessor->write();
-        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
+        throw std::logic_error("Write operation called on read-only variable.");
       }
 
       void doReadTransfer() override {
+        if(!firstReadTransfer) {
+          application_lock.unlock();
+        }
+        else {
+          firstReadTransfer = false;
+        }
         _accessor->doReadTransfer();
+        application_lock.lock();
+        ++Application::getInstance().testableMode_counter;
       }
 
       bool doReadTransferNonBlocking() override {
         return _accessor->doReadTransferNonBlocking();
       }
 
+      TransferFuture& readAsync() override {
+        auto &future = _accessor->readAsync();
+        auto sharedThis = boost::static_pointer_cast<TestDecoratorRegisterAccessor<UserType>>(this->shared_from_this());
+        TransferElement::hasActiveFuture = true;
+        activeTestDecoratorFuture = TestDecoratorTransferFuture<UserType>(future, sharedThis);
+        return activeTestDecoratorFuture;
+      }
+
       void postRead() override {
-        _accessor->postRead();
+        if(!TransferElement::hasActiveFuture) _accessor->postRead();
         for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
       }
 
       void preWrite() override {
-        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
-        _accessor->preWrite();
+        throw std::logic_error("Write operation called on read-only variable.");
       }
 
       void postWrite() override {
-        _accessor->postWrite();
-        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
+        throw std::logic_error("Write operation called on read-only variable.");
       }
 
       bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
@@ -89,6 +142,16 @@ namespace ChimeraTK {
       using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
 
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _accessor;
+      
+      /** Lock used to lock the testableMode_mutex of the application */
+      std::unique_lock<std::mutex> application_lock;
+      
+      /** Flag whether the call to doReadTransfer() is the first call after construction or not */
+      bool firstReadTransfer{true};
+      
+      friend class TestDecoratorTransferFuture<UserType>;
+      
+      TestDecoratorTransferFuture<UserType> activeTestDecoratorFuture;
   };
 
 } /* namespace ChimeraTK */

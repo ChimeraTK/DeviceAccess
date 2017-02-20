@@ -29,6 +29,9 @@ namespace ChimeraTK {
   template<typename UserType>
   class Accessor;
 
+  template<typename UserType>
+  class TestDecoratorRegisterAccessor;
+
   class Application : public ApplicationBase, public EntityOwner {
 
     public:
@@ -65,8 +68,34 @@ namespace ChimeraTK {
        *  created by the control system adapter, or if the instance is not based on the Application class. */
       static Application& getInstance();
       
-      /** Enable the testable mode. TODO @todo add further documentation */
+      /** Enable the testable mode. This allows to pause and resume the application for testing purposes using the
+       *  functions pauseApplication() and resumeApplication(). The application will start in paused state.
+       * 
+       *  This function must be called before the application is initialised (i.e. before the call to initialise()).
+       * 
+       *  Note: Enabling the testable mode will have a singificant impact on the performance, since it will prevent
+       *  any module threads to run at the same time! */
       void enableTestableMode() { testableMode = true; }
+      
+      /** Lock the mutex for the testable mode, which prevents any application thread from running. This works only if
+       *  enableTestableMode() was called before. */
+      void pauseApplication() { assert(testableMode); testableMode_lock.lock(); }
+
+      /** Unlock the mutex for the testable mode, which allows the application threads to run again. This works only if
+       *  enableTestableMode() was called before. */
+      void resumeApplication() { assert(testableMode); testableMode_lock.unlock(); }
+
+      /** Resume the application until all application threads are stuck in a blocking read operation. Must be called
+       *  while the application is paused. */
+      void stepApplication() {
+        while(true) {
+          testableMode_counter = 0;
+          resumeApplication();
+          usleep(100);
+          pauseApplication();
+          if(testableMode_counter == 0) break;
+        }
+      }
 
     protected:
 
@@ -143,6 +172,22 @@ namespace ChimeraTK {
       /** Flag if connections should be made in testable mode (i.e. the TestDecoratorRegisterAccessor is put around all
        *  push-type input accessors etc.). */
       bool testableMode{false};
+      
+      /** Mutex used in testable mode to take control over the application threads. */
+      std::mutex testableMode_mutex;
+      
+      /** The lock used to lock the testableMode_mutex. */
+      std::unique_lock<std::mutex> testableMode_lock{testableMode_mutex};
+      
+      /** Counter used in testable mode to check if application code was executed after releasing the testableMode_mutex.
+       *  This value may only be accessed while holding the testableMode_mutex. */
+      size_t testableMode_counter{0};
+
+      template<typename UserType>
+      friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter
+
+      template<typename UserType>
+      friend class TestDecoratorTransferFuture;   // needs access to the testableMode_mutex and testableMode_counter
 
   };
 
