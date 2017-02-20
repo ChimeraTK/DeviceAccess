@@ -205,7 +205,13 @@ namespace mtca4u {
        *  Called by the TransferGroup after a write will be executed directly on the underlying accessor. */
       virtual void postWrite() {};
 
-      /** Check if the two TransferElements are identical, i.e. accessing the same hardware register */
+      /** 
+       *  Check if the two TransferElements are identical, i.e. accessing the same hardware register. The definition of
+       *  an "hardware register" is strongly depending on the backend implementation, thus using this function in
+       *  application code will probably break the abstraction!
+       *
+       *  @todo Rename this function to something more appropriate (e.g. mayJoinTransfer?)
+       */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
 
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
@@ -239,22 +245,32 @@ namespace mtca4u {
         throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
       }
 
-      /** Obtain the underlying TransferElements with actual hardware access. If this transfer element
+      /** 
+       *  Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing
        *  a shared pointer of itself.
+       * 
+       *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() = 0;
 
-      /** Obtain the highest level implementation TransferElement. For TransferElements which are itself an
+      /** 
+       *  Obtain the highest level implementation TransferElement. For TransferElements which are itself an
        *  implementation this will directly return a shared pointer to this. If this TransferElement is a user
-       *  frontend, the pointer to the internal implementation is returned. */
+       *  frontend, the pointer to the internal implementation is returned.
+       *
+       *  Note: Avoid using this in application code, since it will break the abstraction!
+       */
       virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
         return shared_from_this();
       }
 
-      /** Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
+      /** 
+       *  Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
        *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
        *  element matches the new element, this function has no effect.
+       *
+       *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
 

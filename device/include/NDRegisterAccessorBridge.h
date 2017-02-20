@@ -85,17 +85,6 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
       }
 
-    protected:
-
-      NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
-      : _impl(impl)
-      {}
-
-      NDRegisterAccessorBridge() {}
-
-      /** pointer to the implementation */
-      boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
-
       bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         return _impl->isSameRegister(other);
       }
@@ -117,11 +106,22 @@ namespace mtca4u {
         return _impl;
       }
 
-      friend class TransferGroup;
-
       const std::type_info& getValueType() const override {
         return typeid(UserType);
       }
+
+    protected:
+
+      NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
+      : _impl(impl)
+      {}
+
+      NDRegisterAccessorBridge() {}
+
+      /** pointer to the implementation */
+      boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
+
+      //friend class TransferGroup;
 
     private:
 
