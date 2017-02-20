@@ -38,7 +38,7 @@ namespace mtca4u {
   /*******************************************************************************************************************/
 
   /** Base class for register accessors which can be part of a TransferGroup */
-  class TransferElement : public boost::enable_shared_from_this<TransferElement>{
+  class TransferElement : public boost::enable_shared_from_this<TransferElement> {
 
     public:
 
@@ -46,6 +46,20 @@ namespace mtca4u {
       TransferElement(std::string const &name = std::string(), std::string const &unit = std::string(unitNotSet),
                       std::string const &description = std::string())
       : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
+      
+      /** Copy constructor: do not allow copying when in TransferGroup, remove asynchronous read state */
+      TransferElement(const TransferElement &other)
+      : boost::enable_shared_from_this<TransferElement>(),
+        _name(other._name),
+        _unit(other._unit),
+        _description(other._description),
+        isInTransferGroup{false}
+      {
+        if(other.isInTransferGroup) {
+          throw DeviceException("Copying a TransferElement which is part of a TransferGroup is not allowed.",
+              DeviceException::WRONG_PARAMETER);
+        }
+      }
       
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
@@ -284,16 +298,16 @@ namespace mtca4u {
    *  return value of boost::wait_for_any(). */
   class TransferFutureIterator {
     public:
-      TransferFutureIterator(const std::list<TransferFuture>::iterator &it) : _it(it) {}
+      TransferFutureIterator(const std::list<TransferFuture*>::iterator &it) : _it(it) {}
       TransferFutureIterator operator++() { TransferFutureIterator ret(_it); ++_it; return ret; }
       TransferFutureIterator operator++(int) { ++_it; return *this; }
       bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
       bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
-      boost::shared_future<void>& operator*() {return _it->getBoostFuture();}
-      boost::shared_future<void>& operator->() {return _it->getBoostFuture();}
-      TransferFuture getTransferFuture() const {return *_it;}
+      boost::shared_future<void>& operator*() {return (*_it)->getBoostFuture();}
+      boost::shared_future<void>& operator->() {return (*_it)->getBoostFuture();}
+      TransferFuture& getTransferFuture() const {return **_it;}
     private:
-      std::list<TransferFuture>::iterator _it;
+      std::list<TransferFuture*>::iterator _it;
   };
   
 } /* namespace mtca4u */
@@ -310,9 +324,9 @@ namespace mtca4u {
   /*******************************************************************************************************************/  
   
   inline TransferElement& TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-    std::list<TransferFuture> futureList;
+    std::list<TransferFuture*> futureList;
     for(auto elem : elementsToRead) {
-      auto future = elem.get().readAsync();
+      auto *future = &(elem.get().readAsync());
       futureList.push_back(future);
     }
     // See class description of TransferFutureIterator. We need this trick to obtain the transfer element from the

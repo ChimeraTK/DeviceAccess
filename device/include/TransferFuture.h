@@ -63,7 +63,22 @@ namespace ChimeraTK {
       
       /** Return the corresponding TransferElement */
       mtca4u::TransferElement& getTransferElement() { return *_transferElement; }
+      
+      /** Make the TransferFuture non-copyable (otherwise we get problems with polymorphism) */
+      TransferFuture(const TransferFuture &other) = delete;
+      TransferFuture& operator=(const TransferFuture &other) = delete;
+      
+      /** Allow move operation on the TransferFuture */
+      TransferFuture(const TransferFuture &&other)
+      : _theFuture(other._theFuture), _transferElement(other._transferElement) {}
 
+      TransferFuture& operator=(const TransferFuture &&other) {
+        _theFuture = other._theFuture;
+        _transferElement = other._transferElement;
+        return *this;
+      }
+
+      
     protected:
 
       /** The plain boost future */

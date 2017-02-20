@@ -93,20 +93,20 @@ void AsyncReadTest::testAsyncRead() {
   backend->readMutex[0x08].unlock();
 
   // simple reading through readAsync without actual need
-  TransferFuture future;
+  TransferFuture *future;
   dummy = 5;
-  future = accessor.readAsync();
-  future.wait();
+  future = &(accessor.readAsync());
+  future->wait();
   BOOST_CHECK( accessor == 5 );
 
   // check that future's wait() function won't return before the read is complete
   for(int i=0; i<5; ++i) {
     dummy = 42+i;
     backend->readMutex[0x08].lock();
-    future = accessor.readAsync();
+    future = &(accessor.readAsync());
     std::atomic<bool> flag;
     flag = false;
-    std::thread thread([&future, &flag] { future.wait(); flag = true; });
+    std::thread thread([&future, &flag] { future->wait(); flag = true; });
     usleep(100000);
     BOOST_CHECK(flag == false);
     backend->readMutex[0x08].unlock();
@@ -118,20 +118,20 @@ void AsyncReadTest::testAsyncRead() {
   backend->readMutex[0x08].lock();
   dummy = 666;
   for(int i=0; i<5; ++i) {
-    future = accessor.readAsync();
+    future = &(accessor.readAsync());
     BOOST_CHECK( accessor == 46 );    // still the old value from the last test part
   }
   backend->readMutex[0x08].unlock();
-  future.wait();
+  future->wait();
   BOOST_CHECK( accessor == 666 );
   
   // now try another asynchronous transfer
   dummy = 999;
   backend->readMutex[0x08].lock();
-  future = accessor.readAsync();
+  future = &(accessor.readAsync());
   std::atomic<bool> flag;
   flag = false;
-  std::thread thread([&future, &flag] { future.wait(); flag = true; });
+  std::thread thread([&future, &flag] { future->wait(); flag = true; });
   usleep(100000);
   BOOST_CHECK(flag == false);
   backend->readMutex[0x08].unlock();
