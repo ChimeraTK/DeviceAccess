@@ -23,6 +23,7 @@
 
 #include "DeviceException.h"
 #include "TimeStamp.h"
+#include "TransferFuture.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -31,50 +32,8 @@ namespace ChimeraTK {
 namespace mtca4u {
 
   class TransferGroup;
-  class TransferElement;
-  class TransferFutureIterator;
-
-  /** Special future returned by TransferElement::readAsync(). See its function description for more details.
-   * 
-   *  Implementation note: for efficiency reasons we keep this class in the same header file as the TransferElement, as
-   *  this allows us to make the implementation inline. This might not be really necessary and will not improve
-   *  performance any more if the class will have to be made virtual, but as long as there is no need for this
-   *  extra flexibility we can keep it like this. */
-  class TransferFuture {
-    public:
-      
-      /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
-       *  automatically executed before returning, so the new data is directly available in the buffer. */
-      void wait();
-
-      /** Default constructor to generate a dysfunctional future (just for late initialisation) */
-      TransferFuture()
-      : _transferElement(nullptr) {}
-
-      /** Constructor to generate an already fulfilled future. */
-      TransferFuture(TransferElement *transferElement)
-      : _transferElement(transferElement) {
-        boost::promise<void> prom;
-        _theFuture = prom.get_future().share();
-        prom.set_value();
-      }
-      
-      /** Constructor accepting a "plain" boost::shared_future */
-      TransferFuture(boost::shared_future<void> plainFuture, TransferElement *transferElement)
-      : _theFuture(plainFuture), _transferElement(transferElement)
-      {}
-
-    protected:
-      
-      friend class TransferElement;
-      friend class TransferFutureIterator;
-
-      /** The plain boost future */
-      boost::shared_future<void> _theFuture;
-      
-      /** Pointer to the TransferElement */
-      TransferElement *_transferElement;
-  };
+  
+  using ChimeraTK::TransferFuture;
   
   /*******************************************************************************************************************/
 
@@ -311,14 +270,6 @@ namespace mtca4u {
       friend class TransferGroup;
       friend class TransferFuture;
   };
-
-  /*******************************************************************************************************************/  
-  
-  inline void TransferFuture::wait() {
-    _theFuture.wait();
-    _transferElement->postRead();
-    _transferElement->hasActiveFuture = false;
-  }
 
   /*******************************************************************************************************************/  
 
