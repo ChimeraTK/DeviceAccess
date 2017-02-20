@@ -116,10 +116,12 @@ namespace mtca4u {
        *
        *  Design note: A special type of future has to be returned to allow an abstraction from the implementation
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
-       *  without launching a thread.
+       *  without launching a thread. A reference is returned since we need polymorphism. This is possible since
+       *  the implementation anyway needs to store the object to be able to return it a second time if readAsync()
+       *  is called again before the future is fulfilled.
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture readAsync() = 0;
+      virtual TransferFuture& readAsync() = 0;
       
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
        *  new data. The TransferElement which received new data is returned as a reference. When this function

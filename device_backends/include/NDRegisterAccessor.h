@@ -73,7 +73,7 @@ namespace mtca4u {
         return typeid(UserType);
       }
 
-      TransferFuture readAsync() override {
+      TransferFuture& readAsync() override {
         ChimeraTK::ExperimentalFeatures::check("asynchronous read");
         if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
         
