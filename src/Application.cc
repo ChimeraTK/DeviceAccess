@@ -25,6 +25,7 @@
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
 #include "ConstantAccessor.h"
+#include "TestDecoratorRegisterAccessor.h"
 
 using namespace ChimeraTK;
 
@@ -281,9 +282,19 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
     dir = SynchronizationDirection::deviceToControlSystem;
   }
 
-  // create the ProcessScalar for the proper UserType
-  return _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
+  // create the ProcessArray for the proper UserType
+  boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> pvar;
+  pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
                                                                node.getOwner().getUnit(), node.getOwner().getDescription());
+
+  // decorate the process variable if testable mode is enabled and if this is the receiving end of the variable
+  if(testableMode && node.getDirection() == VariableDirection::feeding) {
+    mtca4u::NDRegisterAccessor<UserType>* deco = new TestDecoratorRegisterAccessor<UserType>(pvar);
+    pvar.reset(deco);
+  }
+  
+  // return the process variable
+  return pvar;
 }
 
 /*********************************************************************************************************************/
@@ -292,8 +303,18 @@ template<typename UserType>
 std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
   Application::createApplicationVariable(size_t nElements, const std::string &name) {
 
-  // create the ProcessScalar for the proper UserType
-  return createSynchronizedProcessArray<UserType>(nElements, name);
+  // create the ProcessArray for the proper UserType
+  std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
+  pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
+  
+  // decorate the receiving end of the process variable if testable mode is enabled
+  if(testableMode) {
+    mtca4u::NDRegisterAccessor<UserType>* deco = new TestDecoratorRegisterAccessor<UserType>(pvarPair.second);
+    pvarPair.second.reset(deco);
+  }
+  
+  // return the pair
+  return pvarPair;
 }
 
 /*********************************************************************************************************************/

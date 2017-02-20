@@ -64,6 +64,9 @@ namespace ChimeraTK {
       /** Obtain instance of the application. Will throw an exception if called before the instance has been
        *  created by the control system adapter, or if the instance is not based on the Application class. */
       static Application& getInstance();
+      
+      /** Enable the testable mode. TODO @todo add further documentation */
+      void enableTestableMode() { testableMode = true; }
 
     protected:
 
@@ -111,7 +114,7 @@ namespace ChimeraTK {
       void overallRegisterModule(Module &module) {
         overallModuleList.push_back(&module);
       }
-
+      
       /** List of application modules */
       std::list<Module*> overallModuleList;   /// @todo TODO FIXME maybe recursing through all modules is better than having an additional overall list?
 
@@ -136,6 +139,10 @@ namespace ChimeraTK {
 
       /** Map of DeviceBackends used by this application. The map key is the alias name from the DMAP file */
       std::map<std::string, boost::shared_ptr<mtca4u::DeviceBackend>> deviceMap;
+      
+      /** Flag if connections should be made in testable mode (i.e. the TestDecoratorRegisterAccessor is put around all
+       *  push-type input accessors etc.). */
+      bool testableMode{false};
 
   };
 
