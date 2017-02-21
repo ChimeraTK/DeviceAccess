@@ -372,6 +372,85 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
   BOOST_CHECK(app.noLoopTestModule.someInput == 66);
   BOOST_CHECK(app.noLoopTestModule.someUIntInput == 4);
   
+  // send something to v1
+  app.noLoopTestModule.outputs.v1 = 33;
+  app.noLoopTestModule.outputs.v1.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 33);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
+  
+  // send something to v1 again
+  app.noLoopTestModule.outputs.v1 = 34;
+  app.noLoopTestModule.outputs.v1.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 34);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
+  
+  // send something to v3
+  app.noLoopTestModule.outputs.v3 = 40;
+  app.noLoopTestModule.outputs.v3.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 40);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 3);
+  
+  // send something to v2
+  app.noLoopTestModule.outputs.v2 = 50;
+  app.noLoopTestModule.outputs.v2.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 50);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 2);
+  
+  // send something to v1 a 3rd time
+  app.noLoopTestModule.outputs.v1 = 35;
+  app.noLoopTestModule.outputs.v1.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 35);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
+  
 }
 
-// TODO: testReadAny   and   test with multiple application threads!
