@@ -83,6 +83,7 @@ struct BlockingReadTestModule : public ctk::ApplicationModule {
         someInput.read();
         T val = someInput;
         someOutput = val;
+        usleep(10000);  // wait some extra time to make sure we are really blocking the test procedure thread
         someOutput.write();
       }
     }
@@ -104,6 +105,7 @@ struct AsyncReadTestModule : public ctk::ApplicationModule {
         future.wait();
         T val = someInput;
         someOutput = val;
+        usleep(10000);  // wait some extra time to make sure we are really blocking the test procedure thread
         someOutput.write();
       }
     }
