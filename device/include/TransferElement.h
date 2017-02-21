@@ -142,7 +142,7 @@ namespace mtca4u {
        *  returns, the all elements but the returned TransferElement still have a pending transfer, thus calling
        *  read() or write() and similar functions on them is illegal. Only their current values may be accessed,
        *  another readAny() or readAsync() may be called. */
-      static TransferElement& readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+      static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /** Write the data to device. */
       virtual void write() = 0;
@@ -323,7 +323,7 @@ namespace mtca4u {
 
   /*******************************************************************************************************************/  
   
-  inline TransferElement& TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+  inline boost::shared_ptr<TransferElement> TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
     std::list<TransferFuture*> futureList;
     for(auto elem : elementsToRead) {
       auto *future = &(elem.get().readAsync());
@@ -335,7 +335,7 @@ namespace mtca4u {
     boost::this_thread::interruption_point();
     iter.getTransferFuture().wait();    // complete the transfer (i.e. run postRead())
     boost::this_thread::interruption_point();
-    return iter.getTransferFuture().getTransferElement();
+    return iter.getTransferFuture().getTransferElement().shared_from_this();
   }
 
 } /* namespace mtca4u */
