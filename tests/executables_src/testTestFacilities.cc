@@ -451,6 +451,93 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
   BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
   BOOST_CHECK(app.noLoopTestModule.someInput == 35);
   BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
+
+  // check that we still don't receive anything anymore, even if we try running the application again
+  app.stepApplication();
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
   
 }
 
+/*********************************************************************************************************************/
+/* test the interplay of multiple chained modules and their threads in test mode */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testChainedModules, T, test_types ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testChainedModules<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+
+  // put everything we got into one chain
+  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;
+  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
+  app.blockingReadTestModule.someOutput >> app.asyncReadTestModule.someInput;
+  app.asyncReadTestModule.someOutput >> app.noLoopTestModule.someInput;
+  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput;
+  app.noLoopTestModule.someOutput >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+
+  app.enableTestableMode();
+  app.initialise();
+  app.run();
+
+  // check that we don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // send something to v2
+  app.noLoopTestModule.outputs.v2 = 11;
+  app.noLoopTestModule.outputs.v2.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 11);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 2);
+  
+  // send something to v3
+  app.noLoopTestModule.outputs.v3 = 12;
+  app.noLoopTestModule.outputs.v3.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 12);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 3);
+  
+  // send something to v3 again
+  app.noLoopTestModule.outputs.v3 = 13;
+  app.noLoopTestModule.outputs.v3.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 13);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 3);
+
+  // check that we still don't receive anything anymore, even if we try running the application again
+  app.stepApplication();
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+
+}
