@@ -7,6 +7,7 @@
 
 #include <mtca4u/TransferElement.h>
 
+#include "Application.h"
 #include "VariableGroup.h"
 
 namespace ChimeraTK {
@@ -16,7 +17,7 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
   
-  void VariableGroup::readAny() {
+  boost::shared_ptr<mtca4u::TransferElement> VariableGroup::readAny() {
     auto accessorList = getAccessorListRecursive();
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
     std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
@@ -27,7 +28,7 @@ namespace ChimeraTK {
     }
     
     // wait until one of the push-type accessors receives an update
-    mtca4u::TransferElement::readAny(transferElementList);
+    auto ret = Application::getInstance().readAny(transferElementList);
     
     // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
@@ -35,6 +36,8 @@ namespace ChimeraTK {
         accessor.getAppAccessorNoType().readNonBlocking();
       }
     }
+    
+    return ret;
   }
 
 /*********************************************************************************************************************/

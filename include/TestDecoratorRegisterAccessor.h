@@ -33,16 +33,16 @@ namespace ChimeraTK {
       }
       
       void wait() override {
-        if(!_accessor->firstReadTransfer) {
-          _accessor->application_lock.unlock();
+        try {
+          Application::getTestableModeLockObject().unlock();
         }
-        else {
-          _accessor->firstReadTransfer = false;
+        catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
+          if(e.code() != std::errc::operation_not_permitted) throw e;
         }
         _originalFuture->wait();
         _accessor->postRead();
         _accessor->hasActiveFuture = false;
-        _accessor->application_lock.lock();
+        Application::getTestableModeLockObject().lock();
         ++Application::getInstance().testableMode_counter;
       }
 
@@ -65,7 +65,6 @@ namespace ChimeraTK {
         buffer_2D.resize(_accessor->getNumberOfChannels());
         for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
         assert(_accessor->isReadOnly());
-        application_lock = std::unique_lock<std::mutex>(Application::getInstance().testableMode_mutex, std::defer_lock);
       }
       
       void write() override {
@@ -73,14 +72,14 @@ namespace ChimeraTK {
       }
 
       void doReadTransfer() override {
-        if(!firstReadTransfer) {
-          application_lock.unlock();
+        try {
+          Application::getTestableModeLockObject().unlock();
         }
-        else {
-          firstReadTransfer = false;
+        catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
+          if(e.code() != std::errc::operation_not_permitted) throw e;
         }
         _accessor->doReadTransfer();
-        application_lock.lock();
+        Application::getTestableModeLockObject().lock();
         ++Application::getInstance().testableMode_counter;
       }
 
@@ -142,12 +141,6 @@ namespace ChimeraTK {
       using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
 
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _accessor;
-      
-      /** Lock used to lock the testableMode_mutex of the application */
-      std::unique_lock<std::mutex> application_lock;
-      
-      /** Flag whether the call to doReadTransfer() is the first call after construction or not */
-      bool firstReadTransfer{true};
       
       friend class TestDecoratorTransferFuture<UserType>;
       

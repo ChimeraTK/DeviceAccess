@@ -22,6 +22,7 @@
 #include "DeviceModule.h"
 #include "ControlSystemModule.h"
 #include "TestDecoratorRegisterAccessor.h"
+#include "VariableGroup.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -51,7 +52,17 @@ struct NoLoopTestModule : public ctk::ApplicationModule {
     NoLoopTestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
 
     ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
+    ctk::ScalarPushInput<uint32_t> someUIntInput{this, "someUIntInput", "", "Unsigned integer"};
     ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
+
+    struct Outputs : public ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarOutput<T> v1{this, "v1", "cm", "Output 1 for testing"};
+      ctk::ScalarOutput<T> v2{this, "v2", "cm", "Output 2 for testing"};
+      ctk::ScalarOutput<T> v3{this, "v3", "cm", "Output 3 for testing"};
+      ctk::ScalarOutput<T> v4{this, "v4", "cm", "Output 4 for testing"};
+    };
+    Outputs outputs{this, "outputs"};
 
     void mainLoop() {
     }
@@ -99,6 +110,54 @@ struct AsyncReadTestModule : public ctk::ApplicationModule {
 };
 
 /*********************************************************************************************************************/
+/* the ReadAnyTestModule calls readAny on a bunch of inputs and outputs some information on the received data */
+
+template<typename T>
+struct ReadAnyTestModule : public ctk::ApplicationModule {
+    ReadAnyTestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+
+    struct Inputs : public ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarPushInput<T> v1{this, "v1", "cm", "Input 1 for testing"};
+      ctk::ScalarPushInput<T> v2{this, "v2", "cm", "Input 2 for testing"};
+      ctk::ScalarPushInput<T> v3{this, "v3", "cm", "Input 3 for testing"};
+      ctk::ScalarPushInput<T> v4{this, "v4", "cm", "Input 4 for testing"};
+    };
+    Inputs inputs{this, "inputs"};
+    ctk::ScalarOutput<T> value{this, "value", "cm", "The last value received from any of the inputs"};
+    ctk::ScalarOutput<uint32_t> index{this, "index", "", "The index (1..4) of the input where the last value was received"};
+
+    void mainLoop() {
+      while(true) {
+        auto justRead = inputs.readAny();
+        if(inputs.v1.isSameRegister(justRead)) {
+          index = 1;
+          value = (T)inputs.v1;
+        }
+        else if(inputs.v2.isSameRegister(justRead)) {
+          index = 2;
+          value = (T)inputs.v2;
+        }
+        else if(inputs.v3.isSameRegister(justRead)) {
+          index = 3;
+          value = (T)inputs.v3;
+        }
+        else if(inputs.v4.isSameRegister(justRead)) {
+          index = 4;
+          value = (T)inputs.v4;
+        }
+        else {
+          index = 0;
+          value = 0;
+        }
+        usleep(10000);  // wait some extra time to make sure we are really blocking the test procedure thread
+        index.write();
+        value.write();
+      }
+    }
+};
+
+/*********************************************************************************************************************/
 /* dummy application */
 
 template<typename T>
@@ -114,6 +173,7 @@ struct TestApplication : public ctk::Application {
     NoLoopTestModule<T> noLoopTestModule{this,"noLoopTestModule"};
     BlockingReadTestModule<T> blockingReadTestModule{this,"blockingReadTestModule"};
     AsyncReadTestModule<T> asyncReadTestModule{this,"asyncReadTestModule"};
+    ReadAnyTestModule<T> readAnyTestModule{this,"readAnyTestModule"};
 };
 
 /*********************************************************************************************************************/
@@ -128,6 +188,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoDecorator, T, test_types ) {
   app.noLoopTestModule.someOutput >> app.noLoopTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
   app.asyncReadTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
+  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
+  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
   app.initialise();
   app.run();
   
@@ -153,6 +216,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDecorator, T, test_types ) {
   app.noLoopTestModule.someOutput >> app.noLoopTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
   app.asyncReadTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
+  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
+  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
   app.enableTestableMode();
   app.initialise();
   app.run();
@@ -187,7 +253,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDecorator, T, test_types ) {
   }
   bool ret = app.noLoopTestModule.someInput.readNonBlocking();
   BOOST_CHECK(ret == false);
-
   // test blocking read
   for(int i=0; i<5; ++i) {
     auto future = std::async(std::launch::async, [&app] { app.noLoopTestModule.someInput.read(); });
@@ -213,6 +278,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testBlockingRead, T, test_types ) {
   app.noLoopTestModule.someOutput >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.noLoopTestModule.someInput;
   app.asyncReadTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
+  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
+  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
   app.enableTestableMode();
   app.initialise();
   app.run();
@@ -243,6 +311,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testAsyncRead, T, test_types ) {
   app.noLoopTestModule.someOutput >> app.asyncReadTestModule.someInput;
   app.asyncReadTestModule.someOutput >> app.noLoopTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
+  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
+  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
   app.enableTestableMode();
   app.initialise();
   app.run();
@@ -260,3 +331,47 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testAsyncRead, T, test_types ) {
   }
 
 }
+
+/*********************************************************************************************************************/
+/* test testReadAny in test mode */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testReadAny<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+
+  app.noLoopTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
+  app.asyncReadTestModule.someOutput >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+  app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
+  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;
+  app.readAnyTestModule.value >> app.noLoopTestModule.someInput;
+  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput;
+  app.enableTestableMode();
+  app.initialise();
+  app.run();
+
+  // check that we don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // send something to v4
+  app.noLoopTestModule.outputs.v4 = 66;
+  app.noLoopTestModule.outputs.v4.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  app.stepApplication();
+  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
+  BOOST_CHECK(app.noLoopTestModule.someInput == 66);
+  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 4);
+  
+}
+
+// TODO: testReadAny   and   test with multiple application threads!

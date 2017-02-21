@@ -146,6 +146,11 @@ void Application::run() {
 /*********************************************************************************************************************/
 
 void Application::shutdown() {
+  
+  // first allow to run the application threads again, if we are in testable mode
+  if(testableMode && getTestableModeLockObject().owns_lock()) {
+    getTestableModeLockObject().unlock();
+  }
 
   // deactivate the FanOuts first, since they have running threads inside accessing the modules etc.
   // (note: the modules are members of the Application implementation and thus get destroyed after this destructor)
