@@ -23,6 +23,7 @@
 #include "ControlSystemModule.h"
 #include "TestDecoratorRegisterAccessor.h"
 #include "VariableGroup.h"
+#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -43,30 +44,6 @@ typedef boost::mpl::list<int8_t,uint8_t,
                          int16_t,uint16_t,
                          int32_t,uint32_t,
                          float,double>        test_types;
-
-/*********************************************************************************************************************/
-/* the NoLoopTestModule is a dummy test module with an empty mainLoop */
-
-template<typename T>
-struct NoLoopTestModule : public ctk::ApplicationModule {
-    NoLoopTestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
-
-    ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
-    ctk::ScalarPushInput<uint32_t> someUIntInput{this, "someUIntInput", "", "Unsigned integer"};
-    ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
-
-    struct Outputs : public ctk::VariableGroup {
-      using ctk::VariableGroup::VariableGroup;
-      ctk::ScalarOutput<T> v1{this, "v1", "cm", "Output 1 for testing"};
-      ctk::ScalarOutput<T> v2{this, "v2", "cm", "Output 2 for testing"};
-      ctk::ScalarOutput<T> v3{this, "v3", "cm", "Output 3 for testing"};
-      ctk::ScalarOutput<T> v4{this, "v4", "cm", "Output 4 for testing"};
-    };
-    Outputs outputs{this, "outputs"};
-
-    void mainLoop() {
-    }
-};
 
 /*********************************************************************************************************************/
 /* the BlockingReadTestModule blockingly reads its input in the main loop and writes the result to its output */
@@ -172,7 +149,7 @@ struct TestApplication : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
 
-    NoLoopTestModule<T> noLoopTestModule{this,"noLoopTestModule"};
+    ctk::ControlSystemModule cs{""};
     BlockingReadTestModule<T> blockingReadTestModule{this,"blockingReadTestModule"};
     AsyncReadTestModule<T> asyncReadTestModule{this,"asyncReadTestModule"};
     ReadAnyTestModule<T> readAnyTestModule{this,"readAnyTestModule"};
@@ -187,85 +164,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoDecorator, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.noLoopTestModule.someOutput >> app.noLoopTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
-  app.asyncReadTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
-  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
-  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
-  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
+  
+  app.blockingReadTestModule >= app.cs["blocking"];
+  app.asyncReadTestModule >= app.cs["async"];
+  app.readAnyTestModule >= app.cs["readAny"];
+
   app.initialise();
   app.run();
   
   // check if we got the decorator for the input
-  auto hlinput = app.noLoopTestModule.someInput.getHighLevelImplElement();
+  auto hlinput = app.blockingReadTestModule.someInput.getHighLevelImplElement();
   BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestDecoratorRegisterAccessor<T>>(hlinput) == nullptr );
 
   // check that we did not get the decorator for the output
-  auto hloutput = app.noLoopTestModule.someOutput.getHighLevelImplElement();
+  auto hloutput = app.blockingReadTestModule.someOutput.getHighLevelImplElement();
   BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestDecoratorRegisterAccessor<T>>(hloutput) == nullptr );
 
-}
-
-/*********************************************************************************************************************/
-/* simply test the TestDecoratorRegisterAccessor if it is used and if it properly works as a decorator */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE( testDecorator, T, test_types ) {
-  std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << "==> testDecorator<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-
-  app.noLoopTestModule.someOutput >> app.noLoopTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
-  app.asyncReadTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
-  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
-  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
-  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
-  app.enableTestableMode();
-  app.initialise();
-  app.run();
-  app.resumeApplication();  // don't take control in this test
-
-  // check if we got the decorator for the input
-  auto hlinput = app.noLoopTestModule.someInput.getHighLevelImplElement();
-  BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestDecoratorRegisterAccessor<T>>(hlinput) != nullptr );
-
-  // check that we did not get the decorator for the output
-  auto hloutput = app.noLoopTestModule.someOutput.getHighLevelImplElement();
-  BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestDecoratorRegisterAccessor<T>>(hloutput) == nullptr );
-  
-  // check meta-data
-  BOOST_CHECK(app.noLoopTestModule.someInput.isReadOnly());
-  BOOST_CHECK(app.noLoopTestModule.someInput.isReadable());
-  BOOST_CHECK(!app.noLoopTestModule.someInput.isWriteable());
-
-  // test non blocking read
-  app.noLoopTestModule.someInput = 41;
-  for(int i=0; i<5; ++i) {
-    app.noLoopTestModule.someOutput = 42+i;
-    bool ret = app.noLoopTestModule.someInput.readNonBlocking();
-    BOOST_CHECK(ret == false);
-    int val = app.noLoopTestModule.someInput;
-    BOOST_CHECK(val == 42+i-1);
-    app.noLoopTestModule.someOutput.write();
-    ret = app.noLoopTestModule.someInput.readNonBlocking();
-    BOOST_CHECK(ret == true);
-    val = app.noLoopTestModule.someInput;
-    BOOST_CHECK(val == 42+i);
-  }
-  bool ret = app.noLoopTestModule.someInput.readNonBlocking();
-  BOOST_CHECK(ret == false);
-  // test blocking read
-  for(int i=0; i<5; ++i) {
-    auto future = std::async(std::launch::async, [&app] { app.noLoopTestModule.someInput.read(); });
-    app.noLoopTestModule.someOutput = 120+i;
-    BOOST_CHECK(future.wait_for(std::chrono::milliseconds(10)) == std::future_status::timeout);
-    app.noLoopTestModule.someOutput.write();
-    BOOST_CHECK(future.wait_for(std::chrono::milliseconds(100)) == std::future_status::ready);
-    int val = app.noLoopTestModule.someInput;
-    BOOST_CHECK(val == 120+i);
-  }
-  
 }
 
 /*********************************************************************************************************************/
@@ -277,25 +193,25 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testBlockingRead, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.noLoopTestModule.someOutput >> app.blockingReadTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.noLoopTestModule.someInput;
-  app.asyncReadTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
-  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
-  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
-  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
-  app.enableTestableMode();
-  app.initialise();
-  app.run();
+  app.cs("input") >> app.blockingReadTestModule.someInput;
+  app.blockingReadTestModule.someOutput >> app.cs("output");
+  app.asyncReadTestModule >= app.cs["async"]; // avoid runtime warning
+  app.readAnyTestModule >= app.cs["readAny"]; // avoid runtime warning
+  
+  ctk::TestFacility test;
+  auto pvInput = test.getScalar<T>("input");
+  auto pvOutput = test.getScalar<T>("output");
+  test.runApplication();
 
-  // test blocking read when taking control in the test thread
+  // test blocking read when taking control in the test thread (note: the blocking read is executed in the app module!)
   for(int i=0; i<5; ++i) {
-    app.noLoopTestModule.someOutput = 120+i;
-    app.noLoopTestModule.someOutput.write();
+    pvInput = 120+i;
+    pvInput.write();
     usleep(10000);
-    BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-    app.stepApplication();
-    CHECK_TIMEOUT(app.noLoopTestModule.someInput.readNonBlocking() == true, 200);
-    int val = app.noLoopTestModule.someInput;
+    BOOST_CHECK(pvOutput.readNonBlocking() == false);
+    test.stepApplication();
+    CHECK_TIMEOUT(pvOutput.readNonBlocking() == true, 200);
+    int val = pvOutput;
     BOOST_CHECK(val == 120+i);
   }
 
@@ -310,25 +226,31 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testAsyncRead, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.noLoopTestModule.someOutput >> app.asyncReadTestModule.someInput;
-  app.asyncReadTestModule.someOutput >> app.noLoopTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
-  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;  // just to avoid runtime warning
-  app.readAnyTestModule.value >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
-  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput; // just to avoid runtime warning
-  app.enableTestableMode();
-  app.initialise();
-  app.run();
+  app.cs("input") >> app.asyncReadTestModule.someInput;
+  app.asyncReadTestModule.someOutput >> app.cs("output");
+  app.blockingReadTestModule >= app.cs["blocking"]; // avoid runtime warning
+  app.readAnyTestModule >= app.cs["readAny"]; // avoid runtime warning
+
+  ctk::TestFacility test;
+  
+  auto pvInput = test.getScalar<T>("input");
+  auto pvOutput = test.getScalar<T>("output");
+  
+  test.runApplication();
 
   // test blocking read when taking control in the test thread
   for(int i=0; i<5; ++i) {
-    app.noLoopTestModule.someOutput = 120+i;
-    app.noLoopTestModule.someOutput.write();
+    pvInput = 120+i;
+    pvInput.write();
     usleep(10000);
-    BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-    app.stepApplication();
-    CHECK_TIMEOUT(app.noLoopTestModule.someInput.readNonBlocking() == true, 200);
-    int val = app.noLoopTestModule.someInput;
+    BOOST_CHECK(pvOutput.readNonBlocking() == false);
+    test.stepApplication();
+    bool ret = pvOutput.readNonBlocking();
+    BOOST_CHECK(ret == true);
+    if(!ret) {
+      CHECK_TIMEOUT(pvOutput.readNonBlocking() == true, 10000);
+    }
+    int val = pvOutput;
     BOOST_CHECK(val == 120+i);
   }
 
@@ -343,122 +265,135 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.noLoopTestModule.someOutput >> app.asyncReadTestModule.someInput; // just to avoid runtime warning
-  app.asyncReadTestModule.someOutput >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
-  app.blockingReadTestModule.someOutput >> app.blockingReadTestModule.someInput; // just to avoid runtime warning
-  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;
-  app.readAnyTestModule.value >> app.noLoopTestModule.someInput;
-  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput;
-  app.enableTestableMode();
-  app.initialise();
-  app.run();
+  app.readAnyTestModule.inputs >= app.cs["input"];
+  app.readAnyTestModule.value >> app.cs("value");
+  app.readAnyTestModule.index >> app.cs("index");
+  app.blockingReadTestModule >= app.cs["blocking"];  // avoid runtime warning
+  app.asyncReadTestModule >= app.cs["async"];  // avoid runtime warning
+
+  ctk::TestFacility test;
+  auto value = test.getScalar<T>("value");
+  auto index = test.getScalar<uint32_t>("index");
+  auto v1 = test.getScalar<T>("input/v1");
+  auto v2 = test.getScalar<T>("input/v2");
+  auto v3 = test.getScalar<T>("input/v3");
+  auto v4 = test.getScalar<T>("input/v4");
+  test.runApplication();
 
   // check that we don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // send something to v4
-  app.noLoopTestModule.outputs.v4 = 66;
-  app.noLoopTestModule.outputs.v4.write();
+  v4 = 66;
+  v4.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
-  app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 66);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 4);
+  test.stepApplication();
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 66);
+  BOOST_CHECK(index == 4);
   
   // send something to v1
-  app.noLoopTestModule.outputs.v1 = 33;
-  app.noLoopTestModule.outputs.v1.write();
+  v1 = 33;
+  v1.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
-  app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 33);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
+  test.stepApplication();
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 33);
+  BOOST_CHECK(index == 1);
   
   // send something to v1 again
-  app.noLoopTestModule.outputs.v1 = 34;
-  app.noLoopTestModule.outputs.v1.write();
+  v1 = 34;
+  v1.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
-  app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 34);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
+  test.stepApplication();
+
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 34);
+  BOOST_CHECK(index == 1);
   
   // send something to v3
-  app.noLoopTestModule.outputs.v3 = 40;
-  app.noLoopTestModule.outputs.v3.write();
+  v3 = 40;
+  v3.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
-  app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 40);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 3);
+  test.stepApplication();
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 40);
+  BOOST_CHECK(index == 3);
   
   // send something to v2
-  app.noLoopTestModule.outputs.v2 = 50;
-  app.noLoopTestModule.outputs.v2.write();
+  v2 = 50;
+  v2.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
-  app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 50);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 2);
+  test.stepApplication();
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 50);
+  BOOST_CHECK(index == 2);
+
+  // check that stepApplication() throws an exception if no input data is available
+  try {
+    test.stepApplication();
+    BOOST_ERROR("IllegalParameter exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  }
+
+  // check that we still don't receive anything anymore
+  usleep(10000);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // send something to v1 a 3rd time
-  app.noLoopTestModule.outputs.v1 = 35;
-  app.noLoopTestModule.outputs.v1.write();
+  v1 = 35;
+  v1.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
-  app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 35);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 1);
-
-  // check that we still don't receive anything anymore, even if we try running the application again
-  app.stepApplication();
-  usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  test.stepApplication();
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 35);
+  BOOST_CHECK(index == 1);
   
 }
 
@@ -472,74 +407,85 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testChainedModules, T, test_types ) {
   TestApplication<T> app;
 
   // put everything we got into one chain
-  app.noLoopTestModule.outputs >= app.readAnyTestModule.inputs;
+  app.readAnyTestModule.inputs >= app.cs["input"];
   app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.asyncReadTestModule.someInput;
-  app.asyncReadTestModule.someOutput >> app.noLoopTestModule.someInput;
-  app.readAnyTestModule.index >> app.noLoopTestModule.someUIntInput;
-  app.noLoopTestModule.someOutput >> ctk::VariableNetworkNode::makeConstant<T>(false, 0, 1); // just to avoid runtime warning
+  app.asyncReadTestModule.someOutput >> app.cs("value");
+  app.readAnyTestModule.index >> app.cs("index");
 
-  app.enableTestableMode();
-  app.initialise();
-  app.run();
+  ctk::TestFacility test;
+  auto value = test.getScalar<T>("value");
+  auto index = test.getScalar<uint32_t>("index");
+  auto v1 = test.getScalar<T>("input/v1");
+  auto v2 = test.getScalar<T>("input/v2");
+  auto v3 = test.getScalar<T>("input/v3");
+  auto v4 = test.getScalar<T>("input/v4");
+  test.runApplication();
 
   // check that we don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // send something to v2
-  app.noLoopTestModule.outputs.v2 = 11;
-  app.noLoopTestModule.outputs.v2.write();
+  v2 = 11;
+  v2.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
   app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 11);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 2);
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 11);
+  BOOST_CHECK(index == 2);
   
   // send something to v3
-  app.noLoopTestModule.outputs.v3 = 12;
-  app.noLoopTestModule.outputs.v3.write();
+  v3 = 12;
+  v3.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
   app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 12);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 3);
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 12);
+  BOOST_CHECK(index == 3);
   
   // send something to v3 again
-  app.noLoopTestModule.outputs.v3 = 13;
-  app.noLoopTestModule.outputs.v3.write();
+  v3 = 13;
+  v3.write();
 
   // check that we still don't receive anything yet
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
   
   // run the application and check that we got the expected result
   app.stepApplication();
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == true);
-  BOOST_CHECK(app.noLoopTestModule.someInput == 13);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput == 3);
+  BOOST_CHECK(value.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(value == 13);
+  BOOST_CHECK(index == 3);
 
-  // check that we still don't receive anything anymore, even if we try running the application again
-  app.stepApplication();
+  // check that stepApplication() throws an exception if no input data is available
+  try {
+    test.stepApplication();
+    BOOST_ERROR("IllegalParameter exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  }
+
+  // check that we still don't receive anything anymore
   usleep(10000);
-  BOOST_CHECK(app.noLoopTestModule.someInput.readNonBlocking() == false);
-  BOOST_CHECK(app.noLoopTestModule.someUIntInput.readNonBlocking() == false);
+  BOOST_CHECK(value.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
 
 }
