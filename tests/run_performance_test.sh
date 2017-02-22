@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration value: maximum percentage a newly measured value is allowed exceed the stored reference
-MAXPERCENT=20
+MAXPERCENT=100
 
 if [ -z "$1" -o ! -f "$1" ]; then
   echo Usage: ./run_performance_test.sh /path/to/reference/file.txt
