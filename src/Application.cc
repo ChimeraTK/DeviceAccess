@@ -652,7 +652,7 @@ boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference
       theLock.unlock();
     }
     catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
-      if(e.code() != std::errc::operation_not_permitted) throw e;
+      if(e.code() != std::errc::operation_not_permitted) throw;
     }
     auto ret = mtca4u::TransferElement::readAny(elementsToRead);
     assert(theLock.owns_lock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
