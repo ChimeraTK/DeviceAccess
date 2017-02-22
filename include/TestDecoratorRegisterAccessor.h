@@ -43,7 +43,7 @@ namespace ChimeraTK {
         _accessor->postRead();
         _accessor->hasActiveFuture = false;
         Application::getTestableModeLockObject().lock();
-        ++Application::getInstance().testableMode_counter;
+        --Application::getInstance().testableMode_counter;
       }
 
     protected:
@@ -64,11 +64,15 @@ namespace ChimeraTK {
         _accessor(accessor) {
         buffer_2D.resize(_accessor->getNumberOfChannels());
         for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
-        assert(_accessor->isReadOnly());
       }
       
       void write() override {
-        throw std::logic_error("Write operation called on read-only variable.");
+        preWrite();
+        auto &myLock = Application::getTestableModeLockObject();
+        if(!myLock.owns_lock()) myLock.lock();   // may happen if first write in thread is done before first blocking read
+        ++Application::getInstance().testableMode_counter;
+        _accessor->write();
+        postWrite();
       }
 
       void doReadTransfer() override {
@@ -80,7 +84,7 @@ namespace ChimeraTK {
         }
         _accessor->doReadTransfer();
         Application::getTestableModeLockObject().lock();
-        ++Application::getInstance().testableMode_counter;
+        --Application::getInstance().testableMode_counter;
       }
 
       bool doReadTransferNonBlocking() override {
@@ -101,11 +105,11 @@ namespace ChimeraTK {
       }
 
       void preWrite() override {
-        throw std::logic_error("Write operation called on read-only variable.");
+        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
       }
 
       void postWrite() override {
-        throw std::logic_error("Write operation called on read-only variable.");
+        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
       }
 
       bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {

@@ -292,7 +292,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
                                                                node.getOwner().getUnit(), node.getOwner().getDescription());
 
-  // decorate the process variable if testable mode is enabled and if this is the receiving end of the variable
+  // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
   if(testableMode && node.getDirection() == VariableDirection::feeding) {
     mtca4u::NDRegisterAccessor<UserType>* deco = new TestDecoratorRegisterAccessor<UserType>(pvar);
     pvar.reset(deco);
@@ -306,16 +306,22 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 
 template<typename UserType>
 std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-  Application::createApplicationVariable(size_t nElements, const std::string &name) {
-
+  Application::createApplicationVariable(VariableNetworkNode const &node) {
+    
+  // obtain the meta data
+  size_t nElements = node.getNumberOfElements();
+  std::string name = node.getName();
+  
   // create the ProcessArray for the proper UserType
   std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
   pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
   
-  // decorate the receiving end of the process variable if testable mode is enabled
+  // decorate the process variable if testable mode is enabled
   if(testableMode) {
-    mtca4u::NDRegisterAccessor<UserType>* deco = new TestDecoratorRegisterAccessor<UserType>(pvarPair.second);
-    pvarPair.second.reset(deco);
+    mtca4u::NDRegisterAccessor<UserType>* decoFirst = new TestDecoratorRegisterAccessor<UserType>(pvarPair.first);
+    mtca4u::NDRegisterAccessor<UserType>* decoSecond = new TestDecoratorRegisterAccessor<UserType>(pvarPair.second);
+    pvarPair.first.reset(decoFirst);
+    pvarPair.second.reset(decoSecond);
   }
   
   // return the pair
@@ -497,7 +503,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             consumingFanOut.reset();
           }
           else {
-            auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getName());
+            auto impls = createApplicationVariable<UserType>(consumer);
             fanOut->addSlave(impls.first);
             consumer.getAppAccessor<UserType>().replace(impls.second);
           }
@@ -512,7 +518,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), consumer.getName());
+          auto impls = createApplicationVariable<UserType>(consumer);
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
@@ -534,7 +540,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
+        auto impls = createApplicationVariable<UserType>(consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getAppAccessor<UserType>().replace(impls.second);
         connectionMade = true;
@@ -551,7 +557,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
+        auto impls = createApplicationVariable<UserType>(consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
@@ -573,7 +579,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
+          auto impls = createApplicationVariable<UserType>(consumer);
           fanOut->addSlave(impls.first);
           consumer.getAppAccessor<UserType>().replace(impls.second);
         }
@@ -587,7 +593,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer.getNumberOfElements(), feeder.getName());
+          auto impls = createApplicationVariable<UserType>(consumer);
           fanOut->addSlave(impls.first);
           consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
         }
@@ -617,4 +623,40 @@ VariableNetwork& Application::createNetwork() {
 
 Application& Application::getInstance() {
   return dynamic_cast<Application&>(ApplicationBase::getInstance());
+}
+
+/*********************************************************************************************************************/
+
+void Application::stepApplication() {
+  // testableMode_counter must be non-zero, otherwise there is no input for the application to process
+  if(testableMode_counter == 0) {
+    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+        "Application::stepApplication() called despite no input was provided to the application to process!");
+  }
+  // let the application run until it has processed all data (i.e. the semaphore counter is 0) 
+  while(testableMode_counter > 0) {
+    getTestableModeLockObject().unlock();
+    boost::this_thread::yield();
+    getTestableModeLockObject().lock();
+  }
+}
+
+/*********************************************************************************************************************/
+
+boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+  if(!testableMode) {
+    return mtca4u::TransferElement::readAny(elementsToRead);
+  }
+  else {
+    auto &theLock = getTestableModeLockObject();
+    try {
+      theLock.unlock();
+    }
+    catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
+      if(e.code() != std::errc::operation_not_permitted) throw e;
+    }
+    auto ret = mtca4u::TransferElement::readAny(elementsToRead);
+    assert(theLock.owns_lock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
+    return ret;
+  }
 }

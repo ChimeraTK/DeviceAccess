@@ -75,32 +75,18 @@ namespace ChimeraTK {
        * 
        *  Note: Enabling the testable mode will have a singificant impact on the performance, since it will prevent
        *  any module threads to run at the same time! */
-      void enableTestableMode() { testableMode = true; pauseApplication(); }
-      
-      /** Lock the mutex for the testable mode, which prevents any application thread from running. This works only if
-       *  enableTestableMode() was called before. */
-      void pauseApplication() { assert(testableMode); getTestableModeLockObject().lock(); }
+      void enableTestableMode() { testableMode = true; getTestableModeLockObject().lock(); }
 
-      /** Unlock the mutex for the testable mode, which allows the application threads to run again. This works only if
-       *  enableTestableMode() was called before. */
-      void resumeApplication() { assert(testableMode); getTestableModeLockObject().unlock(); }
-
-      /** Resume the application until all application threads are stuck in a blocking read operation. Must be called
-       *  while the application is paused. */
-      void stepApplication() {
-        while(true) {
-          testableMode_counter = 0;
-          resumeApplication();
-          usleep(100);
-          pauseApplication();
-          if(testableMode_counter == 0) break;
-        }
-      }
+      /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
+       *  the testable mode was enabled. */
+      void stepApplication();
 
       /** Obtain the lock object for the testable mode lock for the current thread. The returned object has
        *  thread_local storage duration and must only be used inside the current thread. Initially (i.e. after
        *  the first call in one particular thread) the lock will not be owned by the returned object, so it is
-       *  important to catch the corresponding exception when calling std::unique_lock::unlock(). */
+       *  important to catch the corresponding exception when calling std::unique_lock::unlock().
+       *
+       *  This function should generally not be used in user code. */
       static std::unique_lock<std::mutex>& getTestableModeLockObject() {
         thread_local static std::unique_lock<std::mutex> myLock(Application::getInstance().testableMode_mutex,
                                                                 std::defer_lock);
@@ -111,23 +97,7 @@ namespace ChimeraTK {
        *  original version provided by DeviceAccess. If the testable mode is not enabled, just the original version
        *  is called instead. Only with the testable mode enabled, special precautions are taken to make this blocking
        *  call testable. */
-      boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-        if(!testableMode) {
-          return mtca4u::TransferElement::readAny(elementsToRead);
-        }
-        else {
-          auto &theLock = getTestableModeLockObject();
-          try {
-            theLock.unlock();
-          }
-          catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
-            if(e.code() != std::errc::operation_not_permitted) throw e;
-          }
-          auto ret = mtca4u::TransferElement::readAny(elementsToRead);
-          assert(theLock.owns_lock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
-          return ret;
-        }
-      }
+      boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
     protected:
 
@@ -165,10 +135,10 @@ namespace ChimeraTK {
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessVariable(VariableNetworkNode const &node);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
-       *  sender, the second the receiver. nElements will be the array size of the created variable. */
+       *  sender, the second the receiver. */
       template<typename UserType>
       std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-            createApplicationVariable(size_t nElements, const std::string &name);
+            createApplicationVariable(VariableNetworkNode const &node);
 
       /** Register an application module with the application. Will be called automatically by all modules in their
        *  constructors. */
@@ -209,8 +179,8 @@ namespace ChimeraTK {
        *  obtained through getLockObjectForCurrentThread() */
       std::mutex testableMode_mutex;
       
-      /** Counter used in testable mode to check if application code was executed after releasing the testableMode_mutex.
-       *  This value may only be accessed while holding the testableMode_mutex. */
+      /** Semaphore counter used in testable mode to check if application code is finished executing. This value may
+       *  only be accessed while holding the testableMode_mutex. */
       size_t testableMode_counter{0};
 
       template<typename UserType>
