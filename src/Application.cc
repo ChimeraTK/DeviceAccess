@@ -29,6 +29,8 @@
 
 using namespace ChimeraTK;
 
+std::mutex Application::testableMode_mutex;
+
 /*********************************************************************************************************************/
 
 void Application::initialise() {

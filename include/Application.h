@@ -88,8 +88,7 @@ namespace ChimeraTK {
        *
        *  This function should generally not be used in user code. */
       static std::unique_lock<std::mutex>& getTestableModeLockObject() {
-        thread_local static std::unique_lock<std::mutex> myLock(Application::getInstance().testableMode_mutex,
-                                                                std::defer_lock);
+        thread_local static std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
         return myLock;
       }
       
@@ -176,8 +175,13 @@ namespace ChimeraTK {
       bool testableMode{false};
       
       /** Mutex used in testable mode to take control over the application threads. Use only through the lock object 
-       *  obtained through getLockObjectForCurrentThread() */
-      std::mutex testableMode_mutex;
+       *  obtained through getLockObjectForCurrentThread().
+       *
+       *  This member is static, since it should survive destroying an application instance and creating a new one.
+       *  Otherwise getTestableModeLockObject() would not work, since it relies on thread_local instances which have to
+       *  be static. The static storage duration presents no problem in either case, since there can only be one single
+       *  instance of Application at a time (see ApplicationBase constructor). */
+      static std::mutex testableMode_mutex;
       
       /** Semaphore counter used in testable mode to check if application code is finished executing. This value may
        *  only be accessed while holding the testableMode_mutex. */
