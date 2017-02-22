@@ -296,8 +296,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 
   // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
   if(testableMode && node.getDirection() == VariableDirection::feeding) {
-    mtca4u::NDRegisterAccessor<UserType>* deco = new TestDecoratorRegisterAccessor<UserType>(pvar);
-    pvar.reset(deco);
+    pvar = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
   }
   
   // return the process variable
@@ -320,10 +319,8 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   
   // decorate the process variable if testable mode is enabled
   if(testableMode) {
-    mtca4u::NDRegisterAccessor<UserType>* decoFirst = new TestDecoratorRegisterAccessor<UserType>(pvarPair.first);
-    mtca4u::NDRegisterAccessor<UserType>* decoSecond = new TestDecoratorRegisterAccessor<UserType>(pvarPair.second);
-    pvarPair.first.reset(decoFirst);
-    pvarPair.second.reset(decoSecond);
+    pvarPair.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
+    pvarPair.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
   }
   
   // return the pair
