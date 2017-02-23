@@ -88,8 +88,14 @@ namespace mtca4u {
               DeviceException::WRONG_PARAMETER);
         }
         NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0) = x;
-	return *this;
+        return *this;
       }
+      
+      /* Convert content of (cooked) buffer into std::vector */
+      operator const std::vector<UserType>&() {
+        return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0);
+      }
+      
 
       /** Return a direct pointer to the memory buffer storng the elements.
        *  @attention Note that this pointer will be invalidated during read(), write() and swap(). If this accessor is
