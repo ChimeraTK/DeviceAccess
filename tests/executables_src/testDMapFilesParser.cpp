@@ -533,7 +533,7 @@ void DMapFilesParserTest::testParsedirInvalidDir() {
   std::string path_to_dir = "NonExistentDir";
 
   BOOST_CHECK_THROW(filesParser.parse_dir(path_to_dir),
-      mtca4u::DMapFileParserException)
+      mtca4u::DMapFileParserException);
   try {
     filesParser.parse_dir(path_to_dir);
   }
