@@ -279,7 +279,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
   auto v3 = test.getScalar<T>("input/v3");
   auto v4 = test.getScalar<T>("input/v4");
   test.runApplication();
-
   // check that we don't receive anything yet
   usleep(10000);
   BOOST_CHECK(value.readNonBlocking() == false);

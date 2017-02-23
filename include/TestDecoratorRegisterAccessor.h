@@ -24,21 +24,23 @@ namespace ChimeraTK {
       
       TestDecoratorTransferFuture() : _originalFuture{nullptr} {}
 
-      TestDecoratorTransferFuture(TransferFuture &originalFuture,
-                                  boost::shared_ptr<TestDecoratorRegisterAccessor<UserType>> accessor)
+      TestDecoratorTransferFuture(TransferFuture &originalFuture, TestDecoratorRegisterAccessor<UserType> *accessor)
       : _originalFuture(&originalFuture), _accessor(accessor)
       {
         TransferFuture::_theFuture = _originalFuture->getBoostFuture();
         TransferFuture::_transferElement = &(_originalFuture->getTransferElement());
       }
       
+      virtual ~TestDecoratorTransferFuture() {}
+      
       void wait() override {
         try {
           Application::getTestableModeLockObject().unlock();
         }
         catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
-          if(e.code() != std::errc::operation_not_permitted) throw e;
+          if(e.code() != std::errc::operation_not_permitted) throw;
         }
+        boost::this_thread::interruption_point();
         _originalFuture->wait();
         _accessor->postRead();
         _accessor->hasActiveFuture = false;
@@ -46,11 +48,27 @@ namespace ChimeraTK {
         --Application::getInstance().testableMode_counter;
       }
 
+      TestDecoratorTransferFuture& operator=(const TestDecoratorTransferFuture &&other) {
+        TransferFuture::_theFuture = other._theFuture;
+        TransferFuture::_transferElement = other._transferElement;
+        _originalFuture = other._originalFuture;
+        _accessor = other._accessor;
+        return *this;
+      }
+
+      TestDecoratorTransferFuture(TestDecoratorTransferFuture &&other)
+      : TransferFuture(other._theFuture, other._transferElement),
+        _originalFuture(other._originalFuture),
+        _accessor(other._accessor)
+      {}
+
+      TestDecoratorTransferFuture(const TestDecoratorTransferFuture &other) = delete;
+
     protected:
       
       TransferFuture *_originalFuture;
       
-      boost::shared_ptr<TestDecoratorRegisterAccessor<UserType>> _accessor;
+      TestDecoratorRegisterAccessor<UserType> *_accessor;
   };
 
   /*******************************************************************************************************************/
@@ -65,6 +83,9 @@ namespace ChimeraTK {
         buffer_2D.resize(_accessor->getNumberOfChannels());
         for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
       }
+      
+      virtual ~TestDecoratorRegisterAccessor() {}
+      
       
       void write() override {
         preWrite();
@@ -92,10 +113,12 @@ namespace ChimeraTK {
       }
 
       TransferFuture& readAsync() override {
+        if(TransferElement::hasActiveFuture) {
+          return activeTestDecoratorFuture;
+        }
         auto &future = _accessor->readAsync();
-        auto sharedThis = boost::static_pointer_cast<TestDecoratorRegisterAccessor<UserType>>(this->shared_from_this());
         TransferElement::hasActiveFuture = true;
-        activeTestDecoratorFuture = TestDecoratorTransferFuture<UserType>(future, sharedThis);
+        activeTestDecoratorFuture = TestDecoratorTransferFuture<UserType>(future, this);
         return activeTestDecoratorFuture;
       }
 
