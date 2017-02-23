@@ -56,18 +56,20 @@ namespace ChimeraTK {
         return *this;
       }
 
-      TestDecoratorTransferFuture(TestDecoratorTransferFuture &&other)
+      TestDecoratorTransferFuture(const TestDecoratorTransferFuture &&other)
       : TransferFuture(other._theFuture, other._transferElement),
         _originalFuture(other._originalFuture),
         _accessor(other._accessor)
       {}
 
       TestDecoratorTransferFuture(const TestDecoratorTransferFuture &other) = delete;
+      TestDecoratorTransferFuture& operator=(const TestDecoratorTransferFuture &other) = delete;
 
     protected:
       
+      // plain pointers are ok, since this class is non-copyable and always owned by the TestDecoratorRegisterAccessor
+      // (which also holds a shared pointer on the actual accessor, which in turn owns the originalFuture).
       TransferFuture *_originalFuture;
-      
       TestDecoratorRegisterAccessor<UserType> *_accessor;
   };
 
