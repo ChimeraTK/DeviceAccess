@@ -41,35 +41,26 @@ class TestableDummyBackend : public DummyBackend {
 class DummyBackendTest {
   public:
     DummyBackendTest()
-  : a(0), b(0), c(0), _backendInstance()
-  {
-      std::list<std::string> parameters;
-      parameters.push_back(std::string(TEST_MAPPING_FILE));
-      _dummyBackend = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE) );
-  }
+    : a(0), b(0), c(0), _backendInstance()
+    {
+        std::list<std::string> parameters;
+        parameters.push_back(std::string(TEST_MAPPING_FILE));
+        _dummyBackend = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE) );
+    }
 
     static void testCalculateVirtualAddress();
     static void testCheckSizeIsMultipleOfWordSize();
     static void testAddressRange();
-    // void testOpenClose();
+
     void testReadWriteSingleWordRegister();
-    /// The read function can be readDMA or readArea, the writeFunction is always
-    /// writeArea.
-    /// WriteDMA probably does not make sense at all.
-    /// The argument is a pointer to a member function of the DummyBackend class,
-    /// which
-    /// returns void and takes uint32_t, int32_t*, size_t, uint8_t as arguments.
-    void testReadWriteMultiWordRegister(
-        //void (DummyBackend::*readFunction)(uint32_t, int32_t*, size_t, uint8_t));
-        void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t));
-    //void testWriteDMA();
+    void testReadWriteMultiWordRegister();
     void testReadDeviceInfo();
     void testReadOnly();
     void testWriteCallbackFunctions();
     void testIsWriteRangeOverlap();
     void testWriteRegisterWithoutCallback();
-    /// Test that all registers, read-only flags and callback functions are
-    /// removed
+
+    /// Test that all registers, read-only flags and callback functions are removed
     void testFinalClosing();
 
     // Try Creating a backend and check if it is connected.
@@ -105,65 +96,55 @@ class DummyBackendTestSuite : public test_suite {
 
       // Pointers to test cases with dependencies. All other test cases are added
       // directly.
-      test_case* readOnlyTestCase =
-          BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadOnly, dummyBackendTest);
-      test_case* writeCallbackFunctionsTestCase = BOOST_CLASS_TEST_CASE(
-          &DummyBackendTest::testWriteCallbackFunctions, dummyBackendTest);
-      test_case* writeRegisterWithoutCallbackTestCase = BOOST_CLASS_TEST_CASE(
-          &DummyBackendTest::testWriteRegisterWithoutCallback, dummyBackendTest);
+      test_case* readOnlyTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadOnly, dummyBackendTest);
+      test_case* writeCallbackFunctionsTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteCallbackFunctions, dummyBackendTest);
+      test_case* writeRegisterWithoutCallbackTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteRegisterWithoutCallback, dummyBackendTest);
 
-      test_case* createBackendTestCase = BOOST_CLASS_TEST_CASE(
-          &DummyBackendTest::testCreateBackend, dummyBackendTest);
-      test_case* openTestCase = BOOST_CLASS_TEST_CASE(
-          &DummyBackendTest::testOpen, dummyBackendTest);
-      test_case* openCloseTestCase = BOOST_CLASS_TEST_CASE(
-          &DummyBackendTest::testOpenClose, dummyBackendTest);
-      test_case* closeTestCase = BOOST_CLASS_TEST_CASE(
-          &DummyBackendTest::testClose, dummyBackendTest);
+      test_case* createBackendTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testCreateBackend, dummyBackendTest);
+      test_case* openTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testOpen, dummyBackendTest);
+      test_case* openCloseTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testOpenClose, dummyBackendTest);
+      test_case* closeTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testClose, dummyBackendTest);
+
+      test_case* testCalculateVirtualAddress = BOOST_TEST_CASE(DummyBackendTest::testCalculateVirtualAddress);
+      test_case* testCheckSizeIsMultipleOfWordSize = BOOST_TEST_CASE(DummyBackendTest::testCheckSizeIsMultipleOfWordSize);
+      test_case* testAddressRange = BOOST_TEST_CASE(DummyBackendTest::testAddressRange);
+      test_case* testReadWriteSingleWordRegister = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadWriteSingleWordRegister, dummyBackendTest);
+      test_case* testReadWriteMultiWordRegister = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadWriteMultiWordRegister, dummyBackendTest);
+      test_case* testReadDeviceInfo = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadDeviceInfo, dummyBackendTest);
+      test_case* testIsWriteRangeOverlap = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testIsWriteRangeOverlap, dummyBackendTest);
+      test_case* testFinalClosing = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testFinalClosing, dummyBackendTest);
 
       // we use the setup from the read-only test to check that the callback
       // function is not executed if the register is not writeable.
+      testCheckSizeIsMultipleOfWordSize->depends_on(testCalculateVirtualAddress);
+      testAddressRange->depends_on(testCheckSizeIsMultipleOfWordSize);
+      testReadWriteSingleWordRegister->depends_on(testAddressRange);
+      testReadWriteMultiWordRegister->depends_on(testReadWriteSingleWordRegister);
+      testReadDeviceInfo->depends_on(testReadWriteMultiWordRegister);
+      readOnlyTestCase->depends_on(testReadDeviceInfo);
       writeCallbackFunctionsTestCase->depends_on(readOnlyTestCase);
-      writeRegisterWithoutCallbackTestCase->depends_on(
-          writeCallbackFunctionsTestCase);
+      writeRegisterWithoutCallbackTestCase->depends_on(writeCallbackFunctionsTestCase);
+      testIsWriteRangeOverlap->depends_on(writeRegisterWithoutCallbackTestCase);
+      testFinalClosing->depends_on(testIsWriteRangeOverlap);
+      createBackendTestCase->depends_on(testFinalClosing);
+      openTestCase->depends_on(createBackendTestCase);
+      closeTestCase->depends_on(openTestCase);
+      openCloseTestCase->depends_on(closeTestCase);
 
-      // As boost test cases need nullary functions (working with parameters would
-      // not work with function pointers)
-      // we create them by binding readArea and readDMA to the
-      // testReadWriteMultiWordRegister function of the
-      // dummyBackendTest instance.
-      boost::function<void(void)> testReadWriteArea =
-          boost::bind(&DummyBackendTest::testReadWriteMultiWordRegister,
-              dummyBackendTest, &DummyBackend::read);
-
-      /*boost::function<void(void)> testReadWriteDMA =
-        boost::bind(&DummyBackendTest::testReadWriteMultiWordRegister,
-                    DummyBackendTest, &DummyBackend::readDMA);*/
-
-      add(BOOST_TEST_CASE(DummyBackendTest::testCalculateVirtualAddress));
-      add(BOOST_TEST_CASE(DummyBackendTest::testCheckSizeIsMultipleOfWordSize));
-      add(BOOST_TEST_CASE(DummyBackendTest::testAddressRange));
-      // add( BOOST_CLASS_TEST_CASE( &DummyBackendTest::testOpenClose,
-      // dummyBackendTest ) );
-      add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadWriteSingleWordRegister,
-          dummyBackendTest));
-      add(BOOST_TEST_CASE(testReadWriteArea)); // not BOOST_CLASS_TEST_CASE as the
-      // functions are already bound to
-      // the instance
-      //add(BOOST_TEST_CASE(testReadWriteDMA));
-      //add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteDMA, dummyBackendTest));
-      add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadDeviceInfo,
-          dummyBackendTest));
+      add(testCalculateVirtualAddress);
+      add(testCheckSizeIsMultipleOfWordSize);
+      add(testAddressRange);
+      add(testReadWriteSingleWordRegister);
+      add(testReadWriteMultiWordRegister);
+      add(testReadDeviceInfo);
       add(readOnlyTestCase);
       add(writeCallbackFunctionsTestCase);
       add(writeRegisterWithoutCallbackTestCase);
-      add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testIsWriteRangeOverlap,
-          dummyBackendTest));
-      add(BOOST_CLASS_TEST_CASE(&DummyBackendTest::testFinalClosing,
-          dummyBackendTest));
+      add(testIsWriteRangeOverlap);
+      add(testFinalClosing);
       add(createBackendTestCase);
       add(openTestCase);
-      add (closeTestCase);
+      add(closeTestCase);
       add(openCloseTestCase);
     }
 };
@@ -222,7 +203,7 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
       DummyBackendException);
 }
 
-void DummyBackendTest::testReadWriteMultiWordRegister( void (DummyBackend::*readFunction)(uint8_t, uint32_t, int32_t*, size_t) ) {
+void DummyBackendTest::testReadWriteMultiWordRegister() {
   // freshlyopenice();
   TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
@@ -234,7 +215,7 @@ void DummyBackendTest::testReadWriteMultiWordRegister( void (DummyBackend::*read
   size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
   std::vector<int32_t> dataContent(sizeInWords, -1);
 
-  BOOST_CHECK_NO_THROW((dummyBackend->*readFunction)(bar, offset, &(dataContent[0]), sizeInBytes));
+  BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes));
   for(std::vector<int32_t>::iterator dataIter = dataContent.begin(); dataIter != dataContent.end(); ++dataIter) {
     std::stringstream errorMessage;
     errorMessage << "*dataIter = " << *dataIter;
