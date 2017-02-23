@@ -41,10 +41,13 @@ namespace ctk = ChimeraTK;
     }
 
 // list of user types the accessors are tested with
+/*
 typedef boost::mpl::list<int8_t,uint8_t,
                          int16_t,uint16_t,
                          int32_t,uint32_t,
                          float,double>        test_types;
+*/
+typedef boost::mpl::list<int32_t>        test_types;
 
 constexpr char dummySdm[] = "sdm://./dummy=test.map";
                          
@@ -624,10 +627,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithTrigger, T, test_types ) {
   auto valueFromAsync = test.getScalar<T>("valueFromAsync");
   auto index = test.getScalar<uint32_t>("index");
   auto trigger = test.getScalar<int>("trigger");
-  auto v1 = dev.getScalarRegisterAccessor<T>("REG1");
   auto v2 = dev.getScalarRegisterAccessor<T>("REG2");
-  auto v3 = dev.getScalarRegisterAccessor<T>("REG3");
-  auto v4 = dev.getScalarRegisterAccessor<T>("REG4");
   test.runApplication();
 
   // check that we don't receive anything yet
@@ -676,4 +676,137 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithTrigger, T, test_types ) {
   BOOST_CHECK(valueFromAsync == 22);
   BOOST_CHECK(index == 2);
 
+  // check that stepApplication() throws an exception if no input data is available
+  try {
+    test.stepApplication();
+    BOOST_ERROR("IllegalParameter exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  }
+
+  // check that we still don't receive anything anymore
+  usleep(10000);
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+
+}
+
+/*********************************************************************************************************************/
+/* test combination with trigger distributed to mutliple receivers */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testWithTriggerFanOut, T, test_types ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testWithTriggerFanOut<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+  // distribute a value to multiple inputs
+  auto triggernode = app.cs("trigger", typeid(int), 1);
+  app.dev("REG1") [ triggernode ] >> app.readAnyTestModule.inputs.v1;
+  app.cs("v2") >> app.readAnyTestModule.inputs.v2;
+  app.cs("v3") >> app.readAnyTestModule.inputs.v3;
+  app.cs("v4") >> app.readAnyTestModule.inputs.v4;
+  app.dev("REG2") [ triggernode ] >> app.asyncReadTestModule.someInput;
+  app.dev("REG3") [ triggernode ] >> app.blockingReadTestModule.someInput;
+  app.readAnyTestModule.value >> app.cs("valueFromAny");
+  app.readAnyTestModule.index >> app.cs("index");
+  app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
+  app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
+
+  ctk::TestFacility test;
+  ctk::Device dev;
+  dev.open(dummySdm);
+  auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
+  auto valueFromAsync = test.getScalar<T>("valueFromAsync");
+  auto valueFromAny = test.getScalar<T>("valueFromAny");
+  auto index = test.getScalar<uint32_t>("index");
+  auto trigger = test.getScalar<int>("trigger");
+  auto r1 = dev.getScalarRegisterAccessor<T>("REG1");
+  auto r2 = dev.getScalarRegisterAccessor<T>("REG2");
+  auto r3 = dev.getScalarRegisterAccessor<T>("REG3");
+  test.runApplication();
+
+  // check that we don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  
+  // send something to the registers and send the trigger
+  r1 = 11;
+  r2 = 22;
+  r3 = 33;
+  r1.write();
+  r2.write();
+  r3.write();
+  trigger.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAny.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  test.stepApplication();
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
+  BOOST_CHECK(valueFromAny.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(valueFromBlocking == 33);
+  BOOST_CHECK(valueFromAsync == 22);
+  BOOST_CHECK(valueFromAny == 11);
+  BOOST_CHECK(index == 1);
+
+  // check that we don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  
+  // send something else to the registers and send the trigger
+  r1 = 6;
+  r2 = 5;
+  r3 = 4;
+  r1.write();
+  r2.write();
+  r3.write();
+  trigger.write();
+
+  // check that we still don't receive anything yet
+  usleep(10000);
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAny.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  
+  // run the application and check that we got the expected result
+  test.stepApplication();
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
+  BOOST_CHECK(valueFromAny.readNonBlocking() == true);
+  BOOST_CHECK(index.readNonBlocking() == true);
+  BOOST_CHECK(valueFromBlocking == 4);
+  BOOST_CHECK(valueFromAsync == 5);
+  BOOST_CHECK(valueFromAny == 6);
+  BOOST_CHECK(index == 1);
+
+  // check that stepApplication() throws an exception if no input data is available
+  try {
+    test.stepApplication();
+    BOOST_ERROR("IllegalParameter exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  }
+
+  // check that we still don't receive anything anymore
+  usleep(10000);
+  BOOST_CHECK(valueFromBlocking.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAsync.readNonBlocking() == false);
+  BOOST_CHECK(valueFromAny.readNonBlocking() == false);
+  BOOST_CHECK(index.readNonBlocking() == false);
+  
 }
