@@ -33,7 +33,9 @@ endforeach(testExecutableSrcFile)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/src srcFilesForDummyServerLib)
 add_library(RebotDummyServerLib ${srcFilesForDummyServerLib})
 add_executable(RebotDummyServer ${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/main.cpp)
-target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME} ${BOOST_LIBRARIES})
+# ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
+# other quirks. If not done, strange crashes occur on newer boost/gcc versions!
+target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME})
 
 target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
 
@@ -48,7 +50,9 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/unitTestsNotUnderCtest  executa
 foreach( executablesrc ${executables})
   get_filename_component(exename ${executablesrc} NAME_WE)
   add_executable(${exename} ${executablesrc})
-  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES})
+  # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
+  # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
+  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
 endforeach(executablesrc)
 
 
