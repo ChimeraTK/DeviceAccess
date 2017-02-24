@@ -74,11 +74,9 @@ if(TESTING_IS_ENABLED)
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${testExecutableSrcFile})
-    target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES}
-                                                           ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                                           ${Boost_LIBRARIES}
-                                                           ${LibXML++_LIBRARIES}
-                                                           ${glib_LIBRARIES})
+    # do not link against the boost unit test library, the tests are not written for it!
+    target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
+                                                           ${mtca4u-deviceaccess_LBRARIES})
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
 
@@ -152,9 +150,9 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/
                                                   EXCLUDE PATTERN "${PROJECT_NAME}" EXCLUDE)
 
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
-set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME}")
+set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${mtca4u-deviceaccess_LBRARIES}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
-set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
-set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
