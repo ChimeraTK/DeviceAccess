@@ -164,8 +164,9 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/include/mtca4u/ DESTINATION include/mtca
 #Only the reference header is needed. The other variables are for dependencies of this library,
 #but there are none.
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS}")
-set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES}")
-set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
+# Important: do not expose the boost unit test library to the dependents!
+set(${PROJECT_NAME}_LIBRARIES "")
+set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
 set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
@@ -186,5 +187,5 @@ if(DOXYGEN_FOUND)
           COMPONENT doc)
 else(DOXYGEN_FOUND)
   message("Doxygen not found, documentation cannot be build.")
-endif(DOXYGEN_FOUND) 
+endif(DOXYGEN_FOUND)
 
