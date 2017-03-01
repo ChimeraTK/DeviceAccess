@@ -128,7 +128,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_
                                                  SOVERSION ${${PROJECT_NAME}_SOVERSION})
 target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES}
                                       ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                      ${Boost_LIBRARIES} pthread
+                                      pthread
                                       ${LibXML++_LIBRARIES}
                                       ${glib_LIBRARIES})
 
