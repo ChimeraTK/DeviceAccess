@@ -1,9 +1,9 @@
 /*
- * ScalarAccessor.h
- *
- *  Created on: Jun 07, 2016
- *      Author: Martin Hierholzer
- */
+* ScalarAccessor.h
+*
+*  Created on: Jun 07, 2016
+*      Author: Martin Hierholzer
+*/
 
 #ifndef CHIMERATK_SCALAR_ACCESSOR_H
 #define CHIMERATK_SCALAR_ACCESSOR_H
@@ -21,7 +21,7 @@
 namespace ChimeraTK {
 
   /** Accessor for scalar variables (i.e. single values). Note for users: Use the convenience classes
-   *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
+  *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
   template< typename UserType >
   class ScalarAccessor : public mtca4u::ScalarRegisterAccessor<UserType> {
     public:
@@ -38,15 +38,15 @@ namespace ChimeraTK {
 
       /** Replace with other ScalarRegisterAccessor */
       void replace(const ScalarAccessor<UserType> &newAccessor) {
-	mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
-	node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
-				   newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
-				   &newAccessor.node.getValueType());
-	if(_owner != newAccessor._owner) {
-	  if(_owner != nullptr) _owner->unregisterAccessor(*this);
+        mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
+        node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
+                                  newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
+                                  &newAccessor.node.getValueType());
+        if(_owner != newAccessor._owner) {
+          if(_owner != nullptr) _owner->unregisterAccessor(*this);
           _owner = newAccessor._owner;
-	  _owner->registerAccessor(*this);
-	}
+          _owner->registerAccessor(*this);
+        }
       }
 
       void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
@@ -54,14 +54,14 @@ namespace ChimeraTK {
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
 
       ~ScalarAccessor() {
-	if(_owner != nullptr) _owner->unregisterAccessor(*this);
+        if(_owner != nullptr) _owner->unregisterAccessor(*this);
       }
       
   protected:
 
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode, const std::string &description)
-	: node(this, name, direction, unit, 1, mode, description, &typeid(UserType)), _owner(owner)
+      : node(this, name, direction, unit, 1, mode, description, &typeid(UserType)), _owner(owner)
       {
         owner->registerAccessor(*this);
       }
