@@ -38,11 +38,6 @@ namespace ChimeraTK {
 
       Module& operator[](const std::string& moduleName);
 
-  protected:
-
-      /** The thread executing mainLoop() */
-      boost::thread moduleThread;
-
   };
 
 } /* namespace ChimeraTK */
