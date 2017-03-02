@@ -29,6 +29,10 @@ namespace ChimeraTK {
        *  read after receiving the update. If no push-type variables are in the group, this function will just read
        *  all variables. The returned TransferElement will be the push-type variable which has been updated. */
       boost::shared_ptr<mtca4u::TransferElement> readAny();
+      
+      /** Just call read() on all variables in the group. If there are push-type variables in the group, this call
+       *  will block until all of the variables have received an update. */
+      void readAll();
 
       VariableNetworkNode operator()(const std::string& variableName);
 

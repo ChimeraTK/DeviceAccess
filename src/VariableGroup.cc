@@ -42,6 +42,15 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
   
+  void VariableGroup::readAll() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().read();
+    }
+  }
+
+/*********************************************************************************************************************/
+  
   VariableNetworkNode VariableGroup::operator()(const std::string& variableName) {
     for(auto variable : getAccessorList()) {
       if(variable.getName() == variableName) return VariableNetworkNode(variable);
