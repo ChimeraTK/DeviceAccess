@@ -51,15 +51,25 @@ namespace ChimeraTK {
       /** Obtain a scalar process variable from the application, which is published to the control system. */
       template<typename T>
       mtca4u::ScalarRegisterAccessor<T> getScalar(const mtca4u::RegisterPath &name) const {
-        auto pv = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pvManager->getProcessArray<T>(name));
-        return mtca4u::ScalarRegisterAccessor<T>(pv);
+        auto pv = pvManager->getProcessArray<T>(name);
+        if(pv == nullptr) {
+          throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
+                                        mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
+        }
+        auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
+        return mtca4u::ScalarRegisterAccessor<T>(deco);
       }
       
       /** Obtain an array-type process variable from the application, which is published to the control system. */
       template<typename T>
       mtca4u::OneDRegisterAccessor<T> getArray(const mtca4u::RegisterPath &name) const {
-        auto pv = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pvManager->getProcessArray<T>(name));
-        return mtca4u::OneDRegisterAccessor<T>(pv);
+        auto pv = pvManager->getProcessArray<T>(name);
+        if(pv == nullptr) {
+          throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
+                                        mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
+        }
+        auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
+        return mtca4u::OneDRegisterAccessor<T>(deco);
       }
       
   protected:
