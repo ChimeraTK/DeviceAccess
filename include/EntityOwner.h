@@ -31,7 +31,7 @@ namespace ChimeraTK {
       EntityOwner(EntityOwner *owner, const std::string &name);
       
       /** Virtual destructor to make the type polymorphic */
-      virtual ~EntityOwner() {}
+      virtual ~EntityOwner();
       
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }
@@ -44,6 +44,9 @@ namespace ChimeraTK {
       
       /** Obtain the list of accessors/variables associated with this instance and any submodules */
       std::list<VariableNetworkNode> getAccessorListRecursive();
+      
+      /** Obtain the list of submodules associated with this instance and any submodules */
+      std::list<Module*> getSubmoduleListRecursive();
 
       /** Called inside the constructor of Accessor: adds the accessor to the list */
       void registerAccessor(VariableNetworkNode accessor) {
@@ -57,6 +60,9 @@ namespace ChimeraTK {
       
       /** Register another module as a sub-mdoule. Will be called automatically by all modules in their constructors. */
       void registerModule(Module* module);
+      
+      /** Unregister another module as a sub-mdoule. Will be called automatically by all modules in their destructors. */
+      void unregisterModule(Module* module);
 
   protected:
     

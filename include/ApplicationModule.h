@@ -35,6 +35,16 @@ namespace ChimeraTK {
       VariableNetworkNode operator()(const std::string& variableName);
 
       Module& operator[](const std::string& moduleName);
+      
+      /** Move operation with the assignment operator */
+      ApplicationModule& operator=(ApplicationModule &&rhs) {
+        moduleThread = std::move(rhs.moduleThread);
+        _name = std::move(rhs._name);
+        _owner = std::move(rhs._owner);
+        accessorList = std::move(rhs.accessorList);
+        moduleList = std::move(rhs.moduleList);
+        return *this;
+      }
     
     protected:
 

@@ -139,15 +139,6 @@ namespace ChimeraTK {
       std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
             createApplicationVariable(VariableNetworkNode const &node);
 
-      /** Register an application module with the application. Will be called automatically by all modules in their
-       *  constructors. */
-      void overallRegisterModule(Module &module) {
-        overallModuleList.push_back(&module);
-      }
-      
-      /** List of application modules */
-      std::list<Module*> overallModuleList;   /// @todo TODO FIXME maybe recursing through all modules is better than having an additional overall list?
-
       /** List of InternalModules */
       std::list<boost::shared_ptr<InternalModule>> internalModuleList;
 

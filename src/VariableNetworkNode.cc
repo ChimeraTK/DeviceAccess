@@ -199,8 +199,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::operator==(const VariableNetworkNode& other) const {
-    if(other.pdata != pdata) return false;
-    return true;
+    return (other.pdata == pdata);
   }
 
   /*********************************************************************************************************************/

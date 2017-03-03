@@ -25,8 +25,23 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
+  EntityOwner::~EntityOwner() {
+    if(_owner != nullptr) {
+      auto thisMustBeAModule = static_cast<Module*>(this);  /// @todo TODO FIXME this is a bit dangerous...
+      _owner->unregisterModule(thisMustBeAModule);
+    }
+  }
+
+/*********************************************************************************************************************/
+
   void EntityOwner::registerModule(Module *module) {
     moduleList.push_back(module);
+  }
+
+/*********************************************************************************************************************/
+
+  void EntityOwner::unregisterModule(Module *module) {
+    moduleList.remove(module);
   }
 
 /*********************************************************************************************************************/
@@ -38,6 +53,20 @@ namespace ChimeraTK {
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
       auto sublist = submodule->getAccessorListRecursive();
+      list.insert(list.end(), sublist.begin(), sublist.end());
+    }
+    return list;
+  }
+
+/*********************************************************************************************************************/
+
+  std::list<Module*> EntityOwner::getSubmoduleListRecursive() {
+    // add modules of this instance itself
+    std::list<Module*> list = getSubmoduleList();
+    
+    // iterate through submodules
+    for(auto submodule : getSubmoduleList()) {
+      auto sublist = submodule->getSubmoduleListRecursive();
       list.insert(list.end(), sublist.begin(), sublist.end());
     }
     return list;

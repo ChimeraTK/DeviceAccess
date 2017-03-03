@@ -12,11 +12,12 @@ namespace ChimeraTK {
 
   Module::Module(EntityOwner *owner, const std::string &name)
   : EntityOwner(owner, name)
-  {
-    Application *theApp = &(Application::getInstance());
-    assert(theApp != nullptr);
-    theApp->overallRegisterModule(*this);
-  }
+  {}
+  
+/*********************************************************************************************************************/
+
+  Module::~Module()
+  {}
   
 /*********************************************************************************************************************/
 

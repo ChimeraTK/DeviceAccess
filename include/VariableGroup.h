@@ -37,6 +37,18 @@ namespace ChimeraTK {
       VariableNetworkNode operator()(const std::string& variableName);
 
       Module& operator[](const std::string& moduleName);
+      
+      /** Move operation with the assignment operator
+          @todo should be in the base class!? */
+      VariableGroup& operator=(VariableGroup &&rhs) {
+        _name = std::move(rhs._name);
+        _owner = std::move(rhs._owner);
+        accessorList = std::move(rhs.accessorList);
+        moduleList = std::move(rhs.moduleList);
+        return *this;
+      }
+      
+      VariableGroup& operator=(VariableGroup &rhs) = delete;
 
   };
 

@@ -48,7 +48,7 @@ void Application::initialise() {
 /*********************************************************************************************************************/
 
 void Application::processUnconnectedNodes() {
-  for(auto &module : overallModuleList) {
+  for(auto &module : getSubmoduleListRecursive()) {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
         std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "
@@ -103,7 +103,7 @@ void Application::checkConnections() {
   }
   
   // check if all accessors are connected
-  for(auto &module : overallModuleList) {
+  for(auto &module : getSubmoduleListRecursive()) {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
         throw std::invalid_argument("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+
@@ -131,7 +131,7 @@ void Application::run() {
 
   // read all input variables once, to set the startup value e.g. coming from the config file
   // (without triggering an action inside the application)
-  for(auto &module : overallModuleList) {
+  for(auto &module : getSubmoduleListRecursive()) {
     for(auto &variable : module->getAccessorList()) {
       if(variable.getDirection() == VariableDirection::consuming) {
         variable.getAppAccessorNoType().readNonBlocking();
@@ -140,7 +140,7 @@ void Application::run() {
   }
 
   // start the threads for the modules
-  for(auto &module : overallModuleList) {
+  for(auto &module : getSubmoduleListRecursive()) {
     module->run();
   }
 }
@@ -161,7 +161,7 @@ void Application::shutdown() {
   }
 
   // next deactivate the modules, as they have running threads inside as well
-  for(auto &module : overallModuleList) {
+  for(auto &module : getSubmoduleListRecursive()) {
     module->terminate();
   }
 

@@ -53,6 +53,15 @@ namespace ChimeraTK {
 
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
 
+      /** Move-assignment operator as an alternative for replace where applicable. This is needed to allow late
+       *  initialisation of ApplicationModules using ScalarAccessors */
+      ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &&rhs) {
+        mtca4u::NDRegisterAccessorBridge<UserType>::replace(rhs);
+        node.pdata = rhs.node.pdata;
+        node.pdata->appNode = this;
+        return *this;
+      }
+      
       ~ScalarAccessor() {
         if(_owner != nullptr) _owner->unregisterAccessor(*this);
       }

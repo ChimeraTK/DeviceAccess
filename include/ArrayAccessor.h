@@ -1,9 +1,9 @@
 /*
- * ArrayAccessor.h
- *
- *  Created on: Jun 07, 2016
- *      Author: Martin Hierholzer
- */
+* ArrayAccessor.h
+*
+*  Created on: Jun 07, 2016
+*      Author: Martin Hierholzer
+*/
 
 #ifndef CHIMERATK_ARRAY_ACCESSOR_H
 #define CHIMERATK_ARRAY_ACCESSOR_H
@@ -20,7 +20,7 @@
 namespace ChimeraTK {
 
   /** Accessor for array variables (i.e. vectors). Note for users: Use the convenience classes
-   *  ArrayPollInput, ArrayPushInput, ArrayOutput instead of this class directly. */
+  *  ArrayPollInput, ArrayPushInput, ArrayOutput instead of this class directly. */
   template< typename UserType >
   class ArrayAccessor :  public mtca4u::OneDRegisterAccessor<UserType> {
     public:
@@ -36,29 +36,40 @@ namespace ChimeraTK {
       }
       /** Replace with other ScalarRegisterAccessor */
       void replace(const ArrayAccessor<UserType> &newAccessor) {
-	mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
-	node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
-				   newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
-				   &newAccessor.node.getValueType());
-	if(_owner != newAccessor._owner) {
-	  if(_owner != nullptr) _owner->unregisterAccessor(*this);
+        if(_owner != newAccessor._owner && _owner != nullptr) {
+          _owner->unregisterAccessor(node);
+        }
+        mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
+        node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
+                                  newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
+                                  &newAccessor.node.getValueType());
+        if(_owner != newAccessor._owner) {
           _owner = newAccessor._owner;
-	  _owner->registerAccessor(*this);
-	}
+          if(_owner != nullptr) _owner->registerAccessor(node);
+        }
       }
 
       void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
 
+      /** Move-assignment operator as an alternative for replace where applicable. This is needed to allow late
+       *  initialisation of ApplicationModules using ArrayAccessors */
+      ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &&rhs) {
+        mtca4u::NDRegisterAccessorBridge<UserType>::replace(rhs);
+        node.pdata = rhs.node.pdata;
+        node.pdata->appNode = this;
+        return *this;
+      }
+
       using mtca4u::OneDRegisterAccessor<UserType>::operator=;
 
       ~ArrayAccessor() {
-	if(_owner != nullptr) _owner->unregisterAccessor(*this);
+        if(_owner != nullptr) _owner->unregisterAccessor(*this);
       }
       
   protected:
       ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           size_t nElements, UpdateMode mode, const std::string &description)
-	: node(this, name, direction, unit, nElements, mode, description, &typeid(UserType)), _owner(owner)
+        : node(this, name, direction, unit, nElements, mode, description, &typeid(UserType)), _owner(owner)
       {
         owner->registerAccessor(*this);
       }
