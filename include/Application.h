@@ -96,7 +96,7 @@ namespace ChimeraTK {
        *  original version provided by DeviceAccess. If the testable mode is not enabled, just the original version
        *  is called instead. Only with the testable mode enabled, special precautions are taken to make this blocking
        *  call testable. */
-      boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+      static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
     protected:
 

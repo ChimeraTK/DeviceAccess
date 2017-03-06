@@ -648,11 +648,11 @@ void Application::stepApplication() {
 /*********************************************************************************************************************/
 
 boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-  if(!testableMode) {
+  if(!Application::getInstance().testableMode) {
     return mtca4u::TransferElement::readAny(elementsToRead);
   }
   else {
-    auto &theLock = getTestableModeLockObject();
+    auto &theLock = Application::getInstance().getTestableModeLockObject();
     try {
       theLock.unlock();
     }
