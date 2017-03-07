@@ -1,5 +1,5 @@
 #include <mtca4u/Device.h>
-#include <mtca4u/BackendFactory.h>
+#include <mtca4u/Utilities.h>
 #include <iostream>
 
 /* All information needed to access the device is
@@ -8,12 +8,12 @@
  */
 
 int main(){
-  /* Before you use a device you have to tell the factory
+  /* Before you use a device you have to tell DeviceAccess
    * which dmap file to use.
    * \todo There should be a global function to do this. It is an implementation
    * detail that it's the factory which has to know it.
    */
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
+  mtca4u::setDMapFilePath("example.dmap");
 
   /* Create a device. Make sure a device alias is present
    * in the dmap file.

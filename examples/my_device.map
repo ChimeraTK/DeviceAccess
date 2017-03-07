@@ -16,7 +16,7 @@ BOARD.CLOCK3                  0x00000001    0x0000001C    0x00000004    0x000000
 
 # There might be a temperature controller with two scalar registers: A set point and a monitor value
 TEMPERATURE_CONTROLLER.SET_POINT     0x1    0x00000020    0x00000004    0x00000000       24         8         0
-TEMPERATURE_CONTROLLER.MONITOR_VALUE 0x1    0x00000020    0x00000004    0x00000000       24         8         0
+TEMPERATURE_CONTROLLER.MONITOR_VALUE 0x1    0x00000024    0x00000004    0x00000000       24         8         0
 
 # The data area, of an ADC which multiplexes data of all channels
 ADC.AREA_DATA_RAW             0x00000010   0x00000000    0x00000040     0x00000002

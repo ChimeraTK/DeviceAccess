@@ -1,9 +1,9 @@
 #include <mtca4u/Device.h>
-#include <mtca4u/BackendFactory.h>
+#include <mtca4u/Utilities.h>
 #include <iostream>
 
 int main() {
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
+  mtca4u::setDMapFilePath("example.dmap");
   mtca4u::Device myDevice;
   myDevice.open("MY_DEVICE");
 

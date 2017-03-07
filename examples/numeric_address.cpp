@@ -1,19 +1,23 @@
 #include <mtca4u/Device.h>
-#include <mtca4u/BackendFactory.h>
 #include <mtca4u/NumericAddress.h>
 #include <iostream>
 
-/* All information needed to access the device is the device alias (plus a .dmap file).
- * In this example, no map file is needed, since the numeric address is directly
+/* When you are doing numerical addressing you usually don't have a map file yet.
+ * You directly open the device (pcie for instance) with the URI syntax which you usually
+ * put into the dmap file.
+ * In this example, the map file is only needed to tell the dummy what to simulate.
+ * In the code the map file information is not used since the numeric address is directly
  * written in the code.
- * Otherwise, the example is identical to "basic.cpp". See there for additional
+ * Otherwise, the example is identical to "basic.cpp". Look there for additional
  * documentation.
  */
 
 int main(){
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("example.dmap");
   mtca4u::Device myDevice;
-  myDevice.open("MY_DEVICE");
+  /* If you have the mtcadummy driver installed you can also use a pci device:
+   * myDevice.open("sdm://./pci:pcieunidummys6");
+   */
+  myDevice.open("sdm://./dummy=my_device.map");
 
   /* Here, the register is accessed by its numeric address through a special register
    * path name. The first component is a constant defining that a numeric address will
