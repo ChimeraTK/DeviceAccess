@@ -23,6 +23,7 @@
 
 #include "DeviceException.h"
 #include "TimeStamp.h"
+#include "TransferFuture.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -31,55 +32,13 @@ namespace ChimeraTK {
 namespace mtca4u {
 
   class TransferGroup;
-  class TransferElement;
-  class TransferFutureIterator;
-
-  /** Special future returned by TransferElement::readAsync(). See its function description for more details.
-   * 
-   *  Implementation note: for efficiency reasons we keep this class in the same header file as the TransferElement, as
-   *  this allows us to make the implementation inline. This might not be really necessary and will not improve
-   *  performance any more if the class will have to be made virtual, but as long as there is no need for this
-   *  extra flexibility we can keep it like this. */
-  class TransferFuture {
-    public:
-      
-      /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
-       *  automatically executed before returning, so the new data is directly available in the buffer. */
-      void wait();
-
-      /** Default constructor to generate a dysfunctional future (just for late initialisation) */
-      TransferFuture()
-      : _transferElement(nullptr) {}
-
-      /** Constructor to generate an already fulfilled future. */
-      TransferFuture(TransferElement *transferElement)
-      : _transferElement(transferElement) {
-        boost::promise<void> prom;
-        _theFuture = prom.get_future().share();
-        prom.set_value();
-      }
-      
-      /** Constructor accepting a "plain" boost::shared_future */
-      TransferFuture(boost::shared_future<void> plainFuture, TransferElement *transferElement)
-      : _theFuture(plainFuture), _transferElement(transferElement)
-      {}
-
-    protected:
-      
-      friend class TransferElement;
-      friend class TransferFutureIterator;
-
-      /** The plain boost future */
-      boost::shared_future<void> _theFuture;
-      
-      /** Pointer to the TransferElement */
-      TransferElement *_transferElement;
-  };
+  
+  using ChimeraTK::TransferFuture;
   
   /*******************************************************************************************************************/
 
   /** Base class for register accessors which can be part of a TransferGroup */
-  class TransferElement : public boost::enable_shared_from_this<TransferElement>{
+  class TransferElement : public boost::enable_shared_from_this<TransferElement> {
 
     public:
 
@@ -87,6 +46,20 @@ namespace mtca4u {
       TransferElement(std::string const &name = std::string(), std::string const &unit = std::string(unitNotSet),
                       std::string const &description = std::string())
       : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
+      
+      /** Copy constructor: do not allow copying when in TransferGroup, remove asynchronous read state */
+      TransferElement(const TransferElement &other)
+      : boost::enable_shared_from_this<TransferElement>(),
+        _name(other._name),
+        _unit(other._unit),
+        _description(other._description),
+        isInTransferGroup{false}
+      {
+        if(other.isInTransferGroup) {
+          throw DeviceException("Copying a TransferElement which is part of a TransferGroup is not allowed.",
+              DeviceException::WRONG_PARAMETER);
+        }
+      }
       
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
@@ -157,17 +130,19 @@ namespace mtca4u {
        *
        *  Design note: A special type of future has to be returned to allow an abstraction from the implementation
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
-       *  without launching a thread.
+       *  without launching a thread. A reference is returned since we need polymorphism. This is possible since
+       *  the implementation anyway needs to store the object to be able to return it a second time if readAsync()
+       *  is called again before the future is fulfilled.
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture readAsync() = 0;
+      virtual TransferFuture& readAsync() = 0;
       
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
        *  new data. The TransferElement which received new data is returned as a reference. When this function
        *  returns, the all elements but the returned TransferElement still have a pending transfer, thus calling
        *  read() or write() and similar functions on them is illegal. Only their current values may be accessed,
        *  another readAny() or readAsync() may be called. */
-      static TransferElement& readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+      static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /** Write the data to device. */
       virtual void write() = 0;
@@ -205,7 +180,13 @@ namespace mtca4u {
        *  Called by the TransferGroup after a write will be executed directly on the underlying accessor. */
       virtual void postWrite() {};
 
-      /** Check if the two TransferElements are identical, i.e. accessing the same hardware register */
+      /** 
+       *  Check if the two TransferElements are identical, i.e. accessing the same hardware register. The definition of
+       *  an "hardware register" is strongly depending on the backend implementation, thus using this function in
+       *  application code will probably break the abstraction!
+       *
+       *  @todo Rename this function to something more appropriate (e.g. mayJoinTransfer?)
+       */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
 
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
@@ -239,22 +220,32 @@ namespace mtca4u {
         throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
       }
 
-      /** Obtain the underlying TransferElements with actual hardware access. If this transfer element
+      /** 
+       *  Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing
        *  a shared pointer of itself.
+       * 
+       *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() = 0;
 
-      /** Obtain the highest level implementation TransferElement. For TransferElements which are itself an
+      /** 
+       *  Obtain the highest level implementation TransferElement. For TransferElements which are itself an
        *  implementation this will directly return a shared pointer to this. If this TransferElement is a user
-       *  frontend, the pointer to the internal implementation is returned. */
+       *  frontend, the pointer to the internal implementation is returned.
+       *
+       *  Note: Avoid using this in application code, since it will break the abstraction!
+       */
       virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() {
         return shared_from_this();
       }
 
-      /** Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
+      /** 
+       *  Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
        *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
        *  element matches the new element, this function has no effect.
+       *
+       *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
 
@@ -297,14 +288,6 @@ namespace mtca4u {
   };
 
   /*******************************************************************************************************************/  
-  
-  inline void TransferFuture::wait() {
-    _theFuture.wait();
-    _transferElement->postRead();
-    _transferElement->hasActiveFuture = false;
-  }
-
-  /*******************************************************************************************************************/  
 
   // Note: the %iterator in the third line prevents doxygen from creating a link which it cannot resolve.
   // It reads: std::list<boost::shared_future<void>>::iterator
@@ -315,16 +298,16 @@ namespace mtca4u {
    *  return value of boost::wait_for_any(). */
   class TransferFutureIterator {
     public:
-      TransferFutureIterator(const std::list<TransferFuture>::iterator &it) : _it(it) {}
+      TransferFutureIterator(const std::list<TransferFuture*>::iterator &it) : _it(it) {}
       TransferFutureIterator operator++() { TransferFutureIterator ret(_it); ++_it; return ret; }
       TransferFutureIterator operator++(int) { ++_it; return *this; }
       bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
       bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
-      boost::shared_future<void>& operator*() {return _it->_theFuture;}
-      boost::shared_future<void>& operator->() {return _it->_theFuture;}
-      TransferFuture getTransferFuture() const {return *_it;}
+      boost::shared_future<void>& operator*() {return (*_it)->getBoostFuture();}
+      boost::shared_future<void>& operator->() {return (*_it)->getBoostFuture();}
+      TransferFuture& getTransferFuture() const {return **_it;}
     private:
-      std::list<TransferFuture>::iterator _it;
+      std::list<TransferFuture*>::iterator _it;
   };
   
 } /* namespace mtca4u */
@@ -340,10 +323,10 @@ namespace mtca4u {
 
   /*******************************************************************************************************************/  
   
-  inline TransferElement& TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-    std::list<TransferFuture> futureList;
+  inline boost::shared_ptr<TransferElement> TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+    std::list<TransferFuture*> futureList;
     for(auto elem : elementsToRead) {
-      auto future = elem.get().readAsync();
+      auto *future = &(elem.get().readAsync());
       futureList.push_back(future);
     }
     // See class description of TransferFutureIterator. We need this trick to obtain the transfer element from the
@@ -352,7 +335,7 @@ namespace mtca4u {
     boost::this_thread::interruption_point();
     iter.getTransferFuture().wait();    // complete the transfer (i.e. run postRead())
     boost::this_thread::interruption_point();
-    return *(iter.getTransferFuture()._transferElement);
+    return iter.getTransferFuture().getTransferElement().shared_from_this();
   }
 
 } /* namespace mtca4u */

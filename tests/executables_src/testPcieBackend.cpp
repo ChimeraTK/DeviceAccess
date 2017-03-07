@@ -122,15 +122,22 @@ class PcieBackendTestSuite : public test_suite {
 
       test_case* failIfBackendClosedTestCase = BOOST_CLASS_TEST_CASE( &PcieBackendTest::testFailIfBackendClosed, pcieBackendTest );
 
-      readRegisterTestCase->depends_on( openTestCase );
-      writeRegisterTestCase->depends_on( readRegisterTestCase );
+      test_case *testConstructor = BOOST_TEST_CASE( &PcieBackendTest::testConstructor );
+
+      createBackendTestCase->depends_on( testConstructor );
+      openTestCase->depends_on( createBackendTestCase );
       readTestCase->depends_on( openTestCase );
       writeAreaTestCase->depends_on( readTestCase );
-      readDMATestCase->depends_on( openTestCase );
+      readRegisterTestCase->depends_on( writeAreaTestCase );
+      writeRegisterTestCase->depends_on( readRegisterTestCase );
+      readDMATestCase->depends_on( writeRegisterTestCase );
       writeDMATestCase->depends_on( readDMATestCase );
-      closeTestCase->depends_on( openTestCase );
-      add( BOOST_TEST_CASE( &PcieBackendTest::testConstructor ) );
-      // Todo .. Add dependencies
+      readDeviceInfoTestCase->depends_on( writeDMATestCase );
+      closeTestCase->depends_on( readDeviceInfoTestCase );
+      failIfBackendClosedTestCase->depends_on( closeTestCase );
+
+      add (testConstructor);
+
       add (createBackendTestCase);
       add (openTestCase);
 
@@ -146,7 +153,7 @@ class PcieBackendTestSuite : public test_suite {
       add (readDeviceInfoTestCase);
 
       add (closeTestCase);
-      add( failIfBackendClosedTestCase );
+      add (failIfBackendClosedTestCase);
 
     }
   private:
@@ -178,6 +185,7 @@ init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 // The implementations of the individual tests
 
 void PcieBackendTest::testConstructor() {
+  std::cout << "testConstructor" << std::endl;
   PcieBackend pcieBackend("");
   BOOST_CHECK( pcieBackend.isOpen() == false );
   BOOST_CHECK( pcieBackend.isConnected() == true );
@@ -189,6 +197,7 @@ PcieBackendTest::PcieBackendTest(std::string const & deviceFileName, unsigned in
 
 
 std::string PcieBackendTest::checkDmaValues( std::vector<int32_t> const & dmaBuffer ) {
+  std::cout << "testDmaValues" << std::endl;
   bool dmaValuesOK = true;
   size_t i; // we need this after the loop
   for ( i=0; i < dmaBuffer.size(); ++i)
@@ -214,6 +223,7 @@ std::string PcieBackendTest::checkDmaValues( std::vector<int32_t> const & dmaBuf
 //check that the exception is thrown if the backend is not opened
 void PcieBackendTest::testFailIfBackendClosed()
 {
+  std::cout << "testFailIfBackendClosed" << std::endl;
   //FIXME: Change the driver to have the standard register set and adapt this code
 
   // We use the  WORD_USER_OFFSET register in bar 0 for all operations. It is read/write.
@@ -243,6 +253,7 @@ void PcieBackendTest::testFailIfBackendClosed()
 }
 
 void PcieBackendTest::testReadDeviceInfo(){
+  std::cout << "testReadDeviceInfo" << std::endl;
   // The device info returns slot and driver version (major and minor).
   // For the dummy major and minor are the same as firmware and compilation, respectively.
   int32_t major;
@@ -261,6 +272,7 @@ void PcieBackendTest::testReadDeviceInfo(){
 }
 
 void PcieBackendTest::testReadDMA(){
+  std::cout << "testReadDMA" << std::endl;
   // Start the ADC on the dummy device. This will fill the "DMA" buffer with the default values (index^2) in the first 25 words.
   //_pcieBackendInstance->writeReg(/*bar*/ 0, WORD_ADC_ENA_OFFSET, 1);
   int32_t data = 1;
@@ -287,10 +299,12 @@ void PcieBackendTest::testReadDMA(){
 }
 
 void PcieBackendTest::testWriteDMA(){
+  std::cout << "testWriteDMA" << std::endl;
 
 }
 
 void PcieBackendTest::testRead(){
+  std::cout << "testRead" << std::endl;
   //FIXME: Change the driver to have the standard register set and adapt this code
 
   // Read the first two words, which are WORD_FIRMWARE and WORD_COMPILATION
@@ -326,6 +340,7 @@ void PcieBackendTest::testRead(){
 }
 
 void PcieBackendTest::testWriteArea(){
+  std::cout << "testWriteArea" << std::endl;
   //FIXME: Change the driver to have the standard register set and adapt this code
 
   // Read the two WORD_CLK_CNT words, write them and read them back
@@ -357,6 +372,7 @@ void PcieBackendTest::testWriteArea(){
 
 void PcieBackendTest::testReadRegister()
 {
+  std::cout << "testReadRegister" << std::endl;
   //FIXME: Change the driver to have the standard register set and adapt this code
 
   // read the WORD_COMPILATION register in bar 0. It's value is not 0.
@@ -382,6 +398,7 @@ void PcieBackendTest::testReadRegister()
 
 void PcieBackendTest::testWriteRegister()
 {
+  std::cout << "testWriteRegister" << std::endl;
   //FIXME: Change the driver to have the standard register set and adapt this code
 
   // We read the user register, increment it by one, write it and reread it.
@@ -402,6 +419,7 @@ void PcieBackendTest::testWriteRegister()
 
 
 void PcieBackendTest::testClose(){
+  std::cout << "testClose" << std::endl;
   /** Try closing the backend */
   _pcieBackendInstance->close();
   /** backend should not be open now */
@@ -412,12 +430,14 @@ void PcieBackendTest::testClose(){
 
 
 void PcieBackendTest::testOpen(){
+  std::cout << "testOpen" << std::endl;
   _pcieBackendInstance->open();
   BOOST_CHECK(_pcieBackendInstance->isOpen() == true );
   BOOST_CHECK(_pcieBackendInstance->isConnected() == true );
 }
 
 void PcieBackendTest::testCreateBackend(){
+  std::cout << "testCreateBackend" << std::endl;
   /** Try creating a non existing backend */
   BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
   /** Try creating an existing backend */

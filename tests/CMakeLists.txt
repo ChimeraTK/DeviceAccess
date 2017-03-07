@@ -20,10 +20,12 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/executables_src testExecutables
 
 foreach( testExecutableSrcFile ${testExecutables})
   #NAME_WE means the base name without path and (longest) extension
-  get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
-  add_executable(${excutableName} ${testExecutableSrcFile})
-  target_link_libraries(${excutableName} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES}) 
-  add_test(${excutableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${excutableName})
+  get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
+  add_executable(${executableName} ${testExecutableSrcFile})
+  # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
+  # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
+  target_link_libraries(${executableName} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
+  add_test(${executableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${executableName})
 endforeach(testExecutableSrcFile)
 
 #
@@ -31,11 +33,13 @@ endforeach(testExecutableSrcFile)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/src srcFilesForDummyServerLib)
 add_library(RebotDummyServerLib ${srcFilesForDummyServerLib})
 add_executable(RebotDummyServer ${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/main.cpp)
-target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME} ${BOOST_LIBRARIES})
+# ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
+# other quirks. If not done, strange crashes occur on newer boost/gcc versions!
+target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME})
 
 target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
 
-# 
+#
 # Introduced directory unitTestsNotUnderCtest; This contains the boost unit
 # tests (currently for the rebot backend). The tests in this directory should
 # not be added as ctest tests. The idea is to call them indirectly through a
@@ -46,7 +50,9 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/unitTestsNotUnderCtest  executa
 foreach( executablesrc ${executables})
   get_filename_component(exename ${executablesrc} NAME_WE)
   add_executable(${exename} ${executablesrc})
-  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY ${Boost_LIBRARIES})
+  # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
+  # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
+  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
 endforeach(executablesrc)
 
 

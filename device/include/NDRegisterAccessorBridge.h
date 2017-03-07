@@ -35,8 +35,14 @@ namespace mtca4u {
        *  argument, both NDRegisterAccessorBridges will then point to the same accessor and thus are sharing the
        *  same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding
        *  getXXRegisterAccessor() function of Device must be called. */
-      void replace(const NDRegisterAccessorBridge &newAccessor) {
+      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) {
         _impl = newAccessor._impl;
+      }
+      
+      /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
+       *  has been obtained directly (instead of a NDRegisterAccessorBridge). */
+      void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
+        _impl = newImpl;
       }
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
@@ -58,7 +64,7 @@ namespace mtca4u {
         NDRegisterAccessorBridge<UserType>::_impl->postRead();
       }
 
-      TransferFuture readAsync() override {
+      TransferFuture& readAsync() override {
         return NDRegisterAccessorBridge<UserType>::_impl->readAsync();
       }
 
@@ -78,17 +84,6 @@ namespace mtca4u {
       bool isWriteable() const override {
         return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
       }
-
-    protected:
-
-      NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
-      : _impl(impl)
-      {}
-
-      NDRegisterAccessorBridge() {}
-
-      /** pointer to the implementation */
-      boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
 
       bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         return _impl->isSameRegister(other);
@@ -111,11 +106,22 @@ namespace mtca4u {
         return _impl;
       }
 
-      friend class TransferGroup;
-
       const std::type_info& getValueType() const override {
         return typeid(UserType);
       }
+
+    protected:
+
+      NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
+      : _impl(impl)
+      {}
+
+      NDRegisterAccessorBridge() {}
+
+      /** pointer to the implementation */
+      boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
+
+      //friend class TransferGroup;
 
     private:
 

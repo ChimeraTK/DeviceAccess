@@ -69,7 +69,32 @@ namespace mtca4u {
         return buffer_2D.size();
       }
 
-      /** Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
+      virtual const std::type_info& getValueType() const {
+        return typeid(UserType);
+      }
+
+      TransferFuture& readAsync() override {
+        ChimeraTK::ExperimentalFeatures::check("asynchronous read");
+        if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
+        
+        // create promise future pair and launch doReadTransfer in separate thread
+        readAsyncPromise = boost::promise<void>();
+        auto boostFuture = readAsyncPromise.get_future().share();
+        readAsyncThread = boost::thread( [this] { doReadTransfer(); readAsyncPromise.set_value(); } );
+        
+        // form TransferFuture, store it for later re-used and return it
+        activeFuture = TransferFuture(boostFuture, static_cast<TransferElement*>(this));
+        hasActiveFuture = true;
+        return activeFuture;
+      }
+
+      /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
+       *  \deprecated This function is deprecated, remove it at some point!
+       * 
+       *  This function was deprecated since it cannot be implemented for lockfree implementations (like the
+       *  ControlSystemAdapter's ProcessVariable).
+       *  
+       *  Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
        *  AccessMode::wait_for_new_data to obtain the amount of data waiting for retrieval in this accessor. If the
        *  returned value is 0, the call to read() will block until new data has arrived. If the returned value is > 0,
        *  it is guaranteed that the next call to read() will not block. If the accessor was obtained without the
@@ -85,25 +110,6 @@ namespace mtca4u {
        *  by the fixed point converter is required, this function will throw an exception. */
       virtual FixedPointConverter getFixedPointConverter() const  {
         throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
-      }
-
-      virtual const std::type_info& getValueType() const {
-        return typeid(UserType);
-      }
-
-      TransferFuture readAsync() override {
-        ChimeraTK::ExperimentalFeatures::check("asynchronous read");
-        if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
-        
-        // create promise future pair and launch doReadTransfer in separate thread
-        readAsyncPromise = boost::promise<void>();
-        auto boostFuture = readAsyncPromise.get_future().share();
-        readAsyncThread = boost::thread( [this] { doReadTransfer(); readAsyncPromise.set_value(); } );
-        
-        // form TransferFuture, store it for later re-used and return it
-        activeFuture = TransferFuture(boostFuture, static_cast<TransferElement*>(this));
-        hasActiveFuture = true;
-        return activeFuture;
       }
 
     protected:
