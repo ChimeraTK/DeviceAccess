@@ -136,8 +136,6 @@ endforeach(dir)
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")
-add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
-
 
 #change the install prefix to the source directory in case the user has not specified a destination 
 #i. e. CMAKE_INSTALL_PREFIX is not set manually
@@ -189,4 +187,5 @@ endif(DOXYGEN_FOUND)
 # We don't want to link client applications to the boost testing library. This might give trouble.
 enable_testing()  
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
+add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
 

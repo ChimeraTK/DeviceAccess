@@ -20,7 +20,7 @@ are complete and fully functional.
 \li Transfer groups
 \li Firmware debugging without map/dmap file
 \li Automatic data conversion and raw data access
-\li Implementing your own backend
+\li \ref custom_backends
 \li \ref dmap
 \li \ref mapping 
 

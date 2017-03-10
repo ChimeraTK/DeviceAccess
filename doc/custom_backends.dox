@@ -1,0 +1,32 @@
+/**
+\page custom_backends Creating ryour own backend
+
+\section Writing Dummies: Extending the DummyBackend
+
+Is this a good idea, or would one rather extend the VirtualLabBackend?
+
+\section The Plugin Mechanism
+
+Custom backends are provided as shared libraries. There is a plugin mechanism which allows
+to load the backend at run time. Like this you can for instance load all kinds of
+backends in QtHardMon, although it has not been linked against it.
+
+The backend has to fulfil a few requirements for the plugin mechanism to work.
+
+\li The backend has to provide a createInstance() function which can be given to the BackendFactory. Like this the factory can create the backend without knowing the details how to call the specific constructor.
+\li The backend has to be registered with the factory. This should automatically happen
+  when the library is loaded.
+\li The library should be loadable at run time, not only at link time. This requires
+  to check that the backend has been compiled with the the correct DeviceAcces version.
+
+The CustomBackend example shows how to implement those three steps of the plugin mechanism.
+\include CustomBackend.cc
+
+Next topic: \ref dmap
+
+*/
+
+/**
+\example CustomBackend.cc
+An example of the plugin mechanism. The CustomBackend automatically registers itself to the BackendFactory of the DeviceAccess library.
+*/

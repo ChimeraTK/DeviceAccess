@@ -1,0 +1,3 @@
+@LOAD_LIB ${PROJECT_BINARY_DIR}/lib/libCustomBackend.so
+
+MY_CUSTOM_DEVICE sdm://./CUSTOM=my_device.map my_device.map

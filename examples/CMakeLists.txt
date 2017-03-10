@@ -24,3 +24,5 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_N
 # the Makefile which is creates by CMake when doing an in-source build.
 # In the installed example it should be called Makefile. We don't have a CMakeLists.tx example at the moment.
 install(FILES Makefile.example DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}/examples RENAME Makefile )
+
+add_subdirectory ("custom_backend_registration")
