@@ -638,7 +638,12 @@ void Application::stepApplication() {
         "Application::stepApplication() called despite no input was provided to the application to process!");
   }
   // let the application run until it has processed all data (i.e. the semaphore counter is 0) 
+  size_t oldCounter = 0;
   while(testableMode_counter > 0) {
+    if(enableDebugTestableMode && ( oldCounter != testableMode_counter) ) {
+      std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter << std::endl;
+      oldCounter = testableMode_counter;
+    }
     getTestableModeLockObject().unlock();
     boost::this_thread::yield();
     getTestableModeLockObject().lock();

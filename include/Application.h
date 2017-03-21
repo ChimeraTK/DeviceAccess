@@ -80,6 +80,10 @@ namespace ChimeraTK {
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
        *  the testable mode was enabled. */
       void stepApplication();
+      
+      /** Enable some additional (potentially noisy) debug output for the testable mode. Can be useful if tests
+       *  of applications seem to hang for no reason in stepApplication. */
+      void debugTestableMode() { enableDebugTestableMode = true; }
 
       /** Obtain the lock object for the testable mode lock for the current thread. The returned object has
        *  thread_local storage duration and must only be used inside the current thread. Initially (i.e. after
@@ -177,6 +181,9 @@ namespace ChimeraTK {
       /** Semaphore counter used in testable mode to check if application code is finished executing. This value may
        *  only be accessed while holding the testableMode_mutex. */
       size_t testableMode_counter{0};
+      
+      /** Flag if noisy debug output is enabled for the testable mode */
+      bool enableDebugTestableMode{false};
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter

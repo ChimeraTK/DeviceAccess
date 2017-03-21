@@ -46,6 +46,10 @@ namespace ChimeraTK {
         _accessor->hasActiveFuture = false;
         Application::getTestableModeLockObject().lock();
         --Application::getInstance().testableMode_counter;
+        if(Application::getInstance().enableDebugTestableMode) {
+          std::cout << "TestDecoratorTransferFuture::wait[name='"<<_accessor->getName()<<"']: testableMode_counter decreased, now at value "
+                    << Application::getInstance().testableMode_counter << std::endl; 
+        }
       }
 
       TestDecoratorTransferFuture& operator=(const TestDecoratorTransferFuture &&other) {
@@ -94,6 +98,10 @@ namespace ChimeraTK {
         auto &myLock = Application::getTestableModeLockObject();
         if(!myLock.owns_lock()) myLock.lock();   // may happen if first write in thread is done before first blocking read
         ++Application::getInstance().testableMode_counter;
+        if(Application::getInstance().enableDebugTestableMode) {
+          std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"']: testableMode_counter increased, now at value "
+                    << Application::getInstance().testableMode_counter << std::endl; 
+        }
         _accessor->write();
         postWrite();
       }
@@ -108,6 +116,10 @@ namespace ChimeraTK {
         _accessor->doReadTransfer();
         Application::getTestableModeLockObject().lock();
         --Application::getInstance().testableMode_counter;
+        if(Application::getInstance().enableDebugTestableMode) {
+          std::cout << "TestDecoratorRegisterAccessor::doReadTransfer[name='"<<this->getName()<<"']: testableMode_counter decreased, now at value "
+                    << Application::getInstance().testableMode_counter << std::endl; 
+        }
       }
 
       bool doReadTransferNonBlocking() override {
