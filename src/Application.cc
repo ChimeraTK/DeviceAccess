@@ -586,6 +586,11 @@ void Application::typedMakeConnection(VariableNetwork &network) {
                                                                 feeder.getDescription(), feeder.getNumberOfElements());
       feeder.getAppAccessor<UserType>().replace(fanOut);
 
+      // In case we have one or more trigger receivers among our consumers, we produce exactly one application variable
+      // for it. We never need more, since the distribution is done with a TriggerFanOut.
+      bool usedTriggerReceiver{false};        // flag if we already have a trigger receiver
+      auto triggerConnection = createApplicationVariable<UserType>(feeder);   // will get destroyed if not used
+
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
           auto impls = createApplicationVariable<UserType>(consumer);
@@ -602,9 +607,9 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          auto impls = createApplicationVariable<UserType>(consumer);
-          fanOut->addSlave(impls.first);
-          consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
+          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first);
+          usedTriggerReceiver = true;
+          consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
