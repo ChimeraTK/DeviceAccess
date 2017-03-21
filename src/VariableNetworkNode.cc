@@ -82,6 +82,7 @@ namespace ChimeraTK {
     pdata->type = NodeType::TriggerReceiver;
     pdata->direction = VariableDirection::consuming;
     pdata->triggerReceiver = nodeToTrigger;
+    pdata->name = "trigger:"+nodeToTrigger.getName();
   }
 
   /*********************************************************************************************************************/
@@ -318,8 +319,16 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const std::string& VariableNetworkNode::getName() const {
-    return pdata->name;
+  std::string VariableNetworkNode::getName() const {
+    if(pdata->type == NodeType::ControlSystem) {
+      return pdata->publicName;
+    }
+    else if(pdata->type == NodeType::Device) {
+      return pdata->deviceAlias+":"+pdata->registerName;
+    }
+    else {
+      return pdata->name;
+    }
   }
 
   /*********************************************************************************************************************/

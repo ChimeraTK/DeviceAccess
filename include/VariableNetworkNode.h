@@ -108,7 +108,7 @@ namespace ChimeraTK {
       UpdateMode getMode() const;
       VariableDirection getDirection() const;
       const std::type_info& getValueType() const;
-      const std::string& getName() const;
+      std::string getName() const;
       const std::string& getUnit() const;
       const std::string& getDescription() const;
       VariableNetwork& getOwner() const;

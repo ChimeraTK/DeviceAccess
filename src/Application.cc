@@ -293,6 +293,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> pvar;
   pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
                                                                node.getOwner().getUnit(), node.getOwner().getDescription());
+  assert(pvar->getName() != "");
 
   // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
   if(testableMode && node.getDirection() == VariableDirection::feeding) {
@@ -312,11 +313,14 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   // obtain the meta data
   size_t nElements = node.getNumberOfElements();
   std::string name = node.getName();
+  assert(name != "");
   
   // create the ProcessArray for the proper UserType
   std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
   pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
-  
+  assert(pvarPair.first->getName() != "");
+  assert(pvarPair.second->getName() != "");
+ 
   // decorate the process variable if testable mode is enabled
   if(testableMode) {
     pvarPair.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
@@ -561,6 +565,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
+        consumer.dump();
         auto impls = createApplicationVariable<UserType>(consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
