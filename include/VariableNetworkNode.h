@@ -205,6 +205,7 @@ namespace ChimeraTK {
     node.pdata->type = NodeType::Constant;
     node.pdata->valueType = &typeid(UserType);
     node.pdata->nElements = length;
+    node.pdata->name = "*UNNAMED CONSTANT*";
     if(makeFeeder) {
       node.pdata->direction = VariableDirection::feeding;
       node.pdata->mode = UpdateMode::push;
