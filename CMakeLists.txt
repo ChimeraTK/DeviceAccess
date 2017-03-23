@@ -120,16 +120,12 @@ target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${li
       )
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/mtca4u
-)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/mtca4u)
 
 foreach(dir ${inc_dirs} )
     file(GLOB headerFiles  "${dir}/*.h")
     foreach(headerFile ${headerFiles} )
-        add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/mtca4u
-        )
+        execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/mtca4u)
     endforeach(headerFile)
 endforeach(dir)
 
