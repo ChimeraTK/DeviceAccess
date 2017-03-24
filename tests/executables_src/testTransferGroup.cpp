@@ -21,33 +21,33 @@ using namespace mtca4u;
 struct BufferingRegisterAccessor_int_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<int> >(NDRegisterAccessorBridge<int>::*type);
 };
-template class accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorBridge<int>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorBridge<int>::_impl>;
 
 struct BufferingRegisterAccessor_int32_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorBridge<int32_t>::*type);
 };
-template class accessPrivateData::stow_private<BufferingRegisterAccessor_int32_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
 
 struct BufferingRegisterAccessor_uint16_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<uint16_t> >(NDRegisterAccessorBridge<uint16_t>::*type);
 };
-template class accessPrivateData::stow_private<BufferingRegisterAccessor_uint16_impl, &mtca4u::NDRegisterAccessorBridge<uint16_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_uint16_impl, &mtca4u::NDRegisterAccessorBridge<uint16_t>::_impl>;
 
 struct BufferingRegisterAccessor_int64_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<int64_t> >(NDRegisterAccessorBridge<int64_t>::*type);
 };
-template class accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorBridge<int64_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorBridge<int64_t>::_impl>;
 
 struct NumericAddressedLowLevelTransferElement_startAddress {
     typedef size_t (NumericAddressedLowLevelTransferElement::*type);
 };
-template class accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
+template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
         &mtca4u::NumericAddressedLowLevelTransferElement::_startAddress>;
 
 struct NumericAddressedLowLevelTransferElement_numberOfBytes {
     typedef size_t (NumericAddressedLowLevelTransferElement::*type);
 };
-template class accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
+template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
         &mtca4u::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
 
 

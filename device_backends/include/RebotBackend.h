@@ -24,7 +24,7 @@ namespace ChimeraTK {
   using namespace mtca4u;
 
   class TcpCtrl;
-  class RebotProtocolImplementor;
+  struct RebotProtocolImplementor;
 
   // A helper class that contains a mutex and a flag.
   // The idea is to put it into a shared pointer and hand it to a thread which is sleeping a long
