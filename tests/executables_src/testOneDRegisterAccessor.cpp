@@ -21,7 +21,7 @@ using namespace mtca4u;
 struct OneDRegisterAccessor_double_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<double> >(NDRegisterAccessorBridge<double>::*type);
 };
-template class accessPrivateData::stow_private<OneDRegisterAccessor_double_impl, &mtca4u::NDRegisterAccessorBridge<double>::_impl>;
+template struct accessPrivateData::stow_private<OneDRegisterAccessor_double_impl, &mtca4u::NDRegisterAccessorBridge<double>::_impl>;
 
 /**********************************************************************************************************************/
 class OneDRegisterTest {

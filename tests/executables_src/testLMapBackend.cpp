@@ -19,7 +19,7 @@ using namespace mtca4u;
 struct BufferingRegisterAccessor_int32t_impl {
     typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorBridge<int32_t>::*type);
 };
-template class accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
 
 
 class LMapBackendTest {
