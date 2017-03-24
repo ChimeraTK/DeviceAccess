@@ -79,7 +79,7 @@ namespace mtca4u {
        * implemented yet
        */
       virtual void write() override{
-        accessor->buffer_2D.swap(NDRegistovererAccessor<UserType>::buffer_2D);
+        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
         accessor->write();
       }
 
