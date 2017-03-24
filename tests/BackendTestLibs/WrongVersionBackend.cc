@@ -26,7 +26,7 @@ static WrongVersionBackend::BackendRegisterer gWrongVersionBackendRegisterer;
 
 
 extern "C"{
-  std::string versionUsedToCompile(){
+  const char * versionUsedToCompile(){
     return WRONG_VERSION;
   }
 }

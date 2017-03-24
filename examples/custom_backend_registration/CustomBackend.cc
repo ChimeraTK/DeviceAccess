@@ -75,7 +75,7 @@ static CustomBackend::BackendRegisterer gCustomBackendRegisterer;
 // at run time. This function is used to determine that this is a valid DeviceAcces
 // backend library. Just copy this code, sorry for the boiler plate.
 extern "C"{
-  std::string versionUsedToCompile(){
+  const char * versionUsedToCompile(){
     return CHIMERATK_DEVICEACCESS_VERSION;
   }
 }

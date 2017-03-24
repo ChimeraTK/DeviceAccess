@@ -160,7 +160,7 @@ namespace ChimeraTK {
     }
 
     // try to find the symbol for the version function.
-    std::string (*versionFunction)();
+    const char * (*versionFunction)();
     // We have to use an instance of the function pointer with the right signature
     // and reinterpred cast it because dlsym is giving out a void pointer which in
     // pedantic C++ cannot be casted directly to a function pointer.
@@ -173,7 +173,7 @@ namespace ChimeraTK {
       throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
     }
 
-    if (versionFunction() != CHIMERATK_DEVICEACCESS_VERSION){
+    if (std::string(versionFunction()) != CHIMERATK_DEVICEACCESS_VERSION){
       std::stringstream errorMessage;
       errorMessage << soFile << " was compiled with the wrong DeviceAccess version " << versionFunction()
 		   << ". Recompile with DeviceAccess version " << CHIMERATK_DEVICEACCESS_VERSION;
