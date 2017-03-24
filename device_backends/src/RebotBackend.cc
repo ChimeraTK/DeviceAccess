@@ -167,7 +167,7 @@ std::vector<uint32_t> RebotBackend::frameClientHello() {
   clientHello.push_back(rebot::HELLO_TOKEN);
   clientHello.push_back(rebot::MAGIC_WORD);
   clientHello.push_back(rebot::CLIENT_PROTOCOL_VERSION);
-  return std::move(clientHello);
+  return clientHello;
 }
 
 uint32_t RebotBackend::parseRxServerHello(
