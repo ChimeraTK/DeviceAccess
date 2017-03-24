@@ -69,7 +69,7 @@ namespace mtca4u {
         return buffer_2D.size();
       }
 
-      virtual const std::type_info& getValueType() const {
+      virtual const std::type_info& getValueType() const override{
         return typeid(UserType);
       }
 

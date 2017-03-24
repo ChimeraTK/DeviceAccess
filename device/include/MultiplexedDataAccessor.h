@@ -57,7 +57,7 @@ namespace mtca4u {
         return NDRegisterAccessor<UserType>::getNumberOfChannels();
       }
 
-      FixedPointConverter getFixedPointConverter() const {
+      FixedPointConverter getFixedPointConverter() const override {
         throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
       }
 
@@ -78,8 +78,8 @@ namespace mtca4u {
        * to write to DMA memory Areas, but this functionality has not been
        * implemented yet
        */
-      virtual void write() {
-        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+      virtual void write() override{
+        accessor->buffer_2D.swap(NDRegistovererAccessor<UserType>::buffer_2D);
         accessor->write();
       }
 
@@ -88,29 +88,29 @@ namespace mtca4u {
        */
       virtual ~MultiplexedDataAccessor() {}
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {// LCOV_EXCL_LINE
+      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {// LCOV_EXCL_LINE
         return accessor->isSameRegister(other);// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual bool isReadOnly() const {// LCOV_EXCL_LINE
+      virtual bool isReadOnly() const override {// LCOV_EXCL_LINE
         return accessor->isReadOnly();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual bool isReadable() const {// LCOV_EXCL_LINE
+      virtual bool isReadable() const override {// LCOV_EXCL_LINE
         return accessor->isReadable();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual bool isWriteable() const {// LCOV_EXCL_LINE
+      virtual bool isWriteable() const override{// LCOV_EXCL_LINE
         return accessor->isWriteable();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
     protected:
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {// LCOV_EXCL_LINE
+      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {// LCOV_EXCL_LINE
         return accessor->getHardwareAccessingElements();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {// LCOV_EXCL_LINE
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {// LCOV_EXCL_LINE
         if(accessor->isSameRegister(newElement)) {// LCOV_EXCL_LINE
           accessor = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);// LCOV_EXCL_LINE
         }// LCOV_EXCL_LINE
