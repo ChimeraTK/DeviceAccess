@@ -13,6 +13,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TcpCtrl.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol0.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol1.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/testableRebotSleep.cc
    PARENT_SCOPE
 )
 
