@@ -22,7 +22,7 @@ struct WorkingBackend : public DummyBackend{
 static WorkingBackend::BackendRegisterer gWorkingBackendRegisterer;
 
 extern "C"{
-  const char * versionUsedToCompile(){
+  const char * deviceAccessVersionUsedToCompile(){
     return CHIMERATK_DEVICEACCESS_VERSION;
   }
 }

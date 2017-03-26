@@ -26,7 +26,7 @@ static WrongVersionBackend::BackendRegisterer gWrongVersionBackendRegisterer;
 
 
 extern "C"{
-  const char * versionUsedToCompile(){
+  const char * deviceAccessVersionUsedToCompile(){
     return WRONG_VERSION;
   }
 }

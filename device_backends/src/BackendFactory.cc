@@ -164,12 +164,12 @@ namespace ChimeraTK {
     // We have to use an instance of the function pointer with the right signature
     // and reinterpred cast it because dlsym is giving out a void pointer which in
     // pedantic C++ cannot be casted directly to a function pointer.
-    *reinterpret_cast<void**>(&versionFunction) = dlsym(hndl, "versionUsedToCompile");
+    *reinterpret_cast<void**>(&versionFunction) = dlsym(hndl, "deviceAccessVersionUsedToCompile");
 
     if (versionFunction == NULL){
       dlclose(hndl);
       std::stringstream errorMessage;
-      errorMessage << "Symbol 'versionUsedToCompile' not found in " <<soFile;
+      errorMessage << "Symbol 'deviceAccessVersionUsedToCompile' not found in " <<soFile;
       throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
     }
 
