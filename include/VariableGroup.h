@@ -34,6 +34,9 @@ namespace ChimeraTK {
        *  will block until all of the variables have received an update. */
       void readAll();
 
+      /** Just call write() on all variables in the group. */
+      void writeAll();
+
       VariableNetworkNode operator()(const std::string& variableName);
 
       Module& operator[](const std::string& moduleName);
