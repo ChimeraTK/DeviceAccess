@@ -296,7 +296,8 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   assert(pvar->getName() != "");
 
   // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
-  if(testableMode && node.getDirection() == VariableDirection::feeding) {
+  // don't decorate if the feeding side is a constant!
+  if(testableMode && node.getDirection() == VariableDirection::feeding && node.getType() != NodeType::Constant) {
     pvar = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
   }
   
