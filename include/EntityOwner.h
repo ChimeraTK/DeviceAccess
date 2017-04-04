@@ -17,6 +17,7 @@ namespace ChimeraTK {
   
   class AccessorBase;
   class Module;
+  class VirtualModule;
 
   /** Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
     * @todo Rename this class to "Owner" and make it more generic. It should basically just implement the
@@ -38,6 +39,7 @@ namespace ChimeraTK {
       
       /** Obtain the list of accessors/variables directly associated with this instance */
       std::list<VariableNetworkNode>& getAccessorList() { return accessorList; }
+      const std::list<VariableNetworkNode>& getAccessorList() const { return accessorList; }
       
       /** Obtain the list of submodules associated with this instance */
       const std::list<Module*>& getSubmoduleList() const { return moduleList; }
@@ -47,6 +49,16 @@ namespace ChimeraTK {
       
       /** Obtain the list of submodules associated with this instance and any submodules */
       std::list<Module*> getSubmoduleListRecursive();
+      
+      /** Return a VirtualModule containing the part of the tree structure matching the given tag. The resulting
+       *  VirtualModule might have virtual sub-modules, if this EntityOwner contains sub-EntityOwners with
+       *  entities matchting the tag. */
+      VirtualModule findTag(const std::string &tag, bool eliminateAllHierarchies=false) const;
+      
+      /** Add the part of the tree structure matching the given tag to a VirtualModule. Users normally will use
+       *  findTag() instead. */
+      void findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies=false,
+                                    bool eliminateFirstHierarchy=false) const;
 
       /** Called inside the constructor of Accessor: adds the accessor to the list */
       void registerAccessor(VariableNetworkNode accessor) {
@@ -63,6 +75,21 @@ namespace ChimeraTK {
       
       /** Unregister another module as a sub-mdoule. Will be called automatically by all modules in their destructors. */
       void unregisterModule(Module* module);
+      
+      /** Eliminate the level of hierarchy represented by this EntityOwner. This is e.g. used when building the
+       *  hierarchy of VirtualModules in findTag(). Eliminating one level of hierarchy will make all childs of that
+       *  hierarchy level to appear as if there were direct childs of the next higher hierarchy level. If e.g. there is
+       *  a variable on the third level "A.B.C" and one selects to eliminate the second level of hierarchy (e.g. calls
+       *  B.eliminateHierarchy()), the structure would look like "A.C". This of course only affects the "dynamic" data
+       *  model, while the static C++ model is fixed at compile time.
+       *  @todo Also use in VariableGroup::operator() and VariableGroup::operator[] ??? */
+      void eliminateHierarchy() { _eliminateHierarchy = true; }
+      
+      /** Returns the flag whether this level of hierarchy should be eliminated */
+      bool getEliminateHierarchy() const { return _eliminateHierarchy; }
+      
+      /** Print the full hierarchy to stdout. */
+      void dump(const std::string &prefix="") const;
 
   protected:
     
@@ -77,6 +104,9 @@ namespace ChimeraTK {
 
       /** List of modules owned by this instance */
       std::list<Module*> moduleList;
+      
+      /** Flag whether this level of hierarchy should be eliminated or not */
+      bool _eliminateHierarchy{false};
       
   };
 

@@ -11,6 +11,7 @@
 
 #include "EntityOwner.h"
 #include "Module.h"
+#include "VirtualModule.h"
 
 namespace ChimeraTK {
 
@@ -70,6 +71,68 @@ namespace ChimeraTK {
       list.insert(list.end(), sublist.begin(), sublist.end());
     }
     return list;
+  }
+
+/*********************************************************************************************************************/
+
+  VirtualModule EntityOwner::findTag(const std::string &tag, bool eliminateAllHierarchies) const {
+
+    // create new module to return
+    VirtualModule module{_name+"{"+tag+"}"};
+    
+    // add everything matching the tag to the virtual module and return it
+    findTagAndAppendToModule(module, tag, eliminateAllHierarchies, true);
+    return module;
+  }
+
+  /*********************************************************************************************************************/
+
+  void EntityOwner::findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies,
+                                             bool eliminateFirstHierarchy) const {
+    
+    VirtualModule nextmodule{_name+"{"+tag+"}"};
+    VirtualModule *moduleToAddTo;
+    
+    if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
+      moduleToAddTo = &nextmodule;
+      module.addSubModule(nextmodule);
+    }
+    else {
+      moduleToAddTo = &module;
+    }
+    
+    // add nodes to the module if matching the tag
+    for(auto node : getAccessorList()) {
+      if(node.getTags().count(tag) > 0) {
+        moduleToAddTo->registerAccessor(node);
+      }
+    }
+
+    // iterate through submodules
+    for(auto submodule : getSubmoduleList()) {
+      submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies);
+    }
+    
+  }
+
+  /*********************************************************************************************************************/
+
+  void EntityOwner::dump(const std::string &prefix) const {
+    
+    if(prefix == "") {
+      std::cout << "==== Hierarchy dump of module '" << _name << "':" << std::endl;
+    }
+    
+    for(auto node : getAccessorList()) {
+      std::cout << prefix << "+ ";
+      node.dump();
+    }
+
+    for(auto submodule : getSubmoduleList()) {
+      std::cout << prefix << "| " << submodule->getName() << std::endl;
+      submodule->dump(prefix+"| ");
+    }
+    
   }
   
 } /* namespace ChimeraTK */

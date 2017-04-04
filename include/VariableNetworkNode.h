@@ -8,6 +8,8 @@
 #ifndef CHIMERATK_VARIABLE_NETWORK_NODE_H
 #define CHIMERATK_VARIABLE_NETWORK_NODE_H
 
+#include <unordered_set>
+
 #include <assert.h>
 
 #include <boost/shared_ptr.hpp>
@@ -64,6 +66,9 @@ namespace ChimeraTK {
       /** Factory function for a constant (a constructor cannot be templated) */
       template<typename UserType>
       static VariableNetworkNode makeConstant(bool makeFeeder, UserType value=0, size_t length=1);
+      
+      /** Change meta data (name, unit, description). This function may only be used on Application-type nodes. */
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description);
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
@@ -102,6 +107,10 @@ namespace ChimeraTK {
 
       /** Check if the node already has an owner */
       bool hasOwner() const;
+      
+      /** Add a tag. This function may only be used on Application-type nodes. Valid names for tags only contain 
+       *  alpha-numeric characters (i.e. no spaces and no special characters). @todo enforce this!*/
+      void addTag(const std::string &tag);
 
       /** Getter for the properties */
       NodeType getType() const;
@@ -116,6 +125,7 @@ namespace ChimeraTK {
       const std::string& getPublicName() const;
       const std::string& getDeviceAlias() const;
       const std::string& getRegisterName() const;
+      const std::unordered_set<std::string>& getTags() const;
       void setNumberOfElements(size_t nElements);
       size_t getNumberOfElements() const;
       mtca4u::TransferElement& getAppAccessorNoType();
@@ -190,6 +200,9 @@ namespace ChimeraTK {
     
     /** Number of elements in the variable. 0 means not yet decided. */
     size_t nElements{0};
+    
+    /** Set of tags  if type == Application */
+    std::unordered_set<std::string> tags;
 
   };
 

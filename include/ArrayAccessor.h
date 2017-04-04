@@ -24,6 +24,11 @@ namespace ChimeraTK {
   template< typename UserType >
   class ArrayAccessor :  public mtca4u::OneDRegisterAccessor<UserType> {
     public:
+      
+      /** Change meta data (name, unit, description) */
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description) {
+        node.setMetaData(name,unit,description);
+      }
 
       /** Convert into VariableNetworkNode */
       operator VariableNetworkNode() {
@@ -64,6 +69,12 @@ namespace ChimeraTK {
 
       ~ArrayAccessor() {
         if(_owner != nullptr) _owner->unregisterAccessor(*this);
+      }
+      
+      /** Add a tag. Valid names for tags only contain alpha-numeric characters (i.e. no spaces and no special
+       *  characters). */
+      void addTag(const std::string &tag) {
+        node.addTag(tag);
       }
       
   protected:

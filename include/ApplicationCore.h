@@ -17,6 +17,7 @@
 #include "DeviceModule.h"
 #include "ControlSystemModule.h"
 #include "VariableGroup.h"
+#include "VirtualModule.h"
 
 #ifndef CHIMERATK_APPLICATION_CORE_H
 #define CHIMERATK_APPLICATION_CORE_H

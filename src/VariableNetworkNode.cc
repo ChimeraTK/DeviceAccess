@@ -396,4 +396,29 @@ namespace ChimeraTK {
     return *(pdata->appNode);
   }
 
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
+                                           const std::string &description) {
+    if(getType() != NodeType::Application) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+          "Calling VariableNetworkNode::updateMetaData() is not allowed for non-application type nodes.");
+    }
+    pdata->name = name;
+    pdata->unit = unit;
+    pdata->description = description;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::addTag(const std::string &tag) {
+    pdata->tags.insert(tag);
+  }
+
+  /*********************************************************************************************************************/
+  
+  const std::unordered_set<std::string>& VariableNetworkNode::getTags() const {
+    return pdata->tags;
+  }
+
 }
