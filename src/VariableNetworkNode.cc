@@ -117,6 +117,10 @@ namespace ChimeraTK {
 
     std::cout << " [ptr: " << &(*pdata) << "]";
     
+    std::cout << " { ";
+    for(auto &tag : pdata->tags) std::cout << tag << " ";
+    std::cout << "}";
+    
     std::cout << std::endl;
 }
 
