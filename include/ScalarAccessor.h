@@ -26,9 +26,15 @@ namespace ChimeraTK {
   class ScalarAccessor : public mtca4u::ScalarRegisterAccessor<UserType> {
     public:
       
-      /** Change meta data (name, unit, description) */
+      /** Change meta data (name, unit, description and optionally tags). This function may only be used on
+       *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
+       *  tags, an empty set can be passed. */
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description) {
         node.setMetaData(name,unit,description);
+      }
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
+                       const std::unordered_set<std::string> &tags) {
+        node.setMetaData(name,unit,description,tags);
       }
 
       /** Convert into VariableNetworkNode */
@@ -80,8 +86,8 @@ namespace ChimeraTK {
   protected:
 
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
-          UpdateMode mode, const std::string &description)
-      : node(this, name, direction, unit, 1, mode, description, &typeid(UserType)), _owner(owner)
+          UpdateMode mode, const std::string &description, const std::unordered_set<std::string> &tags={})
+      : node(this, name, direction, unit, 1, mode, description, &typeid(UserType), tags), _owner(owner)
       {
         owner->registerAccessor(*this);
       }
@@ -98,8 +104,10 @@ namespace ChimeraTK {
   /** Convenience class for input scalar accessors with UpdateMode::push */
   template< typename UserType >
   struct ScalarPushInput : public ScalarAccessor<UserType> {
-    ScalarPushInput(Module *owner, const std::string &name, std::string unit, const std::string &description)
-    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::push, description)
+    ScalarPushInput(Module *owner, const std::string &name, std::string unit,
+                    const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::push,
+                               description, tags)
     {}
     ScalarPushInput() : ScalarAccessor<UserType>() {}
     using ScalarAccessor<UserType>::operator=;
@@ -108,8 +116,10 @@ namespace ChimeraTK {
   /** Convenience class for input scalar accessors with UpdateMode::poll */
   template< typename UserType >
   struct ScalarPollInput : public ScalarAccessor<UserType> {
-    ScalarPollInput(Module *owner, const std::string &name, std::string unit, const std::string &description)
-    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::poll, description)
+    ScalarPollInput(Module *owner, const std::string &name, std::string unit,
+                    const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::poll,
+                               description, tags)
     {}
     ScalarPollInput() : ScalarAccessor<UserType>() {}
     void doReadTransfer() override { this->doReadTransferNonBlocking(); }
@@ -120,8 +130,10 @@ namespace ChimeraTK {
   /** Convenience class for output scalar accessors (always UpdateMode::push) */
   template< typename UserType >
   struct ScalarOutput : public ScalarAccessor<UserType> {
-    ScalarOutput(Module *owner, const std::string &name, std::string unit, const std::string &description)
-    : ScalarAccessor<UserType>(owner, name, VariableDirection::feeding, unit, UpdateMode::push, description)
+    ScalarOutput(Module *owner, const std::string &name, std::string unit,
+                 const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ScalarAccessor<UserType>(owner, name, VariableDirection::feeding, unit, UpdateMode::push,
+                               description, tags)
     {}
     ScalarOutput() : ScalarAccessor<UserType>() {}
     using ScalarAccessor<UserType>::operator=;

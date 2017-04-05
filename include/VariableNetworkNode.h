@@ -46,7 +46,8 @@ namespace ChimeraTK {
       /** Constructor for an Application node */
       VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name,
           VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
-          const std::string &description, const std::type_info* valueType);
+          const std::string &description, const std::type_info* valueType,
+          const std::unordered_set<std::string> &tags={});
 
       /** Constructor for a Device node */
       VariableNetworkNode(const std::string &deviceAlias, const std::string &registerName, UpdateMode mode,
@@ -67,8 +68,12 @@ namespace ChimeraTK {
       template<typename UserType>
       static VariableNetworkNode makeConstant(bool makeFeeder, UserType value=0, size_t length=1);
       
-      /** Change meta data (name, unit, description). This function may only be used on Application-type nodes. */
+      /** Change meta data (name, unit, description and optionally tags). This function may only be used on
+       *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
+       *  tags, an empty set can be passed. */
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description);
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
+                       const std::unordered_set<std::string> &tags);
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);

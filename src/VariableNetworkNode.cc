@@ -31,7 +31,8 @@ namespace ChimeraTK {
 
   VariableNetworkNode::VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name,
                                   VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
-                                  const std::string &description, const std::type_info* valueType)
+                                  const std::string &description, const std::type_info* valueType,
+                                  const std::unordered_set<std::string> &tags)
   : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::Application;
@@ -43,6 +44,7 @@ namespace ChimeraTK {
     pdata->unit = unit;
     pdata->nElements = nElements;
     pdata->description = description;
+    pdata->tags = tags;
   }
 
   /*********************************************************************************************************************/
@@ -403,7 +405,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
-                                           const std::string &description) {
+                                        const std::string &description) {
     if(getType() != NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
           "Calling VariableNetworkNode::updateMetaData() is not allowed for non-application type nodes.");
@@ -411,6 +413,14 @@ namespace ChimeraTK {
     pdata->name = name;
     pdata->unit = unit;
     pdata->description = description;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
+                                        const std::string &description, const std::unordered_set<std::string> &tags) {
+    setMetaData(name, unit, description);
+    pdata->tags = tags;
   }
 
   /*********************************************************************************************************************/

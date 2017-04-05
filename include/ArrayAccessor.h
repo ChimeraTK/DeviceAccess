@@ -25,9 +25,15 @@ namespace ChimeraTK {
   class ArrayAccessor :  public mtca4u::OneDRegisterAccessor<UserType> {
     public:
       
-      /** Change meta data (name, unit, description) */
+      /** Change meta data (name, unit, description and optionally tags). This function may only be used on
+       *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
+       *  tags, an empty set can be passed. */
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description) {
         node.setMetaData(name,unit,description);
+      }
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
+                       const std::unordered_set<std::string> &tags) {
+        node.setMetaData(name,unit,description,tags);
       }
 
       /** Convert into VariableNetworkNode */
@@ -79,8 +85,9 @@ namespace ChimeraTK {
       
   protected:
       ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
-          size_t nElements, UpdateMode mode, const std::string &description)
-        : node(this, name, direction, unit, nElements, mode, description, &typeid(UserType)), _owner(owner)
+          size_t nElements, UpdateMode mode, const std::string &description,
+          const std::unordered_set<std::string> &tags={})
+        : node(this, name, direction, unit, nElements, mode, description, &typeid(UserType), tags), _owner(owner)
       {
         owner->registerAccessor(*this);
       }
@@ -97,8 +104,10 @@ namespace ChimeraTK {
   /** Convenience class for input array accessors with UpdateMode::push */
   template< typename UserType >
   struct ArrayPushInput : public ArrayAccessor<UserType> {
-    ArrayPushInput(Module *owner, const std::string &name, std::string unit, size_t nElements, const std::string &description)
-    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::push, description)
+    ArrayPushInput(Module *owner, const std::string &name, std::string unit, size_t nElements,
+                   const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::push,
+                              description, tags)
     {}
     ArrayPushInput() : ArrayAccessor<UserType>() {}
     using ArrayAccessor<UserType>::operator=;
@@ -107,8 +116,10 @@ namespace ChimeraTK {
   /** Convenience class for input array accessors with UpdateMode::poll */
   template< typename UserType >
   struct ArrayPollInput : public ArrayAccessor<UserType> {
-    ArrayPollInput(Module *owner, const std::string &name, std::string unit, size_t nElements, const std::string &description)
-    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::poll, description)
+    ArrayPollInput(Module *owner, const std::string &name, std::string unit, size_t nElements,
+                   const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::poll,
+                              description, tags)
     {}
     ArrayPollInput() : ArrayAccessor<UserType>() {}
     void doReadTransfer() override { this->doReadTransferNonBlocking(); }
@@ -119,8 +130,10 @@ namespace ChimeraTK {
   /** Convenience class for output array accessors (always UpdateMode::push) */
   template< typename UserType >
   struct ArrayOutput : public ArrayAccessor<UserType> {
-    ArrayOutput(Module *owner, const std::string &name, std::string unit, size_t nElements, const std::string &description)
-    : ArrayAccessor<UserType>(owner, name, VariableDirection::feeding, unit, nElements, UpdateMode::push, description)
+    ArrayOutput(Module *owner, const std::string &name, std::string unit, size_t nElements,
+                const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ArrayAccessor<UserType>(owner, name, VariableDirection::feeding, unit, nElements, UpdateMode::push,
+                              description, tags)
     {}
     ArrayOutput() : ArrayAccessor<UserType>() {}
     using ArrayAccessor<UserType>::operator=;
