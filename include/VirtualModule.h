@@ -24,6 +24,9 @@ namespace ChimeraTK {
       /** Constructor */
       VirtualModule(const std::string &name) : Module(nullptr, name) {}
 
+      /** Copy constructor */
+      VirtualModule(const VirtualModule &other);
+
       /** Destructor */
       virtual ~VirtualModule();
 
@@ -32,7 +35,7 @@ namespace ChimeraTK {
       Module& operator[](const std::string& moduleName);
       
       /** Add a virtual sub-module. The module instance will be added to an internal list. */
-      void addSubModule(const VirtualModule &module);
+      void addSubModule(VirtualModule module);
       
     protected:
     

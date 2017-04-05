@@ -93,9 +93,10 @@ namespace ChimeraTK {
     VirtualModule nextmodule{_name+"{"+tag+"}"};
     VirtualModule *moduleToAddTo;
     
+    bool needToAddSubModule = false;
     if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
       moduleToAddTo = &nextmodule;
-      module.addSubModule(nextmodule);
+      needToAddSubModule = true;
     }
     else {
       moduleToAddTo = &module;
@@ -111,6 +112,12 @@ namespace ChimeraTK {
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
       submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies);
+    }
+    
+    if(needToAddSubModule) {
+      if( nextmodule.getAccessorList().size() > 0 || nextmodule.getSubmoduleList().size() > 0 ) {
+        module.addSubModule(nextmodule);
+      }
     }
     
   }
