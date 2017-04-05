@@ -35,11 +35,11 @@ typedef boost::mpl::list<int8_t,uint8_t,
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
-    ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
-    ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Descrption"};
+    ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
     void mainLoop() {}
 };
@@ -56,7 +56,7 @@ struct TestApplication : public ctk::Application {
     using Application::deviceMap;           // expose the device map for the tests
     void defineConnections() {}             // the setup is done in the tests
 
-    TestModule<T> testModule{this,"testModule"};
+    TestModule<T> testModule{this,"testModule", "The test module"};
     ctk::DeviceModule devMymodule{"Dummy0","MyModule"};
     ctk::DeviceModule dev{"Dummy0"};
 };

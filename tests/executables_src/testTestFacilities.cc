@@ -56,7 +56,7 @@ constexpr char dummySdm[] = "sdm://./dummy=test.map";
 
 template<typename T>
 struct BlockingReadTestModule : public ctk::ApplicationModule {
-    BlockingReadTestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
     ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
@@ -77,7 +77,7 @@ struct BlockingReadTestModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct AsyncReadTestModule : public ctk::ApplicationModule {
-    AsyncReadTestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
     ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
@@ -99,7 +99,7 @@ struct AsyncReadTestModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct ReadAnyTestModule : public ctk::ApplicationModule {
-    ReadAnyTestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     struct Inputs : public ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
@@ -108,7 +108,7 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
       ctk::ScalarPushInput<T> v3{this, "v3", "cm", "Input 3 for testing"};
       ctk::ScalarPushInput<T> v4{this, "v4", "cm", "Input 4 for testing"};
     };
-    Inputs inputs{this, "inputs"};
+    Inputs inputs{this, "inputs", "A group of inputs"};
     ctk::ScalarOutput<T> value{this, "value", "cm", "The last value received from any of the inputs"};
     ctk::ScalarOutput<uint32_t> index{this, "index", "", "The index (1..4) of the input where the last value was received"};
 
@@ -157,9 +157,9 @@ struct TestApplication : public ctk::Application {
 
     ctk::ControlSystemModule cs{""};
     ctk::DeviceModule dev{dummySdm,""};
-    BlockingReadTestModule<T> blockingReadTestModule{this,"blockingReadTestModule"};
-    AsyncReadTestModule<T> asyncReadTestModule{this,"asyncReadTestModule"};
-    ReadAnyTestModule<T> readAnyTestModule{this,"readAnyTestModule"};
+    BlockingReadTestModule<T> blockingReadTestModule{this,"blockingReadTestModule", "Module for testing blocking read"};
+    AsyncReadTestModule<T> asyncReadTestModule{this,"asyncReadTestModule", "Module for testing async read"};
+    ReadAnyTestModule<T> readAnyTestModule{this,"readAnyTestModule", "Module for testing readAny()"};
 };
 
 /*********************************************************************************************************************/

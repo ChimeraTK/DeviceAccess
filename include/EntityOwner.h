@@ -29,13 +29,17 @@ namespace ChimeraTK {
     public:
 
       /** Constructor: register the EntityOwner with its owner */
-      EntityOwner(EntityOwner *owner, const std::string &name);
+      EntityOwner(EntityOwner *owner, const std::string &name, const std::string &description,
+                  bool eliminateHierarchy=false);
       
       /** Virtual destructor to make the type polymorphic */
       virtual ~EntityOwner();
       
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }
+      
+      /** Get the decription of the module instance */
+      const std::string& getDescription() const { return _description; }
       
       /** Obtain the list of accessors/variables directly associated with this instance */
       std::list<VariableNetworkNode>& getAccessorList() { return accessorList; }
@@ -103,6 +107,9 @@ namespace ChimeraTK {
     
       /** The name of this instance */
       std::string _name;
+    
+      /** The description of this instance */
+      std::string _description;
       
       /** Owner of this instance */
       EntityOwner *_owner{nullptr};

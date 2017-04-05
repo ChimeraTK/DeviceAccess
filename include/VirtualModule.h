@@ -22,7 +22,7 @@ namespace ChimeraTK {
     public:
 
       /** Constructor */
-      VirtualModule(const std::string &name) : Module(nullptr, name) {}
+      VirtualModule(const std::string &name, const std::string &description) : Module(nullptr, name, description) {}
 
       /** Copy constructor */
       VirtualModule(const VirtualModule &other);

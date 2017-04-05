@@ -80,7 +80,7 @@ class TestTransferGroupDummy : public mtca4u::DummyBackend {
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
     ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
@@ -110,7 +110,7 @@ struct TestApplication : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
 
-    TestModule<T> testModule{this,"testModule"};
+    TestModule<T> testModule{this,"testModule", "The test module"};
     ctk::DeviceModule dev{"Dummy0"};
     ctk::DeviceModule dev2{dummySdm};
     ctk::ControlSystemModule cs;

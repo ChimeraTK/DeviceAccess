@@ -11,7 +11,7 @@
 namespace ChimeraTK {
 
   ControlSystemModule::ControlSystemModule(const std::string& _variableNamePrefix)
-  : Module(&(Application::getInstance()), "ControlSystem:"+_variableNamePrefix),
+  : Module(&(Application::getInstance()), "ControlSystem:"+_variableNamePrefix, ""),
     variableNamePrefix(_variableNamePrefix)
   {}
 

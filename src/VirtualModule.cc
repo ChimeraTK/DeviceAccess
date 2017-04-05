@@ -13,7 +13,7 @@
 namespace ChimeraTK {
 
   VirtualModule::VirtualModule(const VirtualModule &other)
-  : Module(nullptr, other.getName()) {
+  : Module(nullptr, other.getName(), other.getDescription()) {
     // since moduleList stores plain pointers, we need to regenerate this list
     /// @todo find a better way than storing plain pointers!
     for(auto &mod : other.submodules) addSubModule(mod);

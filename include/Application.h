@@ -37,7 +37,7 @@ namespace ChimeraTK {
     public:
 
       Application(const std::string& name)
-      : ApplicationBase(name), EntityOwner(nullptr, name) {}
+      : ApplicationBase(name), EntityOwner(nullptr, name, "") {}
 
       ~Application() {}
 

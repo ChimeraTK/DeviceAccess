@@ -90,9 +90,9 @@ struct MyApp : public ctk::Application {
     MyApp() : Application("demoApp") {}
     ~MyApp() { shutdown(); }
 
-    AutomationModule automation{this, "automation"};
-    ControlLoopModule controlLoop{this, "controlLoop"};
-    SimulatorModule simulator{this, "simulator"};
+    AutomationModule automation{this, "automation", "Module for automated ramping of setpoint"};
+    ControlLoopModule controlLoop{this, "controlLoop", "Implements a control loop"};
+    SimulatorModule simulator{this, "simulator", "Simulates a device"};
     ctk::DeviceModule dev{"Dummy0", "MyModule"};
     ctk::ControlSystemModule cs{"MyLocation"};
 

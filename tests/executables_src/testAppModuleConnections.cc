@@ -34,7 +34,7 @@ typedef boost::mpl::list<int8_t,uint8_t,
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-    TestModule(ctk::EntityOwner *owner, const std::string &name) : ctk::ApplicationModule(owner,name) {}
+    using ctk::ApplicationModule::ApplicationModule;
 
     ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Some output scalar"};
     ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
@@ -73,7 +73,7 @@ struct TestApplication : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
 
-    TestModule<T> testModule{this,"testModule"};
+    TestModule<T> testModule{this,"testModule", "The test module"};
 };
 
 /*********************************************************************************************************************/

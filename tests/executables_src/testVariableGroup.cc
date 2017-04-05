@@ -38,7 +38,7 @@ struct TestModule : public ctk::ApplicationModule {
     ctk::ScalarPollInput<int> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
     ctk::ScalarPollInput<int> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
   };
-  MixedGroup mixedGroup{this, "mixedGroup"};
+  MixedGroup mixedGroup{this, "mixedGroup", "A group with both push and poll inputs"};
 
   ctk::ScalarOutput<int> feedingPush{this, "feedingPush", "MV/m", "Descrption"};
   ctk::ScalarOutput<int> feedingPush2{this, "feedingPush2", "MV/m", "Descrption"};
@@ -60,7 +60,7 @@ struct TestApplication : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
     
-    TestModule testModule{this, "testModule"};
+    TestModule testModule{this, "testModule", "The test module"};
 };
 
 /*********************************************************************************************************************/
