@@ -75,6 +75,10 @@ namespace ChimeraTK {
       
       /** Unregister another module as a sub-mdoule. Will be called automatically by all modules in their destructors. */
       void unregisterModule(Module* module);
+
+      /** Add a tag to all Application-type nodes inside this group. It will recurse into any subgroups. See
+       *  VariableNetworkNode::addTag() for additional information about tags. */
+      void addTag(const std::string &tag);
       
       /** Eliminate the level of hierarchy represented by this EntityOwner. This is e.g. used when building the
        *  hierarchy of VirtualModules in findTag(). Eliminating one level of hierarchy will make all childs of that
