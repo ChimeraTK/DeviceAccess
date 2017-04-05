@@ -148,5 +148,15 @@ namespace ChimeraTK {
     for(auto &node : getAccessorList()) node.addTag(tag);
     for(auto &submodule : getSubmoduleList()) submodule->addTag(tag);
   }
+
+  /*********************************************************************************************************************/
+
+  VirtualModule EntityOwner::flatten() {
+    VirtualModule nextmodule{_name+"~"};
+    for(auto &node : getAccessorListRecursive()) {
+      nextmodule.registerAccessor(node);
+    }
+    return nextmodule;
+  }
   
 } /* namespace ChimeraTK */

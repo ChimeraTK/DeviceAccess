@@ -87,10 +87,14 @@ namespace ChimeraTK {
        *  B.eliminateHierarchy()), the structure would look like "A.C". This of course only affects the "dynamic" data
        *  model, while the static C++ model is fixed at compile time.
        *  @todo Also use in VariableGroup::operator() and VariableGroup::operator[] ??? */
-      void eliminateHierarchy() { _eliminateHierarchy = true; }
+      void setEliminateHierarchy() { _eliminateHierarchy = true; }
       
       /** Returns the flag whether this level of hierarchy should be eliminated */
       bool getEliminateHierarchy() const { return _eliminateHierarchy; }
+      
+      /** Create a VirtualModule which contains all variables of this EntityOwner in a flat hierarchy. It will recurse
+       *  through all sub-modules and add all found variables directly to the VirtualModule. */
+      VirtualModule flatten();
       
       /** Print the full hierarchy to stdout. */
       void dump(const std::string &prefix="") const;
