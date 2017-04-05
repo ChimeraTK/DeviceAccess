@@ -51,8 +51,10 @@ void Application::processUnconnectedNodes() {
   for(auto &module : getSubmoduleListRecursive()) {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
-        std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "
-                     "Reading will always result in 0, writing will be ignored." << std::endl;
+        if(enableUnconnectedVariablesWarning) {
+          std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "
+                       "Reading will always result in 0, writing will be ignored." << std::endl;
+        }
         networkList.emplace_back();
         networkList.back().addNode(accessor);
         

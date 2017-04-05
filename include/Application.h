@@ -63,6 +63,10 @@ namespace ChimeraTK {
       /** Output the connections requested in the initialise() function to std::cout. This may be done also before
        *  makeConnections() has been called. */
       void dumpConnections();
+      
+      /** Enable warning about unconnected variables. This can be helpful to identify missing connections but is
+       *  disabled by default since it may often be very noisy. */
+      void warnUnconnectedVariables() { enableUnconnectedVariablesWarning = true; }
 
       /** Obtain instance of the application. Will throw an exception if called before the instance has been
        *  created by the control system adapter, or if the instance is not based on the Application class. */
@@ -184,6 +188,9 @@ namespace ChimeraTK {
       
       /** Flag if noisy debug output is enabled for the testable mode */
       bool enableDebugTestableMode{false};
+      
+      /** Flag whether to warn about unconnected variables or not */
+      bool enableUnconnectedVariablesWarning{false};
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter
