@@ -79,7 +79,7 @@ namespace ChimeraTK {
   VirtualModule EntityOwner::findTag(const std::string &tag, bool eliminateAllHierarchies) const {
 
     // create new module to return
-    VirtualModule module{_name+"{"+tag+"}", _description};
+    VirtualModule module{_name, _description};
     
     // add everything matching the tag to the virtual module and return it
     findTagAndAppendToModule(module, tag, eliminateAllHierarchies, true);
@@ -91,7 +91,7 @@ namespace ChimeraTK {
   void EntityOwner::findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies,
                                              bool eliminateFirstHierarchy) const {
     
-    VirtualModule nextmodule{_name+"{"+tag+"}", _description};
+    VirtualModule nextmodule{_name, _description};
     VirtualModule *moduleToAddTo;
     
     bool needToAddSubModule = false;
@@ -153,7 +153,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VirtualModule EntityOwner::flatten() {
-    VirtualModule nextmodule{_name+"~", _description};
+    VirtualModule nextmodule{_name, _description};
     for(auto &node : getAccessorListRecursive()) {
       nextmodule.registerAccessor(node);
     }
