@@ -48,12 +48,16 @@ namespace ChimeraTK {
       /** Subscript operator: Return sub-module of the given name */
       virtual Module& operator[](const std::string& moduleName) = 0;
       
-      /** ">=" operator: Connect the entire module into another module. All variables inside this module and all
-        * submodules are connected to the right-hand-side module. All variables and submodules must have an equally
-        * named and typed counterpart in the right-hand-side module (or the right-hand-side module allows creation of
-        * such entities, as in case of a ControlSystemModule). The right-hand-side module may contain additional
-        * variables or submodules, which are ignored. */
-      Module& operator>=(Module &rhs);
+      /** Connect the entire module into another module. All variables inside this module and all
+        * submodules are connected to the target module. All variables and submodules must have an equally
+        * named and typed counterpart in the target module (or the target module allows creation of
+        * such entities, as in case of a ControlSystemModule). The target module may contain additional
+        * variables or submodules, which are ignored.
+        * 
+        * If an optional trigger node is specified, this trigger node is applied to all poll-type output variables
+        * of the target module, which are being connected during this operation, if the corresponding variable
+        * in this module is push-type. */
+      void connectTo(Module &target, VariableNetworkNode trigger={});
       
   };
 

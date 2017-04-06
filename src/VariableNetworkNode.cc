@@ -206,7 +206,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::operator==(const VariableNetworkNode& other) const {
-    return (other.pdata == pdata);
+    return (other.pdata == pdata) || (pdata->type == NodeType::invalid && other.pdata->type == NodeType::invalid);
   }
 
   /*********************************************************************************************************************/

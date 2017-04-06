@@ -22,24 +22,29 @@ namespace ChimeraTK {
   
 /*********************************************************************************************************************/
 
-  Module& Module::operator>=(Module &rhs) {
+  void Module::connectTo(Module &target, VariableNetworkNode trigger) {
     
     // connect all direct variables of this module to their counter-parts in the right-hand-side module
     for(auto variable : getAccessorList()) {
       if(variable.getDirection() == VariableDirection::feeding) {
-        variable >> rhs(variable.getName());
+        variable >> target(variable.getName());
       }
       else {
-        rhs(variable.getName()) >> variable;
+        // use trigger?
+        if(trigger != VariableNetworkNode() && target(variable.getName()).getMode() == UpdateMode::poll
+                                            && variable.getMode() == UpdateMode::push ) {
+          target(variable.getName()) [ trigger ] >> variable;
+        }
+        else {
+          target(variable.getName()) >> variable;
+        }
       }
     }
     
     // connect all sub-modules to their couter-parts in the right-hand-side module
     for(auto submodule : getSubmoduleList()) {
-      *submodule >= rhs[submodule->getName()];
+      submodule->connectTo(target[submodule->getName()], trigger);
     }
-    
-    return *this;
     
   }
 

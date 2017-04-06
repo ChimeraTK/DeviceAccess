@@ -174,9 +174,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoDecorator, T, test_types ) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
   
-  app.blockingReadTestModule >= app.cs["blocking"];
-  app.asyncReadTestModule >= app.cs["async"];
-  app.readAnyTestModule >= app.cs["readAny"];
+  app.blockingReadTestModule.connectTo(app.cs["blocking"]);
+  app.asyncReadTestModule.connectTo(app.cs["async"]);
+  app.readAnyTestModule.connectTo(app.cs["readAny"]);
 
   app.initialise();
   app.run();
@@ -202,8 +202,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testBlockingRead, T, test_types ) {
 
   app.cs("input") >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("output");
-  app.asyncReadTestModule >= app.cs["async"]; // avoid runtime warning
-  app.readAnyTestModule >= app.cs["readAny"]; // avoid runtime warning
+  app.asyncReadTestModule.connectTo(app.cs["async"]); // avoid runtime warning
+  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
   
   ctk::TestFacility test;
   auto pvInput = test.getScalar<T>("input");
@@ -235,8 +235,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testAsyncRead, T, test_types ) {
 
   app.cs("input") >> app.asyncReadTestModule.someInput;
   app.asyncReadTestModule.someOutput >> app.cs("output");
-  app.blockingReadTestModule >= app.cs["blocking"]; // avoid runtime warning
-  app.readAnyTestModule >= app.cs["readAny"]; // avoid runtime warning
+  app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
+  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
   ctk::TestFacility test;
   
@@ -272,11 +272,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.readAnyTestModule.inputs >= app.cs["input"];
+  app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
   app.readAnyTestModule.value >> app.cs("value");
   app.readAnyTestModule.index >> app.cs("index");
-  app.blockingReadTestModule >= app.cs["blocking"];  // avoid runtime warning
-  app.asyncReadTestModule >= app.cs["async"];  // avoid runtime warning
+  app.blockingReadTestModule.connectTo(app.cs["blocking"]);  // avoid runtime warning
+  app.asyncReadTestModule.connectTo(app.cs["async"]);  // avoid runtime warning
 
   ctk::TestFacility test;
   auto value = test.getScalar<T>("value");
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testChainedModules, T, test_types ) {
   TestApplication<T> app;
 
   // put everything we got into one chain
-  app.readAnyTestModule.inputs >= app.cs["input"];
+  app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
   app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.asyncReadTestModule.someInput;
   app.asyncReadTestModule.someOutput >> app.cs("value");
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithFanOut, T, test_types ) {
   TestApplication<T> app;
 
   // distribute a value to multiple inputs
-  app.readAnyTestModule.inputs >= app.cs["input"];
+  app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
   app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >> app.asyncReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
   app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
