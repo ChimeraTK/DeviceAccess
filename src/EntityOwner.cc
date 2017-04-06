@@ -17,7 +17,7 @@ namespace ChimeraTK {
 
   EntityOwner::EntityOwner(EntityOwner *owner, const std::string &name, const std::string &description,
                            bool eliminateHierarchy)
-  : _name(name), _description(name), _owner(owner), _eliminateHierarchy(eliminateHierarchy)
+  : _name(name), _description(description), _owner(owner), _eliminateHierarchy(eliminateHierarchy)
   {
     if(owner != nullptr) {
       auto thisMustBeAModule = static_cast<Module*>(this);  /// @todo TODO FIXME this is a bit dangerous...
