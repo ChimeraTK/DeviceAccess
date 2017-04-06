@@ -18,7 +18,6 @@ namespace ChimeraTK {
 
     public:
 
-      /** Use this constructor if the FanOut should be a consuming implementation. */
       ConstantAccessor(UserType value=0, size_t length=1)
       : _value(length, value)
       {
