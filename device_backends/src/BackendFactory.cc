@@ -32,7 +32,10 @@ namespace ChimeraTK {
     std::cout << "adding:" << interface << std::endl << std::flush;
 #endif
     if (version != CHIMERATK_DEVICEACCESS_VERSION){
-      // register a function that throws an exception with the message when trying to create a backend
+      // Register a function that throws an exception with the message when trying to create a backend.
+      // We do not throw here because this would throw an uncatchable exception inside the static instance
+      // of a backend registerer, which would violate the policy that a dmap file with broken backends
+      // should be usable if the particular backend is not used.
       std::stringstream errorMessage;
       errorMessage << "Backend plugin '"<< interface << "' compiled with wrong DeviceAccess version "
 		   << version <<". Please recompile with version " << CHIMERATK_DEVICEACCESS_VERSION;
@@ -152,6 +155,12 @@ namespace ChimeraTK {
     }
 
   void BackendFactory::loadPluginLibrary(std::string soFile){
+    // Create a copy of the original creator map. If we unload the library because the signature is not
+    // recognised we have to restore the original map because it could be an old backed that has a working
+    // registerer (or the programmer forgot the signature function). In this case we would leave the
+    // factory with a dangling function pointer which causes a segfault if the backend is opened.
+    auto originalCreatorMap = creatorMap;
+    
     // first do an open which does not load the symbols yet
     // FIXME: Only works for functions, not for variables = registerer :-(
     void *hndl = dlopen(soFile.c_str() , RTLD_LAZY );
@@ -167,6 +176,7 @@ namespace ChimeraTK {
     *reinterpret_cast<void**>(&versionFunction) = dlsym(hndl, "deviceAccessVersionUsedToCompile");
 
     if (versionFunction == NULL){
+      creatorMap = originalCreatorMap;
       dlclose(hndl);
       std::stringstream errorMessage;
       errorMessage << "Symbol 'deviceAccessVersionUsedToCompile' not found in " <<soFile;
@@ -177,6 +187,10 @@ namespace ChimeraTK {
       std::stringstream errorMessage;
       errorMessage << soFile << " was compiled with the wrong DeviceAccess version " << versionFunction()
 		   << ". Recompile with DeviceAccess version " << CHIMERATK_DEVICEACCESS_VERSION;
+      // Do not restore the original creator map. If the registerer worked there is a function which throws an
+      // exception that tells the user that the backend has been compiled against the wrong version.
+      // This is better than just printing a warning because the exception which is thrown here is caught
+      // if the library is loaded via dmap file (to keep dmap files working if broken backends are not used).
       dlclose(hndl);
       throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
     }
@@ -195,8 +209,13 @@ namespace ChimeraTK {
     for ( auto lib : dmap->getPluginLibraries() ){
       try{
         loadPluginLibrary(lib);
-      }catch(DeviceException &){
-        //ignore library loading errors when doing this automatically for all plugins in the dmap file
+      }catch(DeviceException &e){
+        //Ignore library loading errors when doing this automatically for all plugins in the dmap file
+        //to keep dmap files usable if the broken backends are not used.
+        //Print a warning that the loading failed.
+        std::cerr << "Error: Caught exception loading plugin '"<< lib <<"' specified in dmap file: "
+                  << e.what() << std::endl;
+        std::cerr << "Some backends with not be available!" << std::endl;
       }
     }
   }

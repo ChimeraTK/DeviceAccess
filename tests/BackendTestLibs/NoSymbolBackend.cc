@@ -4,7 +4,8 @@
 
 using namespace mtca4u;
 
-/// this backend does not have the deviceAccessVersionUsedToCompile symbol, needed to load at runtime.
+/// This backend does not have the deviceAccessVersionUsedToCompile symbol, needed to load at runtime.
+/// It has, however, a working backend registerer.
 struct NoSymbolBackend : public DummyBackend{
   using DummyBackend::DummyBackend;
   
@@ -18,5 +19,6 @@ struct NoSymbolBackend : public DummyBackend{
     }
   };
 
-  static BackendRegisterer backendRegisterer;
 };
+
+static NoSymbolBackend::BackendRegisterer gNoSymbolBackendRegisterer;
