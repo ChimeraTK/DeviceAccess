@@ -19,7 +19,10 @@ namespace ChimeraTK {
 
   VariableNetworkNode ControlSystemModule::operator()(const std::string& variableName, const std::type_info &valueType,
                                                       size_t nElements) {
-    return{variableNamePrefix/variableName, VariableDirection::invalid, valueType, nElements};
+    if(variables.count(variableName) == 0) {
+      variables[variableName] = {variableNamePrefix/variableName, VariableDirection::invalid, valueType, nElements};
+    }
+    return variables[variableName];
   }
 
 }

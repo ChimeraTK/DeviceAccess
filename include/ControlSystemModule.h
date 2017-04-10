@@ -43,6 +43,8 @@ namespace ChimeraTK {
       mtca4u::RegisterPath variableNamePrefix;
       
       std::list<ControlSystemModule> subModules;
+      
+      std::map<std::string, VariableNetworkNode> variables;
 
   };
 
