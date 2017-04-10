@@ -44,6 +44,11 @@ namespace ChimeraTK {
     if(a.getDirection() == VariableDirection::feeding) {
       // make sure we only have one feeding node per network
       if(hasFeedingNode()) {
+        std::cout << "*** Trying to add a feeding accessor to a network already having a feeding accessor." << std::endl;
+        std::cout << "The network you were trying to add the new accessor to:" << std::endl;
+        dump();
+        std::cout << "The node you were trying to add:" << std::endl;
+        a.dump();
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
             "Trying to add a feeding accessor to a network already having a feeding accessor.");
       }
