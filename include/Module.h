@@ -43,10 +43,10 @@ namespace ChimeraTK {
       virtual void terminate() {};
 
       /** Function call operator: Return VariableNetworkNode of the given variable name */
-      virtual VariableNetworkNode operator()(const std::string& variableName) = 0;
+      virtual VariableNetworkNode operator()(const std::string& variableName) const = 0;
 
       /** Subscript operator: Return sub-module of the given name */
-      virtual Module& operator[](const std::string& moduleName) = 0;
+      virtual Module& operator[](const std::string& moduleName) const = 0;
       
       /** Connect the entire module into another module. All variables inside this module and all
         * submodules are connected to the target module. All variables and submodules must have an equally
@@ -57,7 +57,7 @@ namespace ChimeraTK {
         * If an optional trigger node is specified, this trigger node is applied to all poll-type output variables
         * of the target module, which are being connected during this operation, if the corresponding variable
         * in this module is push-type. */
-      void connectTo(Module &target, VariableNetworkNode trigger={});
+      void connectTo(const Module &target, VariableNetworkNode trigger={}) const;
       
   };
 

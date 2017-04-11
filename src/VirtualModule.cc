@@ -28,7 +28,7 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
   
-  VariableNetworkNode VirtualModule::operator()(const std::string& variableName) {
+  VariableNetworkNode VirtualModule::operator()(const std::string& variableName) const {
     for(auto variable : getAccessorList()) {
       if(variable.getName() == variableName) return VariableNetworkNode(variable);
     }
@@ -37,7 +37,7 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  Module& VirtualModule::operator[](const std::string& moduleName) {
+  Module& VirtualModule::operator[](const std::string& moduleName) const {
     for(auto submodule : getSubmoduleList()) {
       if(submodule->getName() == moduleName) return *submodule;
     }

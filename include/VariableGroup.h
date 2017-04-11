@@ -37,9 +37,9 @@ namespace ChimeraTK {
       /** Just call write() on all variables in the group. */
       void writeAll();
 
-      VariableNetworkNode operator()(const std::string& variableName);
+      VariableNetworkNode operator()(const std::string& variableName) const override;
 
-      Module& operator[](const std::string& moduleName);
+      Module& operator[](const std::string& moduleName) const override;
       
       /** Move operation with the assignment operator
           @todo should be in the base class!? */

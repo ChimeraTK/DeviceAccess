@@ -30,9 +30,9 @@ namespace ChimeraTK {
       /** Destructor */
       virtual ~VirtualModule();
 
-      VariableNetworkNode operator()(const std::string& variableName);
+      VariableNetworkNode operator()(const std::string& variableName) const override;
 
-      Module& operator[](const std::string& moduleName);
+      Module& operator[](const std::string& moduleName) const override;
       
       /** Add a virtual sub-module. The module instance will be added to an internal list. */
       void addSubModule(VirtualModule module);

@@ -28,29 +28,31 @@ namespace ChimeraTK {
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the register with another variable. */
       VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
-          const std::type_info &valueType=typeid(AnyType), size_t nElements=0);
+          const std::type_info &valueType=typeid(AnyType), size_t nElements=0) const;
       VariableNetworkNode operator()(const std::string& registerName, const std::type_info &valueType,
-          size_t nElements=0, UpdateMode mode=UpdateMode::poll) {
+          size_t nElements=0, UpdateMode mode=UpdateMode::poll) const {
         return operator()(registerName, mode, valueType, nElements);
       }
-      VariableNetworkNode operator()(const std::string& variableName) {
+      VariableNetworkNode operator()(const std::string& variableName) const override {
         return operator()(variableName, UpdateMode::poll);
       }
 
-      Module& operator[](const std::string& moduleName) {
+      Module& operator[](const std::string& moduleName) const override {
         subModules.emplace_back(deviceAliasOrURI, registerNamePrefix/moduleName);
         return subModules.back();
       }
 
       /** Prepare the device for usage (i.e. open it) */
-      void prepare();
+      void prepare() override;
 
     protected:
 
       std::string deviceAliasOrURI;
       mtca4u::RegisterPath registerNamePrefix;
       
-      std::list<DeviceModule> subModules;
+      // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
+      // thus does not change the logical state of this module
+      mutable std::list<DeviceModule> subModules;
 
   };
 

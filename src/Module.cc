@@ -22,7 +22,7 @@ namespace ChimeraTK {
   
 /*********************************************************************************************************************/
 
-  void Module::connectTo(Module &target, VariableNetworkNode trigger) {
+  void Module::connectTo(const Module &target, VariableNetworkNode trigger) const {
     
     // connect all direct variables of this module to their counter-parts in the right-hand-side module
     for(auto variable : getAccessorList()) {

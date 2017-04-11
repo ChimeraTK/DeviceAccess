@@ -28,13 +28,13 @@ namespace ChimeraTK {
       /** To be implemented by the user: function called in a separate thread executing the main loop of the module */
       virtual void mainLoop() = 0;
 
-      void run();
+      void run() override;
 
-      void terminate();
+      void terminate() override;
       
-      VariableNetworkNode operator()(const std::string& variableName);
+      VariableNetworkNode operator()(const std::string& variableName) const override;
 
-      Module& operator[](const std::string& moduleName);
+      Module& operator[](const std::string& moduleName) const override;
       
       /** Move operation with the assignment operator */
       ApplicationModule& operator=(ApplicationModule &&rhs) {

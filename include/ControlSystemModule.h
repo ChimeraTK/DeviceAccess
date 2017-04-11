@@ -28,12 +28,12 @@ namespace ChimeraTK {
       /** The function call operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the control system variable with another variable. */
       VariableNetworkNode operator()(const std::string& variableName, const std::type_info &valueType,
-                                     size_t nElements=0);
-      VariableNetworkNode operator()(const std::string& variableName) {
+                                     size_t nElements=0) const;
+      VariableNetworkNode operator()(const std::string& variableName) const override {
         return operator()(variableName, typeid(AnyType));
       }
 
-      Module& operator[](const std::string& moduleName) {
+      Module& operator[](const std::string& moduleName) const override {
         subModules.emplace_back(variableNamePrefix/moduleName);
         return subModules.back();
       }
@@ -42,9 +42,13 @@ namespace ChimeraTK {
 
       mtca4u::RegisterPath variableNamePrefix;
       
-      std::list<ControlSystemModule> subModules;
+      // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
+      // thus does not change the logical state of this module
+      mutable std::list<ControlSystemModule> subModules;
       
-      std::map<std::string, VariableNetworkNode> variables;
+      // List of variables accessed through the operator(). This is mutable since it is little more than a cache and
+      // thus does not change the logical state of this module
+      mutable std::map<std::string, VariableNetworkNode> variables;
 
   };
 
