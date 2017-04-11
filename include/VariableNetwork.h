@@ -69,7 +69,7 @@ namespace ChimeraTK {
       bool hasApplicationConsumer() const;
 
       /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
-      void dump(const std::string& linePrefix="") const;
+      void dump(const std::string& linePrefix="", std::ostream& stream=std::cout) const;
 
       /** Compare two networks */
       bool operator==(const VariableNetwork &other) const {

@@ -102,7 +102,7 @@ namespace ChimeraTK {
       VariableNetworkNode getExternalTrigger();
 
       /** Print node information to std::cout */
-      void dump() const;
+      void dump(std::ostream& stream=std::cout) const;
 
       /** Create an XML node describing this network node as seen by the control syste. If the type is not
        *  NodeType::ControlSystem, this function does nothing. Otherwise the correct directory hierarchy will be

@@ -5,6 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
+#include <strstream>
+
 #include <libxml++/libxml++.h>
 
 #include "VariableNetwork.h"
@@ -44,13 +46,13 @@ namespace ChimeraTK {
     if(a.getDirection() == VariableDirection::feeding) {
       // make sure we only have one feeding node per network
       if(hasFeedingNode()) {
-        std::cout << "*** Trying to add a feeding accessor to a network already having a feeding accessor." << std::endl;
-        std::cout << "The network you were trying to add the new accessor to:" << std::endl;
-        dump();
-        std::cout << "The node you were trying to add:" << std::endl;
-        a.dump();
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-            "Trying to add a feeding accessor to a network already having a feeding accessor.");
+        std::strstream msg;
+        msg << "Trying to add a feeding accessor to a network already having a feeding accessor." << std::endl;
+        msg << "The network you were trying to add the new accessor to:" << std::endl;
+        dump("", msg);
+        msg << "The node you were trying to add:" << std::endl;
+        a.dump(msg);
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
       }
       // force value type, engineering unit and description of the network if set in this feeding node
       if(a.getValueType() != typeid(AnyType)) valueType = &(a.getValueType());
@@ -69,41 +71,41 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::dump(const std::string& linePrefix) const {
-    std::cout << linePrefix << "VariableNetwork";
-    std::cout << " [ptr: " << this << "]";
-    std::cout << " {" << std::endl;
-    std::cout << linePrefix << "  value type = " << valueType->name() << ", engineering unit = " << engineeringUnit << std::endl;
-    std::cout << linePrefix << "  trigger type = ";
+  void VariableNetwork::dump(const std::string& linePrefix, std::ostream& stream) const {
+    stream << linePrefix << "VariableNetwork";
+    stream << " [ptr: " << this << "]";
+    stream << " {" << std::endl;
+    stream << linePrefix << "  value type = " << valueType->name() << ", engineering unit = " << engineeringUnit << std::endl;
+    stream << linePrefix << "  trigger type = ";
     try {
       TriggerType tt = getTriggerType();
-      if(tt == TriggerType::feeder) std::cout << "feeder" << std::endl;
-      if(tt == TriggerType::pollingConsumer) std::cout << "pollingConsumer" << std::endl;
-      if(tt == TriggerType::external) std::cout << "external" << std::endl;
-      if(tt == TriggerType::none) std::cout << "none" << std::endl;
+      if(tt == TriggerType::feeder) stream << "feeder" << std::endl;
+      if(tt == TriggerType::pollingConsumer) stream << "pollingConsumer" << std::endl;
+      if(tt == TriggerType::external) stream << "external" << std::endl;
+      if(tt == TriggerType::none) stream << "none" << std::endl;
     }
     catch(ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork> &e) {
-      std::cout << "**error**" << std::endl;
+      stream << "**error**" << std::endl;
     }
-    std::cout << linePrefix << "  feeder";
+    stream << linePrefix << "  feeder";
     if(hasFeedingNode()) {
       getFeedingNode().dump();
     }
     else {
-      std::cout << " **error, no feeder found**" << std::endl;
+      stream << " **error, no feeder found**" << std::endl;
     }
-    std::cout << linePrefix << "  consumers: " << countConsumingNodes() << std::endl;
+    stream << linePrefix << "  consumers: " << countConsumingNodes() << std::endl;
     size_t count = 0;
     for(auto &consumer : nodeList) {
       if(consumer.getDirection() != VariableDirection::consuming) continue;
-      std::cout << linePrefix << "    # " << ++count << ":";
+      stream << linePrefix << "    # " << ++count << ":";
       consumer.dump();
     }
     if(getFeedingNode().hasExternalTrigger()) {
-      std::cout << linePrefix << "  external trigger node: ";
+      stream << linePrefix << "  external trigger node: ";
       getFeedingNode().getExternalTrigger().dump();
     }
-    std::cout << linePrefix << "}" << std::endl;
+    stream << linePrefix << "}" << std::endl;
   }
 
   /*********************************************************************************************************************/
@@ -121,8 +123,11 @@ namespace ChimeraTK {
     // network has an external trigger
     if(feeder.hasExternalTrigger()) {
       if(feeder.getMode() == UpdateMode::push) {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-            "Providing an external trigger to a variable network which is fed by a pushing variable is not allowed.");
+        std::strstream msg;
+        msg << "Providing an external trigger to a variable network which is fed by a pushing variable is not allowed." << std::endl;
+        msg << "The illegal network:" << std::endl;
+        dump("", msg);
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
       }
       return TriggerType::external;
     }
@@ -136,8 +141,11 @@ namespace ChimeraTK {
           return n.getDirection() == VariableDirection::consuming && n.getMode() == UpdateMode::poll;
         } );
     if(nPollingConsumers != 1) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer.");
+      std::strstream msg;
+      msg << "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer." << std::endl;
+      msg << "The illegal network:" << std::endl;
+      dump("", msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
     return TriggerType::pollingConsumer;
   }

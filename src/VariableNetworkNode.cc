@@ -103,27 +103,27 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::dump() const {
-    if(pdata->type == NodeType::Application) std::cout << " type = Application ('" << pdata->name << "')";
-    if(pdata->type == NodeType::ControlSystem) std::cout << " type = ControlSystem ('" << pdata->publicName << "')";
-    if(pdata->type == NodeType::Device) std::cout << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
-    if(pdata->type == NodeType::TriggerReceiver) std::cout << " type = TriggerReceiver";
-    if(pdata->type == NodeType::Constant) std::cout << " type = Constant";
-    if(pdata->type == NodeType::invalid) std::cout << " type = **invalid**";
+  void VariableNetworkNode::dump(std::ostream& stream) const {
+    if(pdata->type == NodeType::Application) stream << " type = Application ('" << pdata->name << "')";
+    if(pdata->type == NodeType::ControlSystem) stream << " type = ControlSystem ('" << pdata->publicName << "')";
+    if(pdata->type == NodeType::Device) stream << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
+    if(pdata->type == NodeType::TriggerReceiver) stream << " type = TriggerReceiver";
+    if(pdata->type == NodeType::Constant) stream << " type = Constant";
+    if(pdata->type == NodeType::invalid) stream << " type = **invalid**";
 
-    if(pdata->mode == UpdateMode::push) std::cout << " pushing";
-    if(pdata->mode == UpdateMode::poll) std::cout << " polling";
+    if(pdata->mode == UpdateMode::push) stream << " pushing";
+    if(pdata->mode == UpdateMode::poll) stream << " polling";
 
-    std::cout << " data type: " << pdata->valueType->name();
-    std::cout << " length: " << pdata->nElements;
+    stream << " data type: " << pdata->valueType->name();
+    stream << " length: " << pdata->nElements;
 
-    std::cout << " [ptr: " << &(*pdata) << "]";
+    stream << " [ptr: " << &(*pdata) << "]";
     
-    std::cout << " { ";
-    for(auto &tag : pdata->tags) std::cout << tag << " ";
-    std::cout << "}";
+    stream << " { ";
+    for(auto &tag : pdata->tags) stream << tag << " ";
+    stream << "}";
     
-    std::cout << std::endl;
+    stream << std::endl;
 }
 
   /*********************************************************************************************************************/
