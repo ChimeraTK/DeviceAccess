@@ -31,7 +31,7 @@ namespace ChimeraTK {
     public:
 
       /** returns an explanatory string */
-      const char* what() const noexcept { return _what; }
+      const char* what() const noexcept { return _what.c_str(); }
 
       /** returns the ID describing the exception type */
       ApplicationExceptionID getID() const { return _id; }
@@ -39,12 +39,12 @@ namespace ChimeraTK {
     protected:
 
       /** the constructor is protected, create instances of ApplicationExceptionWithID instead! */
-      ApplicationException(ApplicationExceptionID id, const char* description)
+      ApplicationException(ApplicationExceptionID id, const std::string& description)
       : _id(id), _what(description)
       {}
 
       ApplicationExceptionID _id;
-      const char* _what;
+      std::string _what;
 
   };
 
@@ -54,7 +54,7 @@ namespace ChimeraTK {
     public:
 
       /** pass the explanatory string returned by what() to the constructor */
-      ApplicationExceptionWithID(const char* description)
+      ApplicationExceptionWithID(const std::string& description)
       : ApplicationException(id, description)
       {}
   };
