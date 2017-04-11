@@ -46,7 +46,7 @@ namespace ChimeraTK {
     if(a.getDirection() == VariableDirection::feeding) {
       // make sure we only have one feeding node per network
       if(hasFeedingNode()) {
-        std::strstream msg;
+        std::stringstream msg;
         msg << "Trying to add a feeding accessor to a network already having a feeding accessor." << std::endl;
         msg << "The network you were trying to add the new accessor to:" << std::endl;
         dump("", msg);
@@ -89,7 +89,7 @@ namespace ChimeraTK {
     }
     stream << linePrefix << "  feeder";
     if(hasFeedingNode()) {
-      getFeedingNode().dump();
+      getFeedingNode().dump(stream);
     }
     else {
       stream << " **error, no feeder found**" << std::endl;
@@ -99,11 +99,11 @@ namespace ChimeraTK {
     for(auto &consumer : nodeList) {
       if(consumer.getDirection() != VariableDirection::consuming) continue;
       stream << linePrefix << "    # " << ++count << ":";
-      consumer.dump();
+      consumer.dump(stream);
     }
     if(getFeedingNode().hasExternalTrigger()) {
       stream << linePrefix << "  external trigger node: ";
-      getFeedingNode().getExternalTrigger().dump();
+      getFeedingNode().getExternalTrigger().dump(stream);
     }
     stream << linePrefix << "}" << std::endl;
   }
@@ -123,7 +123,7 @@ namespace ChimeraTK {
     // network has an external trigger
     if(feeder.hasExternalTrigger()) {
       if(feeder.getMode() == UpdateMode::push) {
-        std::strstream msg;
+        std::stringstream msg;
         msg << "Providing an external trigger to a variable network which is fed by a pushing variable is not allowed." << std::endl;
         if(verboseExceptions) {
           msg << "The illegal network:" << std::endl;
@@ -139,12 +139,12 @@ namespace ChimeraTK {
     }
     // network is fed by a poll-type node: must have exactly one polling consumer
     size_t nPollingConsumers = count_if( nodeList.begin(), nodeList.end(),
-        [](const VariableNetworkNode n) {
+        [](const VariableNetworkNode &n) {
           return n.getDirection() == VariableDirection::consuming && n.getMode() == UpdateMode::poll;
         } );
     if(nPollingConsumers != 1) {
-      std::strstream msg;
-      msg << "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer." << std::endl;
+      std::stringstream msg;
+      msg << "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer. Maybe you forgot to add a trigger?" << std::endl;
       if(verboseExceptions) {
         msg << "The illegal network:" << std::endl;
         dump("", msg);
