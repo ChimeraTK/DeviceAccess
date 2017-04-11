@@ -5,7 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
-#include <strstream>
+#include <sstream>
 
 #include <libxml++/libxml++.h>
 
@@ -78,7 +78,7 @@ namespace ChimeraTK {
     stream << linePrefix << "  value type = " << valueType->name() << ", engineering unit = " << engineeringUnit << std::endl;
     stream << linePrefix << "  trigger type = ";
     try {
-      TriggerType tt = getTriggerType();
+      TriggerType tt = getTriggerType(false);
       if(tt == TriggerType::feeder) stream << "feeder" << std::endl;
       if(tt == TriggerType::pollingConsumer) stream << "pollingConsumer" << std::endl;
       if(tt == TriggerType::external) stream << "external" << std::endl;
@@ -118,15 +118,17 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetwork::TriggerType VariableNetwork::getTriggerType() const {
+  VariableNetwork::TriggerType VariableNetwork::getTriggerType(bool verboseExceptions) const {
     const auto &feeder = getFeedingNode();
     // network has an external trigger
     if(feeder.hasExternalTrigger()) {
       if(feeder.getMode() == UpdateMode::push) {
         std::strstream msg;
         msg << "Providing an external trigger to a variable network which is fed by a pushing variable is not allowed." << std::endl;
-        msg << "The illegal network:" << std::endl;
-        dump("", msg);
+        if(verboseExceptions) {
+          msg << "The illegal network:" << std::endl;
+          dump("", msg);
+        }
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
       }
       return TriggerType::external;
@@ -143,8 +145,10 @@ namespace ChimeraTK {
     if(nPollingConsumers != 1) {
       std::strstream msg;
       msg << "In a network with a poll-type feeder and no external trigger, there must be exactly one polling consumer." << std::endl;
-      msg << "The illegal network:" << std::endl;
-      dump("", msg);
+      if(verboseExceptions) {
+        msg << "The illegal network:" << std::endl;
+        dump("", msg);
+      }
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
     return TriggerType::pollingConsumer;

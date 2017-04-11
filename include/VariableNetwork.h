@@ -82,8 +82,10 @@ namespace ChimeraTK {
       }
 
       /** Return the trigger type. This function will also do some checking if the network confguration is valid under
-       *  the aspect of the trigger type. */
-      TriggerType getTriggerType() const;
+       *  the aspect of the trigger type.
+       *  The optional argument is only internally used to prevent endless recursive calls if getTriggerType() is
+       *  called inside dump(). */
+      TriggerType getTriggerType(bool verboseExceptions=true) const;
 
       /** Return the enginerring unit */
       const std::string& getUnit() const { return engineeringUnit; }
