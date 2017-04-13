@@ -35,7 +35,7 @@ namespace ChimeraTK {
       
       void wait() override {
         try {
-          Application::getTestableModeLockObject().unlock();
+          Application::testableModeUnlock("TransferFuture "+_accessor->getName());
         }
         catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
           if(e.code() != std::errc::operation_not_permitted) throw;
@@ -44,7 +44,7 @@ namespace ChimeraTK {
         _originalFuture->wait();
         _accessor->postRead();
         _accessor->hasActiveFuture = false;
-        Application::getTestableModeLockObject().lock();
+        Application::testableModeLock("TransferFuture "+_accessor->getName());
         --Application::getInstance().testableMode_counter;
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorTransferFuture::wait[name='"<<_accessor->getName()<<"']: testableMode_counter decreased, now at value "
@@ -95,8 +95,10 @@ namespace ChimeraTK {
       
       void write() override {
         preWrite();
-        auto &myLock = Application::getTestableModeLockObject();
-        if(!myLock.owns_lock()) myLock.lock();   // may happen if first write in thread is done before first blocking read
+        if(!Application::testableModeTestLock()) {
+          // may happen if first write in thread is done before first blocking read
+          Application::testableModeLock("write "+this->getName());
+        }
         ++Application::getInstance().testableMode_counter;
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"']: testableMode_counter increased, now at value "
@@ -108,13 +110,13 @@ namespace ChimeraTK {
 
       void doReadTransfer() override {
         try {
-          Application::getTestableModeLockObject().unlock();
+          Application::testableModeUnlock("doReadTransfer "+this->getName());
         }
         catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
           if(e.code() != std::errc::operation_not_permitted) throw e;
         }
         _accessor->doReadTransfer();
-        Application::getTestableModeLockObject().lock();
+        Application::testableModeLock("doReadTransfer "+this->getName());
         --Application::getInstance().testableMode_counter;
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorRegisterAccessor::doReadTransfer[name='"<<this->getName()<<"']: testableMode_counter decreased, now at value "

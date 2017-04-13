@@ -152,8 +152,8 @@ void Application::run() {
 void Application::shutdown() {
   
   // first allow to run the application threads again, if we are in testable mode
-  if(testableMode && getTestableModeLockObject().owns_lock()) {
-    getTestableModeLockObject().unlock();
+  if(testableMode && testableModeTestLock()) {
+    testableModeUnlock("shutdown");
   }
 
   // deactivate the FanOuts first, since they have running threads inside accessing the modules etc.
@@ -657,9 +657,10 @@ void Application::stepApplication() {
       std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter << std::endl;
       oldCounter = testableMode_counter;
     }
-    getTestableModeLockObject().unlock();
+    testableModeUnlock("stepApplication");
     boost::this_thread::yield();
-    getTestableModeLockObject().lock();
+    std::cout << "HIER stepApplication" << std::endl;
+    testableModeLock("stepApplication");
   }
 }
 
@@ -670,15 +671,14 @@ boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference
     return mtca4u::TransferElement::readAny(elementsToRead);
   }
   else {
-    auto &theLock = Application::getInstance().getTestableModeLockObject();
     try {
-      theLock.unlock();
+      testableModeUnlock("readAny");
     }
     catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
       if(e.code() != std::errc::operation_not_permitted) throw;
     }
     auto ret = mtca4u::TransferElement::readAny(elementsToRead);
-    assert(theLock.owns_lock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
+    assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
     return ret;
   }
 }

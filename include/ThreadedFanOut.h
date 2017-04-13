@@ -10,6 +10,7 @@
 
 #include <mtca4u/NDRegisterAccessor.h>
 
+#include "Application.h"
 #include "FanOut.h"
 #include "InternalModule.h"
 
@@ -46,6 +47,7 @@ namespace ChimeraTK {
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
+        Application::getInstance().testableModeThreadName() = "Threaded "+FanOut<UserType>::impl->getName();
         while(true) {
           // receive data
           boost::this_thread::interruption_point();

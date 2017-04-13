@@ -18,13 +18,13 @@
 #include "Flags.h"
 #include "InternalModule.h"
 #include "EntityOwner.h"
-#include "TriggerFanOut.h"
 
 namespace ChimeraTK {
 
   class Module;
   class AccessorBase;
   class VariableNetwork;
+  class TriggerFanOut;
 
   template<typename UserType>
   class Accessor;
@@ -79,7 +79,7 @@ namespace ChimeraTK {
        * 
        *  Note: Enabling the testable mode will have a singificant impact on the performance, since it will prevent
        *  any module threads to run at the same time! */
-      void enableTestableMode() { testableMode = true; getTestableModeLockObject().lock(); }
+      void enableTestableMode() { testableMode = true; testableModeLock("enableTestableMode"); }
 
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
        *  the testable mode was enabled. */
@@ -88,23 +88,56 @@ namespace ChimeraTK {
       /** Enable some additional (potentially noisy) debug output for the testable mode. Can be useful if tests
        *  of applications seem to hang for no reason in stepApplication. */
       void debugTestableMode() { enableDebugTestableMode = true; }
-
-      /** Obtain the lock object for the testable mode lock for the current thread. The returned object has
-       *  thread_local storage duration and must only be used inside the current thread. Initially (i.e. after
-       *  the first call in one particular thread) the lock will not be owned by the returned object, so it is
-       *  important to catch the corresponding exception when calling std::unique_lock::unlock().
-       *
-       *  This function should generally not be used in user code. */
-      static std::unique_lock<std::mutex>& getTestableModeLockObject() {
-        thread_local static std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
-        return myLock;
-      }
       
       /** This is a testable version of mtca4u::TransferElement::readAny(). Always use this version instead of the
        *  original version provided by DeviceAccess. If the testable mode is not enabled, just the original version
        *  is called instead. Only with the testable mode enabled, special precautions are taken to make this blocking
        *  call testable. */
       static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+      
+      /** Lock the testable mode mutex for the current thread. Internally, a thread-local std::unique_lock<std::mutex>
+       *  will be created and re-used in subsequent calls within the same thread to this function and to
+       *  testableModeUnlock().
+       *
+       *  This function should generally not be used in user code. */
+      static void testableModeLock(const std::string& name) {
+        if(getInstance().enableDebugTestableMode) {
+          std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+                    << " tries to obtain lock for " << name << std::endl;
+        }
+        getTestableModeLockObject().lock();
+        if(getInstance().enableDebugTestableMode) {
+          std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+                    << " obtained lock successfully for " << name << std::endl;
+        }
+      }
+      
+      /** Unlock the testable mode mutex for the current thread. See also testableModeLock().
+       * 
+       *  Initially the lock will not be owned by the current thread, so the first call to this function will throw an
+       *  exception (see std::unique_lock::unlock()), unless testableModeLock() has been called first.
+       *
+       *  This function should generally not be used in user code. */
+      static void testableModeUnlock(const std::string& name) {
+        if(getInstance().enableDebugTestableMode) {
+          std::cout << "Application::testableModeUnlock(): Thread " << testableModeThreadName()
+                    << " releases lock for " << name << std::endl;
+        }
+        getTestableModeLockObject().unlock();
+      }
+      
+      /** Test if the testable mode mutex is locked by the current thread.
+       *
+       *  This function should generally not be used in user code. */
+      static bool testableModeTestLock() {
+        return getTestableModeLockObject().owns_lock();
+      }
+
+      /** Get string holding the name of the current thread for debugging output of the testable mode. */
+      static std::string& testableModeThreadName() {
+        thread_local static std::string name{"**UNNAMED**"};
+        return name;
+      }
 
     protected:
 
@@ -114,6 +147,15 @@ namespace ChimeraTK {
 
       template<typename UserType>
       friend class Accessor;
+
+      /** Obtain the lock object for the testable mode lock for the current thread. The returned object has
+       *  thread_local storage duration and must only be used inside the current thread. Initially (i.e. after
+       *  the first call in one particular thread) the lock will not be owned by the returned object, so it is
+       *  important to catch the corresponding exception when calling std::unique_lock::unlock(). */
+      static std::unique_lock<std::mutex>& getTestableModeLockObject() {
+        thread_local static std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
+        return myLock;
+      }
       
       /** Register the connections to constants for previously unconnected nodes. */
       void processUnconnectedNodes();

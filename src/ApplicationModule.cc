@@ -6,6 +6,7 @@
  */
 
 #include "ApplicationModule.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
@@ -35,6 +36,7 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void ApplicationModule::mainLoopWrapper() {
+    Application::getInstance().testableModeThreadName() = "ApplicatioModule "+getName();
     // enter the main loop
     mainLoop();
   }
