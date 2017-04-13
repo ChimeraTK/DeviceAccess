@@ -9,6 +9,7 @@
 #define CHIMERATK_APPLICATION_H
 
 #include <mutex>
+#include <atomic>
 
 #include <mtca4u/DeviceBackend.h>
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
@@ -106,12 +107,23 @@ namespace ChimeraTK {
        *  This function should generally not be used in user code. */
       static void testableModeLock(const std::string& name) {
         if(!getInstance().testableMode) return;
-        if(getInstance().enableDebugTestableMode) {
+        if(getInstance().enableDebugTestableMode && !getInstance().testableMode_repeatingMutexOwner) {
           std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
                     << " tries to obtain lock for " << name << std::endl;
         }
         getTestableModeLockObject().lock();
-        if(getInstance().enableDebugTestableMode) {
+        if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
+          if(!getInstance().testableMode_repeatingMutexOwner) {
+            getInstance().testableMode_repeatingMutexOwner = true;
+            std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+                      << " repeatedly obtained lock successfully for " << name << ". Further messages will be suppressed." << std::endl;
+          }
+        }
+        else {
+          getInstance().testableMode_repeatingMutexOwner = false;
+        }
+        getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
+        if(getInstance().enableDebugTestableMode && !getInstance().testableMode_repeatingMutexOwner) {
           std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
                     << " obtained lock successfully for " << name << std::endl;
         }
@@ -125,7 +137,8 @@ namespace ChimeraTK {
        *  This function should generally not be used in user code. */
       static void testableModeUnlock(const std::string& name) {
         if(!getInstance().testableMode) return;
-        if(getInstance().enableDebugTestableMode) {
+        if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner
+          || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {
           std::cout << "Application::testableModeUnlock(): Thread " << testableModeThreadName()
                     << " releases lock for " << name << std::endl;
         }
@@ -240,6 +253,14 @@ namespace ChimeraTK {
       
       /** Flag whether to warn about unconnected variables or not */
       bool enableUnconnectedVariablesWarning{false};
+      
+      /** Last thread which successfully obtained the lock for the testable mode. This is used to prevent spamming
+       *  repeating messages if the same thread acquires and releases the lock in a loop without another thread
+       *  activating in between. */
+      std::thread::id testableMode_lastMutexOwner;
+      
+      /** @todo DOCU */
+      std::atomic<bool> testableMode_repeatingMutexOwner{false};
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter

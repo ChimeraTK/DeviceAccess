@@ -413,9 +413,10 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   auto consumers = network.getConsumingNodes();
   bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
   bool useFeederTrigger = network.getTriggerType() == VariableNetwork::TriggerType::feeder;
+  bool constantFeeder = feeder.getType() == NodeType::Constant;
 
   // 1st case: the feeder requires a fixed implementation
-  if(feeder.hasImplementation()) {
+  if(feeder.hasImplementation() && !constantFeeder) {
 
     // Create feeding implementation. Note: though the implementation is derived from the feeder, it will be used as
     // the implementation of the (or one of the) consumer. Logically, implementations are always pairs of
@@ -429,10 +430,6 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
     else if(feeder.getType() == NodeType::ControlSystem) {
       feedingImpl = createProcessVariable<UserType>(feeder);
-    }
-    else if(feeder.getType() == NodeType::Constant) {
-      feedingImpl = feeder.getConstAccessor<UserType>();
-      assert(feedingImpl != nullptr);
     }
     else {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
@@ -541,7 +538,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     }
   }
   // 2nd case: the feeder does not require a fixed implementation
-  else {    /* !feeder.hasImplementation() */
+  else if(!constantFeeder) {    /* !feeder.hasImplementation() */
     // we should be left with an application feeder node
     if(feeder.getType() != NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
@@ -620,6 +617,36 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       connectionMade = true;
     }
+  }
+  else {    /* constantFeeder */
+    assert(feeder.getType() == NodeType::Constant);
+    auto feedingImpl = feeder.getConstAccessor<UserType>();
+    assert(feedingImpl != nullptr);
+  
+    for(auto &consumer : consumers) {
+      if(consumer.getType() == NodeType::Application) {
+        consumer.getAppAccessor<UserType>().replace(feedingImpl);
+      }
+      else if(consumer.getType() == NodeType::ControlSystem) {
+        auto impl = createProcessVariable<UserType>(consumer);
+        impl->accessChannel(0) = feedingImpl->accessChannel(0);
+        impl->write();
+      }
+      else if(consumer.getType() == NodeType::Device) {
+        auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+            VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
+        impl->accessChannel(0) = feedingImpl->accessChannel(0);
+        impl->write();
+      }
+      else if(consumer.getType() == NodeType::TriggerReceiver) {
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Using constants as triggers is not supported!");
+      }
+      else {
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+      }
+    }
+    connectionMade = true;
+    
   }
 
   if(!connectionMade) {
