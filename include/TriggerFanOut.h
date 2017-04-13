@@ -59,6 +59,7 @@ namespace ChimeraTK {
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
         Application::getInstance().testableModeThreadName() = "TriggerFanOut "+externalTrigger->getName();
+        Application::testableModeLock("start");
         while(true) {
           // wait for external trigger
           boost::this_thread::interruption_point();

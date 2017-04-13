@@ -79,7 +79,11 @@ namespace ChimeraTK {
        * 
        *  Note: Enabling the testable mode will have a singificant impact on the performance, since it will prevent
        *  any module threads to run at the same time! */
-      void enableTestableMode() { testableMode = true; testableModeLock("enableTestableMode"); }
+      void enableTestableMode() {
+        testableMode = true;
+        testableModeLock("enableTestableMode");
+        testableModeThreadName() = "TEST THREAD";
+      }
 
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
        *  the testable mode was enabled. */
@@ -101,6 +105,7 @@ namespace ChimeraTK {
        *
        *  This function should generally not be used in user code. */
       static void testableModeLock(const std::string& name) {
+        if(!getInstance().testableMode) return;
         if(getInstance().enableDebugTestableMode) {
           std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
                     << " tries to obtain lock for " << name << std::endl;
@@ -119,6 +124,7 @@ namespace ChimeraTK {
        *
        *  This function should generally not be used in user code. */
       static void testableModeUnlock(const std::string& name) {
+        if(!getInstance().testableMode) return;
         if(getInstance().enableDebugTestableMode) {
           std::cout << "Application::testableModeUnlock(): Thread " << testableModeThreadName()
                     << " releases lock for " << name << std::endl;
@@ -130,6 +136,7 @@ namespace ChimeraTK {
        *
        *  This function should generally not be used in user code. */
       static bool testableModeTestLock() {
+        if(!getInstance().testableMode) return false;
         return getTestableModeLockObject().owns_lock();
       }
 
