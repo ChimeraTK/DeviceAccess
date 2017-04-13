@@ -659,7 +659,6 @@ void Application::stepApplication() {
     }
     testableModeUnlock("stepApplication");
     boost::this_thread::yield();
-    std::cout << "HIER stepApplication" << std::endl;
     testableModeLock("stepApplication");
   }
 }
