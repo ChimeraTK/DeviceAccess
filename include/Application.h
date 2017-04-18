@@ -26,6 +26,7 @@ namespace ChimeraTK {
   class AccessorBase;
   class VariableNetwork;
   class TriggerFanOut;
+  class TestFacility;
 
   template<typename UserType>
   class Accessor;
@@ -105,29 +106,7 @@ namespace ChimeraTK {
        *  testableModeUnlock().
        *
        *  This function should generally not be used in user code. */
-      static void testableModeLock(const std::string& name) {
-        if(!getInstance().testableMode) return;
-        if(getInstance().enableDebugTestableMode && !getInstance().testableMode_repeatingMutexOwner) {
-          std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
-                    << " tries to obtain lock for " << name << std::endl;
-        }
-        getTestableModeLockObject().lock();
-        if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
-          if(!getInstance().testableMode_repeatingMutexOwner) {
-            getInstance().testableMode_repeatingMutexOwner = true;
-            std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
-                      << " repeatedly obtained lock successfully for " << name << ". Further messages will be suppressed." << std::endl;
-          }
-        }
-        else {
-          getInstance().testableMode_repeatingMutexOwner = false;
-        }
-        getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
-        if(getInstance().enableDebugTestableMode && !getInstance().testableMode_repeatingMutexOwner) {
-          std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
-                    << " obtained lock successfully for " << name << std::endl;
-        }
-      }
+      static void testableModeLock(const std::string& name);
       
       /** Unlock the testable mode mutex for the current thread. See also testableModeLock().
        * 
@@ -135,15 +114,7 @@ namespace ChimeraTK {
        *  exception (see std::unique_lock::unlock()), unless testableModeLock() has been called first.
        *
        *  This function should generally not be used in user code. */
-      static void testableModeUnlock(const std::string& name) {
-        if(!getInstance().testableMode) return;
-        if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner
-          || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {
-          std::cout << "Application::testableModeUnlock(): Thread " << testableModeThreadName()
-                    << " releases lock for " << name << std::endl;
-        }
-        getTestableModeLockObject().unlock();
-      }
+      static void testableModeUnlock(const std::string& name);
       
       /** Test if the testable mode mutex is locked by the current thread.
        *
@@ -259,14 +230,24 @@ namespace ChimeraTK {
        *  activating in between. */
       std::thread::id testableMode_lastMutexOwner;
       
-      /** @todo DOCU */
-      std::atomic<bool> testableMode_repeatingMutexOwner{false};
+      /** Counter how often the same thread has acquired the testable mode mutex in a row without another thread
+       *  owning it in between. This is an indicator for the test being stalled due to data send through a process
+       *  variable but not read by the receiver. */
+      std::atomic<size_t> testableMode_repeatingMutexOwner{false};
+      
+      /** Testable mode: List of variables which are decorated with the TestDecoratorRegisterAccessor and thus counted
+       *  when determining if the application has finished processing all data for the "step". This list is used to
+       *  print useful debug information when a stalled test is detected. */
+      std::list<boost::shared_ptr<mtca4u::TransferElement>> testableMode_variables;
+      
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter
 
       template<typename UserType>
-      friend class TestDecoratorTransferFuture;   // needs access to the testableMode_mutex and testableMode_counter
+      friend class TestDecoratorTransferFuture;     // needs access to the testableMode_mutex and testableMode_counter
+      
+      friend class TestFacility;                    // needs access to testableMode_variables
 
   };
 

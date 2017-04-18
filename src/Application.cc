@@ -328,6 +328,10 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   if(testableMode) {
     pvarPair.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
     pvarPair.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
+    
+    // put the decorators into the list
+    testableMode_variables.push_back(pvarPair.first);
+    testableMode_variables.push_back(pvarPair.second);
   }
   
   // return the pair
@@ -707,4 +711,57 @@ boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference
     assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
     return ret;
   }
+}
+
+/*********************************************************************************************************************/
+
+void Application::testableModeLock(const std::string& name) {
+  if(!getInstance().testableMode) return;
+  if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
+    std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+              << " tries to obtain lock for " << name << std::endl;
+  }
+  getTestableModeLockObject().lock();
+  if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
+    if(getInstance().testableMode_repeatingMutexOwner == 0) {
+      std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+                << " repeatedly obtained lock successfully for " << name << ". Further messages will be suppressed." << std::endl;
+    }
+    getInstance().testableMode_repeatingMutexOwner++;
+    usleep(1000);
+    if(getInstance().testableMode_repeatingMutexOwner > 1000) {
+      std::cout << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
+      std::cout << "    The following variables still contain unread values:" << std::endl;
+      for(auto &var : Application::getInstance().testableMode_variables) {
+        if(var->isReadable()) {
+          if(var->readNonBlocking()) {
+            std::cout << "    - " << var->getName() << std::endl;
+          }
+        }
+      }
+      // throw an exception which cannot be caught (other than with catch all)
+      class TestsStalled {};
+      throw TestsStalled();
+    }
+  }
+  else {
+    getInstance().testableMode_repeatingMutexOwner = 0;
+  }
+  getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
+  if(getInstance().enableDebugTestableMode && !getInstance().testableMode_repeatingMutexOwner) {
+    std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+              << " obtained lock successfully for " << name << std::endl;
+  }
+}
+
+/*********************************************************************************************************************/
+
+void Application::testableModeUnlock(const std::string& name) {
+  if(!getInstance().testableMode) return;
+  if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner
+    || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {
+    std::cout << "Application::testableModeUnlock(): Thread " << testableModeThreadName()
+              << " releases lock for " << name << std::endl;
+  }
+  getTestableModeLockObject().unlock();
 }
