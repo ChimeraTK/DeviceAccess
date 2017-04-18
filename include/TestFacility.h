@@ -57,7 +57,7 @@ namespace ChimeraTK {
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
         auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
-        Application::getInstance().testableMode_variables.push_back(deco);
+        Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
         return mtca4u::ScalarRegisterAccessor<T>(deco);
       }
       
@@ -70,7 +70,7 @@ namespace ChimeraTK {
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
         auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
-        Application::getInstance().testableMode_variables.push_back(deco);
+        Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
         return mtca4u::OneDRegisterAccessor<T>(deco);
       }
       

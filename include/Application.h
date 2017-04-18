@@ -234,11 +234,15 @@ namespace ChimeraTK {
        *  owning it in between. This is an indicator for the test being stalled due to data send through a process
        *  variable but not read by the receiver. */
       std::atomic<size_t> testableMode_repeatingMutexOwner{false};
+
+      /** Testable mode: like testableMode_counter but broken out for each variable. This is not actually used as a
+       *  semaphore counter but only in case of a detected stall (see testableMode_repeatingMutexOwner) to print
+       *  a list of variables which still contain unread values. The index of the map is the unique ID of the 
+       *  variable. */
+      std::map<size_t, size_t> testableMode_perVarCounter;
       
-      /** Testable mode: List of variables which are decorated with the TestDecoratorRegisterAccessor and thus counted
-       *  when determining if the application has finished processing all data for the "step". This list is used to
-       *  print useful debug information when a stalled test is detected. */
-      std::list<boost::shared_ptr<mtca4u::TransferElement>> testableMode_variables;
+      /** Map of unique IDs to namess, used along with testableMode_perVarCounter to print sensible information. */
+      std::map<size_t, std::string> testableMode_names;
       
 
       template<typename UserType>

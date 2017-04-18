@@ -47,6 +47,7 @@ namespace ChimeraTK {
         _accessor->hasActiveFuture = false;
         Application::testableModeLock("TransferFuture "+_accessor->getName());
         --Application::getInstance().testableMode_counter;
+        --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorTransferFuture::wait[name='"<<_accessor->getName()<<"']: testableMode_counter decreased, now at value "
                     << Application::getInstance().testableMode_counter << std::endl; 
@@ -101,6 +102,7 @@ namespace ChimeraTK {
           Application::testableModeLock("write "+this->getName());
         }
         ++Application::getInstance().testableMode_counter;
+        ++Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"']: testableMode_counter increased, now at value "
                     << Application::getInstance().testableMode_counter << std::endl; 
@@ -119,6 +121,7 @@ namespace ChimeraTK {
         _accessor->doReadTransfer();
         Application::testableModeLock("doReadTransfer "+this->getName());
         --Application::getInstance().testableMode_counter;
+        --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorRegisterAccessor::doReadTransfer[name='"<<this->getName()<<"']: testableMode_counter decreased, now at value "
                     << Application::getInstance().testableMode_counter << std::endl; 
@@ -178,6 +181,10 @@ namespace ChimeraTK {
 
       void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override {
         _accessor->setPersistentDataStorage(storage);
+      }
+      
+      size_t getUniqueId() const {
+        return _accessor->getUniqueId();
       }
 
     protected:

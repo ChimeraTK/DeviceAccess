@@ -300,7 +300,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   // don't decorate if the feeding side is a constant!
   if(testableMode && node.getDirection() == VariableDirection::feeding && node.getType() != NodeType::Constant) {
     auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
-    testableMode_variables.push_back(pvarDec);
+    testableMode_names[pvarDec->getUniqueId()] = "ControlSystem:"+node.getPublicName();
     return pvarDec;
   }
   
@@ -332,8 +332,7 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
     pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
     
     // put the decorators into the list
-    testableMode_variables.push_back(pvarPairDec.first);
-    testableMode_variables.push_back(pvarPairDec.second);
+    testableMode_names[pvarPair.first->getUniqueId()] = "Internal:"+pvarPair.first->getName()+"->"+pvarPair.second->getName();
     
     return pvarPairDec;
   }
@@ -736,11 +735,9 @@ void Application::testableModeLock(const std::string& name) {
     if(getInstance().testableMode_repeatingMutexOwner > 1000) {
       std::cout << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
       std::cout << "    The following variables still contain unread values:" << std::endl;
-      for(auto &var : Application::getInstance().testableMode_variables) {
-        if(var->isReadable()) {
-          if(var->readNonBlocking()) {
-            std::cout << "    - " << var->getName() << std::endl;
-          }
+      for(auto &pair : Application::getInstance().testableMode_perVarCounter) {
+        if(pair.second > 0) {
+          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << std::endl;
         }
       }
       // throw an exception which cannot be caught (other than with catch all)
