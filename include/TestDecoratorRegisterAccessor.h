@@ -8,6 +8,7 @@
 #ifndef CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 #define CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 
+#include <ChimeraTK/ControlSystemAdapter/ProcessArray.h>
 #include <mtca4u/NDRegisterAccessor.h>
 
 #include "Application.h"
@@ -83,7 +84,7 @@ namespace ChimeraTK {
   template<typename UserType>
   class TestDecoratorRegisterAccessor : public mtca4u::NDRegisterAccessor<UserType> {
     public:
-      TestDecoratorRegisterAccessor(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> accessor)
+      TestDecoratorRegisterAccessor(boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> accessor)
       : mtca4u::NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()),
         _accessor(accessor) {
         buffer_2D.resize(_accessor->getNumberOfChannels());
@@ -183,7 +184,7 @@ namespace ChimeraTK {
       
       using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
 
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _accessor;
+      boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> _accessor;
       
       friend class TestDecoratorTransferFuture<UserType>;
       

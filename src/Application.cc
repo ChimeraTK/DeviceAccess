@@ -292,15 +292,16 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   }
 
   // create the ProcessArray for the proper UserType
-  boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> pvar;
-  pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
-                                                               node.getOwner().getUnit(), node.getOwner().getDescription());
+  auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
+                                                                    node.getOwner().getUnit(), node.getOwner().getDescription());
   assert(pvar->getName() != "");
 
   // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
   // don't decorate if the feeding side is a constant!
   if(testableMode && node.getDirection() == VariableDirection::feeding && node.getType() != NodeType::Constant) {
-    pvar = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
+    auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
+    testableMode_variables.push_back(pvarDec);
+    return pvarDec;
   }
   
   // return the process variable
@@ -319,19 +320,22 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   assert(name != "");
   
   // create the ProcessArray for the proper UserType
-  std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
-  pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
+  auto pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
  
   // decorate the process variable if testable mode is enabled
   if(testableMode) {
-    pvarPair.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
-    pvarPair.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
+    std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
+               boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPairDec;
+    pvarPairDec.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
+    pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
     
     // put the decorators into the list
-    testableMode_variables.push_back(pvarPair.first);
-    testableMode_variables.push_back(pvarPair.second);
+    testableMode_variables.push_back(pvarPairDec.first);
+    testableMode_variables.push_back(pvarPairDec.second);
+    
+    return pvarPairDec;
   }
   
   // return the pair
