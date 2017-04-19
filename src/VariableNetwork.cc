@@ -159,42 +159,59 @@ namespace ChimeraTK {
   void VariableNetwork::check() {
     // must have consuming nodes
     if(countConsumingNodes() == 0) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "No consuming nodes connected to this network!");
+      std::stringstream msg;
+      msg << "No consuming nodes connected to this network!" << std::endl;
+      msg << "The illegal network:" << std::endl;
+      dump("", msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
 
     // must have a feeding node
     if(!hasFeedingNode()) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "No feeding node connected to this network!");
+      std::stringstream msg;
+      msg << "No feeding node connected to this network!" << std::endl;
+      msg << "The illegal network:" << std::endl;
+      dump("", msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
 
     // the network's value type must be correctly set
     if(*valueType == typeid(AnyType)) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "No data type specified for any of the nodes in this network!");
+      std::stringstream msg;
+      msg << "No data type specified for any of the nodes in this network!" << std::endl;
+      msg << "The illegal network:" << std::endl;
+      dump("", msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
     
     // the feeder node must have a non-zero length
     size_t length = getFeedingNode().getNumberOfElements();
     if(length == 0) {
-      getFeedingNode().dump();
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "The feeding node has zero (or undefined) length!");
+      std::stringstream msg;
+      msg << "The feeding node has zero (or undefined) length!" << std::endl;
+      msg << "The illegal network:" << std::endl;
+      dump("", msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
     
     // all consumers must have the same length as the feeder or a zero length for trigger receivers
     for(auto &node : nodeList) {
       if(node.getType() != NodeType::TriggerReceiver) {
         if(node.getNumberOfElements() != length) {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-              "The network contains a node with a different length than the feeding node!");
+          std::stringstream msg;
+          msg << "The network contains a node with a different length than the feeding node!" << std::endl;
+          msg << "The illegal network:" << std::endl;
+          dump("", msg);
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
         }
       }
       else {
         if(node.getNumberOfElements() != 0) {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-              "The network contains a trigger receiver node with a non-zero length!");
+          std::stringstream msg;
+          msg << "The network contains a trigger receiver node with a non-zero length!" << std::endl;
+          msg << "The illegal network:" << std::endl;
+          dump("", msg);
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
         }
       }
     }
