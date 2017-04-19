@@ -347,11 +347,84 @@ void Application::makeConnections() {
   
   // run checks first
   checkConnections();
+  
+  // apply optimisations
+  optimiseConnections();
+  
+  // run checks again to make sure the optimisations didn't create corrupted networks
+  checkConnections();
 
   // make the connections for all networks
   for(auto &network : networkList) {
     makeConnectionsForNetwork(network);
   }
+
+}
+
+/*********************************************************************************************************************/
+
+void Application::optimiseConnections() {
+
+  // list of iterators of networks to be removed from the networkList after the merge operation
+  std::list<VariableNetwork*> deleteNetworks;
+  
+  // search for networks with the same feeder
+  for(auto it1 = networkList.begin(); it1 != networkList.end(); ++it1) {
+    for(auto it2 = it1; it2 != networkList.end(); ++it2) {
+      if(it1 == it2) continue;
+     
+      auto feeder1 = it1->getFeedingNode();
+      auto feeder2 = it2->getFeedingNode();
+      
+      // this optimisation is only necessary for device-type nodes, since application and control-system nodes will
+      // automatically create merged networks when having the same feeder
+      /// @todo check if this assumtion is true! control-system nodes can be created with different types, too!
+      if(feeder1.getType() != NodeType::Device || feeder2.getType() != NodeType::Device) continue;
+      
+      // check if referrring to same register
+      if(feeder1.getDeviceAlias() != feeder2.getDeviceAlias()) continue;
+      if(feeder1.getRegisterName() != feeder2.getRegisterName()) continue;
+      
+      // check if directions are the same
+      if(feeder1.getDirection() != feeder2.getDirection()) continue;
+      
+      // check if value types and number of elements are compatible
+      if(feeder1.getValueType() != feeder2.getValueType()) continue;
+      if(feeder1.getNumberOfElements() != feeder2.getNumberOfElements()) continue;
+      
+      // check if transfer mode is the same
+      if(feeder1.getMode() != feeder2.getMode()) continue;
+      
+      // check if triggers are compatible, if present
+      if(feeder1.hasExternalTrigger() != feeder2.hasExternalTrigger()) continue;
+      if(feeder1.hasExternalTrigger()) {
+        if(feeder1.getExternalTrigger() != feeder2.getExternalTrigger()) continue;
+      }
+      
+      // everything should be compatible at this point: merge the networks. We will merge the network of the outer
+      // loop into the network of the inner loop, since the network of the outer loop will not be found a second time
+      // in the inner loop.
+      std::cout << "HIER merging networks" << std::endl;
+      it1->dump();
+      it2->dump();
+      for(auto consumer : it1->getConsumingNodes()) {
+        consumer.clearOwner();
+        it2->addNode(consumer);
+      }
+      it2->dump();
+      
+      // schedule the outer loop network for deletion and stop processing it
+      deleteNetworks.push_back(&(*it1));
+      break;
+    }
+  }
+  
+  // remove networks from the network list
+  for(auto net : deleteNetworks) {
+    networkList.remove(*net);
+  }
+  
+  dumpConnections();
 
 }
 

@@ -53,10 +53,6 @@ namespace ChimeraTK {
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
       mutable std::list<DeviceModule> subModules;
-      
-      // List of variables accessed through the operator(). This is mutable since it is little more than a cache and
-      // thus does not change the logical state of this module
-      mutable std::map<std::string, VariableNetworkNode> variables;
 
   };
 

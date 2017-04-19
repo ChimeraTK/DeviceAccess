@@ -153,6 +153,9 @@ namespace ChimeraTK {
 
       /** Make the connections between accessors as requested in the initialise() function. */
       void makeConnections();
+      
+      /** Apply optimisations to the VariableNetworks, e.g. by merging networks sharing the same feeder. */
+      void optimiseConnections();
 
       /** Make the connections for a single network */
       void makeConnectionsForNetwork(VariableNetwork &network);

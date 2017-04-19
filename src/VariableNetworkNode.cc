@@ -97,6 +97,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void VariableNetworkNode::clearOwner() {
+    pdata->network = nullptr;
+  }
+
+  /*********************************************************************************************************************/
+
   bool VariableNetworkNode::hasImplementation() const {
     return pdata->type == NodeType::Device || pdata->type == NodeType::ControlSystem || pdata->type == NodeType::Constant;
   }

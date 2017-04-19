@@ -77,6 +77,9 @@ namespace ChimeraTK {
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
+      
+      /** Clear the owner network of this node. */
+      void clearOwner();
 
       /** Set the value type for this node. Only possible of the current value type is undecided (i.e. AnyType). */
       void setValueType(const std::type_info& newType) const;

@@ -22,10 +22,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode DeviceModule::operator()(const std::string& registerName, UpdateMode mode,
       const std::type_info &valueType, size_t nElements) const {
-    if(variables.count(registerName) == 0) {
-      variables[registerName] = {deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType, nElements};
-    }
-    return variables[registerName];
+    return {deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType, nElements};
   }
 
   /*********************************************************************************************************************/
