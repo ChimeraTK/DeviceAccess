@@ -719,20 +719,38 @@ boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference
 /*********************************************************************************************************************/
 
 void Application::testableModeLock(const std::string& name) {
+  // don't do anything if testable mode is not enabled
   if(!getInstance().testableMode) return;
+  
+  // debug output if enabled (also prevent spamming the same message)
   if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
     std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
               << " tries to obtain lock for " << name << std::endl;
   }
+  
+  // if last lock was obtained repeatedly by the same thread, sleep a short time before obtaining the lock to give the
+  // other threads a chance to get the lock first
+  if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(1000);
+  
+  // obtain the lock
   getTestableModeLockObject().lock();
+  
+  // check if the last owner of the mutex was this thread, which may be a hint that no other thread is waiting for the
+  // lock
   if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
-    if(getInstance().testableMode_repeatingMutexOwner == 0) {
+    // debug output if enabled
+    if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
       std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
                 << " repeatedly obtained lock successfully for " << name << ". Further messages will be suppressed." << std::endl;
     }
+    
+    // increase counter for stall detection
     getInstance().testableMode_repeatingMutexOwner++;
-    usleep(1000);
+    
+    // detect stall: if the same thread got the mutex with no other thread obtaining it in between for one second, we
+    // assume no other thread is able to process data at this time. The test should fail in this case
     if(getInstance().testableMode_repeatingMutexOwner > 1000) {
+      // print an informative message first, which lists also all variables currently containing unread data.
       std::cout << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
       std::cout << "    The following variables still contain unread values:" << std::endl;
       for(auto &pair : Application::getInstance().testableMode_perVarCounter) {
@@ -740,18 +758,22 @@ void Application::testableModeLock(const std::string& name) {
           std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << std::endl;
         }
       }
-      // throw an exception which cannot be caught (other than with catch all)
+      // throw an exception which cannot be caught (other than with catch all). This makes sure that the tests fail
+      // properly
       class TestsStalled {};
       throw TestsStalled();
     }
   }
   else {
+    // last owner of the mutex was different: reset the counter and store the thread id
     getInstance().testableMode_repeatingMutexOwner = 0;
-  }
-  getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
-  if(getInstance().enableDebugTestableMode && !getInstance().testableMode_repeatingMutexOwner) {
-    std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
-              << " obtained lock successfully for " << name << std::endl;
+    getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
+    
+    // debug output if enabled
+    if(getInstance().enableDebugTestableMode) {
+      std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+                << " obtained lock successfully for " << name << std::endl;
+    }
   }
 }
 
