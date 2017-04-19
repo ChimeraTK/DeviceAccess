@@ -260,7 +260,8 @@ namespace mtca4u {
     for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
       auto info = boost::static_pointer_cast<const LNMBackendRegisterInfo>(it.get());
       if(info->hasDeviceName()) {
-        ret.insert(info->deviceName);
+        std::string dev = info->deviceName;
+        if(dev != "this") ret.insert(dev);
       }
     }
     return ret;

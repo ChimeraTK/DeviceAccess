@@ -46,7 +46,13 @@ namespace mtca4u {
               DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
         }
         // get target device and accessor
-        _targetDevice = _dev->_devices[_info.deviceName];
+        std::string devName = _info.deviceName;
+        if(devName != "this") {
+          _targetDevice = _dev->_devices[devName];
+        }
+        else {
+          _targetDevice = dev;
+        }
         _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
         // allocate the buffer
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);

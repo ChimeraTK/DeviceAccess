@@ -30,24 +30,31 @@ namespace mtca4u {
     _catalogue = parser.getCatalogue();
 
     // create all devices referenced in the map
-    auto devNames = parser.getTargetDevices();
-    for(auto devName = devNames.begin(); devName != devNames.end(); ++devName) {
-      _devices[*devName] = BackendFactory::getInstance().createBackend(*devName);
+    for(auto &devName : parser.getTargetDevices()) {
+      _devices[devName] = BackendFactory::getInstance().createBackend(devName);
     }
 
     // fill in information to the catalogue from the target devices
     for(auto &info : _catalogue) {
       LNMBackendRegisterInfo &info_cast = static_cast<LNMBackendRegisterInfo&>(info);
-      if(info_cast.targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
-        auto target_info = _devices[info_cast.deviceName]->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+      auto targetType = info_cast.targetType;
+      if(targetType != LNMBackendRegisterInfo::TargetType::REGISTER &&
+         targetType != LNMBackendRegisterInfo::TargetType::CHANNEL     ) continue;
+      
+      std::string devName = info_cast.deviceName;
+      boost::shared_ptr<RegisterInfo> target_info;
+      if(devName != "this") {
+        target_info = _devices[devName]->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+      }
+      else {
+        target_info = getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+      }
+
+      if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
         info_cast.nDimensions = target_info->getNumberOfDimensions();
         info_cast.nChannels = target_info->getNumberOfChannels();
-        if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
       }
-      else if(info_cast.targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
-        auto target_info = _devices[info_cast.deviceName]->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
-        if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
-      }
+      if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
     }
   }
 
@@ -93,7 +100,14 @@ namespace mtca4u {
     // implementation for each type
     boost::shared_ptr< NDRegisterAccessor<UserType> > ptr;
     if( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
-      auto _targetDevice = _devices[info->deviceName];
+      DeviceBackend *_targetDevice;
+      std::string devName = info->deviceName;
+      if(devName != "this") {
+        _targetDevice = _devices[info->deviceName].get();
+      }
+      else {
+        _targetDevice = this;
+      }
       // determine the offset and length
       size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
       size_t actualLength = ( numberOfWords > 0 ? numberOfWords : size_t(info->length) );
