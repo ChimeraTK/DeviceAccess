@@ -26,6 +26,8 @@ namespace mtca4u{
   class FixedPointConverter{
     public:
       /** The constructor defines the conversion factor.
+       *  @param variableName The name of the variable. It is useds in case an exception is 
+            thrown which significantly simplifies the debugging.
        *  @param nBits The number of total bits must not exceed 32.
        *  @param fractionalBits The numer of fractional bits can range from
        *    -1024+nBits to 1021-nBits (in case of a double user type). For integer
@@ -35,7 +37,8 @@ namespace mtca4u{
        *    number of the respective number of bits
        *    (i.e. in signed 6 bit, 0 fractional bits 0x3F is -1)
        */
-      FixedPointConverter(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
+    FixedPointConverter(std::string variableName,
+                        unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
 
       /** Conversion function from fixed value to type T.
        *  In case the number of bits is less than 32, invalid leading bits are ignored.
@@ -97,6 +100,7 @@ namespace mtca4u{
 
     private:
 
+      std::string _variableName;
       unsigned int _nBits;
       int _fractionalBits;
       bool _isSigned;
