@@ -62,6 +62,8 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 
   // check the registation of a new backed, called NewBackend ;-)
   // Throws with the wrong version (00.18 did not have the feature yet, so its safe to use it)
+  // It however is only happening when the backend is tried to be instantiated because otherwise we would
+  // end up in uncatchable exceptions while loading a dmap file with a broken backend.
   BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18") );
 
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"), BackendFactoryException);
@@ -82,11 +84,12 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
   //check that the backend really is registered
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map") );
 
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"),
-  		     DeviceException );
+  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"), DeviceException );
+  BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./noSymbol=goodMapFile.map"), DeviceException );
+  
   BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libWrongVersionBackend.so"),
   		     DeviceException );
-
+  BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./wrongVersionBackend=goodMapFile.map"), DeviceException );
 }
 
 BOOST_AUTO_TEST_CASE( testCreateFromUri ){

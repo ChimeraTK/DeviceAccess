@@ -25,6 +25,7 @@ namespace mtca4u {
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
       : NDRegisterAccessor<UserType>(registerPathName),
+        _fixedPointConverter(registerPathName),
         isRaw(false),
         _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
@@ -67,7 +68,7 @@ namespace mtca4u {
 
         // configure fixed point converter
         if(!flags.has(AccessMode::raw)) {
-          _fixedPointConverter = FixedPointConverter(_registerInfo->width, _registerInfo->nFractionalBits,
+          _fixedPointConverter = FixedPointConverter(_registerPathName, _registerInfo->width, _registerInfo->nFractionalBits,
               _registerInfo->signedFlag);
         }
         else {
@@ -75,7 +76,7 @@ namespace mtca4u {
             throw DeviceException("Given UserType when obtaining the BufferingRegisterAccessor in raw mode does not "
                 "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
           }
-          _fixedPointConverter = FixedPointConverter(32, 0, true);
+          _fixedPointConverter = FixedPointConverter(_registerPathName, 32, 0, true);
           isRaw = true;
         }
       }

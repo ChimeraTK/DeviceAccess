@@ -158,7 +158,7 @@ namespace mtca4u {
 
         // store sequence info and fixed point converter
         _sequenceInfos.push_back(sequenceInfo);
-        _converters.push_back( FixedPointConverter(sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag) );
+        _converters.push_back( FixedPointConverter(registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag) );
       }
 
       // check if no sequences were found

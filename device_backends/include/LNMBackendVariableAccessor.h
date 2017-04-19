@@ -28,7 +28,7 @@ namespace mtca4u {
           size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
       : NDRegisterAccessor<UserType>(registerPathName),
         _registerPathName(registerPathName),
-        _fixedPointConverter(32, 0, 1)
+        _fixedPointConverter(registerPathName, 32, 0, 1)
       {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});

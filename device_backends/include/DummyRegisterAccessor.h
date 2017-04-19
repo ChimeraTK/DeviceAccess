@@ -177,10 +177,10 @@ namespace mtca4u {
       /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
       /// DummyBackend itself. module and name denominate the register entry in the map file.
       DummyRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-      : _dev(dev)
+        : _dev(dev), fpc(module+"/"+name)
       {
         _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
-        fpc =  FixedPointConverter(registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
+        fpc =  FixedPointConverter(module+"/"+name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
         // initialise the base DummyRegisterElement
         proxies::DummyRegisterElement<T>::fpcptr = &fpc;
         proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
@@ -245,7 +245,7 @@ namespace mtca4u {
       /// DummyBackend itself. module and name denominate the register entry in the map file.
       /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the name when searching for the register.
       DummyMultiplexedRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-      : _dev(dev), pitch(0)
+        : _dev(dev), pitch(0)
       {
         _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX+name, registerInfo, module);
 
@@ -262,7 +262,7 @@ namespace mtca4u {
             break;
           }
           // create fixed point converter for sequence
-          fpc.push_back( FixedPointConverter(elem.width, elem.nFractionalBits, elem.signedFlag) );
+          fpc.push_back( FixedPointConverter(module+"/"+name,elem.width, elem.nFractionalBits, elem.signedFlag) );
           // store offsets and number of bytes per word
           offsets.push_back(elem.address);
           nbytes.push_back(elem.nBytes);
