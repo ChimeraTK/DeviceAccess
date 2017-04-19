@@ -181,6 +181,22 @@ namespace mtca4u{
       template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type = 0>
       bool isNegativeUserType(UserType value) const;
 
+      /** Internal exceptions to overload the what() function of the boost exceptions in order to fill in the variable name.
+       *  We derrive from the original exception so we do not break the signature in case existing code is catching the exception.
+       *  These exceptions are not part of the external interface and cannot be caught explicitly because they are private.
+       *  Catch boost::numeric::bad_numeric_cast and derrivatives if you want to do error handling.
+       */
+      template<class BOOST_EXCEPTION_T>
+      struct FPC_OverflowException: public BOOST_EXCEPTION_T{
+        FPC_OverflowException(std::string variableName) :
+          errorMessage("Exception during fixed point conversion in " + variableName + ": " + BOOST_EXCEPTION_T().what()){
+        }
+        std::string errorMessage;
+        virtual const char* what() const throw() override{
+          return errorMessage.c_str();
+        }
+      };
+    
   };
 
   /**********************************************************************************************************************/
@@ -206,12 +222,12 @@ namespace mtca4u{
       try {
         cooked =  boost::numeric_cast<UserType>(rawValue);
       }
-      catch( boost::numeric::positive_overflow &e) {
+      catch( boost::numeric::positive_overflow &) {
         if(!isNegative) {
-          throw boost::numeric::positive_overflow();
+          throw FPC_OverflowException<boost::numeric::positive_overflow>(_variableName);
         }
         else {
-          throw boost::numeric::negative_overflow();
+          throw FPC_OverflowException<boost::numeric::negative_overflow>(_variableName);
         }
       }
 
@@ -223,7 +239,7 @@ namespace mtca4u{
         }
         else {
           cooked = 0;
-          throw boost::numeric::negative_overflow();
+          throw FPC_OverflowException<boost::numeric::negative_overflow>(_variableName);
         }
       }
 
@@ -242,7 +258,13 @@ namespace mtca4u{
       typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType,double>,
           boost::numeric::def_overflow_handler,
           Round<double> >   converter;
-      cooked = converter::convert(d_cooked);
+      try{
+        cooked = converter::convert(d_cooked);
+      }catch( boost::numeric::positive_overflow & ) {
+        throw FPC_OverflowException<boost::numeric::positive_overflow>(_variableName);
+      }catch( boost::numeric::negative_overflow & ) {
+        throw FPC_OverflowException<boost::numeric::negative_overflow>(_variableName);
+      }
     }
 
     return cooked;

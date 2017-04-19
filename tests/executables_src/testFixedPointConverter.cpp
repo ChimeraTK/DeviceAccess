@@ -66,6 +66,11 @@ void checkToCookedOverflowNeg(FixedPointConverter const & converter, uint32_t in
     converter.template toCooked<T>( input );
   }
   catch(boost::numeric::negative_overflow &e) {
+    // Although we do not check the content of the what() message, we execute it here
+    // to see that it's working.
+    // We leave the printout in here to have the code covarage and the possibility to manually
+    // check the output of the test.
+    std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
     hasThrown = true;
   }
   if(!hasThrown) BOOST_FAIL(message.str());
@@ -81,6 +86,7 @@ void checkToCookedOverflowPos(FixedPointConverter const & converter, uint32_t in
     converter.template toCooked<T>( input );
   }
   catch(boost::numeric::positive_overflow &e) {
+    std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
     hasThrown = true;
   }
   if(!hasThrown) BOOST_FAIL(message.str());
