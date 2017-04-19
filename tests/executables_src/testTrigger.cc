@@ -127,9 +127,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToApp, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/Variable");
+  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
 
-  app.dev("/MyModule/Variable") [ app.testModule.theTrigger ] >> app.testModule.consumingPush;
+  app.dev("/MyModule/readBack") [ app.testModule.theTrigger ] >> app.testModule.consumingPush;
   app.initialise();
   app.run();
 
@@ -178,9 +178,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/Variable");
+  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
 
-  app.dev("/MyModule/Variable", typeid(T), 1) [ app.testModule.theTrigger ] >> app.cs("myCSVar");
+  app.dev("/MyModule/readBack", typeid(T), 1) [ app.testModule.theTrigger ] >> app.cs("myCSVar");
   
   app.initialise();
   app.run();
@@ -224,9 +224,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/Variable");
+  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
 
-  app.dev("/MyModule/Variable", typeid(T), 1) [ app.cs("theTrigger", typeid(T), 1) ] >> app.cs("myCSVar");
+  app.dev("/MyModule/readBack", typeid(T), 1) [ app.cs("theTrigger", typeid(T), 1) ] >> app.cs("myCSVar");
   
   app.initialise();
   app.run();

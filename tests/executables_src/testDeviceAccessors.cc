@@ -71,11 +71,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.devMymodule("Variable");
+  app.testModule.feedingToDevice >> app.devMymodule("actuator");
   app.initialise();
 
   boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
 
   regacc->accessData(0) = 0;
   app.testModule.feedingToDevice = 42;
@@ -101,11 +101,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.dev("/MyModule/Variable") >> app.testModule.consumingPoll;
+  app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   app.initialise();
 
   boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/Variable",1,0,{});
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;

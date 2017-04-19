@@ -1,16 +1,16 @@
 <logicalNameMap>
-    <module name="MyModule">
-      <constant name="Constant">
-        <type>integer</type>
-        <value>42</value>
-      </constant>
-      <constant name="Constant2">
-        <type>integer</type>
-        <value>666</value>
-      </constant>
-      <variable name="Variable">
-        <type>integer</type>
-        <value>2</value>
-      </variable>
-    </module>
+  <module name="MyModule">
+    <variable name="actuator">
+      <value>2</value>
+      <type>integer</type>
+    </variable>
+    <redirectedRegister name="readBack">
+      <targetDevice>this</targetDevice>
+      <targetRegister>MyModule/actuator</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="anotherReadBack">
+      <targetDevice>this</targetDevice>
+      <targetRegister>MyModule/actuator</targetRegister>
+    </redirectedRegister>
+  </module>
 </logicalNameMap>

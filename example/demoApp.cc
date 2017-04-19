@@ -102,10 +102,10 @@ struct MyApp : public ctk::Application {
       cs("setpoint") >> automation.operatorSetpoint;
       automation.loopSetpoint >> controlLoop.setpoint >> cs("setpoint_automation");
 
-      controlLoop.actuator >> dev("Variable") >> cs("actuatorLoop");
+      controlLoop.actuator >> dev("actuator") >> cs("actuatorLoop");
 
-      dev("Variable") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
-      dev("Variable", typeid(double), 1) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
+      dev("readBack") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
+      dev("anotherReadBack", typeid(double), 1) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
 
       simulator.readback >> controlLoop.readback >> cs("readback") >> cs("readback_another_time");
 
