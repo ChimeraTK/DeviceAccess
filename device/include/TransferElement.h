@@ -137,6 +137,15 @@ namespace mtca4u {
        *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture& readAsync() = 0;
       
+      /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
+       *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
+       *  new value was available if AccessMode::wait_for_new_data is set. */
+      bool readLatest() {
+        bool ret = doReadTransferLatest();
+        if(ret) postRead();     // only needs to be called if new data was read
+        return ret;
+      }
+      
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
        *  new data. The TransferElement which received new data is returned as a reference. When this function
        *  returns, the all elements but the returned TransferElement still have a pending transfer, thus calling
@@ -158,6 +167,11 @@ namespace mtca4u {
        *  TransferElement. Calling this function followed by postRead() is exactly equivalent to a call to just
        *  readNonBlocking(). For the return value, see readNonBlocking(). */
       virtual bool doReadTransferNonBlocking() = 0;
+
+      /** Read the latest data from the device without blocking but do not fill it into the user buffer of this
+       *  TransferElement. Calling this function followed by postRead() is exactly equivalent to a call to just
+       *  readLatest(). For the return value, see readNonBlocking(). */
+      virtual bool doReadTransferLatest() = 0;
 
       /** Transfer the data from the device receive buffer into the user buffer, while converting the data into the
        *  user data format if needed.

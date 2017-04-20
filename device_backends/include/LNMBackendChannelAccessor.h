@@ -75,6 +75,11 @@ namespace mtca4u {
         return true;
       }
 
+      bool doReadTransferLatest() override {
+        doReadTransfer();
+        return true;
+      }
+
       void postRead() override {
         _accessor->postRead();
         _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);

@@ -38,6 +38,11 @@ namespace mtca4u {
         return true;
       }
 
+      bool doReadTransferLatest() override {
+        doReadTransfer();
+        return true;
+      }
+
       void postRead() override;
 
       void write() override;

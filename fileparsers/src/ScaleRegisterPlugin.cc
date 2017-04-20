@@ -58,6 +58,10 @@ namespace mtca4u {
 	return _accessor->readNonBlocking();
       }
 
+      virtual bool doReadTransferLatest() {
+	return _accessor->readLatest();
+      }
+
       virtual void preWrite() {
         // apply scaling factor while copying buffer from our buffer to underlying accessor
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {

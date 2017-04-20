@@ -48,6 +48,11 @@ namespace mtca4u {
         doReadTransfer();
         return true;
       }
+
+      bool doReadTransferLatest() override {
+        doReadTransfer();
+        return true;
+      }
       
       TransferFuture& readAsync() override {                                                                 // LCOV_EXCL_LINE
         // This function is not needed and will never be called. If readAsync() is called on the high-level accessor,

@@ -66,6 +66,10 @@ namespace mtca4u {
         return true;
       }
 
+      bool doReadTransferLatest() override {
+        return true;
+      }
+
       void write() override {
         if(isReadOnly()) {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",

@@ -92,6 +92,11 @@ namespace mtca4u {
         return true;
       }
 
+      bool doReadTransferLatest() override {
+        _rawAccessor->read();
+        return true;
+      }
+
       void write() override {
         if(TransferElement::isInTransferGroup) {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",

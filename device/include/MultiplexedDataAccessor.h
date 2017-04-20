@@ -68,6 +68,10 @@ namespace mtca4u {
       bool doReadTransferNonBlocking() override {
         return accessor->readNonBlocking();
       }
+
+      bool doReadTransferLatest() override {
+        return accessor->readLatest();
+      }
       
       void postRead() override {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);

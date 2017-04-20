@@ -60,6 +60,10 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->doReadTransferNonBlocking();
       }
 
+      bool doReadTransferLatest() override {
+        return NDRegisterAccessorBridge<UserType>::_impl->doReadTransferLatest();
+      }
+
       void postRead() override {
         NDRegisterAccessorBridge<UserType>::_impl->postRead();
       }
