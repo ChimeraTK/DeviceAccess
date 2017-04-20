@@ -122,8 +122,8 @@ namespace ChimeraTK {
                               description, tags)
     {}
     ArrayPollInput() : ArrayAccessor<UserType>() {}
-    void doReadTransfer() override { this->doReadTransferNonBlocking(); }
-    void read() { this->readNonBlocking(); }
+    void doReadTransfer() override { this->doReadTransferLatest(); }
+    void read() { this->readLatest(); }
     using ArrayAccessor<UserType>::operator=;
   };
 

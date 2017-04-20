@@ -132,6 +132,10 @@ namespace ChimeraTK {
         return _accessor->doReadTransferNonBlocking();
       }
 
+      bool doReadTransferLatest() override {
+        return _accessor->doReadTransferLatest();
+      }
+
       TransferFuture& readAsync() override {
         if(TransferElement::hasActiveFuture) {
           return activeTestDecoratorFuture;

@@ -122,8 +122,8 @@ namespace ChimeraTK {
                                description, tags)
     {}
     ScalarPollInput() : ScalarAccessor<UserType>() {}
-    void doReadTransfer() override { this->doReadTransferNonBlocking(); }
-    void read() { this->readNonBlocking(); }
+    void doReadTransfer() override { this->doReadTransferLatest(); }
+    void read() { this->readLatest(); }
     using ScalarAccessor<UserType>::operator=;
   };
 

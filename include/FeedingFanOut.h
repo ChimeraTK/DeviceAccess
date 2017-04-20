@@ -67,6 +67,10 @@ namespace ChimeraTK {
         throw std::logic_error("Read operation called on write-only variable.");
       }
       
+      bool doReadTransferLatest() override {
+        throw std::logic_error("Read operation called on write-only variable.");
+      }
+
       void postRead() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }

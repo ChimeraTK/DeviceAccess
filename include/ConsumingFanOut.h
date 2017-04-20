@@ -45,11 +45,15 @@ namespace ChimeraTK {
       void doReadTransfer() override {
         FanOut<UserType>::impl->read();
       }
-      
+
       bool doReadTransferNonBlocking() override {
         return FanOut<UserType>::impl->readNonBlocking();
       }
-      
+
+      bool doReadTransferLatest() override {
+        return FanOut<UserType>::impl->readLatest();
+      }
+
       void postRead() override {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].swap(FanOut<UserType>::impl->accessChannel(0));
         for(auto &slave : slaves) {     // send out copies to slaves
