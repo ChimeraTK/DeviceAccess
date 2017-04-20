@@ -404,14 +404,10 @@ void Application::optimiseConnections() {
       // everything should be compatible at this point: merge the networks. We will merge the network of the outer
       // loop into the network of the inner loop, since the network of the outer loop will not be found a second time
       // in the inner loop.
-      std::cout << "HIER merging networks" << std::endl;
-      it1->dump();
-      it2->dump();
       for(auto consumer : it1->getConsumingNodes()) {
         consumer.clearOwner();
         it2->addNode(consumer);
       }
-      it2->dump();
       
       // schedule the outer loop network for deletion and stop processing it
       deleteNetworks.push_back(&(*it1));
@@ -423,8 +419,6 @@ void Application::optimiseConnections() {
   for(auto net : deleteNetworks) {
     networkList.remove(*net);
   }
-  
-  dumpConnections();
 
 }
 
