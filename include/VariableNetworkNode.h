@@ -9,6 +9,7 @@
 #define CHIMERATK_VARIABLE_NETWORK_NODE_H
 
 #include <unordered_set>
+#include <unordered_map>
 
 #include <assert.h>
 
@@ -90,6 +91,7 @@ namespace ChimeraTK {
       /** Compare two nodes */
       bool operator==(const VariableNetworkNode& other) const;
       bool operator!=(const VariableNetworkNode& other) const;
+      bool operator<(const VariableNetworkNode& other) const;
 
       /** Connect two nodes */
 //      VariableNetworkNode& operator<<(const VariableNetworkNode &other);
@@ -211,6 +213,10 @@ namespace ChimeraTK {
     
     /** Set of tags  if type == Application */
     std::unordered_set<std::string> tags;
+    
+    /** Map to store triggered versions of this node. The map key is the trigger node and the value is the node
+     *  with the respective trigger added. */
+    std::map<VariableNetworkNode, VariableNetworkNode> nodeWithTrigger;
 
   };
 

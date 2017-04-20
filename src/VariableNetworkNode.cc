@@ -222,6 +222,13 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
+
+  bool VariableNetworkNode::operator<(const VariableNetworkNode& other) const {
+    if(pdata->type == NodeType::invalid && other.pdata->type == NodeType::invalid) return false;
+    return (other.pdata < pdata);
+  }
+
+  /*********************************************************************************************************************/
 /*
   VariableNetworkNode& VariableNetworkNode::operator<<(const VariableNetworkNode &other) {
     if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::consuming;
@@ -256,22 +263,26 @@ namespace ChimeraTK {
     // force direction of the triggering node to be feeding
     if(trigger.pdata->direction == VariableDirection::invalid) trigger.pdata->direction = VariableDirection::feeding;
     assert(trigger.pdata->direction == VariableDirection::feeding);
+    
+    // check if already existing in map
+    if(pdata->nodeWithTrigger.count(trigger) > 0) {
+      return pdata->nodeWithTrigger[trigger];
+    }
 
     // create copy of the node
-    VariableNetworkNode nodeWithTrigger;
-    nodeWithTrigger.pdata.reset(new VariableNetworkNode_data(*pdata));
+    pdata->nodeWithTrigger[trigger].pdata.reset(new VariableNetworkNode_data(*pdata));
 
     // add ourselves as a trigger receiver to the other network
     if(!trigger.hasOwner()) {
       Application::getInstance().createNetwork().addNode(trigger);
     }
-    trigger.getOwner().addTriggerReceiver(nodeWithTrigger);
+    trigger.getOwner().addTriggerReceiver(pdata->nodeWithTrigger[trigger]);
 
     // set flag and store pointer to other network
-    nodeWithTrigger.pdata->externalTrigger = trigger;
+    pdata->nodeWithTrigger[trigger].pdata->externalTrigger = trigger;
 
     // return the new node
-    return nodeWithTrigger;
+    return pdata->nodeWithTrigger[trigger];
   }
 
   /*********************************************************************************************************************/
