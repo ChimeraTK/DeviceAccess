@@ -535,7 +535,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(feedingImpl);
+        consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(feedingImpl);
         connectionMade = true;
       }
       else {
@@ -603,7 +603,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first);
           usedTriggerReceiver = true;
-          consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(triggerConnection.second);
+          consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
@@ -643,7 +643,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         consumer.dump();
         auto impls = createApplicationVariable<UserType>(consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
-        consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(impls.second);
+        consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Constant) {
@@ -684,7 +684,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first);
           usedTriggerReceiver = true;
-          consumer.getTriggerReceiver().getOwner().setExternalTriggerImpl(triggerConnection.second);
+          consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");

@@ -83,7 +83,7 @@ namespace ChimeraTK {
   {
     pdata->type = NodeType::TriggerReceiver;
     pdata->direction = VariableDirection::consuming;
-    pdata->triggerReceiver = nodeToTrigger;
+    pdata->nodeToTrigger = nodeToTrigger;
     pdata->name = "trigger:"+nodeToTrigger.getName();
   }
 
@@ -375,9 +375,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode VariableNetworkNode::getTriggerReceiver() {
-    assert(pdata->triggerReceiver.getType() != NodeType::invalid);
-    return pdata->triggerReceiver;
+  VariableNetworkNode VariableNetworkNode::getNodeToTrigger() {
+    assert(pdata->nodeToTrigger.getType() != NodeType::invalid);
+    return pdata->nodeToTrigger;
   }
 
   /*********************************************************************************************************************/

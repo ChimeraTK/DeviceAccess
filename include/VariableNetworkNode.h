@@ -131,7 +131,7 @@ namespace ChimeraTK {
       const std::string& getUnit() const;
       const std::string& getDescription() const;
       VariableNetwork& getOwner() const;
-      VariableNetworkNode getTriggerReceiver();
+      VariableNetworkNode getNodeToTrigger();
       const std::string& getPublicName() const;
       const std::string& getDeviceAlias() const;
       const std::string& getRegisterName() const;
@@ -192,7 +192,7 @@ namespace ChimeraTK {
     mtca4u::TransferElement *appNode{nullptr};
 
     /** Pointer to network which should be triggered by this node */
-    VariableNetworkNode triggerReceiver;
+    VariableNetworkNode nodeToTrigger;
 
     /** Pointer to the network providing the external trigger. May only be used for feeding nodes with an
       *  update mode poll. When enabled, the update mode will be converted into push. */
