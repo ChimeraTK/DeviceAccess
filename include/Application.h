@@ -247,6 +247,9 @@ namespace ChimeraTK {
       /** Map of unique IDs to namess, used along with testableMode_perVarCounter to print sensible information. */
       std::map<size_t, std::string> testableMode_names;
       
+      /** Map of unique IDs to process variables which have been decorated with the TestDecoratorRegisterAccessor. */
+      std::map<size_t, boost::shared_ptr<TransferElement>> testableMode_processVars;
+      
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter

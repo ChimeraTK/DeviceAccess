@@ -298,6 +298,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 
   // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
   // don't decorate if the feeding side is a constant!
+  /// @todo if the mode is polling, do not decorate on both sides!
   if(testableMode && node.getDirection() == VariableDirection::feeding && node.getType() != NodeType::Constant) {
     auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
     testableMode_names[pvarDec->getUniqueId()] = "ControlSystem:"+node.getPublicName();
@@ -324,8 +325,8 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
  
-  // decorate the process variable if testable mode is enabled
-  if(testableMode) {
+  // decorate the process variable if testable mode is enabled and mode is push-type
+  if(testableMode && node.getMode() == UpdateMode::push) {
     std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
                boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPairDec;
     pvarPairDec.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
@@ -819,10 +820,18 @@ void Application::testableModeLock(const std::string& name) {
     if(getInstance().testableMode_repeatingMutexOwner > 1000) {
       // print an informative message first, which lists also all variables currently containing unread data.
       std::cout << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
-      std::cout << "    The following variables still contain unread values:" << std::endl;
+      std::cout << "    The following variables still contain unread values or had data loss due to a queue overflow:" << std::endl;
       for(auto &pair : Application::getInstance().testableMode_perVarCounter) {
         if(pair.second > 0) {
-          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << std::endl;
+          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first];
+          // check if process variable still has data in the queue
+          if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
+            std::cout << " (unread data in queue)";
+          }
+          else {
+            std::cout << " (data loss)";
+          }
+          std::cout << std::endl;
         }
       }
       // throw an exception which cannot be caught (other than with catch all). This makes sure that the tests fail

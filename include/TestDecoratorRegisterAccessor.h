@@ -90,6 +90,7 @@ namespace ChimeraTK {
         _accessor(accessor) {
         buffer_2D.resize(_accessor->getNumberOfChannels());
         for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
+        Application::getInstance().testableMode_processVars[getUniqueId()] = accessor;
       }
       
       virtual ~TestDecoratorRegisterAccessor() {}
@@ -133,7 +134,12 @@ namespace ChimeraTK {
       }
 
       bool doReadTransferLatest() override {
-        return _accessor->doReadTransferLatest();
+        bool retval = _accessor->doReadTransferLatest();
+
+        // the queue has been emptied, so make sure that the testableMode_counter reflects this
+        auto &app = Application::getInstance();
+        app.testableMode_counter -= app.testableMode_perVarCounter[_accessor->getUniqueId()];
+        return retval;
       }
 
       TransferFuture& readAsync() override {
