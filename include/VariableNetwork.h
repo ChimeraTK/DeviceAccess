@@ -45,7 +45,7 @@ namespace ChimeraTK {
       void addNode(VariableNetworkNode &a);
 
       /** Add a trigger receiver node */
-      void addTriggerReceiver(VariableNetworkNode& nodeToTrigger);
+      void addNodeToTrigger(VariableNetworkNode& nodeToTrigger);
 
       /** Check if the network already has a feeding node connected to it. */
       bool hasFeedingNode() const;

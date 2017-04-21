@@ -110,7 +110,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::addTriggerReceiver(VariableNetworkNode& nodeToTrigger) {
+  void VariableNetwork::addNodeToTrigger(VariableNetworkNode& nodeToTrigger) {
     VariableNetworkNode node(nodeToTrigger, 0);
     node.setOwner(this);
     nodeList.push_back(node);

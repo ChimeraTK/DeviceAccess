@@ -276,7 +276,7 @@ namespace ChimeraTK {
     if(!trigger.hasOwner()) {
       Application::getInstance().createNetwork().addNode(trigger);
     }
-    trigger.getOwner().addTriggerReceiver(pdata->nodeWithTrigger[trigger]);
+    trigger.getOwner().addNodeToTrigger(pdata->nodeWithTrigger[trigger]);
 
     // set flag and store pointer to other network
     pdata->nodeWithTrigger[trigger].pdata->externalTrigger = trigger;
