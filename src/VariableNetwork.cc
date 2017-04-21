@@ -71,6 +71,35 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void VariableNetwork::removeNode(const VariableNetworkNode &a) {
+    auto nNodes = nodeList.size();
+    nodeList.remove(a);
+    // check if a node was actually removed, if not, throw exception
+    if(nodeList.size() == nNodes) {
+      std::stringstream msg;
+      msg << "Trying remove a VariableNetworkNode from the VariableNetwork which is not in the network." << std::endl;
+      msg << "The network you were trying to remove the node from:" << std::endl;
+      dump("", msg);
+      msg << "The node you were trying to remove:" << std::endl;
+      a.dump(msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(msg.str());
+    }
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetwork::removeNodeToTrigger(const VariableNetworkNode &nodeToNoLongerTrigger) {
+    for(auto &node : nodeList) {
+      if(node.getType() != NodeType::TriggerReceiver) continue;
+      if(node.getNodeToTrigger() == nodeToNoLongerTrigger) {
+        removeNode(node);
+        break;
+      }
+    }
+  }
+
+  /*********************************************************************************************************************/
+
   void VariableNetwork::dump(const std::string& linePrefix, std::ostream& stream) const {
     stream << linePrefix << "VariableNetwork";
     stream << " [ptr: " << this << "]";

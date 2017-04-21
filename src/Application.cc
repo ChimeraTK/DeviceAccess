@@ -410,6 +410,12 @@ void Application::optimiseConnections() {
         it2->addNode(consumer);
       }
       
+      // if trigger present, remove corresponding trigger receiver node from the trigger network
+      for(auto &itTrig : networkList) {
+        if(itTrig.getFeedingNode() != feeder1.getExternalTrigger()) continue;
+        itTrig.removeNodeToTrigger(it1->getFeedingNode());
+      }
+
       // schedule the outer loop network for deletion and stop processing it
       deleteNetworks.push_back(&(*it1));
       break;
