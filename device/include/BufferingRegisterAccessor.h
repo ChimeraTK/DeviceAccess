@@ -66,8 +66,8 @@ namespace mtca4u {
        *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
-      void write() {
-        NDRegisterAccessorBridge<UserType>::_impl->write();
+      bool write() {
+        return NDRegisterAccessorBridge<UserType>::_impl->write();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!

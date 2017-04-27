@@ -97,13 +97,14 @@ namespace mtca4u {
         return true;
       }
 
-      void write() override {
+      bool write() override {
         if(TransferElement::isInTransferGroup) {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);
         }
         preWrite();
         _rawAccessor->write();
+        return false;
       }
 
       void postRead() override {

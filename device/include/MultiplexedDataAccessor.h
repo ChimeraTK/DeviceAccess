@@ -82,9 +82,9 @@ namespace mtca4u {
        * to write to DMA memory Areas, but this functionality has not been
        * implemented yet
        */
-      virtual void write() override{
+      bool write() override {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
-        accessor->write();
+        return accessor->write();
       }
 
       /**

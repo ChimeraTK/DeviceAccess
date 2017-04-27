@@ -45,7 +45,7 @@ namespace mtca4u {
 
       void postRead() override;
 
-      void write() override;
+      bool write() override;
 
       void preWrite() override;
 
@@ -258,9 +258,10 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::write() {
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::write() {
       preWrite();
       _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
+      return false;
   }
 
   /********************************************************************************************************************/

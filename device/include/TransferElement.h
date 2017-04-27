@@ -145,7 +145,7 @@ namespace mtca4u {
         if(ret) postRead();     // only needs to be called if new data was read
         return ret;
       }
-      
+
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
        *  new data. The TransferElement which received new data is returned as a reference. When this function
        *  returns, the all elements but the returned TransferElement still have a pending transfer, thus calling
@@ -153,8 +153,9 @@ namespace mtca4u {
        *  another readAny() or readAsync() may be called. */
       static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
-      /** Write the data to device. */
-      virtual void write() = 0;
+      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
+       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
+      virtual bool write() = 0;
 
       /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
        *  function followed by postRead() is exactly equivalent to a call to just read().

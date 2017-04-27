@@ -72,8 +72,8 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->readAsync();
       }
 
-      void write() override {
-        NDRegisterAccessorBridge<UserType>::_impl->write();
+      bool write() override {
+        return NDRegisterAccessorBridge<UserType>::_impl->write();
       }
 
       /** Return if the register accessor allows only reading */

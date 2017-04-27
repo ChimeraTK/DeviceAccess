@@ -40,8 +40,9 @@ namespace mtca4u {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
-      void write() override {
+      bool write() override {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+        return false;
       }
 
       bool doReadTransferNonBlocking() override {

@@ -41,7 +41,7 @@ namespace mtca4u {
 
       virtual ~ScaleRegisterPluginRegisterAccessor() {};
 
-      void postRead() {
+      void postRead() override {
         // apply scaling factor while copying buffer from underlying accessor to our buffer
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
@@ -50,19 +50,20 @@ namespace mtca4u {
         }
       }
     
-      virtual void doReadTransfer() {
+      void doReadTransfer() override {
         _accessor->read();
       }
 
-      virtual bool doReadTransferNonBlocking() {
+      bool doReadTransferNonBlocking() override {
 	return _accessor->readNonBlocking();
       }
 
-      virtual bool doReadTransferLatest() {
-	return _accessor->readLatest();
+      bool doReadTransferLatest() override {
+        doReadTransfer();
+        return true;
       }
 
-      virtual void preWrite() {
+      void preWrite() override {
         // apply scaling factor while copying buffer from our buffer to underlying accessor
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
@@ -71,12 +72,12 @@ namespace mtca4u {
         }
       }
 
-      virtual void write() {
+      bool write() override {
         preWrite();
-        _accessor->write();
+        return _accessor->write();
       }
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const {
+      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const ScaleRegisterPluginRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_accessor != rhsCasted->_accessor) return false;
@@ -84,19 +85,19 @@ namespace mtca4u {
         return true;
       }
 
-      virtual bool isReadOnly() const {
+      bool isReadOnly() const override {
         return _accessor->isReadOnly();
       }
 
-      virtual bool isReadable() const {
+      bool isReadable() const override {
         return true;
       }
 
-      virtual bool isWriteable() const {
+      bool isWriteable() const override {
         return true;
       }
 
-     virtual FixedPointConverter getFixedPointConverter() const {
+      FixedPointConverter getFixedPointConverter() const override {
         return _accessor->getFixedPointConverter();
       }
 
@@ -108,11 +109,11 @@ namespace mtca4u {
       /** The scaling factor */
       DynamicValue<double> _scalingFactor;
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return _accessor->getHardwareAccessingElements();
       }
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
         if(_accessor->isSameRegister(newElement)) {
           _accessor = boost::static_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
         }

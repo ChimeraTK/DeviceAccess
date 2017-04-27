@@ -65,7 +65,7 @@ namespace mtca4u {
         _accessor->read();
       }
 
-      void write() override {
+      bool write() override {
         throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
             DeviceException::REGISTER_IS_READ_ONLY);
       }
