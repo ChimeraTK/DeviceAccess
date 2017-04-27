@@ -34,6 +34,12 @@ namespace ChimeraTK {
        *  will block until all of the variables have received an update. */
       void readAll();
 
+      /** Just call readNonBlocking() on all variables in the group. */
+      void readAllNonBlocking();
+
+      /** Just call readLatest() on all variables in the group. */
+      void readAllLatest();
+
       /** Just call write() on all variables in the group. */
       void writeAll();
 

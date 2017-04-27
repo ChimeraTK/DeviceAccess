@@ -50,6 +50,24 @@ namespace ChimeraTK {
   }
 
 /*********************************************************************************************************************/
+
+  void VariableGroup::readAllNonBlocking() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().readNonBlocking();
+    }
+  }
+
+/*********************************************************************************************************************/
+
+  void VariableGroup::readAllLatest() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().readLatest();
+    }
+  }
+
+/*********************************************************************************************************************/
   
   void VariableGroup::writeAll() {
     auto accessorList = getAccessorListRecursive();
