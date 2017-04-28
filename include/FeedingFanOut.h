@@ -75,7 +75,8 @@ namespace ChimeraTK {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 
-      void write() override {
+      bool write() override {
+        bool dataLost = false;
         boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> firstSlave;   // will have the data for the other slaves after swapping
         for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
           if(slave->getNumberOfSamples() != 0) {          // do not send copy if no data is expected (e.g. trigger)
@@ -87,13 +88,14 @@ namespace ChimeraTK {
               slave->accessChannel(0) = firstSlave->accessChannel(0);
             }
           }
-          slave->write();
+          bool ret = slave->write();
+          if(ret) dataLost = true;
         }
         // swap back the data from the first slave so we still have it available
         if(firstSlave) {
           firstSlave->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
         }
-        return;
+        return dataLost;
       }
       
       bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {

@@ -50,7 +50,8 @@ namespace ChimeraTK {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
       }
       
-      void write() override {
+      bool write() override {
+        return true;
       }
 
       bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const>&) const override {return false;}

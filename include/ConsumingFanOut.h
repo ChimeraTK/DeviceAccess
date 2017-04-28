@@ -65,7 +65,7 @@ namespace ChimeraTK {
         }
       }
 
-      void write() override {
+      bool write() override {
         throw std::logic_error("Write operation called on read-only variable.");
       }
       
