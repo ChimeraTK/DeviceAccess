@@ -23,29 +23,7 @@ namespace ChimeraTK {
       using Module::Module;
 
       /** Destructor */
-      virtual ~VariableGroup();
-      
-      /** Wait for receiving an update for any of the push-type variables in the group. Any poll-type variables are
-       *  read after receiving the update. If no push-type variables are in the group, this function will just read
-       *  all variables. The returned TransferElement will be the push-type variable which has been updated. */
-      boost::shared_ptr<mtca4u::TransferElement> readAny();
-      
-      /** Just call read() on all variables in the group. If there are push-type variables in the group, this call
-       *  will block until all of the variables have received an update. */
-      void readAll();
-
-      /** Just call readNonBlocking() on all variables in the group. */
-      void readAllNonBlocking();
-
-      /** Just call readLatest() on all variables in the group. */
-      void readAllLatest();
-
-      /** Just call write() on all variables in the group. */
-      void writeAll();
-
-      VariableNetworkNode operator()(const std::string& variableName) const override;
-
-      Module& operator[](const std::string& moduleName) const override;
+      virtual ~VariableGroup() {};
       
       /** Move operation with the assignment operator
           @todo should be in the base class!? */

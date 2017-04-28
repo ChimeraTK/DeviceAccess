@@ -48,4 +48,83 @@ namespace ChimeraTK {
     
   }
 
+/*********************************************************************************************************************/
+  
+  boost::shared_ptr<mtca4u::TransferElement> Module::readAny() {
+    auto accessorList = getAccessorListRecursive();
+    // put push-type transfer elements into a list suitable for TransferElement::readAny()
+    std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
+    for(auto &accessor : accessorList) {
+      if(accessor.getMode() == UpdateMode::push) {
+        transferElementList.emplace_back(accessor.getAppAccessorNoType());
+      }
+    }
+    
+    // wait until one of the push-type accessors receives an update
+    auto ret = Application::getInstance().readAny(transferElementList);
+    
+    // trigger read on the poll-type accessors
+    for(auto accessor : accessorList) {
+      if(accessor.getMode() == UpdateMode::poll) {
+        accessor.getAppAccessorNoType().readNonBlocking();
+      }
+    }
+    
+    return ret;
+  }
+
+/*********************************************************************************************************************/
+  
+  void Module::readAll() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().read();
+    }
+  }
+
+/*********************************************************************************************************************/
+
+  void Module::readAllNonBlocking() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().readNonBlocking();
+    }
+  }
+
+/*********************************************************************************************************************/
+
+  void Module::readAllLatest() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().readLatest();
+    }
+  }
+
+/*********************************************************************************************************************/
+  
+  void Module::writeAll() {
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      accessor.getAppAccessorNoType().write();
+    }
+  }
+
+/*********************************************************************************************************************/
+  
+  VariableNetworkNode Module::operator()(const std::string& variableName) const {
+    for(auto variable : getAccessorList()) {
+      if(variable.getName() == variableName) return VariableNetworkNode(variable);
+    }
+    throw std::logic_error("Variable '"+variableName+"' is not part of the variable group '"+_name+"'.");
+  }
+
+/*********************************************************************************************************************/
+
+  Module& Module::operator[](const std::string& moduleName) const {
+    for(auto submodule : getSubmoduleList()) {
+      if(submodule->getName() == moduleName) return *submodule;
+    }
+    throw std::logic_error("Sub-module '"+moduleName+"' is not part of the variable group '"+_name+"'.");
+  }
+
 } /* namespace ChimeraTK */
