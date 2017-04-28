@@ -34,9 +34,15 @@ namespace ChimeraTK {
       
       /** Virtual destructor to make the type polymorphic */
       virtual ~EntityOwner();
-      
+
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }
+
+      /** Get the fully qualified name of the module instance, i.e. the name containing all module names further up in
+       *  the hierarchy. */
+      std::string getQualifiedName() const {
+        return ( _owner != nullptr ? _owner->getQualifiedName() : "" ) + "/" + _name;
+      }
       
       /** Get the decription of the module instance */
       const std::string& getDescription() const { return _description; }
