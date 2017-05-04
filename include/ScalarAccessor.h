@@ -60,7 +60,7 @@ namespace ChimeraTK {
         }
       }
 
-      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
+      void replace(const mtca4u::NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
 
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
 

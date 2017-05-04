@@ -60,7 +60,7 @@ namespace ChimeraTK {
         }
       }
 
-      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
+      void replace(const mtca4u::NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
 
       /** Move-assignment operator as an alternative for replace where applicable. This is needed to allow late
        *  initialisation of ApplicationModules using ArrayAccessors */
