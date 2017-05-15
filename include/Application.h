@@ -84,7 +84,7 @@ namespace ChimeraTK {
       void enableTestableMode() {
         testableMode = true;
         testableModeLock("enableTestableMode");
-        testableModeThreadName() = "TEST THREAD";
+        threadName() = "TEST THREAD";
       }
 
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
@@ -124,8 +124,9 @@ namespace ChimeraTK {
         return getTestableModeLockObject().owns_lock();
       }
 
-      /** Get string holding the name of the current thread for debugging output of the testable mode. */
-      static std::string& testableModeThreadName() {
+      /** Get string holding the name of the current thread. This is used e.g. for debugging output of the testable
+       *  mode and for the internal profiler. */
+      static std::string& threadName() {
         thread_local static std::string name{"**UNNAMED**"};
         return name;
       }

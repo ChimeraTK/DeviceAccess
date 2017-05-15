@@ -798,7 +798,7 @@ void Application::testableModeLock(const std::string& name) {
   
   // debug output if enabled (also prevent spamming the same message)
   if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
-    std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+    std::cout << "Application::testableModeLock(): Thread " << threadName()
               << " tries to obtain lock for " << name << std::endl;
   }
   
@@ -814,7 +814,7 @@ void Application::testableModeLock(const std::string& name) {
   if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
     // debug output if enabled
     if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
-      std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+      std::cout << "Application::testableModeLock(): Thread " << threadName()
                 << " repeatedly obtained lock successfully for " << name << ". Further messages will be suppressed." << std::endl;
     }
     
@@ -853,7 +853,7 @@ void Application::testableModeLock(const std::string& name) {
     
     // debug output if enabled
     if(getInstance().enableDebugTestableMode) {
-      std::cout << "Application::testableModeLock(): Thread " << testableModeThreadName()
+      std::cout << "Application::testableModeLock(): Thread " << threadName()
                 << " obtained lock successfully for " << name << std::endl;
     }
   }
@@ -865,7 +865,7 @@ void Application::testableModeUnlock(const std::string& name) {
   if(!getInstance().testableMode) return;
   if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner
     || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {
-    std::cout << "Application::testableModeUnlock(): Thread " << testableModeThreadName()
+    std::cout << "Application::testableModeUnlock(): Thread " << threadName()
               << " releases lock for " << name << std::endl;
   }
   getTestableModeLockObject().unlock();
