@@ -113,4 +113,20 @@ namespace mtca4u {
     if(accessor.isReadOnly()) readOnly = true;
   }
 
+  /*********************************************************************************************************************/
+
+  void TransferGroup::dump() {
+    
+    std::cout << "=== Accessors added to this group: " << std::endl;
+    for(auto &elem : highLevelElements) {
+      std::cout << " - " << elem->getName() << std::endl;
+    }
+    std::cout << "=== Low-level transfer elements in this group: " << std::endl;
+    for(auto &elem : elements) {
+      std::cout << " - " << elem->getName() << std::endl;
+    }
+    std::cout << "===" << std::endl;
+
+  }
+
 } /* namespace mtca4u */

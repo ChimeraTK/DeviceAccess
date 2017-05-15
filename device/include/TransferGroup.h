@@ -60,6 +60,10 @@ namespace mtca4u {
        *  elements is read-only. */
       bool isReadOnly();
 
+      /** Print information about the accessors in this group to screen, which might help to understand which
+       *  transfers were merged and which were not. */
+      void dump();
+
     protected:
 
       /** List of low-level TransferElements in this group, which are directly responsible for the hardware access */
