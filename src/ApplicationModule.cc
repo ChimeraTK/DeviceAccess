@@ -36,7 +36,7 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void ApplicationModule::mainLoopWrapper() {
-    Application::getInstance().threadName() = "ApplicatioModule "+getName();
+    Application::registerThread("ApplicatioModule "+getName());
     Application::testableModeLock("start");
     // enter the main loop
     mainLoop();

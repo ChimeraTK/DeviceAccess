@@ -83,6 +83,12 @@ namespace ChimeraTK {
         node.addTag(tag);
       }
       
+      void read() {
+        Profiler::stopMeasurement();
+        mtca4u::OneDRegisterAccessor<UserType>::read();
+        Profiler::startMeasurement();
+      }
+      
   protected:
       ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           size_t nElements, UpdateMode mode, const std::string &description,

@@ -47,12 +47,14 @@ namespace ChimeraTK {
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
-        Application::getInstance().threadName() = "ThreadedFanOut "+FanOut<UserType>::impl->getName();
+        Application::registerThread("ThreadedFanOut "+FanOut<UserType>::impl->getName());
         Application::testableModeLock("start");
         while(true) {
           // receive data
           boost::this_thread::interruption_point();
+          Profiler::stopMeasurement();
           FanOut<UserType>::impl->read();
+          Profiler::startMeasurement();
           boost::this_thread::interruption_point();
           // send out copies to slaves
           for(auto &slave : FanOut<UserType>::slaves) {

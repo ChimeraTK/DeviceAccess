@@ -19,6 +19,7 @@
 #include "Flags.h"
 #include "InternalModule.h"
 #include "EntityOwner.h"
+#include "Profiler.h"
 
 namespace ChimeraTK {
 
@@ -129,6 +130,13 @@ namespace ChimeraTK {
       static std::string& threadName() {
         thread_local static std::string name{"**UNNAMED**"};
         return name;
+      }
+      
+      /** Register the thread in the application system and give it a name. This should be done for all threads used by
+       *  the application to help with debugging and to allow profiling. */
+      static void registerThread(const std::string &name) {
+        threadName() = name;
+        Profiler::registerThread(name);
       }
 
     protected:

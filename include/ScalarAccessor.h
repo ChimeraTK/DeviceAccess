@@ -83,6 +83,12 @@ namespace ChimeraTK {
         node.addTag(tag);
       }
       
+      void read() {
+        Profiler::stopMeasurement();
+        mtca4u::ScalarRegisterAccessor<UserType>::read();
+        Profiler::startMeasurement();
+      }
+      
   protected:
 
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,

@@ -15,6 +15,7 @@
 #include "Application.h"
 #include "FeedingFanOut.h"
 #include "InternalModule.h"
+#include "Profiler.h"
 
 namespace ChimeraTK {
   
@@ -58,12 +59,14 @@ namespace ChimeraTK {
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
       void run() {
-        Application::getInstance().threadName() = "TriggerFanOut "+externalTrigger->getName();
+        Application::registerThread("TriggerFanOut "+externalTrigger->getName());
         Application::testableModeLock("start");
         while(true) {
           // wait for external trigger
           boost::this_thread::interruption_point();
+          Profiler::stopMeasurement();
           externalTrigger->read();
+          Profiler::startMeasurement();
           boost::this_thread::interruption_point();
           // receive data
           transferGroup.read();
