@@ -16,6 +16,7 @@
 #include <mtca4u/OneDRegisterAccessor.h>
 
 #include "VariableNetworkNode.h"
+#include "Profiler.h"
 
 namespace ChimeraTK {
 

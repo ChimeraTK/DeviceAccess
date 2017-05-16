@@ -17,6 +17,7 @@
 
 #include "Module.h"
 #include "VariableNetworkNode.h"
+#include "Profiler.h"
 
 namespace ChimeraTK {
 
