@@ -25,4 +25,13 @@ namespace ChimeraTK {
     return variables[variableName];
   }
 
+  /*********************************************************************************************************************/
+
+  Module& ControlSystemModule::operator[](const std::string& moduleName) const {
+    if(subModules.count(moduleName) == 0) {
+      subModules[moduleName] = {variableNamePrefix/moduleName};
+    }
+    return subModules[moduleName];
+  }
+
 }
