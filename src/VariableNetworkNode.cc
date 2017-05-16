@@ -229,15 +229,6 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-/*
-  VariableNetworkNode& VariableNetworkNode::operator<<(const VariableNetworkNode &other) {
-    if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::consuming;
-    if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::feeding;
-    Application::getInstance().connect(*this, other);
-    return *this;
-  }
-*/
-  /*********************************************************************************************************************/
 
   VariableNetworkNode VariableNetworkNode::operator>>(VariableNetworkNode other) {
     if(pdata->direction == VariableDirection::invalid) {

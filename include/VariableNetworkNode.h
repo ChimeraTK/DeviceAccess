@@ -94,7 +94,6 @@ namespace ChimeraTK {
       bool operator<(const VariableNetworkNode& other) const;
 
       /** Connect two nodes */
-//      VariableNetworkNode& operator<<(const VariableNetworkNode &other);
       VariableNetworkNode operator>>(VariableNetworkNode other);
 
       /** Add a trigger */
