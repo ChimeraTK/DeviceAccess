@@ -25,6 +25,9 @@ namespace ChimeraTK {
        *  (separated by a slash). */
       DeviceModule(const std::string& deviceAliasOrURI, const std::string& registerNamePrefix="");
 
+      /** Default constructor: create dysfunctional device module */
+      DeviceModule() {}
+
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the register with another variable. */
       VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
@@ -37,13 +40,7 @@ namespace ChimeraTK {
         return operator()(variableName, UpdateMode::poll);
       }
 
-      Module& operator[](const std::string& moduleName) const override {
-        subModules.emplace_back(deviceAliasOrURI, registerNamePrefix/moduleName);
-        return subModules.back();
-      }
-
-      /** Prepare the device for usage (i.e. open it) */
-      void prepare() override;
+      Module& operator[](const std::string& moduleName) const override;
 
     protected:
 
@@ -52,7 +49,7 @@ namespace ChimeraTK {
       
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
-      mutable std::list<DeviceModule> subModules;
+      mutable std::map<std::string, DeviceModule> subModules;
 
   };
 

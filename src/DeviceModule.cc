@@ -27,8 +27,11 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void DeviceModule::prepare() {
-
+  Module& DeviceModule::operator[](const std::string& moduleName) const {
+    if(subModules.count(moduleName) == 0) {
+      subModules[moduleName] = {deviceAliasOrURI, registerNamePrefix/moduleName};
+    }
+    return subModules[moduleName];
   }
 
 }
