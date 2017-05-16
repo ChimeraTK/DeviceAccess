@@ -75,7 +75,7 @@ namespace ChimeraTK {
       /** Start the time measurement for the current thread. Call this immediately after the thread woke up e.g. from
        *  blocking read. */
       static void startMeasurement() {
-        assert(getThreadData().isActive == false);
+        if(getThreadData().isActive) return;
         getThreadData().isActive = true;
         getThreadData().lastActiated = std::chrono::high_resolution_clock::now();
       }
