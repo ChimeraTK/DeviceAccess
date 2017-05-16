@@ -240,8 +240,32 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode VariableNetworkNode::operator>>(VariableNetworkNode other) {
-    if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
-    if(other.pdata->direction == VariableDirection::invalid) other.pdata->direction = VariableDirection::consuming;
+    if(pdata->direction == VariableDirection::invalid) {
+      if(!other.hasOwner()) {
+        pdata->direction = VariableDirection::feeding;
+      }
+      else {
+        if(other.getOwner().hasFeedingNode()) {
+          pdata->direction = VariableDirection::consuming;
+        }
+        else {
+          pdata->direction = VariableDirection::feeding;
+        }
+      }
+    }
+    if(other.pdata->direction == VariableDirection::invalid) {
+      if(!hasOwner()) {
+        other.pdata->direction = VariableDirection::consuming;
+      }
+      else {
+        if(getOwner().hasFeedingNode()) {
+          other.pdata->direction = VariableDirection::consuming;
+        }
+        else {
+          other.pdata->direction = VariableDirection::feeding;
+        }
+      }
+    }
     Application::getInstance().connect(*this, other);
     return *this;
   }
