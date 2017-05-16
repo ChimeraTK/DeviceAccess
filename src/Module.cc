@@ -55,6 +55,7 @@ namespace ChimeraTK {
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
     std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
     for(auto &accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isReadable()) continue;
       if(accessor.getMode() == UpdateMode::push) {
         transferElementList.emplace_back(accessor.getAppAccessorNoType());
       }
@@ -65,6 +66,7 @@ namespace ChimeraTK {
     
     // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isReadable()) continue;
       if(accessor.getMode() == UpdateMode::poll) {
         accessor.getAppAccessorNoType().readNonBlocking();
       }
@@ -78,6 +80,7 @@ namespace ChimeraTK {
   void Module::readAll() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isReadable()) continue;
       accessor.getAppAccessorNoType().read();
     }
   }
@@ -87,6 +90,7 @@ namespace ChimeraTK {
   void Module::readAllNonBlocking() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isReadable()) continue;
       accessor.getAppAccessorNoType().readNonBlocking();
     }
   }
@@ -96,6 +100,7 @@ namespace ChimeraTK {
   void Module::readAllLatest() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isReadable()) continue;
       accessor.getAppAccessorNoType().readLatest();
     }
   }
@@ -105,6 +110,7 @@ namespace ChimeraTK {
   void Module::writeAll() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isWriteable()) continue;
       accessor.getAppAccessorNoType().write();
     }
   }
