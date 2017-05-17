@@ -30,7 +30,7 @@ namespace ChimeraTK {
 
       /** Constructor: register the EntityOwner with its owner */
       EntityOwner(EntityOwner *owner, const std::string &name, const std::string &description,
-                  bool eliminateHierarchy=false);
+                  bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
       
       /** Virtual destructor to make the type polymorphic */
       virtual ~EntityOwner();
@@ -72,6 +72,7 @@ namespace ChimeraTK {
 
       /** Called inside the constructor of Accessor: adds the accessor to the list */
       void registerAccessor(VariableNetworkNode accessor) {
+        for(auto &tag : _tags) accessor.addTag(tag);
         accessorList.push_back(accessor);
       }
 
@@ -128,6 +129,9 @@ namespace ChimeraTK {
       
       /** Flag whether this level of hierarchy should be eliminated or not */
       bool _eliminateHierarchy{false};
+      
+      /** List of tags to be added to all accessors and modules inside this module */
+      std::unordered_set<std::string> _tags;
       
   };
 

@@ -16,8 +16,8 @@
 namespace ChimeraTK {
 
   EntityOwner::EntityOwner(EntityOwner *owner, const std::string &name, const std::string &description,
-                           bool eliminateHierarchy)
-  : _name(name), _description(description), _owner(owner), _eliminateHierarchy(eliminateHierarchy)
+                           bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
+  : _name(name), _description(description), _owner(owner), _eliminateHierarchy(eliminateHierarchy), _tags(tags)
   {
     if(owner != nullptr) {
       auto thisMustBeAModule = static_cast<Module*>(this);  /// @todo TODO FIXME this is a bit dangerous...
@@ -37,6 +37,7 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void EntityOwner::registerModule(Module *module) {
+    for(auto &tag : _tags) module->addTag(tag);
     moduleList.push_back(module);
   }
 
@@ -148,6 +149,7 @@ namespace ChimeraTK {
   void EntityOwner::addTag(const std::string &tag) {
     for(auto &node : getAccessorList()) node.addTag(tag);
     for(auto &submodule : getSubmoduleList()) submodule->addTag(tag);
+    _tags.insert(tag);
   }
 
   /*********************************************************************************************************************/
