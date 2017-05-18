@@ -85,6 +85,9 @@ void Application::processUnconnectedNodes() {
         else if(accessor.getValueType() == typeid(double)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<double>(makeFeeder, 0, length));
         }
+        else if(accessor.getValueType() == typeid(std::string)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<std::string>(makeFeeder, 0, length));
+        }
         else {
           throw std::invalid_argument("Unknown value type.");
         }
@@ -477,6 +480,12 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
   }
   else if(network.getValueType() == typeid(double)) {
     typedMakeConnection<double>(network);
+  }
+  else if(network.getValueType() == typeid(std::string)) {
+    typedMakeConnection<std::string>(network);
+  }
+  else {
+    throw std::invalid_argument("Unknown value type.");
   }
 
   // mark the network as created
