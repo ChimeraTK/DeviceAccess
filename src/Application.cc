@@ -320,7 +320,6 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
     }
     else {
       testableMode_isPollMode[pvar->getUniqueId()] = true;
-      std::cout << "HIER createProcessVariable " << node.getPublicName() << " " << testableMode_isPollMode[pvar->getUniqueId()] << std::endl;
     }
   }
   
