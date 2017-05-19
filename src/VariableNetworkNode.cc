@@ -49,12 +49,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mod,
+  VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mode,
       VariableDirection dir, const std::type_info &valTyp, size_t nElements)
   : pdata(new VariableNetworkNode_data)
   {
     pdata->type = NodeType::Device;
-    pdata->mode = mod;
+    pdata->mode = mode;
     pdata->direction = dir;
     pdata->valueType = &valTyp;
     pdata->deviceAlias = devAlias;
@@ -238,6 +238,9 @@ namespace ChimeraTK {
       else {
         if(other.getOwner().hasFeedingNode()) {
           pdata->direction = VariableDirection::consuming;
+          if(getType() == NodeType::Device) {   // special treatment for Device-type variables: consumers are push-type
+            pdata->mode = UpdateMode::push;
+          }
         }
         else {
           pdata->direction = VariableDirection::feeding;
@@ -247,10 +250,16 @@ namespace ChimeraTK {
     if(other.pdata->direction == VariableDirection::invalid) {
       if(!hasOwner()) {
         other.pdata->direction = VariableDirection::consuming;
+        if(other.getType() == NodeType::Device) {   // special treatment for Device-type variables: consumers are push-type
+          other.pdata->mode = UpdateMode::push;
+        }
       }
       else {
         if(getOwner().hasFeedingNode()) {
           other.pdata->direction = VariableDirection::consuming;
+          if(other.getType() == NodeType::Device) {   // special treatment for Device-type variables: consumers are push-type
+            other.pdata->mode = UpdateMode::push;
+          }
         }
         else {
           other.pdata->direction = VariableDirection::feeding;

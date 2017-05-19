@@ -301,11 +301,27 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 
   // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
   // don't decorate if the feeding side is a constant!
-  /// @todo if the mode is polling, do not decorate on both sides!
+  // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware of this.
   if(testableMode && node.getDirection() == VariableDirection::feeding && node.getType() != NodeType::Constant) {
-    auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
-    testableMode_names[pvarDec->getUniqueId()] = "ControlSystem:"+node.getPublicName();
-    return pvarDec;
+    
+    // The transfer mode of this process variable is considered to be polling, if only one consumer exists and this
+    // consumer is polling. Reason: mulitple consumers will result in the use of a FanOut, so the communication up to
+    // the FanOut will be push-type, even if all consumers are poll-type.
+    /// @todo Check if this is true!
+    auto mode = UpdateMode::push;
+    if(node.getOwner().countConsumingNodes() == 1) {
+      if(node.getOwner().getConsumingNodes().front().getMode() == UpdateMode::poll) mode = UpdateMode::poll;
+    }
+    
+    if(mode != UpdateMode::poll) {
+      auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
+      testableMode_names[pvarDec->getUniqueId()] = "ControlSystem:"+node.getPublicName();
+      return pvarDec;
+    }
+    else {
+      testableMode_isPollMode[pvar->getUniqueId()] = true;
+      std::cout << "HIER createProcessVariable " << node.getPublicName() << " " << testableMode_isPollMode[pvar->getUniqueId()] << std::endl;
+    }
   }
   
   // return the process variable
@@ -840,10 +856,17 @@ void Application::testableModeLock(const std::string& name) {
         if(pair.second > 0) {
           std::cout << "    - " << Application::getInstance().testableMode_names[pair.first];
           // check if process variable still has data in the queue
-          if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
-            std::cout << " (unread data in queue)";
+          try {
+            if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
+              std::cout << " (unread data in queue)";
+            }
+            else {
+              std::cout << " (data loss)";
+            }
           }
-          else {
+          catch(std::logic_error &e) {
+            // if we receive a logic_error in readNonBlocking() it just means another thread is waiting on a
+            // TransferFuture of this variable, and we actually were not allowed to read...
             std::cout << " (data loss)";
           }
           std::cout << std::endl;

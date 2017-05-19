@@ -56,9 +56,15 @@ namespace ChimeraTK {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
-        auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
-        Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
-        return mtca4u::ScalarRegisterAccessor<T>(deco);
+        // decorate with TestDecoratorRegisterAccessor if variable is not poll-type
+        if(!Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
+          auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
+          Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
+          return mtca4u::ScalarRegisterAccessor<T>(deco);
+        }
+        else {
+          return mtca4u::ScalarRegisterAccessor<T>(pv);
+        }
       }
       
       /** Obtain an array-type process variable from the application, which is published to the control system. */
@@ -69,9 +75,14 @@ namespace ChimeraTK {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
-        auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
-        Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
-        return mtca4u::OneDRegisterAccessor<T>(deco);
+        if(!Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
+          auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
+          Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
+          return mtca4u::OneDRegisterAccessor<T>(deco);
+        }
+        else {
+          return mtca4u::OneDRegisterAccessor<T>(pv);
+        }
       }
       
   protected:

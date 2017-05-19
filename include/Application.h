@@ -259,6 +259,9 @@ namespace ChimeraTK {
       /** Map of unique IDs to process variables which have been decorated with the TestDecoratorRegisterAccessor. */
       std::map<size_t, boost::shared_ptr<TransferElement>> testableMode_processVars;
       
+      /** Map of unique IDs to flags whether the update mode is UpdateMode::poll (so we do not use the decorator) */
+      std::map<size_t, bool> testableMode_isPollMode;
+      
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter
