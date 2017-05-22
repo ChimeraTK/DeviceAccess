@@ -8,6 +8,8 @@
 #ifndef CHIMERATK_TEST_FACILITY
 #define CHIMERATK_TEST_FACILITY
 
+#include <boost/fusion/include/at_key.hpp>
+
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <mtca4u/ScalarRegisterAccessor.h>
 #include <mtca4u/OneDRegisterAccessor.h>
@@ -51,44 +53,79 @@ namespace ChimeraTK {
       /** Obtain a scalar process variable from the application, which is published to the control system. */
       template<typename T>
       mtca4u::ScalarRegisterAccessor<T> getScalar(const mtca4u::RegisterPath &name) const {
+
+        // check for existing accessor in cache
+        if(boost::fusion::at_key<T>(scalarMap.table).count(name) > 0) {
+          return boost::fusion::at_key<T>(scalarMap.table)[name];
+        }
+
+        // obtain accessor from ControlSystemPVManager
         auto pv = pvManager->getProcessArray<T>(name);
         if(pv == nullptr) {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
-        // decorate with TestDecoratorRegisterAccessor if variable is not poll-type
+
+        // decorate with TestDecoratorRegisterAccessor if variable is not poll-type and store it in cache
         if(!Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
           auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
           Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
-          return mtca4u::ScalarRegisterAccessor<T>(deco);
+          boost::fusion::at_key<T>(scalarMap.table)[name].replace(mtca4u::ScalarRegisterAccessor<T>(deco));
         }
         else {
-          return mtca4u::ScalarRegisterAccessor<T>(pv);
+          boost::fusion::at_key<T>(scalarMap.table)[name].replace(mtca4u::ScalarRegisterAccessor<T>(pv));
         }
+
+        // return the accessor as stored in the cache
+        return boost::fusion::at_key<T>(scalarMap.table)[name];
       }
       
       /** Obtain an array-type process variable from the application, which is published to the control system. */
       template<typename T>
       mtca4u::OneDRegisterAccessor<T> getArray(const mtca4u::RegisterPath &name) const {
+
+        // check for existing accessor in cache
+        if(boost::fusion::at_key<T>(arrayMap.table).count(name) > 0) {
+          return boost::fusion::at_key<T>(arrayMap.table)[name];
+        }
+
+        // obtain accessor from ControlSystemPVManager
         auto pv = pvManager->getProcessArray<T>(name);
         if(pv == nullptr) {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
+
+        // decorate with TestDecoratorRegisterAccessor if variable is not poll-type and store it in cache
         if(!Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
           auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
           Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
-          return mtca4u::OneDRegisterAccessor<T>(deco);
+          boost::fusion::at_key<T>(arrayMap.table)[name].replace(mtca4u::OneDRegisterAccessor<T>(deco));
         }
         else {
-          return mtca4u::OneDRegisterAccessor<T>(pv);
+          boost::fusion::at_key<T>(arrayMap.table)[name].replace(mtca4u::OneDRegisterAccessor<T>(pv));
         }
+
+        // return the accessor as stored in the cache
+        return boost::fusion::at_key<T>(arrayMap.table)[name];
       }
       
   protected:
     
       boost::shared_ptr<ControlSystemPVManager> pvManager;
       
+      // Cache (possible decorated) accessors to avoid the need to create accessors multiple times. This would not work
+      // if the accessor is decorated, since the buffer would be lost and thus the current value could no longer be
+      // obtained. This has to be done separately for scalar and array accessors and in dependence of the user type.
+      // Since this is a cache and does not change the logical behaviour of the class, the maps are defined mutable.
+      template<typename UserType>
+      using ScalarMap = std::map<std::string, mtca4u::ScalarRegisterAccessor<UserType>>;
+      mutable mtca4u::TemplateUserTypeMap<ScalarMap> scalarMap;
+
+      template<typename UserType>
+      using ArrayMap = std::map<std::string, mtca4u::OneDRegisterAccessor<UserType>>;
+      mutable mtca4u::TemplateUserTypeMap<ArrayMap> arrayMap;
+
   };
   
 } /* namespace ChimeraTK */
