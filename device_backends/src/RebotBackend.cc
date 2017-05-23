@@ -177,7 +177,6 @@ uint32_t RebotBackend::parseRxServerHello(
 }
 
   void RebotBackend::heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex){
-    int beatcount = 0;
     while (true){
       try{
         // only send a heartbeat if the connection was inactive for half of the timeout period
@@ -195,8 +194,6 @@ uint32_t RebotBackend::parseRxServerHello(
           _lastSendTime=testable_rebot_sleep::now();
           if (_protocolImplementor){
             _protocolImplementor->sendHeartbeat();
-            // FIXE: remove debug output
-            std::cout << "heartbeat: beat " << beatcount++ << std::endl;
           }
         }
         // sleep without holding the lock. Sleep for half of the connection timeout (plus 1 ms)
