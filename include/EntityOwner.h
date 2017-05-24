@@ -54,8 +54,11 @@ namespace ChimeraTK {
       /** Obtain the list of submodules associated with this instance */
       const std::list<Module*>& getSubmoduleList() const { return moduleList; }
       
-      /** Obtain the list of accessors/variables associated with this instance and any submodules */
-      std::list<VariableNetworkNode> getAccessorListRecursive();
+      /** Obtain the list of accessors/variables associated with this instance and any variable groups. If the optional
+       *  argument is set to true, also submodules (which have their own thread) are included. In that case, the
+       *  accessors in the returned list may not be used (i.e. write or read data or initiate transfers) from the same
+       *  thread and only connections may be registered between the accessors. */
+      std::list<VariableNetworkNode> getAccessorListRecursive(bool includeSubmodules = false);
       
       /** Obtain the list of submodules associated with this instance and any submodules */
       std::list<Module*> getSubmoduleListRecursive();
