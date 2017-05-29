@@ -12,7 +12,6 @@
 #include "EntityOwner.h"
 #include "Module.h"
 #include "VirtualModule.h"
-#include "VariableGroup.h"
 
 namespace ChimeraTK {
 
@@ -50,17 +49,13 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  std::list<VariableNetworkNode> EntityOwner::getAccessorListRecursive(bool includeSubmodules) {
+  std::list<VariableNetworkNode> EntityOwner::getAccessorListRecursive() {
     // add accessors of this instance itself
     std::list<VariableNetworkNode> list = getAccessorList();
     
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
-      // ignore anything that is not a VariableGroup if submodules should not be included
-      /// @todo Add test for this!
-      if(!includeSubmodules && dynamic_cast<VariableGroup*>(submodule) == nullptr) continue;
-      // obtail list of accessors from the submodule/group and insert it into the list
-      auto sublist = submodule->getAccessorListRecursive(includeSubmodules);
+      auto sublist = submodule->getAccessorListRecursive();
       list.insert(list.end(), sublist.begin(), sublist.end());
     }
     return list;
@@ -161,7 +156,7 @@ namespace ChimeraTK {
 
   VirtualModule EntityOwner::flatten() {
     VirtualModule nextmodule{_name, _description};
-    for(auto &node : getAccessorListRecursive(true)) {
+    for(auto &node : getAccessorListRecursive()) {
       nextmodule.registerAccessor(node);
     }
     return nextmodule;
