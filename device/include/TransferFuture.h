@@ -34,10 +34,15 @@ namespace ChimeraTK {
   /** Special future returned by TransferElement::readAsync(). See its function description for more details. */
   class TransferFuture {
     public:
-      
+
       /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
        *  automatically executed before returning, so the new data is directly available in the buffer. */
       virtual void wait();
+
+      /** Check if new data has arrived. If yes, the TransferElement::postRead() action is automatically
+       *  executed before returning, so the new data is directly available in the buffer. Otherwise the buffer
+       *  is kept unchanged and a subsequent call to wait() or hasNewData() is required to obtain the data. */
+      bool hasNewData();
 
       /** Default constructor to generate a dysfunctional future (just for late initialisation) */
       TransferFuture()
