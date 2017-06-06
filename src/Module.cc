@@ -79,9 +79,17 @@ namespace ChimeraTK {
   
   void Module::readAll() {
     auto accessorList = getAccessorListRecursive();
+    // first blockingly read all push-type variables
     for(auto accessor : accessorList) {
       if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getMode() != UpdateMode::push) continue;
       accessor.getAppAccessorNoType().read();
+    }
+    // next non-blockingly read the latest values of all poll-type variables
+    for(auto accessor : accessorList) {
+      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getMode() == UpdateMode::push) continue;
+      accessor.getAppAccessorNoType().readLatest();
     }
   }
 
