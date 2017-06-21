@@ -129,6 +129,11 @@ void Application::run() {
         "Error: An instance of Application must have its applicationName set.");
   }
 
+  // prepare the modules
+  for(auto &module : getSubmoduleListRecursive()) {
+    module->prepare();
+  }
+
   // start the necessary threads for the FanOuts etc.
   for(auto &internalModule : internalModuleList) {
     internalModule->activate();
@@ -148,6 +153,7 @@ void Application::run() {
   for(auto &module : getSubmoduleListRecursive()) {
     module->run();
   }
+
 }
 
 /*********************************************************************************************************************/

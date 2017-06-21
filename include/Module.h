@@ -36,13 +36,14 @@ namespace ChimeraTK {
       /** Destructor */
       virtual ~Module();
 
-      /** Prepare the execution of the module. */
+      /** Prepare the execution of the module. This function is called before any module is started (including internal
+       *  modules like FanOuts) and before the initial values of the variables are pushed into the queues. */
       virtual void prepare() {};
 
       /** Execute the module. */
       virtual void run() {};
 
-      /** Terminate the module. Must be called before destruction, if run() was called previously. */
+      /** Terminate the module. Must/will be called before destruction, if run() was called previously. */
       virtual void terminate() {};
       
       /** Wait for receiving an update for any of the push-type variables in the group. Any poll-type variables are
