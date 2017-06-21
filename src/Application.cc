@@ -144,7 +144,7 @@ void Application::run() {
   for(auto &module : getSubmoduleListRecursive()) {
     for(auto &variable : module->getAccessorList()) {
       if(variable.getDirection() == VariableDirection::consuming) {
-        variable.getAppAccessorNoType().readNonBlocking();
+        variable.getAppAccessorNoType().readLatest();
       }
     }
   }
@@ -370,13 +370,11 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
 
 void Application::makeConnections() {
   
-  // run checks first
-  checkConnections();
-  
   // apply optimisations
+  // note: checks may not be run before since sometimes networks may only be valid after optimisations
   optimiseConnections();
   
-  // run checks again to make sure the optimisations didn't create corrupted networks
+  // run checks
   checkConnections();
 
   // make the connections for all networks
@@ -435,9 +433,11 @@ void Application::optimiseConnections() {
       }
       
       // if trigger present, remove corresponding trigger receiver node from the trigger network
-      for(auto &itTrig : networkList) {
-        if(itTrig.getFeedingNode() != feeder1.getExternalTrigger()) continue;
-        itTrig.removeNodeToTrigger(it1->getFeedingNode());
+      if(feeder1.hasExternalTrigger()) {
+        for(auto &itTrig : networkList) {
+          if(itTrig.getFeedingNode() != feeder1.getExternalTrigger()) continue;
+          itTrig.removeNodeToTrigger(it1->getFeedingNode());
+        }
       }
 
       // schedule the outer loop network for deletion and stop processing it
@@ -617,7 +617,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       // add all consumers to the FanOut
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          if(consumingFanOut) {
+          if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
             consumer.getAppAccessor<UserType>().replace(consumingFanOut);
             consumingFanOut.reset();
           }
