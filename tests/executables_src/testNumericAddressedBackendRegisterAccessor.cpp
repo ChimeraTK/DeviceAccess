@@ -60,5 +60,44 @@ BOOST_AUTO_TEST_CASE( testReadWrite ){
   // FIXME: systematically test reading and writing. Currently is scattered all over the place...
 }
 
+BOOST_AUTO_TEST_CASE( testRawWrite ){
+  Device device;
+  device.open("sdm://./dummy=goodMapFile.map");
+
+  auto accessor1 = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 0,  {AccessMode::raw});
+  for (auto & value : accessor1){
+    value = 0xFF;
+  }
+  accessor1.write();
+
+  // another accessor for reading the same register
+  auto accessor2 = device.getOneDRegisterAccessor<int>("MODULE1/TEST_AREA", 0, 0,  {AccessMode::raw});
+  accessor2.read();
+  for (auto & value : accessor2){
+    BOOST_CHECK(value == 0xFF);
+  }
+
+  for (auto & value : accessor1){
+    value = 0x77;
+  }
+  accessor1.write();
+  for (auto & value : accessor1){
+    BOOST_CHECK(value == 0x77);
+  } 
+
+  accessor2.read();
+  for (auto & value : accessor2){
+    BOOST_CHECK(value == 0x77);
+  } 
+
+  // do not change the content of accessor1. suspicion: it has old, swapped data
+  accessor1.write();
+  accessor2.read();
+  for (auto & value : accessor2){
+    BOOST_CHECK(value == 0x77);
+  } 
+  
+}
+
 // After you finished all test you have to end the test suite.
 BOOST_AUTO_TEST_SUITE_END()
