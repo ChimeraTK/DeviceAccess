@@ -31,7 +31,7 @@ namespace mtca4u {
           size_t bar, size_t startAddress, size_t numberOfWords)
       : _dev(dev), _bar(bar), isShared(false)
       {
-        changeAddress(startAddress, numberOfWords);
+        setAddress(startAddress, numberOfWords);
       }
 
       virtual ~NumericAddressedLowLevelTransferElement() {};
@@ -107,25 +107,27 @@ namespace mtca4u {
         return rawDataBuffer.begin() + (addressInBar-_startAddress)/sizeof(int32_t);
       }
 
-      /** Change the start address (inside the bar given in the constructor) and number of words of this accessor. */
+      /** Change the start address (inside the bar given in the constructor) and number of words of this accessor,  and set the shared flag. */
       void changeAddress(size_t startAddress, size_t numberOfWords) {
-
-        // change address
-        _startAddress = startAddress;
-        _numberOfWords = numberOfWords;
-
-        // allocated the buffer
-        rawDataBuffer.resize(_numberOfWords);
-
-        // compute number of bytes
-        _numberOfBytes = _numberOfWords*sizeof(int32_t);
-
-        // set shared flag
+        setAddress(startAddress, numberOfWords);
         isShared = true;
       }
 
     protected:
 
+      /** Set the start address (inside the bar given in the constructor) and number of words of this accessor. */
+      void setAddress(size_t startAddress, size_t numberOfWords) {
+        // change address
+        _startAddress = startAddress;
+        _numberOfWords = numberOfWords;
+        
+        // allocated the buffer
+        rawDataBuffer.resize(_numberOfWords);
+        
+        // compute number of bytes
+        _numberOfBytes = _numberOfWords*sizeof(int32_t);
+      }
+      
       /** the backend to use for the actual hardware access */
       boost::shared_ptr<NumericAddressedBackend> _dev;
 

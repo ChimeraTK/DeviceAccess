@@ -104,6 +104,7 @@ namespace mtca4u {
         }
         preWrite();
         _rawAccessor->write();
+        postWrite();
         return false;
       }
 
