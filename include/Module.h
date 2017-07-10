@@ -79,10 +79,43 @@ namespace ChimeraTK {
         * 
         * If an optional trigger node is specified, this trigger node is applied to all poll-type output variables
         * of the target module, which are being connected during this operation, if the corresponding variable
-        * in this module is push-type. */
-      void connectTo(const Module &target, VariableNetworkNode trigger={}) const;
+        * in this module is push-type.
+        *
+        * Note: This function is a template to allow special modules to provide overridden () and >> operators with
+        * a changed return type of the () operator. */
+      template<typename MODULE>
+      void connectTo(const MODULE &target, VariableNetworkNode trigger={}) const;
       
   };
+  
+/*********************************************************************************************************************/
+
+  template<typename MODULE>
+  void Module::connectTo(const MODULE &target, VariableNetworkNode trigger) const {
+    
+    // connect all direct variables of this module to their counter-parts in the right-hand-side module
+    for(auto variable : getAccessorList()) {
+      if(variable.getDirection() == VariableDirection::feeding) {
+        variable >> target(variable.getName());
+      }
+      else {
+        // use trigger?
+        if(trigger != VariableNetworkNode() && target(variable.getName()).getMode() == UpdateMode::poll
+                                            && variable.getMode() == UpdateMode::push ) {
+          target(variable.getName()) [ trigger ] >> variable;
+        }
+        else {
+          target(variable.getName()) >> variable;
+        }
+      }
+    }
+    
+    // connect all sub-modules to their couter-parts in the right-hand-side module
+    for(auto submodule : getSubmoduleList()) {
+      submodule->connectTo(target[submodule->getName()], trigger);
+    }
+    
+  }
 
 } /* namespace ChimeraTK */
 
