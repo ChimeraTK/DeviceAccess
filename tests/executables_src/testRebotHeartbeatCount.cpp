@@ -1,4 +1,3 @@
-#if 0
 
 /******************************************************************************
  * This file currently runs on real time, so it will take about a minute to finish!
@@ -99,4 +98,3 @@ BOOST_AUTO_TEST_CASE( testHeartbeat1 ){
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#endif
