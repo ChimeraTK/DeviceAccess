@@ -37,7 +37,7 @@ add_executable(RebotDummyServer ${CMAKE_CURRENT_SOURCE_DIR}/RebotDummyServer/mai
 # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
 target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME})
 
-target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
+#target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
 
 #
 # Introduced directory unitTestsNotUnderCtest; This contains the boost unit
