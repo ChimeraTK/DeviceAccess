@@ -141,11 +141,10 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 #Install the library and the executables
-install(TARGETS ${PROJECT_NAME}
-            RUNTIME DESTINATION bin
-	    LIBRARY DESTINATION lib
-	    ARCHIVE DESTINATION lib
-  )
+install( TARGETS ${PROJECT_NAME}
+         RUNTIME DESTINATION bin
+         LIBRARY DESTINATION lib
+         ARCHIVE DESTINATION lib )
 
 #all include files go into include/PROJECT_NAME
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include/mtca4u/ DESTINATION include/mtca4u)
