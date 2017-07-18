@@ -38,7 +38,7 @@ namespace mtca4u {
 
         /// Implicit type conversion to user type T.
         /// This covers already a lot of operations like arithmetics and comparison
-        inline operator T() {
+        inline operator T() const {
           return fpcptr->template toCooked<T>(*buffer);
         }
 
