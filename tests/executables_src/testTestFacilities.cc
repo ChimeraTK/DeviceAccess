@@ -810,3 +810,38 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithTriggerFanOut, T, test_types ) {
   BOOST_CHECK(index.readNonBlocking() == false);
   
 }
+
+/*********************************************************************************************************************/
+/* test convenience read functions */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testConvenienceRead, T, test_types ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testConvenienceRead<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+
+  app.cs("input") >> app.blockingReadTestModule.someInput;
+  app.blockingReadTestModule.someOutput >> app.cs("output");
+  app.asyncReadTestModule.connectTo(app.cs["async"]); // avoid runtime warning
+  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
+  
+  ctk::TestFacility test;
+  auto pvOutput = test.getScalar<T>("output");
+  test.runApplication();
+
+  // test blocking read when taking control in the test thread (note: the blocking read is executed in the app module!)
+  for(int i=0; i<5; ++i) {
+    test.writeScalar<T>("input", 120+i);
+    test.stepApplication();
+    CHECK_TIMEOUT(test.readScalar<T>("output") == 120+i, 200);
+  }
+
+  // same with array function (still a scalar variable behind, but this does not matter)
+  for(int i=0; i<5; ++i) {
+    std::vector<T> myValue{120+i};
+    test.writeArray<T>("input", myValue);
+    test.stepApplication();
+    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{120+i}, 200);
+  }
+
+}

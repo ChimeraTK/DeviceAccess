@@ -110,6 +110,39 @@ namespace ChimeraTK {
         return boost::fusion::at_key<T>(arrayMap.table)[name];
       }
       
+      /** Convenience function to write a scalar process variable in a single call */
+      template<typename TYPE>
+      void writeScalar( const std::string &name, const TYPE value ) {
+        auto acc = getScalar<TYPE>(name);
+        acc = value;
+        acc.write();
+      }
+      
+      /** Convenience function to write an array process variable in a single call */
+      template<typename TYPE>
+      void writeArray( const std::string &name, const std::vector<TYPE> &value ) {
+        auto acc = getArray<TYPE>(name);
+        acc = value;
+        acc.write();
+      }
+      
+      /** Convenience function to read the latest value of a scalar process variable in a single call */
+      template<typename TYPE>
+      TYPE readScalar( const std::string &name ) {
+        auto acc = getScalar<TYPE>(name);
+        acc.readLatest();
+        return acc;
+      }
+      
+      /** Convenience function to read the latest value of an array process variable in a single call */
+      template<typename TYPE>
+      std::vector<TYPE> readArray( const std::string &name ) {
+        auto acc = getArray<TYPE>(name);
+        acc.readLatest();
+        return acc;
+      }
+
+      
   protected:
     
       boost::shared_ptr<ControlSystemPVManager> pvManager;
