@@ -45,7 +45,7 @@ namespace ChimeraTK {
       VariableNetworkNode& operator=(const VariableNetworkNode &rightHandSide);
 
       /** Constructor for an Application node */
-      VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name,
+      VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name, const std::string &qualifiedName,
           VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
           const std::string &description, const std::type_info* valueType,
           const std::unordered_set<std::string> &tags={});
@@ -72,9 +72,10 @@ namespace ChimeraTK {
       /** Change meta data (name, unit, description and optionally tags). This function may only be used on
        *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
        *  tags, an empty set can be passed. */
-      void setMetaData(const std::string &name, const std::string &unit, const std::string &description);
-      void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
-                       const std::unordered_set<std::string> &tags);
+      void setMetaData(const std::string &name, const std::string &qualifiedName, const std::string &unit,
+                       const std::string &description);
+      void setMetaData(const std::string &name, const std::string &qualifiedName, const std::string &unit,
+                       const std::string &description, const std::unordered_set<std::string> &tags);
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
@@ -127,6 +128,7 @@ namespace ChimeraTK {
       VariableDirection getDirection() const;
       const std::type_info& getValueType() const;
       std::string getName() const;
+      std::string getQualifiedName() const;
       const std::string& getUnit() const;
       const std::string& getDescription() const;
       VariableNetwork& getOwner() const;
@@ -202,6 +204,7 @@ namespace ChimeraTK {
 
     /** Accessor name if type == Application */
     std::string name;
+    std::string qualifiedName;
 
     /** Device information if type == Device */
     std::string deviceAlias;

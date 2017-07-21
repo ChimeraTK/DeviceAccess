@@ -26,16 +26,16 @@ namespace ChimeraTK {
   template< typename UserType >
   class ScalarAccessor : public mtca4u::ScalarRegisterAccessor<UserType> {
     public:
-      
+
       /** Change meta data (name, unit, description and optionally tags). This function may only be used on
        *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
        *  tags, an empty set can be passed. */
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description) {
-        node.setMetaData(name,unit,description);
+        node.setMetaData(name, _owner->getQualifiedName()+"/"+name, unit, description);
       }
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
                        const std::unordered_set<std::string> &tags) {
-        node.setMetaData(name,unit,description,tags);
+        node.setMetaData(name, _owner->getQualifiedName()+"/"+name, unit, description, tags);
       }
 
       /** Convert into VariableNetworkNode */
@@ -51,9 +51,10 @@ namespace ChimeraTK {
       /** Replace with other ScalarRegisterAccessor */
       void replace(const ScalarAccessor<UserType> &newAccessor) {
         mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
-        node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
-                                  newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
-                                  &newAccessor.node.getValueType());
+        node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getQualifiedName(),
+                                   newAccessor.node.getDirection(), newAccessor.node.getUnit(),
+                                   newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(),
+                                   newAccessor.node.getDescription(), &newAccessor.node.getValueType());
         if(_owner != newAccessor._owner) {
           if(_owner != nullptr) _owner->unregisterAccessor(*this);
           _owner = newAccessor._owner;
@@ -94,7 +95,8 @@ namespace ChimeraTK {
 
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           UpdateMode mode, const std::string &description, const std::unordered_set<std::string> &tags={})
-      : node(this, name, direction, unit, 1, mode, description, &typeid(UserType), tags), _owner(owner)
+      : node(this, name, owner->getQualifiedName()+"/"+name, direction, unit, 1, mode, description, &typeid(UserType), tags),
+        _owner(owner)
       {
         owner->registerAccessor(*this);
       }

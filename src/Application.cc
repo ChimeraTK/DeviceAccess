@@ -357,7 +357,7 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
     pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
     
     // put the decorators into the list
-    testableMode_names[pvarPair.first->getUniqueId()] = "Internal:"+pvarPair.first->getName()+"->"+pvarPair.second->getName();
+    testableMode_names[pvarPair.first->getUniqueId()] = "Internal:"+node.getQualifiedName();//+"->"+pvarPair.second->getQualifiedName();
     
     return pvarPairDec;
   }
@@ -834,7 +834,7 @@ void Application::testableModeLock(const std::string& name) {
   
   // if last lock was obtained repeatedly by the same thread, sleep a short time before obtaining the lock to give the
   // other threads a chance to get the lock first
-  if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(1000);
+  if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(10000);
   
   // obtain the lock
   getTestableModeLockObject().lock();

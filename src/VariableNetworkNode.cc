@@ -30,6 +30,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name,
+                                  const std::string &qualifiedName,
                                   VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
                                   const std::string &description, const std::type_info* valueType,
                                   const std::unordered_set<std::string> &tags)
@@ -38,6 +39,7 @@ namespace ChimeraTK {
     pdata->type = NodeType::Application;
     pdata->appNode = accessorBridge;
     pdata->name = name;
+    pdata->qualifiedName = qualifiedName;
     pdata->mode = mode;
     pdata->direction = direction;
     pdata->valueType = valueType;
@@ -380,6 +382,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  std::string VariableNetworkNode::getQualifiedName() const {
+    return pdata->qualifiedName;
+  }
+
+  /*********************************************************************************************************************/
+
   const std::string& VariableNetworkNode::getUnit() const {
     return pdata->unit;
   }
@@ -445,22 +453,23 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
-                                        const std::string &description) {
+  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &qualifiedName,
+                                        const std::string &unit, const std::string &description) {
     if(getType() != NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
           "Calling VariableNetworkNode::updateMetaData() is not allowed for non-application type nodes.");
     }
     pdata->name = name;
+    pdata->qualifiedName = qualifiedName;
     pdata->unit = unit;
     pdata->description = description;
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
+  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &qualifiedName, const std::string &unit,
                                         const std::string &description, const std::unordered_set<std::string> &tags) {
-    setMetaData(name, unit, description);
+    setMetaData(name, qualifiedName, unit, description);
     pdata->tags = tags;
   }
 

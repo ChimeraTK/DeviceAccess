@@ -25,16 +25,16 @@ namespace ChimeraTK {
   template< typename UserType >
   class ArrayAccessor :  public mtca4u::OneDRegisterAccessor<UserType> {
     public:
-      
+
       /** Change meta data (name, unit, description and optionally tags). This function may only be used on
        *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
        *  tags, an empty set can be passed. */
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description) {
-        node.setMetaData(name,unit,description);
+        node.setMetaData(name, _owner->getQualifiedName()+"/"+name, unit, description);
       }
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
                        const std::unordered_set<std::string> &tags) {
-        node.setMetaData(name,unit,description,tags);
+        node.setMetaData(name, _owner->getQualifiedName()+"/"+name, unit, description, tags);
       }
 
       /** Convert into VariableNetworkNode */
@@ -52,9 +52,9 @@ namespace ChimeraTK {
           _owner->unregisterAccessor(node);
         }
         mtca4u::NDRegisterAccessorBridge<UserType>::replace(newAccessor);
-        node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getDirection(), newAccessor.node.getUnit(),
-                                  newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(), newAccessor.node.getDescription(),
-                                  &newAccessor.node.getValueType());
+        node = VariableNetworkNode(this, newAccessor.node.getName(), newAccessor.node.getQualifiedName(), newAccessor.node.getDirection(),
+                                   newAccessor.node.getUnit(), newAccessor.node.getNumberOfElements(), newAccessor.node.getMode(),  newAccessor.node.getDescription(),
+                                   &newAccessor.node.getValueType());
         if(_owner != newAccessor._owner) {
           _owner = newAccessor._owner;
           if(_owner != nullptr) _owner->registerAccessor(node);
@@ -94,7 +94,8 @@ namespace ChimeraTK {
       ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           size_t nElements, UpdateMode mode, const std::string &description,
           const std::unordered_set<std::string> &tags={})
-        : node(this, name, direction, unit, nElements, mode, description, &typeid(UserType), tags), _owner(owner)
+        : node(this, name, owner->getQualifiedName()+"/"+name, direction, unit, nElements, mode, description, &typeid(UserType), tags),
+         _owner(owner)
       {
         owner->registerAccessor(*this);
       }
