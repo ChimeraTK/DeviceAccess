@@ -26,6 +26,8 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferElement.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/RegisterCatalogue.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/AccessMode.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/VersionNumber.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/VersionNumberSource.h
    PARENT_SCOPE
 )
 
