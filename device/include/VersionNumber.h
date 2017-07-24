@@ -2,6 +2,7 @@
 #define CHIMERA_TK_VERSION_NUMBER_H
 
 #include <cstdint>
+#include <stdexcept>
 
 namespace ChimeraTK {
 
@@ -23,9 +24,12 @@ namespace ChimeraTK {
       /** Copy constructor */
       VersionNumber(const VersionNumber &other) : _value(other._value), _isValid(other._isValid) {}
 
-      /** Convert value of version number into uint64_t. Note that the result is undefined if the version number is not
-       *  valid (i.e. if isValid() returns false). */
+      /** Convert value of version number into uint64_t. If the version number is not valid, an std::invalid_argument
+       *  exception will be thrown */
       operator UnderlyingDataType() const {
+        if(!_isValid) {
+          throw std::invalid_argument("This VersionNumber is invalid and thus cannot be converted to numeric data type.");
+        }
         return _value;
       }
       
