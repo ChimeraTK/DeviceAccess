@@ -97,7 +97,7 @@ namespace mtca4u {
         return true;
       }
 
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         if(TransferElement::isInTransferGroup) {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);

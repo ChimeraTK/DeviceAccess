@@ -71,7 +71,7 @@ namespace mtca4u {
       }
 
 
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         if(isReadOnly()) {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
               DeviceException::REGISTER_IS_READ_ONLY);

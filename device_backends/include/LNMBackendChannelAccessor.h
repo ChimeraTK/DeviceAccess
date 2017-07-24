@@ -65,7 +65,7 @@ namespace mtca4u {
         _accessor->read();
       }
 
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
             DeviceException::REGISTER_IS_READ_ONLY);
       }

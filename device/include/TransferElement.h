@@ -169,7 +169,7 @@ namespace mtca4u {
 
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
        *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
-      virtual bool write() = 0;
+      virtual bool write(ChimeraTK::VersionNumber versionNumber={}) = 0;
 
       /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
        *  function followed by postRead() is exactly equivalent to a call to just read().

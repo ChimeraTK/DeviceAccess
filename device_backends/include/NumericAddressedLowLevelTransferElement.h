@@ -40,7 +40,7 @@ namespace mtca4u {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
         return false;
       }

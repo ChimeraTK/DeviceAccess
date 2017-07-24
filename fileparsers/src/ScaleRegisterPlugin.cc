@@ -72,9 +72,9 @@ namespace mtca4u {
         }
       }
 
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
         preWrite();
-        return _accessor->write();
+        return _accessor->write(versionNumber);
       }
 
       bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {

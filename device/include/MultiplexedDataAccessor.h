@@ -82,9 +82,9 @@ namespace mtca4u {
        * to write to DMA memory Areas, but this functionality has not been
        * implemented yet
        */
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
-        return accessor->write();
+        return accessor->write(versionNumber);
       }
 
       /**
