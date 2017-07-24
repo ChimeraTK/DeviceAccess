@@ -9,6 +9,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferGroup.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterCatalogue.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/ExperimentalFeatures.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/VersionNumberSource.cc
    PARENT_SCOPE
 )
 
