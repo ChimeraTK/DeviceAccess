@@ -24,6 +24,7 @@
 #include "DeviceException.h"
 #include "TimeStamp.h"
 #include "TransferFuture.h"
+#include "VersionNumberSource.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -152,6 +153,19 @@ namespace mtca4u {
        *  read() or write() and similar functions on them is illegal. Only their current values may be accessed,
        *  another readAny() or readAsync() may be called. */
       static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+
+      /**
+      * Returns the version number that is associated with the last transfer (i.e. last read or write). See
+      * ChimeraTK::VersionNumber for details.
+      * 
+      * The returned version number may be invalid (i.e. ChimeraTK::VersionNumber::isValid() returns false), if
+      * AccessMode::wait_for_new_data as not been specified. If AccessMode::wait_for_new_data was specified, a valid
+      * version number must be returned (either obtained from the ChimeraTK::VersionNumberSource or derived from an
+      * existing version number e.g. of another variable).
+      */
+      virtual ChimeraTK::VersionNumber getVersionNumber() const {
+        return ChimeraTK::VersionNumber();
+      }
 
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
        *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
