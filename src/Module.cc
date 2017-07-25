@@ -40,7 +40,7 @@ namespace ChimeraTK {
     for(auto accessor : accessorList) {
       if(!accessor.getAppAccessorNoType().isReadable()) continue;
       if(accessor.getMode() == UpdateMode::poll) {
-        accessor.getAppAccessorNoType().readNonBlocking();
+        accessor.getAppAccessorNoType().readLatest();
       }
     }
     
