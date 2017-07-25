@@ -319,10 +319,10 @@ namespace mtca4u {
   /*******************************************************************************************************************/  
 
   // Note: the %iterator in the third line prevents doxygen from creating a link which it cannot resolve.
-  // It reads: std::list<boost::shared_future<void>>::iterator
+  // It reads: std::list<TransferFuture::PlainFutureType>::iterator
   /** Internal class needed for TransferElement::readAny(): Provide a wrapper around the list iterator to effectivly
    *  allow passing std::list<TransferFuture>::iterator to boost::wait_for_any() which otherwise expects e.g.
-   *  std::list<boost::shared_future<void>>::%iterator. This class provides the same interface as an interator of
+   *  std::list<TransferFuture::PlainFutureType>::%iterator. This class provides the same interface as an interator of
    *  the expected type but adds the function getTransferFuture(), so we can obtain the TransferElement from the 
    *  return value of boost::wait_for_any(). */
   class TransferFutureIterator {
@@ -332,8 +332,8 @@ namespace mtca4u {
       TransferFutureIterator operator++(int) { ++_it; return *this; }
       bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
       bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
-      boost::shared_future<void>& operator*() {return (*_it)->getBoostFuture();}
-      boost::shared_future<void>& operator->() {return (*_it)->getBoostFuture();}
+      TransferFuture::PlainFutureType& operator*() {return (*_it)->getBoostFuture();}
+      TransferFuture::PlainFutureType& operator->() {return (*_it)->getBoostFuture();}
       TransferFuture& getTransferFuture() const {return **_it;}
     private:
       std::list<TransferFuture*>::iterator _it;
@@ -343,11 +343,11 @@ namespace mtca4u {
 namespace std {
   template<>
   struct iterator_traits<mtca4u::TransferFutureIterator> {
-      typedef boost::shared_future<void> value_type;
+      typedef ChimeraTK::TransferFuture::PlainFutureType value_type;
       typedef size_t difference_type;
       typedef std::forward_iterator_tag iterator_category;
   };
-}
+} /* namespace std */
 namespace mtca4u {
 
   /*******************************************************************************************************************/  

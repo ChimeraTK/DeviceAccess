@@ -78,9 +78,14 @@ namespace mtca4u {
         if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
         
         // create promise future pair and launch doReadTransfer in separate thread
-        readAsyncPromise = boost::promise<void>();
+        readAsyncPromise = TransferFuture::PromiseType();
         auto boostFuture = readAsyncPromise.get_future().share();
-        readAsyncThread = boost::thread( [this] { doReadTransfer(); readAsyncPromise.set_value(); } );
+        readAsyncThread = boost::thread(
+          [this] {
+            doReadTransfer();
+            readAsyncPromise.set_value(VersionNumberSource::nextVersionNumber());
+          }
+        );
         
         // form TransferFuture, store it for later re-used and return it
         activeFuture = TransferFuture(boostFuture, static_cast<TransferElement*>(this));
@@ -130,7 +135,7 @@ namespace mtca4u {
       boost::thread readAsyncThread;
       
       /// Promise used in readAsync()
-      boost::promise<void> readAsyncPromise;
+      TransferFuture::PromiseType readAsyncPromise;
 
   };
 
