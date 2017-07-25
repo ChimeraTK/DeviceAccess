@@ -65,7 +65,7 @@ namespace ChimeraTK {
         }
       }
 
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         throw std::logic_error("Write operation called on read-only variable.");
       }
       

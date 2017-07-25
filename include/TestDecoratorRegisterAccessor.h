@@ -102,14 +102,14 @@ namespace ChimeraTK {
       virtual ~TestDecoratorRegisterAccessor() {}
       
       
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
         bool dataLost = false;
         preWrite();
         if(!Application::testableModeTestLock()) {
           // may happen if first write in thread is done before first blocking read
           Application::testableModeLock("write "+this->getName());
         }
-        dataLost = _accessor->write();
+        dataLost = _accessor->write(versionNumber);
         if(!dataLost) {
           ++Application::getInstance().testableMode_counter;
           ++Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];

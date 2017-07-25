@@ -50,7 +50,7 @@ namespace ChimeraTK {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
       }
       
-      bool write() override {
+      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         return true;
       }
 
