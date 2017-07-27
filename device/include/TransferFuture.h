@@ -21,7 +21,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 
-#include "VersionNumberSource.h"
+#include "VersionNumber.h"
 #include "DeviceException.h"
 #include "TimeStamp.h"
 

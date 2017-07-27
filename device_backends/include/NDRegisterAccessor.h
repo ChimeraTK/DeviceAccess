@@ -85,7 +85,7 @@ namespace mtca4u {
         readAsyncThread = boost::thread(
           [this] {
             doReadTransfer();
-            transferFutureData._versionNumber = VersionNumberSource::nextVersionNumber();
+            transferFutureData._versionNumber = VersionNumber();
             readAsyncPromise.set_value(&transferFutureData);
           }
         );

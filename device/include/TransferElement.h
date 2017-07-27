@@ -24,7 +24,7 @@
 #include "DeviceException.h"
 #include "TimeStamp.h"
 #include "TransferFuture.h"
-#include "VersionNumberSource.h"
+#include "VersionNumber.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
