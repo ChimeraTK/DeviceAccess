@@ -32,15 +32,39 @@ namespace mtca4u {
 
 namespace ChimeraTK {
 
-  /** Special future returned by TransferElement::readAsync(). See its function description for more details. */
+  /**
+   * Special future returned by TransferElement::readAsync(). See its function description for more details.
+   * 
+   * Due due a bug in BOOST 1.58 (already fixed in later versions, but we need to support this version), it is not
+   * possible to achieve this behaviour with a continuation with a launch policy of boost::launch::deferred, so we have
+   * to live with this wrapper class.
+   * 
+   * Important note: It is strongly recommended to only use those member functions which are present also in
+   * boost::shared_future<void> and use the "auto" keyword for the type where possible. This would simplify a possible
+   * transition to boost::shared_future<void> when support for the buggy BOOST version is no longer required.
+   * 
+   * @todo can we make all other functions private?
+   */
   class TransferFuture {
     public:
       
+      /** Data class for the information transported by the future itself. This class will be extended by backends to
+       *  transport additional information, if needed. */
+      struct Data {
+
+          Data(VersionNumber versionNumber) : _versionNumber(versionNumber) {}
+
+          /** The version number associated with the transferred data. It must be set properly by the backend to allow
+           *  functions like readAny() to sort results properly. */
+          VersionNumber _versionNumber;
+
+      };
+      
       /** Shortcut for the plain boost::shared_future type. */
-      typedef boost::shared_future<VersionNumber::UnderlyingDataType> PlainFutureType;
+      typedef boost::shared_future<Data*> PlainFutureType;
       
       /** Shortcut for the corresponding boost::promise type. */
-      typedef boost::promise<VersionNumber::UnderlyingDataType> PromiseType;
+      typedef boost::promise<Data*> PromiseType;
 
       /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
        *  automatically executed before returning, so the new data is directly available in the buffer. */
@@ -48,7 +72,10 @@ namespace ChimeraTK {
 
       /** Check if new data has arrived. If yes, the TransferElement::postRead() action is automatically
        *  executed before returning, so the new data is directly available in the buffer. Otherwise the buffer
-       *  is kept unchanged and a subsequent call to wait() or hasNewData() is required to obtain the data. */
+       *  is kept unchanged and a subsequent call to wait() or hasNewData() is required to obtain the data.
+       
+          @todo deprecate and replace with wait_for() to make the interface more similar to standard boost futures.
+       */
       bool hasNewData();
 
       /** Default constructor to generate a dysfunctional future (just for late initialisation) */
@@ -56,16 +83,11 @@ namespace ChimeraTK {
       : _transferElement(nullptr) {}
 
       /** Constructor to generate an already fulfilled future. */
-      TransferFuture(mtca4u::TransferElement *transferElement, VersionNumber versionNumber={})
+      TransferFuture(mtca4u::TransferElement *transferElement, Data *data)
       : _transferElement(transferElement) {
-        boost::promise<VersionNumber::UnderlyingDataType> prom;
+        PromiseType prom;
         _theFuture = prom.get_future().share();
-        if(versionNumber.isValid()) {
-          prom.set_value(versionNumber);
-        }
-        else {
-          prom.set_value(VersionNumberSource::nextVersionNumber());
-        }
+        prom.set_value(data);
       }
       
       /** Constructor accepting a "plain" boost::shared_future */

@@ -8,6 +8,8 @@
 #ifndef MTCA4U_N_D_REGISTER_ACCESSOR_H
 #define MTCA4U_N_D_REGISTER_ACCESSOR_H
 
+#include <boost/make_shared.hpp>
+
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
 #include "FixedPointConverter.h"
@@ -83,7 +85,8 @@ namespace mtca4u {
         readAsyncThread = boost::thread(
           [this] {
             doReadTransfer();
-            readAsyncPromise.set_value(VersionNumberSource::nextVersionNumber());
+            transferFutureData._versionNumber = VersionNumberSource::nextVersionNumber();
+            readAsyncPromise.set_value(&transferFutureData);
           }
         );
         
@@ -136,6 +139,9 @@ namespace mtca4u {
       
       /// Promise used in readAsync()
       TransferFuture::PromiseType readAsyncPromise;
+      
+      /// Data transferred in the TransferFuture, used by the default implementation of readAsync()
+      TransferFuture::Data transferFutureData{{}};
 
   };
 
