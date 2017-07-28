@@ -1,15 +1,29 @@
 /**
-\page custom_backends Creating ryour own backend
+\page custom_backends Using and creating custom backends
 
-\section Writing Dummies: Extending the DummyBackend
+\section writing_dummies Writing Dummies: Extending the DummyBackend
 
 Is this a good idea, or would one rather extend the VirtualLabBackend?
 
-\section The Plugin Mechanism
+\section plugin_mechanism The Plugin Mechanism
 
 Custom backends are provided as shared libraries. There is a plugin mechanism which allows
 to load the backend at run time. Like this you can for instance load all kinds of
 backends in QtHardMon, although it has not been linked against it.
+
+\subsection loading_backends Loading custom backends
+
+Custom backends should be loaded in the dmap file using the \c \@LOADLIB keyword, followed by the full path to the .so file with the backend.
+
+\verbatim
+@LOAD_LIB /path/to/your/build_directory/lib/libCustomBackend.so
+
+MY_CUSTOM_DEVICE sdm://./CUSTOM=my_device.map my_device.map
+\endverbatim
+
+Example dmap file from the custom backend registration example (see examples/custom_backend_registration in your build directory).
+
+\subsection writing_backends Writing your own backed
 
 The backend has to fulfil a few requirements for the plugin mechanism to work.
 
