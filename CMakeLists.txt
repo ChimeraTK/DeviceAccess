@@ -107,7 +107,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl) 
+target_link_libraries( ${PROJECT_NAME}  ${LibXML++_LDFLAGS} -Wl,$<IF:$<CXX_COMPILER_ID:Clang>,-all_load,--whole-archive> ${libexception} ${libfileparser} ${libutil}  -Wl,$<IF:$<CXX_COMPILER_ID:Clang>,-noall_load,--no-whole-archive> ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl)
 
 #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")

@@ -130,4 +130,5 @@ foreach( backendTestLibSrcFile ${backendTestLibSources})
   #NAME_WE means the base name without path and (longest) extension
   get_filename_component(libName ${backendTestLibSrcFile} NAME_WE)
   add_library(${libName} SHARED ${backendTestLibSrcFile})
+  target_link_libraries(${libName} ${PROJECT_NAME})
 endforeach()
