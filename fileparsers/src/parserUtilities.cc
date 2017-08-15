@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "parserUtilities.h"
@@ -13,7 +14,7 @@ namespace mtca4u{
     static std::string appendForwardSlash(const std::string& path);
     
     std::string getCurrentWorkingDirectory() {
-      char* currentWorkingDir = get_current_dir_name();
+      char* currentWorkingDir = getcwd(nullptr, 0);
       if (currentWorkingDir == nullptr) {
         throw std::runtime_error("Could not get the current working directory");
       }
