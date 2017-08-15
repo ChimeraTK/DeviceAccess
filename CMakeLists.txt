@@ -86,7 +86,7 @@ get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIR
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
-if(PLATFORM_ID STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(HAVE_PCIE_BACKEND 1)
   add_definitions(-DCHIMERATK_HAVE_PCIE_BACKEND)
 else()
