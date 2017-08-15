@@ -84,6 +84,15 @@ include_directories("${PROJECT_BINARY_DIR}/generated_include")
 # Only these include directories should be copied for examples. 
 get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
+# The PCIe backend can only be built on Linux, so we define a variable here that
+# we can then use in other places.
+if(PLATFORM_ID STREQUAL "Linux")
+  set(HAVE_PCIE_BACKEND 1)
+  add_definitions(-DCHIMERATK_HAVE_PCIE_BACKEND)
+else()
+  set(HAVE_PCIE_BACKEND 0)
+endif()
+
 # Now add other includes; headers added after this point will  not be copied as
 # part of the installation
 include_directories(${Boost_INCLUDE_DIRS} ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
