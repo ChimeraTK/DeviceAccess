@@ -2,12 +2,12 @@ set(SOURCE
    ${SOURCE}
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackendImpl.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc
+   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc>
    ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackendRegisterAccessor.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc
+   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc>
    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackend.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/TcpCtrl.cc
@@ -29,10 +29,10 @@ set(HEADERS
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendChannelAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendVariableAccessor.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h
+   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h>
    ${CMAKE_CURRENT_SOURCE_DIR}/include/LogicalNameMappingBackend.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyBackend.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackendException.h
+   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackendException.h>
    ${CMAKE_CURRENT_SOURCE_DIR}/include/llrfdrv_io_compat.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/pciedev_io.h
    ${CMAKE_CURRENT_SOURCE_DIR}/include/pcieuni_io_compat.h

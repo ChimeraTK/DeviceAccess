@@ -11,7 +11,9 @@
 #include "BackendFactory.h"
 #include "MapFileParser.h"
 #include "RebotBackend.h"
+#ifdef CHIMERATK_HAVE_PCIE_BACKEND
 #include "PcieBackend.h"
+#endif
 #include "DummyBackend.h"
 #include "LogicalNameMappingBackend.h"
 #include "DMapFileParser.h"
@@ -57,8 +59,10 @@ namespace ChimeraTK {
   }
 
   BackendFactory::BackendFactory(){
+#ifdef CHIMERATK_HAVE_PCIE_BACKEND
     registerBackendType("pci","",&PcieBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("pci","pcie",&PcieBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+#endif
     registerBackendType("dummy","",&DummyBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("rebot","",&RebotBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);

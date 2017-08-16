@@ -84,6 +84,15 @@ include_directories("${PROJECT_BINARY_DIR}/generated_include")
 # Only these include directories should be copied for examples. 
 get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
+# The PCIe backend can only be built on Linux, so we define a variable here that
+# we can then use in other places.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(HAVE_PCIE_BACKEND 1)
+  add_definitions(-DCHIMERATK_HAVE_PCIE_BACKEND)
+else()
+  set(HAVE_PCIE_BACKEND 0)
+endif()
+
 # Now add other includes; headers added after this point will  not be copied as
 # part of the installation
 include_directories(${Boost_INCLUDE_DIRS} ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
@@ -107,7 +116,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries( ${PROJECT_NAME}  -Wl,--whole-archive ${libexception} ${libfileparser} ${libutil}  -Wl,--no-whole-archive ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl) 
+target_link_libraries( ${PROJECT_NAME}  ${LibXML++_LDFLAGS} -Wl,$<$<CXX_COMPILER_ID:Clang>:-all_load>$<$<NOT:$<CXX_COMPILER_ID:Clang>>:--whole-archive> ${libexception} ${libfileparser} ${libutil}  -Wl,$<$<CXX_COMPILER_ID:Clang>:-noall_load>$<$<NOT:$<CXX_COMPILER_ID:Clang>>:--no-whole-archive> ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl)
 
 #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")

@@ -10,6 +10,7 @@ foreach( SOURCE_FILE ${LIBRARY_SOURCE_FILES} )
   get_filename_component(TARGET ${SOURCE_FILE} NAME_WE)
 #  link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
   add_library(${TARGET} SHARED ${SOURCE_FILE})
+  target_link_libraries(${TARGET} ${PROJECT_NAME})
 endforeach()
 
 #cpp files are the source for tests
