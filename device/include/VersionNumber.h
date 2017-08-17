@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <string>
 
 namespace ChimeraTK {
 
@@ -53,7 +54,13 @@ namespace ChimeraTK {
       bool operator<=(const VersionNumber &other) {
         return _value <= other._value;
       }
-    
+      
+      /** Conversion into a human readable std::string to allow e.g. printing the version number on screen. Do not try
+       *  to parse the string in any way, the exact format is unspecified. */
+      operator std::string() const {
+        return std::string("v") + std::to_string(_value);
+      }
+
     private:
     
       /**
