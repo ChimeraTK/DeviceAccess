@@ -268,9 +268,9 @@ void VersionNumberTest::testThreadedCreation() {
   std::cout << "Filling lists of VersionNumbers..." << std::endl;
 
   std::thread t([this]{
-    for(int i=0; i<3000; ++i) this->listA.push_back(VersionNumber());
+    for(int i=0; i<1000; ++i) this->listA.push_back(VersionNumber());
   });
-  for(int i=0; i<3000; ++i) listB.push_back(VersionNumber());
+  for(int i=0; i<1000; ++i) listB.push_back(VersionNumber());
   t.join();
 
   std::cout << "Now comparing all pairs of elements in the lists..." << std::endl;
