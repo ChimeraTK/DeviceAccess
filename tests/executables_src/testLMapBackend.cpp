@@ -73,7 +73,9 @@ void LMapBackendTest::testExceptions() {
   
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device;
+  BOOST_CHECK(device.isOpened() == false);
   device.open("LMAP0");
+  BOOST_CHECK(device.isOpened() == true);
   int data = 0;
 
   BOOST_CHECK_THROW(device.getRegisterMap(), mtca4u::DeviceException);
@@ -115,7 +117,9 @@ void LMapBackendTest::testExceptions() {
   catch(mtca4u::DeviceException &e) {
     BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
   }
+  BOOST_CHECK(device.isOpened() == true);
   device.close();
+  BOOST_CHECK(device.isOpened() == false);
   
 }
 

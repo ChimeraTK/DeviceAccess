@@ -68,6 +68,8 @@ namespace mtca4u {
       if (!device->second->isOpen())
         device->second->open();
     }
+    // flag as opened
+    _opened = true;
   }
 
   /********************************************************************************************************************/
@@ -79,6 +81,8 @@ namespace mtca4u {
       if (device->second->isOpen())
         device->second->close();
     }
+    // flag as closed
+    _opened = false;
   }
 
   /********************************************************************************************************************/
