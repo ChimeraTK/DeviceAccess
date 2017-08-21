@@ -27,13 +27,11 @@ class AsyncTestDummy : public DummyBackend {
     }
     
     void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) override {
-      std::cout << "BEGIN read " << address << std::endl;
       while(!readMutex.at(address).try_lock_for(std::chrono::milliseconds(100))) {
         boost::this_thread::interruption_point();
       }
       DummyBackend::read(bar,address,data,sizeInBytes);
       readMutex.at(address).unlock();
-      std::cout << "END read " << address << std::endl;
     }
     
     std::map<int, std::timed_mutex> readMutex;
@@ -301,6 +299,97 @@ void AsyncReadTest::testReadAny() {
     thread.join();
     BOOST_CHECK( a3 == 122 );
     backend->readMutex[0x20].lock();
+  }
+
+  // register 1 and then register 2 (order should be guaranteed)
+  {
+    // write to register 1 and launch the asynchronous read on it - but only wait on the underlying BOOST future
+    // so postRead() is not yet called.
+    dummy1 = 55;
+    backend->readMutex[0x10].unlock();
+    TransferFuture &f1 = a1.readAsync();
+    f1.getBoostFuture().wait();
+    backend->readMutex[0x10].lock();
+    
+    // same with register 2
+    dummy2 = 66;
+    backend->readMutex[0x14].unlock();
+    TransferFuture &f2 = a2.readAsync();
+    f2.getBoostFuture().wait();
+    backend->readMutex[0x14].lock();
+    f1.getBoostFuture().wait();
+    f2.getBoostFuture().wait();
+    
+    // no point to use a thread here
+    auto r = TransferElement::readAny({a1,a2,a3,a4});
+    BOOST_CHECK(a1.isSameRegister(r));
+    BOOST_CHECK(a1 == 55);
+    BOOST_CHECK(a2 == 123);
+
+    r = TransferElement::readAny({a1,a2,a3,a4});
+    BOOST_CHECK(a2.isSameRegister(r));
+    BOOST_CHECK(a1 == 55);
+    BOOST_CHECK(a2 == 66);
+  }
+
+  // registers in order: 4, 2, 3 and 1
+  {
+    // register 4 (see above for explanation)
+    dummy4 = 11;
+    backend->readMutex[0x24].unlock();
+    TransferFuture &f4 = a4.readAsync();
+    f4.getBoostFuture().wait();
+    backend->readMutex[0x24].lock();
+    
+    // register 2
+    dummy2 = 22;
+    backend->readMutex[0x14].unlock();
+    TransferFuture &f2 = a2.readAsync();
+    f2.getBoostFuture().wait();
+    backend->readMutex[0x14].lock();
+    
+    // register 3
+    dummy3 = 33;
+    backend->readMutex[0x20].unlock();
+    TransferFuture &f3 = a3.readAsync();
+    f3.getBoostFuture().wait();
+    backend->readMutex[0x20].lock();
+    
+    // register 1
+    dummy1 = 44;
+    backend->readMutex[0x10].unlock();
+    TransferFuture &f1 = a1.readAsync();
+    f1.getBoostFuture().wait();
+    backend->readMutex[0x10].lock();
+
+    // no point to use a thread here
+    auto r = TransferElement::readAny({a1,a2,a3,a4});
+    BOOST_CHECK(a4.isSameRegister(r));
+    BOOST_CHECK(a1 == 55);
+    BOOST_CHECK(a2 == 66);
+    BOOST_CHECK(a3 == 122);
+    BOOST_CHECK(a4 == 11);
+
+    r = TransferElement::readAny({a1,a2,a3,a4});
+    BOOST_CHECK(a2.isSameRegister(r));
+    BOOST_CHECK(a1 == 55);
+    BOOST_CHECK(a2 == 22);
+    BOOST_CHECK(a3 == 122);
+    BOOST_CHECK(a4 == 11);
+
+    r = TransferElement::readAny({a1,a2,a3,a4});
+    BOOST_CHECK(a3.isSameRegister(r));
+    BOOST_CHECK(a1 == 55);
+    BOOST_CHECK(a2 == 22);
+    BOOST_CHECK(a3 == 33);
+    BOOST_CHECK(a4 == 11);
+
+    r = TransferElement::readAny({a1,a2,a3,a4});
+    BOOST_CHECK(a1.isSameRegister(r));
+    BOOST_CHECK(a1 == 44);
+    BOOST_CHECK(a2 == 22);
+    BOOST_CHECK(a3 == 33);
+    BOOST_CHECK(a4 == 11);
   }
 
   device.close();

@@ -116,12 +116,13 @@ namespace mtca4u {
       
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
-       *  need to call read() or readNonBlocking() (which would trigger another data transfer). Any call to read(),
-       *  readNonBlocking() or write() is illegal until the future has been fulfilled (and this fact has been noted
-       *  by calling e.g. TransferFuture::wait()).
+       *  need to call read() or readNonBlocking() (which would trigger another data transfer). 
        * 
        *  It is allowed to call this function multiple times, which will return the same (shared) future until it
-       *  is fulfilled.
+       *  is fulfilled. If other read functions (like read() or readNonBlocking()) are called before the future
+       *  previously returned by this function was fulfilled, that call will be equivalent to the respective call
+       *  on the future (i.e. TransferFuture::wait() resp. TransferFuture::hasNewData()) and thus the future will
+       *  hae been used afterwards.
        * 
        *  The future will be fulfilled at the time when normally read() would return. A call to this function is
        *  roughly logically equivalent to:
@@ -148,10 +149,11 @@ namespace mtca4u {
       }
 
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
-       *  new data. The TransferElement which received new data is returned as a reference. When this function
-       *  returns, the all elements but the returned TransferElement still have a pending transfer, thus calling
-       *  read() or write() and similar functions on them is illegal. Only their current values may be accessed,
-       *  another readAny() or readAsync() may be called. */
+       *  new data. The TransferElement which received new data is returned as a reference. In case multiple
+       *  TransferElements receive new data simultaneously (or already have new data available before the call to
+       *  readAny()), the TransferElement with the oldest VersionNumber (see getVersionNumber()) will be returned
+       *  by this function. This ensures that data is received in the order of sending (unless data is "dated back"
+       *  and sent with an older version number, which might be the case e.g. when using the ControlSystemAdapter). */
       static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /**
@@ -358,13 +360,30 @@ namespace mtca4u {
       auto *future = &(elem.get().readAsync());
       futureList.push_back(future);
     }
-    // See class description of TransferFutureIterator. We need this trick to obtain the transfer element from the
-    // returned iterator.
+    // wait until any future is ready
     auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
-    boost::this_thread::interruption_point();
-    iter.getTransferFuture().wait();    // complete the transfer (i.e. run postRead())
-    boost::this_thread::interruption_point();
-    return iter.getTransferFuture().getTransferElement().shared_from_this();
+
+    // Find the variable which has the oldest version number (to guarantee the order of updates).
+    // Start with assuming that the future returned by boost::wait_for_any() has the oldes version number.
+    TransferFuture *theUpdate = &(iter.getTransferFuture());
+    for(auto future : futureList) {
+      // skip if this is the future returned by boost::wait_for_any()
+      if(future == theUpdate) continue;
+      // also skip if the future is not yet ready
+      if(future->getBoostFuture().wait_for(boost::chrono::duration<int, boost::centi>(0)) == boost::future_status::timeout) {
+        continue;
+      }
+      // compare  version number with the version number of the stored future
+      if(future->getBoostFuture().get()->_versionNumber < theUpdate->getBoostFuture().get()->_versionNumber) {
+        theUpdate = future;
+      }
+    }
+    
+    // complete the transfer (i.e. run postRead())
+    theUpdate->wait();
+
+    // return the transfer element as a shared pointer
+    return theUpdate->getTransferElement().shared_from_this();
   }
 
 } /* namespace mtca4u */
