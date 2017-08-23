@@ -1,7 +1,7 @@
 /*
- * VariableGroup.cc
+ * ModuleGroup.cc
  *
- *  Created on: Jun 27, 2016
+ *  Created on: Aug 23, 2017
  *      Author: Martin Hierholzer
  */
 
@@ -9,15 +9,16 @@
 
 namespace ChimeraTK {
 
-  VariableGroup::VariableGroup(EntityOwner *owner, const std::string &name, const std::string &description,
+  ModuleGroup::ModuleGroup(EntityOwner *owner, const std::string &name, const std::string &description,
           bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
   : Module(owner,name,description,eliminateHierarchy,tags)
   {
-    if(!dynamic_cast<ApplicationModule*>(owner) && !dynamic_cast<VariableGroup*>(owner)) {
+    if(!dynamic_cast<Application*>(owner) && !dynamic_cast<ModuleGroup*>(owner)) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-        "VariableGroups must be owned either by ApplicationModule or other VariableGroups!");
+        "ModuleGroups must be owned either by the Application or other ModuleGroups!");
     }
   }
 
 } /* namespace ChimeraTK */
+
 

@@ -17,4 +17,6 @@
 #include "DeviceModule.h"
 #include "ControlSystemModule.h"
 #include "VariableGroup.h"
+#include "ModuleGroup.h"
 #include "VirtualModule.h"
+#include "ApplicationException.h"

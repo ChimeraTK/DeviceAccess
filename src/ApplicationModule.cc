@@ -5,10 +5,23 @@
  *      Author: Martin Hierholzer
  */
 
-#include "ApplicationModule.h"
-#include "Application.h"
+#include "ApplicationCore.h"
 
 namespace ChimeraTK {
+
+/*********************************************************************************************************************/
+
+  ApplicationModule::ApplicationModule(EntityOwner *owner, const std::string &name, const std::string &description,
+          bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
+  : Module(owner,name,description,eliminateHierarchy,tags)
+  {
+    if(!dynamic_cast<ModuleGroup*>(owner) && !dynamic_cast<Application*>(owner)) {
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+        "ApplicationModules must be owned either by ModuleGroups or the Application!");
+    }
+  }
+
+/*********************************************************************************************************************/
 
   void ApplicationModule::run() {
 
