@@ -46,11 +46,13 @@ namespace ChimeraTK {
         _accessor->postRead();
         _accessor->hasActiveFuture = false;
         Application::testableModeLock("TransferFuture "+_accessor->getName());
+        assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
+        assert(Application::getInstance().testableMode_counter > 0);
         --Application::getInstance().testableMode_counter;
         --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorTransferFuture::wait[name='"<<_accessor->getName()<<"']: testableMode_counter decreased, now at value "
-                    << Application::getInstance().testableMode_counter << std::endl; 
+                    << Application::getInstance().testableMode_counter << " / " << Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] << std::endl; 
         }
       }
 
@@ -137,11 +139,13 @@ namespace ChimeraTK {
         }
         _accessor->doReadTransfer();
         Application::testableModeLock("doReadTransfer "+this->getName());
+        assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
+        assert(Application::getInstance().testableMode_counter > 0);
         --Application::getInstance().testableMode_counter;
         --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
         if(Application::getInstance().enableDebugTestableMode) {
           std::cout << "TestDecoratorRegisterAccessor::doReadTransfer[name='"<<this->getName()<<"']: testableMode_counter "
-                       "decreased, now at value " << Application::getInstance().testableMode_counter << std::endl; 
+                       "decreased, now at value " << Application::getInstance().testableMode_counter << " / " << Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] << std::endl; 
         }
       }
 
@@ -153,6 +157,7 @@ namespace ChimeraTK {
         bool retval = _accessor->doReadTransferLatest();
 
         // the queue has been emptied, so make sure that the testableMode_counter reflects this
+        assert(Application::testableModeTestLock());
         auto &app = Application::getInstance();
         app.testableMode_counter -= app.testableMode_perVarCounter[_accessor->getUniqueId()];
         app.testableMode_perVarCounter[_accessor->getUniqueId()] = 0;
