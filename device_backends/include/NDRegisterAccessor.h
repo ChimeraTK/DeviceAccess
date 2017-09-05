@@ -34,10 +34,28 @@ namespace mtca4u {
         
       /** A virtual base class needs a virtual destructor */
       virtual ~NDRegisterAccessor() {
+        // This is a requirement to all implementations: call shutdown() in the destructor!
+        assert(shutdownCalled);
+      }
+      
+      /**
+       * All implementations must call this function in their destructor. Also, implementations must call it in their
+       * constructors before throwing an exception (hint: put catch-all block around the entired constructor, call
+       * shutdown() there and then rethrow the exception).
+       * 
+       * Implementation note: This function call is necessary to ensure that a potentially still-running thread
+       * launched in readAsync() is properly terminated before destroying the accessor object. Since this thread
+       * accesses virtual functions like doReadTransfer(), the full accessor object must still be alive, thus shutting
+       * down the thread in the base class destructor is too late. Technically, implementations overriding readAsync()
+       * would not need to call this function, but to make sure all implementations which do not override readAsync()
+       * actually call it, the function call is enforced for all implementations in the destructor with an assert.
+       */
+      void shutdown() {
         if(readAsyncThread.joinable()) {
           readAsyncThread.interrupt();
           readAsyncThread.join();
         }
+        shutdownCalled = true;
       }
 
       /** Get or set register accessor's buffer content (1D version).
@@ -142,6 +160,11 @@ namespace mtca4u {
       
       /// Data transferred in the TransferFuture, used by the default implementation of readAsync()
       TransferFuture::Data transferFutureData{{}};
+      
+  private:
+    
+      /// Flag whether shutdown() has been called or not
+      bool shutdownCalled{false};
 
   };
 

@@ -30,58 +30,66 @@ namespace mtca4u {
         _registerPathName(registerPathName),
         _numberOfWords(numberOfWords)
       {
-        // check for unknown flags
-        flags.checkForUnknownFlags({AccessMode::raw});
+        try {
+          // check for unknown flags
+          flags.checkForUnknownFlags({AccessMode::raw});
 
-        // check device backend
-        _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
-        if(!_dev) {
-          throw DeviceException("MemoryAddressedBackendBufferingRegisterAccessor is used with a backend which is not "
-              "a MemoryAddressedBackend.", DeviceException::WRONG_PARAMETER);
-        }
-
-        // obtain register information
-        boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
-        _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
-        _bar = _registerInfo->bar;
-        _startAddress = _registerInfo->address + wordOffsetInRegister*sizeof(int32_t);
-
-        // check number of words
-        if(_numberOfWords == 0) {
-          _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
-        }
-        if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
-          throw DeviceException("Requested number of words exceeds the size of the register!",
-              DeviceException::WRONG_PARAMETER);
-        }
-        if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
-          throw DeviceException("Requested offset exceeds the size of the register!",
-              DeviceException::WRONG_PARAMETER);
-        }
-
-        // create low-level transfer element handling the actual data transfer to the hardware with raw data
-        _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev,_bar,_startAddress,_numberOfWords));
-
-        // allocated the buffers
-        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
-
-        // configure fixed point converter
-        if(!flags.has(AccessMode::raw)) {
-          _fixedPointConverter = FixedPointConverter(_registerPathName, _registerInfo->width, _registerInfo->nFractionalBits,
-              _registerInfo->signedFlag);
-        }
-        else {
-          if(typeid(UserType) != typeid(int32_t)) {
-            throw DeviceException("Given UserType when obtaining the BufferingRegisterAccessor in raw mode does not "
-                "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
+          // check device backend
+          _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
+          if(!_dev) {
+            throw DeviceException("MemoryAddressedBackendBufferingRegisterAccessor is used with a backend which is not "
+                "a MemoryAddressedBackend.", DeviceException::WRONG_PARAMETER);
           }
-          _fixedPointConverter = FixedPointConverter(_registerPathName, 32, 0, true);
-          isRaw = true;
+
+          // obtain register information
+          boost::shared_ptr<RegisterInfo> info = _dev->getRegisterInfo(registerPathName);
+          _registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+          _bar = _registerInfo->bar;
+          _startAddress = _registerInfo->address + wordOffsetInRegister*sizeof(int32_t);
+
+          // check number of words
+          if(_numberOfWords == 0) {
+            _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
+          }
+          if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
+            throw DeviceException("Requested number of words exceeds the size of the register!",
+                DeviceException::WRONG_PARAMETER);
+          }
+          if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
+            throw DeviceException("Requested offset exceeds the size of the register!",
+                DeviceException::WRONG_PARAMETER);
+          }
+
+          // create low-level transfer element handling the actual data transfer to the hardware with raw data
+          _rawAccessor.reset(new NumericAddressedLowLevelTransferElement(_dev,_bar,_startAddress,_numberOfWords));
+
+          // allocated the buffers
+          NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+          NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
+
+          // configure fixed point converter
+          if(!flags.has(AccessMode::raw)) {
+            _fixedPointConverter = FixedPointConverter(_registerPathName, _registerInfo->width, _registerInfo->nFractionalBits,
+                _registerInfo->signedFlag);
+          }
+          else {
+            if(typeid(UserType) != typeid(int32_t)) {
+              throw DeviceException("Given UserType when obtaining the BufferingRegisterAccessor in raw mode does not "
+                  "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
+            }
+            _fixedPointConverter = FixedPointConverter(_registerPathName, 32, 0, true);
+            isRaw = true;
+          }
+        }
+        catch(...) {
+          this->shutdown();
+          throw;
         }
       }
 
-      virtual ~NumericAddressedBackendRegisterAccessor() {};
+      virtual ~NumericAddressedBackendRegisterAccessor() {
+        this->shutdown();
+      };
 
       void doReadTransfer() override {
         _rawAccessor->read();

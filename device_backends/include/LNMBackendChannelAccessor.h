@@ -29,37 +29,43 @@ namespace mtca4u {
       : NDRegisterAccessor<UserType>(registerPathName),
         _registerPathName(registerPathName)
       {
-        // check for unknown flags
-        flags.checkForUnknownFlags({AccessMode::raw});
-        // check for illegal parameter combinations
-        if(flags.has(AccessMode::raw)) {
-          throw DeviceException("LNMBackendChannelAccessor: raw access not yet supported!", DeviceException::NOT_IMPLEMENTED);
+        try {
+          // check for unknown flags
+          flags.checkForUnknownFlags({AccessMode::raw});
+          // check for illegal parameter combinations
+          if(flags.has(AccessMode::raw)) {
+            throw DeviceException("LNMBackendChannelAccessor: raw access not yet supported!", DeviceException::NOT_IMPLEMENTED);
+          }
+          _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+          // copy the register info and create the internal accessors, if needed
+          _info = *( boost::static_pointer_cast<LNMBackendRegisterInfo>(
+              _dev->getRegisterCatalogue().getRegister(_registerPathName)) );
+          _info.createInternalAccessors(dev);
+          // check for incorrect usage of this accessor
+          if( _info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL ) {
+            throw DeviceException("LNMBackendChannelAccessor used for wrong register type.",
+                DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+          }
+          // get target device and accessor
+          std::string devName = _info.deviceName;
+          if(devName != "this") {
+            _targetDevice = _dev->_devices[devName];
+          }
+          else {
+            _targetDevice = dev;
+          }
+          _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
+          // allocate the buffer
+          NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+          NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
         }
-        _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
-        // copy the register info and create the internal accessors, if needed
-        _info = *( boost::static_pointer_cast<LNMBackendRegisterInfo>(
-            _dev->getRegisterCatalogue().getRegister(_registerPathName)) );
-        _info.createInternalAccessors(dev);
-        // check for incorrect usage of this accessor
-        if( _info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL ) {
-          throw DeviceException("LNMBackendChannelAccessor used for wrong register type.",
-              DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+        catch(...) {
+          this->shutdown();
+          throw;
         }
-        // get target device and accessor
-        std::string devName = _info.deviceName;
-        if(devName != "this") {
-          _targetDevice = _dev->_devices[devName];
-        }
-        else {
-          _targetDevice = dev;
-        }
-        _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
-        // allocate the buffer
-        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
-      virtual ~LNMBackendChannelAccessor() {};
+      virtual ~LNMBackendChannelAccessor() { this->shutdown(); };
 
       void doReadTransfer() override {
         _accessor->read();
