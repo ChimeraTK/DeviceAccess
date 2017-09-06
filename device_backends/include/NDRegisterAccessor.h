@@ -85,6 +85,8 @@ namespace mtca4u {
         readAsyncThread = boost::thread(
           [this] {
             doReadTransfer();
+            // Do not call postRead() here. This thread is not allowed to touch the user space buffers.
+            // postRead() will be called in the user thread in TransferFuture::wait().
             transferFutureData._versionNumber = VersionNumber();
             readAsyncPromise.set_value(&transferFutureData);
           }
