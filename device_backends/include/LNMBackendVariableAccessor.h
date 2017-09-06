@@ -30,35 +30,41 @@ namespace mtca4u {
         _registerPathName(registerPathName),
         _fixedPointConverter(registerPathName, 32, 0, 1)
       {
-        // check for unknown flags
-        flags.checkForUnknownFlags({AccessMode::raw});
-        // check for illegal parameter combinations
-        if(wordOffsetInRegister != 0 || numberOfWords > 1) {
-          throw DeviceException("LNMBackendBufferingVariableAccessor: offset and number of words not "
-              "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
-        }
-        if(flags.has(AccessMode::raw)) {
-          if(typeid(UserType) != typeid(int32_t)) {
-            throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
-                " does not match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
+        try {
+          // check for unknown flags
+          flags.checkForUnknownFlags({AccessMode::raw});
+          // check for illegal parameter combinations
+          if(wordOffsetInRegister != 0 || numberOfWords > 1) {
+            throw DeviceException("LNMBackendBufferingVariableAccessor: offset and number of words not "
+                "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
           }
+          if(flags.has(AccessMode::raw)) {
+            if(typeid(UserType) != typeid(int32_t)) {
+              throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
+                  " does not match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
+            }
+          }
+          _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
+          // obtain the register info
+          _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
+              _dev->getRegisterCatalogue().getRegister(_registerPathName));
+          // check for incorrect usage of this accessor
+          if( _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT &&
+              _info->targetType != LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
+            throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
+                DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+          }
+          NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+          NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
+          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(_info->value);
         }
-        _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
-        // obtain the register info
-        _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
-            _dev->getRegisterCatalogue().getRegister(_registerPathName));
-        // check for incorrect usage of this accessor
-        if( _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT &&
-            _info->targetType != LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
-          throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
-              DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+        catch(...) {
+          this->shutdown();
+          throw;
         }
-        NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(_info->value);
       }
 
-      virtual ~LNMBackendVariableAccessor() {};
+      virtual ~LNMBackendVariableAccessor() { this->shutdown(); };
 
       void doReadTransfer() override {}
 

@@ -34,12 +34,18 @@ namespace mtca4u {
           DynamicValue<double> scalingFactor)
       : _accessor(accessor), _scalingFactor(scalingFactor)
       {
-        // reserve space for cooked buffer
-        NDRegisterAccessor<UserType>::buffer_2D.resize(_accessor->getNumberOfChannels());
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
+        try {
+          // reserve space for cooked buffer
+          NDRegisterAccessor<UserType>::buffer_2D.resize(_accessor->getNumberOfChannels());
+          NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
+        }
+        catch(...) {
+          this->shutdown();
+          throw;
+        }
       }
 
-      virtual ~ScaleRegisterPluginRegisterAccessor() {};
+      virtual ~ScaleRegisterPluginRegisterAccessor() { this->shutdown(); };
 
       void postRead() override {
         // apply scaling factor while copying buffer from underlying accessor to our buffer

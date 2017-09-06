@@ -29,7 +29,9 @@ namespace mtca4u {
       NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfElements, size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend );
 
-      virtual ~NumericAddressedBackendMuxedRegisterAccessor() {}
+      virtual ~NumericAddressedBackendMuxedRegisterAccessor() {
+        this->shutdown();
+      }
 
       void doReadTransfer() override;
 
@@ -122,6 +124,7 @@ namespace mtca4u {
     _numberOfElements(numberOfElements),
     _elementsOffset(elementsOffset)
   {
+    try {
       // re-split register and module after merging names by the last dot (to allow module.register in the register name)
       _registerPathName.setAltSeparator(".");
       auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
@@ -218,6 +221,11 @@ namespace mtca4u {
 
       // allocate the raw io buffer
       _ioBuffer.resize(_nBytes/sizeof(int32_t));
+    }
+    catch(...) {
+      this->shutdown();
+      throw;
+    }
   }
 
   /********************************************************************************************************************/

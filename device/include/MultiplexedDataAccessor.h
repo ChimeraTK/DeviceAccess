@@ -24,6 +24,8 @@ namespace mtca4u {
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
         MultiplexedDataAccessor<UserType>::buffer_2D = accessor->buffer_2D;
       }
+      
+      virtual ~MultiplexedDataAccessor() { this->shutdown(); }
 
       /** \deprecated
        * Do not use, only for backwards compatibility.
@@ -86,11 +88,6 @@ namespace mtca4u {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
         return accessor->write(versionNumber);
       }
-
-      /**
-       * Default destructor
-       */
-      virtual ~MultiplexedDataAccessor() {}
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {// LCOV_EXCL_LINE
         return accessor->isSameRegister(other);// LCOV_EXCL_LINE
