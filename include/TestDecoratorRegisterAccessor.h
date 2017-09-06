@@ -81,7 +81,7 @@ namespace ChimeraTK {
       TestDecoratorRegisterAccessor<UserType> *_accessor;
   };
 
-  /*******************************************************************************************************************/
+  /*********************************************************getTwoDRegisterAccessor**********************************************************/
   
   /** Decorator of the NDRegisterAccessor which facilitates tests of the application */
   template<typename UserType>
@@ -89,19 +89,25 @@ namespace ChimeraTK {
     public:
       TestDecoratorRegisterAccessor(boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> accessor)
       : mtca4u::NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()),
-        _accessor(accessor) {
-
-        // initialise buffers
-        buffer_2D.resize(_accessor->getNumberOfChannels());
-        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
-        
-        // if receiving end, register for testable mode (stall detection)
-        if(isReadable()) {
-          Application::getInstance().testableMode_processVars[getUniqueId()] = accessor;
+        _accessor(accessor)
+      {
+        try {
+          // initialise buffers
+          buffer_2D.resize(_accessor->getNumberOfChannels());
+          for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
+          
+          // if receiving end, register for testable mode (stall detection)
+          if(isReadable()) {
+            Application::getInstance().testableMode_processVars[getUniqueId()] = accessor;
+          }
+        }
+        catch(...) {
+          this->shutdown();
+          throw;
         }
       }
       
-      virtual ~TestDecoratorRegisterAccessor() {}
+      virtual ~TestDecoratorRegisterAccessor() { this->shutdown(); }
       
       
       bool write(ChimeraTK::VersionNumber versionNumber={}) override {

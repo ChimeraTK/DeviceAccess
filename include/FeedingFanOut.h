@@ -27,8 +27,18 @@ namespace ChimeraTK {
       : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()),
         mtca4u::NDRegisterAccessor<UserType>(name, unit, description)
       {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
+        try {
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
+        }
+        catch(...) {
+          this->shutdown();
+          throw;
+        }
+      }
+      
+      ~FeedingFanOut() {
+        this->shutdown();
       }
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */

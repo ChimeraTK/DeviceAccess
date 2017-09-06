@@ -21,8 +21,18 @@ namespace ChimeraTK {
       ConstantAccessor(UserType value=0, size_t length=1)
       : _value(length, value)
       {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+        try {
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+        }
+        catch(...) {
+          this->shutdown();
+          throw;
+        }
+      }
+      
+      ~ConstantAccessor() {
+        this->shutdown();
       }
       
       void doReadTransfer() override {

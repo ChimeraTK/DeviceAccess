@@ -24,10 +24,20 @@ namespace ChimeraTK {
       ConsumingFanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
       : FanOut<UserType>(feedingImpl)
       {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( feedingImpl->getNumberOfChannels() );
-        for(size_t i=0; i<feedingImpl->getNumberOfChannels(); i++) {
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( feedingImpl->getNumberOfSamples() );
+        try {
+          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( feedingImpl->getNumberOfChannels() );
+          for(size_t i=0; i<feedingImpl->getNumberOfChannels(); i++) {
+            mtca4u::NDRegisterAccessor<UserType>::buffer_2D[i].resize( feedingImpl->getNumberOfSamples() );
+          }
         }
+        catch(...) {
+          this->shutdown();
+          throw;
+        }
+      }
+      
+      ~ConsumingFanOut() {
+        this->shutdown();
       }
 
       bool isReadable() const override {
