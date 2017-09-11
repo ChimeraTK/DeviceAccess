@@ -16,7 +16,7 @@ namespace mtca4u {
     public:
 
       MultiplexedDataAccessor( boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor )
-      : accessor(_accessor)
+      : NDRegisterAccessor<UserType>(_accessor->getName(), _accessor->getUnit(), _accessor->getDescription()), accessor(_accessor)
       {
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
         std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE

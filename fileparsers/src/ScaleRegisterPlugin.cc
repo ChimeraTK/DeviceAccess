@@ -32,7 +32,7 @@ namespace mtca4u {
       /** The constructor takes the original accessor and the scaling factor as arguments */
       ScaleRegisterPluginRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > accessor,
           DynamicValue<double> scalingFactor)
-      : _accessor(accessor), _scalingFactor(scalingFactor)
+      : NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()), _accessor(accessor), _scalingFactor(scalingFactor)
       {
         try {
           // reserve space for cooked buffer
