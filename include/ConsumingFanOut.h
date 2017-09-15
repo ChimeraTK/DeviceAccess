@@ -22,7 +22,7 @@ namespace ChimeraTK {
     public:
       
       ConsumingFanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
-      : FanOut<UserType>(feedingImpl)
+        : FanOut<UserType>(feedingImpl), mtca4u::NDRegisterAccessor<UserType>(feedingImpl->getName(), feedingImpl->getUnit(), feedingImpl->getDescription())
       {
         try {
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize( feedingImpl->getNumberOfChannels() );

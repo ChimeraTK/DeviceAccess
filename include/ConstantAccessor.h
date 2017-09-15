@@ -19,7 +19,7 @@ namespace ChimeraTK {
     public:
 
       ConstantAccessor(UserType value=0, size_t length=1)
-      : _value(length, value)
+        : mtca4u::NDRegisterAccessor<UserType>("UnnamedConstantAccessor"), _value(length, value)
       {
         try {
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
