@@ -109,6 +109,12 @@ namespace ChimeraTK {
       
       /** Print the full hierarchy to stdout. */
       void dump(const std::string &prefix="") const;
+      
+      /** Create Graphviz dot graph write to file */
+      void dumpGraph(const std::string &fileName="graph.dot") const;
+      
+      /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
+      void dumpGraphInternal(std::ostream &stream) const;
 
   protected:
     

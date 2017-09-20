@@ -146,6 +146,52 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void EntityOwner::dumpGraph(const std::string& fileName) const {
+    std::fstream file(fileName, std::ios_base::out);
+    file << "digraph G {" << std::endl;
+    dumpGraphInternal(file);
+    file << "}" << std::endl;
+    file.close();
+    std::cout << "HIER " << fileName << std::endl;
+  }
+
+  /*********************************************************************************************************************/
+
+  void EntityOwner::dumpGraphInternal(std::ostream &stream) const {
+    
+    std::string myDotNode = getQualifiedName();
+    std::replace(myDotNode.begin(), myDotNode.end(), '/', '_');
+    stream << myDotNode << "[label=\"" << getName() << "\"]" << std::endl;
+    
+    for(auto &node : getAccessorList()) {
+      std::string dotNode = node.getQualifiedName();
+      std::replace(dotNode.begin(), dotNode.end(), '/', '_');
+      stream << dotNode << "[label=\"{" << node.getName() << "| {";
+      bool first = true;
+      for(auto tag : node.getTags()) {
+        if(!first) {
+          stream << "|";
+        }
+        else {
+          first = false;
+        }
+        stream << tag;
+      }
+      stream << "}}\", shape=record]" << std::endl;
+      stream << "  " << myDotNode << " -> " << dotNode  << std::endl;
+    }
+
+    for(auto &submodule : getSubmoduleList()) {
+      std::string dotNode = submodule->getQualifiedName();
+      std::replace(dotNode.begin(), dotNode.end(), '/', '_');
+      stream << "  " << myDotNode << " -> " << dotNode << std::endl;
+      submodule->dumpGraphInternal(stream);
+    }
+
+  }
+
+  /*********************************************************************************************************************/
+
   void EntityOwner::addTag(const std::string &tag) {
     for(auto &node : getAccessorList()) node.addTag(tag);
     for(auto &submodule : getSubmoduleList()) submodule->addTag(tag);
