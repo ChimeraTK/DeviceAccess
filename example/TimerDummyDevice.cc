@@ -56,6 +56,8 @@ class TimerDummyRegisterAccessor : public mtca4u::NDRegisterAccessor<UserType> {
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0] = UserType();
     }
     
+    ~TimerDummyRegisterAccessor() { this->shutdown(); }
+    
     void doReadTransfer() override {
       usleep(1000000);
     }
