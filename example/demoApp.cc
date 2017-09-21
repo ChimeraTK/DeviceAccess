@@ -12,115 +12,94 @@
 
 namespace ctk = ChimeraTK;
 
-struct AutomationModule : public ctk::ApplicationModule {
+struct Automation : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
-
-    ctk::ScalarPollInput<double> operatorSetpoint{this, "operatorSetpoint", "Celsius", "Setpoint given by the operator"};
-    ctk::ScalarOutput<double> loopSetpoint{this, "loopSetpoint", "Celsius", "Setpoint computed by the automation module"};
-
+    ctk::ScalarPollInput<double> opSP{this, "opSP", "MV", "..."};
+    ctk::ScalarOutput<double> curSP{this, "curSP", "MV", "..."};
+    ctk::ScalarPushInput<int> trigger{this, "trigger", "", "..."};
+    
     void mainLoop() {
-      loopSetpoint = 0;
-      loopSetpoint.write();
-
       while(true) {
-        operatorSetpoint.read();
-        if(operatorSetpoint > loopSetpoint) loopSetpoint++;
-        if(operatorSetpoint < loopSetpoint) loopSetpoint--;
-        std::cout << "AutomationModule: operatorSetpoint = " << operatorSetpoint << std::endl;
-        std::cout << "AutomationModule: loopSetpoint = " << loopSetpoint << std::endl;
-        loopSetpoint.write();
-        usleep(200000);
+        trigger.read();
+        opSP.readLatest();     // opSP.read() would be equivalent
+        if(std::abs(opSP - curSP) > 0.01) {
+          curSP += std::max( std::min(opSP - curSP, 0.1), -0.1);
+          curSP.write();
+        }
       }
-
     }
 };
 
+constexpr size_t tableLength{16384};
+constexpr double samplingFrequency = 9.0; // MHz
+constexpr double bitScalingFactor = 2000.0; // bits/MV
 
-struct ControlLoopModule : public ctk::ApplicationModule {
+struct TableGeneration : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
-
-    ctk::ScalarPushInput<double> setpoint{this, "setpoint", "Celsius", "Setpoint for my control loop"};
-    ctk::ScalarPushInput<double> readback{this, "readback", "Celsius", "Control loop input value"};
-    ctk::ScalarOutput<double> actuator{this, "actuator", "A", "Actuator output of the control loop"};
-
+    struct TableParameters : public ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarPushInput<double> pulseLength{this, "pulseLength", "us", "..."};
+      ctk::ScalarPushInput<double> setpoint{this, "setpoint", "MV", "..."};
+    };
+    TableParameters tableParameters{this, "tableParameters", "..."};
+    
+    ctk::ArrayOutput<int32_t> setpointTable{this, "setpointTable", "bits", tableLength, "..."};
+    ctk::ArrayOutput<int32_t> feedforwardTable{this, "feedforwardTable", "bits", tableLength, "..."};
+    
     void mainLoop() {
-
-      actuator = 0;
-      actuator.write();
-
       while(true) {
-        readback.read();
-        setpoint.read();
-        actuator = 10.*(setpoint-readback);
-        std::cout << "ControlLoopModule: setpoint = " << setpoint << std::endl;
-        std::cout << "ControlLoopModule: readback = " << readback << std::endl;
-        std::cout << "ControlLoopModule: actuator = " << actuator << std::endl;
-        actuator.write();
-        usleep(200000);
+        tableParameters.readAny();    // block until the any table parameter is changed
+        
+        for(size_t i = 0; i < tableLength; ++i) {
+          if(i < tableParameters.pulseLength * samplingFrequency) {
+            setpointTable[i] = tableParameters.setpoint * bitScalingFactor;
+            feedforwardTable[i] = 0.5 * tableParameters.setpoint * bitScalingFactor;
+          }
+          else {
+            setpointTable[i] = 0;
+            feedforwardTable[i] = 0;
+          }
+        }
+        
+        setpointTable.write();
+        feedforwardTable.write();
       }
-
     }
 };
 
+struct ExampleApp : public ctk::Application {
+    ExampleApp() : Application("exampleApp") {}
+    ~ExampleApp() { shutdown(); }
 
-struct SimulatorModule : public ctk::ApplicationModule {
-    using ctk::ApplicationModule::ApplicationModule;
-
-    ctk::ScalarPushInput<double> actuator{this, "actuator", "A", "Actuator input for the simulation"};
-    ctk::ScalarOutput<double> readback{this, "readback", "Celsius", "Readback output value of the simulation"};
-
-    double lastValue{0};
-
-    void mainLoop() {
-
-      while(true) {
-        actuator.read();
-        readback = (100*lastValue + actuator)/100.;
-        lastValue = readback;
-        std::cout << "SimulatorModule: actuator = " << actuator << std::endl;
-        std::cout << "SimulatorModule: readback = " << readback << std::endl;
-        readback.write();
-        usleep(200000);
-      }
-
-    }
-};
-
-
-struct MyApp : public ctk::Application {
-    MyApp() : Application("demoApp") {}
-    ~MyApp() { shutdown(); }
-
-    AutomationModule automation{this, "automation", "Module for automated ramping of setpoint"};
-    ControlLoopModule controlLoop{this, "controlLoop", "Implements a control loop"};
-    SimulatorModule simulator{this, "simulator", "Simulates a device"};
-    ctk::DeviceModule dev{"Dummy0", "MyModule"};
+    Automation automation{this, "automation", "..."};
+    TableGeneration tableGeneration{this, "tableGeneration", "..."};
+    ctk::DeviceModule dev{"Device"};
+    ctk::DeviceModule timer{"Timer"};
     ctk::ControlSystemModule cs{"MyLocation"};
-
-    void defineConnections() {
-      mtca4u::setDMapFilePath("dummy.dmap");
-
-      cs("setpoint") >> automation.operatorSetpoint;
-      automation.loopSetpoint >> controlLoop.setpoint >> cs("setpoint_automation");
-
-      controlLoop.actuator >> dev("actuator") >> cs("actuatorLoop");
-
-      dev("readBack") [ controlLoop.actuator ] >> simulator.actuator >> cs("actuatorSimulator");
-      dev("anotherReadBack", typeid(double), 1) [ controlLoop.actuator ] >> cs("actuatorSimulator_direct");
-
-      simulator.readback >> controlLoop.readback >> cs("readback") >> cs("readback_another_time");
-
-      // Proposed notations and special cases (not yet implemented):
-      // dev("Some2DRegister") [ triggerVariable ] >> ( Channel(0) >> cavity0.probe, Channel(1) >> cavity1.probe );
-      // dev("SomeBitField") [ triggerVariable ] >> ( Bit(0) >> myModule.someBoolean, Bit(31) >> anotherModule.yesOrNo );
-      // cs("SomeVector") >> ( Element(3) >> myModule.someScalar, Elements(4,2) >> myModule.smallVector );
-      // dev("Variable") [ cs("myFirstTrigger") ] >> myModuleA.Variable;
-      // dev("Variable") [ cs("mySecondTrigger") ] >> myModuleB.Variable;
-
-      dumpConnections();
-    }
-
+    
+    void defineConnections();
+    
 };
+ExampleApp theExampleApp;
 
-MyApp myApp;
+
+void ExampleApp::defineConnections() {
+    mtca4u::setDMapFilePath("dummy.dmap");
+
+    cs("setpoint") >> automation.opSP;
+    automation.curSP >> tableGeneration.tableParameters.setpoint >> cs("currentSetpoint");
+    
+    auto macropulseNr = timer("macropulseNr", typeid(int), 1, ctk::UpdateMode::push);
+    macropulseNr >> automation.trigger;
+    
+    cs("pulseLength") >> tableGeneration.tableParameters.pulseLength;
+    
+    tableGeneration.setpointTable >> dev("setpointTable");
+    tableGeneration.feedforwardTable >> dev("feedforwardTable");
+    
+    dev("probeSignal", typeid(int), tableLength) [ macropulseNr ] >> cs("probeSignal");
+    
+    dumpConnections();
+
+}
 

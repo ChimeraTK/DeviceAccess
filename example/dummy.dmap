@@ -1,1 +1,2 @@
-Dummy0     sdm://./logicalNameMap dummy.xlmap
+Device      sdm://./DemoDummy:0=DemoDummy.map       DemoDummy.map
+Timer       sdm://./TimerDummy:0=TimerDummy.map     TimerDummy.map

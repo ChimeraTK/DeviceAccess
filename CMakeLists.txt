@@ -84,8 +84,6 @@ if(TESTING_IS_ENABLED)
   include(cmake/enable_code_coverage_report.cmake)
 
   # copy config files
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.xlmap DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test.map DESTINATION ${PROJECT_BINARY_DIR})
 
 endif(TESTING_IS_ENABLED)
@@ -93,7 +91,7 @@ endif(TESTING_IS_ENABLED)
 # build example
 if(DEMO_IS_ENABLED)
 
-  add_executable(demoApp example/demoApp.cc)
+  add_executable(demoApp example/demoApp.cc example/TimerDummyDevice.cc example/DemoDummyDevice.cc)
   set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
   set_target_properties(demoApp PROPERTIES LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
   target_link_libraries(demoApp ${PROJECT_NAME}
@@ -116,9 +114,9 @@ if(DEMO_IS_ENABLED)
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
   # copy config files
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.xlmap DESTINATION ${PROJECT_BINARY_DIR})
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example/DemoDummy.map DESTINATION ${PROJECT_BINARY_DIR})
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
 
 endif(DEMO_IS_ENABLED)
 

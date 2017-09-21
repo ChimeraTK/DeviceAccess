@@ -1,0 +1,4 @@
+# name                    nr of elements       address          size           bar    width   fracbits    signed   
+setpointTable             16384                0                65536          0      32      0           0
+feedforwardTable          16384                0                65536          1      32      0           0
+probeSignal               16384                0                65536          2      32      0           0
