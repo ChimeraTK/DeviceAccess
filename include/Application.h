@@ -139,6 +139,8 @@ namespace ChimeraTK {
         Profiler::registerThread(name);
       }
 
+      ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
+
     protected:
 
       friend class Module;

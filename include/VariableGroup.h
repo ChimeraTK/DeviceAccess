@@ -54,6 +54,8 @@ namespace ChimeraTK {
       
       VariableGroup& operator=(VariableGroup &rhs) = delete;
 
+      ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
+
   };
 
 } /* namespace ChimeraTK */

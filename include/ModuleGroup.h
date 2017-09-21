@@ -40,17 +40,35 @@ namespace ChimeraTK {
       /** Destructor */
       virtual ~ModuleGroup() {};
       
+      /** Move operation with the move constructor
+          @todo should be in the base class!? */
+      ModuleGroup(ModuleGroup &&rhs) {
+        _name = std::move(rhs._name);
+        _owner = std::move(rhs._owner);
+        _description = std::move(rhs._description);
+        accessorList = std::move(rhs.accessorList);
+        moduleList = std::move(rhs.moduleList);
+        _eliminateHierarchy = rhs._eliminateHierarchy;
+        _tags = std::move(rhs._tags);
+      }
+
       /** Move operation with the assignment operator
           @todo should be in the base class!? */
       ModuleGroup& operator=(ModuleGroup &&rhs) {
         _name = std::move(rhs._name);
         _owner = std::move(rhs._owner);
+        _description = std::move(rhs._description);
         accessorList = std::move(rhs.accessorList);
         moduleList = std::move(rhs.moduleList);
+        _eliminateHierarchy = rhs._eliminateHierarchy;
+        _tags = std::move(rhs._tags);
         return *this;
       }
       
       ModuleGroup& operator=(ModuleGroup &rhs) = delete;
+      ModuleGroup& operator=(const ModuleGroup &rhs) = delete;
+
+      ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
 
   };
 

@@ -80,7 +80,7 @@ namespace ChimeraTK {
   VirtualModule EntityOwner::findTag(const std::string &tag, bool eliminateAllHierarchies) const {
 
     // create new module to return
-    VirtualModule module{_name, _description};
+    VirtualModule module{_name, _description, getModuleType()};
     
     // add everything matching the tag to the virtual module and return it
     findTagAndAppendToModule(module, tag, eliminateAllHierarchies, true);
@@ -92,7 +92,7 @@ namespace ChimeraTK {
   void EntityOwner::findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies,
                                              bool eliminateFirstHierarchy) const {
     
-    VirtualModule nextmodule{_name, _description};
+    VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule *moduleToAddTo;
     
     bool needToAddSubModule = false;
@@ -152,20 +152,36 @@ namespace ChimeraTK {
     dumpGraphInternal(file);
     file << "}" << std::endl;
     file.close();
-    std::cout << "HIER " << fileName << std::endl;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::string EntityOwner::cleanDotNode(std::string fullName) const {
+    std::replace(fullName.begin(), fullName.end(), '/', '_');
+    std::replace(fullName.begin(), fullName.end(), ':', '_');
+    return fullName;
   }
 
   /*********************************************************************************************************************/
 
   void EntityOwner::dumpGraphInternal(std::ostream &stream) const {
     
-    std::string myDotNode = getQualifiedName();
-    std::replace(myDotNode.begin(), myDotNode.end(), '/', '_');
-    stream << myDotNode << "[label=\"" << getName() << "\"]" << std::endl;
+    std::string myDotNode = cleanDotNode(getQualifiedName());
+    
+    stream << myDotNode << "[label=\"" << getName() << "\"";
+    if(_eliminateHierarchy) {
+      stream << ",style=dotted";
+    }
+    if(getModuleType() == ModuleType::ModuleGroup) {
+      stream << ",peripheries=2";
+    }
+    if(getModuleType() == ModuleType::ApplicationModule) {
+      stream << ",style=bold";
+    }
+    stream << "]" << std::endl;
     
     for(auto &node : getAccessorList()) {
-      std::string dotNode = node.getQualifiedName();
-      std::replace(dotNode.begin(), dotNode.end(), '/', '_');
+      std::string dotNode = cleanDotNode(node.getQualifiedName());
       stream << dotNode << "[label=\"{" << node.getName() << "| {";
       bool first = true;
       for(auto tag : node.getTags()) {
@@ -182,8 +198,7 @@ namespace ChimeraTK {
     }
 
     for(auto &submodule : getSubmoduleList()) {
-      std::string dotNode = submodule->getQualifiedName();
-      std::replace(dotNode.begin(), dotNode.end(), '/', '_');
+      std::string dotNode = cleanDotNode(submodule->getQualifiedName());
       stream << "  " << myDotNode << " -> " << dotNode << std::endl;
       submodule->dumpGraphInternal(stream);
     }
@@ -201,7 +216,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VirtualModule EntityOwner::flatten() {
-    VirtualModule nextmodule{_name, _description};
+    VirtualModule nextmodule{_name, _description, getModuleType()};
     for(auto &node : getAccessorListRecursive()) {
       nextmodule.registerAccessor(node);
     }

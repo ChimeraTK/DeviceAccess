@@ -35,6 +35,8 @@ namespace ChimeraTK {
 
       Module& operator[](const std::string& moduleName) const override;
 
+      ModuleType getModuleType() const override { return ModuleType::ControlSystem; }
+
     protected:
 
       mtca4u::RegisterPath variableNamePrefix;

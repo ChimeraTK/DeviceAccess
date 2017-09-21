@@ -113,10 +113,21 @@ namespace ChimeraTK {
       /** Create Graphviz dot graph write to file */
       void dumpGraph(const std::string &fileName="graph.dot") const;
       
-      /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
-      void dumpGraphInternal(std::ostream &stream) const;
+      enum class ModuleType {
+        ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device
+      };
+      
+      /** Return the module type of this module, or in case of a VirtualModule the module type this VirtualModule was
+       *  derived from. */
+      virtual ModuleType getModuleType() const = 0;
 
   protected:
+      
+      /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
+      void dumpGraphInternal(std::ostream &stream) const;
+      
+      /** Clean a fully qualified entity name so it can be used as a dot node name (i.e. strip slashes etc.) */
+      std::string cleanDotNode(std::string fullName) const;
     
       /** The name of this instance */
       std::string _name;

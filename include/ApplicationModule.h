@@ -63,7 +63,9 @@ namespace ChimeraTK {
         moduleList = std::move(rhs.moduleList);
         return *this;
       }
-    
+
+      ModuleType getModuleType() const override { return ModuleType::ApplicationModule; }
+
     protected:
 
       /** Wrapper around mainLoop(), to execute additional tasks in the thread before entering the main loop */
