@@ -51,15 +51,16 @@ endif()
 # set C++ compiler flags for compiling this project
 set(CMAKE_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
 
-#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
+# use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
 add_definitions(-DDMAP_FILE_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
-#use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
-#build. The 'make doc' target will still exist
+# use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
+# build. The 'make doc' target will still exist
 if(SUPPRESS_AUTO_DOC_BUILD)
     unset(DOC_DEPENDENCY)
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/doc)  # otherwise make install might fail
 else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
@@ -179,7 +180,7 @@ if(DOXYGEN_FOUND)
   add_custom_target(doc ${DOC_DEPENDENCY}
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
+  )
   #note the / after ${CMAKE_BINARY_DIR}/doc/. This causes the directory to be renamed to the destination, not copied into
   install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}
           COMPONENT doc)
