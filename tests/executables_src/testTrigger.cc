@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToApp, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerDevToApp<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerDevToCS<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerByCS<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerTransferGroup, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerTransferGroup<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 

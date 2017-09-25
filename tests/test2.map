@@ -1,0 +1,4 @@
+# both registers have the same address, so whatever we write to actuator we can read back from readBack
+/MyModule/actuator                0x00000001    0x00000000    0x00000004
+/MyModule/readBack                0x00000001    0x00000000    0x00000004
+
