@@ -43,7 +43,11 @@ namespace ChimeraTK {
       virtual ~VariableGroup() {};
 
       /** Move operation with the move constructor */
-      VariableGroup(VariableGroup &&other) : Module(std::move(other)) {}
+      VariableGroup(VariableGroup &&other) :
+      Module(other._owner, other._name, other._description, other._eliminateHierarchy, other._tags) {
+        other._owner = nullptr;
+        other._name = "deleted";
+      }
       
       /** Inherit assignment */
       using Module::operator=;

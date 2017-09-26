@@ -35,9 +35,15 @@ namespace ChimeraTK {
         registerNamePrefix(std::move(other.registerNamePrefix)),
         subModules(std::move(other.subModules))
       {}
-      
-      /** Inherit assignment */
-      using Module::operator=;
+
+      /** Move assignment */
+      DeviceModule& operator=(DeviceModule &&other) {
+        Module::operator=(std::move(other));
+        deviceAliasOrURI = std::move(other.deviceAliasOrURI);
+        registerNamePrefix = std::move(other.registerNamePrefix);
+        subModules = std::move(other.subModules);
+        return *this;
+      }
 
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the register with another variable. */

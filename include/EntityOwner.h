@@ -44,23 +44,9 @@ namespace ChimeraTK {
         moduleList(std::move(other.moduleList)),
         _eliminateHierarchy(other._eliminateHierarchy),
         _tags(std::move(other._tags))
-      {}
-
-      /** Move operation with the assignment operator */
-      EntityOwner& operator=(EntityOwner &&other) {
-        _name = std::move(other._name);
-        _description = std::move(other._description);
-        _owner = std::move(other._owner);
-        accessorList = std::move(other.accessorList);
-        moduleList = std::move(other.moduleList);
-        _eliminateHierarchy = other._eliminateHierarchy;
-        _tags = std::move(other._tags);
-        return *this;
+      {
+        other._owner = nullptr;
       }
-      
-      /** Delete other assignment operators */
-      EntityOwner& operator=(EntityOwner &other) = delete;
-      EntityOwner& operator=(const EntityOwner &other) = delete;
 
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }

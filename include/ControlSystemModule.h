@@ -33,8 +33,14 @@ namespace ChimeraTK {
         variables(std::move(other.variables))
       {}
       
-      /** Inherit assignment */
-      using Module::operator=;
+      /** Move assignment */
+      ControlSystemModule& operator=(ControlSystemModule &&other) {
+        Module::operator=(std::move(other));
+        variableNamePrefix = std::move(other.variableNamePrefix);
+        subModules = std::move(other.subModules);
+        variables = std::move(other.variables);
+        return *this;
+      }
 
       /** The function call operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the control system variable with another variable. */

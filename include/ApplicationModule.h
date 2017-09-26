@@ -40,7 +40,12 @@ namespace ChimeraTK {
       ApplicationModule() : Module(nullptr, "invalid", "invalid ApplicationModule") {}
 
       /** Move operation with the move constructor */
-      ApplicationModule(ApplicationModule &&other) : Module(std::move(other)) {}
+      ApplicationModule(ApplicationModule &&other) :
+      Module(other._owner, other._name, other._description, other._eliminateHierarchy, other._tags) {
+        assert(!moduleThread.joinable());   // if the thread is already running, moving is no longer allowed!
+        other._owner = nullptr;
+        other._name = "deleted";
+      }
       
       /** Inherit assignment */
       using Module::operator=;
