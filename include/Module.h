@@ -35,6 +35,12 @@ namespace ChimeraTK {
 
       /** Destructor */
       virtual ~Module();
+      
+      /** Move operation with the move constructor */
+      Module(Module &&rhs) : EntityOwner(std::move(rhs)) {}
+      
+      /** Inherit assignment */
+      using EntityOwner::operator=;
 
       /** Prepare the execution of the module. This function is called before any module is started (including internal
        *  modules like FanOuts) and before the initial values of the variables are pushed into the queues. */

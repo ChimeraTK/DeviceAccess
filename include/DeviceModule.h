@@ -28,6 +28,17 @@ namespace ChimeraTK {
       /** Default constructor: create dysfunctional device module */
       DeviceModule() {}
 
+      /** Move operation with the move constructor */
+      DeviceModule(DeviceModule &&other)
+      : Module(std::move(other)),
+        deviceAliasOrURI(std::move(other.deviceAliasOrURI)),
+        registerNamePrefix(std::move(other.registerNamePrefix)),
+        subModules(std::move(other.subModules))
+      {}
+      
+      /** Inherit assignment */
+      using Module::operator=;
+
       /** The subscript operator returns a VariableNetworkNode which can be used in the Application::initialise()
        *  function to connect the register with another variable. */
       VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,

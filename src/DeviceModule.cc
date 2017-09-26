@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
   Module& DeviceModule::operator[](const std::string& moduleName) const {
     if(subModules.count(moduleName) == 0) {
-      subModules[moduleName] = {deviceAliasOrURI, registerNamePrefix/moduleName};
+      subModules.emplace(std::pair<std::string, DeviceModule>(moduleName, DeviceModule(deviceAliasOrURI, registerNamePrefix/moduleName)));
     }
     return subModules[moduleName];
   }

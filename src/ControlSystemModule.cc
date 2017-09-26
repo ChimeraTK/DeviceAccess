@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
   Module& ControlSystemModule::operator[](const std::string& moduleName) const {
     if(subModules.count(moduleName) == 0) {
-      subModules[moduleName] = {variableNamePrefix/moduleName};
+      subModules.emplace(std::pair<std::string, ControlSystemModule>(moduleName, ControlSystemModule(variableNamePrefix/moduleName)));
     }
     return subModules[moduleName];
   }
