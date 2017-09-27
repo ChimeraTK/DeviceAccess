@@ -15,16 +15,14 @@ namespace ChimeraTK {
   : EntityOwner(name, description, eliminateHierarchy, tags),
     _owner(owner)
   {
-    assert(_owner != nullptr);
-    _owner->registerModule(this);
+    if(_owner != nullptr) _owner->registerModule(this);
   }
   
 /*********************************************************************************************************************/
 
   Module::~Module()
   {
-    assert(_owner != nullptr);
-    _owner->unregisterModule(this);
+    if(_owner != nullptr) _owner->unregisterModule(this);
   }
 
 /*********************************************************************************************************************/
