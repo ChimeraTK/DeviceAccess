@@ -29,33 +29,21 @@ namespace ChimeraTK {
     public:
 
       /** Constructor: register the EntityOwner with its owner */
-      EntityOwner(EntityOwner *owner, const std::string &name, const std::string &description,
+      EntityOwner(const std::string &name, const std::string &description,
                   bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
       
       /** Virtual destructor to make the type polymorphic */
       virtual ~EntityOwner();
       
       /** Move constructor */
-      EntityOwner(EntityOwner &&other)
-      : _name(std::move(other._name)),
-        _description(std::move(other._description)),
-        _owner(other._owner),
-        accessorList(std::move(other.accessorList)),
-        moduleList(std::move(other.moduleList)),
-        _eliminateHierarchy(other._eliminateHierarchy),
-        _tags(std::move(other._tags))
-      {
-        other._owner = nullptr;
-      }
+      EntityOwner(EntityOwner &&other);
 
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }
 
       /** Get the fully qualified name of the module instance, i.e. the name containing all module names further up in
        *  the hierarchy. */
-      std::string getQualifiedName() const {
-        return ( _owner != nullptr ? _owner->getQualifiedName() : "" ) + "/" + _name;
-      }
+      virtual std::string getQualifiedName() const = 0;
       
       /** Get the decription of the module instance */
       const std::string& getDescription() const { return _description; }
@@ -94,8 +82,10 @@ namespace ChimeraTK {
         accessorList.remove(accessor);
       }
       
-      /** Register another module as a sub-mdoule. Will be called automatically by all modules in their constructors. */
-      void registerModule(Module* module);
+      /** Register another module as a sub-mdoule. Will be called automatically by all modules in their constructors.
+       *  If addTags is set to false, the tags of this EntityOwner will not be set to the module being registered.
+       *  This is e.g. used in the move-constructor of Module to prevent from altering the tags in the move operation. */
+      void registerModule(Module* module, bool addTags=true);
       
       /** Unregister another module as a sub-mdoule. Will be called automatically by all modules in their destructors. */
       void unregisterModule(Module* module);
@@ -147,9 +137,6 @@ namespace ChimeraTK {
     
       /** The description of this instance */
       std::string _description;
-      
-      /** Owner of this instance */
-      EntityOwner *_owner{nullptr};
       
       /** List of accessors owned by this instance */
       std::list<VariableNetworkNode> accessorList;

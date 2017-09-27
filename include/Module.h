@@ -31,7 +31,7 @@ namespace ChimeraTK {
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-      Module() : EntityOwner(nullptr, "invalid", "invalid module") {}
+      Module() : EntityOwner("invalid", "invalid module"), _owner{nullptr} {}
 
       /** Destructor */
       virtual ~Module();
@@ -40,22 +40,21 @@ namespace ChimeraTK {
       Module(Module &&other)
       : EntityOwner(std::move(other))
       {
-        _owner->unregisterModule(&other);
-        _owner->registerModule(this);
-        other._owner = nullptr;
+        _owner = other._owner;
+        _owner->registerModule(this, false);
+        // note: the other module unregisters itself in its destructor - will will be called next after any move operation
       }
 
       Module& operator=(Module &&other) {
         _name = std::move(other._name);
         _description = std::move(other._description);
         _owner = other._owner;
-        _owner->unregisterModule(&other);
-        _owner->registerModule(this);
-        other._owner = nullptr;
+        _owner->registerModule(this, false);
         accessorList = std::move(other.accessorList);
         moduleList = std::move(other.moduleList);
         _eliminateHierarchy = other._eliminateHierarchy;
         _tags = std::move(other._tags);
+        // note: the other module unregisters itself in its destructor - will will be called next after any move operation
         return *this;
       }
       
@@ -113,6 +112,24 @@ namespace ChimeraTK {
         * a changed return type of the () operator. */
       template<typename MODULE>
       void connectTo(const MODULE &target, VariableNetworkNode trigger={}) const;
+
+      std::string getQualifiedName() const override {
+        assert(_owner != nullptr);
+        return _owner->getQualifiedName() + "/" + _name;
+      }
+      
+      /** Set a new owner. The caller has to take care himself that the Module gets unregistered with the old owner
+       *  and registered with the new one. Do not use in user code! */
+      void setOwner(EntityOwner *newOwner) {
+        _owner = newOwner;
+      }
+      
+      EntityOwner* getOwner() const { return _owner; }
+
+  protected:
+      
+      /** Owner of this instance */
+      EntityOwner *_owner{nullptr};
       
   };
   

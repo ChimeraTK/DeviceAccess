@@ -12,13 +12,20 @@ namespace ChimeraTK {
 
   Module::Module(EntityOwner *owner, const std::string &name, const std::string &description,
                  bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
-  : EntityOwner(owner, name, description, eliminateHierarchy, tags)
-  {}
+  : EntityOwner(name, description, eliminateHierarchy, tags),
+    _owner(owner)
+  {
+    assert(_owner != nullptr);
+    _owner->registerModule(this);
+  }
   
 /*********************************************************************************************************************/
 
   Module::~Module()
-  {}
+  {
+    assert(_owner != nullptr);
+    _owner->unregisterModule(this);
+  }
 
 /*********************************************************************************************************************/
   

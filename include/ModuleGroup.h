@@ -39,10 +39,8 @@ namespace ChimeraTK {
 
       /** Move operation with the move constructor */
       ModuleGroup(ModuleGroup &&other) :
-      Module(other._owner, other._name, other._description, other._eliminateHierarchy, other._tags) {
-        other._owner = nullptr;
-        other._name = "deleted";
-      }
+      Module(std::move(other))
+      {}
       
       /** Inherit assignment */
       using Module::operator=;

@@ -40,7 +40,7 @@ namespace ChimeraTK {
     public:
 
       Application(const std::string& name)
-      : ApplicationBase(name), EntityOwner(nullptr, name, "") {}
+      : ApplicationBase(name), EntityOwner(name, "") {}
 
       ~Application() {}
 
@@ -140,6 +140,10 @@ namespace ChimeraTK {
       }
 
       ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
+
+      std::string getQualifiedName() const override {
+        return "/" + _name;
+      }
 
     protected:
 

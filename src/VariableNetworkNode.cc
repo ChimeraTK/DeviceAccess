@@ -10,6 +10,7 @@
 #include "VariableNetworkNode.h"
 #include "VariableNetwork.h"
 #include "Application.h"
+#include "EntityOwner.h"
 
 namespace ChimeraTK {
 
@@ -29,17 +30,17 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name,
-                                  const std::string &qualifiedName,
+  VariableNetworkNode::VariableNetworkNode(EntityOwner *owner, mtca4u::TransferElement *accessorBridge, const std::string &name,
                                   VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
                                   const std::string &description, const std::type_info* valueType,
                                   const std::unordered_set<std::string> &tags)
-  : pdata(new VariableNetworkNode_data)
+  : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
+    pdata->owningModule = owner;
     pdata->type = NodeType::Application;
     pdata->appNode = accessorBridge;
     pdata->name = name;
-    pdata->qualifiedName = qualifiedName;
+    pdata->qualifiedName = owner->getQualifiedName() + "/" + name;
     pdata->mode = mode;
     pdata->direction = direction;
     pdata->valueType = valueType;
@@ -47,13 +48,14 @@ namespace ChimeraTK {
     pdata->nElements = nElements;
     pdata->description = description;
     pdata->tags = tags;
+    owner->registerAccessor(*this);
   }
 
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mode,
       VariableDirection dir, const std::type_info &valTyp, size_t nElements)
-  : pdata(new VariableNetworkNode_data)
+  : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
     pdata->type = NodeType::Device;
     pdata->mode = mode;
@@ -68,7 +70,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode::VariableNetworkNode(std::string pubName, VariableDirection dir, const std::type_info &valTyp,
       size_t nElements)
-  : pdata(new VariableNetworkNode_data)
+  : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
     pdata->type = NodeType::ControlSystem;
     pdata->mode = UpdateMode::push;
@@ -81,13 +83,25 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int)
-  : pdata(new VariableNetworkNode_data)
+  : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
     pdata->type = NodeType::TriggerReceiver;
     pdata->direction = VariableDirection::consuming;
     pdata->nodeToTrigger = nodeToTrigger;
     pdata->name = "trigger:"+nodeToTrigger.getName();
   }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata)
+  : pdata(_pdata)
+  {}
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode()
+  : pdata(boost::make_shared<VariableNetworkNode_data>())
+  {}
 
   /*********************************************************************************************************************/
 
@@ -296,7 +310,7 @@ namespace ChimeraTK {
     }
 
     // create copy of the node
-    pdata->nodeWithTrigger[trigger].pdata.reset(new VariableNetworkNode_data(*pdata));
+    pdata->nodeWithTrigger[trigger].pdata = boost::make_shared<VariableNetworkNode_data>(*pdata);
 
     // add ourselves as a trigger receiver to the other network
     if(!trigger.hasOwner()) {
@@ -310,10 +324,6 @@ namespace ChimeraTK {
     // return the new node
     return pdata->nodeWithTrigger[trigger];
   }
-
-  /*********************************************************************************************************************/
-
-  VariableNetworkNode::VariableNetworkNode() {}
 
   /*********************************************************************************************************************/
   
@@ -453,23 +463,23 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &qualifiedName,
-                                        const std::string &unit, const std::string &description) {
+  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
+                                        const std::string &description) {
     if(getType() != NodeType::Application) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
           "Calling VariableNetworkNode::updateMetaData() is not allowed for non-application type nodes.");
     }
     pdata->name = name;
-    pdata->qualifiedName = qualifiedName;
+    pdata->qualifiedName = pdata->owningModule->getQualifiedName()+"/"+name;
     pdata->unit = unit;
     pdata->description = description;
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &qualifiedName, const std::string &unit,
+  void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
                                         const std::string &description, const std::unordered_set<std::string> &tags) {
-    setMetaData(name, qualifiedName, unit, description);
+    setMetaData(name, unit, description);
     pdata->tags = tags;
   }
 
@@ -483,6 +493,25 @@ namespace ChimeraTK {
   
   const std::unordered_set<std::string>& VariableNetworkNode::getTags() const {
     return pdata->tags;
+  }
+
+  /*********************************************************************************************************************/
+  
+  void VariableNetworkNode::setAppAccessorPointer(mtca4u::TransferElement *accessor) {
+    assert(getType() == NodeType::Application);
+    pdata->appNode = accessor;
+  }
+
+  /*********************************************************************************************************************/
+  
+  EntityOwner* VariableNetworkNode::getOwningModule() const {
+    return pdata->owningModule;
+  }
+
+  /*********************************************************************************************************************/
+  
+  void VariableNetworkNode::setOwningModule(EntityOwner *newOwner) const {
+    pdata->owningModule = newOwner;
   }
 
 }

@@ -15,29 +15,37 @@
 
 namespace ChimeraTK {
 
-  EntityOwner::EntityOwner(EntityOwner *owner, const std::string &name, const std::string &description,
+  EntityOwner::EntityOwner(const std::string &name, const std::string &description,
                            bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
-  : _name(name), _description(description), _owner(owner), _eliminateHierarchy(eliminateHierarchy), _tags(tags)
+  : _name(name), _description(description), _eliminateHierarchy(eliminateHierarchy), _tags(tags)
+  {}
+
+/*********************************************************************************************************************/
+
+  EntityOwner::~EntityOwner() {}
+
+/*********************************************************************************************************************/
+
+  EntityOwner::EntityOwner(EntityOwner &&other)
+  : _name(std::move(other._name)),
+    _description(std::move(other._description)),
+    accessorList(std::move(other.accessorList)),
+    moduleList(std::move(other.moduleList)),
+    _eliminateHierarchy(other._eliminateHierarchy),
+    _tags(std::move(other._tags))
   {
-    if(owner != nullptr) {
-      auto thisMustBeAModule = static_cast<Module*>(this);  /// @todo TODO FIXME this is a bit dangerous...
-      owner->registerModule(thisMustBeAModule);
+    for(auto mod : moduleList) {
+      mod->setOwner(this);
+    }
+    for(auto node : accessorList) {
+      node.setOwningModule(this);
     }
   }
 
 /*********************************************************************************************************************/
 
-  EntityOwner::~EntityOwner() {
-    if(_owner != nullptr) {
-      auto thisMustBeAModule = static_cast<Module*>(this);  /// @todo TODO FIXME this is a bit dangerous...
-      _owner->unregisterModule(thisMustBeAModule);
-    }
-  }
-
-/*********************************************************************************************************************/
-
-  void EntityOwner::registerModule(Module *module) {
-    for(auto &tag : _tags) module->addTag(tag);
+  void EntityOwner::registerModule(Module *module, bool addTags) {
+    if(addTags) for(auto &tag : _tags) module->addTag(tag);
     moduleList.push_back(module);
   }
 

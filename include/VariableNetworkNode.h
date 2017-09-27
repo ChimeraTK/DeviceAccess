@@ -28,6 +28,7 @@ namespace ChimeraTK {
 
   class VariableNetwork;
   class AccessorBase;
+  class EntityOwner;
   struct VariableNetworkNode_data;
 
   /** Pseudo type to identify nodes which can have arbitrary types */
@@ -45,7 +46,7 @@ namespace ChimeraTK {
       VariableNetworkNode& operator=(const VariableNetworkNode &rightHandSide);
 
       /** Constructor for an Application node */
-      VariableNetworkNode(mtca4u::TransferElement *accessorBridge, const std::string &name, const std::string &qualifiedName,
+      VariableNetworkNode(EntityOwner *owner, mtca4u::TransferElement *accessorBridge, const std::string &name,
           VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
           const std::string &description, const std::type_info* valueType,
           const std::unordered_set<std::string> &tags={});
@@ -62,6 +63,9 @@ namespace ChimeraTK {
        *  argument is only there to discriminate the signature from the copy constructor and will be ignored. */
       VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
 
+      /** Constructor to wrap a VariableNetworkNode_data pointer */
+      VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> pdata);
+
       /** Default constructor for an invalid node */
       VariableNetworkNode();
       
@@ -72,10 +76,9 @@ namespace ChimeraTK {
       /** Change meta data (name, unit, description and optionally tags). This function may only be used on
        *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
        *  tags, an empty set can be passed. */
-      void setMetaData(const std::string &name, const std::string &qualifiedName, const std::string &unit,
-                       const std::string &description);
-      void setMetaData(const std::string &name, const std::string &qualifiedName, const std::string &unit,
-                       const std::string &description, const std::unordered_set<std::string> &tags);
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description);
+      void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
+                       const std::unordered_set<std::string> &tags);
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
@@ -149,7 +152,14 @@ namespace ChimeraTK {
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> getConstAccessor() const;
       
       /** Return the unique ID of this node (will change every time the application is started). */
-      const void* getUniqueId() const {return pdata.get();}
+      const void* getUniqueId() const { return pdata.get(); }
+      
+      /** Change pointer to the accessor. May only be used for application nodes. */
+      void setAppAccessorPointer(mtca4u::TransferElement *accessor);
+      
+      EntityOwner* getOwningModule() const;
+      
+      void setOwningModule(EntityOwner *newOwner) const;
 
     //protected:  @todo make protected again (with proper interface extension)
 
@@ -193,11 +203,11 @@ namespace ChimeraTK {
     mtca4u::TransferElement *appNode{nullptr};
 
     /** Pointer to network which should be triggered by this node */
-    VariableNetworkNode nodeToTrigger;
+    VariableNetworkNode nodeToTrigger{nullptr};
 
     /** Pointer to the network providing the external trigger. May only be used for feeding nodes with an
       *  update mode poll. When enabled, the update mode will be converted into push. */
-    VariableNetworkNode externalTrigger;
+    VariableNetworkNode externalTrigger{nullptr};
 
     /** Public name if type == ControlSystem */
     std::string publicName;
@@ -220,6 +230,9 @@ namespace ChimeraTK {
      *  with the respective trigger added. */
     std::map<VariableNetworkNode, VariableNetworkNode> nodeWithTrigger;
 
+    /** Pointer to the module owning this node */
+    EntityOwner *owningModule{nullptr};
+
   };
 
   /*********************************************************************************************************************/
@@ -229,7 +242,7 @@ namespace ChimeraTK {
   template<typename UserType>
   VariableNetworkNode VariableNetworkNode::makeConstant(bool makeFeeder, UserType value, size_t length) {
     VariableNetworkNode node;
-    node.pdata.reset(new VariableNetworkNode_data);
+    node.pdata = boost::make_shared<VariableNetworkNode_data>();
     node.pdata->constNode.reset(new ConstantAccessor<UserType>(value, length));
     node.pdata->type = NodeType::Constant;
     node.pdata->valueType = &typeid(UserType);
