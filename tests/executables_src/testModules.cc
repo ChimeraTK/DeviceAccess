@@ -19,25 +19,13 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                   \
-    {                                                                                                               \
-      std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                  \
-      while(!(condition)) {                                                                                         \
-        bool timeout_reached = (std::chrono::steady_clock::now()-t0) > std::chrono::milliseconds(maxMilliseconds);  \
-        BOOST_CHECK( !timeout_reached );                                                                            \
-        if(timeout_reached) break;                                                                                  \
-        usleep(1000);                                                                                               \
-      }                                                                                                             \
-    }
-
-
 /*********************************************************************************************************************/
 /* Variable group used in the modules */
 
 struct SomeGroup : ctk::VariableGroup {
   using ctk::VariableGroup::VariableGroup;
-  ctk::ScalarPushInput<std::string> inGroup{this, "inGroup", "", "This is a string", {"C", "D"}};
-  ctk::ArrayPushInput<int64_t> alsoInGroup{this, "alsoInGroup", "justANumber", 16, "A 64 bit number array", {"C"}};
+  ctk::ScalarPushInput<std::string> inGroup{this, "inGroup", "", "This is a string", {"C", "A"}};
+  ctk::ArrayPushInput<int64_t> alsoInGroup{this, "alsoInGroup", "justANumber", 16, "A 64 bit number array", {"A", "D"}};
 };
 
 /*********************************************************************************************************************/
@@ -100,6 +88,81 @@ struct VectorOfModulesApp : public ctk::Application {
 
     size_t _nInstances;
     std::vector<TestModule> vectorOfTestModule;
+};
+
+/*********************************************************************************************************************/
+/* An application module with a vector of a variable group*/
+
+struct VectorModule : public ctk::ApplicationModule {
+    VectorModule(ctk::EntityOwner *owner, const std::string &name, const std::string &description, size_t nInstances,
+             bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={})
+    : ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags)
+    {
+      for(size_t i=0; i < nInstances; ++i) {
+        std::string name = "testGroup_" + std::to_string(i);
+        vectorOfSomeGroup.emplace_back(this, name, "Description 2");
+      }
+    }
+
+    ctk::ScalarPushInput<int> someInput{this, "nameOfSomeInput", "cm", "This is just some input for testing", {"A", "B"}};
+    ctk::ScalarOutput<double> someOutput{this, "someOutput", "V", "Description", {"A", "C"}};
+
+    std::vector<SomeGroup> vectorOfSomeGroup;
+
+    struct AnotherGroup : ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarPushInput<uint8_t> foo{this, "foo", "counts", "Some counter", {"D"}};
+    } anotherGroup{this, "anotherName", "Description of my other group"};
+
+    void mainLoop() {
+      while(true) {
+        someInput.read();
+        int val = someInput;
+        someOutput = val;
+        someOutput.write();
+      }
+    }
+};
+
+/*********************************************************************************************************************/
+/* An module group with a vector of a application moduoles */
+
+struct VectorModuleGroup : public ctk::ModuleGroup {
+    VectorModuleGroup(EntityOwner *owner, const std::string &name, const std::string &description, size_t nInstances,
+            bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={})
+    : ctk::ModuleGroup(owner, name, description, eliminateHierarchy, tags)
+    {
+      for(size_t i=0; i < nInstances; ++i) {
+        std::string name = "test_" + std::to_string(i);
+        vectorOfVectorModule.emplace_back(this, name, "Description 3", nInstances);
+      }
+    }
+    
+    std::vector<VectorModule> vectorOfVectorModule;
+    
+};
+
+/*********************************************************************************************************************/
+/* Application with a vector of module groups containing a vector of modules containing a vector of variable groups */
+
+struct VectorOfEverythingApp : public ctk::Application {
+    VectorOfEverythingApp(size_t nInstances)
+    : Application("myApp"),
+      _nInstances(nInstances)
+    {}
+    ~VectorOfEverythingApp() { shutdown(); }
+
+    using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
+
+    void defineConnections() {
+      for(size_t i = 0; i < _nInstances; ++i) {
+        std::string name = "testModule_" + std::to_string(i) + "_instance";
+        vectorOfVectorModuleGroup.emplace_back(this, name, "Description", _nInstances);
+      }
+    }
+
+    size_t _nInstances;
+    std::vector<VectorModuleGroup> vectorOfVectorModuleGroup;
 };
 
 /*********************************************************************************************************************/
@@ -185,6 +248,21 @@ BOOST_AUTO_TEST_CASE( test_getSubmoduleList ) {
 }
 
 /*********************************************************************************************************************/
+/* test getAccessorList() and getAccessorListRecursive() */
+
+BOOST_AUTO_TEST_CASE( test_getAccessorList ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> test_getAccessorList" << std::endl;
+  std::cout << std::endl;
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << " TODO -> IMPLEMENT THIS TEST!!!" << std::endl;
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << std::endl;
+}
+
+/*********************************************************************************************************************/
 /* test function call operator of the ApplicationModule */
 
 BOOST_AUTO_TEST_CASE( testApplicatioModuleFnCallOp ) {
@@ -245,6 +323,30 @@ BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
     BOOST_CHECK( app.vectorOfTestModule[i].getName() == name );
     auto node = static_cast<ctk::VariableNetworkNode>(app.vectorOfTestModule[i].someInput);
     BOOST_CHECK( node.getQualifiedName() == "/myApp/"+name+"/nameOfSomeInput" );
+
+    // check accessor list
+    std::list<ctk::VariableNetworkNode> accList = app.vectorOfTestModule[i].getAccessorList();
+    BOOST_CHECK( accList.size() == 2 );
+    size_t foundSomeInput = 0;
+    size_t foundSomeOutput = 0;
+    for(auto &acc : accList) {
+      if(acc == app.vectorOfTestModule[i].someInput) foundSomeInput++;
+      if(acc == app.vectorOfTestModule[i].someOutput) foundSomeOutput++;
+    }
+    BOOST_CHECK( foundSomeInput == 1 );
+    BOOST_CHECK( foundSomeOutput == 1 );
+
+    // check submodule list
+    std::list<ctk::Module*> modList = app.vectorOfTestModule[i].getSubmoduleList();
+    BOOST_CHECK( modList.size() == 2 );
+    size_t foundSomeGroup = 0;
+    size_t foundAnotherGroup = 0;
+    for(auto mod : modList) {
+      if(mod == &(app.vectorOfTestModule[i].someGroup)) foundSomeGroup++;
+      if(mod == &(app.vectorOfTestModule[i].anotherGroup)) foundAnotherGroup++;
+    }
+    BOOST_CHECK( foundSomeGroup == 1 );
+    BOOST_CHECK( foundAnotherGroup == 1 );
   }
 
   // check if instances appear properly in getSubmoduleList()
@@ -286,7 +388,7 @@ BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
       BOOST_CHECK( instancesAnotherGroupFound[i] == 1 );
     }
   }
-  
+
   // check ownerships
   for(size_t i = 0; i < nInstances; ++i) {
     BOOST_CHECK( app.vectorOfTestModule[i].getOwner() == &app );
@@ -297,6 +399,264 @@ BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
     BOOST_CHECK( app.vectorOfTestModule[i].someGroup.alsoInGroup.getOwner() == &(app.vectorOfTestModule[i].someGroup) );
     BOOST_CHECK( app.vectorOfTestModule[i].anotherGroup.getOwner() == &(app.vectorOfTestModule[i]) );
     BOOST_CHECK( app.vectorOfTestModule[i].anotherGroup.foo.getOwner() == &(app.vectorOfTestModule[i].anotherGroup) );
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test correct behaviour when using a std::vector of ModuleGroup, ApplicatioModule and VariableGroup at the same time */
+
+BOOST_AUTO_TEST_CASE( testVectorsOfAllModules ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testVectorsOfAllModules" << std::endl;
+
+  // create app with a vector containing 10 modules
+  size_t nInstances = 10;
+  VectorOfEverythingApp app(nInstances);
+  
+  //-------------------------------------------------------------------------------------------------------------------
+  // the app creates the 10 module instances in defineConnections, check if this is done proplery (a quite redundant
+  // test...)
+  BOOST_CHECK(app.vectorOfVectorModuleGroup.size() == 0);
+  app.defineConnections();
+  BOOST_CHECK(app.vectorOfVectorModuleGroup.size() == nInstances);
+  for(size_t i=0; i < nInstances; ++i) {
+    BOOST_CHECK(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule.size() == nInstances);
+    for(size_t k=0; k < nInstances; ++k) {
+      BOOST_CHECK(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup.size() == nInstances);
+    }
+  }
+  
+  //-------------------------------------------------------------------------------------------------------------------
+  // check presence in lists (getSubmoduleList() and getAccessorList())
+
+  { // checks on first hierarchy level (application has the list of module groups)
+    std::list<ctk::Module*> list = app.getSubmoduleList();
+    BOOST_CHECK( list.size() == nInstances );
+    std::map<size_t, size_t> found;
+    for(size_t i=0; i < nInstances; ++i) found[i] = 0;
+    for(auto mod : list) {
+      for(size_t i=0; i < nInstances; ++i) {
+        if(mod == &(app.vectorOfVectorModuleGroup[i])) found[i]++;
+      }
+    }
+    for(size_t i=0; i < nInstances; ++i) BOOST_CHECK( found[i] == 1 );
+    
+  }
+
+  { // checks on second hierarchy level (each module group has the list of modules)
+    for(size_t i=0; i < nInstances; ++i) {
+      std::list<ctk::Module*> list = app.vectorOfVectorModuleGroup[i].getSubmoduleList();
+      BOOST_CHECK( list.size() == nInstances );
+
+      std::map<size_t, size_t> found;
+      for(size_t k=0; k < nInstances; ++k) found[k] = 0;
+      for(auto mod : list) {
+        for(size_t k=0; k < nInstances; ++k) {
+          if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k])) found[k]++;
+        }
+      }
+      for(size_t k=0; k < nInstances; ++k) BOOST_CHECK( found[k] == 1 );
+
+    }
+  }
+
+  { // checks on third hierarchy level (each module has accessors and variable groups)
+    for(size_t i=0; i < nInstances; ++i) {
+      for(size_t k=0; k < nInstances; ++k) {
+        
+        // search for accessors
+        std::list<ctk::VariableNetworkNode> accList = app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].getAccessorList();
+        BOOST_CHECK_EQUAL( accList.size(), 2 );
+        size_t someInputFound = 0;
+        size_t someOutputFound = 0;
+        for(auto acc : accList) {
+          if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput) someInputFound++;
+          if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput) someOutputFound++;
+        }
+        BOOST_CHECK_EQUAL( someInputFound, 1 );
+        BOOST_CHECK_EQUAL( someOutputFound, 1 );
+
+        // search for variable groups
+        std::list<ctk::Module*> modList = app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].getSubmoduleList();
+        BOOST_CHECK_EQUAL( modList.size(), nInstances + 1 );
+
+        std::map<size_t, size_t> someGroupFound;
+        for(size_t m=0; m < nInstances; ++m) someGroupFound[m] = 0;
+        size_t anotherGroupFound = 0;
+        for(auto mod : modList) {
+          for(size_t m=0; m < nInstances; ++m) {
+            if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m])) someGroupFound[m]++;
+          }
+          if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].anotherGroup)) anotherGroupFound++;
+        }
+        for(size_t m=0; m < nInstances; ++m) {
+          BOOST_CHECK_EQUAL( someGroupFound[m], 1 );
+        }
+        BOOST_CHECK_EQUAL( anotherGroupFound, 1 );
+        
+      }
+    }
+  }
+
+  { // checks on fourth hierarchy level (each variable group has accessors)
+    for(size_t i=0; i < nInstances; ++i) {
+      for(size_t k=0; k < nInstances; ++k) {
+        for(size_t m=0; m < nInstances; ++m) {
+
+          // search for accessors
+          std::list<ctk::VariableNetworkNode> accList =
+                  app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].getAccessorList();
+          BOOST_CHECK_EQUAL(accList.size(), 2);
+          size_t inGroupFound = 0;
+          size_t alsoInGroupFound = 0;
+          for(auto acc : accList) {
+            if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup) {
+              inGroupFound++;
+            }
+            if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup) {
+              alsoInGroupFound++;
+            }
+          }
+          BOOST_CHECK_EQUAL(inGroupFound, 1);
+          BOOST_CHECK_EQUAL(alsoInGroupFound, 1);
+
+          // make sure no further subgroups exist
+          BOOST_CHECK_EQUAL(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].
+                                vectorOfSomeGroup[m].getSubmoduleList().size(), 0);
+
+        }
+      }
+    }
+  }
+
+  //-------------------------------------------------------------------------------------------------------------------
+  // check ownerships
+  for(size_t i = 0; i < nInstances; ++i) {
+    BOOST_CHECK( app.vectorOfVectorModuleGroup[i].getOwner() == &app );
+    for(size_t k = 0; k < nInstances; ++k) {
+      BOOST_CHECK( app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].getOwner() == &(app.vectorOfVectorModuleGroup[i]) );
+      BOOST_CHECK( app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput.getOwner()
+                     == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k]) );
+      BOOST_CHECK( app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput.getOwner()
+                     == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k]) );
+      for(size_t m = 0; m < nInstances; ++m) {
+        BOOST_CHECK( app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].getOwner()
+                       == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k]) );
+        BOOST_CHECK( app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup.getOwner()
+                       == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m]) );
+        BOOST_CHECK( app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup.getOwner()
+                       == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m]) );
+      }
+    }
+  }
+  
+  //-------------------------------------------------------------------------------------------------------------------
+  // check pointers to accessors in VariableNetworkNode
+  for(size_t i = 0; i < nInstances; ++i) {
+    for(size_t k = 0; k < nInstances; ++k) {
+      {
+        auto a = &(static_cast<ctk::VariableNetworkNode>(
+                        app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput).getAppAccessorNoType());
+        auto b = &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput);
+        BOOST_CHECK( a == b );
+      }
+      {
+        auto a = &(static_cast<ctk::VariableNetworkNode>(
+                        app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput).getAppAccessorNoType());
+        auto b = &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput);
+        BOOST_CHECK( a == b );
+      }
+      for(size_t m = 0; m < nInstances; ++m) {
+        {
+          auto a = &(static_cast<ctk::VariableNetworkNode>(
+                          app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup).getAppAccessorNoType());
+          auto b = &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup);
+          BOOST_CHECK( a == b );
+        }
+        {
+          auto a = &(static_cast<ctk::VariableNetworkNode>(
+                          app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup).getAppAccessorNoType());
+          auto b = &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup);
+          BOOST_CHECK( a == b );
+        }
+      }
+    }
+  }
+  
+  //-------------------------------------------------------------------------------------------------------------------
+  // search for tags and check result
+  auto searchResult = app.findTag("A");
+  std::list<ctk::Module*> list = searchResult.getSubmoduleList();
+  
+  { // checks on first hierarchy level
+    BOOST_CHECK(list.size() == nInstances);
+    std::map<std::string, int> nameMap;
+    for(auto mod : list) {
+      nameMap[mod->getName()]++;
+    }
+    for(size_t i=0; i < nInstances; ++i) {
+      std::string name = "testModule_" + std::to_string(i) + "_instance";
+      BOOST_CHECK(nameMap[name] == 1);
+    }
+  }
+
+  { // checks on second hierarchy level
+    for(auto mod : list) {
+      std::list<ctk::Module*> list2 = mod->getSubmoduleList();
+
+      BOOST_CHECK(list2.size() == nInstances);
+      std::map<std::string, int> nameMap;
+      for(auto mod2 : list2) {
+        nameMap[mod2->getName()]++;
+      }
+      for(size_t i=0; i < nInstances; ++i) {
+        std::string name = "test_" + std::to_string(i);
+        BOOST_CHECK(nameMap[name] == 1);
+      }
+    }
+  }
+
+  { // checks on third hierarchy level
+    for(auto mod : list) {
+      std::list<ctk::Module*> list2 = mod->getSubmoduleList();
+      for(auto mod2 : list2) {
+        std::list<ctk::Module*> list3 = mod2->getSubmoduleList();
+
+        BOOST_CHECK(list3.size() == nInstances);
+        std::map<std::string, int> nameMap;
+        for(auto mod3 : list3) {
+          nameMap[mod3->getName()]++;
+        }
+        for(size_t i=0; i < nInstances; ++i) {
+          std::string name = "testGroup_" + std::to_string(i);
+          BOOST_CHECK(nameMap[name] == 1);
+        }
+      }
+    }
+  }
+
+  { // checks on fourth hierarchy level (actual variables)
+    for(auto mod : list) {
+      std::list<ctk::Module*> list2 = mod->getSubmoduleList();
+      for(auto mod2 : list2) {
+        std::list<ctk::Module*> list3 = mod2->getSubmoduleList();
+        for(auto mod3 : list3) {
+          std::list<ctk::VariableNetworkNode> vars = mod3->getAccessorList();
+          BOOST_CHECK(vars.size() == 2);
+
+          size_t foundInGroup = 0;
+          size_t foundAlsoInGroup = 0;
+          for(auto var : vars) {
+            if(var.getName() == "inGroup") ++foundInGroup;
+            if(var.getName() == "alsoInGroup") ++foundAlsoInGroup;
+          }
+          BOOST_CHECK( foundInGroup == 1 );
+          BOOST_CHECK( foundAlsoInGroup == 1 );
+         
+        }
+      }
+    }
   }
 
 }
