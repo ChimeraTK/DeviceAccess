@@ -48,7 +48,6 @@ namespace ChimeraTK {
     pdata->nElements = nElements;
     pdata->description = description;
     pdata->tags = tags;
-    owner->registerAccessor(*this);
   }
 
   /*********************************************************************************************************************/
