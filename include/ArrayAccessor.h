@@ -46,7 +46,8 @@ namespace ChimeraTK {
       VariableNetworkNode operator>>(const VariableNetworkNode &otherNode) {
         return node >> otherNode;
       }
-      /** Replace with other ScalarRegisterAccessor */
+
+      /** Replace with other ArrayAccessor */
       void replace(ArrayAccessor<UserType> &&other) {
         operator=(std::move(other));
       }

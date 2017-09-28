@@ -48,7 +48,7 @@ namespace ChimeraTK {
         return node >> otherNode;
       }
 
-      /** Replace with other ScalarRegisterAccessor */
+      /** Replace with other ScalarAccessor */
       void replace(ScalarAccessor<UserType> &&other) {
         operator=(std::move(other));
       }
