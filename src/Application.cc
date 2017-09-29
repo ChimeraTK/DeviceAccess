@@ -246,7 +246,18 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 
   // if both nodes already have an owner, we are done
   if(a.hasOwner() && b.hasOwner()) {
-    assert( &(a.getOwner()) == &(b.getOwner()) );   /// @todo TODO merge networks?
+    if(&(a.getOwner()) != &(b.getOwner())) {      /// @todo TODO merge networks?
+      std::cout << "*** ERROR: nodes to be connected should have the same owner!" << std::endl;
+      std::cout << "Node A:" << std::endl;
+      a.dump();
+      std::cout << "Node B:" << std::endl;
+      b.dump();
+      std::cout << "Owner of node A:" << std::endl;
+      a.getOwner().dump();
+      std::cout << "Owner of node B:" << std::endl;
+      b.getOwner().dump();
+      assert(&(a.getOwner()) == &(b.getOwner()));
+    }
   }
   // add b to the existing network of a
   else if(a.hasOwner()) {
