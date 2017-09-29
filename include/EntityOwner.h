@@ -63,11 +63,11 @@ namespace ChimeraTK {
       
       /** Return a VirtualModule containing the part of the tree structure matching the given tag. The resulting
        *  VirtualModule might have virtual sub-modules, if this EntityOwner contains sub-EntityOwners with
-       *  entities matchting the tag. */
+       *  entities matchting the tag. "tag" is interpreted as a regular expression (see std::regex_match). */
       VirtualModule findTag(const std::string &tag, bool eliminateAllHierarchies=false) const;
       
       /** Add the part of the tree structure matching the given tag to a VirtualModule. Users normally will use
-       *  findTag() instead. */
+       *  findTag() instead. "tag" is interpreted as a regular expression (see std::regex_match). */
       void findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies=false,
                                     bool eliminateFirstHierarchy=false) const;
 

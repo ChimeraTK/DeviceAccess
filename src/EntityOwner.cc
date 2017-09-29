@@ -6,7 +6,7 @@
  */
 
 #include <cassert>
-
+#include <regex>
 #include <iostream>
 
 #include "EntityOwner.h"
@@ -113,10 +113,17 @@ namespace ChimeraTK {
     }
     
     // add nodes to the module if matching the tag
+    std::regex expr(tag);
     for(auto node : getAccessorList()) {
-      if(node.getTags().count(tag) > 0) {
-        moduleToAddTo->registerAccessor(node);
+      bool addNode = false;
+      for(auto &nodeTag : node.getTags()) {
+        if(std::regex_match(nodeTag, expr)) {
+          addNode = true;
+          break;
+        }
       }
+      if(!addNode) if(std::regex_match("", expr)) addNode = true;     // check if empty tag matches
+      if(addNode) moduleToAddTo->registerAccessor(node);
     }
 
     // iterate through submodules
