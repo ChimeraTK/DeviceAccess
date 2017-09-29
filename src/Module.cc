@@ -103,19 +103,47 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
   
   VariableNetworkNode Module::operator()(const std::string& variableName) const {
+    // search for variable in our list
     for(auto variable : getAccessorList()) {
       if(variable.getName() == variableName) return VariableNetworkNode(variable);
     }
-    throw std::logic_error("Variable '"+variableName+"' is not part of the variable group '"+_name+"'.");
+    // recurse into those submodules which have the eliminate hierarchy flag on
+    for(auto submodule : getSubmoduleList()) {
+      if(submodule->getEliminateHierarchy()) {
+        try {
+          return (*submodule)(variableName);
+        }
+        catch(std::logic_error &e) {
+          // ignore this exception, it just means this submodule does not have this variable
+          /// @todo FIXME don't use exceptions for regular program flow, add a function to test the presence of a variable instead!
+        }
+      }
+    }
+    // variable not found anywhere: throw exception
+    throw std::logic_error("Variable '"+variableName+"' is not part of the module '"+_name+"'.");
   }
 
 /*********************************************************************************************************************/
 
   Module& Module::operator[](const std::string& moduleName) const {
+    // search for module in our list
     for(auto submodule : getSubmoduleList()) {
       if(submodule->getName() == moduleName) return *submodule;
     }
-    throw std::logic_error("Sub-module '"+moduleName+"' is not part of the variable group '"+_name+"'.");
+    // recurse into those submodules which have the eliminate hierarchy flag on
+    for(auto submodule : getSubmoduleList()) {
+      if(submodule->getEliminateHierarchy()) {
+        try {
+          return (*submodule)[moduleName];
+        }
+        catch(std::logic_error &e) {
+          // ignore this exception, it just means this submodule does not have this module
+          /// @todo FIXME don't use exceptions for regular program flow, add a function to test the presence of a module instead!
+        }
+      }
+    }
+    // module not found anywhere: throw exception
+    throw std::logic_error("Sub-module '"+moduleName+"' is not part of the module '"+_name+"'.");
   }
 
 } /* namespace ChimeraTK */
