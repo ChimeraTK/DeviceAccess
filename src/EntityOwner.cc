@@ -85,21 +85,33 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  VirtualModule EntityOwner::findTag(const std::string &tag, bool eliminateAllHierarchies) const {
+  VirtualModule EntityOwner::findTag(const std::string &tag) const {
 
     // create new module to return
     VirtualModule module{_name, _description, getModuleType()};
     
     // add everything matching the tag to the virtual module and return it
-    findTagAndAppendToModule(module, tag, eliminateAllHierarchies, true);
+    findTagAndAppendToModule(module, tag, false, true);
     return module;
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
+  VirtualModule EntityOwner::excludeTag(const std::string &tag) const {
+
+    // create new module to return
+    VirtualModule module{_name, _description, getModuleType()};
+    
+    // add everything matching the tag to the virtual module and return it
+    findTagAndAppendToModule(module, tag, false, true, true);
+    return module;
+  }
+
+/*********************************************************************************************************************/
 
   void EntityOwner::findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies,
-                                             bool eliminateFirstHierarchy) const {
-    
+                                             bool eliminateFirstHierarchy, bool negate) const {
+                                               
     VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule *moduleToAddTo;
     
@@ -122,13 +134,14 @@ namespace ChimeraTK {
           break;
         }
       }
-      if(!addNode) if(std::regex_match("", expr)) addNode = true;     // check if empty tag matches
+      if(node.getTags().size() == 0) if(std::regex_match("", expr)) addNode = true;     // check if empty tag matches, if no tag applied to node
+      if(negate) addNode = !addNode;
       if(addNode) moduleToAddTo->registerAccessor(node);
     }
 
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
-      submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies);
+      submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate);
     }
     
     if(needToAddSubModule) {
@@ -139,7 +152,7 @@ namespace ChimeraTK {
     
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
   void EntityOwner::dump(const std::string &prefix) const {
     
@@ -159,7 +172,7 @@ namespace ChimeraTK {
     
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
   void EntityOwner::dumpGraph(const std::string& fileName) const {
     std::fstream file(fileName, std::ios_base::out);
@@ -169,7 +182,7 @@ namespace ChimeraTK {
     file.close();
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
   std::string EntityOwner::cleanDotNode(std::string fullName) const {
     std::replace(fullName.begin(), fullName.end(), '/', '_');
@@ -177,7 +190,7 @@ namespace ChimeraTK {
     return fullName;
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
   void EntityOwner::dumpGraphInternal(std::ostream &stream) const {
     
@@ -220,7 +233,7 @@ namespace ChimeraTK {
 
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
   void EntityOwner::addTag(const std::string &tag) {
     for(auto &node : getAccessorList()) node.addTag(tag);
@@ -228,7 +241,7 @@ namespace ChimeraTK {
     _tags.insert(tag);
   }
 
-  /*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
   VirtualModule EntityOwner::flatten() {
     VirtualModule nextmodule{_name, _description, getModuleType()};

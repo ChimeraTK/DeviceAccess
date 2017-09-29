@@ -60,16 +60,16 @@ namespace ChimeraTK {
       
       /** Obtain the list of submodules associated with this instance and any submodules */
       std::list<Module*> getSubmoduleListRecursive();
-      
+
       /** Return a VirtualModule containing the part of the tree structure matching the given tag. The resulting
        *  VirtualModule might have virtual sub-modules, if this EntityOwner contains sub-EntityOwners with
        *  entities matchting the tag. "tag" is interpreted as a regular expression (see std::regex_match). */
-      VirtualModule findTag(const std::string &tag, bool eliminateAllHierarchies=false) const;
-      
-      /** Add the part of the tree structure matching the given tag to a VirtualModule. Users normally will use
-       *  findTag() instead. "tag" is interpreted as a regular expression (see std::regex_match). */
-      void findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies=false,
-                                    bool eliminateFirstHierarchy=false) const;
+      VirtualModule findTag(const std::string &tag) const;
+
+      /** Return a VirtualModule containing the part of the tree structure not matching the given tag. This is
+       *  the negation of findTag(), this function will keep those variables which findTag() would remove from the
+       *  tree. Again, "tag" is interpreted as a regular expression (see std::regex_match). */
+      VirtualModule excludeTag(const std::string &tag) const;
 
       /** Called inside the constructor of Accessor: adds the accessor to the list */
       void registerAccessor(VariableNetworkNode accessor) {
@@ -125,7 +125,12 @@ namespace ChimeraTK {
       virtual ModuleType getModuleType() const = 0;
 
   protected:
-      
+            
+      /** Add the part of the tree structure matching the given tag to a VirtualModule. Users normally will use
+       *  findTag() instead. "tag" is interpreted as a regular expression (see std::regex_match). */
+      void findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies=false,
+                                    bool eliminateFirstHierarchy=false, bool negate=false) const;
+
       /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
       void dumpGraphInternal(std::ostream &stream) const;
       
