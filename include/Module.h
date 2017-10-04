@@ -112,8 +112,7 @@ namespace ChimeraTK {
       void connectTo(const Module &target, VariableNetworkNode trigger={}) const;
 
       std::string getQualifiedName() const override {
-        assert(_owner != nullptr);
-        return _owner->getQualifiedName() + "/" + _name;
+        return ( (_owner != nullptr) ? _owner->getQualifiedName() : "" ) + "/" + _name;
       }
       
       /** Set a new owner. The caller has to take care himself that the Module gets unregistered with the old owner
