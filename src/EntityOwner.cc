@@ -206,7 +206,7 @@ namespace ChimeraTK {
     
     std::string myDotNode = cleanDotNode(getQualifiedName());
     
-    stream << myDotNode << "[label=\"" << getName() << "\"";
+    stream << "  " << myDotNode << "[label=\"" << getName() << "\"";
     if(_eliminateHierarchy) {
       stream << ",style=dotted";
     }
@@ -221,7 +221,7 @@ namespace ChimeraTK {
     if(showVariables) {
       for(auto &node : getAccessorList()) {
         std::string dotNode = cleanDotNode(node.getQualifiedName());
-        stream << dotNode << "[label=\"{" << node.getName() << "| {";
+        stream << "  " <<  dotNode << "[label=\"{" << node.getName() << "| {";
         bool first = true;
         for(auto tag : node.getTags()) {
           if(!first) {
