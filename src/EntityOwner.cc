@@ -177,7 +177,17 @@ namespace ChimeraTK {
   void EntityOwner::dumpGraph(const std::string& fileName) const {
     std::fstream file(fileName, std::ios_base::out);
     file << "digraph G {" << std::endl;
-    dumpGraphInternal(file);
+    dumpGraphInternal(file, true);
+    file << "}" << std::endl;
+    file.close();
+  }
+
+/*********************************************************************************************************************/
+
+  void EntityOwner::dumpModuleGraph(const std::string& fileName) const {
+    std::fstream file(fileName, std::ios_base::out);
+    file << "digraph G {" << std::endl;
+    dumpGraphInternal(file, false);
     file << "}" << std::endl;
     file.close();
   }
@@ -192,7 +202,7 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  void EntityOwner::dumpGraphInternal(std::ostream &stream) const {
+  void EntityOwner::dumpGraphInternal(std::ostream &stream, bool showVariables) const {
     
     std::string myDotNode = cleanDotNode(getQualifiedName());
     
@@ -208,27 +218,31 @@ namespace ChimeraTK {
     }
     stream << "]" << std::endl;
     
-    for(auto &node : getAccessorList()) {
-      std::string dotNode = cleanDotNode(node.getQualifiedName());
-      stream << dotNode << "[label=\"{" << node.getName() << "| {";
-      bool first = true;
-      for(auto tag : node.getTags()) {
-        if(!first) {
-          stream << "|";
+    if(showVariables) {
+      for(auto &node : getAccessorList()) {
+        std::string dotNode = cleanDotNode(node.getQualifiedName());
+        stream << dotNode << "[label=\"{" << node.getName() << "| {";
+        bool first = true;
+        for(auto tag : node.getTags()) {
+          if(!first) {
+            stream << "|";
+          }
+          else {
+            first = false;
+          }
+          stream << tag;
         }
-        else {
-          first = false;
-        }
-        stream << tag;
+        stream << "}}\", shape=record]" << std::endl;
+        stream << "  " << myDotNode << " -> " << dotNode  << std::endl;
       }
-      stream << "}}\", shape=record]" << std::endl;
-      stream << "  " << myDotNode << " -> " << dotNode  << std::endl;
     }
 
-    for(auto &submodule : getSubmoduleList()) {
+    for(auto submodule : getSubmoduleList()) {
+      if(submodule->getModuleType() == ModuleType::Device ||
+         submodule->getModuleType() == ModuleType::ControlSystem) continue;
       std::string dotNode = cleanDotNode(submodule->getQualifiedName());
       stream << "  " << myDotNode << " -> " << dotNode << std::endl;
-      submodule->dumpGraphInternal(stream);
+      submodule->dumpGraphInternal(stream, showVariables);
     }
 
   }

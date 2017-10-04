@@ -113,8 +113,15 @@ namespace ChimeraTK {
       /** Print the full hierarchy to stdout. */
       void dump(const std::string &prefix="") const;
       
-      /** Create Graphviz dot graph write to file */
+      /** Create Graphviz dot graph and write to file. The graph will contain the full hierarchy of modules and
+       *  variables below (and including) this module. Each variable will also show which tags are attached to it.
+       *  ModuleGroups will be drawn with a double line, ApplicationModules with a bold line. Hierarchies which will
+       *  be eliminated in the dynamic information model are shown with a dotted line. */
       void dumpGraph(const std::string &fileName="graph.dot") const;
+      
+      /** Create a Graphiz dot graph similar to the one created with dumpGraph, but just show the modules and not the
+       *  variables. This allows to get an overview over more complex applications. */
+      void dumpModuleGraph(const std::string &fileName="graph.dot") const;
       
       enum class ModuleType {
         ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device
@@ -132,7 +139,7 @@ namespace ChimeraTK {
                                     bool eliminateFirstHierarchy=false, bool negate=false) const;
 
       /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
-      void dumpGraphInternal(std::ostream &stream) const;
+      void dumpGraphInternal(std::ostream &stream, bool showVariables) const;
       
       /** Clean a fully qualified entity name so it can be used as a dot node name (i.e. strip slashes etc.) */
       std::string cleanDotNode(std::string fullName) const;
