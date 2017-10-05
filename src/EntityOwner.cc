@@ -214,7 +214,7 @@ namespace ChimeraTK {
       stream << ",peripheries=2";
     }
     if(getModuleType() == ModuleType::ApplicationModule) {
-      stream << ",style=bold";
+      stream << ",penwidth=3";
     }
     stream << "]" << std::endl;
     
