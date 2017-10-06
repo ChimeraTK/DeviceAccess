@@ -26,7 +26,7 @@ PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}" ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
 # optional dependency: BOOST unit test framework needed for tests
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework filesystem)
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
 IF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
@@ -34,6 +34,11 @@ ELSE()
   message(" The following packages were not found, so testing will be disabled:")
   message("  * BOOST unit_test_framework")
 ENDIF()
+
+# Find BOOST filesystem
+# Note: we need to search this after looking for the unit_test_framework, since we must not link against the
+#       unit_test_framework library (use header-only)
+FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
 add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.04)
