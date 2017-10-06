@@ -292,6 +292,54 @@ namespace mtca4u {
       *  storage (e.g. read-only variables or device registers) @todo TODO does this make sense?
       */
       virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {};
+      
+      /**
+       * Simple class holding a unique ID for a TransferElement. The ID is guaranteed to be unique for all accessors
+       * throughout the lifetime of the process.
+       */
+      class ID {
+
+        public:
+
+          /** Default constructor constructs an invalid ID, which may be assigned with another ID */
+          ID() : _id(0) {}
+          
+          /** Copy ID from another */
+          ID(const ID& other) : _id(other._id) {}
+
+          /** Compare ID with another. Will always return false, if the ID is invalid (i.e. setId() was never called). */
+          bool operator==(const ID& other) { return (_id != 0) && (_id == other._id); }
+          bool operator!=(const ID& other) { return !(operator==(other)); }
+          
+          /** Assign ID from another. May only be called if currently no ID has been assigned. */
+          ID& operator=(const ID& other) { _id = other._id; return *this; }
+
+        protected:
+          
+          /** Assign an ID to this instance. May only be called if currently no ID has been assigned. */
+          void makeUnique() {
+            static std::atomic<size_t> nextId{0};
+            assert(_id == 0);
+            ++nextId;
+            assert(nextId != 0);
+            _id = nextId;
+          }
+          
+          /** The actual ID value */
+          size_t _id;
+          
+          friend class TransferElement;
+      };
+      
+      /**
+       * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
+       * function will return the unique ID of the actual implementation. This means that e.g. two instances of
+       * ScalarRegisterAccessor created by the same call to Device::getScalarRegisterAccessor() (e.g. by copying the
+       * accessor to another using NDRegisterAccessorBridge::replace()) will have the same ID, while two instances
+       * obtained by to difference calls to Device::getScalarRegisterAccessor() will have a different ID even when
+       * accessing the very same register.
+       */
+      ID getId() const { return _id; };
 
     protected:
 
@@ -303,6 +351,14 @@ namespace mtca4u {
 
       /** Description of this variable/register */
       std::string _description;
+      
+      /** The ID of this TransferElement */
+      ID _id;
+      
+      /** Allow generating a unique ID from derived classes*/
+      void makeUniqueId() {
+        _id.makeUnique();
+      }
 
       /** Flag whether this TransferElement has been added to a TransferGroup or not */
       bool isInTransferGroup;

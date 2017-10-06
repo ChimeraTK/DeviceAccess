@@ -32,6 +32,9 @@ class ScalarRegisterTest {
     /// test the scalar accessor as one value in a larger register
     void testWordOffset();
 
+    /// test the unique ID
+    void testUniqueID();
+
 };
 
 /**********************************************************************************************************************/
@@ -45,6 +48,7 @@ class  ScalarRegisterTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testIntRegisterAccessor, scalarRegisterTest ) );
       add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testFloatRegisterAccessor, scalarRegisterTest ) );
       add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testWordOffset, scalarRegisterTest ) );
+      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testUniqueID, scalarRegisterTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -212,6 +216,8 @@ void ScalarRegisterTest::testFloatRegisterAccessor() {
   device.close();
 
 }
+
+/**********************************************************************************************************************/
 /// test the scalar accessor as one value in a larger register
 void ScalarRegisterTest::testWordOffset(){
   std::cout << "testWordOffset" << std::endl;
@@ -236,4 +242,54 @@ void ScalarRegisterTest::testWordOffset(){
   BOOST_CHECK(dummy == 3.53125);
 
   device.close();
+}
+
+/**********************************************************************************************************************/
+void ScalarRegisterTest::testUniqueID() {
+  std::cout << "testUniqueID" << std::endl;
+  
+  Device device;
+  device.open("DUMMYD2");
+
+  // get register accessors
+  ScalarRegisterAccessor<int> accessor1  = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, true);
+  ScalarRegisterAccessor<int> accessor2  = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, true);
+  
+  // self consistency check
+  BOOST_CHECK(   accessor1.getId() == accessor1.getId()  );
+  BOOST_CHECK( !(accessor1.getId() != accessor1.getId()) );
+  BOOST_CHECK(   accessor2.getId() == accessor2.getId()  );
+  BOOST_CHECK( !(accessor2.getId() != accessor2.getId()) );
+  BOOST_CHECK(   accessor1.getId() != accessor2.getId()  );
+  BOOST_CHECK( !(accessor1.getId() == accessor2.getId()) );
+  BOOST_CHECK(   accessor2.getId() != accessor1.getId()  );
+  BOOST_CHECK( !(accessor2.getId() == accessor1.getId()) );
+  
+  // copy the abstractor and check if unique ID stays the same
+  ScalarRegisterAccessor<int> accessor1Copied;
+  accessor1Copied.replace(accessor1);
+  BOOST_CHECK( accessor1Copied.getId() == accessor1.getId() );
+  BOOST_CHECK( accessor1Copied.getId() != accessor2.getId() );
+  ScalarRegisterAccessor<int> accessor2Copied;
+  accessor2Copied.replace(accessor2);
+  BOOST_CHECK( accessor2Copied.getId() == accessor2.getId() );
+  BOOST_CHECK( accessor2Copied.getId() != accessor1.getId() );
+  
+  // compare with accessor for same register but created another time
+  ScalarRegisterAccessor<int> accessor1a = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, true);
+  BOOST_CHECK( accessor1a.getId() == accessor1a.getId() );
+  BOOST_CHECK( accessor1.getId() != accessor1a.getId() );
+  BOOST_CHECK( accessor2.getId() != accessor1a.getId() );
+  
+  // test storing the ID
+  TransferElement::ID myId;
+  BOOST_CHECK( myId != myId );
+  myId = accessor1.getId();
+  BOOST_CHECK(myId == accessor1.getId());
+  BOOST_CHECK(myId == accessor1Copied.getId());
+  BOOST_CHECK(myId != accessor2.getId());
+  BOOST_CHECK(myId != accessor1a.getId());
+
+  device.close();  
+  
 }

@@ -37,12 +37,14 @@ namespace mtca4u {
        *  getXXRegisterAccessor() function of Device must be called. */
       void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) {
         _impl = newAccessor._impl;
+        TransferElement::_id = _impl->getId();
       }
       
       /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
        *  has been obtained directly (instead of a NDRegisterAccessorBridge). */
       void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
         _impl = newImpl;
+        TransferElement::_id = _impl->getId();
       }
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
@@ -108,6 +110,7 @@ namespace mtca4u {
         else {
           _impl->replaceTransferElement(newElement);
         }
+        TransferElement::_id = _impl->getId();
       }
 
       boost::shared_ptr<TransferElement> getHighLevelImplElement() override {
@@ -122,7 +125,9 @@ namespace mtca4u {
 
       NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : _impl(impl)
-      {}
+      {
+        TransferElement::_id = _impl->getId();
+      }
 
       NDRegisterAccessorBridge() {}
 
