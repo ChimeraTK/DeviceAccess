@@ -112,6 +112,11 @@ namespace mtca4u {
       else {
         _targetDevice = this;
       }
+      // make sure the target device exists
+      if(_targetDevice == nullptr) {
+        throw DeviceException("Target device for this logical register is not opened. See exception thrown in open()!",
+                              DeviceException::NOT_OPENED);
+      }
       // determine the offset and length
       size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
       size_t actualLength = ( numberOfWords > 0 ? numberOfWords : size_t(info->length) );
