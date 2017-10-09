@@ -34,6 +34,12 @@ namespace mtca4u {
       {
         TransferElement::makeUniqueId();
       }
+      
+      /** Copying and moving is not allowed */
+      NDRegisterAccessor(const NDRegisterAccessor &other) = delete;
+      NDRegisterAccessor(NDRegisterAccessor &&other) = delete;
+      NDRegisterAccessor& operator=(const NDRegisterAccessor &other) = delete;
+      NDRegisterAccessor& operator=(NDRegisterAccessor &&other) = delete;
         
       /** A virtual base class needs a virtual destructor */
       virtual ~NDRegisterAccessor() {
