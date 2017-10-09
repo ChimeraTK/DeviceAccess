@@ -85,6 +85,13 @@ namespace mtca4u {
           
           /** Assign ID from another. May only be called if currently no ID has been assigned. */
           ID& operator=(const ID& other) { _id = other._id; return *this; }
+          
+          friend std::ostream& operator<<(std::ostream &os, const ID& me) {
+            std::stringstream ss;
+            ss << std::hex << std::showbase << me._id;
+            os << ss.str();
+            return os;
+          }
 
         protected:
           
@@ -187,9 +194,9 @@ namespace mtca4u {
       }
 
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
-       *  new data. The TransferElement which received new data is returned as a reference. In case multiple
+       *  new data. The ID of the TransferElement which received new data is returned as a reference. In case multiple
        *  TransferElements receive new data simultaneously (or already have new data available before the call to
-       *  readAny()), the TransferElement with the oldest VersionNumber (see getVersionNumber()) will be returned
+       *  readAny()), the ID of the TransferElement with the oldest VersionNumber (see getVersionNumber()) will be returned
        *  by this function. This ensures that data is received in the order of sending (unless data is "dated back"
        *  and sent with an older version number, which might be the case e.g. when using the ControlSystemAdapter). */
       static TransferElement::ID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
@@ -412,7 +419,7 @@ namespace mtca4u {
   
   inline TransferElement::ID TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
     std::list<TransferFuture*> futureList;
-    for(auto elem : elementsToRead) {
+    for(auto &elem : elementsToRead) {
       auto *future = &(elem.get().readAsync());
       futureList.push_back(future);
     }
