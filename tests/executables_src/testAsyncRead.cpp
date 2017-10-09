@@ -322,12 +322,12 @@ void AsyncReadTest::testReadAny() {
     
     // no point to use a thread here
     auto r = TransferElement::readAny({a1,a2,a3,a4});
-    BOOST_CHECK(a1.isSameRegister(r));
+    BOOST_CHECK(a1.getId() == r);
     BOOST_CHECK(a1 == 55);
     BOOST_CHECK(a2 == 123);
 
     r = TransferElement::readAny({a1,a2,a3,a4});
-    BOOST_CHECK(a2.isSameRegister(r));
+    BOOST_CHECK(a2.getId() == r);
     BOOST_CHECK(a1 == 55);
     BOOST_CHECK(a2 == 66);
   }
@@ -364,28 +364,28 @@ void AsyncReadTest::testReadAny() {
 
     // no point to use a thread here
     auto r = TransferElement::readAny({a1,a2,a3,a4});
-    BOOST_CHECK(a4.isSameRegister(r));
+    BOOST_CHECK(a4.getId() == r);
     BOOST_CHECK(a1 == 55);
     BOOST_CHECK(a2 == 66);
     BOOST_CHECK(a3 == 122);
     BOOST_CHECK(a4 == 11);
 
     r = TransferElement::readAny({a1,a2,a3,a4});
-    BOOST_CHECK(a2.isSameRegister(r));
+    BOOST_CHECK(a2.getId() == r);
     BOOST_CHECK(a1 == 55);
     BOOST_CHECK(a2 == 22);
     BOOST_CHECK(a3 == 122);
     BOOST_CHECK(a4 == 11);
 
     r = TransferElement::readAny({a1,a2,a3,a4});
-    BOOST_CHECK(a3.isSameRegister(r));
+    BOOST_CHECK(a3.getId() == r);
     BOOST_CHECK(a1 == 55);
     BOOST_CHECK(a2 == 22);
     BOOST_CHECK(a3 == 33);
     BOOST_CHECK(a4 == 11);
 
     r = TransferElement::readAny({a1,a2,a3,a4});
-    BOOST_CHECK(a1.isSameRegister(r));
+    BOOST_CHECK(a1.getId() == r);
     BOOST_CHECK(a1 == 44);
     BOOST_CHECK(a2 == 22);
     BOOST_CHECK(a3 == 33);

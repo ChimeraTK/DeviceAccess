@@ -64,6 +64,44 @@ namespace mtca4u {
       
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
+      
+      /**
+       * Simple class holding a unique ID for a TransferElement. The ID is guaranteed to be unique for all accessors
+       * throughout the lifetime of the process.
+       */
+      class ID {
+
+        public:
+
+          /** Default constructor constructs an invalid ID, which may be assigned with another ID */
+          ID() : _id(0) {}
+          
+          /** Copy ID from another */
+          ID(const ID& other) : _id(other._id) {}
+
+          /** Compare ID with another. Will always return false, if the ID is invalid (i.e. setId() was never called). */
+          bool operator==(const ID& other) { return (_id != 0) && (_id == other._id); }
+          bool operator!=(const ID& other) { return !(operator==(other)); }
+          
+          /** Assign ID from another. May only be called if currently no ID has been assigned. */
+          ID& operator=(const ID& other) { _id = other._id; return *this; }
+
+        protected:
+          
+          /** Assign an ID to this instance. May only be called if currently no ID has been assigned. */
+          void makeUnique() {
+            static std::atomic<size_t> nextId{0};
+            assert(_id == 0);
+            ++nextId;
+            assert(nextId != 0);
+            _id = nextId;
+          }
+          
+          /** The actual ID value */
+          size_t _id;
+          
+          friend class TransferElement;
+      };
 
       /** A typedef for more compact syntax */
       typedef boost::shared_ptr<TransferElement> SharedPtr;
@@ -154,7 +192,7 @@ namespace mtca4u {
        *  readAny()), the TransferElement with the oldest VersionNumber (see getVersionNumber()) will be returned
        *  by this function. This ensures that data is received in the order of sending (unless data is "dated back"
        *  and sent with an older version number, which might be the case e.g. when using the ControlSystemAdapter). */
-      static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+      static TransferElement::ID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
@@ -294,44 +332,6 @@ namespace mtca4u {
       virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {};
       
       /**
-       * Simple class holding a unique ID for a TransferElement. The ID is guaranteed to be unique for all accessors
-       * throughout the lifetime of the process.
-       */
-      class ID {
-
-        public:
-
-          /** Default constructor constructs an invalid ID, which may be assigned with another ID */
-          ID() : _id(0) {}
-          
-          /** Copy ID from another */
-          ID(const ID& other) : _id(other._id) {}
-
-          /** Compare ID with another. Will always return false, if the ID is invalid (i.e. setId() was never called). */
-          bool operator==(const ID& other) { return (_id != 0) && (_id == other._id); }
-          bool operator!=(const ID& other) { return !(operator==(other)); }
-          
-          /** Assign ID from another. May only be called if currently no ID has been assigned. */
-          ID& operator=(const ID& other) { _id = other._id; return *this; }
-
-        protected:
-          
-          /** Assign an ID to this instance. May only be called if currently no ID has been assigned. */
-          void makeUnique() {
-            static std::atomic<size_t> nextId{0};
-            assert(_id == 0);
-            ++nextId;
-            assert(nextId != 0);
-            _id = nextId;
-          }
-          
-          /** The actual ID value */
-          size_t _id;
-          
-          friend class TransferElement;
-      };
-      
-      /**
        * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
        * function will return the unique ID of the actual implementation. This means that e.g. two instances of
        * ScalarRegisterAccessor created by the same call to Device::getScalarRegisterAccessor() (e.g. by copying the
@@ -410,7 +410,7 @@ namespace mtca4u {
 
   /*******************************************************************************************************************/  
   
-  inline boost::shared_ptr<TransferElement> TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+  inline TransferElement::ID TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
     std::list<TransferFuture*> futureList;
     for(auto elem : elementsToRead) {
       auto *future = &(elem.get().readAsync());
@@ -439,7 +439,7 @@ namespace mtca4u {
     theUpdate->wait();
 
     // return the transfer element as a shared pointer
-    return theUpdate->getTransferElement().shared_from_this();
+    return theUpdate->getTransferElement().getId();
   }
 
 } /* namespace mtca4u */
