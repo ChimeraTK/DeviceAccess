@@ -29,7 +29,7 @@ namespace ChimeraTK {
       : _originalFuture(&originalFuture), _accessor(accessor)
       {
         TransferFuture::_theFuture = _originalFuture->getBoostFuture();
-        TransferFuture::_transferElement = &(_originalFuture->getTransferElement());
+        TransferFuture::_transferElement = accessor;
       }
       
       virtual ~TestDecoratorTransferFuture() {}

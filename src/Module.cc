@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
   
-  boost::shared_ptr<mtca4u::TransferElement> Module::readAny() {
+  TransferElement::ID Module::readAny() {
     auto accessorList = getAccessorListRecursive();
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
     std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;

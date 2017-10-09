@@ -115,19 +115,19 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
     void mainLoop() {
       while(true) {
         auto justRead = inputs.readAny();
-        if(inputs.v1.isSameRegister(justRead)) {
+        if(inputs.v1.getId() == justRead) {
           index = 1;
           value = (T)inputs.v1;
         }
-        else if(inputs.v2.isSameRegister(justRead)) {
+        else if(inputs.v2.getId() == justRead) {
           index = 2;
           value = (T)inputs.v2;
         }
-        else if(inputs.v3.isSameRegister(justRead)) {
+        else if(inputs.v3.getId() == justRead) {
           index = 3;
           value = (T)inputs.v3;
         }
-        else if(inputs.v4.isSameRegister(justRead)) {
+        else if(inputs.v4.getId() == justRead) {
           index = 4;
           value = (T)inputs.v4;
         }

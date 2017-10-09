@@ -814,7 +814,7 @@ void Application::stepApplication() {
 
 /*********************************************************************************************************************/
 
-boost::shared_ptr<TransferElement> Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+TransferElement::ID Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
   if(!Application::getInstance().testableMode) {
     return mtca4u::TransferElement::readAny(elementsToRead);
   }

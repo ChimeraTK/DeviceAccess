@@ -100,7 +100,7 @@ namespace ChimeraTK {
        *  original version provided by DeviceAccess. If the testable mode is not enabled, just the original version
        *  is called instead. Only with the testable mode enabled, special precautions are taken to make this blocking
        *  call testable. */
-      static boost::shared_ptr<TransferElement> readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
+      static mtca4u::TransferElement::ID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
       
       /** Lock the testable mode mutex for the current thread. Internally, a thread-local std::unique_lock<std::mutex>
        *  will be created and re-used in subsequent calls within the same thread to this function and to
