@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <unordered_map>
+
 #include <math.h>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -289,6 +291,31 @@ void ScalarRegisterTest::testUniqueID() {
   BOOST_CHECK(myId == accessor1Copied.getId());
   BOOST_CHECK(myId != accessor2.getId());
   BOOST_CHECK(myId != accessor1a.getId());
+  
+  // check if we can put the ID into an std::unordered_map as a key
+  std::unordered_map<TransferElement::ID, std::string> map1;
+  map1.insert({myId, "SomeTest"});
+  BOOST_CHECK(map1[accessor1.getId()] == "SomeTest");
+  
+  // check if we can put the ID into an std::unordered_map as a value
+  std::unordered_map<std::string, TransferElement::ID> map2;
+  map2.insert({"AnotherTest", myId});
+  BOOST_CHECK(map2["AnotherTest"] == accessor1.getId());
+  
+  // check if we can put the ID into an std::map as a key
+  std::map<TransferElement::ID, std::string> map3;
+  map3.insert({myId, "SomeTest"});
+  BOOST_CHECK(map3[accessor1.getId()] == "SomeTest");
+  
+  // check if we can put the ID into an std::map as a value
+  std::unordered_map<std::string, TransferElement::ID> map4;
+  map4.insert({"AnotherTest", myId});
+  BOOST_CHECK(map4["AnotherTest"] == accessor1.getId());
+  
+  // check if we can put the ID into an std::vector
+  std::vector<TransferElement::ID> vector;
+  vector.push_back(myId);
+  BOOST_CHECK(vector[0] == accessor1.getId());
 
   device.close();  
   

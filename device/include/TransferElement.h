@@ -80,18 +80,25 @@ namespace mtca4u {
           ID(const ID& other) : _id(other._id) {}
 
           /** Compare ID with another. Will always return false, if the ID is invalid (i.e. setId() was never called). */
-          bool operator==(const ID& other) { return (_id != 0) && (_id == other._id); }
-          bool operator!=(const ID& other) { return !(operator==(other)); }
+          bool operator==(const ID& other) const { return (_id != 0) && (_id == other._id); }
+          bool operator!=(const ID& other) const { return !(operator==(other)); }
           
           /** Assign ID from another. May only be called if currently no ID has been assigned. */
           ID& operator=(const ID& other) { _id = other._id; return *this; }
           
+          /** Streaming operator to stream the ID e.g. to std::cout */
           friend std::ostream& operator<<(std::ostream &os, const ID& me) {
             std::stringstream ss;
             ss << std::hex << std::showbase << me._id;
             os << ss.str();
             return os;
           }
+
+          /** Hash function for putting TransferElement::ID e.g. into an std::unordered_map */
+          friend struct std::hash<ID>;
+          
+          /** Comparison for putting TransferElement::ID e.g. into an std::map */
+          friend struct std::less<ID>;
 
         protected:
           
@@ -450,5 +457,30 @@ namespace mtca4u {
   }
 
 } /* namespace mtca4u */
+namespace std {
 
+  /*******************************************************************************************************************/  
+  
+  /** Hash function for putting TransferElement::ID e.g. into an std::unordered_map */
+  template<>
+  struct hash<mtca4u::TransferElement::ID> {
+      std::size_t operator()(const mtca4u::TransferElement::ID &f) const {
+          return std::hash<size_t>{}(f._id);
+      }  
+  };
+
+  /*******************************************************************************************************************/  
+
+  /** Comparison for putting TransferElement::ID e.g. into an std::map */
+  template<>
+  struct less<mtca4u::TransferElement::ID> {
+    // these typedefs are mandatory before C++17, even though they seem to be unused by gcc
+    typedef bool result_type;
+    typedef mtca4u::TransferElement::ID first_argument_type;
+    typedef mtca4u::TransferElement::ID second_argument_type;
+    bool operator()(const mtca4u::TransferElement::ID &a, const mtca4u::TransferElement::ID &b) const {
+      return a._id < b._id;
+    }
+  };
+}
 #endif /* MTCA4U_TRANSFER_ELEMENT_H */
