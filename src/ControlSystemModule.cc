@@ -34,4 +34,10 @@ namespace ChimeraTK {
     return subModules[moduleName];
   }
 
+  /*********************************************************************************************************************/
+
+  const Module& ControlSystemModule::virtualise() const {
+    return *this;
+  }
+
 }

@@ -141,7 +141,17 @@ namespace ChimeraTK {
 
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
-      submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate);
+      // check if submodule already exists by this name and its hierarchy should not be eliminated
+      if(!moduleToAddTo->getEliminateHierarchy() && moduleToAddTo->hasSubmodule(submodule->getName())) {
+        // exists: add to the existing module
+        auto *existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
+        assert(existingSubModule != nullptr);
+        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate);
+      }
+      else {
+        // does not yet exist: add as new submodule to the current module
+        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate);
+      }
     }
     
     if(needToAddSubModule) {
@@ -150,6 +160,24 @@ namespace ChimeraTK {
       }
     }
     
+  }
+
+/*********************************************************************************************************************/
+
+  bool EntityOwner::hasSubmodule(const std::string &name) const {
+    for(auto submodule : getSubmoduleList()) {
+      if(submodule->getName() == name) return true;
+    }
+    return false;
+  }
+
+/*********************************************************************************************************************/
+
+  Module* EntityOwner::getSubmodule(const std::string &name) const {
+    for(auto submodule : getSubmoduleList()) {
+      if(submodule->getName() == name) return submodule;
+    }
+    throw; /// @todo make proper exception
   }
 
 /*********************************************************************************************************************/

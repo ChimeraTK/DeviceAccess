@@ -50,7 +50,7 @@ namespace ChimeraTK {
         _name = std::move(other._name);
         _description = std::move(other._description);
         _owner = other._owner;
-        _owner->registerModule(this, false);
+        if(_owner != nullptr) _owner->registerModule(this, false);
         accessorList = std::move(other.accessorList);
         moduleList = std::move(other.moduleList);
         _eliminateHierarchy = other._eliminateHierarchy;
@@ -94,10 +94,16 @@ namespace ChimeraTK {
       void writeAll();
 
       /** Function call operator: Return VariableNetworkNode of the given variable name */
-      virtual VariableNetworkNode operator()(const std::string& variableName) const;
+      virtual VariableNetworkNode operator()(const std::string& variableName) const = 0;
 
-      /** Subscript operator: Return sub-module of the given name */
-      virtual Module& operator[](const std::string& moduleName) const;
+      /** Subscript operator: Return sub-module of the given name. Hierarchies will already be eliminated, if
+       *  requested. Thus the returned reference will not point to any user-defined object but to a VirtualModule
+       *  containing the variable structure. */
+      virtual Module& operator[](const std::string& moduleName) const = 0;
+      
+      /** Return the virtual version of this module and its sub-modules, i.e. eliminate hierarchies where requested and
+       *  apply other dynamic model changes. */
+      virtual const Module& virtualise() const = 0;
       
       /**
         * Connect the entire module into another module. All variables inside this module and all
@@ -110,7 +116,7 @@ namespace ChimeraTK {
         * of the target module, which are being connected during this operation, if the corresponding variable
         * in this module is push-type.
         */
-      void connectTo(const Module &target, VariableNetworkNode trigger={}) const;
+      virtual void connectTo(const Module &target, VariableNetworkNode trigger={}) const = 0;
 
       std::string getQualifiedName() const override {
         return ( (_owner != nullptr) ? _owner->getQualifiedName() : "" ) + "/" + _name;

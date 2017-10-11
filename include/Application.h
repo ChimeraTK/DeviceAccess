@@ -48,14 +48,14 @@ namespace ChimeraTK {
        *  afterwards. This is mostly useful for writing tests, as it allows to run several applications sequentially
        *  in the same executable. Note that any ApplicationModules etc. owned by this Application are no longer
        *  valid after destroying the Application and must be destroyed as well (or at least no longer used). */
-      void shutdown();
+      void shutdown() override;
       
       /** Define the connections between process variables. Must be implemented by the application developer. */
       virtual void defineConnections() = 0;
       
-      void initialise();
+      void initialise() override;
 
-      void run();
+      void run() override;
       
       /** Check if all connections are valid. */
       void checkConnections();

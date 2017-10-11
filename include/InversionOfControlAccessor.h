@@ -45,6 +45,12 @@ namespace ChimeraTK {
       void addTag(const std::string &tag) {
         node.addTag(tag);
       }
+      
+      /** Add multiple tags. Valid names for tags only contain alpha-numeric characters (i.e. no spaces and no special
+       *  characters). */
+      void addTags(const std::unordered_set<std::string> &tags) {
+        for(auto &tag : tags) node.addTag(tag);
+      }
 
       /** Convert into VariableNetworkNode */
       operator VariableNetworkNode() {

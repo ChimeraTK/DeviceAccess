@@ -11,7 +11,7 @@ namespace ChimeraTK {
 
   ModuleGroup::ModuleGroup(EntityOwner *owner, const std::string &name, const std::string &description,
           bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
-  : Module(owner,name,description,eliminateHierarchy,tags)
+  : ModuleImpl(owner,name,description,eliminateHierarchy,tags)
   {
     if(!dynamic_cast<Application*>(owner) && !dynamic_cast<ModuleGroup*>(owner)) {
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(

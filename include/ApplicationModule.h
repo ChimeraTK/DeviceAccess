@@ -12,14 +12,14 @@
 
 #include <boost/thread.hpp>
 
-#include "Module.h"
+#include "ModuleImpl.h"
 
 namespace ChimeraTK {
   
   class Application;
   class ModuleGroup;
 
-  class ApplicationModule : public Module {
+  class ApplicationModule : public ModuleImpl {
 
     public:
       
@@ -37,17 +37,17 @@ namespace ChimeraTK {
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-      ApplicationModule() : Module(nullptr, "invalid", "invalid ApplicationModule") {}
+      ApplicationModule() : ModuleImpl(nullptr, "invalid", "invalid ApplicationModule") {}
 
       /** Move operation with the move constructor */
       ApplicationModule(ApplicationModule &&other) :
-      Module(std::move(other))
+      ModuleImpl(std::move(other))
       {
         assert(!moduleThread.joinable());   // if the thread is already running, moving is no longer allowed!
       }
       
       /** Inherit assignment */
-      using Module::operator=;
+      using ModuleImpl::operator=;
 
       /** Destructor */
       virtual ~ApplicationModule();

@@ -60,6 +60,12 @@ namespace ChimeraTK {
       
       /** Obtain the list of submodules associated with this instance and any submodules */
       std::list<Module*> getSubmoduleListRecursive();
+      
+      /** Check whether a submodule exists by the given name (not taking into account eliminated hierarchies etc.) */
+      bool hasSubmodule(const std::string &name) const;
+      
+      /** Get a submodule by the given name (not taking into account eliminated hierarchies etc.) */
+      Module* getSubmodule(const std::string &name) const;
 
       /** Return a VirtualModule containing the part of the tree structure matching the given tag. The resulting
        *  VirtualModule might have virtual sub-modules, if this EntityOwner contains sub-EntityOwners with
@@ -124,7 +130,7 @@ namespace ChimeraTK {
       void dumpModuleGraph(const std::string &fileName="graph.dot") const;
       
       enum class ModuleType {
-        ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device
+        ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device, Invalid
       };
       
       /** Return the module type of this module, or in case of a VirtualModule the module type this VirtualModule was

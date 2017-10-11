@@ -7,6 +7,7 @@
 
 #include "Application.h"
 #include "Module.h"
+#include "VirtualModule.h"
 
 namespace ChimeraTK {
 
@@ -98,80 +99,6 @@ namespace ChimeraTK {
       if(!accessor.getAppAccessorNoType().isWriteable()) continue;
       accessor.getAppAccessorNoType().write();
     }
-  }
-
-/*********************************************************************************************************************/
-  
-  VariableNetworkNode Module::operator()(const std::string& variableName) const {
-    // search for variable in our list
-    for(auto variable : getAccessorList()) {
-      if(variable.getName() == variableName) return VariableNetworkNode(variable);
-    }
-    // recurse into those submodules which have the eliminate hierarchy flag on
-    for(auto submodule : getSubmoduleList()) {
-      if(submodule->getEliminateHierarchy()) {
-        try {
-          return (*submodule)(variableName);
-        }
-        catch(std::logic_error &e) {
-          // ignore this exception, it just means this submodule does not have this variable
-          /// @todo FIXME don't use exceptions for regular program flow, add a function to test the presence of a variable instead!
-        }
-      }
-    }
-    // variable not found anywhere: throw exception
-    throw std::logic_error("Variable '"+variableName+"' is not part of the module '"+_name+"'.");
-  }
-
-/*********************************************************************************************************************/
-
-  Module& Module::operator[](const std::string& moduleName) const {
-    // search for module in our list
-    for(auto submodule : getSubmoduleList()) {
-      if(submodule->getName() == moduleName) return *submodule;
-    }
-    // recurse into those submodules which have the eliminate hierarchy flag on
-    for(auto submodule : getSubmoduleList()) {
-      if(submodule->getEliminateHierarchy()) {
-        try {
-          return (*submodule)[moduleName];
-        }
-        catch(std::logic_error &e) {
-          // ignore this exception, it just means this submodule does not have this module
-          /// @todo FIXME don't use exceptions for regular program flow, add a function to test the presence of a module instead!
-        }
-      }
-    }
-    // module not found anywhere: throw exception
-    throw std::logic_error("Sub-module '"+moduleName+"' is not part of the module '"+_name+"'.");
-  }
-
-/*********************************************************************************************************************/
-
-  void Module::connectTo(const Module &target, VariableNetworkNode trigger) const {
-    
-    // connect all direct variables of this module to their counter-parts in the right-hand-side module
-    for(auto variable : getAccessorList()) {
-      if(variable.getDirection() == VariableDirection::feeding) {
-        variable >> target(variable.getName());
-      }
-      else {
-        // use trigger?
-        if(trigger != VariableNetworkNode() && target(variable.getName()).getMode() == UpdateMode::poll
-                                            && variable.getMode() == UpdateMode::push ) {
-          target(variable.getName()) [ trigger ] >> variable;
-        }
-        else {
-          target(variable.getName()) >> variable;
-        }
-      }
-    }
-    
-    // connect all sub-modules to their couter-parts in the right-hand-side module
-    for(auto submodule : getSubmoduleList()) {
-      submodule->connectTo(target[submodule->getName()], trigger);
-    }
-    
   }
 
 } /* namespace ChimeraTK */

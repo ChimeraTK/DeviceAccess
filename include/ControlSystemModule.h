@@ -50,9 +50,15 @@ namespace ChimeraTK {
         return operator()(variableName, typeid(AnyType));
       }
 
+      void connectTo(const Module &, VariableNetworkNode ={}) const override {
+        throw;   /// @todo make proper exception
+      }
+
       Module& operator[](const std::string& moduleName) const override;
 
       ModuleType getModuleType() const override { return ModuleType::ControlSystem; }
+
+      const Module& virtualise() const override;
 
     protected:
 

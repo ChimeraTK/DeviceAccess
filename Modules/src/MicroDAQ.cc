@@ -37,7 +37,7 @@ namespace ChimeraTK {
     
     // for simplification, first create a VirtualModule containing the correct hierarchy structure (obeying eliminate
     // hierarchy etc.)
-    auto dynamicModel = source.findTag(".*");
+    auto dynamicModel = source.findTag(".*");     /// @todo use virtualise() instead
     
     // add all accessors on this hierarchy level
     for(auto &acc : dynamicModel.getAccessorList()) {

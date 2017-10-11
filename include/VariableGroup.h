@@ -12,13 +12,13 @@
 
 #include <boost/thread.hpp>
 
-#include "Module.h"
+#include "ModuleImpl.h"
 
 namespace ChimeraTK {
   
   class ApplicationModule;
 
-  class VariableGroup : public Module {
+  class VariableGroup : public ModuleImpl {
 
     public:
       
@@ -37,18 +37,18 @@ namespace ChimeraTK {
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-      VariableGroup() : Module(nullptr, "invalid", "invalid VariableGroup") {}
+      VariableGroup() : ModuleImpl(nullptr, "invalid", "invalid VariableGroup") {}
 
       /** Destructor */
       virtual ~VariableGroup() {};
 
       /** Move operation with the move constructor */
       VariableGroup(VariableGroup &&other) :
-      Module(std::move(other))
+      ModuleImpl(std::move(other))
       {}
       
       /** Inherit assignment */
-      using Module::operator=;
+      using ModuleImpl::operator=;
 
       ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
 
