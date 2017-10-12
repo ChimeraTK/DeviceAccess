@@ -92,7 +92,7 @@ void Application::processUnconnectedNodes() {
           constantList.emplace_back(VariableNetworkNode::makeConstant<double>(makeFeeder, 0, length));
         }
         else if(accessor.getValueType() == typeid(std::string)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<std::string>(makeFeeder, 0, length));
+          constantList.emplace_back(VariableNetworkNode::makeConstant<std::string>(makeFeeder, "", length));
         }
         else {
           throw std::invalid_argument("Unknown value type.");
