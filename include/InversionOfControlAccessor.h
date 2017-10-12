@@ -56,6 +56,9 @@ namespace ChimeraTK {
       operator VariableNetworkNode() {
         return node;
       }
+      operator const VariableNetworkNode() const {
+        return node;
+      }
       
       /** Connect with other node */
       VariableNetworkNode operator>>(const VariableNetworkNode &otherNode) {
