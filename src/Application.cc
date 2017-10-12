@@ -79,6 +79,12 @@ void Application::processUnconnectedNodes() {
         else if(accessor.getValueType() == typeid(uint32_t)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<uint32_t>(makeFeeder, 0, length));
         }
+        else if(accessor.getValueType() == typeid(int64_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<int64_t>(makeFeeder, 0, length));
+        }
+        else if(accessor.getValueType() == typeid(uint64_t)) {
+          constantList.emplace_back(VariableNetworkNode::makeConstant<uint64_t>(makeFeeder, 0, length));
+        }
         else if(accessor.getValueType() == typeid(float)) {
           constantList.emplace_back(VariableNetworkNode::makeConstant<float>(makeFeeder, 0, length));
         }
@@ -506,6 +512,12 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
   }
   else if(network.getValueType() == typeid(uint32_t)) {
     typedMakeConnection<uint32_t>(network);
+  }
+  else if(network.getValueType() == typeid(int64_t)) {
+    typedMakeConnection<int64_t>(network);
+  }
+  else if(network.getValueType() == typeid(uint64_t)) {
+    typedMakeConnection<uint64_t>(network);
   }
   else if(network.getValueType() == typeid(float)) {
     typedMakeConnection<float>(network);
