@@ -74,6 +74,19 @@ BOOST_AUTO_TEST_CASE( testConfigReader ) {
   std::cout << "==> testConfigReader" << std::endl;
   
   TestApplication app;
+  
+  // check if values are already accessible
+  BOOST_CHECK_EQUAL(app.config.get<int8_t>("var8"), -123);
+  BOOST_CHECK_EQUAL(app.config.get<uint8_t>("var8u"), 34);
+  BOOST_CHECK_EQUAL(app.config.get<int16_t>("var16"), -567);
+  BOOST_CHECK_EQUAL(app.config.get<uint16_t>("var16u"), 678);
+  BOOST_CHECK_EQUAL(app.config.get<int32_t>("var32"), -345678);
+  BOOST_CHECK_EQUAL(app.config.get<uint32_t>("var32u"), 234567);
+  BOOST_CHECK_EQUAL(app.config.get<int64_t>("var64"), -2345678901234567890);
+  BOOST_CHECK_EQUAL(app.config.get<uint64_t>("var64u"), 12345678901234567890U);
+  BOOST_CHECK_CLOSE(app.config.get<float>("varFloat"), 3.1415, 0.000001);
+  BOOST_CHECK_CLOSE(app.config.get<double>("varDouble"), -2.8, 0.000001);
+  BOOST_CHECK_EQUAL(app.config.get<std::string>("varString"), "My dear mister singing club!");
  
   app.config.connectTo(app.testModule);
   

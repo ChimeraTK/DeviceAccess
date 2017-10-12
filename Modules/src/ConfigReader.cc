@@ -50,8 +50,8 @@ namespace ChimeraTK {
     }
     
     // place the variable onto the vector
-    std::vector<ConfigReader::Var<T>> &variableVector = boost::fusion::at_key<T>(variableMap.table);
-    variableVector.emplace_back(ConfigReader::Var<T>(this, name, convertedValue));
+    std::map<std::string, ConfigReader::Var<T>> &theMap = boost::fusion::at_key<T>(variableMap.table);
+    theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(this, name, convertedValue)));
   }
 
   /*********************************************************************************************************************/
@@ -59,8 +59,8 @@ namespace ChimeraTK {
   template<>
   void ConfigReader::createVar<std::string>(const std::string &name, const std::string &value) {
     // place the variable onto the vector
-    std::vector<ConfigReader::Var<std::string>> &variableVector = boost::fusion::at_key<std::string>(variableMap.table);
-    variableVector.emplace_back(ConfigReader::Var<std::string>(this, name, value));
+    std::map<std::string, ConfigReader::Var<std::string>> &theMap = boost::fusion::at_key<std::string>(variableMap.table);
+    theMap.emplace(std::make_pair(name, ConfigReader::Var<std::string>(this, name, value)));
   }
 
   /*********************************************************************************************************************/
@@ -94,7 +94,7 @@ namespace ChimeraTK {
         parsingError("Expected 'variable' tag instead of: "+root->get_name());
       }
 
-      // parse the element and put into mape
+      // obtain attributes from the element
       auto name = element->get_attribute("name");
       if(!name) parsingError("Missing attribute 'name' for the 'variable' tag.");
       auto type = element->get_attribute("type");
@@ -127,10 +127,11 @@ namespace ChimeraTK {
       
       // get user type and vector
       typedef typename PAIR::first_type T;
-      std::vector<ConfigReader::Var<T>> &variableVector = boost::fusion::at_key<T>(_owner->variableMap.table);
+      std::map<std::string, ConfigReader::Var<T>> &theMap = boost::fusion::at_key<T>(_owner->variableMap.table);
       
       // iterate vector and set values
-      for(auto &var : variableVector) {
+      for(auto &pair : theMap) {
+        auto &var = pair.second;
         var._accessor = var._value;
         var._accessor.write();
       }

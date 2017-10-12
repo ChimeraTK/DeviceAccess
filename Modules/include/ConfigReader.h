@@ -22,6 +22,14 @@ namespace ChimeraTK {
                   const std::unordered_set<std::string> &tags={});
       
       void mainLoop() override;
+      
+      /** Get value for given configuration variable. This is already accessible right after construction of this
+       *  object. */
+      template<typename T>
+      const T& get(const std::string &variableName) const {
+        return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
+      }
+      
 
     protected:
       
@@ -47,12 +55,12 @@ namespace ChimeraTK {
       template<typename T>
       void createVar(const std::string &name, const std::string &value);
       
-      /** Define type for vector of Var, so we can put it into the TemplateUserTypeMap */
+      /** Define type for map of std::string to Var, so we can put it into the TemplateUserTypeMap */
       template<typename T>
-      using VectorOfVar = std::vector<Var<T>>;
+      using MapOfVar = std::map<std::string, Var<T>>;
       
       /** Type-depending map of vectors of variables */
-      mtca4u::TemplateUserTypeMap<VectorOfVar> variableMap;
+      mtca4u::TemplateUserTypeMap<MapOfVar> variableMap;
       
       /** Map assigning string type identifyers to C++ types */
       mtca4u::SingleTypeUserTypeMap<const char*> typeMap{"int8","uint8","int16","uint16","int32","uint32",
