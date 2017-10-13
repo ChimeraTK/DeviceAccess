@@ -1,7 +1,3 @@
-/*
- *  Generic module to read an XML config file and provide the defined values as constant variables
- */
-
 #ifndef CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 #define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
@@ -16,6 +12,23 @@ namespace ChimeraTK {
   struct FunctorFill;
   struct FunctorSetValues;
 
+  /**
+   *  Generic module to read an XML config file and provide the defined values as constant variables. The config file
+   *  should look like this:
+   *  \code{.xml}
+<configuration>
+  <variable name="variableName" type="int32" value="42"/>
+  <variable name="anotherVariable" type="string" value="Hello world!"/>
+</configuration>
+      \endcode
+   *
+   *  Outputs are created for each variable, so they can be connected to other modules. All values will be provided to
+   *  the receivers already in the preparation phase, so no read() must be called. Updates will never be sent, so any
+   *  blocking read operation on the receivers will block forever.
+   *
+   *  Configuration values can already be accessed during the Application::defineConnection() function by using the
+   *  ConfigReader::get() function.
+   */
   struct ConfigReader : ApplicationModule {
         
       ConfigReader(EntityOwner *owner, const std::string &name, const std::string &fileName,
