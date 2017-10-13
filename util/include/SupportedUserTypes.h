@@ -48,6 +48,22 @@ namespace mtca4u {
        > table;
   };
 
+  /** Map of UserType to a single type */
+  template<typename T>
+  using SingleTypeUserTypeMap = boost::fusion::map<
+                                    boost::fusion::pair<int8_t,T>,
+                                    boost::fusion::pair<uint8_t,T>,
+                                    boost::fusion::pair<int16_t,T>,
+                                    boost::fusion::pair<uint16_t,T>,
+                                    boost::fusion::pair<int32_t,T>,
+                                    boost::fusion::pair<uint32_t,T>,
+                                    boost::fusion::pair<int64_t,T>,
+                                    boost::fusion::pair<uint64_t,T>,
+                                    boost::fusion::pair<float,T>,
+                                    boost::fusion::pair<double,T>,
+                                    boost::fusion::pair<std::string,T>
+                                > ;
+
 } /* namespace mtca4u */
 
 #endif /* MTCA4U_SUPPORTED_USER_TYPES_H */
