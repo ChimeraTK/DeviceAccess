@@ -21,7 +21,8 @@ namespace ChimeraTK {
       ConfigReader(EntityOwner *owner, const std::string &name, const std::string &fileName,
                   const std::unordered_set<std::string> &tags={});
       
-      void mainLoop() override;
+      void mainLoop() override {}
+      void prepare() override;
       
       /** Get value for given configuration variable. This is already accessible right after construction of this
        *  object. */

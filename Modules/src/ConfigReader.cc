@@ -143,8 +143,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void ConfigReader::mainLoop() {
-    std::cout << "ConfigReader::mainLoop()" << std::endl;
+  void ConfigReader::prepare() {
     boost::fusion::for_each( variableMap.table, FunctorSetValues(this) );
   }
 

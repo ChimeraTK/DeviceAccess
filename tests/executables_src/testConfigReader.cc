@@ -36,7 +36,8 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
   std::atomic<bool> done{false};
 
   void mainLoop() {
-    readAll();
+
+    // values should be available right away
     BOOST_CHECK_EQUAL((int8_t)var8, -123);
     BOOST_CHECK_EQUAL((uint8_t)var8u, 34);
     BOOST_CHECK_EQUAL((int16_t)var16, -567);
@@ -48,6 +49,22 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
     BOOST_CHECK_CLOSE((float)varFloat, 3.1415, 0.000001);
     BOOST_CHECK_CLOSE((double)varDouble, -2.8, 0.000001);
     BOOST_CHECK_EQUAL((std::string)varString, "My dear mister singing club!");
+    
+    // no further update shall be received
+    usleep(1000000);   // 1 second
+    BOOST_CHECK( !var8.readNonBlocking() );
+    BOOST_CHECK( !var8u.readNonBlocking() );
+    BOOST_CHECK( !var16.readNonBlocking() );
+    BOOST_CHECK( !var16u.readNonBlocking() );
+    BOOST_CHECK( !var32.readNonBlocking() );
+    BOOST_CHECK( !var32u.readNonBlocking() );
+    BOOST_CHECK( !var64.readNonBlocking() );
+    BOOST_CHECK( !var64u.readNonBlocking() );
+    BOOST_CHECK( !varFloat.readNonBlocking() );
+    BOOST_CHECK( !varDouble.readNonBlocking() );
+    BOOST_CHECK( !varString.readNonBlocking() );
+    
+    // inform main thread that we are done
     done = true;
   }
 
