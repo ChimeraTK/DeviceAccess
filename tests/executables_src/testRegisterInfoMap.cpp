@@ -513,6 +513,115 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo.signedFlag == false );
   BOOST_CHECK( myRegisterInfo.lineNumber == 123 );
   BOOST_CHECK( myRegisterInfo.module == "MY_MODULE" );
+  
+  BOOST_CHECK( myRegisterInfo.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( myRegisterInfo.getDataDescriptor().isIntegral() == false );
+  BOOST_CHECK( myRegisterInfo.getDataDescriptor().isSigned() == false );
+  BOOST_CHECK( myRegisterInfo.getDataDescriptor().nFractionalDigits() == 2 );   // 2^5 = 32 -> 2 digits
+  BOOST_CHECK( myRegisterInfo.getDataDescriptor().nDigits() == 7 );             // 2^(18-5) = 8192 -> 4 digits + 1 for the dot + 2 fractional
+
+  // test a signed integer
+  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo2( "ANOTHER_NAME",
+      1, // nElements
+      0xDEADBEEF, //address
+      4, // size
+      0, // bar
+      23, // width
+      0, // frac_bits
+      true, // signed
+      234, //lineNumber
+      "XYZ");
+  BOOST_CHECK( myRegisterInfo2.name == "ANOTHER_NAME" );
+  BOOST_CHECK( myRegisterInfo2.nElements == 1 );
+  BOOST_CHECK( myRegisterInfo2.address == 0xDEADBEEF );
+  BOOST_CHECK( myRegisterInfo2.nBytes == 4 );
+  BOOST_CHECK( myRegisterInfo2.bar == 0 );
+  BOOST_CHECK( myRegisterInfo2.width == 23 );
+  BOOST_CHECK( myRegisterInfo2.nFractionalBits == 0 );
+  BOOST_CHECK( myRegisterInfo2.signedFlag == true );
+  BOOST_CHECK( myRegisterInfo2.lineNumber == 234 );
+  BOOST_CHECK( myRegisterInfo2.module == "XYZ" );
+  
+  BOOST_CHECK( myRegisterInfo2.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( myRegisterInfo2.getDataDescriptor().isIntegral() == true );
+  BOOST_CHECK( myRegisterInfo2.getDataDescriptor().isSigned() == true );
+  BOOST_CHECK( myRegisterInfo2.getDataDescriptor().nDigits() == 8 );             // 2^23 = 8388608 -> 7 digits + 1 for the sign
+
+  // ... and an unsigned integer (otherwise identical)
+  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo3( "ANOTHER_NAME",
+      1, // nElements
+      0xDEADBEEF, //address
+      4, // size
+      0, // bar
+      23, // width
+      0, // frac_bits
+      false, // signed
+      234, //lineNumber
+      "XYZ");
+  BOOST_CHECK( myRegisterInfo3.name == "ANOTHER_NAME" );
+  BOOST_CHECK( myRegisterInfo3.nElements == 1 );
+  BOOST_CHECK( myRegisterInfo3.address == 0xDEADBEEF );
+  BOOST_CHECK( myRegisterInfo3.nBytes == 4 );
+  BOOST_CHECK( myRegisterInfo3.bar == 0 );
+  BOOST_CHECK( myRegisterInfo3.width == 23 );
+  BOOST_CHECK( myRegisterInfo3.nFractionalBits == 0 );
+  BOOST_CHECK( myRegisterInfo3.signedFlag == false );
+  BOOST_CHECK( myRegisterInfo3.lineNumber == 234 );
+  BOOST_CHECK( myRegisterInfo3.module == "XYZ" );
+  
+  BOOST_CHECK( myRegisterInfo3.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( myRegisterInfo3.getDataDescriptor().isIntegral() == true );
+  BOOST_CHECK( myRegisterInfo3.getDataDescriptor().isSigned() == false );
+  BOOST_CHECK( myRegisterInfo3.getDataDescriptor().nDigits() == 7 );             // 2^23 = 8388608 -> 7 digits
+
+  // a boolean
+  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo4( "SOME_BOOLEAN",
+      1, // nElements
+      0x46, //address
+      4, // size
+      0, // bar
+      1, // width
+      0, // frac_bits
+      false, // signed
+      235, //lineNumber
+      "TEST");
+  BOOST_CHECK( myRegisterInfo4.name == "SOME_BOOLEAN" );
+  BOOST_CHECK( myRegisterInfo4.nElements == 1 );
+  BOOST_CHECK( myRegisterInfo4.address == 0x46 );
+  BOOST_CHECK( myRegisterInfo4.nBytes == 4 );
+  BOOST_CHECK( myRegisterInfo4.bar == 0 );
+  BOOST_CHECK( myRegisterInfo4.width == 1 );
+  BOOST_CHECK( myRegisterInfo4.nFractionalBits == 0 );
+  BOOST_CHECK( myRegisterInfo4.signedFlag == false );
+  BOOST_CHECK( myRegisterInfo4.lineNumber == 235 );
+  BOOST_CHECK( myRegisterInfo4.module == "TEST" );
+  
+  BOOST_CHECK( myRegisterInfo4.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::boolean );
+
+  // a boolean
+  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo5( "SOME_VOID",
+      1, // nElements
+      0x46, //address
+      4, // size
+      0, // bar
+      0, // width
+      0, // frac_bits
+      false, // signed
+      236, //lineNumber
+      "TEST");
+  BOOST_CHECK( myRegisterInfo5.name == "SOME_VOID" );
+  BOOST_CHECK( myRegisterInfo5.nElements == 1 );
+  BOOST_CHECK( myRegisterInfo5.address == 0x46 );
+  BOOST_CHECK( myRegisterInfo5.nBytes == 4 );
+  BOOST_CHECK( myRegisterInfo5.bar == 0 );
+  BOOST_CHECK( myRegisterInfo5.width == 0 );
+  BOOST_CHECK( myRegisterInfo5.nFractionalBits == 0 );
+  BOOST_CHECK( myRegisterInfo5.signedFlag == false );
+  BOOST_CHECK( myRegisterInfo5.lineNumber == 236 );
+  BOOST_CHECK( myRegisterInfo5.module == "TEST" );
+  
+  BOOST_CHECK( myRegisterInfo5.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::nodata );
+  
 }
 
 void MapFileTest::testGetRegistersInModule(){

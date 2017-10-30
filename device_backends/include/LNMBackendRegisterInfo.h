@@ -26,20 +26,24 @@ namespace mtca4u {
       : targetType(TargetType::INVALID)
       {}
 
-      virtual RegisterPath getRegisterName() const {
+      RegisterPath getRegisterName() const override {
         return name;
       }
 
-      virtual unsigned int getNumberOfElements() const {
+      unsigned int getNumberOfElements() const override {
         return length;
       }
 
-      virtual unsigned int getNumberOfDimensions() const {
+      unsigned int getNumberOfDimensions() const override {
         return nDimensions;
       }
 
-      virtual unsigned int getNumberOfChannels() const {
+      unsigned int getNumberOfChannels() const override {
         return nChannels;
+      }
+
+      const DataDescriptor& getDataDescriptor() const override {
+        return _dataDescriptor;
       }
 
       /** Name of the registrer */
@@ -115,6 +119,10 @@ namespace mtca4u {
     protected:
 
       friend class LogicalNameMapParser;
+      friend class LogicalNameMappingBackend;
+      
+      DataDescriptor _dataDescriptor;
+      
   };
 
 } /* namespace mtca4u */
