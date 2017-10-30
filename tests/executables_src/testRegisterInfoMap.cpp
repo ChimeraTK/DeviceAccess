@@ -573,6 +573,54 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo3.getDataDescriptor().isIntegral() == true );
   BOOST_CHECK( myRegisterInfo3.getDataDescriptor().isSigned() == false );
   BOOST_CHECK( myRegisterInfo3.getDataDescriptor().nDigits() == 7 );             // 2^23 = 8388608 -> 7 digits
+
+  // a boolean
+  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo4( "SOME_BOOLEAN",
+      1, // nElements
+      0x46, //address
+      4, // size
+      0, // bar
+      1, // width
+      0, // frac_bits
+      false, // signed
+      235, //lineNumber
+      "TEST");
+  BOOST_CHECK( myRegisterInfo4.name == "SOME_BOOLEAN" );
+  BOOST_CHECK( myRegisterInfo4.nElements == 1 );
+  BOOST_CHECK( myRegisterInfo4.address == 0x46 );
+  BOOST_CHECK( myRegisterInfo4.nBytes == 4 );
+  BOOST_CHECK( myRegisterInfo4.bar == 0 );
+  BOOST_CHECK( myRegisterInfo4.width == 1 );
+  BOOST_CHECK( myRegisterInfo4.nFractionalBits == 0 );
+  BOOST_CHECK( myRegisterInfo4.signedFlag == false );
+  BOOST_CHECK( myRegisterInfo4.lineNumber == 235 );
+  BOOST_CHECK( myRegisterInfo4.module == "TEST" );
+  
+  BOOST_CHECK( myRegisterInfo4.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::boolean );
+
+  // a boolean
+  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo5( "SOME_VOID",
+      1, // nElements
+      0x46, //address
+      4, // size
+      0, // bar
+      0, // width
+      0, // frac_bits
+      false, // signed
+      236, //lineNumber
+      "TEST");
+  BOOST_CHECK( myRegisterInfo5.name == "SOME_VOID" );
+  BOOST_CHECK( myRegisterInfo5.nElements == 1 );
+  BOOST_CHECK( myRegisterInfo5.address == 0x46 );
+  BOOST_CHECK( myRegisterInfo5.nBytes == 4 );
+  BOOST_CHECK( myRegisterInfo5.bar == 0 );
+  BOOST_CHECK( myRegisterInfo5.width == 0 );
+  BOOST_CHECK( myRegisterInfo5.nFractionalBits == 0 );
+  BOOST_CHECK( myRegisterInfo5.signedFlag == false );
+  BOOST_CHECK( myRegisterInfo5.lineNumber == 236 );
+  BOOST_CHECK( myRegisterInfo5.module == "TEST" );
+  
+  BOOST_CHECK( myRegisterInfo5.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::nodata );
   
 }
 

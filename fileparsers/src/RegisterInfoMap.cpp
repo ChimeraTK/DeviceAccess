@@ -303,25 +303,33 @@ namespace mtca4u {
     address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
     signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
   {
-    if(nFractionalBits_ > 0) {
-      size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
-                        ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
-      size_t nFractionalDigits = std::ceil(std::log10(std::pow(2, nFractionalBits_)));
+    if(width > 1) {    // numeric type
+      if(nFractionalBits_ > 0) {
+        size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
+                          ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
+        size_t nFractionalDigits = std::ceil(std::log10(std::pow(2, nFractionalBits_)));
 
-      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
-                                      false,                                    // isIntegral
-                                      signedFlag_,                              // isSigned
-                                      nDigits,
-                                      nFractionalDigits);
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
+                                        false,                                    // isIntegral
+                                        signedFlag_,                              // isSigned
+                                        nDigits,
+                                        nFractionalDigits);
+      }
+      else {
+        size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
+                          ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
+
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
+                                        true,                                     // isIntegral
+                                        signedFlag_,                              // isSigned
+                                        nDigits);
+      }
     }
-    else {
-      size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
-                        ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
-
-      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
-                                      true,                                     // isIntegral
-                                      signedFlag_,                              // isSigned
-                                      nDigits);
+    else if(width == 1) {    // boolean
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean);
+    }
+    else {                // width == 0 -> nodata
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata);
     }
   }
 
