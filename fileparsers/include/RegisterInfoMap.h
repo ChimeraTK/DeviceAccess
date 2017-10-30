@@ -56,25 +56,29 @@ namespace mtca4u {
 
         public:
 
-          virtual RegisterPath getRegisterName() const {
+          RegisterPath getRegisterName() const override {
             RegisterPath path = RegisterPath(module)/name;
             path.setAltSeparator(".");
             return path;
           }
 
-          virtual unsigned int getNumberOfElements() const {
+          unsigned int getNumberOfElements() const override {
             return nElements;
           }
 
-          virtual unsigned int getNumberOfChannels() const {
+          unsigned int getNumberOfChannels() const override {
             if(is2DMultiplexed) return nChannels;
             return 1;
           }
 
-          virtual unsigned int getNumberOfDimensions() const {
+          unsigned int getNumberOfDimensions() const override {
             if(is2DMultiplexed) return 2;
             if(nElements > 1) return 1;
             return 0;
+          }
+
+          const DataDescriptor& getDataDescriptor() const override {
+            return dataDescriptor;
           }
 
           std::string name; /**< Name of register */
@@ -89,6 +93,8 @@ namespace mtca4u {
           bool     signedFlag; /**< Signed/Unsigned flag */
           uint32_t lineNumber; /**< Number of line with description of register in MAP file */
           std::string module; /**< Name of the module this register is in*/
+          
+          DataDescriptor dataDescriptor;
 
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 

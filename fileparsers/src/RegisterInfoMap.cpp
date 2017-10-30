@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <stdexcept>
+#include <cmath>
 
 #include "DeviceException.h"
 #include "RegisterInfoMap.h"
@@ -301,7 +302,28 @@ namespace mtca4u {
   : name( name_ ),  nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_),
     address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
     signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
-  {}
+  {
+    if(nFractionalBits_ > 0) {
+      size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
+                        ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
+      size_t nFractionalDigits = std::ceil(std::log10(std::pow(2, nFractionalBits_)));
+
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
+                                      false,                                    // isIntegral
+                                      signedFlag_,                              // isSigned
+                                      nDigits,
+                                      nFractionalDigits);
+    }
+    else {
+      size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
+                        ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
+
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
+                                      true,                                     // isIntegral
+                                      signedFlag_,                              // isSigned
+                                      nDigits);
+    }
+  }
 
   const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() {
     return _catalogue;

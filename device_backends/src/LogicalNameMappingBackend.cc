@@ -49,6 +49,8 @@ namespace mtca4u {
       else {
         target_info = getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
       }
+      
+      info_cast._dataDescriptor = target_info->getDataDescriptor();
 
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
         info_cast.nDimensions = target_info->getNumberOfDimensions();
