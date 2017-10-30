@@ -12,7 +12,7 @@ include(cmake/set_version_numbers.cmake)
 
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(mtca4u-deviceaccess 00.26 REQUIRED)
+add_dependency(mtca4u-deviceaccess 00.27 REQUIRED)
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
