@@ -63,21 +63,9 @@ namespace mtca4u {
           /** Default constructor sets fundamental type to "undefined" */
           DataDescriptor();
 
-          /** Constructor setting all members in case of a fractional numeric */
-          DataDescriptor(FundamentalType fundamentalType, bool isIntegral, bool isSigned, size_t nDigits,
-                         size_t nFractionalDigits);
-
-          /** Constructor setting all required members in case of an integral numeric */
-          DataDescriptor(FundamentalType fundamentalType, bool isIntegral, bool isSigned, size_t nDigits);
-
-          /** Constructor setting all required members in case of a string */
-          DataDescriptor(FundamentalType fundamentalType);
-          
-          /** Copy constructor */
-          DataDescriptor(const DataDescriptor &other);
-          
-          /** Copy by assignment */
-          DataDescriptor& operator=(const DataDescriptor &other);
+          /** Constructor setting all members. */
+          DataDescriptor(FundamentalType fundamentalType, bool isIntegral=false, bool isSigned=false,
+                         size_t nDigits=0, size_t nFractionalDigits=0);
           
         private:
 
@@ -219,49 +207,7 @@ namespace mtca4u {
     _isSigned(isSigned),
     _nDigits(nDigits),
     _nFractionalDigits(nFractionalDigits)
-  {
-    assert(fundamentalType == FundamentalType::numeric);
-    assert(isIntegral == false);
-  }
-
-  /*******************************************************************************************************************/
-
-  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType, bool isIntegral, bool isSigned,
-                                                      size_t nDigits)
-  : _fundamentalType(fundamentalType),
-    _isIntegral(isIntegral),
-    _isSigned(isSigned),
-    _nDigits(nDigits)
-  {
-    assert(fundamentalType == FundamentalType::numeric);
-    assert(isIntegral == true);
-  }
-
-  /*******************************************************************************************************************/
-
-  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType)
-  : _fundamentalType(fundamentalType)
-  {
-    assert(fundamentalType == FundamentalType::string);
-  }
-  
-  /*******************************************************************************************************************/
-
-  inline RegisterInfo::DataDescriptor::DataDescriptor(const DataDescriptor &other) {
-    operator=(other);
-  }
-  
-  /*******************************************************************************************************************/
-
-  inline RegisterInfo::DataDescriptor& RegisterInfo::DataDescriptor::operator=(const DataDescriptor &other) {
-    _fundamentalType = other._fundamentalType;
-    _isIntegral = other._isIntegral;
-    _isSigned = other._isSigned;
-    _nDigits = other._nDigits;
-    _nFractionalDigits = other._nFractionalDigits;
-    return *this;
-  }
-          
+  {}
   
 } /* namespace mtca4u */
 
