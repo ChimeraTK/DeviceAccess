@@ -25,7 +25,10 @@ namespace mtca4u {
        *  prevent too long fully qualified names. */
       enum class FundamentalType { numeric, string, undefined };
       
-      /** Class describing the actual payload data of a register in an abstract manner */
+      /** Class describing the actual payload data format of a register in an abstract manner. It gives information
+       *  about the underlying data type without fully describing it, to prevent a loss of abstraction on the
+       *  application level. The returned information always refers to the data type and thus is completely independent
+       *  of the current value of the register. */
       class DataDescriptor {
 
         public:
@@ -40,12 +43,21 @@ namespace mtca4u {
            *  types. */
           bool isIntegral() const;
           
-          /** Return the approximate maximum number of digits (of base 10) needed to represent the value
-           *  (including a decimal dot, if not an integral data type). May only be called for numeric data types.  */
+          /** Return the approximate maximum number of digits (of base 10) needed to represent the value (including
+           *  a decimal dot, if not an integral data type, and the sign). May only be called for numeric data types.
+           *
+           *  This number shall only be used for displaying purposes, e.g. to decide how much space for displaying
+           *  the register value should be reserved. Beware that for some data types this might become a really large
+           *  number (e.g. 300), which indicates that you need to choose a different representation than just a plain
+           *  decimal number. */
           size_t nDigits() const;
           
           /** Approximate maximum number of digits after decimal dot (of base 10) needed to represent the value
-           *  (excluding the decimal dot itself). May only be called for non-integral numeric data types.  */
+           *  (excluding the decimal dot itself). May only be called for non-integral numeric data types.
+           *
+           *  Just like in case of nDigits(), this number should only be used for displaying purposes. There is no
+           *  guarantee that the full precision of the number can be displayed with the given number of digits.
+           *  Again beware that this number might be rather large (e.g. 300). */
           size_t nFractionalDigits() const;
           
           /** Default constructor sets fundamental type to "undefined" */
@@ -103,7 +115,8 @@ namespace mtca4u {
       /** Return number of dimensions of this register */
       virtual unsigned int getNumberOfDimensions() const = 0;
 
-      /** Return desciption of the actual payload data for this register */
+      /** Return desciption of the actual payload data for this register. See the description of DataDescriptor for
+       *  more information. */
       virtual const DataDescriptor& getDataDescriptor() const = 0;
       
       /** Iterators for the list of plugins */
