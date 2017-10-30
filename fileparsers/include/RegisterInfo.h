@@ -23,7 +23,7 @@ namespace mtca4u {
 
       /** Enum for the fundamental data types. This is only used inside the DataDescriptor class but defined outside to
        *  prevent too long fully qualified names. */
-      enum class FundamentalType { numeric, string, undefined };
+      enum class FundamentalType { numeric, string, boolean, nodata, undefined };
       
       /** Class describing the actual payload data format of a register in an abstract manner. It gives information
        *  about the underlying data type without fully describing it, to prevent a loss of abstraction on the
