@@ -16,7 +16,7 @@ add_dependency(mtca4u-deviceaccess 00.27 REQUIRED)
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(ChimeraTK-ControlSystemAdapter 00.08 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 00.09 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
