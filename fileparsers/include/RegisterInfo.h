@@ -200,13 +200,13 @@ namespace mtca4u {
 
   /*******************************************************************************************************************/
 
-  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType, bool isIntegral, bool isSigned,
-                                                      size_t nDigits, size_t nFractionalDigits)
-  : _fundamentalType(fundamentalType),
-    _isIntegral(isIntegral),
-    _isSigned(isSigned),
-    _nDigits(nDigits),
-    _nFractionalDigits(nFractionalDigits)
+  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_, bool isSigned_,
+                                                      size_t nDigits_, size_t nFractionalDigits_)
+  : _fundamentalType(fundamentalType_),
+    _isIntegral(isIntegral_),
+    _isSigned(isSigned_),
+    _nDigits(nDigits_),
+    _nFractionalDigits(nFractionalDigits_)
   {}
   
 } /* namespace mtca4u */
