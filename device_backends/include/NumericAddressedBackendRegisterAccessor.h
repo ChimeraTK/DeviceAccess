@@ -37,8 +37,8 @@ namespace mtca4u {
           // check device backend
           _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
           if(!_dev) {
-            throw DeviceException("MemoryAddressedBackendBufferingRegisterAccessor is used with a backend which is not "
-                "a MemoryAddressedBackend.", DeviceException::WRONG_PARAMETER);
+            throw DeviceException("NumericAddressedBackendRegisterAccessor is used with a backend which is not "
+                "a NumericAddressedBackend.", DeviceException::WRONG_PARAMETER);
           }
 
           // obtain register information
@@ -52,11 +52,11 @@ namespace mtca4u {
             _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
           }
           if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
-            throw DeviceException("Requested number of words exceeds the size of the register!",
+            throw DeviceException("Requested number of words exceeds the size of the register '"+_registerPathName+"'!",
                 DeviceException::WRONG_PARAMETER);
           }
           if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
-            throw DeviceException("Requested offset exceeds the size of the register!",
+            throw DeviceException("Requested offset exceeds the size of the register'"+_registerPathName+"'!",
                 DeviceException::WRONG_PARAMETER);
           }
 
@@ -74,8 +74,8 @@ namespace mtca4u {
           }
           else {
             if(typeid(UserType) != typeid(int32_t)) {
-              throw DeviceException("Given UserType when obtaining the BufferingRegisterAccessor in raw mode does not "
-                  "match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
+              throw DeviceException("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
+                  "match the expected type. Use an int32_t instead! (Register name: "+_registerPathName+"')", DeviceException::WRONG_PARAMETER);
             }
             _fixedPointConverter = FixedPointConverter(_registerPathName, 32, 0, true);
             isRaw = true;
@@ -107,8 +107,8 @@ namespace mtca4u {
 
       bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed "
+                                "(Register name: "+_registerPathName+"')", DeviceException::NOT_IMPLEMENTED);
         }
         preWrite();
         _rawAccessor->write();
