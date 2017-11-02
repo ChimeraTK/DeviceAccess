@@ -21,10 +21,13 @@ namespace ChimeraTK {
    * 
    * The output array has a size of nGroups*nElementsPerGroup.
    */
-  template<typename TYPE, size_t nGroups, size_t nElemsPerGroup=1>
+  template<typename TYPE>
   struct WriteSplitArrayModule : public ApplicationModule {
 
-      WriteSplitArrayModule(EntityOwner *owner, const std::string &name, const std::string &description);
+      WriteSplitArrayModule(EntityOwner *owner, const std::string &name, const std::string &description,
+                            size_t nGroups, size_t nElemsPerGroup=1);
+      
+      WriteSplitArrayModule() {}
 
       /** Vector of input arrays, each with a length of nElemsPerGroup. If nElemsPerGroup is 1 (default), the inputs
        *  can be used as scalars.
@@ -34,9 +37,14 @@ namespace ChimeraTK {
       std::vector<ArrayPushInput<TYPE>> input;
       
       /** Output array. Will be updated each time any input was changed with the corresponding data from the input. */
-      ArrayOutput<TYPE> output{this, "output", "", nGroups*nElemsPerGroup, "Output array"};
+      ArrayOutput<TYPE> output;
       
       void mainLoop();
+      
+    private:
+    
+      size_t _nGroups;
+      size_t _nElemsPerGroup;
 
   };
 
@@ -54,10 +62,13 @@ namespace ChimeraTK {
    * 
    * The input array has a size of nGroups*nElementsPerGroup.
    */
-  template<typename TYPE, size_t nGroups, size_t nElemsPerGroup=1>
+  template<typename TYPE>
   struct ReadSplitArrayModule : public ApplicationModule {
 
-      ReadSplitArrayModule(EntityOwner *owner, const std::string &name, const std::string &description);
+      ReadSplitArrayModule(EntityOwner *owner, const std::string &name, const std::string &description,
+                           size_t nGroups, size_t nElemsPerGroup=1);
+      
+      ReadSplitArrayModule() {}
 
       /** Vector of output arrays, each with a length of nElemsPerGroup. If nElemsPerGroup is 1 (default), the outputs
        *  can be used as scalars.
@@ -67,43 +78,51 @@ namespace ChimeraTK {
       std::vector<ArrayOutput<TYPE>> output;
       
       /** Input array. Each time this input is changed, all outputs will be updated with the corresponding data. */
-      ArrayPushInput<TYPE> input{this, "input", "", nGroups*nElemsPerGroup, "Input array"};
+      ArrayPushInput<TYPE> input;
       
       void mainLoop();
+      
+    private:
+    
+      size_t _nGroups;
+      size_t _nElemsPerGroup;
 
   };
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
 
-  template<typename TYPE, size_t nGroups, size_t nElemsPerGroup>
-  WriteSplitArrayModule<TYPE,nGroups,nElemsPerGroup>::WriteSplitArrayModule(EntityOwner *owner, const std::string &name,
-                                                                            const std::string &description)
-  : ApplicationModule(owner, name, description)
+  template<typename TYPE>
+  WriteSplitArrayModule<TYPE>::WriteSplitArrayModule(EntityOwner *owner, const std::string &name,
+                                                  const std::string &description, size_t nGroups, size_t nElemsPerGroup)
+  : ApplicationModule(owner, name, description),
+    output(this, "output", "", nGroups*nElemsPerGroup, "Output array"),
+    _nGroups(nGroups),
+    _nElemsPerGroup(nElemsPerGroup)
   {
-    for(size_t i=0; i<nGroups; ++i) {
+    for(size_t i=0; i<_nGroups; ++i) {
       std::string comment;
-      if(nElemsPerGroup == 1) {
+      if(_nElemsPerGroup == 1) {
         comment = "The element "+std::to_string(i)+" of the output array";
       }
       else {
-        comment = "The elements "+std::to_string(i*nElemsPerGroup)+" to "+
-                  std::to_string((i+1)*nElemsPerGroup-1)+" of the output array";
+        comment = "The elements "+std::to_string(i*_nElemsPerGroup)+" to "+
+                  std::to_string((i+1)*_nElemsPerGroup-1)+" of the output array";
       }
-      input.push_back(ArrayPushInput<TYPE>(this, "input"+std::to_string(i), "", nElemsPerGroup, comment));
+      input.push_back(ArrayPushInput<TYPE>(this, "input"+std::to_string(i), "", _nElemsPerGroup, comment));
     }
   }
 
   /*********************************************************************************************************************/
 
-  template<typename TYPE, size_t nGroups, size_t nElemsPerGroup>
-  void WriteSplitArrayModule<TYPE,nGroups,nElemsPerGroup>::mainLoop() {
+  template<typename TYPE>
+  void WriteSplitArrayModule<TYPE>::mainLoop() {
     while(true) {
       
       // write the array from the individual elements
-      for(size_t i=0; i<nGroups; ++i) {
-        for(size_t k=0; k<nElemsPerGroup; ++k) {
-          output[i*nElemsPerGroup + k] = input[i][k];
+      for(size_t i=0; i<_nGroups; ++i) {
+        for(size_t k=0; k<_nElemsPerGroup; ++k) {
+          output[i*_nElemsPerGroup + k] = input[i][k];
         }
       }
       output.write();
@@ -115,34 +134,37 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  template<typename TYPE, size_t nGroups, size_t nElemsPerGroup>
-  ReadSplitArrayModule<TYPE,nGroups,nElemsPerGroup>::ReadSplitArrayModule(EntityOwner *owner, const std::string &name,
-                                                                          const std::string &description)
-  : ApplicationModule(owner, name, description)
+  template<typename TYPE>
+  ReadSplitArrayModule<TYPE>::ReadSplitArrayModule(EntityOwner *owner, const std::string &name,
+                                                  const std::string &description, size_t nGroups, size_t nElemsPerGroup)
+  : ApplicationModule(owner, name, description),
+    input(this, "input", "", nGroups*nElemsPerGroup, "Input array"),
+    _nGroups(nGroups),
+    _nElemsPerGroup(nElemsPerGroup)
   {
-    for(size_t i=0; i<nGroups; ++i) {
+    for(size_t i=0; i<_nGroups; ++i) {
       std::string comment;
-      if(nElemsPerGroup == 1) {
+      if(_nElemsPerGroup == 1) {
         comment = "The element "+std::to_string(i)+" of the input array";
       }
       else {
-        comment = "The elements "+std::to_string(i*nElemsPerGroup)+" to "+
-                  std::to_string((i+1)*nElemsPerGroup-1)+" of the input array";
+        comment = "The elements "+std::to_string(i*_nElemsPerGroup)+" to "+
+                  std::to_string((i+1)*_nElemsPerGroup-1)+" of the input array";
       }
-      output.push_back(ArrayOutput<TYPE>(this, "output"+std::to_string(i), "", nElemsPerGroup, comment));
+      output.push_back(ArrayOutput<TYPE>(this, "output"+std::to_string(i), "", _nElemsPerGroup, comment));
     }
   }
 
   /*********************************************************************************************************************/
       
-  template<typename TYPE, size_t nGroups, size_t nElemsPerGroup>
-  void ReadSplitArrayModule<TYPE,nGroups,nElemsPerGroup>::mainLoop() {
+  template<typename TYPE>
+  void ReadSplitArrayModule<TYPE>::mainLoop() {
     while(true) {
       
       // write the array from the individual elements
-      for(size_t i=0; i<nGroups; ++i) {
-        for(size_t k=0; k<nElemsPerGroup; ++k) {
-          input[i][k] = output[i*nElemsPerGroup + k];
+      for(size_t i=0; i<_nGroups; ++i) {
+        for(size_t k=0; k<_nElemsPerGroup; ++k) {
+          input[i][k] = output[i*_nElemsPerGroup + k];
         }
       }
       writeAll();
