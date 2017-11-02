@@ -49,6 +49,7 @@ struct TestModule : public ctk::ApplicationModule {
     ctk::ArrayPushInput<T> consumingPushArray{this, "consumingPushArray", "m", 10, "Descrption"};
     
     ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Descrption"};
+    ctk::ArrayOutput<T> feedingPseudoArray{this, "feedingPseudoArray", "m", 1, "Descrption"};
 
     ctk::ScalarPollInput<T> lateConstrScalarPollInput;
     ctk::ScalarPushInput<T> lateConstrScalarPushInput;
@@ -317,4 +318,26 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testLateConstruction, T, test_types ) {
   app.testModule.lateConstrArrayPollInput.read();
   for(T i=0; i<10; ++i) BOOST_CHECK(app.testModule.lateConstrArrayPollInput[i] == i);
 
+}
+
+/*********************************************************************************************************************/
+/* test case for connecting array of length 1 with scalar */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testPseudoArray, T, test_types ) {
+  std::cout << "*** testPseudoArray<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+  
+  app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
+  
+  // run the app
+  app.initialise();
+  app.run();
+  
+  // test data transfer
+  app.testModule.feedingPseudoArray[0] = 33;
+  app.testModule.feedingPseudoArray.write();
+  app.testModule.consumingPush.read();
+  BOOST_CHECK( app.testModule.consumingPush == 33 );
+  
 }
