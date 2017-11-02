@@ -365,7 +365,7 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   auto pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
- 
+
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
     std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
@@ -374,7 +374,7 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
     pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
     
     // put the decorators into the list
-    testableMode_names[pvarPair.first->getUniqueId()] = "Internal:"+node.getQualifiedName();//+"->"+pvarPair.second->getQualifiedName();
+    testableMode_names[pvarPair.first->getUniqueId()] = "Internal:"+node.getQualifiedName();
     
     return pvarPairDec;
   }
