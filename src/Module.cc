@@ -33,7 +33,7 @@ namespace ChimeraTK {
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
     std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
     for(auto &accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
       if(accessor.getMode() == UpdateMode::push) {
         transferElementList.emplace_back(accessor.getAppAccessorNoType());
       }
@@ -44,7 +44,7 @@ namespace ChimeraTK {
     
     // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
       if(accessor.getMode() == UpdateMode::poll) {
         accessor.getAppAccessorNoType().readLatest();
       }
@@ -59,13 +59,13 @@ namespace ChimeraTK {
     auto accessorList = getAccessorListRecursive();
     // first blockingly read all push-type variables
     for(auto accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
       if(accessor.getMode() != UpdateMode::push) continue;
       accessor.getAppAccessorNoType().read();
     }
     // next non-blockingly read the latest values of all poll-type variables
     for(auto accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
       if(accessor.getMode() == UpdateMode::push) continue;
       accessor.getAppAccessorNoType().readLatest();
     }
@@ -76,7 +76,7 @@ namespace ChimeraTK {
   void Module::readAllNonBlocking() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
       accessor.getAppAccessorNoType().readNonBlocking();
     }
   }
@@ -86,7 +86,7 @@ namespace ChimeraTK {
   void Module::readAllLatest() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isReadable()) continue;
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
       accessor.getAppAccessorNoType().readLatest();
     }
   }
@@ -96,7 +96,7 @@ namespace ChimeraTK {
   void Module::writeAll() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
-      if(!accessor.getAppAccessorNoType().isWriteable()) continue;
+      if(accessor.getDirection() != VariableDirection::feeding) continue;
       accessor.getAppAccessorNoType().write();
     }
   }
