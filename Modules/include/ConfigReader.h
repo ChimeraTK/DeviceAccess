@@ -38,12 +38,9 @@ namespace ChimeraTK {
       void prepare() override;
       
       /** Get value for given configuration variable. This is already accessible right after construction of this
-       *  object. */
+       *  object. Throws std::out_of_range if variable doesn't exist. */
       template<typename T>
-      const T& get(const std::string &variableName) const {
-        return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
-      }
-      
+      const T& get(const std::string &variableName) const;
 
     protected:
       
@@ -84,6 +81,20 @@ namespace ChimeraTK {
       friend struct FunctorSetValues;
                                                          
   };
+
+  /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
+
+  template<typename T>
+  const T& ConfigReader::get(const std::string &variableName) const {
+    try {
+      return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
+    }
+    catch(std::out_of_range &e) {
+      throw(std::out_of_range("ConfigReader: Cannot find a configuration variable of the name '"+
+                              variableName+"' in the config file '"+_fileName+"'."));
+    }
+  }
 
 } // namespace ChimeraTK
 
