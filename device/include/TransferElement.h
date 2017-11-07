@@ -205,7 +205,11 @@ namespace mtca4u {
        *  TransferElements receive new data simultaneously (or already have new data available before the call to
        *  readAny()), the ID of the TransferElement with the oldest VersionNumber (see getVersionNumber()) will be returned
        *  by this function. This ensures that data is received in the order of sending (unless data is "dated back"
-       *  and sent with an older version number, which might be the case e.g. when using the ControlSystemAdapter). */
+       *  and sent with an older version number, which might be the case e.g. when using the ControlSystemAdapter).
+       *
+       *  Note that the behaviour is undefined when putting the same TransferElement into the list - a result might
+       *  be e.g. that it blocks for ever. This is due to a limitation in the underlying boost::wait_for_any()
+       *  function. */
       static TransferElement::ID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /**
