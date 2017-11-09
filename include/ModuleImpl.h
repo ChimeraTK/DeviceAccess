@@ -29,9 +29,15 @@ namespace ChimeraTK {
       ModuleImpl() : Module() {}
       
       /** Move constructor */
-      ModuleImpl(ModuleImpl &&other)
-      : Module(std::move(other))
-      {}
+      ModuleImpl(ModuleImpl &&other) { operator=(std::move(other)); }
+      
+      /** Move assignment operator */
+      ModuleImpl& operator=(ModuleImpl &&other) {
+        if(other.virtualisedModule_isValid) virtualisedModule = other.virtualisedModule;
+        virtualisedModule_isValid = other.virtualisedModule_isValid;
+        Module::operator=(std::forward<ModuleImpl>(other));
+        return *this;
+      }
 
       VariableNetworkNode operator()(const std::string& variableName) const override;
 

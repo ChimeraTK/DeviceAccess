@@ -26,20 +26,20 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  EntityOwner::EntityOwner(EntityOwner &&other)
-  : _name(std::move(other._name)),
-    _description(std::move(other._description)),
-    accessorList(std::move(other.accessorList)),
-    moduleList(std::move(other.moduleList)),
-    _eliminateHierarchy(other._eliminateHierarchy),
-    _tags(std::move(other._tags))
-  {
+  EntityOwner& EntityOwner::operator=(EntityOwner &&other) {
+    _name = std::move(other._name);
+    _description = std::move(other._description);
+    accessorList = std::move(other.accessorList);
+    moduleList = std::move(other.moduleList);
+    _eliminateHierarchy = other._eliminateHierarchy;
+    _tags = std::move(other._tags);
     for(auto mod : moduleList) {
       mod->setOwner(this);
     }
     for(auto node : accessorList) {
       node.setOwningModule(this);
     }
+    return *this;
   }
 
 /*********************************************************************************************************************/

@@ -32,37 +32,16 @@ namespace ChimeraTK {
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-      Module() : EntityOwner("invalid", "invalid module"), _owner{nullptr} {}
+      Module() : EntityOwner(), _owner{nullptr} {}
 
       /** Destructor */
       virtual ~Module();
       
       /** Move constructor */
-      Module(Module &&other)
-      : EntityOwner(std::move(other))
-      {
-        _owner = other._owner;
-        _owner->registerModule(this, false);
-        // note: the other module unregisters itself in its destructor - will will be called next after any move operation
-      }
+      Module(Module &&other) { operator=(std::move(other)); }
 
-      Module& operator=(Module &&other) {
-        _name = std::move(other._name);
-        _description = std::move(other._description);
-        _owner = other._owner;
-        if(_owner != nullptr) _owner->registerModule(this, false);
-        accessorList = std::move(other.accessorList);
-        moduleList = std::move(other.moduleList);
-        _eliminateHierarchy = other._eliminateHierarchy;
-        _tags = std::move(other._tags);
-        // note: the other module unregisters itself in its destructor - will will be called next after any move operation
-        return *this;
-      }
-      
-      /** Delete other assignment operators */
-      Module& operator=(Module &other) = delete;
-      Module& operator=(const Module &other) = delete;
-
+      /** Move assignment operator */
+      Module& operator=(Module &&other);
 
       /** Prepare the execution of the module. This function is called before any module is started (including internal
        *  modules like FanOuts) and before the initial values of the variables are pushed into the queues. */

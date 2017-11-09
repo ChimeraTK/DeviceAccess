@@ -32,11 +32,22 @@ namespace ChimeraTK {
       EntityOwner(const std::string &name, const std::string &description,
                   bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
       
+      /** Default constructor just for late initialisation */
+      EntityOwner()
+      : _name("**INVALID**"),
+        _description("Invalid EntityOwner created by default constructor just as a place holder")
+      {}
+      
       /** Virtual destructor to make the type polymorphic */
       virtual ~EntityOwner();
       
       /** Move constructor */
-      EntityOwner(EntityOwner &&other);
+      EntityOwner(EntityOwner &&other) { operator=(std::move(other)); }
+      EntityOwner(const EntityOwner &other) = delete;
+      
+      /** Move assignment operator */
+      EntityOwner& operator=(EntityOwner &&other);
+      EntityOwner& operator=(const EntityOwner &other) = delete;
 
       /** Get the name of the module instance */
       const std::string& getName() const { return _name; }

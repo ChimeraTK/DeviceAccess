@@ -26,12 +26,7 @@ namespace ChimeraTK {
       ControlSystemModule(const std::string& variableNamePrefix="");
 
       /** Move operation with the move constructor */
-      ControlSystemModule(ControlSystemModule &&other)
-      : Module(std::move(other)),
-        variableNamePrefix(std::move(other.variableNamePrefix)),
-        subModules(std::move(other.subModules)),
-        variables(std::move(other.variables))
-      {}
+      ControlSystemModule(ControlSystemModule &&other) { operator=(std::move(other)); }
       
       /** Move assignment */
       ControlSystemModule& operator=(ControlSystemModule &&other) {

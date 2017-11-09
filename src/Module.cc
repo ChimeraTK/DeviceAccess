@@ -27,6 +27,16 @@ namespace ChimeraTK {
   }
 
 /*********************************************************************************************************************/
+
+  Module& Module::operator=(Module &&other) {
+    EntityOwner::operator=(std::move(other));
+    _owner = other._owner;
+    if(_owner != nullptr) _owner->registerModule(this, false);
+    // note: the other module unregisters itself in its destructor - will will be called next after any move operation
+    return *this;
+  }
+
+/*********************************************************************************************************************/
   
   TransferElement::ID Module::readAny() {
     auto accessorList = getAccessorListRecursive();

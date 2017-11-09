@@ -12,11 +12,12 @@
 
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/test_case_template.hpp>
+using namespace boost::unit_test_framework;
+
 #include <boost/mpl/list.hpp>
 
 #include "ApplicationCore.h"
 
-using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 /*********************************************************************************************************************/
@@ -138,6 +139,8 @@ struct VectorModuleGroup : public ctk::ModuleGroup {
       }
     }
     
+    VectorModuleGroup() {}
+    
     std::vector<VectorModule> vectorOfVectorModule;
     
 };
@@ -163,6 +166,25 @@ struct VectorOfEverythingApp : public ctk::Application {
 
     size_t _nInstances;
     std::vector<VectorModuleGroup> vectorOfVectorModuleGroup;
+};
+
+/*********************************************************************************************************************/
+/* Application with various modules that get initialised only during defineConnections(). */
+
+struct AssignModuleLaterApp : public ctk::Application {
+    AssignModuleLaterApp()
+    : Application("myApp")
+    {}
+    ~AssignModuleLaterApp() { shutdown(); }
+
+    using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
+
+    void defineConnections() {
+      instanceToAssignLater = VectorModuleGroup(this, "InstanceToAssignLater",
+                                                "This instance was assigned using the operator=()", 42);
+    }
+
+    VectorModuleGroup instanceToAssignLater;
 };
 
 /*********************************************************************************************************************/
@@ -659,4 +681,33 @@ BOOST_AUTO_TEST_CASE( testVectorsOfAllModules ) {
     }
   }
 
+}
+
+/*********************************************************************************************************************/
+/* test late initialisation of modules using the assignment operator */
+
+BOOST_AUTO_TEST_CASE( test_assignmentOperator ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> test_assignmentOperator" << std::endl;
+  std::cout << std::endl;
+
+  AssignModuleLaterApp app;
+
+  BOOST_CHECK( app.getSubmoduleList().size() == 0 );
+  
+  app.defineConnections();
+
+  BOOST_CHECK( app.instanceToAssignLater.getName() == "InstanceToAssignLater" );
+  BOOST_CHECK( app.instanceToAssignLater.getDescription() == "This instance was assigned using the operator=()" );
+  
+  auto list = app.getSubmoduleList();
+  BOOST_CHECK( list.size() == 1 );
+  
+  bool instanceToAssignLater_found = false;
+  for(auto mod : list) {
+    if(mod == &(app.instanceToAssignLater)) instanceToAssignLater_found = true;
+  }
+  
+  BOOST_CHECK(instanceToAssignLater_found);
+  
 }

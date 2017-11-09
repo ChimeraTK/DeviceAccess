@@ -29,12 +29,7 @@ namespace ChimeraTK {
       DeviceModule() {}
 
       /** Move operation with the move constructor */
-      DeviceModule(DeviceModule &&other)
-      : Module(std::move(other)),
-        deviceAliasOrURI(std::move(other.deviceAliasOrURI)),
-        registerNamePrefix(std::move(other.registerNamePrefix)),
-        subModules(std::move(other.subModules))
-      {}
+      DeviceModule(DeviceModule &&other) { operator=(std::move(other)); }
 
       /** Move assignment */
       DeviceModule& operator=(DeviceModule &&other) {

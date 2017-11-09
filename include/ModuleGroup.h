@@ -35,15 +35,16 @@ namespace ChimeraTK {
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-      ModuleGroup() : ModuleImpl(nullptr, "invalid", "invalid VariableGroup") {}
-
-      /** Move operation with the move constructor */
-      ModuleGroup(ModuleGroup &&other) :
-      ModuleImpl(std::move(other))
-      {}
+      ModuleGroup() : ModuleImpl() {}
       
-      /** Inherit assignment */
-      using ModuleImpl::operator=;
+      /** Move constructor */
+      ModuleGroup(ModuleGroup &&other) { operator=(std::move(other)); }
+      
+      /** Move assignment */
+      ModuleGroup& operator=(ModuleGroup &&other) {
+        ModuleImpl::operator=(std::move(other));
+        return *this;
+      }
 
       /** Destructor */
       virtual ~ModuleGroup() {};
