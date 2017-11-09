@@ -32,12 +32,19 @@ namespace ChimeraTK {
       void replace(const mtca4u::NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::replace;
       ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &other) = delete;
-      ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &&other) = delete;
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
       
       /** Move constructor */
       ScalarAccessor(ScalarAccessor<UserType> &&other) {
         InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
+      }
+
+      /** Move assignment. */
+      ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &&other) {
+        // Having a move-assignment operator is required to use the move-assignment operator of a module containing
+        // an accessor.
+        InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
+        return *this;
       }
 
       void read() {

@@ -104,9 +104,10 @@ struct VectorModule : public ctk::ApplicationModule {
         vectorOfSomeGroup.emplace_back(this, name, "Description 2");
       }
     }
+    VectorModule() {}
 
     ctk::ScalarPushInput<int> someInput{this, "nameOfSomeInput", "cm", "This is just some input for testing", {"A", "B"}};
-    ctk::ScalarOutput<double> someOutput{this, "someOutput", "V", "Description", {"A", "C"}};
+    ctk::ArrayOutput<double> someOutput{this, "someOutput", "V", 1, "Description", {"A", "C"}};
 
     std::vector<SomeGroup> vectorOfSomeGroup;
 
@@ -119,7 +120,7 @@ struct VectorModule : public ctk::ApplicationModule {
       while(true) {
         someInput.read();
         int val = someInput;
-        someOutput = val;
+        someOutput[0] = val;
         someOutput.write();
       }
     }
@@ -180,11 +181,14 @@ struct AssignModuleLaterApp : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
 
     void defineConnections() {
-      instanceToAssignLater = VectorModuleGroup(this, "InstanceToAssignLater",
-                                                "This instance was assigned using the operator=()", 42);
+      modGroupInstanceToAssignLater = VectorModuleGroup(this, "modGroupInstanceToAssignLater",
+                                                "This instance of VectorModuleGroup was assigned using the operator=()", 42);
+      modInstanceToAssignLater = VectorModule(this, "modInstanceToAssignLater",
+                                                "This instance of VectorModule was assigned using the operator=()", 13);
     }
 
-    VectorModuleGroup instanceToAssignLater;
+    VectorModuleGroup modGroupInstanceToAssignLater;
+    VectorModule modInstanceToAssignLater;
 };
 
 /*********************************************************************************************************************/
@@ -694,20 +698,29 @@ BOOST_AUTO_TEST_CASE( test_assignmentOperator ) {
   AssignModuleLaterApp app;
 
   BOOST_CHECK( app.getSubmoduleList().size() == 0 );
+  BOOST_CHECK_EQUAL( app.modGroupInstanceToAssignLater.getSubmoduleList().size(), 0 );
   
   app.defineConnections();
 
-  BOOST_CHECK( app.instanceToAssignLater.getName() == "InstanceToAssignLater" );
-  BOOST_CHECK( app.instanceToAssignLater.getDescription() == "This instance was assigned using the operator=()" );
+  BOOST_CHECK( app.modGroupInstanceToAssignLater.getName() == "modGroupInstanceToAssignLater" );
+  BOOST_CHECK( app.modGroupInstanceToAssignLater.getDescription() == "This instance of VectorModuleGroup was assigned using the operator=()" );
+
+  BOOST_CHECK( app.modInstanceToAssignLater.getName() == "modInstanceToAssignLater" );
+  BOOST_CHECK( app.modInstanceToAssignLater.getDescription() == "This instance of VectorModule was assigned using the operator=()" );
   
   auto list = app.getSubmoduleList();
-  BOOST_CHECK( list.size() == 1 );
+  BOOST_CHECK( list.size() == 2 );
   
-  bool instanceToAssignLater_found = false;
+  bool modGroupInstanceToAssignLater_found = false;
+  bool modInstanceToAssignLater_found = false;
   for(auto mod : list) {
-    if(mod == &(app.instanceToAssignLater)) instanceToAssignLater_found = true;
+    if(mod == &(app.modGroupInstanceToAssignLater)) modGroupInstanceToAssignLater_found = true;
+    if(mod == &(app.modInstanceToAssignLater)) modInstanceToAssignLater_found = true;
   }
   
-  BOOST_CHECK(instanceToAssignLater_found);
+  BOOST_CHECK(modGroupInstanceToAssignLater_found);
+  BOOST_CHECK(modInstanceToAssignLater_found);
+  BOOST_CHECK_EQUAL( app.modGroupInstanceToAssignLater.getSubmoduleList().size(), 42 );
+  BOOST_CHECK_EQUAL( app.modInstanceToAssignLater.getSubmoduleList().size(), 14 );
   
 }

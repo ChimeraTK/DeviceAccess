@@ -32,13 +32,20 @@ namespace ChimeraTK {
       void replace(const mtca4u::NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::replace;
       ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &other) = delete;
-      ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &&other) = delete;
       using mtca4u::OneDRegisterAccessor<UserType>::operator=;
       
       /** Move constructor */
       ArrayAccessor(ArrayAccessor<UserType> &&other) {
         InversionOfControlAccessor<ArrayAccessor<UserType>>::replace(std::move(other));
       }
+      
+      /** Move assignment */
+      ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &&other) {
+        // Having a move-assignment operator is required to use the move-assignment operator of a module containing
+        // an accessor.
+        InversionOfControlAccessor<ArrayAccessor<UserType>>::replace(std::move(other));
+        return *this;
+      };
 
       void read() {
         Profiler::stopMeasurement();
