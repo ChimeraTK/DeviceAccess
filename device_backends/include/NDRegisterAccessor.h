@@ -120,7 +120,7 @@ namespace mtca4u {
         );
         
         // form TransferFuture, store it for later re-used and return it
-        activeFuture = TransferFuture(boostFuture, static_cast<TransferElement*>(this));
+        activeFuture.reset(boostFuture, static_cast<TransferElement*>(this));
         hasActiveFuture = true;
         return activeFuture;
       }

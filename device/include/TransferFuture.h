@@ -107,16 +107,17 @@ namespace ChimeraTK {
       TransferFuture(const TransferFuture &other) = delete;
       TransferFuture& operator=(const TransferFuture &other) = delete;
       
-      /** Allow move operation on the TransferFuture */
-      TransferFuture(const TransferFuture &&other)
-      : _theFuture(other._theFuture), _transferElement(other._transferElement) {}
+      /** We cannot move the Transfer future because the accessor must keep a copy of it.*/
+      TransferFuture(const TransferFuture &&other) = delete;
+      /** We cannot move the Transfer future because the accessor must keep a copy of it.*/
+      TransferFuture& operator=(const TransferFuture &&other) = delete;
 
-      TransferFuture& operator=(const TransferFuture &&other) {
-        _theFuture = other._theFuture;
-        _transferElement = other._transferElement;
-        return *this;
+      /** Reset the future. Needed by the accessors which hold the instance which has to be renewed.
+       */
+      void reset(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement){
+        _theFuture = plainFuture;
+        _transferElement = transferElement;
       }
-
       
     protected:
 
