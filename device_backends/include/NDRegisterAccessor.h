@@ -103,6 +103,9 @@ namespace mtca4u {
       }
 
       void read() final {
+        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
+        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
+        // implementation.
         if(TransferElement::isInTransferGroup) {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);
@@ -116,6 +119,9 @@ namespace mtca4u {
       }
 
       bool readNonBlocking() final {
+        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
+        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
+        // implementation.
         if(hasActiveFuture) {
           if(activeFuture.hasNewData()) {
             activeFuture.wait();
@@ -131,6 +137,9 @@ namespace mtca4u {
       }
       
       bool readLatest() final {
+        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
+        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
+        // implementation.
         bool ret = false;
         if(hasActiveFuture) {
           if(activeFuture.hasNewData()) {
