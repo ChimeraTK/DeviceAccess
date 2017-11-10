@@ -421,23 +421,41 @@ void AsyncReadTest::testMixing() {
   TransferFuture *future;
   dummy = 5;
   future = &(accessor.readAsync());
+  future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
   BOOST_CHECK( accessor == 0 );
+  dummy = 6;
   accessor.read();
   BOOST_CHECK( accessor == 5 );
+  accessor.read();
+  BOOST_CHECK( accessor == 6 );
 
   // start reading with readAsync but do not wait on the future - then perform normal readNonBlocking()
   dummy = 8;
   future = &(accessor.readAsync());
-  BOOST_CHECK( accessor == 5 );
+  future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+  BOOST_CHECK( accessor == 6 );
+  dummy = 9;
   BOOST_CHECK( accessor.readNonBlocking() == true );
   BOOST_CHECK( accessor == 8 );
+  BOOST_CHECK( accessor.readNonBlocking() == true );
+  BOOST_CHECK( accessor == 9 );
 
   // start reading with readAsync but do not wait on the future - then perform normal readLatest()
   dummy = 10;
   future = &(accessor.readAsync());
-  BOOST_CHECK( accessor == 8 );
+  future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+  BOOST_CHECK( accessor == 9 );
   BOOST_CHECK( accessor.readLatest() == true );
   BOOST_CHECK( accessor == 10 );
+
+  // start reading with readAsync but do not wait on the future - then perform normal readLatest()
+  dummy = 11;
+  future = &(accessor.readAsync());
+  future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+  BOOST_CHECK( accessor == 10 );
+  dummy = 12;
+  BOOST_CHECK( accessor.readLatest() == true );
+  BOOST_CHECK( accessor == 12 );
 
   device.close();
 
