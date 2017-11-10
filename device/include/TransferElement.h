@@ -142,14 +142,7 @@ namespace mtca4u {
 
       /** Read the data from the device. If AccessMode::wait_for_new_data was set, this function will block until new
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
-      void read() {
-        if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
-        }
-        doReadTransfer();
-        postRead();
-      }
+      virtual void read() = 0;
 
       /** Read the next value, if available in the input buffer.
        * 
@@ -160,11 +153,7 @@ namespace mtca4u {
        *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
        *  the current value before returning. Also this function is not guaranteed to be lock free. The return value
        *  will be always true in this mode. */
-      bool readNonBlocking() {
-          bool ret = doReadTransferNonBlocking();
-          if(ret) postRead();     // only needs to be called if new data was read
-          return ret;
-      }
+      virtual bool readNonBlocking() = 0;
       
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
@@ -194,11 +183,7 @@ namespace mtca4u {
       /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
        *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
        *  new value was available if AccessMode::wait_for_new_data is set. */
-      bool readLatest() {
-        bool ret = doReadTransferLatest();
-        if(ret) postRead();     // only needs to be called if new data was read
-        return ret;
-      }
+      virtual bool readLatest() = 0;
 
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
        *  new data. The ID of the TransferElement which received new data is returned as a reference. In case multiple

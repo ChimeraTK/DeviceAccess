@@ -47,6 +47,9 @@ class AsyncReadTest {
     /// test the TransferElement::readAny() function
     void testReadAny();
 
+    /// test mixing the various read functions
+    void testMixing();
+
 };
 
 /**********************************************************************************************************************/
@@ -58,6 +61,7 @@ class  AsyncReadTestSuite : public test_suite {
 
       add( BOOST_CLASS_TEST_CASE( &AsyncReadTest::testAsyncRead, asyncReadTest ) );
       add( BOOST_CLASS_TEST_CASE( &AsyncReadTest::testReadAny, asyncReadTest ) );
+      add( BOOST_CLASS_TEST_CASE( &AsyncReadTest::testMixing, asyncReadTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -393,4 +397,48 @@ void AsyncReadTest::testReadAny() {
   }
 
   device.close();
+}
+
+/**********************************************************************************************************************/
+void AsyncReadTest::testMixing() {
+  std::cout << "testMixing" << std::endl;
+
+  Device device;
+  device.open(dummySdm);
+  auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(dummySdm));
+  BOOST_CHECK( backend != NULL );
+
+  // obtain register accessor with integral type
+  auto accessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+
+  // dummy register accessor for comparison
+  DummyRegisterAccessor<int> dummy(backend.get(),"APP0","WORD_STATUS");
+  
+  // create the mutex for the register
+  backend->readMutex[0x08].unlock();
+
+  // start reading with readAsync but do not wait on the future - then perform normal read()
+  TransferFuture *future;
+  dummy = 5;
+  future = &(accessor.readAsync());
+  BOOST_CHECK( accessor == 0 );
+  accessor.read();
+  BOOST_CHECK( accessor == 5 );
+
+  // start reading with readAsync but do not wait on the future - then perform normal readNonBlocking()
+  dummy = 8;
+  future = &(accessor.readAsync());
+  BOOST_CHECK( accessor == 5 );
+  BOOST_CHECK( accessor.readNonBlocking() == true );
+  BOOST_CHECK( accessor == 8 );
+
+  // start reading with readAsync but do not wait on the future - then perform normal readLatest()
+  dummy = 10;
+  future = &(accessor.readAsync());
+  BOOST_CHECK( accessor == 8 );
+  BOOST_CHECK( accessor.readLatest() == true );
+  BOOST_CHECK( accessor == 10 );
+
+  device.close();
+
 }

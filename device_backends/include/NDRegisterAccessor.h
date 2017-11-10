@@ -98,8 +98,52 @@ namespace mtca4u {
         return buffer_2D.size();
       }
 
-      virtual const std::type_info& getValueType() const override{
+      const std::type_info& getValueType() const override {
         return typeid(UserType);
+      }
+
+      void read() final {
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
+        if(hasActiveFuture) {
+          activeFuture.wait();
+          return;
+        }
+        doReadTransfer();
+        postRead();
+      }
+
+      bool readNonBlocking() final {
+        if(hasActiveFuture) {
+          if(activeFuture.hasNewData()) {
+            activeFuture.wait();
+            return true;
+          }
+          else {
+            return false;
+          }
+        }
+        bool ret = doReadTransferNonBlocking();
+        if(ret) postRead();     // must only be called if new data was read
+        return ret;
+      }
+      
+      bool readLatest() final {
+        bool ret = false;
+        if(hasActiveFuture) {
+          if(activeFuture.hasNewData()) {
+            activeFuture.wait();
+            ret = true;
+          }
+          else {
+            return false;
+          }
+        }
+        bool ret2 = doReadTransferLatest();
+        if(ret2) postRead();     // only needs to be called if new data was read
+        return ret || ret2;
       }
 
       TransferFuture& readAsync() override {
