@@ -231,25 +231,34 @@ namespace mtca4u {
        *  readLatest(). For the return value, see readNonBlocking(). */
       virtual bool doReadTransferLatest() = 0;
 
+      /** Perform any pre-read tasks if necessary.
+       * 
+       *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly
+       *  on the underlying accessor. */
+      virtual void preRead() {};
+
       /** Transfer the data from the device receive buffer into the user buffer, while converting the data into the
        *  user data format if needed.
        * 
-       *  Called by the TransferGroup after a read was executed directly on the underlying accessor. This function
-       *  must be implemented to extract the read data from the underlying accessor and expose it to the user. */
+       *  Called by read() etc. Also the TransferGroup will call this function after a read was executed directly on
+       *  the underlying accessor. This function must be implemented to extract the read data from the underlying
+       *  accessor and expose it to the user. */
       virtual void postRead() {};
 
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
        *  user data format if needed.
        *  
-       *  Called by the TransferGroup before a write will be executed directly on the underlying accessor. This
-       *  function implemented be used to transfer the data to be written into the underlying accessor. */
+       *  Called by write(). Also the TransferGroup will call this function before a write will be executed directly
+       *  on the underlying accessor. This function implemented be used to transfer the data to be written into the
+       *  underlying accessor. */
       virtual void preWrite() {};
 
       /** Perform any post-write cleanups if necessary. If during preWrite() e.g. the user data buffer was swapped
        *  away, it must be swapped back in this function so the just sent data is available again to the calling
        *  program.
        *  
-       *  Called by the TransferGroup after a write will be executed directly on the underlying accessor. */
+       *  Called by write(). Also the TransferGroup will call this function after a write was executed directly
+       *  on the underlying accessor. */
       virtual void postWrite() {};
 
       /** 

@@ -13,6 +13,9 @@
 namespace mtca4u {
 
   void TransferGroup::read() {
+    for(unsigned int i=0; i<highLevelElements.size(); i++) {
+      highLevelElements[i]->preRead();
+    }
     for(unsigned int i=0; i<elements.size(); i++) {
       elements[i]->read();
     }

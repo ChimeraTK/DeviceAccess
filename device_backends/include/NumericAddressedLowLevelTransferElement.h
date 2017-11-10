@@ -57,12 +57,14 @@ namespace mtca4u {
 
       void read() final {
         // note: readAsync() always throws, so we don't have to check for an active future!
+        preRead();
         doReadTransfer();
         postRead();
       }
 
       bool readNonBlocking() final {
         // note: readAsync() always throws, so we don't have to check for an active future!
+        preRead();
         bool ret = doReadTransferNonBlocking();
         if(ret) postRead();     // must only be called if new data was read
         return ret;
@@ -70,6 +72,7 @@ namespace mtca4u {
       
       bool readLatest() final {
         // note: readAsync() always throws, so we don't have to check for an active future!
+        preRead();
         bool ret = doReadTransferLatest();
         if(ret) postRead();     // only needs to be called if new data was read
         return ret;

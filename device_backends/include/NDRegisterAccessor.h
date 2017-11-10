@@ -114,6 +114,7 @@ namespace mtca4u {
           activeFuture.wait();
           return;
         }
+        preRead();
         doReadTransfer();
         postRead();
       }
@@ -131,6 +132,7 @@ namespace mtca4u {
             return false;
           }
         }
+        preRead();
         bool ret = doReadTransferNonBlocking();
         if(ret) postRead();     // must only be called if new data was read
         return ret;
@@ -150,6 +152,7 @@ namespace mtca4u {
             return false;
           }
         }
+        preRead();
         bool ret2 = doReadTransferLatest();
         if(ret2) postRead();     // only needs to be called if new data was read
         return ret || ret2;
@@ -159,6 +162,7 @@ namespace mtca4u {
         ChimeraTK::ExperimentalFeatures::check("asynchronous read");
         if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
         
+        preRead();
         // create promise future pair and launch doReadTransfer in separate thread
         readAsyncPromise = TransferFuture::PromiseType();
         auto boostFuture = readAsyncPromise.get_future().share();
