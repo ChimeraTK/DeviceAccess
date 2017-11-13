@@ -5,6 +5,8 @@
  *      Author: nshehzad
  */
 
+#include <execinfo.h>
+
 #include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -208,7 +210,30 @@ namespace mtca4u {
     BackendFactory::getInstance().setDMapFilePath(dmapFilePath);
   }
 
+  void Utilities::printStackTrace() {
 
+    void *trace[16];
+    char **messages = (char **)NULL;
+    int i, trace_size = 0;
+  
+    trace_size = backtrace(trace, 16);
+    messages = backtrace_symbols(trace, trace_size);
+    printf("[bt] Execution path:\n");
+    for (i=0; i<trace_size; ++i) {
+      std::string msg(messages[i]);
+      size_t a = msg.find_first_of("(");
+      size_t b = msg.find_first_of("+");
+      std::string functionName = msg.substr(a+1,b-a-1);
+      int status;
+      char *demangledName = abi::__cxa_demangle(functionName.c_str(), nullptr, 0, &status);
+      if(status == 0) {
+        std::cout << "[bt] #" << i << " " << demangledName << std::endl;
+        free(demangledName);
+      }
+      else {
+        std::cout << "[bt] #" << i << " (demangling failed) " << functionName << std::endl;
+      }
+    }
+  }
 
-  } /* namespace mtca4u */
-
+} /* namespace mtca4u */
