@@ -125,7 +125,6 @@ namespace mtca4u {
         // implementation.
         if(hasActiveFuture) {
           if(activeFuture.hasNewData()) {
-            activeFuture.wait();
             return true;
           }
           else {
@@ -145,7 +144,6 @@ namespace mtca4u {
         bool ret = false;
         if(hasActiveFuture) {
           if(activeFuture.hasNewData()) {
-            activeFuture.wait();
             ret = true;
           }
           else {
