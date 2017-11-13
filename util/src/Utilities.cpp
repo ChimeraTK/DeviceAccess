@@ -6,6 +6,7 @@
  */
 
 #include <execinfo.h>
+#include <cxxabi.h>
 
 #include <vector>
 #include <boost/algorithm/string.hpp>
