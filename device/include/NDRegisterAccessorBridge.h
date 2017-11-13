@@ -54,15 +54,15 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl != NULL;
       }
 
-      void read() final {
+      void read() override {
         NDRegisterAccessorBridge<UserType>::_impl->read();
       }
 
-      bool readNonBlocking() final {
+      bool readNonBlocking() override {
         return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
       }
 
-      bool readLatest() final {
+      bool readLatest() override {
         return NDRegisterAccessorBridge<UserType>::_impl->readLatest();
       }
 
