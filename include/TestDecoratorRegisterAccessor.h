@@ -35,25 +35,12 @@ namespace ChimeraTK {
       virtual ~TestDecoratorTransferFuture() {}
       
       void wait() override {
-        try {
-          Application::testableModeUnlock("TransferFuture "+_accessor->getName());
-        }
-        catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
-          if(e.code() != std::errc::operation_not_permitted) throw;
-        }
+        _accessor->releaseLock();
         boost::this_thread::interruption_point();
         _originalFuture->wait();
+        _accessor->obtainLockAndDecrementCounter();
         _accessor->postRead();
         _accessor->hasActiveFuture = false;
-        Application::testableModeLock("TransferFuture "+_accessor->getName());
-        assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
-        assert(Application::getInstance().testableMode_counter > 0);
-        --Application::getInstance().testableMode_counter;
-        --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
-        if(Application::getInstance().enableDebugTestableMode) {
-          std::cout << "TestDecoratorTransferFuture::wait[name='"<<_accessor->getName()<<"']: testableMode_counter decreased, now at value "
-                    << Application::getInstance().testableMode_counter << " / " << Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] << std::endl; 
-        }
       }
 
       TestDecoratorTransferFuture& operator=(const TestDecoratorTransferFuture &&other) {
@@ -137,20 +124,30 @@ namespace ChimeraTK {
       }
 
       void doReadTransfer() override {
+        releaseLock();
+        _accessor->doReadTransfer();
+        obtainLockAndDecrementCounter();
+      }
+      
+      /** Release the testableModeLock */
+      void releaseLock() {
         try {
           Application::testableModeUnlock("doReadTransfer "+this->getName());
         }
         catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
           if(e.code() != std::errc::operation_not_permitted) throw e;
         }
-        _accessor->doReadTransfer();
+      }
+      
+      /** Obtain the testableModeLock and decrement the counter. */
+      void obtainLockAndDecrementCounter() {
         Application::testableModeLock("doReadTransfer "+this->getName());
         assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
         assert(Application::getInstance().testableMode_counter > 0);
         --Application::getInstance().testableMode_counter;
         --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
         if(Application::getInstance().enableDebugTestableMode) {
-          std::cout << "TestDecoratorRegisterAccessor::doReadTransfer[name='"<<this->getName()<<"']: testableMode_counter "
+          std::cout << "TestDecoratorRegisterAccessor[name='"<<this->getName()<<"']: testableMode_counter "
                        "decreased, now at value " << Application::getInstance().testableMode_counter << " / " << Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] << std::endl; 
         }
       }
