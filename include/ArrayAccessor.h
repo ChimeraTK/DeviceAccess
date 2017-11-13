@@ -47,7 +47,7 @@ namespace ChimeraTK {
         return *this;
       };
 
-      void read() {
+      void read() override {
         Profiler::stopMeasurement();
         mtca4u::OneDRegisterAccessor<UserType>::read();
         Profiler::startMeasurement();
@@ -91,7 +91,7 @@ namespace ChimeraTK {
     {}
     ArrayPollInput() : ArrayAccessor<UserType>() {}
     void doReadTransfer() override { this->doReadTransferLatest(); }
-    void read() { this->readLatest(); }
+    void read() override { this->readLatest(); }
     using ArrayAccessor<UserType>::operator=;
   };
 
