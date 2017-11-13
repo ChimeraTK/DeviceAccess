@@ -44,6 +44,10 @@ namespace ChimeraTK {
    * transition to boost::shared_future<void> when support for the buggy BOOST version is no longer required.
    * 
    * @todo can we make all other functions private?
+   * 
+   * Design note: Implementations must be able to override TransferFuture::wait(), because a different scheme for
+   * blocking might be required. An example is the TestDecoratorRegisterAccessor in ApplicationCore, which has to
+   * implment a special logic for each blocking call including the call to wait().
    */
   class TransferFuture {
     public:
