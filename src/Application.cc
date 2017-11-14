@@ -47,57 +47,46 @@ void Application::initialise() {
 
 /*********************************************************************************************************************/
 
+/** Functor class to create a constant for otherwise unconnected variables, suitable for boost::fusion::for_each(). */
+namespace {
+  struct CreateConstantForUnconnectedVar {
+    CreateConstantForUnconnectedVar(const std::type_info &typeInfo, bool makeFeeder, size_t length)
+    : _typeInfo(typeInfo), _makeFeeder(makeFeeder), _length(length) {}
+    
+    template<typename PAIR>
+    void operator()(PAIR&) const {
+      if(typeid(typename PAIR::first_type) != _typeInfo) return;
+      theNode = VariableNetworkNode::makeConstant<typename PAIR::first_type>(_makeFeeder, 0, _length);
+      done = true;
+    }
+    
+    const std::type_info &_typeInfo;
+    bool _makeFeeder;
+    size_t _length;
+    mutable bool done{false};
+    mutable VariableNetworkNode theNode;
+  };
+}
+
+/*********************************************************************************************************************/
+
 void Application::processUnconnectedNodes() {
   for(auto &module : getSubmoduleListRecursive()) {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
         if(enableUnconnectedVariablesWarning) {
-          std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "
-                       "Reading will always result in 0, writing will be ignored." << std::endl;
+          std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "    // LCOV_EXCL_LINE
+                       "Reading will always result in 0, writing will be ignored." << std::endl;    // LCOV_EXCL_LINE
         }
         networkList.emplace_back();
         networkList.back().addNode(accessor);
         
         bool makeFeeder = !(networkList.back().hasFeedingNode());
         size_t length = accessor.getNumberOfElements();
-        
-        if(accessor.getValueType() == typeid(int8_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<int8_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(uint8_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<uint8_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(int16_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<int16_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(uint16_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<uint16_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(int32_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<int32_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(uint32_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<uint32_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(int64_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<int64_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(uint64_t)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<uint64_t>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(float)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<float>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(double)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<double>(makeFeeder, 0, length));
-        }
-        else if(accessor.getValueType() == typeid(std::string)) {
-          constantList.emplace_back(VariableNetworkNode::makeConstant<std::string>(makeFeeder, "", length));
-        }
-        else {
-          throw std::invalid_argument("Unknown value type.");
-        }
-
+        auto callable = CreateConstantForUnconnectedVar(accessor.getValueType(), makeFeeder, length);
+        boost::fusion::for_each(mtca4u::userTypeMap(), callable);
+        assert(callable.done);
+        constantList.emplace_back(callable.theNode);
         networkList.back().addNode(constantList.back());
       }
     }
