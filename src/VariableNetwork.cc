@@ -249,7 +249,13 @@ namespace ChimeraTK {
     for(auto &node : nodeList) {
       assert(&(node.getOwner()) == this);
       if(node.getValueType() == typeid(AnyType)) node.setValueType(*valueType);
-      assert(node.getValueType() == *valueType);
+      if(node.getValueType() != *valueType) {
+        std::stringstream msg;
+        msg << "The network contains variables of different value types, which is not supported!" << std::endl;
+        msg << "The illegal network:" << std::endl;
+        dump("", msg);
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      }
     }
 
     // if the feeder is an application node, it must be in push mode
