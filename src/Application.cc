@@ -103,11 +103,12 @@ void Application::checkConnections() {
   }
   
   // check if all accessors are connected
+  // note: this in principle cannot happen, since processUnconnectedNodes() is called before
   for(auto &module : getSubmoduleListRecursive()) {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
-        throw std::invalid_argument("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+
-                                    "' was not connected!");
+        throw std::invalid_argument("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+    // LCOV_EXCL_LINE
+                                    "' was not connected!");                                                      // LCOV_EXCL_LINE
       }
     }
   }

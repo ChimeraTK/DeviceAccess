@@ -56,9 +56,6 @@ namespace ChimeraTK {
       void initialise() override;
 
       void run() override;
-      
-      /** Check if all connections are valid. */
-      void checkConnections();
 
       /** Instead of running the application, just initialise it and output the published variables to an XML file. */
       void generateXML();
@@ -153,6 +150,9 @@ namespace ChimeraTK {
 
       template<typename UserType>
       friend class Accessor;
+      
+      /** Check if all connections are valid. Internally called in initialise(). */
+      void checkConnections();
 
       /** Obtain the lock object for the testable mode lock for the current thread. The returned object has
        *  thread_local storage duration and must only be used inside the current thread. Initially (i.e. after
