@@ -41,13 +41,10 @@ namespace ctk = ChimeraTK;
     }
 
 // list of user types the accessors are tested with
-/*
 typedef boost::mpl::list<int8_t,uint8_t,
                          int16_t,uint16_t,
                          int32_t,uint32_t,
                          float,double>        test_types;
-*/
-typedef boost::mpl::list<int32_t>        test_types;
 
 constexpr char dummySdm[] = "sdm://./dummy=test.map";
                          
@@ -833,15 +830,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConvenienceRead, T, test_types ) {
   for(int i=0; i<5; ++i) {
     test.writeScalar<T>("input", 120+i);
     test.stepApplication();
-    CHECK_TIMEOUT(test.readScalar<T>("output") == 120+i, 200);
+    CHECK_TIMEOUT(test.readScalar<T>("output") == T(120+i), 200);
   }
 
   // same with array function (still a scalar variable behind, but this does not matter)
   for(int i=0; i<5; ++i) {
-    std::vector<T> myValue{120+i};
+    std::vector<T> myValue{T(120+i)};
     test.writeArray<T>("input", myValue);
     test.stepApplication();
-    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{120+i}, 200);
+    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120+i)}, 200);
   }
 
 }
