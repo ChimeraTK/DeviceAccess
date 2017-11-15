@@ -121,7 +121,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFourScalarPushAccessors, T, test_types ) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingPush >> app.testModule.consumingPush;
+  // connect in this strange way to test if connection code can handle this.
+  app.testModule.consumingPush >> app.testModule.consumingPush2;
   app.testModule.feedingPush >> app.testModule.consumingPush2;
   app.testModule.feedingPush >> app.testModule.consumingPush3;
   app.initialise();
