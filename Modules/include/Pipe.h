@@ -15,21 +15,21 @@ namespace ChimeraTK {
   template<typename Type>
   struct ScalarPipe : public ApplicationModule {
       
-      ScalarPipe(Module *owner, const std::string &name, const std::string &unit, const std::string &description,
+      ScalarPipe(EntityOwner *owner, const std::string &name, const std::string &unit, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
       : ApplicationModule(owner, name, description, true)
       {
-        input.replace(ScalarPushInput<Type>(owner, name, unit, description, tagsInput));
-        output.replace(ScalarOutput<Type>(owner, name, unit, description, tagsOutput));
+        input.replace(ScalarPushInput<Type>(this, name, unit, description, tagsInput));
+        output.replace(ScalarOutput<Type>(this, name, unit, description, tagsOutput));
       }
       
-      ScalarPipe(Module *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
+      ScalarPipe(EntityOwner *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
                 const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
       : ApplicationModule(owner, inputName, description, true)
       {
-        input.replace(ScalarPushInput<Type>(owner, inputName, unit, description, tagsInput));
-        output.replace(ScalarOutput<Type>(owner, outputName, unit, description, tagsOutput));
+        input.replace(ScalarPushInput<Type>(this, inputName, unit, description, tagsInput));
+        output.replace(ScalarOutput<Type>(this, outputName, unit, description, tagsOutput));
       }
       
       ScalarPipe() {}
@@ -54,21 +54,21 @@ namespace ChimeraTK {
   template<typename Type>
   struct ArrayPipe : public ApplicationModule {
       
-      ArrayPipe(Module *owner, const std::string &name, const std::string &unit, size_t nElements, const std::string &description,
+      ArrayPipe(EntityOwner *owner, const std::string &name, const std::string &unit, size_t nElements, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
       : ApplicationModule(owner, name, description, true)
       {
-        input.replace(ArrayPushInput<Type>(owner, name, unit, nElements, description, tagsInput));
-        output.replace(ArrayOutput<Type>(owner, name, unit, nElements, description, tagsOutput));
+        input.replace(ArrayPushInput<Type>(this, name, unit, nElements, description, tagsInput));
+        output.replace(ArrayOutput<Type>(this, name, unit, nElements, description, tagsOutput));
       }
       
-      ArrayPipe(Module *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
+      ArrayPipe(EntityOwner *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
                 size_t nElements, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
       : ApplicationModule(owner, inputName, description, true)
       {
-        input.replace(ArrayPushInput<Type>(owner, inputName, unit, nElements, description, tagsInput));
-        output.replace(ArrayOutput<Type>(owner, outputName, unit, nElements, description, tagsOutput));
+        input.replace(ArrayPushInput<Type>(this, inputName, unit, nElements, description, tagsInput));
+        output.replace(ArrayOutput<Type>(this, outputName, unit, nElements, description, tagsOutput));
       }
 
       ArrayPipe() {}
