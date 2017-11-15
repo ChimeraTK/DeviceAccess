@@ -43,6 +43,14 @@ Application::Application(const std::string& name)
     throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
       "Error: An instance of Application must have its applicationName set.");
   }
+  // check if application name contains illegal characters
+  std::string legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
+  bool nameContainsIllegalChars = name.find_first_not_of(legalChars) != std::string::npos;
+  if(nameContainsIllegalChars) {
+    shutdown();
+    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+      "Error: The application name may only contain alphanumeric characters and underscores.");
+  }
 }
 
 /*********************************************************************************************************************/

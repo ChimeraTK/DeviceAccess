@@ -108,7 +108,7 @@ struct SecondHierarchy : ctk::ModuleGroup { using ctk::ModuleGroup::ModuleGroup;
 /* dummy application */
 
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("test suite") {  ChimeraTK::ExperimentalFeatures::enable(); }
+    TestApplication() : Application("testSuite") {  ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApplication() { shutdown(); }
     
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.

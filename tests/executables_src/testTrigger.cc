@@ -101,7 +101,7 @@ struct TestModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("test suite") {
+    TestApplication() : Application("testSuite") {
       mtca4u::BackendFactory::getInstance().registerBackendType("TestTransferGroupDummy", "",
         &TestTransferGroupDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     }

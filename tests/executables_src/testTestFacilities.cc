@@ -147,7 +147,7 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("test application") {
+    TestApplication() : Application("testApplication") {
       ChimeraTK::ExperimentalFeatures::enable();
     }
     ~TestApplication() { shutdown(); }

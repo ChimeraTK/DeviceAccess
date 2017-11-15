@@ -49,7 +49,7 @@ struct TestModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("test suite") {}
+    TestApplication() : Application("testSuite") {}
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.

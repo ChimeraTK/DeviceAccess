@@ -74,7 +74,7 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
 /* dummy application */
 
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("test suite") {  ChimeraTK::ExperimentalFeatures::enable(); }
+    TestApplication() : Application("testSuite") {  ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApplication() { shutdown(); }
     
     void defineConnections() {}             // the setup is done in the tests
