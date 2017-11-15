@@ -196,18 +196,13 @@ void Application::shutdown() {
 /*********************************************************************************************************************/
 
 void Application::generateXML() {
+  assert(applicationName != "");
   
   // define the connections
   defineConnections();
   
   // also search for unconnected nodes - this is here only executed to print the warnings
   processUnconnectedNodes();
-
-  // check if the application name has been set
-  if(applicationName == "") {
-    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-        "Error: An instance of Application must have its applicationName set.");
-  }
 
   // create XML document with root node
   xmlpp::Document doc;
@@ -261,16 +256,17 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
   // if both nodes already have an owner, we are done
   if(a.hasOwner() && b.hasOwner()) {
     if(&(a.getOwner()) != &(b.getOwner())) {      /// @todo TODO merge networks?
-      std::cout << "*** ERROR: nodes to be connected should have the same owner!" << std::endl;
-      std::cout << "Node A:" << std::endl;
-      a.dump();
-      std::cout << "Node B:" << std::endl;
-      b.dump();
-      std::cout << "Owner of node A:" << std::endl;
-      a.getOwner().dump();
-      std::cout << "Owner of node B:" << std::endl;
-      b.getOwner().dump();
-      assert(&(a.getOwner()) == &(b.getOwner()));
+      std::stringstream what;
+      what << "*** ERROR: nodes to be connected should have the same owner!" << std::endl;
+      what << "Node A:" << std::endl;
+      a.dump(what);
+      what << "Node B:" << std::endl;
+      b.dump(what);
+      what << "Owner of node A:" << std::endl;
+      a.getOwner().dump("",what);
+      what << "Owner of node B:" << std::endl;
+      b.getOwner().dump("",what);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(what.str());
     }
   }
   // add b to the existing network of a

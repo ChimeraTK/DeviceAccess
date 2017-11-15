@@ -17,6 +17,7 @@
 
 #include "Application.h"
 #include "ScalarAccessor.h"
+#include "ArrayAccessor.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 
@@ -45,6 +46,8 @@ struct TestModule : public ctk::ApplicationModule {
     ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
     ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
     ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
+    
+    ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "MV/m", 10, "Description"};
 
     void mainLoop() {}
 };
@@ -130,6 +133,45 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
   app.dev("/MyModule/Variable") >> app.testModule.consumingPoll >> app.testModule.consumingPoll2;
   try {
     app.initialise();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test case for different number of elements */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testDifferentNrElements, T, test_types ) {
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
+  TestApplication<T> app;
+
+  try {
+    app.testModule.feedingArray >> app.testModule.consumingPoll;
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test case for "merging" two networks */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testMergeNetworks, T, test_types ) {
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
+  TestApplication<T> app;
+  app.testModule.feedingPush >> app.testModule.consumingPush;
+  app.testModule.consumingPush2 >> app.testModule.consumingPush3;
+  try {
+    app.testModule.consumingPush >> app.testModule.consumingPush2;
     BOOST_ERROR("Exception expected.");
   }
   catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {

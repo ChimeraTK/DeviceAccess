@@ -130,9 +130,11 @@ namespace ChimeraTK {
       stream << linePrefix << "    # " << ++count << ":";
       consumer.dump(stream);
     }
-    if(getFeedingNode().hasExternalTrigger()) {
-      stream << linePrefix << "  external trigger node: ";
-      getFeedingNode().getExternalTrigger().dump(stream);
+    if(hasFeedingNode()) {
+      if(getFeedingNode().hasExternalTrigger()) {
+        stream << linePrefix << "  external trigger node: ";
+        getFeedingNode().getExternalTrigger().dump(stream);
+      }
     }
     stream << linePrefix << "}" << std::endl;
   }
@@ -148,6 +150,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetwork::TriggerType VariableNetwork::getTriggerType(bool verboseExceptions) const {
+    if(!hasFeedingNode()) return TriggerType::none;
     const auto &feeder = getFeedingNode();
     // network has an external trigger
     if(feeder.hasExternalTrigger()) {
@@ -275,8 +278,11 @@ namespace ChimeraTK {
           return n.getDirection() == VariableDirection::feeding;
         } );
     if(iter == nodeList.end()) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "No feeding node in this network!");
+      std::stringstream msg;
+      msg << "No feeding node in this network!" << std::endl;
+      msg << "The illegal network:" << std::endl;
+      if(!hasFeedingNode()) dump("", msg);
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
     return *iter;
   }
