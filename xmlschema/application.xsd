@@ -7,24 +7,18 @@
 
   <xsd:annotation>
     <xsd:documentation xml:lang="en">
-     Application variable description schema for ChimeraTK ApplicationCore.
-     NOTE: This is a first draft version! Do not use for production!
+     Application variable description schema for ChimeraTK ApplicationCore. XML files produced by Application::generateXML() validate against this schema.
     </xsd:documentation>
   </xsd:annotation>
 
-  <xsd:element name="application" type="ApplicationType"/>
-
-  <xsd:complexType name="ApplicationType">
-    <xsd:sequence>
-      <xsd:element name="directory" type="DirectoryType" minOccurs="0" maxOccurs="unbounded"/>
-    </xsd:sequence>
-    <xsd:attribute name="name" type="xsd:string" use="required"/>
-  </xsd:complexType>
+  <xsd:element name="application" type="DirectoryType"/>
 
   <xsd:complexType name="DirectoryType">
     <xsd:sequence>
-      <xsd:element name="directory" type="DirectoryType" minOccurs="0" maxOccurs="unbounded"/>
-      <xsd:element name="variable" type="VariableType" minOccurs="0" maxOccurs="unbounded"/>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element name="directory" type="DirectoryType"/>
+        <xsd:element name="variable" type="VariableType"/>
+      </xsd:choice>
     </xsd:sequence>
     <xsd:attribute name="name" type="xsd:string" use="required"/>
   </xsd:complexType>
@@ -48,6 +42,8 @@
       <xsd:enumeration value="uint16"/>
       <xsd:enumeration value="int32"/>
       <xsd:enumeration value="uint32"/>
+      <xsd:enumeration value="int64"/>
+      <xsd:enumeration value="uint64"/>
       <xsd:enumeration value="float"/>
       <xsd:enumeration value="double"/>
       <xsd:enumeration value="string"/>
