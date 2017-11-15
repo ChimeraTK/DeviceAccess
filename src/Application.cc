@@ -33,6 +33,20 @@ std::mutex Application::testableMode_mutex;
 
 /*********************************************************************************************************************/
 
+Application::Application(const std::string& name)
+: ApplicationBase(name),
+  EntityOwner(name, "")
+{
+  // check if the application name has been set
+  if(applicationName == "") {
+    shutdown();
+    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+      "Error: An instance of Application must have its applicationName set.");
+  }
+}
+
+/*********************************************************************************************************************/
+
 void Application::initialise() {
 
   // call the user-defined defineConnections() function which describes the structure of the application
@@ -119,11 +133,7 @@ void Application::checkConnections() {
 
 void Application::run() {
 
-  // check if the application name has been set
-  if(applicationName == "") {
-    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-        "Error: An instance of Application must have its applicationName set.");
-  }
+  assert(applicationName != "");
 
   // prepare the modules
   for(auto &module : getSubmoduleListRecursive()) {

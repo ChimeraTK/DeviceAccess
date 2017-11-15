@@ -39,8 +39,9 @@ namespace ChimeraTK {
 
     public:
 
-      Application(const std::string& name)
-      : ApplicationBase(name), EntityOwner(name, "") {}
+      /** The constructor takes the application name as an argument. The name must have a non-zero length and must not
+       *  contain any spaces or special characters. Use only alphanumeric characters and underscores. */
+      Application(const std::string& name);
 
       ~Application() {}
 
