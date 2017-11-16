@@ -98,6 +98,45 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 }
 
 /*********************************************************************************************************************/
+/* test feeding a scalar to two different device registers */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDeviceFanOut, T, test_types ) {
+  std::cout << "testFeedToDeviceFanOut" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  app.testModule.feedingToDevice >> app.devMymodule("actuator")
+                                 >> app.devMymodule("readBack");
+  app.initialise();
+
+  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
+  auto regac = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+  auto regrb = backend->getRegisterAccessor<int>("/MyModule/readBack",1,0,{});
+
+  regac->accessData(0) = 0;
+  regrb->accessData(0) = 0;
+  app.testModule.feedingToDevice = 42;
+  app.testModule.feedingToDevice.write();
+  regac->read();
+  BOOST_CHECK(regac->accessData(0) == 42);
+  regrb->read();
+  BOOST_CHECK(regrb->accessData(0) == 42);
+  app.testModule.feedingToDevice = 120;
+  regac->read();
+  BOOST_CHECK(regac->accessData(0) == 42);
+  regrb->read();
+  BOOST_CHECK(regrb->accessData(0) == 42);
+  app.testModule.feedingToDevice.write();
+  regac->read();
+  BOOST_CHECK(regac->accessData(0) == 120);
+  regrb->read();
+  BOOST_CHECK(regrb->accessData(0) == 120);
+
+}
+
+/*********************************************************************************************************************/
 /* test consuming a scalar from a device */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
