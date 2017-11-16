@@ -140,23 +140,88 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
 };
 
 /*********************************************************************************************************************/
+/* the PollingReadModule is designed to test poll-type transfers (even mixed with push-type) */
+
+template<typename T>
+struct PollingReadModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<T> push{this, "push", "cm", "A push-type input"};
+    ctk::ScalarPushInput<T> push2{this, "push2", "cm", "A second push-type input"};
+    ctk::ScalarPollInput<T> poll{this, "poll", "cm", "A poll-type input"};
+
+    ctk::ScalarOutput<T> valuePush{this, "valuePush", "cm", "The last value received for 'push'"};
+    ctk::ScalarOutput<T> valuePoll{this, "valuePoll", "cm", "The last value received for 'poll'"};
+    ctk::ScalarOutput<int> state{this, "state", "", "State of the test mainLoop"};
+    
+    void mainLoop() {
+      
+      while(true) {
+        push.read();
+        poll.read();
+        valuePush = (T)push;
+        valuePoll = (T)poll;
+        valuePoll.write();
+        valuePush.write();
+        state = 1;
+        state.write();
+        
+        push2.read();
+        push.readNonBlocking();
+        poll.read();
+        valuePush = (T)push;
+        valuePoll = (T)poll;
+        valuePoll.write();
+        valuePush.write();
+        state = 2;
+        state.write();
+        
+        push2.read();
+        push.readLatest();
+        poll.read();
+        valuePush = (T)push;
+        valuePoll = (T)poll;
+        valuePoll.write();
+        valuePush.write();
+        state = 3;
+        state.write();
+        
+      }
+    }
+};
+
+/*********************************************************************************************************************/
 /* dummy application */
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("testApplication") {
-      ChimeraTK::ExperimentalFeatures::enable();
-    }
+    TestApplication() : Application("testApplication") {}
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-    void defineConnections() {}             // the setup is done in the tests
+    void defineConnections() {}             // setup is done in the tests
 
     ctk::ControlSystemModule cs{""};
     ctk::DeviceModule dev{dummySdm,""};
     BlockingReadTestModule<T> blockingReadTestModule{this,"blockingReadTestModule", "Module for testing blocking read"};
     AsyncReadTestModule<T> asyncReadTestModule{this,"asyncReadTestModule", "Module for testing async read"};
     ReadAnyTestModule<T> readAnyTestModule{this,"readAnyTestModule", "Module for testing readAny()"};
+};
+
+/*********************************************************************************************************************/
+/* second application */
+
+template<typename T>
+struct PollingTestApplication : public ctk::Application {
+    PollingTestApplication() : Application("testApplication") {}
+    ~PollingTestApplication() { shutdown(); }
+
+    void defineConnections() {
+      pollingReadModule.connectTo(cs);
+    }
+
+    ctk::ControlSystemModule cs{""};
+    PollingReadModule<T> pollingReadModule{this,"pollingReadModule", "Module for testing poll-type transfers"};
 };
 
 /*********************************************************************************************************************/
@@ -205,6 +270,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testBlockingRead, T, test_types ) {
   ctk::TestFacility test;
   auto pvInput = test.getScalar<T>("input");
   auto pvOutput = test.getScalar<T>("output");
+  app.debugTestableMode();
   test.runApplication();
 
   // test blocking read when taking control in the test thread (note: the blocking read is executed in the app module!)
@@ -823,7 +889,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConvenienceRead, T, test_types ) {
   app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
   
   ctk::TestFacility test;
-  auto pvOutput = test.getScalar<T>("output");
   test.runApplication();
 
   // test blocking read when taking control in the test thread (note: the blocking read is executed in the app module!)
@@ -840,5 +905,69 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConvenienceRead, T, test_types ) {
     test.stepApplication();
     CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120+i)}, 200);
   }
+
+}
+
+/*********************************************************************************************************************/
+/* test poll-type transfers mixed with push-type */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testPolling, T, test_types ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testPolling<" << typeid(T).name() << ">" << std::endl;
+  
+  PollingTestApplication<T> app;
+  
+  ctk::TestFacility test;
+  test.runApplication();
+  
+  auto pv_push = test.getScalar<T>("push");
+  auto pv_push2 = test.getScalar<T>("push2");
+  auto pv_poll = test.getScalar<T>("poll");
+  auto pv_valuePush = test.getScalar<T>("valuePush");
+  auto pv_valuePoll = test.getScalar<T>("valuePoll");
+  auto pv_state = test.getScalar<int>("state");
+  
+  // write values to 'push' and 'poll' and check result
+  pv_push = 120;
+  pv_push.write();
+  pv_poll = 42;
+  pv_poll.write();
+  test.stepApplication();
+  pv_valuePoll.read();
+  pv_valuePush.read();
+  pv_state.read();
+  BOOST_CHECK_EQUAL((T)pv_valuePoll, 42);
+  BOOST_CHECK_EQUAL((T)pv_valuePush, 120);
+  BOOST_CHECK_EQUAL((T)pv_state, 1);
+  
+  // this time the application gets triggered by push2, push is read non-blockingly (single value only)
+  pv_push = 22;
+  pv_push.write();
+  pv_poll = 44;
+  pv_poll.write();
+  pv_poll = 45;
+  pv_poll.write();
+  pv_push2.write();
+  test.stepApplication();
+  pv_valuePoll.read();
+  pv_valuePush.read();
+  pv_state.read();
+  BOOST_CHECK_EQUAL((T)pv_valuePoll, 45);
+  BOOST_CHECK_EQUAL((T)pv_valuePush, 22);
+  BOOST_CHECK_EQUAL((T)pv_state, 2);
+  
+  // this time the application gets triggered by push2, push is read with readLatest()
+  pv_push = 24;
+  pv_push.write();
+  pv_poll = 46;
+  pv_poll.write();
+  pv_push2.write();
+  test.stepApplication();
+  pv_valuePoll.read();
+  pv_valuePush.read();
+  pv_state.read();
+  BOOST_CHECK_EQUAL((T)pv_valuePoll, 46);
+  BOOST_CHECK_EQUAL((T)pv_valuePush, 24);
+  BOOST_CHECK_EQUAL((T)pv_state, 3);
 
 }

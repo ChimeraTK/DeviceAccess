@@ -139,9 +139,9 @@ namespace ChimeraTK {
         }
       }
       
-      /** Obtain the testableModeLock and decrement the counter. */
+      /** Obtain the testableModeLock if not owned yet, and decrement the counter. */
       void obtainLockAndDecrementCounter() {
-        Application::testableModeLock("doReadTransfer "+this->getName());
+        if(!Application::testableModeTestLock()) Application::testableModeLock("doReadTransfer "+this->getName());
         assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
         assert(Application::getInstance().testableMode_counter > 0);
         --Application::getInstance().testableMode_counter;
@@ -153,18 +153,24 @@ namespace ChimeraTK {
       }
 
       bool doReadTransferNonBlocking() override {
-        return _accessor->doReadTransferNonBlocking();
+        bool newData = _accessor->doReadTransferNonBlocking();
+        if(!newData) return false;
+        obtainLockAndDecrementCounter();
+        return true;
       }
 
       bool doReadTransferLatest() override {
-        bool retval = _accessor->doReadTransferLatest();
+        bool newData = _accessor->doReadTransferLatest();
+        if(!newData) return false;
 
         // the queue has been emptied, so make sure that the testableMode_counter reflects this
         assert(Application::testableModeTestLock());
         auto &app = Application::getInstance();
+        assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
+        assert(Application::getInstance().testableMode_counter > 0);
         app.testableMode_counter -= app.testableMode_perVarCounter[_accessor->getUniqueId()];
         app.testableMode_perVarCounter[_accessor->getUniqueId()] = 0;
-        return retval;
+        return true;
       }
 
       TransferFuture& readAsync() override {

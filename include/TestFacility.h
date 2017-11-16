@@ -66,8 +66,9 @@ namespace ChimeraTK {
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
 
-        // decorate with TestDecoratorRegisterAccessor if variable is not poll-type and store it in cache
-        if(!Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
+        // decorate with TestDecoratorRegisterAccessor if variable is sender and receiver is not poll-type,
+        // and store it in cache
+        if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
           auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
           Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(scalarMap.table)[name].replace(mtca4u::ScalarRegisterAccessor<T>(deco));
@@ -96,8 +97,9 @@ namespace ChimeraTK {
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
 
-        // decorate with TestDecoratorRegisterAccessor if variable is not poll-type and store it in cache
-        if(!Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
+        // decorate with TestDecoratorRegisterAccessor if variable is sender and receiver is not poll-type,
+        // and store it in cache
+        if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
           auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
           Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(arrayMap.table)[name].replace(mtca4u::OneDRegisterAccessor<T>(deco));
