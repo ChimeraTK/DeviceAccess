@@ -598,7 +598,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
       }
     }
     else { /* !(nNodes == 2 && !useExternalTrigger) */
@@ -625,9 +625,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         fanOut = threadedFanOut;
       }
       else {
-        if(!network.hasApplicationConsumer()) {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("No application node in the network but no trigger!");
-        }
+        assert(network.hasApplicationConsumer());   // checkConnections should catch this
         consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl);
         fanOut = consumingFanOut;
       }
@@ -665,7 +663,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
         }
       }
       connectionMade = true;
@@ -675,7 +673,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   else if(!constantFeeder) {    /* !feeder.hasImplementation() */
     // we should be left with an application feeder node
     if(feeder.getType() != NodeType::Application) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
     }
     assert(!useExternalTrigger);
     // if we just have two nodes, directly connect them
@@ -710,7 +708,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
       }
     }
     else {
@@ -745,7 +743,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
         }
       }
       connectionMade = true;
@@ -783,17 +781,17 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Using constants as triggers is not supported!");
       }
       else {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
       }
     }
     connectionMade = true;
     
   }
 
-  if(!connectionMade) {
-    throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(
-        "The variable network cannot be handled. Implementation missing!");
-  }
+  if(!connectionMade) {                                                                       // LCOV_EXCL_LINE (assert-like)
+    throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(              // LCOV_EXCL_LINE (assert-like)
+        "The variable network cannot be handled. Implementation missing!");                   // LCOV_EXCL_LINE (assert-like)
+  }                                                                                           // LCOV_EXCL_LINE (assert-like)
 
 }
 
