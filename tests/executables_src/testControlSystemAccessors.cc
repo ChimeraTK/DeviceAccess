@@ -13,6 +13,8 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
+#include <mtca4u/BackendFactory.h>
+#include <mtca4u/Device.h>
 #include <ChimeraTK/ControlSystemAdapter/PVManager.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
@@ -21,6 +23,7 @@
 #include "ScalarAccessor.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
+#include "DeviceModule.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -30,6 +33,17 @@ typedef boost::mpl::list<int8_t,uint8_t,
                          int16_t,uint16_t,
                          int32_t,uint32_t,
                          float,double>        test_types;
+
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                   \
+    {                                                                                                               \
+      std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                  \
+      while(!(condition)) {                                                                                         \
+        bool timeout_reached = (std::chrono::steady_clock::now()-t0) > std::chrono::milliseconds(maxMilliseconds);  \
+        BOOST_CHECK( !timeout_reached );                                                                            \
+        if(timeout_reached) break;                                                                                  \
+        usleep(1000);                                                                                               \
+      }                                                                                                             \
+    }
 
 /*********************************************************************************************************************/
 /* the ApplicationModule for the test is a template of the user type */
@@ -49,7 +63,9 @@ struct TestModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("testSuite") {}
+    TestApplication() : Application("testSuite") {
+      mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+    }
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
@@ -57,6 +73,8 @@ struct TestApplication : public ctk::Application {
 
     TestModule<T> testModule{this, "TestModule", "The test module"};
     ctk::ControlSystemModule cs;
+    
+    ctk::DeviceModule dev{"Dummy0"};
 };
 
 /*********************************************************************************************************************/
@@ -321,3 +339,70 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
 
 }
 
+/*********************************************************************************************************************/
+/* test direct control system to device connections */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDev, T, test_types ) {
+
+  TestApplication<T> app;
+
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
+
+  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator");
+  app.initialise();
+  app.run();
+
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+
+  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
+  auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
+  BOOST_CHECK( myFeeder->getName() == "/myFeeder" );
+
+  myFeeder->accessData(0) = 18;
+  myFeeder->write();
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 18, 3000);
+
+  myFeeder->accessData(0) = 20;
+  myFeeder->write();
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 20, 3000);
+
+}
+
+/*********************************************************************************************************************/
+/* test direct control system to control system connections */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoCS, T, test_types ) {
+
+  TestApplication<T> app;
+
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
+
+  app.cs("mySender", typeid(T), 1) >> app.cs("myReceiver");
+  app.initialise();
+  app.run();
+
+  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);
+  auto mySender = pvManagers.first->getProcessArray<T>("/mySender");
+  BOOST_CHECK( mySender->getName() == "/mySender" );
+  auto myReceiver = pvManagers.first->getProcessArray<T>("/myReceiver");
+  BOOST_CHECK( myReceiver->getName() == "/myReceiver" );
+
+  mySender->accessData(0) = 22;
+  mySender->write();
+  myReceiver->read();
+  BOOST_CHECK_EQUAL( myReceiver->accessData(0), 22 );
+
+  mySender->accessData(0) = 23;
+  mySender->write();
+  myReceiver->read();
+  BOOST_CHECK_EQUAL( myReceiver->accessData(0), 23 );
+
+  mySender->accessData(0) = 24;
+  mySender->write();
+  myReceiver->read();
+  BOOST_CHECK_EQUAL( myReceiver->accessData(0), 24 );
+
+}

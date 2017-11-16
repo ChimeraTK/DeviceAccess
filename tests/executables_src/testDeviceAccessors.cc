@@ -63,6 +63,8 @@ struct TestApplication : public ctk::Application {
     TestModule<T> testModule{this,"testModule", "The test module"};
     ctk::DeviceModule devMymodule{"Dummy0","MyModule"};
     ctk::DeviceModule dev{"Dummy0"};
+    
+    // note: direct device-to-controlsystem connections are tested in testControlSystemAccessors!
 };
 
 /*********************************************************************************************************************/
