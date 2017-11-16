@@ -566,7 +566,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       feedingImpl = createProcessVariable<UserType>(feeder);
     }
     else {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");
+      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
     }
 
     // if we just have two nodes, directly connect them
