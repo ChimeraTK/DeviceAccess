@@ -218,9 +218,7 @@ struct PollingTestApplication : public ctk::Application {
     PollingTestApplication() : Application("testApplication") {}
     ~PollingTestApplication() { shutdown(); }
 
-    void defineConnections() {
-      pollingReadModule.connectTo(cs);
-    }
+    void defineConnections() {}             // setup is done in the tests
 
     ctk::ControlSystemModule cs{""};
     PollingReadModule<T> pollingReadModule{this,"pollingReadModule", "Module for testing poll-type transfers"};
@@ -272,7 +270,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testBlockingRead, T, test_types ) {
   ctk::TestFacility test;
   auto pvInput = test.getScalar<T>("input");
   auto pvOutput = test.getScalar<T>("output");
-  app.debugTestableMode();
   test.runApplication();
 
   // test blocking read when taking control in the test thread (note: the blocking read is executed in the app module!)
@@ -918,7 +915,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstants, T, test_types ) {
   std::cout << "==> testConstants<" << typeid(T).name() << ">" << std::endl;
 
   {
-
     TestApplication<T> app;
     
     ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.blockingReadTestModule.someInput;
@@ -932,9 +928,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstants, T, test_types ) {
     app.readAnyTestModule.value >> app.cs("value");
     app.readAnyTestModule.index >> app.cs("index");
     
-    app.dumpConnections();
-    
-    app.debugTestableMode();
     ctk::TestFacility test;
     test.runApplication();
     
@@ -953,8 +946,39 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstants, T, test_types ) {
     test.stepApplication();
     BOOST_CHECK_EQUAL( test.readScalar<uint32_t>("index"), 4 );
     BOOST_CHECK_EQUAL( test.readScalar<T>("value"), 30 );
-
   }
+
+  {
+    PollingTestApplication<T> app;
+    
+    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.pollingReadModule.push2;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.pollingReadModule.poll;
+    app.pollingReadModule.connectTo(app.cs);
+    
+    ctk::TestFacility test;
+    test.runApplication();
+    
+    BOOST_CHECK_EQUAL( (T)app.pollingReadModule.push2, 18 );
+    BOOST_CHECK_EQUAL( (T)app.pollingReadModule.poll, 20 );
+    BOOST_CHECK_EQUAL( test.readScalar<T>("push2"), 18 );
+    BOOST_CHECK_EQUAL( test.readScalar<T>("poll"), 20 );
+    
+    test.writeScalar<T>("push", 22);
+    test.stepApplication();
+    BOOST_CHECK_EQUAL( test.readScalar<int>("state"), 1 );
+    BOOST_CHECK_EQUAL( test.readScalar<T>("valuePush"), 22 );
+    BOOST_CHECK_EQUAL( test.readScalar<T>("valuePoll"), 20 );
+    
+    // continuing will now stall the tests
+    test.writeScalar<T>("push", 23);
+    try {
+      test.stepApplication();
+      BOOST_ERROR("Exception expected.");
+    }
+    catch(ctk::Application::TestsStalled&) {
+    }
+  }
+
 }
 
 /*********************************************************************************************************************/
@@ -965,6 +989,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testPolling, T, test_types ) {
   std::cout << "==> testPolling<" << typeid(T).name() << ">" << std::endl;
   
   PollingTestApplication<T> app;
+  app.pollingReadModule.connectTo(app.cs);
   
   ctk::TestFacility test;
   test.runApplication();
