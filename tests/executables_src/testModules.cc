@@ -291,9 +291,9 @@ BOOST_AUTO_TEST_CASE( test_getAccessorList ) {
 /*********************************************************************************************************************/
 /* test function call operator of the ApplicationModule */
 
-BOOST_AUTO_TEST_CASE( testApplicatioModuleFnCallOp ) {
+BOOST_AUTO_TEST_CASE( testApplicationModuleFnCallOp ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << "==> testApplicatioModuleFnCallOp" << std::endl;
+  std::cout << "==> testApplicationModuleFnCallOp" << std::endl;
 
   OneModuleApp app;
 
@@ -316,9 +316,9 @@ BOOST_AUTO_TEST_CASE( testApplicatioModuleFnCallOp ) {
 /*********************************************************************************************************************/
 /* test function call operator of the ApplicationModule */
 
-BOOST_AUTO_TEST_CASE( testApplicatioModuleSubscriptOp ) {
+BOOST_AUTO_TEST_CASE( testApplicationModuleSubscriptOp ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << "==> testApplicatioModuleSubscriptOp" << std::endl;
+  std::cout << "==> testApplicationModuleSubscriptOp" << std::endl;
 
   OneModuleApp app;
 
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE( testApplicatioModuleSubscriptOp ) {
 }
 
 /*********************************************************************************************************************/
-/* test correct behaviour when using a std::vector of ApplicatioModules */
+/* test correct behaviour when using a std::vector of ApplicationModules */
 
 BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
 }
 
 /*********************************************************************************************************************/
-/* test correct behaviour when using a std::vector of ModuleGroup, ApplicatioModule and VariableGroup at the same time */
+/* test correct behaviour when using a std::vector of ModuleGroup, ApplicationModule and VariableGroup at the same time */
 
 BOOST_AUTO_TEST_CASE( testVectorsOfAllModules ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
