@@ -836,12 +836,7 @@ TransferElement::ID Application::readAny(std::list<std::reference_wrapper<Transf
     return mtca4u::TransferElement::readAny(elementsToRead);
   }
   else {
-    try {
-      testableModeUnlock("readAny");
-    }
-    catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
-      if(e.code() != std::errc::operation_not_permitted) throw;
-    }
+    testableModeUnlock("readAny");
     auto ret = mtca4u::TransferElement::readAny(elementsToRead);
     assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
     return ret;
