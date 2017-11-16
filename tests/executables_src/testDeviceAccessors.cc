@@ -40,7 +40,7 @@ struct TestModule : public ctk::ApplicationModule {
     ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
     ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
-    ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush", "MV/m", "Description"};
+    ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
 
     ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
@@ -133,6 +133,92 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
   app.testModule.consumingPoll.read();
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test consuming a scalar from a device with a ConsumingFanOut (i.e. one poll-type consumer and several push-type
+ * consumers). */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumingFanOut, T, test_types ) {
+  std::cout << "testConsumingFanOut" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  app.dev("/MyModule/actuator") >> app.testModule.consumingPoll
+                                >> app.testModule.consumingPush
+                                >> app.testModule.consumingPush2;
+  app.initialise();
+
+  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+
+  // single theaded test only, since read() does not block in this case
+  app.testModule.consumingPoll = 0;
+  regacc->accessData(0) = 42;
+  regacc->write();
+  BOOST_CHECK(app.testModule.consumingPoll == 0);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush == 0);
+  BOOST_CHECK(app.testModule.consumingPush2 == 0);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  regacc->accessData(0) = 120;
+  regacc->write();
+  BOOST_CHECK(app.testModule.consumingPoll == 42);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
+  BOOST_CHECK( app.testModule.consumingPoll == 120 );
+  BOOST_CHECK(app.testModule.consumingPush == 120);
+  BOOST_CHECK(app.testModule.consumingPush2 == 120);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPoll == 120);
+  BOOST_CHECK(app.testModule.consumingPush == 120);
+  BOOST_CHECK(app.testModule.consumingPush2 == 120);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
+  app.testModule.consumingPoll.read();
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == true);
+  BOOST_CHECK(app.testModule.consumingPoll == 120);
+  BOOST_CHECK(app.testModule.consumingPush == 120);
+  BOOST_CHECK(app.testModule.consumingPush2 == 120);
+  BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
+  BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
 
 }
 
