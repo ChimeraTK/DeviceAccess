@@ -883,7 +883,7 @@ void Application::testableModeLock(const std::string& name) {
     
     // detect stall: if the same thread got the mutex with no other thread obtaining it in between for one second, we
     // assume no other thread is able to process data at this time. The test should fail in this case
-    if(getInstance().testableMode_repeatingMutexOwner > 1000) {
+    if(getInstance().testableMode_repeatingMutexOwner > 100) {
       // print an informative message first, which lists also all variables currently containing unread data.
       std::cout << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
       std::cout << "    The following variables still contain unread values or had data loss due to a queue overflow:" << std::endl;
