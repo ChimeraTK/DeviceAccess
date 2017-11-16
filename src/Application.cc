@@ -819,9 +819,9 @@ void Application::stepApplication() {
   // let the application run until it has processed all data (i.e. the semaphore counter is 0) 
   size_t oldCounter = 0;
   while(testableMode_counter > 0) {
-    if(enableDebugTestableMode && ( oldCounter != testableMode_counter) ) {
-      std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter << std::endl;
-      oldCounter = testableMode_counter;
+    if(enableDebugTestableMode && ( oldCounter != testableMode_counter) ) {                                         // LCOV_EXCL_LINE (only cout)
+      std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter << std::endl;  // LCOV_EXCL_LINE (only cout)
+      oldCounter = testableMode_counter;                                                                            // LCOV_EXCL_LINE (only cout)
     }
     testableModeUnlock("stepApplication");
     boost::this_thread::yield();
@@ -855,10 +855,10 @@ void Application::testableModeLock(const std::string& name) {
   if(!getInstance().testableMode) return;
   
   // debug output if enabled (also prevent spamming the same message)
-  if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
-    std::cout << "Application::testableModeLock(): Thread " << threadName()
-              << " tries to obtain lock for " << name << std::endl;
-  }
+  if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {          // LCOV_EXCL_LINE (only cout)
+    std::cout << "Application::testableModeLock(): Thread " << threadName()                                   // LCOV_EXCL_LINE (only cout)
+              << " tries to obtain lock for " << name << std::endl;                                           // LCOV_EXCL_LINE (only cout)
+  }                                                                                                           // LCOV_EXCL_LINE (only cout)
   
   // if last lock was obtained repeatedly by the same thread, sleep a short time before obtaining the lock to give the
   // other threads a chance to get the lock first
@@ -871,10 +871,11 @@ void Application::testableModeLock(const std::string& name) {
   // lock
   if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
     // debug output if enabled
-    if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {
-      std::cout << "Application::testableModeLock(): Thread " << threadName()
-                << " repeatedly obtained lock successfully for " << name << ". Further messages will be suppressed." << std::endl;
-    }
+    if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {        // LCOV_EXCL_LINE (only cout)
+      std::cout << "Application::testableModeLock(): Thread " << threadName()                                 // LCOV_EXCL_LINE (only cout)
+                << " repeatedly obtained lock successfully for " << name                                      // LCOV_EXCL_LINE (only cout)
+                << ". Further messages will be suppressed." << std::endl;                                     // LCOV_EXCL_LINE (only cout)
+    }                                                                                                         // LCOV_EXCL_LINE (only cout)
     
     // increase counter for stall detection
     getInstance().testableMode_repeatingMutexOwner++;
@@ -915,10 +916,10 @@ void Application::testableModeLock(const std::string& name) {
     getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
     
     // debug output if enabled
-    if(getInstance().enableDebugTestableMode) {
-      std::cout << "Application::testableModeLock(): Thread " << threadName()
-                << " obtained lock successfully for " << name << std::endl;
-    }
+    if(getInstance().enableDebugTestableMode) {                                             // LCOV_EXCL_LINE (only cout)
+      std::cout << "Application::testableModeLock(): Thread " << threadName()               // LCOV_EXCL_LINE (only cout)
+                << " obtained lock successfully for " << name << std::endl;                 // LCOV_EXCL_LINE (only cout)
+    }                                                                                       // LCOV_EXCL_LINE (only cout)
   }
 }
 
@@ -926,10 +927,10 @@ void Application::testableModeLock(const std::string& name) {
 
 void Application::testableModeUnlock(const std::string& name) {
   if(!getInstance().testableMode) return;
-  if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner
-    || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {
-    std::cout << "Application::testableModeUnlock(): Thread " << threadName()
-              << " releases lock for " << name << std::endl;
-  }
+  if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner      // LCOV_EXCL_LINE (only cout)
+    || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {                  // LCOV_EXCL_LINE (only cout)
+    std::cout << "Application::testableModeUnlock(): Thread " << threadName()                       // LCOV_EXCL_LINE (only cout)
+              << " releases lock for " << name << std::endl;                                        // LCOV_EXCL_LINE (only cout)
+  }                                                                                                 // LCOV_EXCL_LINE (only cout)
   getTestableModeLockObject().unlock();
 }
