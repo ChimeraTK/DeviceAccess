@@ -179,3 +179,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergeNetworks, T, test_types ) {
   }
 
 }
+
+/*********************************************************************************************************************/
+/* test case for constant as trigger */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantTrigger, T, test_types ) {
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+
+  TestApplication<T> app;
+  app.dev("/MyModule/Variable") [ ctk::VariableNetworkNode::makeConstant<int>(true) ] >> app.testModule.consumingPush;
+  try {
+    app.initialise();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter> &e) {
+    BOOST_CHECK_NO_THROW( e.what(); );
+  }
+
+}
