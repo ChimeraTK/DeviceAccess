@@ -65,12 +65,16 @@ namespace ChimeraTK {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
+        
+        // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
+        size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
+        Application::getInstance().idMap[pv->getId()] = varId;
 
         // decorate with TestDecoratorRegisterAccessor if variable is sender and receiver is not poll-type,
         // and store it in cache
-        if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
+        if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
           auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
-          Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
+          Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(scalarMap.table)[name].replace(mtca4u::ScalarRegisterAccessor<T>(deco));
         }
         else {
@@ -96,12 +100,16 @@ namespace ChimeraTK {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
+        
+        // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
+        size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
+        Application::getInstance().idMap[pv->getId()] = varId;
 
         // decorate with TestDecoratorRegisterAccessor if variable is sender and receiver is not poll-type,
         // and store it in cache
-        if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[pv->getUniqueId()]) {
+        if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
           auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
-          Application::getInstance().testableMode_names[pv->getUniqueId()] = "ControlSystem:"+name;
+          Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(arrayMap.table)[name].replace(mtca4u::OneDRegisterAccessor<T>(deco));
         }
         else {

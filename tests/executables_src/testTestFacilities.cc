@@ -195,7 +195,9 @@ struct PollingReadModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("testApplication") {}
+    TestApplication() : Application("testApplication") {
+      ctk::ExperimentalFeatures::enable();
+    }
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
@@ -906,6 +908,53 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConvenienceRead, T, test_types ) {
     CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120+i)}, 200);
   }
 
+}
+
+/*********************************************************************************************************************/
+/* test testable mode when reading from constants */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testConstants, T, test_types ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testConstants<" << typeid(T).name() << ">" << std::endl;
+
+  {
+
+    TestApplication<T> app;
+    
+    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.blockingReadTestModule.someInput;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.asyncReadTestModule.someInput;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 22) >> app.readAnyTestModule.inputs.v1;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 23) >> app.readAnyTestModule.inputs.v2;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 24) >> app.readAnyTestModule.inputs.v3;
+    app.blockingReadTestModule.someOutput >> app.cs("blockingOutput");
+    app.asyncReadTestModule.someOutput >> app.cs("asyncOutput");
+    app.cs("v4") >> app.readAnyTestModule.inputs.v4;
+    app.readAnyTestModule.value >> app.cs("value");
+    app.readAnyTestModule.index >> app.cs("index");
+    
+    app.dumpConnections();
+    
+    app.debugTestableMode();
+    ctk::TestFacility test;
+    test.runApplication();
+    
+    BOOST_CHECK_EQUAL( (T)app.blockingReadTestModule.someInput, 18 );
+    BOOST_CHECK_EQUAL( (T)app.asyncReadTestModule.someInput, 20 );
+    BOOST_CHECK_EQUAL( (T)app.readAnyTestModule.inputs.v1, 22 );
+    BOOST_CHECK_EQUAL( (T)app.readAnyTestModule.inputs.v2, 23 );
+    BOOST_CHECK_EQUAL( (T)app.readAnyTestModule.inputs.v3, 24 );
+    
+    test.writeScalar<T>("v4", 27);
+    test.stepApplication();
+    BOOST_CHECK_EQUAL( test.readScalar<uint32_t>("index"), 4 );
+    BOOST_CHECK_EQUAL( test.readScalar<T>("value"), 27 );
+    
+    test.writeScalar<T>("v4", 30);
+    test.stepApplication();
+    BOOST_CHECK_EQUAL( test.readScalar<uint32_t>("index"), 4 );
+    BOOST_CHECK_EQUAL( test.readScalar<T>("value"), 30 );
+
+  }
 }
 
 /*********************************************************************************************************************/

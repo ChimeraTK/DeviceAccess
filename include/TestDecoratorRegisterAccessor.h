@@ -8,7 +8,6 @@
 #ifndef CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 #define CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 
-#include <ChimeraTK/ControlSystemAdapter/ProcessArray.h>
 #include <mtca4u/NDRegisterAccessor.h>
 
 #include "Application.h"
@@ -74,10 +73,16 @@ namespace ChimeraTK {
   template<typename UserType>
   class TestDecoratorRegisterAccessor : public mtca4u::NDRegisterAccessor<UserType> {
     public:
-      TestDecoratorRegisterAccessor(boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> accessor)
+      TestDecoratorRegisterAccessor(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> accessor)
       : mtca4u::NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()),
         _accessor(accessor)
       {
+        
+        // set ID to match the decorated accessor
+        this->_id = _accessor->getId();
+        variableId = Application::getInstance().idMap[this->_id];
+        assert(variableId != 0);
+
         try {
           // initialise buffers
           buffer_2D.resize(_accessor->getNumberOfChannels());
@@ -85,7 +90,7 @@ namespace ChimeraTK {
           
           // if receiving end, register for testable mode (stall detection)
           if(isReadable()) {
-            Application::getInstance().testableMode_processVars[getUniqueId()] = accessor;
+            Application::getInstance().testableMode_processVars[variableId] = accessor;
           }
         }
         catch(...) {
@@ -107,15 +112,15 @@ namespace ChimeraTK {
         dataLost = _accessor->write(versionNumber);
         if(!dataLost) {
           ++Application::getInstance().testableMode_counter;
-          ++Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
+          ++Application::getInstance().testableMode_perVarCounter[variableId];
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"']: testableMode_counter "
+            std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
                          "increased, now at value " << Application::getInstance().testableMode_counter << std::endl; 
           }
         }
         else {
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"']: testableMode_counter not "
+            std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter not "
                         "increased due to lost data" << std::endl; 
           }
         }
@@ -142,13 +147,13 @@ namespace ChimeraTK {
       /** Obtain the testableModeLock if not owned yet, and decrement the counter. */
       void obtainLockAndDecrementCounter() {
         if(!Application::testableModeTestLock()) Application::testableModeLock("doReadTransfer "+this->getName());
-        assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
+        assert(Application::getInstance().testableMode_perVarCounter[variableId] > 0);
         assert(Application::getInstance().testableMode_counter > 0);
         --Application::getInstance().testableMode_counter;
-        --Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()];
+        --Application::getInstance().testableMode_perVarCounter[variableId];
         if(Application::getInstance().enableDebugTestableMode) {
-          std::cout << "TestDecoratorRegisterAccessor[name='"<<this->getName()<<"']: testableMode_counter "
-                       "decreased, now at value " << Application::getInstance().testableMode_counter << " / " << Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] << std::endl; 
+          std::cout << "TestDecoratorRegisterAccessor[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+                       "decreased, now at value " << Application::getInstance().testableMode_counter << " / " << Application::getInstance().testableMode_perVarCounter[variableId] << std::endl; 
         }
       }
 
@@ -166,10 +171,8 @@ namespace ChimeraTK {
         // the queue has been emptied, so make sure that the testableMode_counter reflects this
         assert(Application::testableModeTestLock());
         auto &app = Application::getInstance();
-        assert(Application::getInstance().testableMode_perVarCounter[_accessor->getUniqueId()] > 0);
-        assert(Application::getInstance().testableMode_counter > 0);
-        app.testableMode_counter -= app.testableMode_perVarCounter[_accessor->getUniqueId()];
-        app.testableMode_perVarCounter[_accessor->getUniqueId()] = 0;
+        app.testableMode_counter -= app.testableMode_perVarCounter[variableId];
+        app.testableMode_perVarCounter[variableId] = 0;
         return true;
       }
 
@@ -223,20 +226,18 @@ namespace ChimeraTK {
       void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override {
         _accessor->setPersistentDataStorage(storage);
       }
-      
-      size_t getUniqueId() const {
-        return _accessor->getUniqueId();
-      }
 
     protected:
       
       using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
 
-      boost::shared_ptr<ChimeraTK::ProcessArray<UserType>> _accessor;
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _accessor;
       
       friend class TestDecoratorTransferFuture<UserType>;
       
       TestDecoratorTransferFuture<UserType> activeTestDecoratorFuture;
+      
+      size_t variableId;
   };
 
 } /* namespace ChimeraTK */

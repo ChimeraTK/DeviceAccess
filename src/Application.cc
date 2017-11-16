@@ -303,8 +303,14 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
   mtca4u::AccessModeFlags flags{};
   if(mode == UpdateMode::push && direction == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
-  // return the register accessor from the device
-  return deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
+  // obatin the register accessor from the device
+  auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
+  
+  // create variable ID
+  idMap[accessor->getId()] = getNextVariableId();
+  
+  // return accessor
+  return accessor;
 }
 
 /*********************************************************************************************************************/
@@ -325,11 +331,14 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
                                                                     node.getOwner().getUnit(), node.getOwner().getDescription());
   assert(pvar->getName() != "");
+  
+  // create variable ID
+  idMap[pvar->getId()] = getNextVariableId();
+  pvIdMap[pvar->getUniqueId()] = idMap[pvar->getId()];
 
-  // decorate the process variable if testable mode is enabled and this is the receiving end of the variable
-  // don't decorate if the feeding side is a constant!
+  // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable.
   // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware of this.
-  if(testableMode && node.getDirection() == VariableDirection::feeding && node.getType() != NodeType::Constant) {
+  if(testableMode && node.getDirection() == VariableDirection::feeding) {
     
     // The transfer mode of this process variable is considered to be polling, if only one consumer exists and this
     // consumer is polling. Reason: mulitple consumers will result in the use of a FanOut, so the communication up to
@@ -342,11 +351,11 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
     
     if(mode != UpdateMode::poll) {
       auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
-      testableMode_names[pvarDec->getUniqueId()] = "ControlSystem:"+node.getPublicName();
+      testableMode_names[idMap[pvarDec->getId()]] = "ControlSystem:"+node.getPublicName();
       return pvarDec;
     }
     else {
-      testableMode_isPollMode[pvar->getUniqueId()] = true;
+      testableMode_isPollMode[idMap[pvar->getId()]] = true;
     }
   }
   
@@ -369,6 +378,11 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   auto pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
+  
+  // create variable ID
+  auto varId = getNextVariableId();
+  idMap[pvarPair.first->getId()] = varId;
+  idMap[pvarPair.second->getId()] = varId;
 
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
@@ -378,7 +392,7 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
     pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
     
     // put the decorators into the list
-    testableMode_names[pvarPair.first->getUniqueId()] = "Internal:"+node.getQualifiedName();
+    testableMode_names[varId] = "Internal:"+node.getQualifiedName();
     
     return pvarPairDec;
   }
@@ -763,7 +777,15 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   
     for(auto &consumer : consumers) {
       if(consumer.getType() == NodeType::Application) {
-        consumer.getAppAccessor<UserType>().replace(feedingImpl);
+        if(testableMode) {
+          idMap[feedingImpl->getId()] = getNextVariableId();
+          auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(feedingImpl);
+          testableMode_names[idMap[pvarDec->getId()]] = "Constant";
+          consumer.getAppAccessor<UserType>().replace(pvarDec);
+        }
+        else {
+          consumer.getAppAccessor<UserType>().replace(feedingImpl);
+        }
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
         auto impl = createProcessVariable<UserType>(consumer);

@@ -244,6 +244,20 @@ namespace ChimeraTK {
       /** Flag whether to warn about unconnected variables or not */
       bool enableUnconnectedVariablesWarning{false};
       
+      /** Map from accessor ID to the variable ID used in the other maps here, e.g. for the testable mode. This allows
+       *  associating sender and receiver pairs of the same ProcessArray. */
+      std::map<mtca4u::TransferElement::ID, size_t> idMap;
+      
+      /** Map from ProcessArray uniqueId to the variable ID for control system variables. This is required for the
+       *  TestFacility. */
+      std::map<size_t, size_t> pvIdMap;
+      
+      /** Return a fresh variable ID which can be assigned to a sender/receiver pair. The ID will always be non-zero. */
+      static size_t getNextVariableId() {
+        static size_t nextId{0};
+        return ++nextId;
+      }
+      
       /** Last thread which successfully obtained the lock for the testable mode. This is used to prevent spamming
        *  repeating messages if the same thread acquires and releases the lock in a loop without another thread
        *  activating in between. */
