@@ -39,6 +39,9 @@ struct TestModule : public ctk::ApplicationModule {
 
     ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
+    ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
+    ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush", "MV/m", "Description"};
+
     ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
     void mainLoop() {}
@@ -54,6 +57,7 @@ struct TestApplication : public ctk::Application {
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     using Application::deviceMap;           // expose the device map for the tests
+    using Application::networkList;         // expose network list to check merging networks
     void defineConnections() {}             // the setup is done in the tests
 
     TestModule<T> testModule{this,"testModule", "The test module"};
@@ -127,6 +131,67 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
   app.testModule.consumingPoll.read();
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
+
+}
+
+/*********************************************************************************************************************/
+/* test merged networks (optimisation done in Application::optimiseConnections()) */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
+  std::cout << "testMergedNetworks" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  // we abuse "feedingToDevice" as trigger here...
+  app.dev("/MyModule/actuator") [ app.testModule.feedingToDevice ] >> app.testModule.consumingPush;
+  app.dev("/MyModule/actuator") [ app.testModule.feedingToDevice ] >> app.testModule.consumingPush2;
+  
+  // check that we have to separate networks for both connections
+  size_t nDeviceFeeders = 0;
+  for(auto &net : app.networkList) {
+    if( net.getFeedingNode().getType() == ctk::NodeType::Device ) nDeviceFeeders++;
+  }
+  BOOST_CHECK_EQUAL( nDeviceFeeders, 2 );
+  
+  // the optimisation to test takes place here
+  app.initialise();
+
+  // check we are left with just one network fed by the device
+  nDeviceFeeders = 0;
+  for(auto &net : app.networkList) {
+    if( net.getFeedingNode().getType() == ctk::NodeType::Device ) nDeviceFeeders++;
+  }
+  BOOST_CHECK_EQUAL( nDeviceFeeders, 1 );
+
+  // run the application to see if everything still behaves as expected
+  app.run();
+
+  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+
+  // single theaded test only, since read() does not block in this case
+  app.testModule.consumingPush = 0;
+  app.testModule.consumingPush2 = 0;
+  regacc->accessData(0) = 42;
+  regacc->write();
+  BOOST_CHECK(app.testModule.consumingPush == 0);
+  BOOST_CHECK(app.testModule.consumingPush2 == 0);
+  app.testModule.feedingToDevice.write();
+  app.testModule.consumingPush.read();
+  app.testModule.consumingPush2.read();
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  regacc->accessData(0) = 120;
+  regacc->write();
+  BOOST_CHECK(app.testModule.consumingPush == 42);
+  BOOST_CHECK(app.testModule.consumingPush2 == 42);
+  app.testModule.feedingToDevice.write();
+  app.testModule.consumingPush.read();
+  app.testModule.consumingPush2.read();
+  BOOST_CHECK( app.testModule.consumingPush == 120 );
+  BOOST_CHECK( app.testModule.consumingPush2 == 120 );
 
 }
 
