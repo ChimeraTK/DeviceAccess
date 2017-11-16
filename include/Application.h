@@ -187,6 +187,18 @@ namespace ChimeraTK {
       /** UserType-dependent part of makeConnectionsForNetwork() */
       template<typename UserType>
       void typedMakeConnection(VariableNetwork &network);
+      
+      /** Functor class to call typedMakeConnection() with the right template argument. */ 
+      struct TypedMakeConnectionCaller {
+        TypedMakeConnectionCaller(Application &owner, VariableNetwork &network);
+        
+        template<typename PAIR>
+        void operator()(PAIR&) const;
+        
+        Application &_owner;
+        VariableNetwork &_network;
+        mutable bool done{false};
+      };
 
       /** Register a connection between two VariableNetworkNode */
       VariableNetwork& connect(VariableNetworkNode a, VariableNetworkNode b);

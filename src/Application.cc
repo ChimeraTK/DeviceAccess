@@ -490,15 +490,30 @@ void Application::optimiseConnections() {
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections() {
-  std::cout << "==== List of all variable connections of the current Application ====" << std::endl;
-  for(auto &network : networkList) {
-    network.dump();
-  }
-  std::cout << "=====================================================================" << std::endl;
+void Application::dumpConnections() {                                                                 // LCOV_EXCL_LINE
+  std::cout << "==== List of all variable connections of the current Application ====" << std::endl;  // LCOV_EXCL_LINE
+  for(auto &network : networkList) {                                                                  // LCOV_EXCL_LINE
+    network.dump();                                                                                   // LCOV_EXCL_LINE
+  }                                                                                                   // LCOV_EXCL_LINE
+  std::cout << "=====================================================================" << std::endl;  // LCOV_EXCL_LINE
+}                                                                                                     // LCOV_EXCL_LINE
+
+/*********************************************************************************************************************/
+
+Application::TypedMakeConnectionCaller::TypedMakeConnectionCaller(Application &owner, VariableNetwork &network)
+: _owner(owner), _network(network) {}
+
+/*********************************************************************************************************************/
+
+template<typename PAIR>
+void Application::TypedMakeConnectionCaller::operator()(PAIR&) const {
+  if(typeid(typename PAIR::first_type) != _network.getValueType()) return;
+  _owner.typedMakeConnection<typename PAIR::first_type>(_network);
+  done = true;
 }
 
 /*********************************************************************************************************************/
+
 
 void Application::makeConnectionsForNetwork(VariableNetwork &network) {
 
@@ -513,42 +528,9 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
 
   // defer actual network creation to templated function
   // @todo TODO replace with boost::mpl::for_each loop!
-  if(network.getValueType() == typeid(int8_t)) {
-    typedMakeConnection<int8_t>(network);
-  }
-  else if(network.getValueType() == typeid(uint8_t)) {
-    typedMakeConnection<uint8_t>(network);
-  }
-  else if(network.getValueType() == typeid(int16_t)) {
-    typedMakeConnection<int16_t>(network);
-  }
-  else if(network.getValueType() == typeid(uint16_t)) {
-    typedMakeConnection<uint16_t>(network);
-  }
-  else if(network.getValueType() == typeid(int32_t)) {
-    typedMakeConnection<int32_t>(network);
-  }
-  else if(network.getValueType() == typeid(uint32_t)) {
-    typedMakeConnection<uint32_t>(network);
-  }
-  else if(network.getValueType() == typeid(int64_t)) {
-    typedMakeConnection<int64_t>(network);
-  }
-  else if(network.getValueType() == typeid(uint64_t)) {
-    typedMakeConnection<uint64_t>(network);
-  }
-  else if(network.getValueType() == typeid(float)) {
-    typedMakeConnection<float>(network);
-  }
-  else if(network.getValueType() == typeid(double)) {
-    typedMakeConnection<double>(network);
-  }
-  else if(network.getValueType() == typeid(std::string)) {
-    typedMakeConnection<std::string>(network);
-  }
-  else {
-    throw std::invalid_argument("Unknown value type.");
-  }
+  auto callable = TypedMakeConnectionCaller(*this, network);
+  boost::fusion::for_each(mtca4u::userTypeMap(), callable);
+  assert(callable.done);
 
   // mark the network as created
   network.markCreated();
