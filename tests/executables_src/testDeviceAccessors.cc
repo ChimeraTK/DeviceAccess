@@ -13,6 +13,7 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
+#include <mtca4u/Device.h>
 #include <mtca4u/BackendFactory.h>
 #include <mtca4u/NDRegisterAccessor.h>
 
@@ -29,6 +30,17 @@ typedef boost::mpl::list<int8_t,uint8_t,
                          int16_t,uint16_t,
                          int32_t,uint32_t,
                          float,double>        test_types;
+
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                   \
+    {                                                                                                               \
+      std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                  \
+      while(!(condition)) {                                                                                         \
+        bool timeout_reached = (std::chrono::steady_clock::now()-t0) > std::chrono::milliseconds(maxMilliseconds);  \
+        BOOST_CHECK( !timeout_reached );                                                                            \
+        if(timeout_reached) break;                                                                                  \
+        usleep(1000);                                                                                               \
+      }                                                                                                             \
+    }
 
 /*********************************************************************************************************************/
 /* the ApplicationModule for the test is a template of the user type */
@@ -322,3 +334,46 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
 
 }
 
+/*********************************************************************************************************************/
+/* test feeding a constant to a device register. */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDevice, T, test_types ) {
+  std::cout << "testConstantToDevice" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
+  app.initialise();
+  app.run();
+  
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 18, 3000 );
+  
+}
+
+/*********************************************************************************************************************/
+/* test feeding a constant to a device register with a fan out. */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDeviceFanOut, T, test_types ) {
+  std::cout << "testConstantToDeviceFanOut" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator")
+                                                      >> app.dev("/MyModule/readBack");
+  app.initialise();
+  app.run();
+  
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 20, 3000 );
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/readBack") == 20, 3000 );
+  
+}
