@@ -142,6 +142,14 @@ namespace ChimeraTK {
       std::string getQualifiedName() const override {
         return "/" + _name;
       }
+      
+      /** Special exception class which will be thrown if tests with the testable mode are stalled. Normally this
+       *  exception should never be caught. The only reason for catching it might be a situation where the expected
+       *  behaviour of an app is to do nothing and one wants to test this. Note that the stall condition only appears
+       *  after a certain timeout, thus tests relying on this will take time.
+       * 
+       *  This exception must not be based on a generic exception class to prevent catching it unintentionally. */
+      class TestsStalled {};
 
     protected:
 

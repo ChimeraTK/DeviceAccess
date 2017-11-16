@@ -926,9 +926,7 @@ void Application::testableModeLock(const std::string& name) {
           std::cout << std::endl;
         }
       }
-      // throw an exception which cannot be caught (other than with catch all). This makes sure that the tests fail
-      // properly
-      class TestsStalled {};
+      // throw a specialised exception to make sure whoever catches it really knows what he does...
       throw TestsStalled();
     }
   }
