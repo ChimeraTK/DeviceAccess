@@ -717,7 +717,6 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        consumer.dump();
         auto impls = createApplicationVariable<UserType>(consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
