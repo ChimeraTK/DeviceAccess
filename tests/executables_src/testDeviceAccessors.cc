@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
   app.dev("/MyModule/actuator") [ app.testModule.feedingToDevice ] >> app.testModule.consumingPush;
   app.dev("/MyModule/actuator") [ app.testModule.feedingToDevice ] >> app.testModule.consumingPush2;
   
-  // check that we have to separate networks for both connections
+  // check that we have two separate networks for both connections
   size_t nDeviceFeeders = 0;
   for(auto &net : app.networkList) {
     if( net.getFeedingNode().getType() == ctk::NodeType::Device ) nDeviceFeeders++;
