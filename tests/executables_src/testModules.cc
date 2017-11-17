@@ -452,13 +452,90 @@ BOOST_AUTO_TEST_CASE( test_getSubmoduleList ) {
 BOOST_AUTO_TEST_CASE( test_getAccessorList ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> test_getAccessorList" << std::endl;
-  std::cout << std::endl;
-  std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << " TODO -> IMPLEMENT THIS TEST!!!" << std::endl;
-  std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << "*********************************************************************************************************************" << std::endl;
-  std::cout << std::endl;
+
+  OneModuleApp app;
+
+  {
+    std::list<ctk::VariableNetworkNode> &list = app.testModule.getAccessorList();
+    BOOST_CHECK( list.size() == 2 );
+    size_t foundSomeInput = 0;
+    size_t foundSomeOutput = 0;
+    for(auto var : list) {
+      if(var == app.testModule.someInput) foundSomeInput++;
+      if(var == app.testModule.someOutput) foundSomeOutput++;
+    }
+    BOOST_CHECK( foundSomeInput == 1 );
+    BOOST_CHECK( foundSomeOutput == 1 );
+  }
+  
+  {
+    const SomeGroup &someGroup(app.testModule.someGroup);
+    const std::list<ctk::VariableNetworkNode> &list = someGroup.getAccessorList();
+    BOOST_CHECK( list.size() == 2 );
+    size_t foundInGroup = 0;
+    size_t foundAlsoInGroup = 0;
+    for(auto var : list) {
+      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
+      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+    }
+    BOOST_CHECK( foundInGroup == 1 );
+    BOOST_CHECK( foundAlsoInGroup == 1 );
+  }
+  
+  {
+    std::list<ctk::VariableNetworkNode> list = app.getAccessorListRecursive();
+    BOOST_CHECK( list.size() == 5 );
+    size_t foundSomeInput = 0;
+    size_t foundSomeOutput = 0;
+    size_t foundInGroup = 0;
+    size_t foundAlsoInGroup = 0;
+    size_t foundFoo = 0;
+    for(auto var : list) {
+      if(var == app.testModule.someInput) foundSomeInput++;
+      if(var == app.testModule.someOutput) foundSomeOutput++;
+      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
+      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+    }
+    BOOST_CHECK( foundSomeInput == 1 );
+    BOOST_CHECK( foundSomeOutput == 1 );
+    BOOST_CHECK( foundInGroup == 1 );
+    BOOST_CHECK( foundAlsoInGroup == 1 );
+    BOOST_CHECK( foundFoo == 1 );
+  }
+  
+  {
+    std::list<ctk::VariableNetworkNode> list = app.testModule.getAccessorListRecursive();
+    BOOST_CHECK( list.size() == 5 );
+    size_t foundSomeInput = 0;
+    size_t foundSomeOutput = 0;
+    size_t foundInGroup = 0;
+    size_t foundAlsoInGroup = 0;
+    size_t foundFoo = 0;
+    for(auto var : list) {
+      if(var == app.testModule.someInput) foundSomeInput++;
+      if(var == app.testModule.someOutput) foundSomeOutput++;
+      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
+      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+    }
+    BOOST_CHECK( foundSomeInput == 1 );
+    BOOST_CHECK( foundSomeOutput == 1 );
+    BOOST_CHECK( foundInGroup == 1 );
+    BOOST_CHECK( foundAlsoInGroup == 1 );
+    BOOST_CHECK( foundFoo == 1 );
+  }
+  
+  {
+    std::list<ctk::VariableNetworkNode> list = app.testModule.anotherGroup.getAccessorListRecursive();
+    BOOST_CHECK( list.size() == 1 );
+    size_t foundFoo = 0;
+    for(auto var : list) {
+      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+    }
+    BOOST_CHECK( foundFoo == 1 );
+  }
+  
 }
 
 /*********************************************************************************************************************/
