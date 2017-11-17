@@ -594,6 +594,125 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleSubscriptOp ) {
 }
 
 /*********************************************************************************************************************/
+/* test finding variables by tag */
+
+BOOST_AUTO_TEST_CASE( testFindTags ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testFindTags" << std::endl;
+
+  OneModuleApp app;
+  
+  // search for tag "A"
+  {
+    ctk::VirtualModule tagA = app.testModule.findTag("A");
+    
+    // check direct variables
+    {
+      std::list<ctk::VariableNetworkNode> &list = tagA.getAccessorList();
+      BOOST_CHECK( list.size() == 2 );
+      size_t foundSomeInput = 0;
+      size_t foundSomeOutput = 0;
+      for(auto var : list) {
+        if(var == app.testModule.someInput) foundSomeInput++;
+        if(var == app.testModule.someOutput) foundSomeOutput++;
+      }
+      BOOST_CHECK( foundSomeInput == 1 );
+      BOOST_CHECK( foundSomeOutput == 1 );
+    }
+    
+    // check number of submodules
+    {
+      std::list<ctk::Module*> list = tagA.getSubmoduleList();
+      BOOST_CHECK( list.size() == 1 );
+    }
+    
+    // check content of submodule
+    {
+      std::list<ctk::VariableNetworkNode> list = tagA["someGroup"].getAccessorList();
+      BOOST_CHECK( list.size() == 2 );
+      size_t foundInGroup = 0;
+      size_t foundAlsoInGroup = 0;
+      for(auto var : list) {
+        if(var == app.testModule.someGroup.inGroup) foundInGroup++;
+        if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      }
+      BOOST_CHECK( foundInGroup == 1 );
+      BOOST_CHECK( foundAlsoInGroup == 1 );
+    }
+    
+  }
+
+  // search for tag "D"
+  {
+    ctk::VirtualModule tagD = app.testModule.findTag("D");
+    
+    // check direct variables
+    {
+      std::list<ctk::VariableNetworkNode> &list = tagD.getAccessorList();
+      BOOST_CHECK( list.size() == 0 );
+    }
+    
+    // check number of submodules
+    {
+      std::list<ctk::Module*> list = tagD.getSubmoduleList();
+      BOOST_CHECK( list.size() == 2 );
+    }
+    
+    // check content of submodule "someGroup"
+    {
+      std::list<ctk::VariableNetworkNode> list = tagD["someGroup"].getAccessorList();
+      BOOST_CHECK( list.size() == 1 );
+      size_t foundAlsoInGroup = 0;
+      for(auto var : list) {
+        if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      }
+      BOOST_CHECK( foundAlsoInGroup == 1 );
+    }
+    
+    // check content of submodule "anotherName"
+    {
+      std::list<ctk::VariableNetworkNode> list = tagD["anotherName"].getAccessorList();
+      BOOST_CHECK( list.size() == 1 );
+      size_t foundFoo = 0;
+      for(auto var : list) {
+        if(var == app.testModule.anotherGroup.foo) foundFoo++;
+      }
+      BOOST_CHECK( foundFoo == 1 );
+    }
+    
+  }
+
+  // search for tag "D", exclude tag "A"
+  {
+    ctk::VirtualModule tagDnotA = app.testModule.findTag("D").excludeTag("A");
+    
+    // check direct variables
+    {
+      std::list<ctk::VariableNetworkNode> &list = tagDnotA.getAccessorList();
+      BOOST_CHECK( list.size() == 0 );
+    }
+    
+    // check number of submodules
+    {
+      std::list<ctk::Module*> list = tagDnotA.getSubmoduleList();
+      BOOST_CHECK( list.size() == 1 );
+    }
+    
+    // check content of submodule "anotherName"
+    {
+      std::list<ctk::VariableNetworkNode> list = tagDnotA["anotherName"].getAccessorList();
+      BOOST_CHECK( list.size() == 1 );
+      size_t foundFoo = 0;
+      for(auto var : list) {
+        if(var == app.testModule.anotherGroup.foo) foundFoo++;
+      }
+      BOOST_CHECK( foundFoo == 1 );
+    }
+    
+  }  
+}
+
+/*********************************************************************************************************************/
 /* test correct behaviour when using a std::vector of ApplicationModules */
 
 BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
