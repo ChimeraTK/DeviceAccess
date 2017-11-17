@@ -36,13 +36,17 @@ FUNCTION(add_dependency dependency_project_name required_version)
   include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS} ${${dependency_project_name}_INCLUDE_DIR})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
   link_directories(${${dependency_project_name}_LIBRARY_DIR})
+  #set the cxx flags used in the child project
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}" PARENT_SCOPE)
+  #set all the flags we found also in the parent scope, so the child can hand them over to the grand children
   SET(${dependency_project_name}_LIBRARIES ${${dependency_project_name}_LIBRARIES} PARENT_SCOPE)
   SET(${dependency_project_name}_LIBRARY_DIRS "${${dependency_project_name}_LIBRARY_DIRS} ${${dependency_project_name}_LIBRARY_DIR}" PARENT_SCOPE)
   SET(${dependency_project_name}_LINKER_FLAGS "${${dependency_project_name}_LINKER_FLAGS} ${${dependency_project_name}_LINK_FLAGS}" PARENT_SCOPE)
   SET(${dependency_project_name}_LINK_FLAGS "${${dependency_project_name}_LINKER_FLAGS} ${${dependency_project_name}_LINK_FLAGS}" PARENT_SCOPE)
   SET(${dependency_project_name}_CXX_FLAGS "${${dependency_project_name}_CXX_FLAGS}" PARENT_SCOPE)
   SET(${dependency_project_name}_FOUND ${${dependency_project_name}_FOUND} PARENT_SCOPE)
+  SET(${dependency_project_name}_VERSION ${${dependency_project_name}_VERSION} PARENT_SCOPE)
+  SET(${dependency_project_name}_INCLUDE_DIRS ${${dependency_project_name}_INCLUDE_DIRS} PARENT_SCOPE)
 
 ENDFUNCTION(add_dependency)
 
