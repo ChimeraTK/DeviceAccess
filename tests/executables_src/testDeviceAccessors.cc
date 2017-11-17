@@ -377,3 +377,51 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDeviceFanOut, T, test_types ) {
   CHECK_TIMEOUT( dev.read<T>("/MyModule/readBack") == 20, 3000 );
   
 }
+
+/*********************************************************************************************************************/
+/* test subscript operator of DeviceModule */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testDeviceModuleSubscriptOp, T, test_types ) {
+  std::cout << "testDeviceModuleSubscriptOp" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
+  app.initialise();
+
+  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
+  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+
+  regacc->accessData(0) = 0;
+  app.testModule.feedingToDevice = 42;
+  app.testModule.feedingToDevice.write();
+  regacc->read();
+  BOOST_CHECK(regacc->accessData(0) == 42);
+  app.testModule.feedingToDevice = 120;
+  regacc->read();
+  BOOST_CHECK(regacc->accessData(0) == 42);
+  app.testModule.feedingToDevice.write();
+  regacc->read();
+  BOOST_CHECK(regacc->accessData(0) == 120);
+
+}
+
+/*********************************************************************************************************************/
+/* test DeviceModule::virtualise()  (trivial implementation) */
+
+BOOST_AUTO_TEST_CASE( testDeviceModuleVirtuallise ) {
+  std::cout << "testDeviceModuleVirtuallise" << std::endl;
+
+  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<int> app;
+
+  app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
+  
+  app.initialise();
+
+  BOOST_CHECK( &(app.dev.virtualise()) == &(app.dev) );
+ 
+}
