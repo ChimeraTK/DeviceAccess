@@ -713,6 +713,95 @@ BOOST_AUTO_TEST_CASE( testFindTags ) {
 }
 
 /*********************************************************************************************************************/
+/* test flatten() */
+
+BOOST_AUTO_TEST_CASE( testFlatten ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testFlatten" << std::endl;
+
+  OneModuleApp app;
+  
+  ctk::VirtualModule flattened = app.testModule.flatten();
+
+  // check number of submodules
+  {
+    std::list<ctk::Module*> list = flattened.getSubmoduleList();
+    BOOST_CHECK( list.size() == 0 );
+  }
+  
+  // check direct variables
+  {
+    std::list<ctk::VariableNetworkNode> &list = flattened.getAccessorList();
+    BOOST_CHECK( list.size() == 5 );
+    size_t foundSomeInput = 0;
+    size_t foundSomeOutput = 0;
+    size_t foundInGroup = 0;
+    size_t foundAlsoInGroup = 0;
+    size_t foundFoo = 0;
+    for(auto var : list) {
+      if(var == app.testModule.someInput) foundSomeInput++;
+      if(var == app.testModule.someOutput) foundSomeOutput++;
+      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
+      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+    }
+    BOOST_CHECK( foundSomeInput == 1 );
+    BOOST_CHECK( foundSomeOutput == 1 );
+    BOOST_CHECK( foundInGroup == 1 );
+    BOOST_CHECK( foundAlsoInGroup == 1 );
+    BOOST_CHECK( foundFoo == 1 );
+  }
+}
+
+/*********************************************************************************************************************/
+/* test addTag() */
+
+BOOST_AUTO_TEST_CASE( testAddTag ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testAddTag" << std::endl;
+
+  OneModuleApp app;
+  app.testModule.addTag("newTag");
+  
+  ctk::VirtualModule withNewTag = app.findTag("newTag");
+
+  // check submodule hierarchy
+  {
+    BOOST_CHECK( withNewTag.getSubmoduleList().size() == 1 );
+    BOOST_CHECK( withNewTag.getAccessorList().size() == 0 );
+    BOOST_CHECK( withNewTag["testModule"].getSubmoduleList().size() == 2 );
+    BOOST_CHECK( withNewTag["testModule"].getAccessorList().size() == 2 );
+    BOOST_CHECK( withNewTag["testModule"]["someGroup"].getSubmoduleList().size() == 0 );
+    BOOST_CHECK( withNewTag["testModule"]["someGroup"].getAccessorList().size() == 2 );
+    BOOST_CHECK( withNewTag["testModule"]["anotherName"].getSubmoduleList().size() == 0 );
+    BOOST_CHECK( withNewTag["testModule"]["anotherName"].getAccessorList().size() == 1 );
+  }
+  
+  // check all variables
+  {
+    std::list<ctk::VariableNetworkNode> list = withNewTag.getAccessorListRecursive();
+    BOOST_CHECK( list.size() == 5 );
+    size_t foundSomeInput = 0;
+    size_t foundSomeOutput = 0;
+    size_t foundInGroup = 0;
+    size_t foundAlsoInGroup = 0;
+    size_t foundFoo = 0;
+    for(auto var : list) {
+      if(var == app.testModule.someInput) foundSomeInput++;
+      if(var == app.testModule.someOutput) foundSomeOutput++;
+      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
+      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+    }
+    BOOST_CHECK( foundSomeInput == 1 );
+    BOOST_CHECK( foundSomeOutput == 1 );
+    BOOST_CHECK( foundInGroup == 1 );
+    BOOST_CHECK( foundAlsoInGroup == 1 );
+    BOOST_CHECK( foundFoo == 1 );
+  }
+}
+
+/*********************************************************************************************************************/
 /* test correct behaviour when using a std::vector of ApplicationModules */
 
 BOOST_AUTO_TEST_CASE( testVectorOfApplicationModule ) {
