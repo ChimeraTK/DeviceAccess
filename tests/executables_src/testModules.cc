@@ -215,6 +215,179 @@ BOOST_AUTO_TEST_CASE( test_ownership ) {
 }
 
 /*********************************************************************************************************************/
+/* test that modules cannot be owned by the wrong types */
+
+BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> test_badHierarchies" << std::endl;
+  
+  // ******************************************
+  // *** Tests for ApplicationModule
+  
+  // check app ApplicationModules cannot be owned by other app modules
+  {
+    OneModuleApp app;
+    try {
+      TestModule willFail(&(app.testModule), "willFail", "");
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // check app ApplicationModules cannot be owned by variable groups
+  {
+    OneModuleApp app;
+    try {
+      TestModule willFail(&(app.testModule.someGroup), "willFail", "");
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // check app ApplicationModules cannot be owned by nothing
+  {
+    OneModuleApp app;
+    try {
+      TestModule willFail(nullptr, "willFail", "");
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // ******************************************
+  // *** Tests for VariableGroup
+  
+  // check app VariableGroup cannot be owned by Applications
+  {
+    OneModuleApp app;
+    try {
+      SomeGroup willFail(&(app), "willFail", "");
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // check app VariableGroup cannot be owned by ModuleGroups
+  {
+    VectorOfEverythingApp app(1);
+    app.defineConnections();
+    try {
+      SomeGroup willFail(&(app.vectorOfVectorModuleGroup[0]), "willFail", "");
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // check app VariableGroup cannot be owned by nothing
+  {
+    OneModuleApp app;
+    try {
+      SomeGroup willFail(nullptr, "willFail", "");
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // ******************************************
+  // *** Tests for ModuleGroup
+  
+  // check app ModuleGroups cannot be owned by ApplicationModules
+  {
+    OneModuleApp app;
+    try {
+      VectorModuleGroup willFail(&(app.testModule), "willFail", "", 1);
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // check app ModuleGroups cannot be owned by VariableGroups
+  {
+    OneModuleApp app;
+    try {
+      VectorModuleGroup willFail(&(app.testModule.someGroup), "willFail", "", 1);
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+  
+  // check app ModuleGroups cannot be owned by nothing
+  {
+    OneModuleApp app;
+    try {
+      VectorModuleGroup willFail(nullptr, "willFail", "", 1);
+      BOOST_FAIL("Exception expected");
+    }
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    }
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* test that modules can be owned by the right types */
+
+BOOST_AUTO_TEST_CASE( test_allowedHierarchies ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> test_allowedHierarchies" << std::endl;
+  
+  // ******************************************
+  // *** Tests for ApplicationModule
+  // check ApplicationModules can be owned by Applications
+  {
+    OneModuleApp app;
+    TestModule shouldNotFail(&(app), "shouldNotFail", "");
+  }
+
+  // check ApplicationModules can be owned by ModuleGroups
+  {
+    VectorOfEverythingApp app(1);
+    app.defineConnections();
+    TestModule shouldNotFail(&(app.vectorOfVectorModuleGroup[0]), "shouldNotFail", "");
+  }
+  
+  // ******************************************
+  // *** Tests for VariableGroup
+  
+  // check VariableGroup can be owned by ApplicationModules
+  {
+    OneModuleApp app;
+    SomeGroup shouldNotFail(&(app.testModule), "shouldNotFail", "");
+  }
+
+  // check VariableGroup can be owned by VariableGroup
+  {
+    OneModuleApp app;
+    SomeGroup shouldNotFail(&(app.testModule.someGroup), "shouldNotFail", "");
+  }
+  
+  // ******************************************
+  // *** Tests for ModuleGroup
+  
+  // check ModuleGroup can be owned by Applications
+  {
+    OneModuleApp app;
+    VectorModuleGroup shouldNotFail(&(app), "shouldNotFail", "", 1);
+  }
+
+  // check ModuleGroup can be owned by ModuleGroups
+  {
+    VectorOfEverythingApp app(1);
+    app.defineConnections();
+    VectorModuleGroup shouldNotFail(&(app.vectorOfVectorModuleGroup[0]), "shouldNotFail", "", 1);
+  }
+  
+}
+
+/*********************************************************************************************************************/
 /* test getSubmoduleList() and getSubmoduleListRecursive() */
 
 BOOST_AUTO_TEST_CASE( test_getSubmoduleList ) {
