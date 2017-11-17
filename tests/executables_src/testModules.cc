@@ -483,6 +483,14 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleFnCallOp ) {
   BOOST_CHECK( app.testModule("nameOfSomeInput").getUnit() == "cm" );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getDescription() == "This is just some input for testing" );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getTags() == std::unordered_set<std::string>({"A", "B"}) );
+  
+  // check exception if variable not found
+  try {
+    app.testModule("notExisting");
+    BOOST_FAIL("Exception expected");
+  }
+  catch(std::logic_error&){
+  }
 
 }
 
@@ -497,6 +505,14 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleSubscriptOp ) {
 
   BOOST_CHECK( &(app.testModule["someGroup"]) == &(app.testModule.someGroup) );
   BOOST_CHECK( &(app.testModule["anotherName"]) == &(app.testModule.anotherGroup) );
+  
+  // check exception if group not found
+  try {
+    app.testModule["notExisting"];
+    BOOST_FAIL("Exception expected");
+  }
+  catch(std::logic_error&){
+  }
 
 }
 
