@@ -87,7 +87,13 @@ namespace ChimeraTK {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
       if(accessor.getDirection() != VariableDirection::consuming) continue;
+      if(accessor.getMode() != UpdateMode::push) continue;
       accessor.getAppAccessorNoType().readNonBlocking();
+    }
+    for(auto accessor : accessorList) {
+      if(accessor.getDirection() != VariableDirection::consuming) continue;
+      if(accessor.getMode() == UpdateMode::push) continue;
+      accessor.getAppAccessorNoType().readLatest();
     }
   }
 
