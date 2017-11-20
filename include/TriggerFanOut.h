@@ -18,7 +18,7 @@
 #include "Profiler.h"
 
 namespace ChimeraTK {
-  
+
   /** InternalModule which waits for a trigger, then reads a number of variables and distributes each of them to any
    *  number of slaves. */
   class TriggerFanOut : public InternalModule {
@@ -28,7 +28,7 @@ namespace ChimeraTK {
       TriggerFanOut(const boost::shared_ptr<mtca4u::TransferElement>& externalTriggerImpl)
       : externalTrigger(externalTriggerImpl)
       {}
-      
+
       ~TriggerFanOut() {
         deactivate();
       }
@@ -74,16 +74,16 @@ namespace ChimeraTK {
           boost::fusion::for_each(fanOutMap.table, SendDataToConsumers());
         }
       }
-      
+
     protected:
-      
+
       /** Functor class to send data to the consumers, suitable for boost::fusion::for_each(). */
       struct SendDataToConsumers {
         template<typename PAIR>
         void operator()(PAIR &pair) const {
-          
+
           auto theMap = pair.second;    // map of feeder to FeedingFanOut (i.e. part of the fanOutMap)
-          
+
           // iterate over all feeder/FeedingFanOut pairs
           for(auto &network : theMap) {
             auto feeder = network.first;
@@ -92,7 +92,7 @@ namespace ChimeraTK {
             fanOut->write();
             // no need to swap back since we don't need the data
           }
-          
+
         }
       };
 
@@ -103,7 +103,7 @@ namespace ChimeraTK {
       template<typename UserType>
       using FanOutMap = std::map<boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<FeedingFanOut<UserType>>>;
       TemplateUserTypeMap<FanOutMap> fanOutMap;
-      
+
       /** TransferGroup containing all feeders NDRegisterAccessors */
       mtca4u::TransferGroup transferGroup;
 

@@ -75,7 +75,7 @@ struct TestApplication : public ctk::Application {
     TestModule<T> testModule{this,"testModule", "The test module"};
     ctk::DeviceModule devMymodule{"Dummy0","MyModule"};
     ctk::DeviceModule dev{"Dummy0"};
-    
+
     // note: direct device-to-controlsystem connections are tested in testControlSystemAccessors!
 };
 
@@ -286,14 +286,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
   // we abuse "feedingToDevice" as trigger here...
   app.dev("/MyModule/actuator") [ app.testModule.feedingToDevice ] >> app.testModule.consumingPush;
   app.dev("/MyModule/actuator") [ app.testModule.feedingToDevice ] >> app.testModule.consumingPush2;
-  
+
   // check that we have two separate networks for both connections
   size_t nDeviceFeeders = 0;
   for(auto &net : app.networkList) {
     if( net.getFeedingNode().getType() == ctk::NodeType::Device ) nDeviceFeeders++;
   }
   BOOST_CHECK_EQUAL( nDeviceFeeders, 2 );
-  
+
   // the optimisation to test takes place here
   app.initialise();
 
@@ -347,12 +347,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDevice, T, test_types ) {
   ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
   app.initialise();
   app.run();
-  
+
   mtca4u::Device dev;
   dev.open("Dummy0");
-  
+
   CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 18, 3000 );
-  
+
 }
 
 /*********************************************************************************************************************/
@@ -369,13 +369,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDeviceFanOut, T, test_types ) {
                                                       >> app.dev("/MyModule/readBack");
   app.initialise();
   app.run();
-  
+
   mtca4u::Device dev;
   dev.open("Dummy0");
-  
+
   CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 20, 3000 );
   CHECK_TIMEOUT( dev.read<T>("/MyModule/readBack") == 20, 3000 );
-  
+
 }
 
 /*********************************************************************************************************************/
@@ -419,9 +419,9 @@ BOOST_AUTO_TEST_CASE( testDeviceModuleVirtuallise ) {
   TestApplication<int> app;
 
   app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
-  
+
   app.initialise();
 
   BOOST_CHECK( &(app.dev.virtualise()) == &(app.dev) );
- 
+
 }

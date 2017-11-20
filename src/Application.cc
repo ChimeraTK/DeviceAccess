@@ -59,7 +59,7 @@ void Application::initialise() {
 
   // call the user-defined defineConnections() function which describes the structure of the application
   defineConnections();
-  
+
   // connect any unconnected accessors with constant values
   processUnconnectedNodes();
 
@@ -74,14 +74,14 @@ namespace {
   struct CreateConstantForUnconnectedVar {
     CreateConstantForUnconnectedVar(const std::type_info &typeInfo, bool makeFeeder, size_t length)
     : _typeInfo(typeInfo), _makeFeeder(makeFeeder), _length(length) {}
-    
+
     template<typename PAIR>
     void operator()(PAIR&) const {
       if(typeid(typename PAIR::first_type) != _typeInfo) return;
       theNode = VariableNetworkNode::makeConstant<typename PAIR::first_type>(_makeFeeder, 0, _length);
       done = true;
     }
-    
+
     const std::type_info &_typeInfo;
     bool _makeFeeder;
     size_t _length;
@@ -102,7 +102,7 @@ void Application::processUnconnectedNodes() {
         }
         networkList.emplace_back();
         networkList.back().addNode(accessor);
-        
+
         bool makeFeeder = !(networkList.back().hasFeedingNode());
         size_t length = accessor.getNumberOfElements();
         auto callable = CreateConstantForUnconnectedVar(accessor.getValueType(), makeFeeder, length);
@@ -123,7 +123,7 @@ void Application::checkConnections() {
   for(auto &network : networkList) {
     network.check();
   }
-  
+
   // check if all accessors are connected
   // note: this in principle cannot happen, since processUnconnectedNodes() is called before
   for(auto &module : getSubmoduleListRecursive()) {
@@ -134,7 +134,7 @@ void Application::checkConnections() {
       }
     }
   }
-  
+
 }
 
 /*********************************************************************************************************************/
@@ -173,7 +173,7 @@ void Application::run() {
 /*********************************************************************************************************************/
 
 void Application::shutdown() {
-  
+
   // first allow to run the application threads again, if we are in testable mode
   if(testableMode && testableModeTestLock()) {
     testableModeUnlock("shutdown");
@@ -197,10 +197,10 @@ void Application::shutdown() {
 
 void Application::generateXML() {
   assert(applicationName != "");
-  
+
   // define the connections
   defineConnections();
-  
+
   // also search for unconnected nodes - this is here only executed to print the warnings
   processUnconnectedNodes();
 
@@ -305,10 +305,10 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
 
   // obatin the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
-  
+
   // create variable ID
   idMap[accessor->getId()] = getNextVariableId();
-  
+
   // return accessor
   return accessor;
 }
@@ -331,7 +331,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
                                                                     node.getOwner().getUnit(), node.getOwner().getDescription());
   assert(pvar->getName() != "");
-  
+
   // create variable ID
   idMap[pvar->getId()] = getNextVariableId();
   pvIdMap[pvar->getUniqueId()] = idMap[pvar->getId()];
@@ -339,7 +339,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable.
   // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware of this.
   if(testableMode && node.getDirection() == VariableDirection::feeding) {
-    
+
     // The transfer mode of this process variable is considered to be polling, if only one consumer exists and this
     // consumer is polling. Reason: mulitple consumers will result in the use of a FanOut, so the communication up to
     // the FanOut will be push-type, even if all consumers are poll-type.
@@ -348,7 +348,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
     if(node.getOwner().countConsumingNodes() == 1) {
       if(node.getOwner().getConsumingNodes().front().getMode() == UpdateMode::poll) mode = UpdateMode::poll;
     }
-    
+
     if(mode != UpdateMode::poll) {
       auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
       testableMode_names[idMap[pvarDec->getId()]] = "ControlSystem:"+node.getPublicName();
@@ -358,7 +358,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
       testableMode_isPollMode[idMap[pvar->getId()]] = true;
     }
   }
-  
+
   // return the process variable
   return pvar;
 }
@@ -368,17 +368,17 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 template<typename UserType>
 std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
   Application::createApplicationVariable(VariableNetworkNode const &node) {
-    
+
   // obtain the meta data
   size_t nElements = node.getNumberOfElements();
   std::string name = node.getName();
   assert(name != "");
-  
+
   // create the ProcessArray for the proper UserType
   auto pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
-  
+
   // create variable ID
   auto varId = getNextVariableId();
   idMap[pvarPair.first->getId()] = varId;
@@ -390,13 +390,13 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
                boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPairDec;
     pvarPairDec.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
     pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
-    
+
     // put the decorators into the list
     testableMode_names[varId] = "Internal:"+node.getQualifiedName();
-    
+
     return pvarPairDec;
   }
-  
+
   // return the pair
   return pvarPair;
 }
@@ -404,11 +404,11 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
-  
+
   // apply optimisations
   // note: checks may not be run before since sometimes networks may only be valid after optimisations
   optimiseConnections();
-  
+
   // run checks
   checkConnections();
 
@@ -425,40 +425,40 @@ void Application::optimiseConnections() {
 
   // list of iterators of networks to be removed from the networkList after the merge operation
   std::list<VariableNetwork*> deleteNetworks;
-  
+
   // search for networks with the same feeder
   for(auto it1 = networkList.begin(); it1 != networkList.end(); ++it1) {
     for(auto it2 = it1; it2 != networkList.end(); ++it2) {
       if(it1 == it2) continue;
-     
+
       auto feeder1 = it1->getFeedingNode();
       auto feeder2 = it2->getFeedingNode();
-      
+
       // this optimisation is only necessary for device-type nodes, since application and control-system nodes will
       // automatically create merged networks when having the same feeder
       /// @todo check if this assumtion is true! control-system nodes can be created with different types, too!
       if(feeder1.getType() != NodeType::Device || feeder2.getType() != NodeType::Device) continue;
-      
+
       // check if referrring to same register
       if(feeder1.getDeviceAlias() != feeder2.getDeviceAlias()) continue;
       if(feeder1.getRegisterName() != feeder2.getRegisterName()) continue;
-      
+
       // check if directions are the same
       if(feeder1.getDirection() != feeder2.getDirection()) continue;
-      
+
       // check if value types and number of elements are compatible
       if(feeder1.getValueType() != feeder2.getValueType()) continue;
       if(feeder1.getNumberOfElements() != feeder2.getNumberOfElements()) continue;
-      
+
       // check if transfer mode is the same
       if(feeder1.getMode() != feeder2.getMode()) continue;
-      
+
       // check if triggers are compatible, if present
       if(feeder1.hasExternalTrigger() != feeder2.hasExternalTrigger()) continue;
       if(feeder1.hasExternalTrigger()) {
         if(feeder1.getExternalTrigger() != feeder2.getExternalTrigger()) continue;
       }
-      
+
       // everything should be compatible at this point: merge the networks. We will merge the network of the outer
       // loop into the network of the inner loop, since the network of the outer loop will not be found a second time
       // in the inner loop.
@@ -466,7 +466,7 @@ void Application::optimiseConnections() {
         consumer.clearOwner();
         it2->addNode(consumer);
       }
-      
+
       // if trigger present, remove corresponding trigger receiver node from the trigger network
       if(feeder1.hasExternalTrigger()) {
         for(auto &itTrig : networkList) {
@@ -480,7 +480,7 @@ void Application::optimiseConnections() {
       break;
     }
   }
-  
+
   // remove networks from the network list
   for(auto net : deleteNetworks) {
     networkList.remove(*net);
@@ -753,7 +753,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     assert(feeder.getType() == NodeType::Constant);
     auto feedingImpl = feeder.getConstAccessor<UserType>();
     assert(feedingImpl != nullptr);
-  
+
     for(auto &consumer : consumers) {
       if(consumer.getType() == NodeType::Application) {
         if(testableMode) {
@@ -785,7 +785,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
     }
     connectionMade = true;
-    
+
   }
 
   if(!connectionMade) {                                                                       // LCOV_EXCL_LINE (assert-like)
@@ -816,7 +816,7 @@ void Application::stepApplication() {
     throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
         "Application::stepApplication() called despite no input was provided to the application to process!");
   }
-  // let the application run until it has processed all data (i.e. the semaphore counter is 0) 
+  // let the application run until it has processed all data (i.e. the semaphore counter is 0)
   size_t oldCounter = 0;
   while(testableMode_counter > 0) {
     if(enableDebugTestableMode && ( oldCounter != testableMode_counter) ) {                                         // LCOV_EXCL_LINE (only cout)
@@ -848,20 +848,20 @@ TransferElement::ID Application::readAny(std::list<std::reference_wrapper<Transf
 void Application::testableModeLock(const std::string& name) {
   // don't do anything if testable mode is not enabled
   if(!getInstance().testableMode) return;
-  
+
   // debug output if enabled (also prevent spamming the same message)
   if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {          // LCOV_EXCL_LINE (only cout)
     std::cout << "Application::testableModeLock(): Thread " << threadName()                                   // LCOV_EXCL_LINE (only cout)
               << " tries to obtain lock for " << name << std::endl;                                           // LCOV_EXCL_LINE (only cout)
   }                                                                                                           // LCOV_EXCL_LINE (only cout)
-  
+
   // if last lock was obtained repeatedly by the same thread, sleep a short time before obtaining the lock to give the
   // other threads a chance to get the lock first
   if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(10000);
-  
+
   // obtain the lock
   getTestableModeLockObject().lock();
-  
+
   // check if the last owner of the mutex was this thread, which may be a hint that no other thread is waiting for the
   // lock
   if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
@@ -871,10 +871,10 @@ void Application::testableModeLock(const std::string& name) {
                 << " repeatedly obtained lock successfully for " << name                                      // LCOV_EXCL_LINE (only cout)
                 << ". Further messages will be suppressed." << std::endl;                                     // LCOV_EXCL_LINE (only cout)
     }                                                                                                         // LCOV_EXCL_LINE (only cout)
-    
+
     // increase counter for stall detection
     getInstance().testableMode_repeatingMutexOwner++;
-    
+
     // detect stall: if the same thread got the mutex with no other thread obtaining it in between for one second, we
     // assume no other thread is able to process data at this time. The test should fail in this case
     if(getInstance().testableMode_repeatingMutexOwner > 100) {
@@ -909,7 +909,7 @@ void Application::testableModeLock(const std::string& name) {
     // last owner of the mutex was different: reset the counter and store the thread id
     getInstance().testableMode_repeatingMutexOwner = 0;
     getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
-    
+
     // debug output if enabled
     if(getInstance().enableDebugTestableMode) {                                             // LCOV_EXCL_LINE (only cout)
       std::cout << "Application::testableModeLock(): Thread " << threadName()               // LCOV_EXCL_LINE (only cout)

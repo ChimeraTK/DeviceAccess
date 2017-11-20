@@ -21,9 +21,9 @@ namespace ChimeraTK {
 
   /** Helper class to facilitate tests of applications based on ApplicationCore */
   class TestFacility {
-    
+
     public:
-    
+
       /** The constructor will internally obtain the instance of the application, so the instance of the TestFacility
        *  must not be created before the application (i.e. usually not before the main() routine). The application will
        *  automatically be put into the testable mode and initialised. */
@@ -34,13 +34,13 @@ namespace ChimeraTK {
         Application::getInstance().enableTestableMode();
         Application::getInstance().initialise();
       }
-      
+
       /** Start the application. This simply calls Application::run(). Since the application is in testable mode, it
        *  will be ??? TODO define precisely what happens on start up */
       void runApplication() const {
         Application::getInstance().run();
       }
-      
+
       /** Perform a "step" of the application. This runs the application until all input provided to it has been
        *  processed and all application modules wait for new data in blocking read calls. This function returns only
        *  after the application has reached that stated and was paused again. After returning from this function,
@@ -49,7 +49,7 @@ namespace ChimeraTK {
       void stepApplication() const {
         Application::getInstance().stepApplication();
       }
-      
+
       /** Obtain a scalar process variable from the application, which is published to the control system. */
       template<typename T>
       mtca4u::ScalarRegisterAccessor<T> getScalar(const mtca4u::RegisterPath &name) const {
@@ -65,7 +65,7 @@ namespace ChimeraTK {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
-        
+
         // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
         size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
         Application::getInstance().idMap[pv->getId()] = varId;
@@ -84,7 +84,7 @@ namespace ChimeraTK {
         // return the accessor as stored in the cache
         return boost::fusion::at_key<T>(scalarMap.table)[name];
       }
-      
+
       /** Obtain an array-type process variable from the application, which is published to the control system. */
       template<typename T>
       mtca4u::OneDRegisterAccessor<T> getArray(const mtca4u::RegisterPath &name) const {
@@ -100,7 +100,7 @@ namespace ChimeraTK {
           throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
                                         mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
         }
-        
+
         // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
         size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
         Application::getInstance().idMap[pv->getId()] = varId;
@@ -119,7 +119,7 @@ namespace ChimeraTK {
         // return the accessor as stored in the cache
         return boost::fusion::at_key<T>(arrayMap.table)[name];
       }
-      
+
       /** Convenience function to write a scalar process variable in a single call */
       template<typename TYPE>
       void writeScalar( const std::string &name, const TYPE value ) {
@@ -127,7 +127,7 @@ namespace ChimeraTK {
         acc = value;
         acc.write();
       }
-      
+
       /** Convenience function to write an array process variable in a single call */
       template<typename TYPE>
       void writeArray( const std::string &name, const std::vector<TYPE> &value ) {
@@ -135,7 +135,7 @@ namespace ChimeraTK {
         acc = value;
         acc.write();
       }
-      
+
       /** Convenience function to read the latest value of a scalar process variable in a single call */
       template<typename TYPE>
       TYPE readScalar( const std::string &name ) {
@@ -143,7 +143,7 @@ namespace ChimeraTK {
         acc.readLatest();
         return acc;
       }
-      
+
       /** Convenience function to read the latest value of an array process variable in a single call */
       template<typename TYPE>
       std::vector<TYPE> readArray( const std::string &name ) {
@@ -152,11 +152,11 @@ namespace ChimeraTK {
         return acc;
       }
 
-      
+
   protected:
-    
+
       boost::shared_ptr<ControlSystemPVManager> pvManager;
-      
+
       // Cache (possible decorated) accessors to avoid the need to create accessors multiple times. This would not work
       // if the accessor is decorated, since the buffer would be lost and thus the current value could no longer be
       // obtained. This has to be done separately for scalar and array accessors and in dependence of the user type.
@@ -170,7 +170,7 @@ namespace ChimeraTK {
       mutable mtca4u::TemplateUserTypeMap<ArrayMap> arrayMap;
 
   };
-  
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERATK_TEST_FACILITY */

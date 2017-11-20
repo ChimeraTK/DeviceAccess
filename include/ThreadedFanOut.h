@@ -15,7 +15,7 @@
 #include "InternalModule.h"
 
 namespace ChimeraTK {
-  
+
   /** FanOut implementation with an internal thread which waits for new data which is read from the given feeding
    *  implementation and distributed to any number of slaves. */
   template<typename UserType>
@@ -26,7 +26,7 @@ namespace ChimeraTK {
       ThreadedFanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
       : FanOut<UserType>(feedingImpl)
       {}
-      
+
 
       ~ThreadedFanOut() {
         deactivate();
@@ -66,7 +66,7 @@ namespace ChimeraTK {
           }
         }
       }
-      
+
     protected:
 
       /** Thread handling the synchronisation, if needed */

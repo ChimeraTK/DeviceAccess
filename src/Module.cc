@@ -18,7 +18,7 @@ namespace ChimeraTK {
   {
     if(_owner != nullptr) _owner->registerModule(this);
   }
-  
+
 /*********************************************************************************************************************/
 
   Module::~Module()
@@ -37,7 +37,7 @@ namespace ChimeraTK {
   }
 
 /*********************************************************************************************************************/
-  
+
   TransferElement::ID Module::readAny() {
     auto accessorList = getAccessorListRecursive();
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
@@ -48,10 +48,10 @@ namespace ChimeraTK {
         transferElementList.emplace_back(accessor.getAppAccessorNoType());
       }
     }
-    
+
     // wait until one of the push-type accessors receives an update
     auto ret = Application::getInstance().readAny(transferElementList);
-    
+
     // trigger read on the poll-type accessors
     for(auto accessor : accessorList) {
       if(accessor.getDirection() != VariableDirection::consuming) continue;
@@ -59,12 +59,12 @@ namespace ChimeraTK {
         accessor.getAppAccessorNoType().readLatest();
       }
     }
-    
+
     return ret;
   }
 
 /*********************************************************************************************************************/
-  
+
   void Module::readAll() {
     auto accessorList = getAccessorListRecursive();
     // first blockingly read all push-type variables
@@ -108,7 +108,7 @@ namespace ChimeraTK {
   }
 
 /*********************************************************************************************************************/
-  
+
   void Module::writeAll() {
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {

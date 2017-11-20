@@ -68,11 +68,11 @@ namespace ChimeraTK {
 
       /** Default constructor for an invalid node */
       VariableNetworkNode();
-      
+
       /** Factory function for a constant (a constructor cannot be templated) */
       template<typename UserType>
       static VariableNetworkNode makeConstant(bool makeFeeder, UserType value=0, size_t length=1);
-      
+
       /** Change meta data (name, unit, description and optionally tags). This function may only be used on
        *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
        *  tags, an empty set can be passed. */
@@ -82,7 +82,7 @@ namespace ChimeraTK {
 
       /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
       void setOwner(VariableNetwork *network);
-      
+
       /** Clear the owner network of this node. */
       void clearOwner();
 
@@ -120,8 +120,8 @@ namespace ChimeraTK {
 
       /** Check if the node already has an owner */
       bool hasOwner() const;
-      
-      /** Add a tag. This function may only be used on Application-type nodes. Valid names for tags only contain 
+
+      /** Add a tag. This function may only be used on Application-type nodes. Valid names for tags only contain
        *  alpha-numeric characters (i.e. no spaces and no special characters). @todo enforce this!*/
       void addTag(const std::string &tag);
 
@@ -150,15 +150,15 @@ namespace ChimeraTK {
 
       template<typename UserType>
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> getConstAccessor() const;
-      
+
       /** Return the unique ID of this node (will change every time the application is started). */
       const void* getUniqueId() const { return pdata.get(); }
-      
+
       /** Change pointer to the accessor. May only be used for application nodes. */
       void setAppAccessorPointer(mtca4u::TransferElement *accessor);
-      
+
       EntityOwner* getOwningModule() const;
-      
+
       void setOwningModule(EntityOwner *newOwner) const;
 
     //protected:  @todo make protected again (with proper interface extension)
@@ -219,13 +219,13 @@ namespace ChimeraTK {
     /** Device information if type == Device */
     std::string deviceAlias;
     std::string registerName;
-    
+
     /** Number of elements in the variable. 0 means not yet decided. */
     size_t nElements{0};
-    
+
     /** Set of tags  if type == Application */
     std::unordered_set<std::string> tags;
-    
+
     /** Map to store triggered versions of this node. The map key is the trigger node and the value is the node
      *  with the respective trigger added. */
     std::map<VariableNetworkNode, VariableNetworkNode> nodeWithTrigger;
@@ -260,7 +260,7 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-  
+
   template<typename UserType>
   mtca4u::NDRegisterAccessorBridge<UserType>& VariableNetworkNode::getAppAccessor() const {
     assert(typeid(UserType) == getValueType());
@@ -271,7 +271,7 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-  
+
   template<typename UserType>
   boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> VariableNetworkNode::getConstAccessor() const {
     return boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(pdata->constNode);

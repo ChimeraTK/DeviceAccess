@@ -42,7 +42,7 @@ namespace ChimeraTK {
   }
 
 /*********************************************************************************************************************/
-  
+
   VariableNetworkNode VirtualModule::operator()(const std::string& variableName) const {
     for(auto variable : getAccessorList()) {
       if(variable.getName() == variableName) return VariableNetworkNode(variable);
@@ -62,7 +62,7 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void VirtualModule::connectTo(const Module &target, VariableNetworkNode trigger) const {
-    
+
     // connect all direct variables of this module to their counter-parts in the right-hand-side module
     for(auto variable : getAccessorList()) {
       if(variable.getDirection() == VariableDirection::feeding) {
@@ -79,12 +79,12 @@ namespace ChimeraTK {
         }
       }
     }
-    
+
     // connect all sub-modules to their couter-parts in the right-hand-side module
     for(auto submodule : getSubmoduleList()) {
       submodule->connectTo(target[submodule->getName()], trigger);
     }
-    
+
   }
 
 /*********************************************************************************************************************/
@@ -93,7 +93,7 @@ namespace ChimeraTK {
     submodules.push_back(module);
     registerModule(&(submodules.back()));
   }
-  
+
 /*********************************************************************************************************************/
 
   const Module& VirtualModule::virtualise() const {

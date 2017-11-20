@@ -50,10 +50,10 @@ namespace ChimeraTK {
        *  in the same executable. Note that any ApplicationModules etc. owned by this Application are no longer
        *  valid after destroying the Application and must be destroyed as well (or at least no longer used). */
       void shutdown() override;
-      
+
       /** Define the connections between process variables. Must be implemented by the application developer. */
       virtual void defineConnections() = 0;
-      
+
       void initialise() override;
 
       void run() override;
@@ -64,7 +64,7 @@ namespace ChimeraTK {
       /** Output the connections requested in the initialise() function to std::cout. This may be done also before
        *  makeConnections() has been called. */
       void dumpConnections();
-      
+
       /** Enable warning about unconnected variables. This can be helpful to identify missing connections but is
        *  disabled by default since it may often be very noisy. */
       void warnUnconnectedVariables() { enableUnconnectedVariablesWarning = true; }
@@ -72,12 +72,12 @@ namespace ChimeraTK {
       /** Obtain instance of the application. Will throw an exception if called before the instance has been
        *  created by the control system adapter, or if the instance is not based on the Application class. */
       static Application& getInstance();
-      
+
       /** Enable the testable mode. This allows to pause and resume the application for testing purposes using the
        *  functions pauseApplication() and resumeApplication(). The application will start in paused state.
-       * 
+       *
        *  This function must be called before the application is initialised (i.e. before the call to initialise()).
-       * 
+       *
        *  Note: Enabling the testable mode will have a singificant impact on the performance, since it will prevent
        *  any module threads to run at the same time! */
       void enableTestableMode() {
@@ -89,32 +89,32 @@ namespace ChimeraTK {
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
        *  the testable mode was enabled. */
       void stepApplication();
-      
+
       /** Enable some additional (potentially noisy) debug output for the testable mode. Can be useful if tests
        *  of applications seem to hang for no reason in stepApplication. */
       void debugTestableMode() { enableDebugTestableMode = true; }
-      
+
       /** This is a testable version of mtca4u::TransferElement::readAny(). Always use this version instead of the
        *  original version provided by DeviceAccess. If the testable mode is not enabled, just the original version
        *  is called instead. Only with the testable mode enabled, special precautions are taken to make this blocking
        *  call testable. */
       static mtca4u::TransferElement::ID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
-      
+
       /** Lock the testable mode mutex for the current thread. Internally, a thread-local std::unique_lock<std::mutex>
        *  will be created and re-used in subsequent calls within the same thread to this function and to
        *  testableModeUnlock().
        *
        *  This function should generally not be used in user code. */
       static void testableModeLock(const std::string& name);
-      
+
       /** Unlock the testable mode mutex for the current thread. See also testableModeLock().
-       * 
+       *
        *  Initially the lock will not be owned by the current thread, so the first call to this function will throw an
        *  exception (see std::unique_lock::unlock()), unless testableModeLock() has been called first.
        *
        *  This function should generally not be used in user code. */
       static void testableModeUnlock(const std::string& name);
-      
+
       /** Test if the testable mode mutex is locked by the current thread.
        *
        *  This function should generally not be used in user code. */
@@ -129,7 +129,7 @@ namespace ChimeraTK {
         thread_local static std::string name{"**UNNAMED**"};
         return name;
       }
-      
+
       /** Register the thread in the application system and give it a name. This should be done for all threads used by
        *  the application to help with debugging and to allow profiling. */
       static void registerThread(const std::string &name) {
@@ -142,12 +142,12 @@ namespace ChimeraTK {
       std::string getQualifiedName() const override {
         return "/" + _name;
       }
-      
+
       /** Special exception class which will be thrown if tests with the testable mode are stalled. Normally this
        *  exception should never be caught. The only reason for catching it might be a situation where the expected
        *  behaviour of an app is to do nothing and one wants to test this. Note that the stall condition only appears
        *  after a certain timeout, thus tests relying on this will take time.
-       * 
+       *
        *  This exception must not be based on a generic exception class to prevent catching it unintentionally. */
       class TestsStalled {};
 
@@ -159,7 +159,7 @@ namespace ChimeraTK {
 
       template<typename UserType>
       friend class Accessor;
-      
+
       /** Check if all connections are valid. Internally called in initialise(). */
       void checkConnections();
 
@@ -171,13 +171,13 @@ namespace ChimeraTK {
         thread_local static std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
         return myLock;
       }
-      
+
       /** Register the connections to constants for previously unconnected nodes. */
       void processUnconnectedNodes();
 
       /** Make the connections between accessors as requested in the initialise() function. */
       void makeConnections();
-      
+
       /** Apply optimisations to the VariableNetworks, e.g. by merging networks sharing the same feeder. */
       void optimiseConnections();
 
@@ -187,14 +187,14 @@ namespace ChimeraTK {
       /** UserType-dependent part of makeConnectionsForNetwork() */
       template<typename UserType>
       void typedMakeConnection(VariableNetwork &network);
-      
-      /** Functor class to call typedMakeConnection() with the right template argument. */ 
+
+      /** Functor class to call typedMakeConnection() with the right template argument. */
       struct TypedMakeConnectionCaller {
         TypedMakeConnectionCaller(Application &owner, VariableNetwork &network);
-        
+
         template<typename PAIR>
         void operator()(PAIR&) const;
-        
+
         Application &_owner;
         VariableNetwork &_network;
         mutable bool done{false};
@@ -227,7 +227,7 @@ namespace ChimeraTK {
 
       /** List of constant variable nodes */
       std::list<VariableNetworkNode> constantList;
-      
+
       /** Map of trigger sources to their corresponding TriggerFanOuts. Note: the key is the unique ID of the
        *  triggering node. */
       std::map<const void*, boost::shared_ptr<TriggerFanOut>> triggerMap;
@@ -240,12 +240,12 @@ namespace ChimeraTK {
 
       /** Map of DeviceBackends used by this application. The map key is the alias name from the DMAP file */
       std::map<std::string, boost::shared_ptr<mtca4u::DeviceBackend>> deviceMap;
-      
+
       /** Flag if connections should be made in testable mode (i.e. the TestDecoratorRegisterAccessor is put around all
        *  push-type input accessors etc.). */
       bool testableMode{false};
-      
-      /** Mutex used in testable mode to take control over the application threads. Use only through the lock object 
+
+      /** Mutex used in testable mode to take control over the application threads. Use only through the lock object
        *  obtained through getLockObjectForCurrentThread().
        *
        *  This member is static, since it should survive destroying an application instance and creating a new one.
@@ -253,36 +253,36 @@ namespace ChimeraTK {
        *  be static. The static storage duration presents no problem in either case, since there can only be one single
        *  instance of Application at a time (see ApplicationBase constructor). */
       static std::mutex testableMode_mutex;
-      
+
       /** Semaphore counter used in testable mode to check if application code is finished executing. This value may
        *  only be accessed while holding the testableMode_mutex. */
       size_t testableMode_counter{0};
-      
+
       /** Flag if noisy debug output is enabled for the testable mode */
       bool enableDebugTestableMode{false};
-      
+
       /** Flag whether to warn about unconnected variables or not */
       bool enableUnconnectedVariablesWarning{false};
-      
+
       /** Map from accessor ID to the variable ID used in the other maps here, e.g. for the testable mode. This allows
        *  associating sender and receiver pairs of the same ProcessArray. */
       std::map<mtca4u::TransferElement::ID, size_t> idMap;
-      
+
       /** Map from ProcessArray uniqueId to the variable ID for control system variables. This is required for the
        *  TestFacility. */
       std::map<size_t, size_t> pvIdMap;
-      
+
       /** Return a fresh variable ID which can be assigned to a sender/receiver pair. The ID will always be non-zero. */
       static size_t getNextVariableId() {
         static size_t nextId{0};
         return ++nextId;
       }
-      
+
       /** Last thread which successfully obtained the lock for the testable mode. This is used to prevent spamming
        *  repeating messages if the same thread acquires and releases the lock in a loop without another thread
        *  activating in between. */
       std::thread::id testableMode_lastMutexOwner;
-      
+
       /** Counter how often the same thread has acquired the testable mode mutex in a row without another thread
        *  owning it in between. This is an indicator for the test being stalled due to data send through a process
        *  variable but not read by the receiver. */
@@ -290,26 +290,26 @@ namespace ChimeraTK {
 
       /** Testable mode: like testableMode_counter but broken out for each variable. This is not actually used as a
        *  semaphore counter but only in case of a detected stall (see testableMode_repeatingMutexOwner) to print
-       *  a list of variables which still contain unread values. The index of the map is the unique ID of the 
+       *  a list of variables which still contain unread values. The index of the map is the unique ID of the
        *  variable. */
       std::map<size_t, size_t> testableMode_perVarCounter;
-      
+
       /** Map of unique IDs to namess, used along with testableMode_perVarCounter to print sensible information. */
       std::map<size_t, std::string> testableMode_names;
-      
+
       /** Map of unique IDs to process variables which have been decorated with the TestDecoratorRegisterAccessor. */
       std::map<size_t, boost::shared_ptr<TransferElement>> testableMode_processVars;
-      
+
       /** Map of unique IDs to flags whether the update mode is UpdateMode::poll (so we do not use the decorator) */
       std::map<size_t, bool> testableMode_isPollMode;
-      
+
 
       template<typename UserType>
       friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter
 
       template<typename UserType>
       friend class TestDecoratorTransferFuture;     // needs access to the testableMode_mutex and testableMode_counter
-      
+
       friend class TestFacility;                    // needs access to testableMode_variables
 
   };

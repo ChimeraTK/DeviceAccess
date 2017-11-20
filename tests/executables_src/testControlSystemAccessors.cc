@@ -73,7 +73,7 @@ struct TestApplication : public ctk::Application {
 
     TestModule<T> testModule{this, "TestModule", "The test module"};
     ctk::ControlSystemModule cs;
-    
+
     ctk::DeviceModule dev{"Dummy0"};
 };
 
@@ -270,15 +270,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
   BOOST_CHECK( myConsumer->getName() == "/myConsumer" );
   BOOST_CHECK( myConsumer->getUnit() == "" );
   BOOST_CHECK( myConsumer->getDescription() == "No comment." );
-  
+
   BOOST_CHECK( myConsumer_copy1->getName() == "/myConsumer_copy1" );
   BOOST_CHECK( myConsumer_copy1->getUnit() == "" );
   BOOST_CHECK( myConsumer_copy1->getDescription() == "No comment." );
-  
+
   BOOST_CHECK( myConsumer_copy2->getName() == "/myConsumer_copy2" );
   BOOST_CHECK( myConsumer_copy2->getUnit() == "" );
   BOOST_CHECK( myConsumer_copy2->getDescription() == "No comment." );
-  
+
   BOOST_CHECK( myConsumer_copy3->getName() == "/myConsumer_copy3" );
   BOOST_CHECK( myConsumer_copy3->getUnit() == "" );
   BOOST_CHECK( myConsumer_copy3->getDescription() == "No comment." );

@@ -30,11 +30,11 @@ namespace ChimeraTK {
           throw;
         }
       }
-      
+
       ~ConstantAccessor() {
         this->shutdown();
       }
-      
+
       void doReadTransfer() override {
         if(firstRead) {
           firstRead = false;
@@ -59,7 +59,7 @@ namespace ChimeraTK {
       void postRead() override {
         mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
       }
-      
+
       bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         return true;
       }
@@ -69,17 +69,17 @@ namespace ChimeraTK {
       bool isReadOnly() const override {return false;}
 
       bool isReadable() const override {return true;}
-      
+
       bool isWriteable() const override {return true;}
 
       std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {return{};}
 
       void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {}
-      
+
     protected:
-      
+
       std::vector<UserType> _value;
-      
+
       bool firstRead{true};
 
   };

@@ -20,7 +20,7 @@ namespace ChimeraTK {
   class ConsumingFanOut : public FanOut<UserType>, public mtca4u::NDRegisterAccessor<UserType> {
 
     public:
-      
+
       ConsumingFanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
         : FanOut<UserType>(feedingImpl), mtca4u::NDRegisterAccessor<UserType>(feedingImpl->getName(), feedingImpl->getUnit(), feedingImpl->getDescription())
       {
@@ -35,7 +35,7 @@ namespace ChimeraTK {
           throw;
         }
       }
-      
+
       ~ConsumingFanOut() {
         this->shutdown();
       }
@@ -43,15 +43,15 @@ namespace ChimeraTK {
       bool isReadable() const override {
         return true;
       }
-      
+
       bool isReadOnly() const override {
         return true;
       }
-      
+
       bool isWriteable() const override {
         return false;
       }
-      
+
       void doReadTransfer() override {
         FanOut<UserType>::impl->read();
       }
@@ -78,16 +78,16 @@ namespace ChimeraTK {
       bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         throw std::logic_error("Write operation called on read-only variable.");
       }
-      
+
       bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {
         // only true if the very instance of the transfer element is the same
         return e.get() == this;
       }
-      
+
       std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() };
       }
-      
+
       void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {
         // You can't replace anything here. Just do nothing.
       }

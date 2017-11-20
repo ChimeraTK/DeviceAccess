@@ -46,7 +46,7 @@ struct TestModule : public ctk::ApplicationModule {
     ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
     ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
     ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
-    
+
     ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "MV/m", 10, "Description"};
 
     void mainLoop() {}

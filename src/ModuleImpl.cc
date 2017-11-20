@@ -1,9 +1,9 @@
 #include "ModuleImpl.h"
 
 namespace ChimeraTK {
-  
+
 /*********************************************************************************************************************/
-  
+
   VariableNetworkNode ModuleImpl::operator()(const std::string& variableName) const {
     return virtualise()(variableName);
   }

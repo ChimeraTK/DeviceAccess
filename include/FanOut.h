@@ -23,7 +23,7 @@ namespace ChimeraTK {
       FanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
       : impl(feedingImpl)
       {}
-      
+
       virtual ~FanOut() {}
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
@@ -33,7 +33,7 @@ namespace ChimeraTK {
               "FanOut::addSlave() has been called with a receiving implementation!");
         }
         // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
-        if( slave->getNumberOfSamples() != 0 && 
+        if( slave->getNumberOfSamples() != 0 &&
             ( slave->getNumberOfChannels() != impl->getNumberOfChannels() ||
               slave->getNumberOfSamples() != impl->getNumberOfSamples()      ) ) {
           std::string what = "FanOut::addSlave(): Trying to add a slave '";
@@ -44,7 +44,7 @@ namespace ChimeraTK {
         }
         slaves.push_back(slave);
       }
-      
+
     protected:
 
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;

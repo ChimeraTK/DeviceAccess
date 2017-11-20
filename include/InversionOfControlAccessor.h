@@ -39,13 +39,13 @@ namespace ChimeraTK {
                        const std::unordered_set<std::string> &tags) {
         node.setMetaData(name, unit, description, tags);
       }
-      
+
       /** Add a tag. Valid names for tags only contain alpha-numeric characters (i.e. no spaces and no special
        *  characters). */
       void addTag(const std::string &tag) {
         node.addTag(tag);
       }
-      
+
       /** Add multiple tags. Valid names for tags only contain alpha-numeric characters (i.e. no spaces and no special
        *  characters). */
       void addTags(const std::unordered_set<std::string> &tags) {
@@ -59,7 +59,7 @@ namespace ChimeraTK {
       operator const VariableNetworkNode() const {
         return node;
       }
-      
+
       /** Connect with other node */
       VariableNetworkNode operator>>(const VariableNetworkNode &otherNode) {
         return node >> otherNode;
@@ -92,7 +92,7 @@ namespace ChimeraTK {
 
       /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
       InversionOfControlAccessor() {}
-    
+
       VariableNetworkNode node;
 
   };

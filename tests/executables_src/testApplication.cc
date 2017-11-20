@@ -32,7 +32,7 @@ namespace ctk = ChimeraTK;
 struct TestApp : public ctk::Application {
     TestApp(const std::string &name) : ctk::Application(name) { ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApp() { shutdown(); }
-    
+
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {
       multiplierD.output >> csmod("myVarD");
@@ -40,7 +40,7 @@ struct TestApp : public ctk::Application {
       pipe.output >> csmod["mySubModule"]("myVarSOut");
       csmod("myVarU16") >> multiplierU16.input;
     }
-    
+
     ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
     ctk::ScalarPipe<std::string> pipe{this, "pipe", "unit", "Some pipe module"};
     ctk::ConstMultiplier<uint16_t,uint16_t, 120> multiplierU16{this, "multiplierU16", "Some other module", 42};
@@ -53,7 +53,7 @@ struct TestApp : public ctk::Application {
 BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
     std::cout << "*********************************************************************************************************************" << std::endl;
     std::cout << "==> testApplicationExceptions" << std::endl;
-    
+
     // zero length name forbidden
     try {
       TestApp app("");
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
     }
     catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
     }
-    
+
     // names with spaces and special characters are forbidden
     try {
       TestApp app("With space");
@@ -80,12 +80,12 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
     {
       TestApp app("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz_1234567890");
     }
-    
+
     // repeated characters are allowed
     {
       TestApp app("AAAAAAA");
     }
-    
+
     // Two apps at the same time are not allowed
     TestApp app1("FirstInstance");
     try {
@@ -125,11 +125,11 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
 
     // delete XML file if already existing
     boost::filesystem::remove("TestAppInstance.xml");
-    
+
     // create app which exports some properties and generate its XML file
     TestApp app("TestAppInstance");
     app.generateXML();
-    
+
     // validate the XML file
     xmlpp::XsdValidator validator("application.xsd");
     validator.validate("TestAppInstance.xml");
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
     catch(xmlpp::exception &e) {
       throw std::runtime_error(std::string("ConfigReader: Error opening the config file 'TestAppInstance.xml': ")+e.what());
     }
-    
+
     // get root element
     const auto root = parser.get_document()->get_root_node();
     BOOST_CHECK_EQUAL(root->get_name(), "application");
@@ -157,21 +157,21 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
       // cast into element, ignore if not an element (e.g. comment)
       auto *element = dynamic_cast<const xmlpp::Element*>(child);
       if(!element) continue;
-      
+
       if(element->get_name() == "variable") {
 
         // obtain attributes from the element
         auto xname = element->get_attribute("name");
         BOOST_REQUIRE(xname != nullptr);
         std::string name(xname->get_value());
-        
+
         // obtain values from sub-elements
         std::string value_type = getValueFromNode(element, "value_type");
         std::string direction = getValueFromNode(element, "direction");
         std::string unit = getValueFromNode(element, "unit");
         std::string description = getValueFromNode(element, "description");
         std::string numberOfElements = getValueFromNode(element, "numberOfElements");
-        
+
         // check if variables are described correctly
         if(name == "myVarD") {
           found_myVarD = true;
@@ -208,14 +208,14 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
           auto xname = element->get_attribute("name");
           BOOST_REQUIRE(xname != nullptr);
           std::string name(xname->get_value());
-          
+
           // obtain values from sub-elements
           std::string value_type = getValueFromNode(element, "value_type");
           std::string direction = getValueFromNode(element, "direction");
           std::string unit = getValueFromNode(element, "unit");
           std::string description = getValueFromNode(element, "description");
           std::string numberOfElements = getValueFromNode(element, "numberOfElements");
-          
+
           if(name == "myVarSIn") {
             found_myVarSIn = true;
             BOOST_CHECK_EQUAL(value_type, "string");
@@ -241,9 +241,9 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
       else {
         BOOST_ERROR("Wrong tag found.");
       }
-      
+
     }
-    
+
     BOOST_CHECK(found_myVarD);
     BOOST_CHECK(found_myVarSIn);
     BOOST_CHECK(found_myVarSOut);

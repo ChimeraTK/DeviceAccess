@@ -21,7 +21,7 @@ namespace ChimeraTK {
   class FeedingFanOut : public FanOut<UserType>, public mtca4u::NDRegisterAccessor<UserType> {
 
     public:
-      
+
       FeedingFanOut(std::string const &name, std::string const &unit, std::string const &description,
                     size_t numberOfElements)
       : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()),
@@ -36,7 +36,7 @@ namespace ChimeraTK {
           throw;
         }
       }
-      
+
       ~FeedingFanOut() {
         this->shutdown();
       }
@@ -48,7 +48,7 @@ namespace ChimeraTK {
               "FeedingFanOut::addSlave() has been called with a receiving implementation!");
         }
         // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
-        if( slave->getNumberOfSamples() != 0 && 
+        if( slave->getNumberOfSamples() != 0 &&
             ( slave->getNumberOfChannels() != 1 || slave->getNumberOfSamples() != this->getNumberOfSamples() ) ) {
           std::string what = "FeedingFanOut::addSlave(): Trying to add a slave '" + slave->getName();
           what += "' with incompatible array shape! Name of fan out: '" + this->getName() + "'";
@@ -60,23 +60,23 @@ namespace ChimeraTK {
       bool isReadable() const override {
         return false;
       }
-      
+
       bool isReadOnly() const override {
         return false;
       }
-      
+
       bool isWriteable() const override {
         return true;
       }
-      
+
       void doReadTransfer() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }
-      
+
       bool doReadTransferNonBlocking() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }
-      
+
       bool doReadTransferLatest() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }
@@ -107,16 +107,16 @@ namespace ChimeraTK {
         }
         return dataLost;
       }
-      
+
       bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {
         // only true if the very instance of the transfer element is the same
         return e.get() == this;
       }
-      
+
       std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() };
       }
-      
+
       void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {
         // You can't replace anything here. Just do nothing.
       }

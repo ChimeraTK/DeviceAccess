@@ -28,7 +28,7 @@ namespace ctk = ChimeraTK;
 
 struct TestModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  
+
   struct MixedGroup : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarPushInput<int> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
@@ -46,7 +46,7 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<int> feedingPoll{this, "feedingPoll", "MV/m", "Descrption"};
   ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m", "Descrption"};
   ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m", "Descrption"};
-  
+
   void mainLoop() {}
 };
 
@@ -56,10 +56,10 @@ struct TestModule : public ctk::ApplicationModule {
 struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {  ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApplication() { shutdown(); }
-    
+
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
-    
+
     TestModule testModule{this, "testModule", "The test module"};
 };
 
@@ -212,16 +212,16 @@ BOOST_AUTO_TEST_CASE( testModuleReadWrite ) {
 BOOST_AUTO_TEST_CASE( testReadAny ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testReadAny" << std::endl;
-  
+
   TestApplication app;
-  
+
   app.testModule.feedingPush >> app.testModule.mixedGroup.consumingPush;
   app.testModule.feedingPush2 >> app.testModule.mixedGroup.consumingPush2;
   app.testModule.feedingPush3 >> app.testModule.mixedGroup.consumingPush3;
   app.testModule.feedingPoll >> app.testModule.mixedGroup.consumingPoll;
   app.testModule.feedingPoll2 >> app.testModule.mixedGroup.consumingPoll2;
   app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
-  
+
   app.initialise();
   app.run();
 
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   app.testModule.feedingPoll.write();
   app.testModule.feedingPoll2.write();
   app.testModule.feedingPoll3.write();
-  
+
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
-  
+
   // two more writes
   app.testModule.feedingPush2 = 666;
   app.testModule.feedingPush2.write();
@@ -294,10 +294,10 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
 
-  // write something  
+  // write something
   app.testModule.feedingPush = 3;
   app.testModule.feedingPush.write();
-  
+
   // check that the group now receives the just written value
   BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
-  
+
   // write to the poll-type variables
   app.testModule.feedingPoll = 66;
   app.testModule.feedingPoll.write();
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
-  
+
   // write something to the push-type variables
   app.testModule.feedingPush2 = 123;
   app.testModule.feedingPush2.write();
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
-  
+
   // two changes at a time
   auto futureRead3 = std::async(std::launch::async, [&app]{ app.testModule.mixedGroup.readAny(); });
   BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);

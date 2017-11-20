@@ -110,10 +110,10 @@ struct SecondHierarchy : ctk::ModuleGroup { using ctk::ModuleGroup::ModuleGroup;
 struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {  ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApplication() { shutdown(); }
-    
+
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
-    
+
     FirstHierarchy first{this, "first", "The test module"};
     SecondHierarchy second{this, "second", "The test module"};
 };
@@ -124,17 +124,17 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE( testConnectTo ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testConnectTo" << std::endl;
-  
+
   TestApplication app;
- 
+
   app.first.findTag(".*").dump();
   app.second.findTag(".*").dump();
-  
+
   app.first.connectTo(app.second);
-  
+
   app.initialise();
   app.run();
-  
+
   /// @todo Test if connections are made properly!
 
 

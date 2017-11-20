@@ -215,7 +215,7 @@ namespace ChimeraTK {
       dump("", msg);
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
-    
+
     // the feeder node must have a non-zero length
     size_t length = getFeedingNode().getNumberOfElements();
     if(length == 0) {
@@ -225,7 +225,7 @@ namespace ChimeraTK {
       dump("", msg);
       throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
     }
-    
+
     // all consumers must have the same length as the feeder or a zero length for trigger receivers
     for(auto &node : nodeList) {
       if(node.getType() != NodeType::TriggerReceiver) {
@@ -296,7 +296,7 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-  
+
   bool VariableNetwork::hasApplicationConsumer() const {
     for(auto &n : nodeList) {
       if(n.getDirection() == VariableDirection::consuming && n.getType() == NodeType::Application) return true;

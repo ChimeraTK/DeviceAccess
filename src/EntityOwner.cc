@@ -60,7 +60,7 @@ namespace ChimeraTK {
   std::list<VariableNetworkNode> EntityOwner::getAccessorListRecursive() {
     // add accessors of this instance itself
     std::list<VariableNetworkNode> list = getAccessorList();
-    
+
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
       auto sublist = submodule->getAccessorListRecursive();
@@ -74,7 +74,7 @@ namespace ChimeraTK {
   std::list<Module*> EntityOwner::getSubmoduleListRecursive() {
     // add modules of this instance itself
     std::list<Module*> list = getSubmoduleList();
-    
+
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
       auto sublist = submodule->getSubmoduleListRecursive();
@@ -89,7 +89,7 @@ namespace ChimeraTK {
 
     // create new module to return
     VirtualModule module{_name, _description, getModuleType()};
-    
+
     // add everything matching the tag to the virtual module and return it
     findTagAndAppendToModule(module, tag, false, true);
     return module;
@@ -101,7 +101,7 @@ namespace ChimeraTK {
 
     // create new module to return
     VirtualModule module{_name, _description, getModuleType()};
-    
+
     // add everything matching the tag to the virtual module and return it
     findTagAndAppendToModule(module, tag, false, true, true);
     return module;
@@ -111,10 +111,10 @@ namespace ChimeraTK {
 
   void EntityOwner::findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies,
                                              bool eliminateFirstHierarchy, bool negate) const {
-                                               
+
     VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule *moduleToAddTo;
-    
+
     bool needToAddSubModule = false;
     if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
       moduleToAddTo = &nextmodule;
@@ -123,7 +123,7 @@ namespace ChimeraTK {
     else {
       moduleToAddTo = &module;
     }
-    
+
     // add nodes to the module if matching the tag
     std::regex expr(tag);
     for(auto node : getAccessorList()) {
@@ -153,13 +153,13 @@ namespace ChimeraTK {
         submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate);
       }
     }
-    
+
     if(needToAddSubModule) {
       if( nextmodule.getAccessorList().size() > 0 || nextmodule.getSubmoduleList().size() > 0 ) {
         module.addSubModule(nextmodule);
       }
     }
-    
+
   }
 
 /*********************************************************************************************************************/
@@ -183,11 +183,11 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void EntityOwner::dump(const std::string &prefix) const {
-    
+
     if(prefix == "") {
       std::cout << "==== Hierarchy dump of module '" << _name << "':" << std::endl;
     }
-    
+
     for(auto &node : getAccessorList()) {
       std::cout << prefix << "+ ";
       node.dump();
@@ -197,7 +197,7 @@ namespace ChimeraTK {
       std::cout << prefix << "| " << submodule->getName() << std::endl;
       submodule->dump(prefix+"| ");
     }
-    
+
   }
 
 /*********************************************************************************************************************/
@@ -231,9 +231,9 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void EntityOwner::dumpGraphInternal(std::ostream &stream, bool showVariables) const {
-    
+
     std::string myDotNode = cleanDotNode(getQualifiedName());
-    
+
     stream << "  " << myDotNode << "[label=\"" << getName() << "\"";
     if(_eliminateHierarchy) {
       stream << ",style=dotted";
@@ -245,7 +245,7 @@ namespace ChimeraTK {
       stream << ",penwidth=3";
     }
     stream << "]" << std::endl;
-    
+
     if(showVariables) {
       for(auto &node : getAccessorList()) {
         std::string dotNode = cleanDotNode(node.getQualifiedName());
@@ -292,5 +292,5 @@ namespace ChimeraTK {
     }
     return nextmodule;
   }
-  
+
 } /* namespace ChimeraTK */

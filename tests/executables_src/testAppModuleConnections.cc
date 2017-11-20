@@ -44,10 +44,10 @@ struct TestModule : public ctk::ApplicationModule {
     ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
     ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
     ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
-    
+
     ctk::ArrayPollInput<T> consumingPollArray{this, "consumingPollArray", "m", 10, "Descrption"};
     ctk::ArrayPushInput<T> consumingPushArray{this, "consumingPushArray", "m", 10, "Descrption"};
-    
+
     ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Descrption"};
     ctk::ArrayOutput<T> feedingPseudoArray{this, "feedingPseudoArray", "m", 1, "Descrption"};
 
@@ -221,10 +221,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoArrayAccessors, T, test_types ) {
   std::cout << "*** testTwoArrayAccessors<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
-  
+
   app.testModule.feedingArray >> app.testModule.consumingPushArray;
   app.initialise();
-  
+
   BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
   BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
 
@@ -328,17 +328,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testPseudoArray, T, test_types ) {
   std::cout << "*** testPseudoArray<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
-  
+
   app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
-  
+
   // run the app
   app.initialise();
   app.run();
-  
+
   // test data transfer
   app.testModule.feedingPseudoArray[0] = 33;
   app.testModule.feedingPseudoArray.write();
   app.testModule.consumingPush.read();
   BOOST_CHECK( app.testModule.consumingPush == 33 );
-  
+
 }

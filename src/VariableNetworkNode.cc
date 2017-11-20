@@ -139,11 +139,11 @@ namespace ChimeraTK {
     stream << " length: " << pdata->nElements;
 
     stream << " [ptr: " << &(*pdata) << "]";
-    
+
     stream << " { ";
     for(auto &tag : pdata->tags) stream << tag << " ";
     stream << "}";
-    
+
     stream << std::endl;
 }
 
@@ -302,7 +302,7 @@ namespace ChimeraTK {
     // force direction of the triggering node to be feeding
     if(trigger.pdata->direction == VariableDirection::invalid) trigger.pdata->direction = VariableDirection::feeding;
     assert(trigger.pdata->direction == VariableDirection::feeding);
-    
+
     // check if already existing in map
     if(pdata->nodeWithTrigger.count(trigger) > 0) {
       return pdata->nodeWithTrigger[trigger];
@@ -325,18 +325,18 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-  
+
   void VariableNetworkNode::setValueType(const std::type_info& newType) const {
     assert(*pdata->valueType == typeid(AnyType));
     pdata->valueType = &newType;
   }
-  
+
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::hasExternalTrigger() const {
     return pdata->externalTrigger.getType() != NodeType::invalid;
   }
-      
+
   /*********************************************************************************************************************/
 
   VariableNetworkNode VariableNetworkNode::getExternalTrigger() {
@@ -489,26 +489,26 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-  
+
   const std::unordered_set<std::string>& VariableNetworkNode::getTags() const {
     return pdata->tags;
   }
 
   /*********************************************************************************************************************/
-  
+
   void VariableNetworkNode::setAppAccessorPointer(mtca4u::TransferElement *accessor) {
     assert(getType() == NodeType::Application);
     pdata->appNode = accessor;
   }
 
   /*********************************************************************************************************************/
-  
+
   EntityOwner* VariableNetworkNode::getOwningModule() const {
     return pdata->owningModule;
   }
 
   /*********************************************************************************************************************/
-  
+
   void VariableNetworkNode::setOwningModule(EntityOwner *newOwner) const {
     pdata->owningModule = newOwner;
   }

@@ -14,7 +14,7 @@
 #include "VariableNetworkNode.h"
 
 namespace ChimeraTK {
-  
+
   class AccessorBase;
   class Module;
   class VirtualModule;
@@ -31,20 +31,20 @@ namespace ChimeraTK {
       /** Constructor: register the EntityOwner with its owner */
       EntityOwner(const std::string &name, const std::string &description,
                   bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
-      
+
       /** Default constructor just for late initialisation */
       EntityOwner()
       : _name("**INVALID**"),
         _description("Invalid EntityOwner created by default constructor just as a place holder")
       {}
-      
+
       /** Virtual destructor to make the type polymorphic */
       virtual ~EntityOwner();
-      
+
       /** Move constructor */
       EntityOwner(EntityOwner &&other) { operator=(std::move(other)); }
       EntityOwner(const EntityOwner &other) = delete;
-      
+
       /** Move assignment operator */
       EntityOwner& operator=(EntityOwner &&other);
       EntityOwner& operator=(const EntityOwner &other) = delete;
@@ -55,26 +55,26 @@ namespace ChimeraTK {
       /** Get the fully qualified name of the module instance, i.e. the name containing all module names further up in
        *  the hierarchy. */
       virtual std::string getQualifiedName() const = 0;
-      
+
       /** Get the decription of the module instance */
       const std::string& getDescription() const { return _description; }
-      
+
       /** Obtain the list of accessors/variables directly associated with this instance */
       std::list<VariableNetworkNode>& getAccessorList() { return accessorList; }
       const std::list<VariableNetworkNode>& getAccessorList() const { return accessorList; }
-      
+
       /** Obtain the list of submodules associated with this instance */
       const std::list<Module*>& getSubmoduleList() const { return moduleList; }
-      
+
       /** Obtain the list of accessors/variables associated with this instance and any submodules */
       std::list<VariableNetworkNode> getAccessorListRecursive();
-      
+
       /** Obtain the list of submodules associated with this instance and any submodules */
       std::list<Module*> getSubmoduleListRecursive();
-      
+
       /** Check whether a submodule exists by the given name (not taking into account eliminated hierarchies etc.) */
       bool hasSubmodule(const std::string &name) const;
-      
+
       /** Get a submodule by the given name (not taking into account eliminated hierarchies etc.) */
       Module* getSubmodule(const std::string &name) const;
 
@@ -98,19 +98,19 @@ namespace ChimeraTK {
       void unregisterAccessor(VariableNetworkNode accessor) {
         accessorList.remove(accessor);
       }
-      
+
       /** Register another module as a sub-mdoule. Will be called automatically by all modules in their constructors.
        *  If addTags is set to false, the tags of this EntityOwner will not be set to the module being registered.
        *  This is e.g. used in the move-constructor of Module to prevent from altering the tags in the move operation. */
       void registerModule(Module* module, bool addTags=true);
-      
+
       /** Unregister another module as a sub-mdoule. Will be called automatically by all modules in their destructors. */
       void unregisterModule(Module* module);
 
       /** Add a tag to all Application-type nodes inside this group. It will recurse into any subgroups. See
        *  VariableNetworkNode::addTag() for additional information about tags. */
       void addTag(const std::string &tag);
-      
+
       /** Eliminate the level of hierarchy represented by this EntityOwner. This is e.g. used when building the
        *  hierarchy of VirtualModules in findTag(). Eliminating one level of hierarchy will make all childs of that
        *  hierarchy level to appear as if there were direct childs of the next higher hierarchy level. If e.g. there is
@@ -119,37 +119,37 @@ namespace ChimeraTK {
        *  model, while the static C++ model is fixed at compile time.
        *  @todo Also use in VariableGroup::operator() and VariableGroup::operator[] ??? */
       void setEliminateHierarchy() { _eliminateHierarchy = true; }
-      
+
       /** Returns the flag whether this level of hierarchy should be eliminated */
       bool getEliminateHierarchy() const { return _eliminateHierarchy; }
-      
+
       /** Create a VirtualModule which contains all variables of this EntityOwner in a flat hierarchy. It will recurse
        *  through all sub-modules and add all found variables directly to the VirtualModule. */
       VirtualModule flatten();
-      
+
       /** Print the full hierarchy to stdout. */
       void dump(const std::string &prefix="") const;
-      
+
       /** Create Graphviz dot graph and write to file. The graph will contain the full hierarchy of modules and
        *  variables below (and including) this module. Each variable will also show which tags are attached to it.
        *  ModuleGroups will be drawn with a double line, ApplicationModules with a bold line. Hierarchies which will
        *  be eliminated in the dynamic information model are shown with a dotted line. */
       void dumpGraph(const std::string &fileName="graph.dot") const;
-      
+
       /** Create a Graphiz dot graph similar to the one created with dumpGraph, but just show the modules and not the
        *  variables. This allows to get an overview over more complex applications. */
       void dumpModuleGraph(const std::string &fileName="graph.dot") const;
-      
+
       enum class ModuleType {
         ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device, Invalid
       };
-      
+
       /** Return the module type of this module, or in case of a VirtualModule the module type this VirtualModule was
        *  derived from. */
       virtual ModuleType getModuleType() const = 0;
 
   protected:
-            
+
       /** Add the part of the tree structure matching the given tag to a VirtualModule. Users normally will use
        *  findTag() instead. "tag" is interpreted as a regular expression (see std::regex_match). */
       void findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies=false,
@@ -157,28 +157,28 @@ namespace ChimeraTK {
 
       /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
       void dumpGraphInternal(std::ostream &stream, bool showVariables) const;
-      
+
       /** Clean a fully qualified entity name so it can be used as a dot node name (i.e. strip slashes etc.) */
       std::string cleanDotNode(std::string fullName) const;
-    
+
       /** The name of this instance */
       std::string _name;
-    
+
       /** The description of this instance */
       std::string _description;
-      
+
       /** List of accessors owned by this instance */
       std::list<VariableNetworkNode> accessorList;
 
       /** List of modules owned by this instance */
       std::list<Module*> moduleList;
-      
+
       /** Flag whether this level of hierarchy should be eliminated or not */
       bool _eliminateHierarchy{false};
-      
+
       /** List of tags to be added to all accessors and modules inside this module */
       std::unordered_set<std::string> _tags;
-      
+
   };
 
 } /* namespace ChimeraTK */

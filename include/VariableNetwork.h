@@ -70,7 +70,7 @@ namespace ChimeraTK {
 
       /** Return list of consuming nodes */
       std::list<VariableNetworkNode> getConsumingNodes() const;
-      
+
       /** Check whether the network has a consuming application node */
       bool hasApplicationConsumer() const;
 

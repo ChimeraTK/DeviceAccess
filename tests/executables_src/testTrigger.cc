@@ -60,7 +60,7 @@ class TestTransferGroupDummy : public mtca4u::DummyBackend {
     static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::string, std::list<std::string> parameters, std::string) {
       return boost::shared_ptr<DeviceBackend>(new TestTransferGroupDummy(parameters.front()));
     }
-    
+
     void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) override {
       last_bar = bar;
       last_address = address;
@@ -68,7 +68,7 @@ class TestTransferGroupDummy : public mtca4u::DummyBackend {
       numberOfTransfers++;
       DummyBackend::read(bar,address,data,sizeInBytes);
     }
-    
+
     std::atomic<size_t> numberOfTransfers{0};
     std::atomic<uint8_t> last_bar;
     std::atomic<uint32_t> last_address;
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
 
   app.dev("/MyModule/readBack", typeid(T), 1) [ app.testModule.theTrigger ] >> app.cs("myCSVar");
-  
+
   app.initialise();
   app.run();
 
@@ -227,14 +227,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
 
   app.dev("/MyModule/readBack", typeid(T), 1) [ app.cs("theTrigger", typeid(T), 1) ] >> app.cs("myCSVar");
-  
+
   app.initialise();
   app.run();
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
   auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
-  
+
   // single theaded test only, since the receiving process scalar does not support blocking
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   app.testModule.feedingToDevice = 42;
@@ -288,14 +288,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerTransferGroup, T, test_types ) {
   dev.write("/REG1", 11);
   dev.write("/REG2", 22);
   dev.write("/REG3", 33);
-  
+
   // trigger the transfer
   app.testModule.theTrigger.write();
   CHECK_TIMEOUT(backend->numberOfTransfers == 1, 200);
   BOOST_CHECK(backend->last_bar == 0);
   BOOST_CHECK(backend->last_address == 0);
   BOOST_CHECK(backend->last_sizeInBytes == 12);
-  
+
   // check result
   app.testModule.consumingPush.read();
   app.testModule.consumingPush2.read();
@@ -303,12 +303,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerTransferGroup, T, test_types ) {
   BOOST_CHECK(app.testModule.consumingPush  == 11);
   BOOST_CHECK(app.testModule.consumingPush2 == 22);
   BOOST_CHECK(app.testModule.consumingPush3 == 33);
-  
+
   // prepare a second transfer
   dev.write("/REG1", 12);
   dev.write("/REG2", 23);
   dev.write("/REG3", 34);
-  
+
   // trigger the transfer
   app.testModule.theTrigger.write();
   CHECK_TIMEOUT(backend->numberOfTransfers == 2, 200);
@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerTransferGroup, T, test_types ) {
   BOOST_CHECK(app.testModule.consumingPush  == 12);
   BOOST_CHECK(app.testModule.consumingPush2 == 23);
   BOOST_CHECK(app.testModule.consumingPush3 == 34);
-  
+
   dev.close();
 
 }

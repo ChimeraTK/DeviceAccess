@@ -33,7 +33,7 @@ namespace ChimeraTK {
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::replace;
       ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &other) = delete;
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
-      
+
       /** Move constructor */
       ScalarAccessor(ScalarAccessor<UserType> &&other) {
         InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
@@ -54,7 +54,7 @@ namespace ChimeraTK {
       }
 
   protected:
-    
+
       friend class InversionOfControlAccessor<ScalarAccessor<UserType>>;
 
       ScalarAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
@@ -63,7 +63,7 @@ namespace ChimeraTK {
       : InversionOfControlAccessor<ScalarAccessor<UserType>>(owner, name, direction, unit, 1, mode,
                                                             description, &typeid(UserType), tags)
       {}
-      
+
       /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
       ScalarAccessor() {}
 

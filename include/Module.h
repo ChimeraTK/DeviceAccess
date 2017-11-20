@@ -28,7 +28,7 @@ namespace ChimeraTK {
              bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
 
       /** Default constructor: Allows late initialisation of modules (e.g. when creating arrays of modules).
-       * 
+       *
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
@@ -36,7 +36,7 @@ namespace ChimeraTK {
 
       /** Destructor */
       virtual ~Module();
-      
+
       /** Move constructor */
       Module(Module &&other) { operator=(std::move(other)); }
 
@@ -52,7 +52,7 @@ namespace ChimeraTK {
 
       /** Terminate the module. Must/will be called before destruction, if run() was called previously. */
       virtual void terminate() {};
-      
+
       /** Wait for receiving an update for any of the push-type variables in the group. Any poll-type variables are
        *  read after receiving the update. If no push-type variables are in the group, this function will just read
        *  all variables. The return value will be the ID of the push-type variable which has been updated. */
@@ -79,18 +79,18 @@ namespace ChimeraTK {
        *  requested. Thus the returned reference will not point to any user-defined object but to a VirtualModule
        *  containing the variable structure. */
       virtual Module& operator[](const std::string& moduleName) const = 0;
-      
+
       /** Return the virtual version of this module and its sub-modules, i.e. eliminate hierarchies where requested and
        *  apply other dynamic model changes. */
       virtual const Module& virtualise() const = 0;
-      
+
       /**
         * Connect the entire module into another module. All variables inside this module and all
         * submodules are connected to the target module. All variables and submodules must have an equally
         * named and typed counterpart in the target module (or the target module allows creation of
         * such entities, as in case of a ControlSystemModule). The target module may contain additional
         * variables or submodules, which are ignored.
-        * 
+        *
         * If an optional trigger node is specified, this trigger node is applied to all poll-type output variables
         * of the target module, which are being connected during this operation, if the corresponding variable
         * in this module is push-type.
@@ -100,22 +100,22 @@ namespace ChimeraTK {
       std::string getQualifiedName() const override {
         return ( (_owner != nullptr) ? _owner->getQualifiedName() : "" ) + "/" + _name;
       }
-      
+
       /** Set a new owner. The caller has to take care himself that the Module gets unregistered with the old owner
        *  and registered with the new one. Do not use in user code! */
       void setOwner(EntityOwner *newOwner) {
         _owner = newOwner;
       }
-      
+
       EntityOwner* getOwner() const { return _owner; }
 
     protected:
-      
+
       /** Owner of this instance */
       EntityOwner *_owner{nullptr};
-      
+
   };
-  
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERATK_MODULE_H */

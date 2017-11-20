@@ -40,16 +40,16 @@ namespace ChimeraTK {
       Module& operator[](const std::string& moduleName) const override;
 
       void connectTo(const Module &target, VariableNetworkNode trigger={}) const override;
-      
+
       /** Add a virtual sub-module. The module instance will be added to an internal list. */
       void addSubModule(VirtualModule module);
 
       ModuleType getModuleType() const override { return _moduleType; }
 
       const Module& virtualise() const override;
-      
+
     protected:
-    
+
       std::list<VirtualModule> submodules;
       ModuleType _moduleType;
 

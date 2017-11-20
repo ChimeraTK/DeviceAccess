@@ -33,12 +33,12 @@ namespace ChimeraTK {
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::replace;
       ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &other) = delete;
       using mtca4u::OneDRegisterAccessor<UserType>::operator=;
-      
+
       /** Move constructor */
       ArrayAccessor(ArrayAccessor<UserType> &&other) {
         InversionOfControlAccessor<ArrayAccessor<UserType>>::replace(std::move(other));
       }
-      
+
       /** Move assignment */
       ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &&other) {
         // Having a move-assignment operator is required to use the move-assignment operator of a module containing
@@ -54,7 +54,7 @@ namespace ChimeraTK {
       }
 
   protected:
-    
+
       friend class InversionOfControlAccessor<ArrayAccessor<UserType>>;
 
       ArrayAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
@@ -63,7 +63,7 @@ namespace ChimeraTK {
       : InversionOfControlAccessor<ArrayAccessor<UserType>>(owner, name, direction, unit, nElements, mode,
                                                             description, &typeid(UserType), tags)
       {}
-      
+
       /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
       ArrayAccessor() {}
 

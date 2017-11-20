@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
       /** Move operation with the move constructor */
       ControlSystemModule(ControlSystemModule &&other) { operator=(std::move(other)); }
-      
+
       /** Move assignment */
       ControlSystemModule& operator=(ControlSystemModule &&other) {
         Module::operator=(std::move(other));
@@ -58,11 +58,11 @@ namespace ChimeraTK {
     protected:
 
       mtca4u::RegisterPath variableNamePrefix;
-      
+
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
       mutable std::map<std::string, ControlSystemModule> subModules;
-      
+
       // List of variables accessed through the operator(). This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
       mutable std::map<std::string, VariableNetworkNode> variables;

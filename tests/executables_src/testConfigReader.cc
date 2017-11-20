@@ -49,7 +49,7 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
     BOOST_CHECK_CLOSE((float)varFloat, 3.1415, 0.000001);
     BOOST_CHECK_CLOSE((double)varDouble, -2.8, 0.000001);
     BOOST_CHECK_EQUAL((std::string)varString, "My dear mister singing club!");
-    
+
     // no further update shall be received
     usleep(1000000);   // 1 second
     BOOST_CHECK( !var8.readNonBlocking() );
@@ -63,7 +63,7 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
     BOOST_CHECK( !varFloat.readNonBlocking() );
     BOOST_CHECK( !varDouble.readNonBlocking() );
     BOOST_CHECK( !varString.readNonBlocking() );
-    
+
     // inform main thread that we are done
     done = true;
   }
@@ -76,9 +76,9 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
 struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {  ChimeraTK::ExperimentalFeatures::enable(); }
     ~TestApplication() { shutdown(); }
-    
+
     void defineConnections() {}             // the setup is done in the tests
-    
+
     ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
     TestModule testModule{this, "TestModule", "The test module"};
 };
@@ -89,9 +89,9 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE( testConfigReader ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testConfigReader" << std::endl;
-  
+
   TestApplication app;
-  
+
   // check if values are already accessible
   BOOST_CHECK_EQUAL(app.config.get<int8_t>("var8"), -123);
   BOOST_CHECK_EQUAL(app.config.get<uint8_t>("var8u"), 34);
@@ -104,12 +104,12 @@ BOOST_AUTO_TEST_CASE( testConfigReader ) {
   BOOST_CHECK_CLOSE(app.config.get<float>("varFloat"), 3.1415, 0.000001);
   BOOST_CHECK_CLOSE(app.config.get<double>("varDouble"), -2.8, 0.000001);
   BOOST_CHECK_EQUAL(app.config.get<std::string>("varString"), "My dear mister singing club!");
- 
+
   app.config.connectTo(app.testModule);
-  
+
   app.initialise();
   app.run();
-  
+
   // wait until tests in TestModule::mainLoop() are complete
   while(app.testModule.done == false) usleep(10000);
 
