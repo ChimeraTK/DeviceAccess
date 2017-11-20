@@ -119,7 +119,7 @@ struct TestApplication : public ctk::Application {
 };
 
 /*********************************************************************************************************************/
-/* test trigger by app variable when connecting a polled device register to an app variable */
+/* test connectTo() */
 
 BOOST_AUTO_TEST_CASE( testConnectTo ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
@@ -127,15 +127,71 @@ BOOST_AUTO_TEST_CASE( testConnectTo ) {
 
   TestApplication app;
 
-  app.first.findTag(".*").dump();
-  app.second.findTag(".*").dump();
-
   app.first.connectTo(app.second);
 
   app.initialise();
   app.run();
 
-  /// @todo Test if connections are made properly!
+  app.second.testModule.varGroup.varA = 1;
+  app.second.testModule.eliminatedGroup.varGroup.varB = 2;
+  app.first.testModule.varGroup.varC = 3;
+  app.second.testModule.varA = 4;
+  app.first.testModule.varX = 5;
+  for(int i=0; i<22; ++i) {
+    app.second.secondModule.myVec[i] = 6+i;
+  }
 
+  app.first.writeAll();
+  app.second.writeAll();
+  app.first.readAllLatest();
+  app.second.readAllLatest();
 
+  BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varA, 1 );
+  BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varB, 2 );
+  BOOST_CHECK_EQUAL( (int) app.second.testModule.varGroup.varC, 3 );
+  BOOST_CHECK_EQUAL( (int) app.first.testModule.varA, 4 );
+  BOOST_CHECK_EQUAL( (int) app.second.testModule.eliminatedGroup.varX, 5 );
+  for(int i=0; i<22; ++i) {
+    BOOST_CHECK_EQUAL( (int) app.first.secondModule.myVec[i], 6+i );
+  }
+
+}
+
+/*********************************************************************************************************************/
+/* check if makeing the same connection twice does not fail */
+
+BOOST_AUTO_TEST_CASE( testConnectTwice ) {
+  std::cout << "*********************************************************************************************************************" << std::endl;
+  std::cout << "==> testConnectTwice" << std::endl;
+
+  TestApplication app;
+
+  app.second.testModule.varA >> app.first.testModule.varA;
+  app.first.connectTo(app.second);
+
+  app.initialise();
+  app.run();
+
+  app.second.testModule.varGroup.varA = 1;
+  app.second.testModule.eliminatedGroup.varGroup.varB = 2;
+  app.first.testModule.varGroup.varC = 3;
+  app.second.testModule.varA = 4;
+  app.first.testModule.varX = 5;
+  for(int i=0; i<22; ++i) {
+    app.second.secondModule.myVec[i] = 6+i;
+  }
+
+  app.first.writeAll();
+  app.second.writeAll();
+  app.first.readAllLatest();
+  app.second.readAllLatest();
+
+  BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varA, 1 );
+  BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varB, 2 );
+  BOOST_CHECK_EQUAL( (int) app.second.testModule.varGroup.varC, 3 );
+  BOOST_CHECK_EQUAL( (int) app.first.testModule.varA, 4 );
+  BOOST_CHECK_EQUAL( (int) app.second.testModule.eliminatedGroup.varX, 5 );
+  for(int i=0; i<22; ++i) {
+    BOOST_CHECK_EQUAL( (int) app.first.secondModule.myVec[i], 6+i );
+  }
 }
