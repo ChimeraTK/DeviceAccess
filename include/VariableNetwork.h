@@ -41,16 +41,16 @@ namespace ChimeraTK {
           none              ///< no trigger has yet been selected
       };
 
-      /** Add an node to the network. */
+      /** Add an node to the network. The node must not yet be part of any network. */
       void addNode(VariableNetworkNode &a);
 
-      /** Add a trigger receiver node */
+      /** Add a trigger receiver node. The node must not yet be part of any network. */
       void addNodeToTrigger(VariableNetworkNode& nodeToTrigger);
 
-      /** Remove a node from the network */
+      /** Remove a node from the network. The node must be part of the given network. */
       void removeNode(const VariableNetworkNode &a);
 
-      /** Remove a trigger receiver node from the network */
+      /** Remove a trigger receiver node from the network. The node must be part of the given network. */
       void removeNodeToTrigger(const VariableNetworkNode &nodeToNoLongerTrigger);
 
       /** Check if the network already has a feeding node connected to it. */

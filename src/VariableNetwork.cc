@@ -34,10 +34,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::addNode(VariableNetworkNode &a) {
-    if(a.hasOwner()) {  // already in the network
-      assert( &(a.getOwner()) == this );    /// @todo TODO merge networks?
-      return;
-    }
+    assert(!a.hasOwner());
 
     // change owner of the node: erase from Application's unconnectedNodeList and set this as owner
     a.setOwner(this);
@@ -74,16 +71,7 @@ namespace ChimeraTK {
   void VariableNetwork::removeNode(const VariableNetworkNode &a) {
     auto nNodes = nodeList.size();
     nodeList.remove(a);
-    // check if a node was actually removed, if not, throw exception
-    if(nodeList.size() == nNodes) {
-      std::stringstream msg;
-      msg << "Trying remove a VariableNetworkNode from the VariableNetwork which is not in the network." << std::endl;
-      msg << "The network you were trying to remove the node from:" << std::endl;
-      dump("", msg);
-      msg << "The node you were trying to remove:" << std::endl;
-      a.dump(msg);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(msg.str());
-    }
+    assert(nodeList.size() != nNodes);
   }
 
   /*********************************************************************************************************************/
