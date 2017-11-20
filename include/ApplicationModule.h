@@ -15,14 +15,14 @@
 #include "ModuleImpl.h"
 
 namespace ChimeraTK {
-  
+
   class Application;
   class ModuleGroup;
 
   class ApplicationModule : public ModuleImpl {
 
     public:
-      
+
       /** Constructor: register the module with its owner. If eliminateHierarchy is true, the hierarchy level
        *  introduced by this module will be eliminated from the "dynamic" data model (see
        *  EntityOwner::setEliminateHierarchy()). The tags given as the last argument are added to all variables
@@ -33,7 +33,7 @@ namespace ChimeraTK {
              bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
 
       /** Default constructor: Allows late initialisation of modules (e.g. when creating arrays of modules).
-       * 
+       *
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
        *  See this bug report: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
@@ -44,7 +44,7 @@ namespace ChimeraTK {
       {
         operator=(std::move(other));
       }
-      
+
       /** Move assignment */
       ApplicationModule& operator=(ApplicationModule &&other) {
         assert(!moduleThread.joinable());   // if the thread is already running, moving is no longer allowed!
@@ -61,10 +61,6 @@ namespace ChimeraTK {
       void run() override;
 
       void terminate() override;
-      
-      VariableNetworkNode operator()(const std::string& variableName) const override;
-
-      Module& operator[](const std::string& moduleName) const override;
 
       ModuleType getModuleType() const override { return ModuleType::ApplicationModule; }
 
