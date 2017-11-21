@@ -22,14 +22,7 @@ namespace ChimeraTK {
   class TestDecoratorTransferFuture : public TransferFuture {
     public:
 
-      TestDecoratorTransferFuture() : _originalFuture{nullptr} {}
-
-      TestDecoratorTransferFuture(TransferFuture &originalFuture, TestDecoratorRegisterAccessor<UserType> *accessor)
-      : _originalFuture(&originalFuture), _accessor(accessor)
-      {
-        TransferFuture::_theFuture = _originalFuture->getBoostFuture();
-        TransferFuture::_transferElement = accessor;
-      }
+      TestDecoratorTransferFuture() : _originalFuture{nullptr}, _accessor{nullptr} {}
 
       virtual ~TestDecoratorTransferFuture() {}
 
@@ -42,22 +35,14 @@ namespace ChimeraTK {
         _accessor->hasActiveFuture = false;
       }
 
-      TestDecoratorTransferFuture& operator=(const TestDecoratorTransferFuture &&other) {
-        TransferFuture::_theFuture = other._theFuture;
-        TransferFuture::_transferElement = other._transferElement;
-        _originalFuture = other._originalFuture;
-        _accessor = other._accessor;
-        return *this;
+      void reset(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement) = delete;
+
+      void reset(TransferFuture &originalFuture, TestDecoratorRegisterAccessor<UserType> *accessor) {
+        _originalFuture = &originalFuture;
+        _accessor = accessor;
+        TransferFuture::_theFuture = _originalFuture->getBoostFuture();
+        TransferFuture::_transferElement = accessor;
       }
-
-      TestDecoratorTransferFuture(const TestDecoratorTransferFuture &&other)
-      : TransferFuture(other._theFuture, other._transferElement),
-        _originalFuture(other._originalFuture),
-        _accessor(other._accessor)
-      {}
-
-      TestDecoratorTransferFuture(const TestDecoratorTransferFuture &other) = delete;
-      TestDecoratorTransferFuture& operator=(const TestDecoratorTransferFuture &other) = delete;
 
     protected:
 
@@ -182,7 +167,7 @@ namespace ChimeraTK {
         }
         auto &future = _accessor->readAsync();
         TransferElement::hasActiveFuture = true;
-        activeTestDecoratorFuture = TestDecoratorTransferFuture<UserType>(future, this);
+        activeTestDecoratorFuture.reset(future, this);
         return activeTestDecoratorFuture;
       }
 
