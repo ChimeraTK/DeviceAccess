@@ -26,6 +26,7 @@
 #include "ArrayAccessor.h"
 #include "ConstantAccessor.h"
 #include "TestDecoratorRegisterAccessor.h"
+#include "DebugDecoratorRegisterAccessor.h"
 
 using namespace ChimeraTK;
 
@@ -367,7 +368,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 
 template<typename UserType>
 std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-  Application::createApplicationVariable(VariableNetworkNode const &node) {
+  Application::createApplicationVariable(VariableNetworkNode const &node, VariableNetworkNode const &consumer) {
 
   // obtain the meta data
   size_t nElements = node.getNumberOfElements();
@@ -375,7 +376,9 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   assert(name != "");
 
   // create the ProcessArray for the proper UserType
-  auto pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
+  std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
+            boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
+  pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
 
@@ -386,15 +389,31 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
 
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
-    std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
-               boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPairDec;
-    pvarPairDec.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
-    pvarPairDec.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
+    pvarPair.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
+    pvarPair.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
 
     // put the decorators into the list
     testableMode_names[varId] = "Internal:"+node.getQualifiedName();
+    if(consumer.getType() != NodeType::invalid) {
+      testableMode_names[varId] += "->"+consumer.getQualifiedName();
+    }
+  }
 
-    return pvarPairDec;
+  // if debug mode was requested for either node, decorate both accessors
+  if( debugMode_variableList.count(node.getUniqueId()) ||
+      ( consumer.getType() != NodeType::invalid && debugMode_variableList.count(consumer.getUniqueId()) ) ) {
+
+    if(consumer.getType() != NodeType::invalid) {
+      assert(node.getDirection() == VariableDirection::feeding);
+      assert(consumer.getDirection() == VariableDirection::consuming);
+      pvarPair.first = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.first, node.getQualifiedName());
+      pvarPair.second = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.second, consumer.getQualifiedName());
+    }
+    else {
+      pvarPair.first = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.first, node.getQualifiedName());
+      pvarPair.second = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.second, node.getQualifiedName());
+    }
+
   }
 
   // return the pair
@@ -527,7 +546,6 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
   }
 
   // defer actual network creation to templated function
-  // @todo TODO replace with boost::mpl::for_each loop!
   auto callable = TypedMakeConnectionCaller(*this, network);
   boost::fusion::for_each(mtca4u::userTypeMap(), callable);
   assert(callable.done);
@@ -680,7 +698,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        auto impls = createApplicationVariable<UserType>(consumer);
+        auto impls = createApplicationVariable<UserType>(feeder,consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getAppAccessor<UserType>().replace(impls.second);
         connectionMade = true;
@@ -697,7 +715,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createApplicationVariable<UserType>(consumer);
+        auto impls = createApplicationVariable<UserType>(feeder,consumer);
         feeder.getAppAccessor<UserType>().replace(impls.first);
         consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;

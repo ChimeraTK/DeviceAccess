@@ -151,6 +151,11 @@ namespace ChimeraTK {
        *  This exception must not be based on a generic exception class to prevent catching it unintentionally. */
       class TestsStalled {};
 
+      /** Enable debug output for a given variable. */
+      void enableVariableDebugging(const VariableNetworkNode &node) {
+        debugMode_variableList.insert(node.getUniqueId());
+      }
+
     protected:
 
       friend class Module;
@@ -214,10 +219,11 @@ namespace ChimeraTK {
       boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessVariable(VariableNetworkNode const &node);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
-       *  sender, the second the receiver. */
+       *  sender, the second the receiver. If two nodes are passed, the first node should be the sender and the second
+       *  the receiver. */
       template<typename UserType>
       std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
-            createApplicationVariable(VariableNetworkNode const &node);
+            createApplicationVariable(VariableNetworkNode const &node, VariableNetworkNode const &consumer={});
 
       /** List of InternalModules */
       std::list<boost::shared_ptr<InternalModule>> internalModuleList;
@@ -303,14 +309,20 @@ namespace ChimeraTK {
       /** Map of unique IDs to flags whether the update mode is UpdateMode::poll (so we do not use the decorator) */
       std::map<size_t, bool> testableMode_isPollMode;
 
+      /** List of variables for which debug output was requested via enableVariableDebugging(). Stored is the unique
+       *  id of the VariableNetworkNode.*/
+      std::unordered_set<const void*> debugMode_variableList;
 
       template<typename UserType>
-      friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter
+      friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter and the idMap
 
       template<typename UserType>
       friend class TestDecoratorTransferFuture;     // needs access to the testableMode_mutex and testableMode_counter
 
       friend class TestFacility;                    // needs access to testableMode_variables
+
+      template<typename UserType>
+      friend class DebugDecoratorRegisterAccessor;   // needs access to the idMap
 
   };
 
