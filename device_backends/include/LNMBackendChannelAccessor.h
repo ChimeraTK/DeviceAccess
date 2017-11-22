@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-#include "NDRegisterAccessor.h"
+#include "SyncNDRegisterAccessor.h"
 #include "LogicalNameMappingBackend.h"
 #include "TwoDRegisterAccessor.h"
 #include "FixedPointConverter.h"
@@ -21,12 +21,12 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  class LNMBackendChannelAccessor : public NDRegisterAccessor<UserType> {
+  class LNMBackendChannelAccessor : public SyncNDRegisterAccessor<UserType> {
     public:
 
       LNMBackendChannelAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : NDRegisterAccessor<UserType>(registerPathName),
+      : SyncNDRegisterAccessor<UserType>(registerPathName),
         _registerPathName(registerPathName)
       {
         try {

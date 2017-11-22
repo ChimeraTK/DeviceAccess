@@ -56,8 +56,6 @@ class DecoratorTransferFuture : public TransferFuture {
 
     DecoratorTransferFuture() : _originalFuture{nullptr}, _accessor{nullptr} {}
 
-    virtual ~DecoratorTransferFuture() {}
-
     void wait() override {
       _originalFuture->wait();
       _accessor->postRead();
@@ -94,18 +92,10 @@ class AsyncAccessorDecorator : public NDRegisterAccessor<UserType> {
       // set ID to match the decorated accessor
       this->_id = _accessor->getId();
 
-      try {
-        // initialise buffers
-        buffer_2D.resize(_accessor->getNumberOfChannels());
-        for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
-      }
-      catch(...) {
-        this->shutdown();
-        throw;
-      }
+      // initialise buffers
+      buffer_2D.resize(_accessor->getNumberOfChannels());
+      for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
     }
-
-    virtual ~AsyncAccessorDecorator() { this->shutdown(); }
 
     bool write(ChimeraTK::VersionNumber versionNumber={}) override {
       return _accessor->write(versionNumber);

@@ -41,32 +41,6 @@ namespace mtca4u {
       NDRegisterAccessor& operator=(const NDRegisterAccessor &other) = delete;
       NDRegisterAccessor& operator=(NDRegisterAccessor &&other) = delete;
 
-      /** A virtual base class needs a virtual destructor */
-      virtual ~NDRegisterAccessor() {
-        // This is a requirement to all implementations: call shutdown() in the destructor!
-        assert(shutdownCalled);
-      }
-
-      /**
-       * All implementations must call this function in their destructor. Also, implementations must call it in their
-       * constructors before throwing an exception (hint: put catch-all block around the entired constructor, call
-       * shutdown() there and then rethrow the exception).
-       *
-       * Implementation note: This function call is necessary to ensure that a potentially still-running thread
-       * launched in readAsync() is properly terminated before destroying the accessor object. Since this thread
-       * accesses virtual functions like doReadTransfer(), the full accessor object must still be alive, thus shutting
-       * down the thread in the base class destructor is too late. Technically, implementations overriding readAsync()
-       * would not need to call this function, but to make sure all implementations which do not override readAsync()
-       * actually call it, the function call is enforced for all implementations in the destructor with an assert.
-       */
-      void shutdown() {
-        if(readAsyncThread.joinable()) {
-          readAsyncThread.interrupt();
-          readAsyncThread.join();
-        }
-        shutdownCalled = true;
-      }
-
       /** Get or set register accessor's buffer content (1D version).
        *  @attention No bounds checking is performed, use getNumberOfSamples() to obtain the number of elements in
        *  the register. */
@@ -156,30 +130,6 @@ namespace mtca4u {
         return ret || ret2;
       }
 
-      TransferFuture& readAsync() override {
-        ChimeraTK::ExperimentalFeatures::check("asynchronous read");
-        if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
-
-        preRead();
-        // create promise future pair and launch doReadTransfer in separate thread
-        readAsyncPromise = TransferFuture::PromiseType();
-        auto boostFuture = readAsyncPromise.get_future().share();
-        readAsyncThread = boost::thread(
-          [this] {
-            doReadTransfer();
-            // Do not call postRead() here. This thread is not allowed to touch the user space buffers.
-            // postRead() will be called in the user thread in TransferFuture::wait().
-            transferFutureData._versionNumber = VersionNumber();
-            readAsyncPromise.set_value(&transferFutureData);
-          }
-        );
-
-        // form TransferFuture, store it for later re-used and return it
-        activeFuture.reset(boostFuture, static_cast<TransferElement*>(this));
-        hasActiveFuture = true;
-        return activeFuture;
-      }
-
       /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
        *  \deprecated This function is deprecated, remove it at some point!
        *
@@ -217,19 +167,6 @@ namespace mtca4u {
       /// the compatibility layers need access to the buffer_2D
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
-
-      /// @todo Move default implementation of readAsync() out of this class and allow to pull it in specifically by implementations.
-      /// Thread which might be launched in readAsync() - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
-      boost::thread readAsyncThread;
-
-      /// Promise used in readAsync() - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
-      TransferFuture::PromiseType readAsyncPromise;
-
-      /// last future returned by default implementation of readAsync() - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
-      TransferFuture activeFuture;
-
-      /// Data transferred in the TransferFuture - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
-      TransferFuture::Data transferFutureData{{}};
 
   private:
 

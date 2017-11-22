@@ -4,7 +4,7 @@
 #include <sstream>
 #include <boost/shared_ptr.hpp>
 
-#include "NDRegisterAccessor.h"
+#include "SyncNDRegisterAccessor.h"
 #include "RegisterInfoMap.h"
 #include "FixedPointConverter.h"
 #include "NumericAddressedBackend.h"
@@ -22,7 +22,7 @@ namespace mtca4u {
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for multiplexd 2D registers
    */
   template <class UserType>
-  class NumericAddressedBackendMuxedRegisterAccessor : public NDRegisterAccessor<UserType> {
+  class NumericAddressedBackendMuxedRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
 
     public:
 
@@ -118,7 +118,7 @@ namespace mtca4u {
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
         const RegisterPath &registerPathName, size_t numberOfElements, size_t elementsOffset,
         boost::shared_ptr<DeviceBackend> _backend )
-  : NDRegisterAccessor<UserType>(registerPathName),
+  : SyncNDRegisterAccessor<UserType>(registerPathName),
     _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)),
     _registerPathName(registerPathName),
     _numberOfElements(numberOfElements),

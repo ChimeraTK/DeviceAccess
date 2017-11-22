@@ -24,8 +24,6 @@ namespace mtca4u {
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
         MultiplexedDataAccessor<UserType>::buffer_2D = accessor->buffer_2D;
       }
-      
-      virtual ~MultiplexedDataAccessor() { this->shutdown(); }
 
       /** \deprecated
        * Do not use, only for backwards compatibility.
@@ -74,9 +72,13 @@ namespace mtca4u {
       bool doReadTransferLatest() override {
         return accessor->readLatest();
       }
-      
+
       void postRead() override {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+      }
+
+      ChimeraTK::TransferFuture& readAsync() override {
+        return accessor->readAsync();
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,

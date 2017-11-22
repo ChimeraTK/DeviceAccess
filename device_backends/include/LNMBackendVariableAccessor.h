@@ -15,18 +15,19 @@
 #include "BufferingRegisterAccessor.h"
 #include "FixedPointConverter.h"
 #include "Device.h"
+#include "SyncNDRegisterAccessor.h"
 
 namespace mtca4u {
 
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  class LNMBackendVariableAccessor : public NDRegisterAccessor<UserType> {
+  class LNMBackendVariableAccessor : public SyncNDRegisterAccessor<UserType> {
     public:
 
       LNMBackendVariableAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : NDRegisterAccessor<UserType>(registerPathName),
+      : SyncNDRegisterAccessor<UserType>(registerPathName),
         _registerPathName(registerPathName),
         _fixedPointConverter(registerPathName, 32, 0, 1)
       {

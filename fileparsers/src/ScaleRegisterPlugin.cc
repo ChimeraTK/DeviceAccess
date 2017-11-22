@@ -34,18 +34,14 @@ namespace mtca4u {
           DynamicValue<double> scalingFactor)
       : NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()), _accessor(accessor), _scalingFactor(scalingFactor)
       {
-        try {
-          // reserve space for cooked buffer
-          NDRegisterAccessor<UserType>::buffer_2D.resize(_accessor->getNumberOfChannels());
-          NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
-        }
-        catch(...) {
-          this->shutdown();
-          throw;
-        }
+        // reserve space for cooked buffer
+        NDRegisterAccessor<UserType>::buffer_2D.resize(_accessor->getNumberOfChannels());
+        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
-      virtual ~ScaleRegisterPluginRegisterAccessor() { this->shutdown(); };
+      ChimeraTK::TransferFuture& readAsync() override {
+        return _accessor->readAsync();
+      }
 
       void postRead() override {
         // apply scaling factor while copying buffer from underlying accessor to our buffer
@@ -55,7 +51,7 @@ namespace mtca4u {
           }
         }
       }
-    
+
       void doReadTransfer() override {
         _accessor->read();
       }

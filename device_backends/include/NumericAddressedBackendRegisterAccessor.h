@@ -8,7 +8,7 @@
 #ifndef MTCA4U_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
 #define MTCA4U_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H
 
-#include "NDRegisterAccessor.h"
+#include "SyncNDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "FixedPointConverter.h"
 #include "ForwardDeclarations.h"
@@ -19,12 +19,12 @@ namespace mtca4u {
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
    */
   template<typename UserType>
-  class NumericAddressedBackendRegisterAccessor : public NDRegisterAccessor<UserType> {
+  class NumericAddressedBackendRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
     public:
 
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
-      : NDRegisterAccessor<UserType>(registerPathName),
+      : SyncNDRegisterAccessor<UserType>(registerPathName),
         _fixedPointConverter(registerPathName),
         isRaw(false),
         _registerPathName(registerPathName),
