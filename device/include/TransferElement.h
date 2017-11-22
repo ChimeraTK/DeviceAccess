@@ -379,9 +379,6 @@ namespace mtca4u {
        *  not yet obtained by the user e.g. through TransferFuture::wait(). */
       bool hasActiveFuture{false};
 
-      /** The currently "active" future, if hasActiveFuture == true */
-      TransferFuture activeFuture;
-
       friend class TransferGroup;
       friend class TransferFuture;
   };

@@ -111,7 +111,7 @@ namespace mtca4u {
               DeviceException::NOT_IMPLEMENTED);
         }
         if(hasActiveFuture) {
-          activeFuture.wait();
+          readAsync().wait();
           return;
         }
         preRead();
@@ -124,7 +124,7 @@ namespace mtca4u {
         // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
         // implementation.
         if(hasActiveFuture) {
-          if(activeFuture.hasNewData()) {
+          if(readAsync().hasNewData()) {
             return true;
           }
           else {
@@ -143,7 +143,7 @@ namespace mtca4u {
         // implementation.
         bool ret = false;
         if(hasActiveFuture) {
-          if(activeFuture.hasNewData()) {
+          if(readAsync().hasNewData()) {
             ret = true;
           }
           else {
@@ -218,13 +218,17 @@ namespace mtca4u {
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
 
-      /// Thread which might be launched in readAsync()
+      /// @todo Move default implementation of readAsync() out of this class and allow to pull it in specifically by implementations.
+      /// Thread which might be launched in readAsync() - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
       boost::thread readAsyncThread;
 
-      /// Promise used in readAsync()
+      /// Promise used in readAsync() - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
       TransferFuture::PromiseType readAsyncPromise;
 
-      /// Data transferred in the TransferFuture, used by the default implementation of readAsync()
+      /// last future returned by default implementation of readAsync() - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
+      TransferFuture activeFuture;
+
+      /// Data transferred in the TransferFuture - DO NOT USE OUTSIDE DEFAULT IMPLEMENTATION OF readAsync()!
       TransferFuture::Data transferFutureData{{}};
 
   private:
