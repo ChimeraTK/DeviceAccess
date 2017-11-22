@@ -33,9 +33,9 @@ namespace ChimeraTK {
 namespace mtca4u {
 
   class TransferGroup;
-  
+
   using ChimeraTK::TransferFuture;
-  
+
   /*******************************************************************************************************************/
 
   /** Base class for register accessors which can be part of a TransferGroup */
@@ -47,7 +47,7 @@ namespace mtca4u {
       TransferElement(std::string const &name = std::string(), std::string const &unit = std::string(unitNotSet),
                       std::string const &description = std::string())
       : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
-      
+
       /** Copy constructor: do not allow copying when in TransferGroup, remove asynchronous read state */
       TransferElement(const TransferElement &other)
       : boost::enable_shared_from_this<TransferElement>(),
@@ -61,10 +61,10 @@ namespace mtca4u {
               DeviceException::WRONG_PARAMETER);
         }
       }
-      
+
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
-      
+
       /**
        * Simple class holding a unique ID for a TransferElement. The ID is guaranteed to be unique for all accessors
        * throughout the lifetime of the process.
@@ -75,17 +75,17 @@ namespace mtca4u {
 
           /** Default constructor constructs an invalid ID, which may be assigned with another ID */
           ID() : _id(0) {}
-          
+
           /** Copy ID from another */
           ID(const ID& other) : _id(other._id) {}
 
           /** Compare ID with another. Will always return false, if the ID is invalid (i.e. setId() was never called). */
           bool operator==(const ID& other) const { return (_id != 0) && (_id == other._id); }
           bool operator!=(const ID& other) const { return !(operator==(other)); }
-          
+
           /** Assign ID from another. May only be called if currently no ID has been assigned. */
           ID& operator=(const ID& other) { _id = other._id; return *this; }
-          
+
           /** Streaming operator to stream the ID e.g. to std::cout */
           friend std::ostream& operator<<(std::ostream &os, const ID& me) {
             std::stringstream ss;
@@ -96,12 +96,12 @@ namespace mtca4u {
 
           /** Hash function for putting TransferElement::ID e.g. into an std::unordered_map */
           friend struct std::hash<ID>;
-          
+
           /** Comparison for putting TransferElement::ID e.g. into an std::map */
           friend struct std::less<ID>;
 
         protected:
-          
+
           /** Assign an ID to this instance. May only be called if currently no ID has been assigned. */
           void makeUnique() {
             static std::atomic<size_t> nextId{0};
@@ -110,10 +110,10 @@ namespace mtca4u {
             assert(nextId != 0);
             _id = nextId;
           }
-          
+
           /** The actual ID value */
           size_t _id;
-          
+
           friend class TransferElement;
       };
 
@@ -145,7 +145,7 @@ namespace mtca4u {
       virtual void read() = 0;
 
       /** Read the next value, if available in the input buffer.
-       * 
+       *
        *  If AccessMode::wait_for_new_data was set, this function returns immediately and the return value indicated
        *  if a new value was available (<code>true</code>) or not (<code>false</code>).
        *
@@ -154,17 +154,17 @@ namespace mtca4u {
        *  the current value before returning. Also this function is not guaranteed to be lock free. The return value
        *  will be always true in this mode. */
       virtual bool readNonBlocking() = 0;
-      
+
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
-       *  need to call read() or readNonBlocking() (which would trigger another data transfer). 
-       * 
+       *  need to call read() or readNonBlocking() (which would trigger another data transfer).
+       *
        *  It is allowed to call this function multiple times, which will return the same (shared) future until it
        *  is fulfilled. If other read functions (like read() or readNonBlocking()) are called before the future
        *  previously returned by this function was fulfilled, that call will be equivalent to the respective call
        *  on the future (i.e. TransferFuture::wait() resp. TransferFuture::hasNewData()) and thus the future will
        *  hae been used afterwards.
-       * 
+       *
        *  The future will be fulfilled at the time when normally read() would return. A call to this function is
        *  roughly logically equivalent to:
        *    boost::async( boost::bind(&TransferElemennt::read, this) );
@@ -179,7 +179,7 @@ namespace mtca4u {
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture& readAsync() = 0;
-      
+
       /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
        *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
        *  new value was available if AccessMode::wait_for_new_data is set. */
@@ -200,7 +200,7 @@ namespace mtca4u {
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
       * ChimeraTK::VersionNumber for details.
-      * 
+      *
       * The returned version number may be invalid (i.e. ChimeraTK::VersionNumber::isValid() returns false), if
       * AccessMode::wait_for_new_data as not been specified. If AccessMode::wait_for_new_data was specified, a valid
       * version number must be returned (either obtained from the ChimeraTK::VersionNumberSource or derived from an
@@ -232,14 +232,14 @@ namespace mtca4u {
       virtual bool doReadTransferLatest() = 0;
 
       /** Perform any pre-read tasks if necessary.
-       * 
+       *
        *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly
        *  on the underlying accessor. */
       virtual void preRead() {};
 
       /** Transfer the data from the device receive buffer into the user buffer, while converting the data into the
        *  user data format if needed.
-       * 
+       *
        *  Called by read() etc. Also the TransferGroup will call this function after a read was executed directly on
        *  the underlying accessor. This function must be implemented to extract the read data from the underlying
        *  accessor and expose it to the user. */
@@ -247,7 +247,7 @@ namespace mtca4u {
 
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
        *  user data format if needed.
-       *  
+       *
        *  Called by write(). Also the TransferGroup will call this function before a write will be executed directly
        *  on the underlying accessor. This function implemented be used to transfer the data to be written into the
        *  underlying accessor. */
@@ -256,12 +256,12 @@ namespace mtca4u {
       /** Perform any post-write cleanups if necessary. If during preWrite() e.g. the user data buffer was swapped
        *  away, it must be swapped back in this function so the just sent data is available again to the calling
        *  program.
-       *  
+       *
        *  Called by write(). Also the TransferGroup will call this function after a write was executed directly
        *  on the underlying accessor. */
       virtual void postWrite() {};
 
-      /** 
+      /**
        *  Check if the two TransferElements are identical, i.e. accessing the same hardware register. The definition of
        *  an "hardware register" is strongly depending on the backend implementation, thus using this function in
        *  application code will probably break the abstraction!
@@ -273,14 +273,14 @@ namespace mtca4u {
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
       virtual bool isReadOnly() const = 0;
 
-      /** Check if transfer element is readable. It throws an acception if you try to read and 
+      /** Check if transfer element is readable. It throws an acception if you try to read and
        *  isReadable() is not true.*/
       virtual bool isReadable() const = 0;
-      
-      /** Check if transfer element is writeable. It throws an acception if you try to write and 
+
+      /** Check if transfer element is writeable. It throws an acception if you try to write and
        *  isWriteable() is not true.*/
       virtual bool isWriteable() const = 0;
-      
+
       /** @brief Deprecated, do not use
        *  @deprecated The time stamp will be replaced with a unique counter.
        *  Only used for backward compatibility with the control system adapter. All implementations
@@ -301,16 +301,16 @@ namespace mtca4u {
         throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
       }
 
-      /** 
+      /**
        *  Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing
        *  a shared pointer of itself.
-       * 
+       *
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() = 0;
 
-      /** 
+      /**
        *  Obtain the highest level implementation TransferElement. For TransferElements which are itself an
        *  implementation this will directly return a shared pointer to this. If this TransferElement is a user
        *  frontend, the pointer to the internal implementation is returned.
@@ -321,7 +321,7 @@ namespace mtca4u {
         return shared_from_this();
       }
 
-      /** 
+      /**
        *  Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
        *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
        *  element matches the new element, this function has no effect.
@@ -333,16 +333,16 @@ namespace mtca4u {
       /** Constant string to be used as a unit when the unit is not provided or known */
       static constexpr char unitNotSet[] = "n./a.";
 
-      /** 
+      /**
       *  Associate a persistent data storage object to be updated on each write operation of this ProcessArray. If no
       *  persistent data storage as associated previously, the value from the persistent storage is read and send to
       *  the receiver.
-      * 
+      *
       *  Note: A call to this function will be ignored, if the TransferElement does not support persistent data
       *  storage (e.g. read-only variables or device registers) @todo TODO does this make sense?
       */
       virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {};
-      
+
       /**
        * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
        * function will return the unique ID of the actual implementation. This means that e.g. two instances of
@@ -363,10 +363,10 @@ namespace mtca4u {
 
       /** Description of this variable/register */
       std::string _description;
-      
+
       /** The ID of this TransferElement */
       ID _id;
-      
+
       /** Allow generating a unique ID from derived classes*/
       void makeUniqueId() {
         _id.makeUnique();
@@ -374,26 +374,26 @@ namespace mtca4u {
 
       /** Flag whether this TransferElement has been added to a TransferGroup or not */
       bool isInTransferGroup;
-      
+
       /** Flag whether there is an "active" TransferFuture which was given out by readAync() but its ready state was
        *  not yet obtained by the user e.g. through TransferFuture::wait(). */
       bool hasActiveFuture{false};
-      
+
       /** The currently "active" future, if hasActiveFuture == true */
       TransferFuture activeFuture;
-      
+
       friend class TransferGroup;
       friend class TransferFuture;
   };
 
-  /*******************************************************************************************************************/  
+  /*******************************************************************************************************************/
 
   // Note: the %iterator in the third line prevents doxygen from creating a link which it cannot resolve.
   // It reads: std::list<TransferFuture::PlainFutureType>::iterator
   /** Internal class needed for TransferElement::readAny(): Provide a wrapper around the list iterator to effectivly
    *  allow passing std::list<TransferFuture>::iterator to boost::wait_for_any() which otherwise expects e.g.
    *  std::list<TransferFuture::PlainFutureType>::%iterator. This class provides the same interface as an interator of
-   *  the expected type but adds the function getTransferFuture(), so we can obtain the TransferElement from the 
+   *  the expected type but adds the function getTransferFuture(), so we can obtain the TransferElement from the
    *  return value of boost::wait_for_any(). */
   class TransferFutureIterator {
     public:
@@ -408,7 +408,7 @@ namespace mtca4u {
     private:
       std::list<TransferFuture*>::iterator _it;
   };
-  
+
 } /* namespace mtca4u */
 namespace std {
   template<>
@@ -420,8 +420,8 @@ namespace std {
 } /* namespace std */
 namespace mtca4u {
 
-  /*******************************************************************************************************************/  
-  
+  /*******************************************************************************************************************/
+
   inline TransferElement::ID TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
     std::list<TransferFuture*> futureList;
     for(auto &elem : elementsToRead) {
@@ -446,7 +446,7 @@ namespace mtca4u {
         theUpdate = future;
       }
     }
-    
+
     // complete the transfer (i.e. run postRead())
     theUpdate->wait();
 
@@ -457,17 +457,17 @@ namespace mtca4u {
 } /* namespace mtca4u */
 namespace std {
 
-  /*******************************************************************************************************************/  
-  
+  /*******************************************************************************************************************/
+
   /** Hash function for putting TransferElement::ID e.g. into an std::unordered_map */
   template<>
   struct hash<mtca4u::TransferElement::ID> {
       std::size_t operator()(const mtca4u::TransferElement::ID &f) const {
           return std::hash<size_t>{}(f._id);
-      }  
+      }
   };
 
-  /*******************************************************************************************************************/  
+  /*******************************************************************************************************************/
 
   /** Comparison for putting TransferElement::ID e.g. into an std::map */
   template<>

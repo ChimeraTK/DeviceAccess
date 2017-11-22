@@ -17,7 +17,7 @@
 #include "ExperimentalFeatures.h"
 
 namespace mtca4u {
-  
+
   /** N-dimensional register accessor. Base class for all register accessor implementations. The user frontend classes
    *  BufferingRegisterAccessor and TwoDRegisterAccessor are using implementations based on this class to perform
    *  the actual IO. */
@@ -25,7 +25,7 @@ namespace mtca4u {
   class NDRegisterAccessor : public TransferElement {
 
     public:
-      /** Creates an NDRegisterAccessor with the specified name (passed on to the 
+      /** Creates an NDRegisterAccessor with the specified name (passed on to the
        *  transfer element). */
       NDRegisterAccessor(std::string const &name,
                          std::string const &unit = std::string(TransferElement::unitNotSet),
@@ -34,24 +34,24 @@ namespace mtca4u {
       {
         TransferElement::makeUniqueId();
       }
-      
+
       /** Copying and moving is not allowed */
       NDRegisterAccessor(const NDRegisterAccessor &other) = delete;
       NDRegisterAccessor(NDRegisterAccessor &&other) = delete;
       NDRegisterAccessor& operator=(const NDRegisterAccessor &other) = delete;
       NDRegisterAccessor& operator=(NDRegisterAccessor &&other) = delete;
-        
+
       /** A virtual base class needs a virtual destructor */
       virtual ~NDRegisterAccessor() {
         // This is a requirement to all implementations: call shutdown() in the destructor!
         assert(shutdownCalled);
       }
-      
+
       /**
        * All implementations must call this function in their destructor. Also, implementations must call it in their
        * constructors before throwing an exception (hint: put catch-all block around the entired constructor, call
        * shutdown() there and then rethrow the exception).
-       * 
+       *
        * Implementation note: This function call is necessary to ensure that a potentially still-running thread
        * launched in readAsync() is properly terminated before destroying the accessor object. Since this thread
        * accesses virtual functions like doReadTransfer(), the full accessor object must still be alive, thus shutting
@@ -136,7 +136,7 @@ namespace mtca4u {
         if(ret) postRead();     // must only be called if new data was read
         return ret;
       }
-      
+
       bool readLatest() final {
         // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
         // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
@@ -159,7 +159,7 @@ namespace mtca4u {
       TransferFuture& readAsync() override {
         ChimeraTK::ExperimentalFeatures::check("asynchronous read");
         if(hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
-        
+
         preRead();
         // create promise future pair and launch doReadTransfer in separate thread
         readAsyncPromise = TransferFuture::PromiseType();
@@ -173,7 +173,7 @@ namespace mtca4u {
             readAsyncPromise.set_value(&transferFutureData);
           }
         );
-        
+
         // form TransferFuture, store it for later re-used and return it
         activeFuture.reset(boostFuture, static_cast<TransferElement*>(this));
         hasActiveFuture = true;
@@ -182,10 +182,10 @@ namespace mtca4u {
 
       /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
        *  \deprecated This function is deprecated, remove it at some point!
-       * 
+       *
        *  This function was deprecated since it cannot be implemented for lockfree implementations (like the
        *  ControlSystemAdapter's ProcessVariable).
-       *  
+       *
        *  Return number of waiting data elements in the queue (or buffer). Use when the accessor was obtained with
        *  AccessMode::wait_for_new_data to obtain the amount of data waiting for retrieval in this accessor. If the
        *  returned value is 0, the call to read() will block until new data has arrived. If the returned value is > 0,
@@ -217,18 +217,18 @@ namespace mtca4u {
       /// the compatibility layers need access to the buffer_2D
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
-      
+
       /// Thread which might be launched in readAsync()
       boost::thread readAsyncThread;
-      
+
       /// Promise used in readAsync()
       TransferFuture::PromiseType readAsyncPromise;
-      
+
       /// Data transferred in the TransferFuture, used by the default implementation of readAsync()
       TransferFuture::Data transferFutureData{{}};
-      
+
   private:
-    
+
       /// Flag whether shutdown() has been called or not
       bool shutdownCalled{false};
 
