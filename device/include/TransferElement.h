@@ -155,6 +155,11 @@ namespace mtca4u {
        *  will be always true in this mode. */
       virtual bool readNonBlocking() = 0;
 
+      /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
+       *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
+       *  new value was available if AccessMode::wait_for_new_data is set. */
+      virtual bool readLatest() = 0;
+
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
        *  need to call read() or readNonBlocking() (which would trigger another data transfer).
@@ -178,10 +183,10 @@ namespace mtca4u {
        *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture readAsync() = 0;
 
-      /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
-       *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
-       *  new value was available if AccessMode::wait_for_new_data is set. */
-      virtual bool readLatest() = 0;
+      /** Check whether there is an ongoing active asynchronous transfer. An asynchronous transfer is considered
+       *  active from the call to readAsync() until wait() has been called on the future (directly or indirectly
+       *  by successfully calling another read function on the TransferElement). */
+      virtual bool asyncTransferActive() = 0;
 
       /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
        *  new data. The ID of the TransferElement which received new data is returned as a reference. In case multiple
@@ -206,6 +211,17 @@ namespace mtca4u {
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
        *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
       virtual bool write(ChimeraTK::VersionNumber versionNumber={}) = 0;
+
+      /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
+      virtual bool isReadOnly() const = 0;
+
+      /** Check if transfer element is readable. It throws an acception if you try to read and
+       *  isReadable() is not true.*/
+      virtual bool isReadable() const = 0;
+
+      /** Check if transfer element is writeable. It throws an acception if you try to write and
+       *  isWriteable() is not true.*/
+      virtual bool isWriteable() const = 0;
 
       /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
        *  function followed by postRead() is exactly equivalent to a call to just read().
@@ -261,6 +277,10 @@ namespace mtca4u {
        *  on the underlying accessor. */
       virtual void postWrite() {};
 
+      /** Clear the flag that there is an ongoing asynchronous transfer. This function will be called by
+       *  TransferFuture::wait() and must be passed on in decorators. Do not otherwise use this function! */
+      virtual void clearAsyncTransferActive() = 0;
+
       /**
        *  Check if the two TransferElements are identical, i.e. accessing the same hardware register. The definition of
        *  an "hardware register" is strongly depending on the backend implementation, thus using this function in
@@ -269,17 +289,6 @@ namespace mtca4u {
        *  @todo Rename this function to something more appropriate (e.g. mayJoinTransfer?)
        */
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
-
-      /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
-      virtual bool isReadOnly() const = 0;
-
-      /** Check if transfer element is readable. It throws an acception if you try to read and
-       *  isReadable() is not true.*/
-      virtual bool isReadable() const = 0;
-
-      /** Check if transfer element is writeable. It throws an acception if you try to write and
-       *  isWriteable() is not true.*/
-      virtual bool isWriteable() const = 0;
 
       /** @brief Deprecated, do not use
        *  @deprecated The time stamp will be replaced with a unique counter.
@@ -374,10 +383,6 @@ namespace mtca4u {
 
       /** Flag whether this TransferElement has been added to a TransferGroup or not */
       bool isInTransferGroup;
-
-      /** Flag whether there is an "active" TransferFuture which was given out by readAync() but its ready state was
-       *  not yet obtained by the user e.g. through TransferFuture::wait(). */
-      bool hasActiveFuture{false};
 
       friend class TransferGroup;
       friend class TransferFuture;

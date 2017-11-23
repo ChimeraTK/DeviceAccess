@@ -1,5 +1,5 @@
 /*
- * NDRegisterAccessor.h - N-dimensional register acceesor
+ * NDRegisterAccessor.h - N-dimensional register accessor
  *
  *  Created on: Mar 21, 2016
  *      Author: Martin Hierholzer
@@ -84,7 +84,7 @@ namespace mtca4u {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);
         }
-        if(hasActiveFuture) {
+        if(this->asyncTransferActive()) {
           readAsync().wait();
           return;
         }
@@ -97,7 +97,7 @@ namespace mtca4u {
         // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
         // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
         // implementation.
-        if(hasActiveFuture) {
+        if(this->asyncTransferActive()) {
           if(readAsync().hasNewData()) {
             readAsync().wait();
             return true;
@@ -117,7 +117,7 @@ namespace mtca4u {
         // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
         // implementation.
         bool ret = false;
-        if(hasActiveFuture) {
+        if(this->asyncTransferActive()) {
           if(readAsync().hasNewData()) {
             readAsync().wait();
             ret = true;
@@ -169,11 +169,6 @@ namespace mtca4u {
       /// the compatibility layers need access to the buffer_2D
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
-
-    private:
-
-      /// Flag whether shutdown() has been called or not
-      bool shutdownCalled{false};
 
   };
 

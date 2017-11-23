@@ -58,7 +58,7 @@ namespace mtca4u {
 
       TransferFuture readAsync() final {
         ChimeraTK::ExperimentalFeatures::check("asynchronous read");
-        if(TransferElement::hasActiveFuture) {
+        if(hasActiveFuture) {
           return activeFuture;  // the last future given out by this fuction is still active
         }
 
@@ -78,18 +78,25 @@ namespace mtca4u {
 
         // form TransferFuture, store it for later re-used and return it
         activeFuture = TransferFuture(boostFuture, this);
-        TransferElement::hasActiveFuture = true;
+        hasActiveFuture = true;
         return activeFuture;
       }
 
-      void postRead() override {
-        TransferElement::hasActiveFuture = false;
+      void clearAsyncTransferActive() override {
+        hasActiveFuture = false;
+      }
+
+      bool asyncTransferActive() override {
+        return hasActiveFuture;
       }
 
     private:
 
       /// Thread which might be launched in readAsync()
       boost::thread readAsyncThread;
+
+      /// Flag whether there is a valid activeFuture or not
+      bool hasActiveFuture{false};
 
       /// Promise used in readAsync()
       TransferFuture::PromiseType readAsyncPromise;

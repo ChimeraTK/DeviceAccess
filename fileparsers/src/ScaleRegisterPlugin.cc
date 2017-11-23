@@ -7,7 +7,7 @@
 
 #include "RegisterPluginFactory.h"
 #include "ScaleRegisterPlugin.h"
-#include "RegisterAccessor.h"
+#include "NDRegisterAccessorDecorator.h"
 
 namespace mtca4u {
 
@@ -26,100 +26,43 @@ namespace mtca4u {
 
   /** The register accessor used by the ScaleRegisterPlugin */
   template<typename UserType>
-  class ScaleRegisterPluginRegisterAccessor : public NDRegisterAccessor<UserType> {
+  class ScaleRegisterPluginRegisterAccessor : public NDRegisterAccessorDecorator<UserType> {
     public:
 
       /** The constructor takes the original accessor and the scaling factor as arguments */
       ScaleRegisterPluginRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > accessor,
           DynamicValue<double> scalingFactor)
-      : NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()), _accessor(accessor), _scalingFactor(scalingFactor)
-      {
-        // reserve space for cooked buffer
-        NDRegisterAccessor<UserType>::buffer_2D.resize(_accessor->getNumberOfChannels());
-        NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
-      }
-
-      ChimeraTK::TransferFuture readAsync() override {
-        return TransferFuture(_accessor->readAsync(), this);
-      }
+      : NDRegisterAccessorDecorator<UserType>(accessor), _scalingFactor(scalingFactor)
+      {}
 
       void postRead() override {
+        std::cout << "HIER postRead" << std::endl;
+        _target->postRead();
         // apply scaling factor while copying buffer from underlying accessor to our buffer
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
-            NDRegisterAccessor<UserType>::buffer_2D[i][k] = _accessor->accessData(i,k) * _scalingFactor;
+            NDRegisterAccessor<UserType>::buffer_2D[i][k] = _target->accessData(i,k) * _scalingFactor;
           }
         }
-      }
-
-      void doReadTransfer() override {
-        _accessor->read();
-      }
-
-      bool doReadTransferNonBlocking() override {
-	return _accessor->readNonBlocking();
-      }
-
-      bool doReadTransferLatest() override {
-        doReadTransfer();
-        return true;
       }
 
       void preWrite() override {
+        std::cout << "HIER preWrite" << std::endl;
         // apply scaling factor while copying buffer from our buffer to underlying accessor
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
-            _accessor->accessData(i,k) = NDRegisterAccessor<UserType>::buffer_2D[i][k] / _scalingFactor;
+            _target->accessData(i,k) = NDRegisterAccessor<UserType>::buffer_2D[i][k] / _scalingFactor;
           }
         }
-      }
-
-      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-        preWrite();
-        return _accessor->write(versionNumber);
-      }
-
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
-        auto rhsCasted = boost::dynamic_pointer_cast< const ScaleRegisterPluginRegisterAccessor<UserType> >(other);
-        if(!rhsCasted) return false;
-        if(_accessor != rhsCasted->_accessor) return false;
-        if(_scalingFactor != rhsCasted->_scalingFactor) return false;
-        return true;
-      }
-
-      bool isReadOnly() const override {
-        return _accessor->isReadOnly();
-      }
-
-      bool isReadable() const override {
-        return true;
-      }
-
-      bool isWriteable() const override {
-        return true;
-      }
-
-      FixedPointConverter getFixedPointConverter() const override {
-        return _accessor->getFixedPointConverter();
+        _target->preWrite();
       }
 
     protected:
 
-      /** The underlying register accessor */
-      boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor;
-
       /** The scaling factor */
       DynamicValue<double> _scalingFactor;
 
-      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
-        return _accessor->getHardwareAccessingElements();
-      }
-
-      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-        if(_accessor->isSameRegister(newElement)) {
-          _accessor = boost::static_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
-        }
-      }
+      using NDRegisterAccessorDecorator<UserType>::_target;
 
   };
 
@@ -165,7 +108,7 @@ namespace mtca4u {
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {
         NDRegisterAccessor<std::string>::buffer_2D[i][k] =
-            std::to_string(std::stod(_accessor->accessData(i,k)) * _scalingFactor);
+            std::to_string(std::stod(_target->accessData(i,k)) * _scalingFactor);
       }
     }
   }
@@ -177,7 +120,7 @@ namespace mtca4u {
     // apply scaling factor while copying buffer from our buffer to underlying accessor
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {
-        _accessor->accessData(i,k) =
+        _target->accessData(i,k) =
             std::to_string(std::stod(NDRegisterAccessor<std::string>::buffer_2D[i][k]) / _scalingFactor);
       }
     }

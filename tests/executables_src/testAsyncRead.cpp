@@ -10,6 +10,7 @@
 #include "DummyBackend.h"
 #include "DeviceAccessVersion.h"
 #include "ExperimentalFeatures.h"
+#include "NDRegisterAccessorDecorator.h"
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
@@ -46,97 +47,6 @@ class AsyncDefaultImplTestDummy : public DummyBackend {
 
 /**********************************************************************************************************************/
 
-template<typename UserType>
-class AsyncAccessorDecorator : public NDRegisterAccessor<UserType> {
-  public:
-    AsyncAccessorDecorator(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> accessor)
-    : mtca4u::NDRegisterAccessor<UserType>(accessor->getName(), accessor->getUnit(), accessor->getDescription()),
-      _accessor(accessor)
-    {
-
-      // set ID to match the decorated accessor
-      this->_id = _accessor->getId();
-
-      // initialise buffers
-      buffer_2D.resize(_accessor->getNumberOfChannels());
-      for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i] = _accessor->accessChannel(i);
-    }
-
-    bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-      return _accessor->write(versionNumber);
-    }
-
-    void doReadTransfer() override {
-      _accessor->doReadTransfer();
-    }
-
-    bool doReadTransferNonBlocking() override {
-      return _accessor->doReadTransferNonBlocking();
-    }
-
-    bool doReadTransferLatest() override {
-      return _accessor->doReadTransferLatest();
-    }
-
-    TransferFuture readAsync() override {
-      TransferElement::hasActiveFuture = true;
-      return TransferFuture(_accessor->readAsync(), this);
-    }
-
-    void postRead() override {
-      _accessor->postRead();
-      for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
-      TransferElement::hasActiveFuture = false;
-    }
-
-    void preWrite() override {
-      for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
-      _accessor->preWrite();
-    }
-
-    void postWrite() override {
-      _accessor->postWrite();
-      for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
-    }
-
-    bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
-      return _accessor->isSameRegister(other);
-    }
-
-    bool isReadOnly() const override {
-      return _accessor->isReadOnly();
-    }
-
-    bool isReadable() const override {
-      return _accessor->isReadable();
-    }
-
-    bool isWriteable() const override {
-      return _accessor->isWriteable();
-    }
-
-    std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
-      return _accessor->getHardwareAccessingElements();
-    }
-
-    void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement> newElement) override {
-      _accessor->replaceTransferElement(newElement);
-    }
-
-    void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override {
-      _accessor->setPersistentDataStorage(storage);
-    }
-
-  protected:
-
-    using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
-
-    boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _accessor;
-
-};
-
-/**********************************************************************************************************************/
-
 class AsyncTestDummy : public AsyncDefaultImplTestDummy {
   public:
     AsyncTestDummy(std::string mapFileName) : AsyncDefaultImplTestDummy(mapFileName) {
@@ -154,7 +64,7 @@ class AsyncTestDummy : public AsyncDefaultImplTestDummy {
       auto acc = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(registerPathName, wordOffsetInRegister,
                                                                              numberOfWords, flags);
 
-      return boost::make_shared<AsyncAccessorDecorator<UserType>>(acc);
+      return boost::make_shared<mtca4u::NDRegisterAccessorDecorator<UserType>>(acc);
     }
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( AsyncTestDummy, getRegisterAccessor_impl, 4 );
 

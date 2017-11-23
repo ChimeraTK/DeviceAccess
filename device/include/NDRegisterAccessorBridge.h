@@ -86,6 +86,10 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->readAsync();
       }
 
+      bool asyncTransferActive() override {
+        return NDRegisterAccessorBridge<UserType>::_impl->asyncTransferActive();
+      }
+
       ChimeraTK::VersionNumber getVersionNumber() const override {
         return NDRegisterAccessorBridge<UserType>::_impl->getVersionNumber();
       }
@@ -131,6 +135,14 @@ namespace mtca4u {
 
       const std::type_info& getValueType() const override {
         return typeid(UserType);
+      }
+
+      void clearAsyncTransferActive() override {
+        throw std::logic_error("NDRegisterAccessorBridge::clearAsyncTransferActive(): Users should never call this function!");
+      }
+
+      void transferFutureWaitCallback() override {
+        throw std::logic_error("NDRegisterAccessorBridge::clearAsyncTransferActive(): Users should never call this function!");
       }
 
     protected:

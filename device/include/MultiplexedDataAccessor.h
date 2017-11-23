@@ -78,7 +78,15 @@ namespace mtca4u {
       }
 
       ChimeraTK::TransferFuture readAsync() override {
-        return ChimeraTK::TransferFuture(accessor->readAsync(), this);
+        throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
+      }
+
+      bool asyncTransferActive() override {
+        return false;
+      }
+
+      void clearAsyncTransferActive() override {
+        throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,
