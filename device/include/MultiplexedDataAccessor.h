@@ -77,8 +77,8 @@ namespace mtca4u {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
-      ChimeraTK::TransferFuture& readAsync() override {
-        return accessor->readAsync();
+      ChimeraTK::TransferFuture readAsync() override {
+        return ChimeraTK::TransferFuture(accessor->readAsync(), this);
       }
 
       /** Multiplex the data from the sequence buffer into the hardware IO buffer,

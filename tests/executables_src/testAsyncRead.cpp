@@ -46,41 +46,6 @@ class AsyncDefaultImplTestDummy : public DummyBackend {
 
 /**********************************************************************************************************************/
 
-
-template<typename UserType>
-class AsyncAccessorDecorator;
-
-template<typename UserType>
-class DecoratorTransferFuture : public TransferFuture {
-  public:
-
-    DecoratorTransferFuture() : _originalFuture{nullptr}, _accessor{nullptr} {}
-
-    void wait() override {
-      _originalFuture->wait();
-      _accessor->postRead();
-      _accessor->hasActiveFuture = false;
-    }
-
-    void reset(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement) = delete;
-
-    void reset(TransferFuture &originalFuture, AsyncAccessorDecorator<UserType> *accessor) {
-      _originalFuture = &originalFuture;
-      _accessor = accessor;
-      TransferFuture::_theFuture = _originalFuture->getBoostFuture();
-      TransferFuture::_transferElement = accessor;
-    }
-
-  protected:
-
-    // plain pointers are ok, since this class is non-copyable and always owned by the AsyncAccessorDecorator
-    // (which also holds a shared pointer on the actual accessor, which in turn owns the originalFuture).
-    TransferFuture *_originalFuture;
-    AsyncAccessorDecorator<UserType> *_accessor;
-};
-
-/**********************************************************************************************************************/
-
 template<typename UserType>
 class AsyncAccessorDecorator : public NDRegisterAccessor<UserType> {
   public:
@@ -113,26 +78,24 @@ class AsyncAccessorDecorator : public NDRegisterAccessor<UserType> {
       return _accessor->doReadTransferLatest();
     }
 
-    TransferFuture& readAsync() override {
-      if(TransferElement::hasActiveFuture) {
-        return activeDecoratorFuture;
-      }
-      auto &future = _accessor->readAsync();
+    TransferFuture readAsync() override {
       TransferElement::hasActiveFuture = true;
-      activeDecoratorFuture.reset(future, this);
-      return activeDecoratorFuture;
+      return TransferFuture(_accessor->readAsync(), this);
     }
 
     void postRead() override {
-      if(!TransferElement::hasActiveFuture) _accessor->postRead();
+      _accessor->postRead();
       for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
+      TransferElement::hasActiveFuture = false;
     }
 
     void preWrite() override {
       for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
+      _accessor->preWrite();
     }
 
     void postWrite() override {
+      _accessor->postWrite();
       for(size_t i=0; i<_accessor->getNumberOfChannels(); ++i) buffer_2D[i].swap(_accessor->accessChannel(i));
     }
 
@@ -169,10 +132,6 @@ class AsyncAccessorDecorator : public NDRegisterAccessor<UserType> {
     using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
 
     boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _accessor;
-
-    friend class DecoratorTransferFuture<UserType>;
-
-    DecoratorTransferFuture<UserType> activeDecoratorFuture;
 
 };
 
@@ -245,9 +204,9 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 
 /**********************************************************************************************************************/
 void AsyncReadTest::testAsyncRead() {
-  std::cout << "testAsyncRead" << std::endl;
 
   for(auto &sdmToUse : sdmList) {
+    std::cout << "testAsyncRead: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
@@ -264,20 +223,25 @@ void AsyncReadTest::testAsyncRead() {
     backend->readMutex[0x08].unlock();
 
     // simple reading through readAsync without actual need
-    TransferFuture *future;
+    TransferFuture future;
     dummy = 5;
-    future = &(accessor.readAsync());
-    future->wait();
+    future = accessor.readAsync();
+    future.wait();
     BOOST_CHECK( accessor == 5 );
+
+    dummy = 6;
+    TransferFuture future2 = accessor.readAsync();
+    future2.wait();
+    BOOST_CHECK( accessor == 6 );
 
     // check that future's wait() function won't return before the read is complete
     for(int i=0; i<5; ++i) {
       dummy = 42+i;
       backend->readMutex[0x08].lock();
-      future = &(accessor.readAsync());
+      future = accessor.readAsync();
       std::atomic<bool> flag;
       flag = false;
-      std::thread thread([&future, &flag] { future->wait(); flag = true; });
+      std::thread thread([&future, &flag] { future.wait(); flag = true; });
       usleep(100000);
       BOOST_CHECK(flag == false);
       backend->readMutex[0x08].unlock();
@@ -289,20 +253,20 @@ void AsyncReadTest::testAsyncRead() {
     backend->readMutex[0x08].lock();
     dummy = 666;
     for(int i=0; i<5; ++i) {
-      future = &(accessor.readAsync());
+      future = accessor.readAsync();
       BOOST_CHECK( accessor == 46 );    // still the old value from the last test part
     }
     backend->readMutex[0x08].unlock();
-    future->wait();
+    future.wait();
     BOOST_CHECK( accessor == 666 );
 
     // now try another asynchronous transfer
     dummy = 999;
     backend->readMutex[0x08].lock();
-    future = &(accessor.readAsync());
+    future = accessor.readAsync();
     std::atomic<bool> flag;
     flag = false;
-    std::thread thread([&future, &flag] { future->wait(); flag = true; });
+    std::thread thread([&future, &flag] { future.wait(); flag = true; });
     usleep(100000);
     BOOST_CHECK(flag == false);
     backend->readMutex[0x08].unlock();
@@ -318,9 +282,9 @@ void AsyncReadTest::testAsyncRead() {
 /**********************************************************************************************************************/
 
 void AsyncReadTest::testReadAny() {
-  std::cout << "testReadAny" << std::endl;
 
   for(auto &sdmToUse : sdmList) {
+    std::cout << "testReadAny: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
@@ -484,24 +448,26 @@ void AsyncReadTest::testReadAny() {
       // so postRead() is not yet called.
       dummy1 = 55;
       backend->readMutex[0x10].unlock();
-      TransferFuture &f1 = a1.readAsync();
+      TransferFuture f1 = a1.readAsync();
       f1.getBoostFuture().wait();
       backend->readMutex[0x10].lock();
 
       // same with register 2
       dummy2 = 66;
       backend->readMutex[0x14].unlock();
-      TransferFuture &f2 = a2.readAsync();
+      TransferFuture f2 = a2.readAsync();
       f2.getBoostFuture().wait();
       backend->readMutex[0x14].lock();
       f1.getBoostFuture().wait();
       f2.getBoostFuture().wait();
+      BOOST_CHECK_EQUAL((int)a1, 42);
+      BOOST_CHECK_EQUAL((int)a2, 123);
 
       // no point to use a thread here
       auto r = TransferElement::readAny({a1,a2,a3,a4});
       BOOST_CHECK(a1.getId() == r);
-      BOOST_CHECK(a1 == 55);
-      BOOST_CHECK(a2 == 123);
+      BOOST_CHECK_EQUAL((int)a1, 55);
+      BOOST_CHECK_EQUAL((int)a2, 123);
 
       r = TransferElement::readAny({a1,a2,a3,a4});
       BOOST_CHECK(a2.getId() == r);
@@ -514,28 +480,28 @@ void AsyncReadTest::testReadAny() {
       // register 4 (see above for explanation)
       dummy4 = 11;
       backend->readMutex[0x24].unlock();
-      TransferFuture &f4 = a4.readAsync();
+      TransferFuture f4 = a4.readAsync();
       f4.getBoostFuture().wait();
       backend->readMutex[0x24].lock();
 
       // register 2
       dummy2 = 22;
       backend->readMutex[0x14].unlock();
-      TransferFuture &f2 = a2.readAsync();
+      TransferFuture f2 = a2.readAsync();
       f2.getBoostFuture().wait();
       backend->readMutex[0x14].lock();
 
       // register 3
       dummy3 = 33;
       backend->readMutex[0x20].unlock();
-      TransferFuture &f3 = a3.readAsync();
+      TransferFuture f3 = a3.readAsync();
       f3.getBoostFuture().wait();
       backend->readMutex[0x20].lock();
 
       // register 1
       dummy1 = 44;
       backend->readMutex[0x10].unlock();
-      TransferFuture &f1 = a1.readAsync();
+      TransferFuture f1 = a1.readAsync();
       f1.getBoostFuture().wait();
       backend->readMutex[0x10].lock();
 
@@ -576,9 +542,9 @@ void AsyncReadTest::testReadAny() {
 
 /**********************************************************************************************************************/
 void AsyncReadTest::testMixing() {
-  std::cout << "testMixing" << std::endl;
 
   for(auto &sdmToUse : sdmList) {
+    std::cout << "testMixing: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
@@ -595,44 +561,44 @@ void AsyncReadTest::testMixing() {
     backend->readMutex[0x08].unlock();
 
     // start reading with readAsync but do not wait on the future - then perform normal read()
-    TransferFuture *future;
+    TransferFuture future;
     dummy = 5;
-    future = &(accessor.readAsync());
-    future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
-    BOOST_CHECK( accessor == 0 );
+    future = accessor.readAsync();
+    future.getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+    BOOST_CHECK_EQUAL( (int)accessor, 0 );
     dummy = 6;
     accessor.read();
-    BOOST_CHECK( accessor == 5 );
+    BOOST_CHECK_EQUAL( (int)accessor, 5 );
     accessor.read();
-    BOOST_CHECK( accessor == 6 );
+    BOOST_CHECK_EQUAL( (int)accessor, 6 );
 
     // start reading with readAsync but do not wait on the future - then perform normal readNonBlocking()
     dummy = 8;
-    future = &(accessor.readAsync());
-    future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
-    BOOST_CHECK( accessor == 6 );
+    future = accessor.readAsync();
+    future.getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+    BOOST_CHECK_EQUAL( (int)accessor, 6 );
     dummy = 9;
     BOOST_CHECK( accessor.readNonBlocking() == true );
-    BOOST_CHECK( accessor == 8 );
+    BOOST_CHECK_EQUAL( (int)accessor, 8 );
     BOOST_CHECK( accessor.readNonBlocking() == true );
-    BOOST_CHECK( accessor == 9 );
+    BOOST_CHECK_EQUAL( (int)accessor, 9 );
 
     // start reading with readAsync but do not wait on the future - then perform normal readLatest()
     dummy = 10;
-    future = &(accessor.readAsync());
-    future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
-    BOOST_CHECK( accessor == 9 );
+    future = accessor.readAsync();
+    future.getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+    BOOST_CHECK_EQUAL( (int)accessor, 9 );
     BOOST_CHECK( accessor.readLatest() == true );
-    BOOST_CHECK( accessor == 10 );
+    BOOST_CHECK_EQUAL( (int)accessor, 10 );
 
     // start reading with readAsync but do not wait on the future - then perform normal readLatest()
     dummy = 11;
-    future = &(accessor.readAsync());
-    future->getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
-    BOOST_CHECK( accessor == 10 );
+    future = accessor.readAsync();
+    future.getBoostFuture().wait();     // this makes sure the actual read is finished but does not affect DeviceAccess in any way
+    BOOST_CHECK_EQUAL( (int)accessor, 10 );
     dummy = 12;
     BOOST_CHECK( accessor.readLatest() == true );
-    BOOST_CHECK( accessor == 12 );
+    BOOST_CHECK_EQUAL( (int)accessor, 12 );
 
     device.close();
   }

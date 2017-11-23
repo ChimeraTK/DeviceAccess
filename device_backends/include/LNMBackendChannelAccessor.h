@@ -88,6 +88,7 @@ namespace mtca4u {
 
       void postRead() override {
         _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
+        SyncNDRegisterAccessor<UserType>::postRead();
       };
 
       bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {

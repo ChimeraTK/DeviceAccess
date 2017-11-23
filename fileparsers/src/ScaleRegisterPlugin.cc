@@ -39,8 +39,8 @@ namespace mtca4u {
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
       }
 
-      ChimeraTK::TransferFuture& readAsync() override {
-        return _accessor->readAsync();
+      ChimeraTK::TransferFuture readAsync() override {
+        return TransferFuture(_accessor->readAsync(), this);
       }
 
       void postRead() override {

@@ -131,6 +131,7 @@ namespace mtca4u {
 
       void postRead() override {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
+        SyncNDRegisterAccessor<UserType>::postRead();
       }
 
       void preWrite() override {

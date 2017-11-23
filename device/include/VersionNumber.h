@@ -13,16 +13,14 @@ namespace ChimeraTK {
    * Version numbers are used to resolve competing updates that are applied to the same process variable. For example,
    * it they can help in breaking an infinite update loop that might occur when two process variables are related and
    * update each other.
-   * 
+   *
    * They are also used to determine the order of updates made to different process variables, e.g. to make sure that
    * TransferElement::readAny() always returns the oldest change first.
-   * 
-   *  @todo add unit test!
    */
   class VersionNumber {
-    
+
     public:
-      
+
       /** Default constructor: Generate new unique version number */
       VersionNumber() : _value(nextVersionNumber()) {}
 
@@ -34,7 +32,7 @@ namespace ChimeraTK {
         _value = other._value;
         return *this;
       }
-      
+
       /** Comparison operators */
       bool operator==(const VersionNumber &other) {
         return _value == other._value;
@@ -54,7 +52,7 @@ namespace ChimeraTK {
       bool operator<=(const VersionNumber &other) {
         return _value <= other._value;
       }
-      
+
       /** Conversion into a human readable std::string to allow e.g. printing the version number on screen. Do not try
        *  to parse the string in any way, the exact format is unspecified. */
       operator std::string() const {
@@ -62,7 +60,7 @@ namespace ChimeraTK {
       }
 
     private:
-    
+
       /**
        * The version number held by this instance
        */

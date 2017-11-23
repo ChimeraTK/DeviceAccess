@@ -56,9 +56,11 @@ namespace mtca4u {
         shutdownCalled = true;
       }
 
-      TransferFuture& readAsync() final {
+      TransferFuture readAsync() final {
         ChimeraTK::ExperimentalFeatures::check("asynchronous read");
-        if(TransferElement::hasActiveFuture) return activeFuture;  // the last future given out by this fuction is still active
+        if(TransferElement::hasActiveFuture) {
+          return activeFuture;  // the last future given out by this fuction is still active
+        }
 
         this->preRead();
         // create promise future pair and launch doReadTransfer in separate thread
@@ -75,9 +77,13 @@ namespace mtca4u {
         );
 
         // form TransferFuture, store it for later re-used and return it
-        activeFuture.reset(boostFuture, static_cast<TransferElement*>(this));
+        activeFuture = TransferFuture(boostFuture, this);
         TransferElement::hasActiveFuture = true;
         return activeFuture;
+      }
+
+      void postRead() override {
+        TransferElement::hasActiveFuture = false;
       }
 
     private:

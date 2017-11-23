@@ -35,22 +35,22 @@ namespace ChimeraTK {
   /**
    * Special future returned by TransferElement::readAsync(). See its function description for more details.
    *
-   * Due due a bug in BOOST 1.58 (already fixed in later versions, but we need to support this version), it is not
-   * possible to achieve this behaviour with a continuation with a launch policy of boost::launch::deferred, so we have
-   * to live with this wrapper class.
-   *
-   * Important note: It is strongly recommended to only use those member functions which are present also in
-   * boost::shared_future<void> and use the "auto" keyword for the type where possible. This would simplify a possible
-   * transition to boost::shared_future<void> when support for the buggy BOOST version is no longer required.
-   *
-   * @todo can we make all other functions private?
-   *
-   * Design note: Implementations must be able to override TransferFuture::wait(), because a different scheme for
-   * blocking might be required. An example is the TestDecoratorRegisterAccessor in ApplicationCore, which has to
-   * implment a special logic for each blocking call including the call to wait().
+   * Design note: Due due a bug in BOOST 1.58 (already fixed in later versions, but we need to support this version),
+   * it is not possible to achieve this behaviour with a continuation with a launch policy of boost::launch::deferred,
+   * so we have to live with this wrapper class. In addition, the wait callback function of boost::future would be an
+   * insufficient replacement for the callback mechanism in this TransferFuture, since we need to distinguish whether
+   * the wait will block or not.
    */
   class TransferFuture {
     public:
+
+      /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
+       *  automatically executed before returning, so the new data is directly available in the buffer. */
+      void wait();
+
+      /** Check if new data has arrived. If new data has arrived (and thus this function returned true), the user still
+       *  has to call wait() to initiate the transfer to the user buffer in the accessor. */
+      bool hasNewData();
 
       /** Data class for the information transported by the future itself. This class will be extended by backends to
        *  transport additional information, if needed. */
@@ -70,60 +70,58 @@ namespace ChimeraTK {
       /** Shortcut for the corresponding boost::promise type. */
       typedef boost::promise<Data*> PromiseType;
 
-      /** Block the current thread until the new data has arrived. The TransferElement::postRead() action is
-       *  automatically executed before returning, so the new data is directly available in the buffer. */
-      virtual void wait();
-
-      /** Check if new data has arrived. If yes, the TransferElement::postRead() action is automatically
-       *  executed before returning, so the new data is directly available in the buffer. Otherwise the buffer
-       *  is kept unchanged and a subsequent call to wait() or hasNewData() is required to obtain the data.
-
-          @todo deprecate and replace with wait_for() to make the interface more similar to standard boost futures.
-       */
-      bool hasNewData();
-
-      /** Default constructor to generate a dysfunctional future (just for late initialisation) */
+      /** Default constructor to generate a dysfunctional future. To initialise the future properly, reset() must be
+       *  called afterwards. This pattern is used since the TransferFuture is a member of the TransferElement and only
+       *  references are returned by readAsync(). */
       TransferFuture()
       : _transferElement(nullptr) {}
 
-      /** Constructor to generate an already fulfilled future. */
-      TransferFuture(mtca4u::TransferElement *transferElement, Data *data)
-      : _transferElement(transferElement) {
-        PromiseType prom;
-        _theFuture = prom.get_future().share();
-        prom.set_value(data);
+      /** Construct from boost future */
+      TransferFuture(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement)
+      : _theFuture(plainFuture), _transferElement(transferElement) {}
+
+      /** "Decorating copy constructor": copy from other TransferFuture but override the transfer element. The
+       *  typical use case is a decorating TransferElement. */
+      TransferFuture(const TransferFuture &other, mtca4u::TransferElement *transferElement)
+      : _theFuture(other._theFuture), _transferElement(transferElement) {}
+
+      /** "Decorating move constructor": move from other TransferFuture but override the transfer element. The
+       *  typical use case is a decorating TransferElement. */
+      TransferFuture(TransferFuture &&other, mtca4u::TransferElement *transferElement)
+      : _theFuture(std::move(other._theFuture)), _transferElement(transferElement) {}
+
+      /** Copy constructor */
+      TransferFuture(const TransferFuture &other) = default;
+
+      /** Move constructor */
+      TransferFuture(TransferFuture &&other) = default;
+
+      /** Copy assignment operator */
+      TransferFuture& operator=(const TransferFuture &other) = default;
+
+      /** Move assignment operator */
+      TransferFuture& operator=(TransferFuture &&other) = default;
+
+      /** Comparison operator: Returns true if the two TransferFutures belong to the same TransferElement. This is
+       *  usually sufficient, since only one valid TransferFuture can belong to a TransferElement at a time. */
+      bool operator==(const TransferFuture &other) {
+        return _transferElement == other._transferElement;
       }
 
-      /** Constructor accepting a "plain" boost::shared_future */
-      TransferFuture(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement)
-      : _theFuture(plainFuture), _transferElement(transferElement)
-      {}
+    //protected:    /// @todo make protected after changing tests and ControlSystemAdapter
 
-      /** Return the underlying BOOST future. Be caerful when using it. Simply waiting on that future is not sufficient
+      friend mtca4u::TransferElement;
+      friend mtca4u::TransferFutureIterator;
+
+      /** Return the underlying BOOST future. Be careful when using it. Simply waiting on that future is not sufficient
        *  since the very purpose of this class is to add functionality. Always call TransferFuture::wait() before
        *  accessing the TransferElement again! */
       PlainFutureType& getBoostFuture() { return _theFuture; }
 
+    protected:
+
       /** Return the corresponding TransferElement */
       mtca4u::TransferElement& getTransferElement() { return *_transferElement; }
-
-      /** Make the TransferFuture non-copyable (otherwise we get problems with polymorphism) */
-      TransferFuture(const TransferFuture &other) = delete;
-      TransferFuture& operator=(const TransferFuture &other) = delete;
-
-      /** We cannot move the Transfer future because the accessor must keep a copy of it.*/
-      TransferFuture(const TransferFuture &&other) = delete;
-      /** We cannot move the Transfer future because the accessor must keep a copy of it.*/
-      TransferFuture& operator=(const TransferFuture &&other) = delete;
-
-      /** Reset the future. Needed by the accessors which hold the instance which has to be renewed.
-       */
-      void reset(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement){
-        _theFuture = plainFuture;
-        _transferElement = transferElement;
-      }
-
-    protected:
 
       /** The plain boost future */
       PlainFutureType _theFuture;

@@ -30,6 +30,7 @@ namespace mtca4u {
         memcpy(&(*itdst), &(*itsrc), _numberOfWords*sizeof(int32_t));
       }
     }
+    SyncNDRegisterAccessor<int32_t>::postRead();
   }
 
   template<>

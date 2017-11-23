@@ -99,6 +99,7 @@ namespace mtca4u {
         // implementation.
         if(hasActiveFuture) {
           if(readAsync().hasNewData()) {
+            readAsync().wait();
             return true;
           }
           else {
@@ -118,6 +119,7 @@ namespace mtca4u {
         bool ret = false;
         if(hasActiveFuture) {
           if(readAsync().hasNewData()) {
+            readAsync().wait();
             ret = true;
           }
           else {

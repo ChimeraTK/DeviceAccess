@@ -39,7 +39,7 @@ namespace mtca4u {
         _impl = newAccessor._impl;
         TransferElement::_id = _impl->getId();
       }
-      
+
       /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
        *  has been obtained directly (instead of a NDRegisterAccessorBridge). */
       void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
@@ -82,7 +82,7 @@ namespace mtca4u {
         NDRegisterAccessorBridge<UserType>::_impl->postRead();
       }
 
-      TransferFuture& readAsync() override {
+      TransferFuture readAsync() override {
         return NDRegisterAccessorBridge<UserType>::_impl->readAsync();
       }
 

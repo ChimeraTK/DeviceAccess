@@ -124,6 +124,7 @@ namespace mtca4u {
           *itdst = _fixedPointConverter.toCooked<UserType>(*itsrc);
           ++itsrc;
         }
+        SyncNDRegisterAccessor<UserType>::postRead();
       };
 
       void preWrite() override {

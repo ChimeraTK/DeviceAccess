@@ -167,18 +167,16 @@ namespace mtca4u {
        *
        *  The future will be fulfilled at the time when normally read() would return. A call to this function is
        *  roughly logically equivalent to:
-       *    boost::async( boost::bind(&TransferElemennt::read, this) );
+       *    boost::async( boost::bind(&TransferElement::read, this) );
        *  (Although such implementation would disallow accessing the user data buffer until the future is fulfilled,
        *  which is not the case for this function.)
        *
        *  Design note: A special type of future has to be returned to allow an abstraction from the implementation
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
-       *  without launching a thread. A reference is returned since we need polymorphism. This is possible since
-       *  the implementation anyway needs to store the object to be able to return it a second time if readAsync()
-       *  is called again before the future is fulfilled.
+       *  without launching a thread.
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture& readAsync() = 0;
+      virtual TransferFuture readAsync() = 0;
 
       /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
        *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
@@ -200,11 +198,6 @@ namespace mtca4u {
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
       * ChimeraTK::VersionNumber for details.
-      *
-      * The returned version number may be invalid (i.e. ChimeraTK::VersionNumber::isValid() returns false), if
-      * AccessMode::wait_for_new_data as not been specified. If AccessMode::wait_for_new_data was specified, a valid
-      * version number must be returned (either obtained from the ChimeraTK::VersionNumberSource or derived from an
-      * existing version number e.g. of another variable).
       */
       virtual ChimeraTK::VersionNumber getVersionNumber() const {
         return ChimeraTK::VersionNumber();
@@ -244,6 +237,13 @@ namespace mtca4u {
        *  the underlying accessor. This function must be implemented to extract the read data from the underlying
        *  accessor and expose it to the user. */
       virtual void postRead() {};
+
+      /** Function called by the TransferFuture before entering a potentially blocking wait(). In contrast to a wait
+       *  callback of a boost::future/promise, this function is not called when just checking whether the result is
+       *  ready or not. Usually it is not necessary to implement this function, but decorators should pass it on. One
+       *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
+       *  the thread execution. */
+      virtual void transferFutureWaitCallback() {};
 
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
        *  user data format if needed.
@@ -394,16 +394,16 @@ namespace mtca4u {
    *  return value of boost::wait_for_any(). */
   class TransferFutureIterator {
     public:
-      TransferFutureIterator(const std::list<TransferFuture*>::iterator &it) : _it(it) {}
+      TransferFutureIterator(const std::list<TransferFuture>::iterator &it) : _it(it) {}
       TransferFutureIterator operator++() { TransferFutureIterator ret(_it); ++_it; return ret; }
       TransferFutureIterator operator++(int) { ++_it; return *this; }
       bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
       bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
-      TransferFuture::PlainFutureType& operator*() {return (*_it)->getBoostFuture();}
-      TransferFuture::PlainFutureType& operator->() {return (*_it)->getBoostFuture();}
-      TransferFuture& getTransferFuture() const {return **_it;}
+      TransferFuture::PlainFutureType& operator*() {return _it->getBoostFuture();}
+      TransferFuture::PlainFutureType& operator->() {return _it->getBoostFuture();}
+      TransferFuture& getTransferFuture() const {return *_it;}
     private:
-      std::list<TransferFuture*>::iterator _it;
+      std::list<TransferFuture>::iterator _it;
   };
 
 } /* namespace mtca4u */
@@ -420,35 +420,32 @@ namespace mtca4u {
   /*******************************************************************************************************************/
 
   inline TransferElement::ID TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-    std::list<TransferFuture*> futureList;
+    std::list<TransferFuture> futureList;
     for(auto &elem : elementsToRead) {
-      auto *future = &(elem.get().readAsync());
-      futureList.push_back(future);
+      futureList.push_back(elem.get().readAsync());
     }
     // wait until any future is ready
     auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
 
     // Find the variable which has the oldest version number (to guarantee the order of updates).
     // Start with assuming that the future returned by boost::wait_for_any() has the oldes version number.
-    TransferFuture *theUpdate = &(iter.getTransferFuture());
+    TransferFuture theUpdate = iter.getTransferFuture();
     for(auto future : futureList) {
       // skip if this is the future returned by boost::wait_for_any()
       if(future == theUpdate) continue;
       // also skip if the future is not yet ready
-      if(future->getBoostFuture().wait_for(boost::chrono::duration<int, boost::centi>(0)) == boost::future_status::timeout) {
-        continue;
-      }
+      if(!future.hasNewData()) continue;
       // compare  version number with the version number of the stored future
-      if(future->getBoostFuture().get()->_versionNumber < theUpdate->getBoostFuture().get()->_versionNumber) {
+      if(future.getBoostFuture().get()->_versionNumber < theUpdate.getBoostFuture().get()->_versionNumber) {
         theUpdate = future;
       }
     }
 
     // complete the transfer (i.e. run postRead())
-    theUpdate->wait();
+    theUpdate.wait();
 
     // return the transfer element as a shared pointer
-    return theUpdate->getTransferElement().getId();
+    return theUpdate.getTransferElement().getId();
   }
 
 } /* namespace mtca4u */

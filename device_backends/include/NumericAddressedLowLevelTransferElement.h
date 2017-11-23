@@ -69,7 +69,7 @@ namespace mtca4u {
         if(ret) postRead();     // must only be called if new data was read
         return ret;
       }
-      
+
       bool readLatest() final {
         // note: readAsync() always throws, so we don't have to check for an active future!
         preRead();
@@ -77,8 +77,8 @@ namespace mtca4u {
         if(ret) postRead();     // only needs to be called if new data was read
         return ret;
       }
-      
-      TransferFuture& readAsync() override {                                                                // LCOV_EXCL_LINE
+
+      TransferFuture readAsync() override {                                                                // LCOV_EXCL_LINE
         // This function is not needed and will never be called. If readAsync() is called on the high-level accessor,
         // the transfer will be "backgrounded" already on that level.
         throw DeviceException("NumericAddressedLowLevelTransferElement::readAsync() is not implemented",    // LCOV_EXCL_LINE
@@ -143,14 +143,14 @@ namespace mtca4u {
         // change address
         _startAddress = startAddress;
         _numberOfWords = numberOfWords;
-        
+
         // allocated the buffer
         rawDataBuffer.resize(_numberOfWords);
-        
+
         // compute number of bytes
         _numberOfBytes = _numberOfWords*sizeof(int32_t);
       }
-      
+
       /** the backend to use for the actual hardware access */
       boost::shared_ptr<NumericAddressedBackend> _dev;
 
