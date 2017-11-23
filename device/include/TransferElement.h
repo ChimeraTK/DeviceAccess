@@ -420,6 +420,10 @@ namespace mtca4u {
   /*******************************************************************************************************************/
 
   inline TransferElement::ID TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+
+    // build list of TransferFutures for all elements. Since readAsync() is a virtual call and we need to visit all
+    // elements at least twice (once in wait_for_any and a second time for sorting by version number), this is assumed
+    // to be less expensive than calling readAsync() on the fly in the TransferFutureIterator instead.
     std::list<TransferFuture> futureList;
     for(auto &elem : elementsToRead) {
       futureList.push_back(elem.get().readAsync());
