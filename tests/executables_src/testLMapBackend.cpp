@@ -70,7 +70,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
 /********************************************************************************************************************/
 
 void LMapBackendTest::testExceptions() {
-  
+
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device;
   BOOST_CHECK(device.isOpened() == false);
@@ -120,7 +120,7 @@ void LMapBackendTest::testExceptions() {
   BOOST_CHECK(device.isOpened() == true);
   device.close();
   BOOST_CHECK(device.isOpened() == false);
-  
+
 }
 
 /********************************************************************************************************************/
@@ -250,7 +250,7 @@ void LMapBackendTest::testExceptions() {
     acc2.read();
     BOOST_CHECK( acc[0] == 3 );
     BOOST_CHECK( acc2[0] == 3 );
-    
+
     device.close();
 
   }
@@ -264,7 +264,7 @@ void LMapBackendTest::testReadWriteRegister() {
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
   mtca4u::Device device, target1;
-  
+
   target1.open("PCIE2");
   device.open("LMAP0");
   // single word
@@ -319,7 +319,7 @@ void LMapBackendTest::testReadWriteRegister() {
 
   device.close();
   target1.close();
-  
+
 
 }
 
@@ -371,7 +371,7 @@ void LMapBackendTest::testReadWriteRange() {
 /********************************************************************************************************************/
 
 void LMapBackendTest::testRegisterAccessorForRegister() {
-  
+
   std::vector<int> area(1024);
   int index;
 
@@ -380,7 +380,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   device.open("LMAP0");
   target1.open("PCIE2");
-  
+
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
   BOOST_CHECK( !acc.isReadOnly() );
@@ -464,7 +464,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   device.close();
   target1.close();
-  
+
 }
 
 /********************************************************************************************************************/
@@ -478,7 +478,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   device.open("LMAP0");
   target1.open("PCIE2");
-  
+
 
   mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
   BOOST_CHECK( acc.isReadOnly() == false );
@@ -673,7 +673,7 @@ void LMapBackendTest::testNonBufferingAccessor() {
 
   device.open("LMAP0");
   target1.open("PCIE2");
-  
+
 
   boost::shared_ptr<mtca4u::RegisterAccessor> acc;
 
@@ -793,13 +793,13 @@ void LMapBackendTest::testPlugin() {
   accDirect.write();
 
   accScaled.read();
-  BOOST_CHECK( accScaled == 33 );
+  BOOST_CHECK_EQUAL( (int)accScaled, 33 );
 
   accScaled = 66;
   accScaled.write();
 
   accDirect.read();
-  BOOST_CHECK( accDirect == 22 );
+  BOOST_CHECK_EQUAL( (int)accDirect, 22 );
 
   BOOST_CHECK(accScaled.isWriteable());
   BOOST_CHECK(accScaled.isReadable());
