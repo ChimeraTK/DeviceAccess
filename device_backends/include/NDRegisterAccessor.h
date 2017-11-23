@@ -170,7 +170,7 @@ namespace mtca4u {
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
 
-  private:
+    private:
 
       /// Flag whether shutdown() has been called or not
       bool shutdownCalled{false};
