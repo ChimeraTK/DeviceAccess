@@ -1,7 +1,7 @@
 #include <mtca4u/DeviceBackendImpl.h>
 #include <mtca4u/BackendFactory.h>
 #include <mtca4u/DeviceAccessVersion.h>
-#include <mtca4u/NDRegisterAccessor.h>
+#include <mtca4u/SyncNDRegisterAccessor.h>
 
 template<typename UserType>
 class TimerDummyRegisterAccessor;
@@ -46,26 +46,26 @@ TimerDummy::BackendRegisterer::BackendRegisterer() {
 }
 
 template<typename UserType>
-class TimerDummyRegisterAccessor : public mtca4u::NDRegisterAccessor<UserType> {
+class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserType> {
   public:
     TimerDummyRegisterAccessor(const mtca4u::RegisterPath &registerPathName)
-    : mtca4u::NDRegisterAccessor<UserType>(registerPathName)
+    : mtca4u::SyncNDRegisterAccessor<UserType>(registerPathName)
     {
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0] = UserType();
     }
-    
+
     ~TimerDummyRegisterAccessor() { this->shutdown(); }
-    
+
     void doReadTransfer() override {
       usleep(1000000);
     }
-    
+
     void postRead() override {
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
     }
-    
+
     bool write(ChimeraTK::VersionNumber) override { return false; }
 
     bool doReadTransferNonBlocking() override { return false; }
@@ -76,13 +76,13 @@ class TimerDummyRegisterAccessor : public mtca4u::NDRegisterAccessor<UserType> {
     bool isWriteable() const override { return false; }
 
     bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &) const override { return false; }
-    
+
     std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override { return { this->shared_from_this() }; }
-    
+
     void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {}
 
 };
-    
+
 template<>
 void TimerDummyRegisterAccessor<std::string>::postRead() {
 }

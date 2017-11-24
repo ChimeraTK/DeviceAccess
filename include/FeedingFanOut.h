@@ -27,18 +27,8 @@ namespace ChimeraTK {
       : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()),
         mtca4u::NDRegisterAccessor<UserType>(name, unit, description)
       {
-        try {
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
-        }
-        catch(...) {
-          this->shutdown();
-          throw;
-        }
-      }
-
-      ~FeedingFanOut() {
-        this->shutdown();
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
       }
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
@@ -82,6 +72,18 @@ namespace ChimeraTK {
       }
 
       void postRead() override {
+        throw std::logic_error("Read operation called on write-only variable.");
+      }
+
+      ChimeraTK::TransferFuture readAsync() override {
+        throw std::logic_error("Read operation called on write-only variable.");
+      }
+
+      bool asyncTransferActive() override {
+        throw std::logic_error("Read operation called on write-only variable.");
+      }
+
+      void clearAsyncTransferActive() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 

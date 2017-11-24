@@ -81,7 +81,7 @@ struct AsyncReadTestModule : public ctk::ApplicationModule {
 
     void mainLoop() {
       while(true) {
-        auto &future = someInput.readAsync();
+        auto future = someInput.readAsync();
         future.wait();
         T val = someInput;
         someOutput = val;

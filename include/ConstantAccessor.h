@@ -8,18 +8,18 @@
 #ifndef CHIMERATK_CONSTANT_ACCESSOR_H
 #define CHIMERATK_CONSTANT_ACCESSOR_H
 
-#include <mtca4u/NDRegisterAccessor.h>
+#include <mtca4u/SyncNDRegisterAccessor.h>
 
 namespace ChimeraTK {
 
   /** Implementation of the NDRegisterAccessor which delivers always the same value and ignors any write operations */
   template<typename UserType>
-  class ConstantAccessor : public mtca4u::NDRegisterAccessor<UserType> {
+  class ConstantAccessor : public mtca4u::SyncNDRegisterAccessor<UserType> {
 
     public:
 
       ConstantAccessor(UserType value=0, size_t length=1)
-        : mtca4u::NDRegisterAccessor<UserType>("UnnamedConstantAccessor"), _value(length, value)
+        : mtca4u::SyncNDRegisterAccessor<UserType>("UnnamedConstantAccessor"), _value(length, value)
       {
         try {
           mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
