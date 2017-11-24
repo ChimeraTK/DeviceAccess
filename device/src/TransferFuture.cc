@@ -4,8 +4,6 @@
 #include <boost/ratio.hpp>
 #include <boost/chrono.hpp>
 
-#pragma GCC diagnostic warning "-fpermissive"
-
 namespace ChimeraTK {
 
   void TransferFuture::wait() {
