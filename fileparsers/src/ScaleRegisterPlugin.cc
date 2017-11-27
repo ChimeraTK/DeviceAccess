@@ -36,7 +36,6 @@ namespace mtca4u {
       {}
 
       void postRead() override {
-        std::cout << "HIER postRead" << std::endl;
         _target->postRead();
         // apply scaling factor while copying buffer from underlying accessor to our buffer
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
@@ -47,7 +46,6 @@ namespace mtca4u {
       }
 
       void preWrite() override {
-        std::cout << "HIER preWrite" << std::endl;
         // apply scaling factor while copying buffer from our buffer to underlying accessor
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
