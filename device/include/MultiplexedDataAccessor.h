@@ -74,14 +74,17 @@ namespace mtca4u {
       }
 
       void postRead() override {
+        accessor->postRead();
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
       void preWrite() override {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+        accessor->preWrite();
       }
 
       void postWrite() override {
+        accessor->postWrite();
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
