@@ -183,48 +183,48 @@ void LMapBackendTest::testExceptions() {
 
   void LMapBackendTest::testReadWriteConstant() {
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device;
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    mtca4u::Device device;
 
-  device.open("LMAP0");
-  int res = 0;
-  device.readReg("Constant",&res, 4);
-  BOOST_CHECK( res == 42 );
+    device.open("LMAP0");
+    int res = 0;
+    device.readReg("Constant",&res, 4);
+    BOOST_CHECK( res == 42 );
 
-  res = 0;
-  BOOST_CHECK_THROW( device.writeReg("Constant",&res), mtca4u::DeviceException );
+    res = 0;
+    BOOST_CHECK_THROW( device.writeReg("Constant",&res), mtca4u::DeviceException );
 
-  device.readReg("Constant",&res, 4);
-  BOOST_CHECK( res == 42 );
+    device.readReg("Constant",&res, 4);
+    BOOST_CHECK( res == 42 );
 
-  // test with buffering register accessor
-  mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Constant");
-  BOOST_CHECK( acc.getNumberOfElements() == 1 );
-  BOOST_CHECK( acc[0] == 42 );
-  acc.read();
-  BOOST_CHECK( acc[0] == 42 );
-  BOOST_CHECK_THROW( acc.write(), DeviceException );
-  try {
-    acc.write();
+    // test with buffering register accessor
+    mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Constant");
+    BOOST_CHECK( acc.getNumberOfElements() == 1 );
+    BOOST_CHECK( acc[0] == 42 );
+    acc.read();
+    BOOST_CHECK( acc[0] == 42 );
+    BOOST_CHECK_THROW( acc.write(), DeviceException );
+    try {
+      acc.write();
+    }
+    catch(DeviceException &e) {
+      BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
+    }
+
+    mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
+    mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
+
+    boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2, impl3;
+    impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+    impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+    impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+
+    BOOST_CHECK( impl->isSameRegister(impl2) == true );
+    BOOST_CHECK( impl->isSameRegister(impl3) == false );
+
+    device.close();
+
   }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
-  }
-
-  mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
-  mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
-
-  boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2, impl3;
-  impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-  impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-  impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-
-  BOOST_CHECK( impl->isSameRegister(impl2) == true );
-  BOOST_CHECK( impl->isSameRegister(impl3) == false );
-
-  device.close();
-
-}
 
   /********************************************************************************************************************/
 
