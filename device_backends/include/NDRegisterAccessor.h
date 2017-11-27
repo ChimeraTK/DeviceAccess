@@ -132,6 +132,20 @@ namespace mtca4u {
         return ret || ret2;
       }
 
+      bool write(ChimeraTK::VersionNumber versionNumber={}) final {
+        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
+        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
+        // implementation.
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
+        preWrite();
+        bool ret = doWriteTransfer(versionNumber);
+        postWrite();
+        return ret;
+      }
+
       /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
        *  \deprecated This function is deprecated, remove it at some point!
        *

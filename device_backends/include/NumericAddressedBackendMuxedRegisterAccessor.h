@@ -47,7 +47,7 @@ namespace mtca4u {
 
       void postRead() override;
 
-      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override;
+      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override;
 
       void preWrite() override;
 
@@ -268,8 +268,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::write(ChimeraTK::VersionNumber /*versionNumber*/) {
-      preWrite();
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/) {
       _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
       return false;
   }

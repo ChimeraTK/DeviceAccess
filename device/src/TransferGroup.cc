@@ -17,7 +17,7 @@ namespace mtca4u {
       highLevelElements[i]->preRead();
     }
     for(unsigned int i=0; i<elements.size(); i++) {
-      elements[i]->read();
+      elements[i]->doReadTransfer();
     }
     for(unsigned int i=0; i<highLevelElements.size(); i++) {
       highLevelElements[i]->postRead();
@@ -35,7 +35,7 @@ namespace mtca4u {
       highLevelElements[i]->preWrite();
     }
     for(unsigned int i=0; i<elements.size(); i++) {
-      elements[i]->write();
+      elements[i]->doWriteTransfer();
     }
     for(unsigned int i=0; i<highLevelElements.size(); i++) {
       highLevelElements[i]->postWrite();
@@ -94,7 +94,7 @@ namespace mtca4u {
 
     // Erase the duplicates (cannot do this inside the loop since it would invalidate the iterators)
     for(auto &e : eraseList) elements.erase(e);
-    
+
     // remove elements which are on both the highLevelElements and the elements lists from the highLevelElements, since
     // we should not run postRead() resp. preWrite()/postWrite() on them
     for(auto &elem : elements) {
@@ -119,7 +119,7 @@ namespace mtca4u {
   /*********************************************************************************************************************/
 
   void TransferGroup::dump() {
-    
+
     std::cout << "=== Accessors added to this group: " << std::endl;
     for(auto &elem : highLevelElements) {
       std::cout << " - " << elem->getName() << std::endl;

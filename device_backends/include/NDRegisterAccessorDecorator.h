@@ -28,6 +28,8 @@ namespace mtca4u {
 
         using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
+        void preRead() override = 0;
+
         void postRead() override = 0;
 
         void preWrite() override = 0;
@@ -47,6 +49,10 @@ namespace mtca4u {
       public:
 
         using NDRegisterAccessor<UserType>::NDRegisterAccessor;
+
+        void preRead() override {
+          _target->preRead();
+        }
 
         void postRead() override {
           _target->postRead();
@@ -94,11 +100,8 @@ namespace mtca4u {
         for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].resize(_target->getNumberOfSamples());
       }
 
-      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-        this->preWrite();
-        bool dataLost = _target->write(versionNumber);
-        this->postWrite();
-        return dataLost;
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        return _target->doWriteTransfer(versionNumber);
       }
 
       void doReadTransfer() override {

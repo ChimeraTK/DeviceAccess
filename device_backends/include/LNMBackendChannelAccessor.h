@@ -68,10 +68,10 @@ namespace mtca4u {
       virtual ~LNMBackendChannelAccessor() { this->shutdown(); };
 
       void doReadTransfer() override {
-        _accessor->read();
+        _accessor->doReadTransfer();
       }
 
-      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
+      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
             DeviceException::REGISTER_IS_READ_ONLY);
       }
@@ -86,9 +86,13 @@ namespace mtca4u {
         return true;
       }
 
+      void preRead() override {
+        _accessor->preRead();
+      }
+
       void postRead() override {
+        _accessor->postRead();
         _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
-        SyncNDRegisterAccessor<UserType>::postRead();
       };
 
       bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {

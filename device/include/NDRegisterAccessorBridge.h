@@ -98,6 +98,10 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->write(versionNumber);
       }
 
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        return NDRegisterAccessorBridge<UserType>::_impl->doWriteTransfer(versionNumber);
+      }
+
       /** Return if the register accessor allows only reading */
       bool isReadOnly() const override {
         return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();

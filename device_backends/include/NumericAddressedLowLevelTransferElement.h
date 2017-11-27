@@ -36,11 +36,25 @@ namespace mtca4u {
 
       virtual ~NumericAddressedLowLevelTransferElement() {};
 
+      bool write(ChimeraTK::VersionNumber versionNumber={}) final {
+        preWrite();
+        bool ret = doWriteTransfer(versionNumber);
+        postWrite();
+        return ret;
+      }
+
+      void read() final {
+        // note: readAsync() always throws, so we don't have to check for an active future!
+        preRead();
+        doReadTransfer();
+        postRead();
+      }
+
       void doReadTransfer() override {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
-      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
+      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
         return false;
       }
@@ -53,13 +67,6 @@ namespace mtca4u {
       bool doReadTransferLatest() override {
         doReadTransfer();
         return true;
-      }
-
-      void read() final {
-        // note: readAsync() always throws, so we don't have to check for an active future!
-        preRead();
-        doReadTransfer();
-        postRead();
       }
 
       bool readNonBlocking() final {

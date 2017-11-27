@@ -78,12 +78,12 @@ namespace mtca4u {
       }
 
 
-      bool write(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
+      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         if(isReadOnly()) {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
               DeviceException::REGISTER_IS_READ_ONLY);
         }
-        preWrite();
+        _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
         return false;
       }
 
@@ -107,6 +107,10 @@ namespace mtca4u {
         return _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
+      void postRead() override {
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
+      }
+
     protected:
 
       /// register and module name
@@ -128,15 +132,6 @@ namespace mtca4u {
       }
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}  // LCOV_EXCL_LINE
-
-      void postRead() override {
-        NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
-        SyncNDRegisterAccessor<UserType>::postRead();
-      }
-
-      void preWrite() override {
-        _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
-      }
 
 
   };

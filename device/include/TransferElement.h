@@ -261,6 +261,10 @@ namespace mtca4u {
        *  the thread execution. */
       virtual void transferFutureWaitCallback() {};
 
+      /** Clear the flag that there is an ongoing asynchronous transfer. This function will be called by
+       *  TransferFuture::wait() and must be passed on in decorators. Do not otherwise use this function! */
+      virtual void clearAsyncTransferActive() = 0;
+
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
        *  user data format if needed.
        *
@@ -277,9 +281,12 @@ namespace mtca4u {
        *  on the underlying accessor. */
       virtual void postWrite() {};
 
-      /** Clear the flag that there is an ongoing asynchronous transfer. This function will be called by
-       *  TransferFuture::wait() and must be passed on in decorators. Do not otherwise use this function! */
-      virtual void clearAsyncTransferActive() = 0;
+      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
+       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false.
+       *
+       *  Calling this function after preWrite() and followed by postWrite() is exactly equivalent to a call to
+       *  write(). */
+      virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) = 0;
 
       /**
        *  Check if the two TransferElements are identical, i.e. accessing the same hardware register. The definition of

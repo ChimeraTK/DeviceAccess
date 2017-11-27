@@ -77,6 +77,14 @@ namespace mtca4u {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
+      void preWrite() override {
+        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+      }
+
+      void postWrite() override {
+        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
+      }
+
       ChimeraTK::TransferFuture readAsync() override {
         throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
       }
@@ -89,14 +97,8 @@ namespace mtca4u {
         throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
       }
 
-      /** Multiplex the data from the sequence buffer into the hardware IO buffer,
-       * using the fixed point converters, and write it to the device. Can be used
-       * to write to DMA memory Areas, but this functionality has not been
-       * implemented yet
-       */
-      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-        accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
-        return accessor->write(versionNumber);
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        return accessor->doWriteTransfer(versionNumber);
       }
 
       virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {// LCOV_EXCL_LINE
