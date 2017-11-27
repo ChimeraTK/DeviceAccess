@@ -30,7 +30,6 @@ namespace ChimeraTK {
 
       void postRead() override {
         mtca4u::NDRegisterAccessorDecorator<UserType>::postRead();
-        buffer_2D[0].swap(FanOut<UserType>::impl->accessChannel(0));
         for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
           // do not send copy if no data is expected (e.g. trigger)
           if(slave->getNumberOfSamples() != 0) {
