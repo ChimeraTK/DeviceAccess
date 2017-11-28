@@ -605,9 +605,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithFanOut, T, test_types ) {
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
   BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(valueFromBlocking == 11);
-  BOOST_CHECK(valueFromAsync == 11);
-  BOOST_CHECK(index == 2);
+  BOOST_CHECK_EQUAL((T)valueFromBlocking, 11);
+  BOOST_CHECK_EQUAL((T)valueFromAsync, 11);
+  BOOST_CHECK_EQUAL((unsigned int)index, 2);
 
   // send something to v3
   v3 = 12;
@@ -624,9 +624,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithFanOut, T, test_types ) {
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
   BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(valueFromBlocking == 12);
-  BOOST_CHECK(valueFromAsync == 12);
-  BOOST_CHECK(index == 3);
+  BOOST_CHECK_EQUAL((T)valueFromBlocking, 12);
+  BOOST_CHECK_EQUAL((T)valueFromAsync, 12);
+  BOOST_CHECK_EQUAL((unsigned int)index, 3);
 
   // send something to v3 again
   v3 = 13;
@@ -643,9 +643,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithFanOut, T, test_types ) {
   BOOST_CHECK(valueFromBlocking.readNonBlocking() == true);
   BOOST_CHECK(valueFromAsync.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(valueFromBlocking == 13);
-  BOOST_CHECK(valueFromAsync == 13);
-  BOOST_CHECK(index == 3);
+  BOOST_CHECK_EQUAL((T)valueFromBlocking, 13);
+  BOOST_CHECK_EQUAL((T)valueFromAsync, 13);
+  BOOST_CHECK_EQUAL((unsigned int)index, 3);
 
   // check that stepApplication() throws an exception if no input data is available
   try {
