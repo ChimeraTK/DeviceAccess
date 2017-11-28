@@ -32,14 +32,13 @@ namespace ChimeraTK {
         }
       }
 
-      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
         bool dataLost = false;
-        this->preWrite();
         if(!Application::testableModeTestLock()) {
           // may happen if first write in thread is done before first blocking read
           Application::testableModeLock("write "+this->getName());
         }
-        dataLost = _target->write(versionNumber);
+        dataLost = _target->doWriteTransfer(versionNumber);
         if(!dataLost) {
           ++Application::getInstance().testableMode_counter;
           ++Application::getInstance().testableMode_perVarCounter[variableId];
@@ -54,7 +53,6 @@ namespace ChimeraTK {
                         "increased due to lost data" << std::endl;
           }
         }
-        this->postWrite();
         return dataLost;
       }
 
@@ -124,7 +122,6 @@ namespace ChimeraTK {
       void postRead() override {
         obtainLockAndDecrementCounter();
         mtca4u::NDRegisterAccessorDecorator<UserType>::postRead();
-        mtca4u::NDRegisterAccessorDecorator<UserType>::clearAsyncTransferActive();
       }
 
     protected:

@@ -87,27 +87,38 @@ namespace ChimeraTK {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 
-      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-        bool dataLost = false;
-        boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> firstSlave;   // will have the data for the other slaves after swapping
+      void preWrite() override {
         for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
           if(slave->getNumberOfSamples() != 0) {          // do not send copy if no data is expected (e.g. trigger)
-            if(!firstSlave) {                             // in case of first slave, swap instead of copy
-              firstSlave = slave;
-              firstSlave->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
+            if(slave == FanOut<UserType>::slaves.front()) {     // in case of first slave, swap instead of copy
+              slave->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
             }
             else {                                // not the first slave: copy the data from the first slave
-              slave->accessChannel(0) = firstSlave->accessChannel(0);
+              slave->accessChannel(0) = FanOut<UserType>::slaves.front()->accessChannel(0);
             }
           }
-          bool ret = slave->write(versionNumber);
+        }
+        // pre write may only be called on the target accessors after we have filled them all, otherwise the first
+        // accessor might take us the data away...
+        for(auto &slave : FanOut<UserType>::slaves) {
+          slave->preWrite();
+        }
+      }
+
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        bool dataLost = false;
+        for(auto &slave : FanOut<UserType>::slaves) {
+          bool ret = slave->doWriteTransfer(versionNumber);
           if(ret) dataLost = true;
         }
-        // swap back the data from the first slave so we still have it available
-        if(firstSlave) {
-          firstSlave->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
-        }
         return dataLost;
+      }
+
+      void postWrite() override {
+        for(auto &slave : FanOut<UserType>::slaves) {
+          slave->postWrite();
+        }
+        FanOut<UserType>::slaves.front()->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
       }
 
       bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {

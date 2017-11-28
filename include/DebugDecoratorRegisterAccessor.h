@@ -26,9 +26,9 @@ namespace ChimeraTK {
         std::cout << "Enable debug output for variable '" << _fullyQualifiedName << "'." << std::endl;
       }
 
-      bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-        std::cout << "write() called on '" << _fullyQualifiedName << "'." << std::endl;
-        return mtca4u::NDRegisterAccessorDecorator<UserType>::write(versionNumber);
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
+        return mtca4u::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
       }
 
       void doReadTransfer() override {
@@ -54,6 +54,11 @@ namespace ChimeraTK {
           std::cout << "readAsync() called on '" << _fullyQualifiedName << "' (new future)." << std::endl;
         }
         return mtca4u::NDRegisterAccessorDecorator<UserType>::readAsync();
+      }
+
+      void preRead() override {
+        std::cout << "preRead() called on '" << _fullyQualifiedName << "'." << std::endl;
+        mtca4u::NDRegisterAccessorDecorator<UserType>::preRead();
       }
 
       void postRead() override {

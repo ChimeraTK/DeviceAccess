@@ -66,7 +66,7 @@ class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserTyp
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
     }
 
-    bool write(ChimeraTK::VersionNumber) override { return false; }
+    bool doWriteTransfer(ChimeraTK::VersionNumber) override { return false; }
 
     bool doReadTransferNonBlocking() override { return false; }
 
