@@ -95,22 +95,16 @@ namespace mtca4u {
     // Erase the duplicates (cannot do this inside the loop since it would invalidate the iterators)
     for(auto &e : eraseList) elements.erase(e);
 
-    // remove elements which are on both the highLevelElements and the elements lists from the highLevelElements, since
-    // we should not run postRead() resp. preWrite()/postWrite() on them
-    for(auto &elem : elements) {
-      bool inHLE = false;
-      std::vector< boost::shared_ptr<TransferElement> >::iterator deleteIt;
-      for(auto hle = highLevelElements.begin(); hle != highLevelElements.end(); ++hle) {
-        if(*hle == elem) {    // this is comparing the shared pointers
-          inHLE = true;
-         deleteIt = hle;
+    // remove duplicates in highLevelElements, since otherwise postRead() etc. is called twice
+    eraseList.clear();
+    for(size_t i=0; i<highLevelElements.size(); ++i) {
+      for(size_t k=i+1; k<highLevelElements.size(); ++k) {
+        if(highLevelElements[i] == highLevelElements[k]) {
+          eraseList.push_back(highLevelElements.begin() + i);
         }
       }
-      if(inHLE) {
-        highLevelElements.erase(deleteIt);
-        elem->isInTransferGroup = false;  // only high level elements should count as being in the group
-      }
     }
+    for(auto &e : eraseList) highLevelElements.erase(e);
 
     // Update read-only flag
     if(accessor.isReadOnly()) readOnly = true;
