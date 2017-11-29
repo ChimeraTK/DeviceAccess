@@ -61,9 +61,11 @@ namespace mtca4u {
 
         void preWrite() override {
           for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
+          _target->preWrite();
         }
 
         void postWrite() override {
+          _target->postWrite();
           for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         }
 
