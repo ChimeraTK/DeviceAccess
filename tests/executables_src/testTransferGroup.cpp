@@ -11,6 +11,7 @@
 #include "BufferingRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "Device.h"
+#include "NDRegisterAccessorDecorator.h"
 
 #include "accessPrivateData.h"
 
@@ -57,6 +58,8 @@ class TransferGroupTest {
     void testLogicalNameMappedRegister();
     void testMergeNumericRegisters();
     void testMergeNumericRegistersDifferentTypes();
+    void testCallsToPrePostFunctionsInDecorator();
+    void testCallsToPrePostFunctionsInLowLevel();
 };
 
 class TransferGroupTestSuite : public test_suite {
@@ -68,6 +71,8 @@ class TransferGroupTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testLogicalNameMappedRegister, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegisters, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegistersDifferentTypes, transferGroupTest) );
+      add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testCallsToPrePostFunctionsInDecorator, transferGroupTest) );
+      add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testCallsToPrePostFunctionsInLowLevel, transferGroupTest) );
     }
 };
 
@@ -536,5 +541,421 @@ void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
   BOOST_CHECK( mux1 == 234 );
   BOOST_CHECK( mux2 == 345 );
   BOOST_CHECK( mux3 == 456 );
+
+}
+
+template<typename T>
+struct CountingDecorator : NDRegisterAccessorDecorator<T> {
+
+    // if fakeLowLevel is set to true, the decorator will pretend to be the low-level TransferElement.
+    CountingDecorator( const boost::shared_ptr<mtca4u::TransferElement> &target,
+                       bool _fakeLowLevel = false )
+    : NDRegisterAccessorDecorator<T>(boost::dynamic_pointer_cast<NDRegisterAccessor<T>>(target)),
+      fakeLowLevel(_fakeLowLevel)
+    {
+      assert(boost::dynamic_pointer_cast<NDRegisterAccessor<T>>(target) != nullptr);    // a bit late but better than nothing...
+    }
+
+    void preRead() override {
+      nPreRead++;
+      NDRegisterAccessorDecorator<T>::preRead();
+    }
+
+    void postRead() override {
+      nPostRead++;
+      NDRegisterAccessorDecorator<T>::postRead();
+    }
+
+    void preWrite() override {
+      nPreWrite++;
+      NDRegisterAccessorDecorator<T>::preWrite();
+    }
+
+    void postWrite() override {
+      nPostWrite++;
+      NDRegisterAccessorDecorator<T>::postWrite();
+    }
+
+    void doReadTransfer() override {
+      nRead++;
+      NDRegisterAccessorDecorator<T>::doReadTransfer();
+    }
+
+    bool doReadTransferNonBlocking() override {
+      nReadNonBlocking++;
+      return NDRegisterAccessorDecorator<T>::doReadTransferNonBlocking();
+    }
+
+    bool doReadTransferLatest() override {
+      nReadLatest++;
+      return NDRegisterAccessorDecorator<T>::doReadTransferLatest();
+    }
+
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+      nWrite++;
+      return NDRegisterAccessorDecorator<T>::doWriteTransfer(versionNumber);
+    }
+
+    std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
+      if(fakeLowLevel) {
+        return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+      }
+      else {
+        return NDRegisterAccessorDecorator<T>::getHardwareAccessingElements();
+      }
+    }
+
+    void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
+      if(!fakeLowLevel) NDRegisterAccessorDecorator<T>::replaceTransferElement(newElement);
+    }
+
+    bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
+      if(fakeLowLevel) {
+        auto casted = boost::dynamic_pointer_cast<CountingDecorator<T> const>(other);
+        if(!casted) return false;
+        return (casted->_target == _target);
+      }
+      else {
+        return NDRegisterAccessorDecorator<T>::isSameRegister(other);
+      }
+    }
+
+    void resetCounters() {
+      nPreRead = 0;
+      nPostRead = 0;
+      nPreWrite = 0;
+      nPostWrite = 0;
+      nRead = 0;
+      nReadNonBlocking = 0;
+      nReadLatest = 0;
+      nWrite = 0;
+    }
+
+    bool fakeLowLevel;
+    size_t nPreRead{0};
+    size_t nPostRead{0};
+    size_t nPreWrite{0};
+    size_t nPostWrite{0};
+    size_t nRead{0};
+    size_t nReadNonBlocking{0};
+    size_t nReadLatest{0};
+    size_t nWrite{0};
+
+    using NDRegisterAccessorDecorator<T>::_target;
+
+};
+
+
+void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
+
+  BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  mtca4u::Device device;
+
+  device.open("DUMMYD3");
+
+  // create register accessors of four registers with adjecent addresses
+  auto mux0 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
+  auto mux1 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
+  auto mux2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
+  auto mux3 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
+
+  // decorate the accessors which we will put into the transfer group, so we can count how often the functions are called
+  auto mux0d = boost::make_shared<CountingDecorator<int>>(mux0.getHighLevelImplElement());
+  auto mux1d = boost::make_shared<CountingDecorator<int>>(mux1.getHighLevelImplElement());
+  auto mux2d = boost::make_shared<CountingDecorator<int>>(mux2.getHighLevelImplElement());
+  auto mux3d = boost::make_shared<CountingDecorator<int>>(mux3.getHighLevelImplElement());
+
+  // decorate another time with a plain NDRegisterAccessorDecorator
+  auto mux0d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux0d);
+  auto mux1d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux1d);
+  auto mux2d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux2d);
+  auto mux3d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux3d);
+
+  // place the decorated registers inside the abstractors
+  mux0.replace(mux0d2);
+  mux1.replace(mux1d2);
+  mux2.replace(mux2d2);
+  mux3.replace(mux3d2);
+
+  // create the same register accessors again, so we have a second set not part of the transfer group
+  auto mux0b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
+  auto mux1b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
+  auto mux2b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
+  auto mux3b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
+
+  // add accessors to the transfer group
+  TransferGroup group;
+  group.addAccessor(mux0);
+  group.addAccessor(mux1);
+  group.addAccessor(mux2);
+  group.addAccessor(mux3);
+
+  // write some data to the registers (without the TransferGroup)
+  mux0b = 18;
+  mux0b.write();
+  mux1b = 20;
+  mux1b.write();
+  mux2b = 22;
+  mux2b.write();
+  mux3b = 23;
+  mux3b.write();
+
+  // read through transfer group
+  group.read();
+
+  BOOST_CHECK_EQUAL( (int)mux0, 18 );
+  BOOST_CHECK_EQUAL( mux0d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux1, 20 );
+  BOOST_CHECK_EQUAL( mux1d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux2, 22 );
+  BOOST_CHECK_EQUAL( mux2d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux3, 23 );
+  BOOST_CHECK_EQUAL( mux3d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nWrite, 0 );
+
+  mux0d->resetCounters();
+  mux1d->resetCounters();
+  mux2d->resetCounters();
+  mux3d->resetCounters();
+
+  // write through transfer group
+  mux0 = 24;
+  mux1 = 27;
+  mux2 = 30;
+  mux3 = 33;
+  group.write();
+
+  BOOST_CHECK_EQUAL( (int)mux0, 24 );
+  BOOST_CHECK_EQUAL( mux0d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux1, 27 );
+  BOOST_CHECK_EQUAL( mux1d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux2, 30 );
+  BOOST_CHECK_EQUAL( mux2d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux3, 33 );
+  BOOST_CHECK_EQUAL( mux3d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nWrite, 0 );
+
+  mux0b.read();
+  BOOST_CHECK_EQUAL( (int)mux0b, 24 );
+  mux1b.read();
+  BOOST_CHECK_EQUAL( (int)mux1b, 27 );
+  mux2b.read();
+  BOOST_CHECK_EQUAL( (int)mux2b, 30 );
+  mux3b.read();
+  BOOST_CHECK_EQUAL( (int)mux3b, 33 );
+
+}
+
+void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
+
+  BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  mtca4u::Device device;
+
+  device.open("DUMMYD3");
+
+  // create register accessors of four registers with adjecent addresses
+  auto mux0 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
+  auto mux1 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
+  auto mux2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
+  auto mux3 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
+
+  // decorate the accessors which we will put into the transfer group, so we can count how often the functions are called
+  auto mux0d = boost::make_shared<CountingDecorator<int>>(mux0.getHighLevelImplElement(), true);
+  auto mux1d = boost::make_shared<CountingDecorator<int>>(mux1.getHighLevelImplElement(), true);
+  auto mux2d = boost::make_shared<CountingDecorator<int>>(mux2.getHighLevelImplElement(), true);
+  auto mux3d = boost::make_shared<CountingDecorator<int>>(mux3.getHighLevelImplElement(), true);
+
+  // place the decorated registers inside the abstractors
+  mux0.replace(mux0d);
+  mux1.replace(mux1d);
+  mux2.replace(mux2d);
+  mux3.replace(mux3d);
+
+  // create the same register accessors again, so we have a second set not part of the transfer group
+  auto mux0b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
+  auto mux1b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
+  auto mux2b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
+  auto mux3b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
+
+  // add accessors to the transfer group
+  TransferGroup group;
+  group.addAccessor(mux0);
+  group.addAccessor(mux1);
+  group.addAccessor(mux2);
+  group.addAccessor(mux3);
+
+  // write some data to the registers (without the TransferGroup)
+  mux0b = 18;
+  mux0b.write();
+  mux1b = 20;
+  mux1b.write();
+  mux2b = 22;
+  mux2b.write();
+  mux3b = 23;
+  mux3b.write();
+
+  // read through transfer group
+  group.read();
+
+  BOOST_CHECK_EQUAL( (int)mux0, 18 );
+  BOOST_CHECK_EQUAL( mux0d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nRead, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux1, 20 );
+  BOOST_CHECK_EQUAL( mux1d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nRead, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux2, 22 );
+  BOOST_CHECK_EQUAL( mux2d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nRead, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nWrite, 0 );
+
+  BOOST_CHECK_EQUAL( (int)mux3, 23 );
+  BOOST_CHECK_EQUAL( mux3d->nPreRead, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nRead, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nWrite, 0 );
+
+  mux0d->resetCounters();
+  mux1d->resetCounters();
+  mux2d->resetCounters();
+  mux3d->resetCounters();
+
+  // write through transfer group
+  mux0 = 24;
+  mux1 = 27;
+  mux2 = 30;
+  mux3 = 33;
+  group.write();
+
+  BOOST_CHECK_EQUAL( (int)mux0, 24 );
+  BOOST_CHECK_EQUAL( mux0d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux0d->nWrite, 1 );
+
+  BOOST_CHECK_EQUAL( (int)mux1, 27 );
+  BOOST_CHECK_EQUAL( mux1d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux1d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux1d->nWrite, 1 );
+
+  BOOST_CHECK_EQUAL( (int)mux2, 30 );
+  BOOST_CHECK_EQUAL( mux2d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux2d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux2d->nWrite, 1 );
+
+  BOOST_CHECK_EQUAL( (int)mux3, 33 );
+  BOOST_CHECK_EQUAL( mux3d->nPreRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nPreWrite, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nPostWrite, 1 );
+  BOOST_CHECK_EQUAL( mux3d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux3d->nWrite, 1 );
+
+  mux0b.read();
+  BOOST_CHECK_EQUAL( (int)mux0b, 24 );
+  mux1b.read();
+  BOOST_CHECK_EQUAL( (int)mux1b, 27 );
+  mux2b.read();
+  BOOST_CHECK_EQUAL( (int)mux2b, 30 );
+  mux3b.read();
+  BOOST_CHECK_EQUAL( (int)mux3b, 33 );
 
 }
