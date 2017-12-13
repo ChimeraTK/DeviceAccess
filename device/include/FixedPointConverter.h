@@ -26,7 +26,7 @@ namespace mtca4u{
   class FixedPointConverter{
     public:
       /** The constructor defines the conversion factor.
-       *  @param variableName The name of the variable. It is useds in case an exception is 
+       *  @param variableName The name of the variable. It is useds in case an exception is
             thrown which significantly simplifies the debugging.
        *  @param nBits The number of total bits must not exceed 32.
        *  @param fractionalBits The numer of fractional bits can range from
@@ -97,6 +97,14 @@ namespace mtca4u{
 
       /** Reconfigure the fixed point converter with new type information */
       void reconfigure(unsigned int nBits = 32, int fractionalBits = 0, bool isSignedFlag = true);
+
+      /** Compare two fixed point converters. The variable name is ignored in this comparison. */
+      bool operator==(const FixedPointConverter &other) const {
+        return _nBits == other._nBits && _fractionalBits == other._fractionalBits && _isSigned == other._isSigned;
+      }
+      bool operator!=(const FixedPointConverter &other) const {
+        return ! operator==(other);
+      }
 
     private:
 
@@ -196,7 +204,7 @@ namespace mtca4u{
           return errorMessage.c_str();
         }
       };
-    
+
   };
 
   /**********************************************************************************************************************/
