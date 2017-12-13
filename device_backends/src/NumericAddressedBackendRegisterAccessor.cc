@@ -10,7 +10,7 @@
 namespace mtca4u {
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::postRead() {
+  void NumericAddressedBackendRegisterAccessor<int32_t>::doPostRead() {
     if(!isRaw) {
       auto itsrc = _rawAccessor->begin(_startAddress);
       for(auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
@@ -30,11 +30,11 @@ namespace mtca4u {
         memcpy(&(*itdst), &(*itsrc), _numberOfWords*sizeof(int32_t));
       }
     }
-    SyncNDRegisterAccessor<int32_t>::postRead();
+    SyncNDRegisterAccessor<int32_t>::doPostRead();
   }
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::preWrite() {
+  void NumericAddressedBackendRegisterAccessor<int32_t>::doPreWrite() {
     if(!isRaw) {
       auto itdst = _rawAccessor->begin(_startAddress);
       for(auto itsrc = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
@@ -57,7 +57,7 @@ namespace mtca4u {
   }
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::postWrite() {
+  void NumericAddressedBackendRegisterAccessor<int32_t>::doPostWrite() {
     if(isRaw) {
       if(!_rawAccessor->isShared) {
         NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_rawAccessor->rawDataBuffer);

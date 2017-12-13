@@ -16,7 +16,9 @@ namespace mtca4u {
 
   namespace detail {
 
-    /** Intermediate class just to make implementations of postRead/preWrite/postWrite depending on whether
+    /** Do not use directly, use NDRegisterAccessorDecorator instead!
+     *
+     *  Intermediate class just to make implementations of postRead/preWrite/postWrite depending on whether
      *  TargetUserType is equal or unequal to UserType. Default implementations for these functions are provided only
      *  in case TargetUserType is equal to UserType. The functions must be implemented by the actual decorator, if the
      *  types are unequal. Otherwise they still can be implemented, but the default provides a useful behavior for many
@@ -28,13 +30,13 @@ namespace mtca4u {
 
         using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
-        void preRead() override = 0;
+        void doPreRead() override = 0;
 
-        void postRead() override = 0;
+        void doPostRead() override = 0;
 
-        void preWrite() override = 0;
+        void doPreWrite() override = 0;
 
-        void postWrite() override = 0;
+        void doPostWrite() override = 0;
 
       protected:
 
@@ -50,21 +52,21 @@ namespace mtca4u {
 
         using NDRegisterAccessor<UserType>::NDRegisterAccessor;
 
-        void preRead() override {
+        void doPreRead() override {
           _target->preRead();
         }
 
-        void postRead() override {
+        void doPostRead() override {
           _target->postRead();
           for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         }
 
-        void preWrite() override {
+        void doPreWrite() override {
           for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
           _target->preWrite();
         }
 
-        void postWrite() override {
+        void doPostWrite() override {
           _target->postWrite();
           for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         }
@@ -119,6 +121,7 @@ namespace mtca4u {
       }
 
       TransferFuture readAsync() override {
+        this->preRead();
         return TransferFuture(_target->readAsync(), this);
       }
 
@@ -126,7 +129,7 @@ namespace mtca4u {
         return _target->asyncTransferActive();
       }
 
-      void preRead() override {
+      void doPreRead() override {
         _target->preRead();
       }
 
@@ -136,10 +139,6 @@ namespace mtca4u {
 
       void clearAsyncTransferActive() override {
         _target->clearAsyncTransferActive();
-      }
-
-      bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
-        return _target->isSameRegister(other);
       }
 
       bool isReadOnly() const override {
@@ -158,18 +157,17 @@ namespace mtca4u {
         return _target->getHardwareAccessingElements();
       }
 
-      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-        if(_target->isSameRegister(newElement)) {
-          _target = boost::static_pointer_cast< NDRegisterAccessor<TargetUserType> >(newElement);
-        }
-        else {
-        _target->replaceTransferElement(newElement);
-        }
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        auto result = _target->getInternalElements();
+        result.push_front(_target);
+        return result;
       }
 
       void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) override {
         _target->setPersistentDataStorage(storage);
       }
+
+      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement> newElement) override;
 
     protected:
 
@@ -178,6 +176,32 @@ namespace mtca4u {
       using detail::NDRegisterAccessorDecoratorImpl<UserType,TargetUserType>::_target;
 
   };
+
+  namespace detail {
+
+    /** Factory to create an instance of the CopyRegisterDecorator. This factory is required to break a circular
+     *  dependency between this include file and CopyRegisterDecorator.h, which would occur if we would just create
+     *  the instance here. */
+    template<typename T>
+    boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> createCopyDecorator(boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> target);
+
+  }
+
+}
+
+template<typename UserType, typename TargetUserType>
+void mtca4u::NDRegisterAccessorDecorator<UserType,TargetUserType>::replaceTransferElement(
+                                                boost::shared_ptr<mtca4u::TransferElement> newElement) {
+
+    auto casted = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<TargetUserType>>(newElement);
+    if(casted && newElement->mayReplaceOther(_target)) {
+      if(_target != newElement) {
+        _target = detail::createCopyDecorator<TargetUserType>(casted);
+      }
+    }
+    else {
+      _target->replaceTransferElement(newElement);
+    }
 
 }
 

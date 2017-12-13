@@ -54,7 +54,7 @@ template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransfer
 
 class TransferGroupTest {
   public:
-    void testSimpleCase();
+    void testAdding();
     void testLogicalNameMappedRegister();
     void testMergeNumericRegisters();
     void testMergeNumericRegistersDifferentTypes();
@@ -67,7 +67,7 @@ class TransferGroupTestSuite : public test_suite {
     TransferGroupTestSuite() : test_suite("TransferGroup class test suite") {
       boost::shared_ptr<TransferGroupTest> transferGroupTest(new TransferGroupTest);
 
-      add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testSimpleCase, transferGroupTest) );
+      add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testAdding, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testLogicalNameMappedRegister, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegisters, transferGroupTest) );
       add( BOOST_CLASS_TEST_CASE(&TransferGroupTest::testMergeNumericRegistersDifferentTypes, transferGroupTest) );
@@ -83,7 +83,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
   return NULL;
 }
 
-void TransferGroupTest::testSimpleCase() {
+void TransferGroupTest::testAdding() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
   mtca4u::Device device;
@@ -126,9 +126,12 @@ void TransferGroupTest::testSimpleCase() {
   // add accessors to the transfer group
   TransferGroup group;
   group.addAccessor(a1);
+  BOOST_CHECK(!group.isReadOnly());
   group.addAccessor(a2);
+  BOOST_CHECK(group.isReadOnly());
   group.addAccessor(a3);
   group.addAccessor(a4);
+  BOOST_CHECK(group.isReadOnly());
 
   // check if adding an accessor to another group throws an exception
   TransferGroup group2;
@@ -170,11 +173,16 @@ void TransferGroupTest::testSimpleCase() {
     BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
   }
 
-  // since we are using a NumericAddressedBackend, only raw buffers are shared. Thus writing to the register accessor
-  // (cooked) buffers should not influence the other accessors in the group.
+  // during the replace operation, user buffers will be reset, if a replacement
+  BOOST_CHECK(a1[0] == 42);
+  BOOST_CHECK(a2[0] == 0);    // this one was replaced
+  BOOST_CHECK(a3[0] == 123);
+  BOOST_CHECK(a4[0] == 42);
+
+  // Writing to the register accessor (cooked) buffers should not influence the other accessors in the group.
   a1[0] = 333;
   BOOST_CHECK(a1[0] == 333);
-  BOOST_CHECK(a2[0] == 42);
+  BOOST_CHECK(a2[0] == 0);
   BOOST_CHECK(a3[0] == 123);
   BOOST_CHECK(a4[0] == 42);
   a2[0] = 666;
@@ -190,24 +198,6 @@ void TransferGroupTest::testSimpleCase() {
   a4[0] = 111;
   BOOST_CHECK(a1[0] == 333);
   BOOST_CHECK(a2[0] == 666);
-  BOOST_CHECK(a3[0] == 999);
-  BOOST_CHECK(a4[0] == 111);
-
- // write will trigger writes of the underlying accessors in sequence, so a4 will write at last
-  group.write();
-  BOOST_CHECK(a1[0] == 333);
-  BOOST_CHECK(a2[0] == 666);
-  BOOST_CHECK(a3[0] == 999);
-  BOOST_CHECK(a4[0] == 111);
-  a1[0] = 0;
-  a2[0] = 0;
-  a3[0] = 0;
-  a4[0] = 0;
-
-  // now read and check if values are as expected
-  group.read();
-  BOOST_CHECK(a1[0] == 111);
-  BOOST_CHECK(a2[0] == 111);
   BOOST_CHECK(a3[0] == 999);
   BOOST_CHECK(a4[0] == 111);
 
@@ -554,26 +544,27 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
       fakeLowLevel(_fakeLowLevel)
     {
       assert(boost::dynamic_pointer_cast<NDRegisterAccessor<T>>(target) != nullptr);    // a bit late but better than nothing...
+      this->_name = "CD:"+this->_name;
     }
 
-    void preRead() override {
+    void doPreRead() override {
       nPreRead++;
-      NDRegisterAccessorDecorator<T>::preRead();
+      NDRegisterAccessorDecorator<T>::doPreRead();
     }
 
-    void postRead() override {
+    void doPostRead() override {
       nPostRead++;
-      NDRegisterAccessorDecorator<T>::postRead();
+      NDRegisterAccessorDecorator<T>::doPostRead();
     }
 
-    void preWrite() override {
+    void doPreWrite() override {
       nPreWrite++;
-      NDRegisterAccessorDecorator<T>::preWrite();
+      NDRegisterAccessorDecorator<T>::doPreWrite();
     }
 
-    void postWrite() override {
+    void doPostWrite() override {
       nPostWrite++;
-      NDRegisterAccessorDecorator<T>::postWrite();
+      NDRegisterAccessorDecorator<T>::doPostWrite();
     }
 
     void doReadTransfer() override {
@@ -606,18 +597,30 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
     }
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-      if(!fakeLowLevel) NDRegisterAccessorDecorator<T>::replaceTransferElement(newElement);
-    }
-
-    bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
-      if(fakeLowLevel) {
-        auto casted = boost::dynamic_pointer_cast<CountingDecorator<T> const>(other);
-        if(!casted) return false;
-        return (casted->_target == _target);
+      if(fakeLowLevel) return;
+      if(_target->mayReplaceOther(newElement)) {
+        _target = boost::static_pointer_cast< NDRegisterAccessor<T> >(newElement);
       }
       else {
-        return NDRegisterAccessorDecorator<T>::isSameRegister(other);
+        _target->replaceTransferElement(newElement);
       }
+    }
+
+    std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+      if(fakeLowLevel) {
+        return {};
+      }
+      else {
+        return NDRegisterAccessorDecorator<T>::getInternalElements();
+      }
+    }
+
+    bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
+      auto casted = boost::dynamic_pointer_cast<CountingDecorator<T> const>(other);
+      if(!casted) return false;
+      if(_target == casted->_target) return true;
+      if(_target->mayReplaceOther(casted->_target)) return true;
+      return false;
     }
 
     void resetCounters() {
@@ -645,7 +648,6 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
 
 };
 
-
 void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
@@ -653,48 +655,47 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
 
   device.open("DUMMYD3");
 
-  // create register accessors of four registers with adjecent addresses
+  // create register accessors of four registers with adjecent addresses, one of the registers is in the group two times
   auto mux0 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
-  auto mux1 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
+  auto mux0_2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
   auto mux2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
   auto mux3 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
 
   // decorate the accessors which we will put into the transfer group, so we can count how often the functions are called
   auto mux0d = boost::make_shared<CountingDecorator<int>>(mux0.getHighLevelImplElement());
-  auto mux1d = boost::make_shared<CountingDecorator<int>>(mux1.getHighLevelImplElement());
+  auto mux0_2d = boost::make_shared<CountingDecorator<int>>(mux0_2.getHighLevelImplElement());
   auto mux2d = boost::make_shared<CountingDecorator<int>>(mux2.getHighLevelImplElement());
   auto mux3d = boost::make_shared<CountingDecorator<int>>(mux3.getHighLevelImplElement());
 
-  // decorate another time with a plain NDRegisterAccessorDecorator
-  auto mux0d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux0d);
-  auto mux1d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux1d);
-  auto mux2d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux2d);
-  auto mux3d2 = boost::make_shared<NDRegisterAccessorDecorator<int>>(mux3d);
-
   // place the decorated registers inside the abstractors
-  mux0.replace(mux0d2);
-  mux1.replace(mux1d2);
-  mux2.replace(mux2d2);
-  mux3.replace(mux3d2);
+  mux0.replace(mux0d);
+  mux0_2.replace(mux0_2d);
+  mux2.replace(mux2d);
+  mux3.replace(mux3d);
 
   // create the same register accessors again, so we have a second set not part of the transfer group
   auto mux0b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
-  auto mux1b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
   auto mux2b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
   auto mux3b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
+
+  BOOST_CHECK( mux0d->_target != mux0_2d->_target );
+  BOOST_CHECK( mux0.getHighLevelImplElement() == mux0d );
+  BOOST_CHECK( mux0_2.getHighLevelImplElement() == mux0_2d );
 
   // add accessors to the transfer group
   TransferGroup group;
   group.addAccessor(mux0);
-  group.addAccessor(mux1);
+  group.addAccessor(mux0_2);
   group.addAccessor(mux2);
   group.addAccessor(mux3);
+
+  BOOST_CHECK( mux0.getHighLevelImplElement() == mux0d );
+  BOOST_CHECK( mux0_2.getHighLevelImplElement() != mux0_2d );
+  BOOST_CHECK( boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(mux0_2.getHighLevelImplElement()) != nullptr );
 
   // write some data to the registers (without the TransferGroup)
   mux0b = 18;
   mux0b.write();
-  mux1b = 20;
-  mux1b.write();
   mux2b = 22;
   mux2b.write();
   mux3b = 23;
@@ -713,15 +714,15 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
   BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
 
-  BOOST_CHECK_EQUAL( (int)mux1, 20 );
-  BOOST_CHECK_EQUAL( mux1d->nPreRead, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nPostRead, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nWrite, 0 );
+  BOOST_CHECK_EQUAL( (int)mux0_2, 18 );
+  BOOST_CHECK_EQUAL( mux0_2d->nPreRead, 0 );      // this accessor is no longer used...
+  BOOST_CHECK_EQUAL( mux0_2d->nPostRead, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nWrite, 0 );
 
   BOOST_CHECK_EQUAL( (int)mux2, 22 );
   BOOST_CHECK_EQUAL( mux2d->nPreRead, 1 );
@@ -744,66 +745,22 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   BOOST_CHECK_EQUAL( mux3d->nWrite, 0 );
 
   mux0d->resetCounters();
-  mux1d->resetCounters();
+  mux0_2d->resetCounters();
   mux2d->resetCounters();
   mux3d->resetCounters();
 
-  // write through transfer group
+  // write through transfer group is not possible, since it is read-only
   mux0 = 24;
-  mux1 = 27;
+  mux0_2 = 24;
   mux2 = 30;
   mux3 = 33;
-  group.write();
-
-  BOOST_CHECK_EQUAL( (int)mux0, 24 );
-  BOOST_CHECK_EQUAL( mux0d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux0d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
-
-  BOOST_CHECK_EQUAL( (int)mux1, 27 );
-  BOOST_CHECK_EQUAL( mux1d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nWrite, 0 );
-
-  BOOST_CHECK_EQUAL( (int)mux2, 30 );
-  BOOST_CHECK_EQUAL( mux2d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux2d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux2d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nWrite, 0 );
-
-  BOOST_CHECK_EQUAL( (int)mux3, 33 );
-  BOOST_CHECK_EQUAL( mux3d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux3d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux3d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nWrite, 0 );
-
-  mux0b.read();
-  BOOST_CHECK_EQUAL( (int)mux0b, 24 );
-  mux1b.read();
-  BOOST_CHECK_EQUAL( (int)mux1b, 27 );
-  mux2b.read();
-  BOOST_CHECK_EQUAL( (int)mux2b, 30 );
-  mux3b.read();
-  BOOST_CHECK_EQUAL( (int)mux3b, 33 );
-
+  try {
+    group.write();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_IS_READ_ONLY);
+  }
 }
 
 void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
@@ -815,40 +772,54 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
 
   // create register accessors of four registers with adjecent addresses
   auto mux0 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
-  auto mux1 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
+  auto mux0_2 = mux0;  // make duplicate of one accessor
   auto mux2 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
   auto mux3 = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
 
   // decorate the accessors which we will put into the transfer group, so we can count how often the functions are called
   auto mux0d = boost::make_shared<CountingDecorator<int>>(mux0.getHighLevelImplElement(), true);
-  auto mux1d = boost::make_shared<CountingDecorator<int>>(mux1.getHighLevelImplElement(), true);
+  auto mux0_2d = boost::make_shared<CountingDecorator<int>>(mux0_2.getHighLevelImplElement(), true);
   auto mux2d = boost::make_shared<CountingDecorator<int>>(mux2.getHighLevelImplElement(), true);
   auto mux3d = boost::make_shared<CountingDecorator<int>>(mux3.getHighLevelImplElement(), true);
 
+  // decorate another time
+  auto mux0d2 = boost::make_shared<CountingDecorator<int>>(mux0d);
+  auto mux0_2d2 = boost::make_shared<CountingDecorator<int>>(mux0_2d);
+  auto mux2d2 = boost::make_shared<CountingDecorator<int>>(mux2d);
+  auto mux3d2 = boost::make_shared<CountingDecorator<int>>(mux3d);
+
   // place the decorated registers inside the abstractors
-  mux0.replace(mux0d);
-  mux1.replace(mux1d);
-  mux2.replace(mux2d);
-  mux3.replace(mux3d);
+  mux0.replace(mux0d2);
+  mux0_2.replace(mux0_2d2);
+  mux2.replace(mux2d2);
+  mux3.replace(mux3d2);
 
   // create the same register accessors again, so we have a second set not part of the transfer group
   auto mux0b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_0");
-  auto mux1b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_1");
   auto mux2b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_2");
   auto mux3b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
+
+  BOOST_CHECK( mux0d->_target == mux0_2d->_target );
+  BOOST_CHECK( mux0d2->_target == mux0d );
+  BOOST_CHECK( mux0_2d2->_target == mux0_2d );
+  BOOST_CHECK( mux2d2->_target == mux2d );
+  BOOST_CHECK( mux3d2->_target == mux3d );
 
   // add accessors to the transfer group
   TransferGroup group;
   group.addAccessor(mux0);
-  group.addAccessor(mux1);
+  group.addAccessor(mux0_2);
   group.addAccessor(mux2);
   group.addAccessor(mux3);
+
+  BOOST_CHECK( mux0d->_target == mux0_2d->_target );
+  BOOST_CHECK( boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(mux0_2.getHighLevelImplElement()) != nullptr );
+  BOOST_CHECK( mux2d2->_target == mux2d );
+  BOOST_CHECK( mux3d2->_target == mux3d );
 
   // write some data to the registers (without the TransferGroup)
   mux0b = 18;
   mux0b.write();
-  mux1b = 20;
-  mux1b.write();
   mux2b = 22;
   mux2b.write();
   mux3b = 23;
@@ -858,6 +829,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   group.read();
 
   BOOST_CHECK_EQUAL( (int)mux0, 18 );
+  BOOST_CHECK_EQUAL( (int)mux0_2, 18 );
   BOOST_CHECK_EQUAL( mux0d->nPreRead, 1 );
   BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
   BOOST_CHECK_EQUAL( mux0d->nPreWrite, 0 );
@@ -866,16 +838,6 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
   BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
   BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
-
-  BOOST_CHECK_EQUAL( (int)mux1, 20 );
-  BOOST_CHECK_EQUAL( mux1d->nPreRead, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nPostRead, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nRead, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nWrite, 0 );
 
   BOOST_CHECK_EQUAL( (int)mux2, 22 );
   BOOST_CHECK_EQUAL( mux2d->nPreRead, 1 );
@@ -898,64 +860,22 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   BOOST_CHECK_EQUAL( mux3d->nWrite, 0 );
 
   mux0d->resetCounters();
-  mux1d->resetCounters();
+  mux0_2d->resetCounters();
   mux2d->resetCounters();
   mux3d->resetCounters();
 
   // write through transfer group
+  /// @todo FIXME transfer group should become read-only in this scenario!!!
   mux0 = 24;
-  mux1 = 27;
+  mux0_2 = 24;
   mux2 = 30;
   mux3 = 33;
-  group.write();
-
-  BOOST_CHECK_EQUAL( (int)mux0, 24 );
-  BOOST_CHECK_EQUAL( mux0d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux0d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nWrite, 1 );
-
-  BOOST_CHECK_EQUAL( (int)mux1, 27 );
-  BOOST_CHECK_EQUAL( mux1d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux1d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux1d->nWrite, 1 );
-
-  BOOST_CHECK_EQUAL( (int)mux2, 30 );
-  BOOST_CHECK_EQUAL( mux2d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux2d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux2d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux2d->nWrite, 1 );
-
-  BOOST_CHECK_EQUAL( (int)mux3, 33 );
-  BOOST_CHECK_EQUAL( mux3d->nPreRead, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nPostRead, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nPreWrite, 1 );
-  BOOST_CHECK_EQUAL( mux3d->nPostWrite, 1 );
-  BOOST_CHECK_EQUAL( mux3d->nRead, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nReadNonBlocking, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nReadLatest, 0 );
-  BOOST_CHECK_EQUAL( mux3d->nWrite, 1 );
-
-  mux0b.read();
-  BOOST_CHECK_EQUAL( (int)mux0b, 24 );
-  mux1b.read();
-  BOOST_CHECK_EQUAL( (int)mux1b, 27 );
-  mux2b.read();
-  BOOST_CHECK_EQUAL( (int)mux2b, 30 );
-  mux3b.read();
-  BOOST_CHECK_EQUAL( (int)mux3b, 33 );
+  try {
+    group.write();
+    BOOST_ERROR("Exception expected.");
+  }
+  catch(mtca4u::DeviceException &e) {
+    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_IS_READ_ONLY);
+  }
 
 }

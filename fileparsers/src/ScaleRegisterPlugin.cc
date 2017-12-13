@@ -35,7 +35,7 @@ namespace mtca4u {
       : NDRegisterAccessorDecorator<UserType>(accessor), _scalingFactor(scalingFactor)
       {}
 
-      void postRead() override {
+      void doPostRead() override {
         _target->postRead();
         // apply scaling factor while copying buffer from underlying accessor to our buffer
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
@@ -45,7 +45,7 @@ namespace mtca4u {
         }
       }
 
-      void preWrite() override {
+      void doPreWrite() override {
         // apply scaling factor while copying buffer from our buffer to underlying accessor
         for(unsigned int i=0; i<NDRegisterAccessor<UserType>::buffer_2D.size(); i++) {
           for(unsigned int k=0; k<NDRegisterAccessor<UserType>::buffer_2D[i].size(); k++) {
@@ -65,10 +65,10 @@ namespace mtca4u {
   };
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::postRead();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::doPostRead();
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::preWrite();
+  void ScaleRegisterPluginRegisterAccessor<std::string>::doPreWrite();
 
   /********************************************************************************************************************/
 
@@ -101,7 +101,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::postRead() {
+  void ScaleRegisterPluginRegisterAccessor<std::string>::doPostRead() {
     // apply scaling factor while copying buffer from underlying accessor to our buffer
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {
@@ -114,7 +114,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<>
-  void ScaleRegisterPluginRegisterAccessor<std::string>::preWrite() {
+  void ScaleRegisterPluginRegisterAccessor<std::string>::doPreWrite() {
     // apply scaling factor while copying buffer from our buffer to underlying accessor
     for(unsigned int i=0; i<NDRegisterAccessor<std::string>::buffer_2D.size(); i++) {
       for(unsigned int k=0; k<NDRegisterAccessor<std::string>::buffer_2D[i].size(); k++) {

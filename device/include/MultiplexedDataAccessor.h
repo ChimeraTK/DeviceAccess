@@ -73,17 +73,17 @@ namespace mtca4u {
         return accessor->readLatest();
       }
 
-      void postRead() override {
+      void doPostRead() override {
         accessor->postRead();
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
-      void preWrite() override {
+      void doPreWrite() override {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
         accessor->preWrite();
       }
 
-      void postWrite() override {
+      void doPostWrite() override {
         accessor->postWrite();
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
@@ -104,36 +104,27 @@ namespace mtca4u {
         return accessor->doWriteTransfer(versionNumber);
       }
 
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {// LCOV_EXCL_LINE
-        return accessor->isSameRegister(other);// LCOV_EXCL_LINE
-      }// LCOV_EXCL_LINE
-
-      virtual bool isReadOnly() const override {// LCOV_EXCL_LINE
+      bool isReadOnly() const override {// LCOV_EXCL_LINE
         return accessor->isReadOnly();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual bool isReadable() const override {// LCOV_EXCL_LINE
+      bool isReadable() const override {// LCOV_EXCL_LINE
         return accessor->isReadable();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual bool isWriteable() const override{// LCOV_EXCL_LINE
+      bool isWriteable() const override{// LCOV_EXCL_LINE
         return accessor->isWriteable();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
     protected:
 
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {// LCOV_EXCL_LINE
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {// LCOV_EXCL_LINE
         return accessor->getHardwareAccessingElements();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {// LCOV_EXCL_LINE
-        if(accessor->isSameRegister(newElement)) {// LCOV_EXCL_LINE
-          accessor = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);// LCOV_EXCL_LINE
-        }// LCOV_EXCL_LINE
-        else {// LCOV_EXCL_LINE
-          accessor->replaceTransferElement(newElement);// LCOV_EXCL_LINE
-        }// LCOV_EXCL_LINE
-      }// LCOV_EXCL_LINE
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        return {};
+      }
 
       boost::shared_ptr< NDRegisterAccessor<UserType> > accessor;
 

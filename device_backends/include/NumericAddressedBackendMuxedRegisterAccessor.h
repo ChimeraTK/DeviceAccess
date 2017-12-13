@@ -45,17 +45,22 @@ namespace mtca4u {
         return true;
       }
 
-      void postRead() override;
+      void doPostRead() override;
 
       bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override;
 
-      void preWrite() override;
+      void doPreWrite() override;
 
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendMuxedRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
-        if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_ioDevice != rhsCasted->_ioDevice) return false;
+        if(_bar != rhsCasted->_bar) return false;
+        if(_address != rhsCasted->_address) return false;
+        if(_nBytes != rhsCasted->_nBytes) return false;
+        if(_numberOfElements != rhsCasted->_numberOfElements) return false;
+        if(_elementsOffset != rhsCasted->_elementsOffset) return false;
+        if(_converters != rhsCasted->_converters) return false;
         return true;
       }
 
@@ -106,6 +111,10 @@ namespace mtca4u {
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+      }
+
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        return {};
       }
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}   // LCOV_EXCL_LINE
@@ -238,7 +247,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template <class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::postRead() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
@@ -262,7 +271,7 @@ namespace mtca4u {
         }
       }
 
-      SyncNDRegisterAccessor<UserType>::postRead();
+      SyncNDRegisterAccessor<UserType>::doPostRead();
   }
 
   /********************************************************************************************************************/
@@ -276,7 +285,7 @@ namespace mtca4u {
   /********************************************************************************************************************/
 
   template<class UserType>
-  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::preWrite() {
+  void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite() {
       uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
       for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
         for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {

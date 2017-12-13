@@ -87,12 +87,8 @@ namespace mtca4u {
         return false;
       }
 
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
-        auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendVariableAccessor<UserType> >(other);
-        if(!rhsCasted) return false;
-        if(_registerPathName != rhsCasted->_registerPathName) return false;
-        if(_dev != rhsCasted->_dev) return false;
-        return true;
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &) const override {
+        return false;   // never replace, since it does not optimise anything
       }
 
       bool isReadOnly() const override {
@@ -107,7 +103,7 @@ namespace mtca4u {
         return _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
       }
 
-      void postRead() override {
+      void doPostRead() override {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
       }
 
@@ -129,6 +125,10 @@ namespace mtca4u {
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+      }
+
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        return {};
       }
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}  // LCOV_EXCL_LINE

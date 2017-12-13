@@ -14,6 +14,7 @@ set(SOURCE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol0.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol1.cc
    ${CMAKE_CURRENT_SOURCE_DIR}/src/testableRebotSleep.cc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/NDRegisterAccessorDecorator.cc
    PARENT_SCOPE
 )
 

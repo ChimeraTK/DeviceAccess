@@ -219,8 +219,8 @@ void LMapBackendTest::testExceptions() {
     impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
     impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
 
-    BOOST_CHECK( impl->isSameRegister(impl2) == true );
-    BOOST_CHECK( impl->isSameRegister(impl3) == false );
+    //BOOST_CHECK( impl->mayReplaceOther(impl2) == true );    // this is currently always set to false, since it doesn't really make any difference...
+    BOOST_CHECK( impl->mayReplaceOther(impl3) == false );
 
     device.close();
 
@@ -393,9 +393,9 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
   impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
 
-  BOOST_CHECK( impl->isSameRegister( impl ) == true );
-  BOOST_CHECK( impl2->isSameRegister( impl ) == false );
-  BOOST_CHECK( impl->isSameRegister( impl2 ) == false );
+  BOOST_CHECK( impl->mayReplaceOther( impl ) == true );
+  BOOST_CHECK( impl2->mayReplaceOther( impl ) == false );
+  BOOST_CHECK( impl->mayReplaceOther( impl2 ) == false );
 
   const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
@@ -560,8 +560,8 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
   impl4 = acc4.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
   impl3_2 = acc3_2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-  BOOST_CHECK( impl3->isSameRegister( impl3_2 ) == true );
-  BOOST_CHECK( impl3->isSameRegister( impl4 ) == false );
+  BOOST_CHECK( impl3->mayReplaceOther( impl3_2 ) == true );
+  BOOST_CHECK( impl3->mayReplaceOther( impl4 ) == false );
 
   mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
   unsigned int nSamples = accTarget[3].size();

@@ -18,7 +18,7 @@ namespace mtca4u {
 
       /** constructor, only internally called from createInstance() */
       ScaleRegisterPlugin(const std::map<std::string, DynamicValue<std::string> > &parameters);
-  
+
     public:
 
       static boost::shared_ptr<RegisterInfoPlugin> createInstance(const std::map<std::string, DynamicValue<std::string> > &parameters);
@@ -32,12 +32,12 @@ namespace mtca4u {
 
       // Helper function to apply scaling factor while copying buffer
       // from underlying accessor to our buffer.
-      // Put into separate function to avouid code duplication 
+      // Put into separate function to avouid code duplication
       void applyScalingFactorUnderlyingToThisBuffer();
-      
+
       /** The scaling factor to multiply the data with */
       DynamicValue<double> scalingFactor;
-  
+
   };
 
 } /* namespace mtca4u */

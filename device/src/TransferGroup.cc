@@ -6,21 +6,28 @@
  */
 
 #include "TransferGroup.h"
+#include "TransferElement.h"
 #include "DeviceException.h"
-#include "BufferingRegisterAccessor.h"
-#include "TwoDRegisterAccessor.h"
+#include "NDRegisterAccessorBridge.h"
+#include "NDRegisterAccessorDecorator.h"
+#include "CopyRegisterDecorator.h"
 
 namespace mtca4u {
 
+  /*********************************************************************************************************************/
+
   void TransferGroup::read() {
-    for(unsigned int i=0; i<highLevelElements.size(); i++) {
-      highLevelElements[i]->preRead();
+    for(auto &elem : highLevelElements) {
+      elem->preRead();
     }
-    for(unsigned int i=0; i<elements.size(); i++) {
-      elements[i]->doReadTransfer();
+    for(auto &elem : lowLevelElements) {
+      elem->doReadTransfer();
     }
-    for(unsigned int i=0; i<highLevelElements.size(); i++) {
-      highLevelElements[i]->postRead();
+    for(auto &elem : copyDecorators) {
+      elem->postRead();
+    }
+    for(auto &elem : highLevelElements) {
+      elem->postRead();
     }
   }
 
@@ -31,14 +38,14 @@ namespace mtca4u {
       throw DeviceException("TransferGroup::write() called, but the TransferGroup is read-only.",
           DeviceException::REGISTER_IS_READ_ONLY);
     }
-    for(unsigned int i=0; i<highLevelElements.size(); i++) {
-      highLevelElements[i]->preWrite();
+    for(auto &elem : highLevelElements) {
+      elem->preWrite();
     }
-    for(unsigned int i=0; i<elements.size(); i++) {
-      elements[i]->doWriteTransfer();
+    for(auto &elem : lowLevelElements) {
+      elem->doWriteTransfer();
     }
-    for(unsigned int i=0; i<highLevelElements.size(); i++) {
-      highLevelElements[i]->postWrite();
+    for(auto &elem : highLevelElements) {
+      elem->postWrite();
     }
   }
 
@@ -59,52 +66,51 @@ namespace mtca4u {
           DeviceException::WRONG_PARAMETER);
     }
 
-    // Store the accessor itself in the high-level list
-    highLevelElements.push_back(accessor.getHighLevelImplElement());
+    // set flag on the accessors that it is now in a transfer group
     accessor.getHighLevelImplElement()->isInTransferGroup = true;
 
-    // Iterate over all new hardware-accessing elements and add them to the list
-    auto newElements = accessor.getHardwareAccessingElements();
-    for(unsigned int i=0; i<newElements.size(); i++) {
-      elements.push_back(newElements[i]);
-    }
+    auto highLevelElementsWithNewAccessor = highLevelElements;
+    highLevelElementsWithNewAccessor.insert(accessor.getHighLevelImplElement());
 
-    // Iterate over all hardware-accessing elements and merge any potential duplicates
-    // Note: This cannot be done only for the newly added elements, since e.g. in NumericAddressedBackend the new
-    // accessor might fill the gap (in the address space) between to already added accessors, in which case also the
-    // already added accessors must be merged.
-    // We go backwards through the list, since the latest element is the recently added accessor, for which we still
-    // have the original pimpl frontend (variable "accessor"). In cases were we need to replace the entire accessor
-    // implementation we need to do this on the pimpl frontent instead of the implementation stored in the
-    // highLevelElements list.
-    std::vector< std::vector< boost::shared_ptr<TransferElement> >::iterator > eraseList;
-    for(int i=elements.size()-1; i>0; --i) {
-      for(int k=i-1; k>=0; --k) {
-        if(elements[i]->isSameRegister(elements[k])) {
-          // replace the TransferElement inside any high-level accessor with the merged version
-          accessor.replaceTransferElement(elements[k]);  // might need to replace the implementation of the pimpl accessor frontend
-          for(auto &m : highLevelElements) {
-            m->replaceTransferElement(elements[k]);
-          }
-          eraseList.push_back(elements.begin() + i); // store iterator to element to be deleted
-          break;
+    // try replacing all internal elements in all high-level elements
+    for(auto &hlElem1 : highLevelElementsWithNewAccessor) {
+
+      auto list = hlElem1->getInternalElements();
+      list.push_front(hlElem1);
+
+      for(auto &replacement : list) {
+        // try on the abstractor first, to make sure we replace at the highest level if possible
+        accessor.replaceTransferElement(replacement);
+        // try on all high-level elements already stored in the list
+        for(auto &hlElem : highLevelElementsWithNewAccessor) {
+          hlElem->replaceTransferElement(replacement);     // note: this does nothing, if the replacement cannot be used by the hlElem!
         }
       }
     }
 
-    // Erase the duplicates (cannot do this inside the loop since it would invalidate the iterators)
-    for(auto &e : eraseList) elements.erase(e);
+    // store the accessor in the list of high-level elements
+    // this must be done only now, since it may have been replaced during the replacement process
+    highLevelElements.insert(accessor.getHighLevelImplElement());
 
-    // remove duplicates in highLevelElements, since otherwise postRead() etc. is called twice
-    eraseList.clear();
-    for(size_t i=0; i<highLevelElements.size(); ++i) {
-      for(size_t k=i+1; k<highLevelElements.size(); ++k) {
-        if(highLevelElements[i] == highLevelElements[k]) {
-          eraseList.push_back(highLevelElements.begin() + i);
+    // update the list of hardware-accessing elements, since we might just have made some of them redundant
+    // since we are using a set to store the elements, duplicates are intrinsically avoided.
+    lowLevelElements.clear();
+    for(auto &hlElem : highLevelElements) {
+      for(auto &hwElem : hlElem->getHardwareAccessingElements()) lowLevelElements.insert(hwElem);
+    }
+
+    // update the list of CopyRegisterDecorators
+    copyDecorators.clear();
+    for(auto &hlElem : highLevelElements) {
+      if(boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(hlElem) != nullptr) {
+        copyDecorators.insert(hlElem);
+      }
+      for(auto &hwElem : hlElem->getInternalElements()) {
+        if(boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(hwElem) != nullptr) {
+          copyDecorators.insert(hwElem);
         }
       }
     }
-    for(auto &e : eraseList) highLevelElements.erase(e);
 
     // Update read-only flag
     if(accessor.isReadOnly()) readOnly = true;
@@ -119,7 +125,7 @@ namespace mtca4u {
       std::cout << " - " << elem->getName() << std::endl;
     }
     std::cout << "=== Low-level transfer elements in this group: " << std::endl;
-    for(auto &elem : elements) {
+    for(auto &elem : lowLevelElements) {
       std::cout << " - " << elem->getName() << std::endl;
     }
     std::cout << "===" << std::endl;

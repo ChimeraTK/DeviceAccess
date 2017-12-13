@@ -180,6 +180,12 @@ namespace mtca4u {
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
        *  without launching a thread.
        *
+       *  Note for implementations: Inside this function and before launching the actual transfer, preRead() has
+       *  to be called, otherwise postRead() will not get executed after the transfer. postRead() on the other hand
+       *  must not be called inside this function, since this would update the user buffer, which should only happen
+       *  when waiting on the TransferFuture. TransferFuture::wait() will automatically call postRead() before
+       *  returning. Decorators must also call preRead() in their implementations of readAsync()!
+       *
        *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture readAsync() = 0;
 
@@ -244,7 +250,18 @@ namespace mtca4u {
        *
        *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly
        *  on the underlying accessor. */
-      virtual void preRead() {};
+      void preRead() {
+        assert(!writeTransactionInProgress);
+        if(readTransactionInProgress) return;
+        doPreRead();
+        readTransactionInProgress = true;
+      };
+
+      /** Backend specific implementation of preRead(). preRead() will call this function, but it will make sure that
+       *  it gets called only once per transfer. */
+    protected:
+      virtual void doPreRead() {};
+    public:
 
       /** Transfer the data from the device receive buffer into the user buffer, while converting the data into the
        *  user data format if needed.
@@ -252,7 +269,18 @@ namespace mtca4u {
        *  Called by read() etc. Also the TransferGroup will call this function after a read was executed directly on
        *  the underlying accessor. This function must be implemented to extract the read data from the underlying
        *  accessor and expose it to the user. */
-      virtual void postRead() {};
+      void postRead() {
+        assert(!writeTransactionInProgress);
+        if(!readTransactionInProgress) return;
+        doPostRead();
+        readTransactionInProgress = false;
+      };
+
+      /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
+       *  it gets called only once per transfer. */
+    protected:
+      virtual void doPostRead() {};
+    public:
 
       /** Function called by the TransferFuture before entering a potentially blocking wait(). In contrast to a wait
        *  callback of a boost::future/promise, this function is not called when just checking whether the result is
@@ -271,7 +299,18 @@ namespace mtca4u {
        *  Called by write(). Also the TransferGroup will call this function before a write will be executed directly
        *  on the underlying accessor. This function implemented be used to transfer the data to be written into the
        *  underlying accessor. */
-      virtual void preWrite() {};
+      void preWrite() {
+        assert(!readTransactionInProgress);
+        if(writeTransactionInProgress) return;
+        doPreWrite();
+        writeTransactionInProgress = true;
+      };
+
+      /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
+       *  it gets called only once per transfer. */
+    protected:
+      virtual void doPreWrite() {};
+    public:
 
       /** Perform any post-write cleanups if necessary. If during preWrite() e.g. the user data buffer was swapped
        *  away, it must be swapped back in this function so the just sent data is available again to the calling
@@ -279,7 +318,18 @@ namespace mtca4u {
        *
        *  Called by write(). Also the TransferGroup will call this function after a write was executed directly
        *  on the underlying accessor. */
-      virtual void postWrite() {};
+      void postWrite() {
+        assert(!readTransactionInProgress);
+        if(!writeTransactionInProgress) return;
+        doPostWrite();
+        writeTransactionInProgress = false;
+      };
+
+      /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
+       *  it gets called only once per transfer. */
+    protected:
+      virtual void doPostWrite() {};
+    public:
 
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
        *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false.
@@ -289,13 +339,34 @@ namespace mtca4u {
       virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) = 0;
 
       /**
-       *  Check if the two TransferElements are identical, i.e. accessing the same hardware register. The definition of
-       *  an "hardware register" is strongly depending on the backend implementation, thus using this function in
-       *  application code will probably break the abstraction!
+       *  Check whether the TransferElement can be used in places where the TransferElement "other" is currently used,
+       *  e.g. to merge the two transfers. This function must be used in replaceTransferElement() by implementations
+       *  which use other TransferElements, to determine if a used TransferElement shall be replaced with the
+       *  TransferElement "other".
        *
-       *  @todo Rename this function to something more appropriate (e.g. mayJoinTransfer?)
+       *  The purpose of this function is not to determine if at any point in the hierarchy an replacement could be
+       *  done. This function only works on a single level. It is not used by the TransferGroup to determine
+       *  replaceTransferElement() whether shall be used (it is always called). Instead this function can be used
+       *  by decorators etc. inside their implementation of replaceTransferElement() to determine if they might swap
+       *  their implementation(s).
+       *
+       *  Beware that this function is non-commutative! In other words, the result of a->mayReplaceOther(b) might be
+       *  different to the result of b->mayReplaceOther(a). Both implementations and users have to take special care to
+       *  strictly follow this definition. Note that in many cases the result will be the same, so it can be difficult
+       *  to test for correct usage. One example of a non-commutative implementation is @todo COMPLETE DOCUMENTATION
+       *
+       *  @todo probably this function must actually be commutative!!!
+       *
+       *  Note for decorators and similar implementations: This function must not be decorated. It should only return
+       *  true if this should actually be replaced with other in the call to replaceTransferElement() one level up in
+       *  the hierarchy. If the replacement should be done further down in the hierarchy, simply return false. It
+       *  should only return if other is fully identical to this (i.e. behaves identical in all situations but might be
+       *  another instance).
        */
-      virtual bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const = 0;
+      virtual bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const {
+        (void) other; // prevent warning
+        return false;
+      }
 
       /** @brief Deprecated, do not use
        *  @deprecated The time stamp will be replaced with a unique counter.
@@ -327,6 +398,22 @@ namespace mtca4u {
       virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() = 0;
 
       /**
+       *  Obtain the full list of TransferElements internally used by this TransferElement. The function is recursive,
+       *  i.e. elements used by the elements returned by this function are also added to the list. It is guaranteed
+       *  that the directly used elements are first in the list and the result from recursion is appended to the list.
+       *
+       *  Example: A decorator would return a list with its target TransferElement followed by the result of
+       *  getInternalElements() called on its target TransferElement.
+       *
+       *  If this TransferElement is not using any other element, it should return an empty vector. Thus those elements
+       *  which return a list just containing themselves in getHardwareAccessingElements() will return an empty list
+       *  here in getInternalElements().
+       *
+       *  Note: Avoid using this in application code, since it will break the abstraction!
+       */
+      virtual std::list< boost::shared_ptr<TransferElement> > getInternalElements() = 0;
+
+      /**
        *  Obtain the highest level implementation TransferElement. For TransferElements which are itself an
        *  implementation this will directly return a shared pointer to this. If this TransferElement is a user
        *  frontend, the pointer to the internal implementation is returned.
@@ -341,10 +428,10 @@ namespace mtca4u {
        *  Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
        *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
        *  element matches the new element, this function has no effect.
-       *
-       *  Note: Avoid using this in application code, since it will break the abstraction!
        */
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        (void) newElement; // prevent warning
+      }
 
       /** Constant string to be used as a unit when the unit is not provided or known */
       static constexpr char unitNotSet[] = "n./a.";
@@ -393,6 +480,11 @@ namespace mtca4u {
 
       friend class TransferGroup;
       friend class TransferFuture;
+
+  private:
+
+      bool readTransactionInProgress{false};
+      bool writeTransactionInProgress{false};
   };
 
   /*******************************************************************************************************************/

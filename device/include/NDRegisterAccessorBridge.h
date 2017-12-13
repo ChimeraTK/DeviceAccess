@@ -11,6 +11,7 @@
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
 #include "NDRegisterAccessor.h"
+#include "CopyRegisterDecorator.h"
 
 namespace mtca4u {
 
@@ -78,8 +79,20 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->doReadTransferLatest();
       }
 
-      void postRead() override {
+      void doPreRead() override {
+        NDRegisterAccessorBridge<UserType>::_impl->preRead();
+      }
+
+      void doPostRead() override {
         NDRegisterAccessorBridge<UserType>::_impl->postRead();
+      }
+
+      void doPreWrite() override {
+        NDRegisterAccessorBridge<UserType>::_impl->preWrite();
+      }
+
+      void doPostWrite() override {
+        NDRegisterAccessorBridge<UserType>::_impl->postWrite();
       }
 
       TransferFuture readAsync() override {
@@ -115,17 +128,26 @@ namespace mtca4u {
         return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
       }
 
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
-        return _impl->isSameRegister(other);
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
+        return _impl->mayReplaceOther(other);
       }
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return _impl->getHardwareAccessingElements();
       }
 
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        auto result = _impl->getInternalElements();
+        result.push_front(_impl);
+        return result;
+      }
+
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-        if(_impl->isSameRegister(newElement)) {
-          _impl = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
+        if(newElement->mayReplaceOther(_impl)) {
+          if(newElement != _impl) {
+            auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(newElement);
+            _impl = boost::make_shared<ChimeraTK::CopyRegisterDecorator<UserType>>(casted);
+          }
         }
         else {
           _impl->replaceTransferElement(newElement);

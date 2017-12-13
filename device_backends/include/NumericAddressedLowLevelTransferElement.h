@@ -105,12 +105,11 @@ namespace mtca4u {
       }                                                                                                     // LCOV_EXCL_LINE
 
 
-      /** Check if the two TransferElements are identical, i.e. accessing the same hardware register. In the special
-       *  case of the NumericAddressedBackendRawAccessor, this function returns also true if the address areas
-       *  are adjacent and/or overlapping. NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes
-       *  care of replacing the NumericAddressedBackendRawAccessors with a single NumericAddressedBackendRawAccessor
-       *  covering the address space of both accessors. */
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
+      /** Check if the address areas are adjacent and/or overlapping.
+       *  NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes care of replacing the
+       *  NumericAddressedBackendRawAccessors with a single NumericAddressedBackendRawAccessor covering the address
+       *  space of both accessors. */
+      bool isMergeable(const boost::shared_ptr<TransferElement const> &other) const {
         // accessor type, device and bar must be the same
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedLowLevelTransferElement >(other);
         if(!rhsCasted) return false;
@@ -121,6 +120,10 @@ namespace mtca4u {
         if(_startAddress + _numberOfBytes < rhsCasted->_startAddress) return false;
         if(_startAddress > rhsCasted->_startAddress + rhsCasted->_numberOfBytes) return false;
         return true;
+      }
+
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &) const override {
+        return false;   // never used, since isMergeable() is used instead
       }
 
       const std::type_info& getValueType() const override {
@@ -169,6 +172,9 @@ namespace mtca4u {
 
         // compute number of bytes
         _numberOfBytes = _numberOfWords*sizeof(int32_t);
+
+        // update the name
+        _name = "NALLTE:" + std::to_string(_startAddress) + "+" + std::to_string(_numberOfBytes);
       }
 
       /** the backend to use for the actual hardware access */
@@ -195,6 +201,10 @@ namespace mtca4u {
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
+      }
+
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        return {};
       }
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE

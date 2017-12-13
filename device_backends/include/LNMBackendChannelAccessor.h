@@ -48,13 +48,14 @@ namespace mtca4u {
           }
           // get target device and accessor
           std::string devName = _info.deviceName;
+          boost::shared_ptr<DeviceBackend> targetDevice;
           if(devName != "this") {
-            _targetDevice = _dev->_devices[devName];
+            targetDevice = _dev->_devices[devName];
           }
           else {
-            _targetDevice = dev;
+            targetDevice = dev;
           }
-          _accessor = _targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
+          _accessor = targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
           // allocate the buffer
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
@@ -86,16 +87,16 @@ namespace mtca4u {
         return true;
       }
 
-      void preRead() override {
+      void doPreRead() override {
         _accessor->preRead();
       }
 
-      void postRead() override {
+      void doPostRead() override {
         _accessor->postRead();
         _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
       };
 
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const LNMBackendChannelAccessor<UserType> >(other);
         if(!rhsCasted) return false;
         if(_registerPathName != rhsCasted->_registerPathName) return false;
@@ -135,16 +136,19 @@ namespace mtca4u {
       /// which may not be owned by the backend
       LNMBackendRegisterInfo _info;
 
-      /// target device
-      boost::shared_ptr<DeviceBackend> _targetDevice;
-
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return _accessor->getHardwareAccessingElements();
       }
 
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        auto result = _accessor->getInternalElements();
+        result.push_front(_accessor);
+        return result;
+      }
+
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
         auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
-        if(newElement->isSameRegister(_accessor) && casted) {
+        if(casted && _accessor->mayReplaceOther(newElement)) {
           _accessor = casted;
         }
         else {

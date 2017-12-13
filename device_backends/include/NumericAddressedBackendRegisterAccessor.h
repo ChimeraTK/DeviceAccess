@@ -114,7 +114,7 @@ namespace mtca4u {
         return false;
       }
 
-      void postRead() override {
+      void doPostRead() override {
         auto itsrc = _rawAccessor->begin(_startAddress);
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
@@ -122,10 +122,10 @@ namespace mtca4u {
           *itdst = _fixedPointConverter.toCooked<UserType>(*itsrc);
           ++itsrc;
         }
-        SyncNDRegisterAccessor<UserType>::postRead();
+        SyncNDRegisterAccessor<UserType>::doPostRead();
       };
 
-      void preWrite() override {
+      void doPreWrite() override {
         auto itsrc = _rawAccessor->begin(_startAddress);
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
@@ -135,17 +135,18 @@ namespace mtca4u {
         }
       };
 
-      void postWrite() override {
-      };
+      void doPostWrite() override {
+      }
 
-      bool isSameRegister(const boost::shared_ptr<TransferElement const> &other) const override {
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendRegisterAccessor<UserType> >(other);
         if(!rhsCasted) return false;
-        if(_registerPathName != rhsCasted->_registerPathName) return false;
         if(_dev != rhsCasted->_dev) return false;
         if(_bar != rhsCasted->_bar) return false;
         if(_startAddress != rhsCasted->_startAddress) return false;
         if(_numberOfWords != rhsCasted->_numberOfWords) return false;
+        if(isRaw != rhsCasted->isRaw) return false;
+        if(_fixedPointConverter != rhsCasted->_fixedPointConverter) return false;
         return true;
       }
 
@@ -196,9 +197,13 @@ namespace mtca4u {
         return _rawAccessor->getHardwareAccessingElements();
       }
 
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
+        return {_rawAccessor};    // the rawAccessor always returns an empty list
+      }
+
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
         auto casted = boost::dynamic_pointer_cast< NumericAddressedLowLevelTransferElement >(newElement);
-        if(newElement->isSameRegister(_rawAccessor) && casted) {
+        if(casted && casted->isMergeable(_rawAccessor)) {
           size_t newStartAddress = std::min(casted->_startAddress, _rawAccessor->_startAddress);
           size_t newStopAddress = std::max(casted->_startAddress+casted->_numberOfBytes,
                                            _rawAccessor->_startAddress+_rawAccessor->_numberOfBytes);
@@ -211,13 +216,13 @@ namespace mtca4u {
   };
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::postRead();
+  void NumericAddressedBackendRegisterAccessor<int32_t>::doPostRead();
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::preWrite();
+  void NumericAddressedBackendRegisterAccessor<int32_t>::doPreWrite();
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::postWrite();
+  void NumericAddressedBackendRegisterAccessor<int32_t>::doPostWrite();
 
 }    // namespace mtca4u
 

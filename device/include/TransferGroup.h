@@ -8,7 +8,7 @@
 #ifndef MTCA4U_TRANSFER_GROUP_H
 #define MTCA4U_TRANSFER_GROUP_H
 
-#include <vector>
+#include <set>
 
 #include "TransferElement.h"
 
@@ -67,10 +67,14 @@ namespace mtca4u {
     protected:
 
       /** List of low-level TransferElements in this group, which are directly responsible for the hardware access */
-      std::vector< boost::shared_ptr<TransferElement> > elements;
+      std::set< boost::shared_ptr<TransferElement> > lowLevelElements;
+
+      /** List of all CopyRegisterDecorators in the group. On these elements, postRead() has to be executed before all
+       *  other elements. */
+      std::set< boost::shared_ptr<TransferElement> > copyDecorators;
 
       /** List of high-level TransferElements in this group which are directly used by the user */
-      std::vector< boost::shared_ptr<TransferElement> > highLevelElements;
+      std::set< boost::shared_ptr<TransferElement> > highLevelElements;
 
       /** Flag if group is read-only */
       bool readOnly;
