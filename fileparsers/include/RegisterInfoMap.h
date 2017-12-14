@@ -1,7 +1,7 @@
 /**
  *      @file           RegisterInfoMap.h
  *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @brief          Provides storage object for registers description taken from MAP file                
+ *      @brief          Provides storage object for registers description taken from MAP file
  */
 #ifndef MTCA4U_MAP_FILE_H
 #define MTCA4U_MAP_FILE_H
@@ -93,7 +93,7 @@ namespace mtca4u {
           bool     signedFlag; /**< Signed/Unsigned flag */
           uint32_t lineNumber; /**< Number of line with description of register in MAP file */
           std::string module; /**< Name of the module this register is in*/
-          
+
           DataDescriptor dataDescriptor;
 
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
@@ -243,6 +243,11 @@ namespace mtca4u {
 
       class const_iterator {
         public:
+          const_iterator() {}
+
+          const_iterator(RegisterCatalogue::const_iterator theIterator_)
+          : theIterator(theIterator_) {}
+
           const_iterator& operator++() {    // ++it
             ++theIterator;
             return *this;
@@ -275,11 +280,16 @@ namespace mtca4u {
           }
         protected:
           RegisterCatalogue::const_iterator theIterator;
-          friend class RegisterInfoMap;
       };
 
       class iterator {
         public:
+
+          iterator() {}
+
+          iterator(RegisterCatalogue::iterator theIterator_)
+          : theIterator(theIterator_) {}
+
           iterator& operator++() {    // ++it
             ++theIterator;
             return *this;
@@ -305,9 +315,7 @@ namespace mtca4u {
             return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(theIterator.get());
           }
           operator const_iterator() {
-            const_iterator it;
-            it.theIterator = theIterator;
-            return it;
+            return {theIterator};
           }
           bool operator==(const iterator &rightHandSide) const {
             return rightHandSide.theIterator == theIterator;
@@ -317,7 +325,6 @@ namespace mtca4u {
           }
         protected:
           RegisterCatalogue::iterator theIterator;
-          friend class RegisterInfoMap;
       };
 
       /**

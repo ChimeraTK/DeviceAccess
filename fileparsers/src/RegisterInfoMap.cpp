@@ -230,27 +230,19 @@ namespace mtca4u {
   }
 
   RegisterInfoMap::iterator RegisterInfoMap::begin() {
-    RegisterInfoMap::iterator it;
-    it.theIterator = _catalogue.begin();
-    return it;
+    return {_catalogue.begin()};
   }
 
   RegisterInfoMap::const_iterator RegisterInfoMap::begin() const {
-    RegisterInfoMap::const_iterator it;
-    it.theIterator = _catalogue.begin();
-    return it;
+    return {_catalogue.begin()};
   }
 
   RegisterInfoMap::iterator RegisterInfoMap::end(){
-    RegisterInfoMap::iterator it;
-    it.theIterator = _catalogue.end();
-    return it;
+    return {_catalogue.end()};
   }
 
   RegisterInfoMap::const_iterator RegisterInfoMap::end() const {
-    RegisterInfoMap::const_iterator it;
-    it.theIterator = _catalogue.end();
-    return it;
+    return {_catalogue.end()};
   }
 
   std::list< RegisterInfoMap::RegisterInfo > RegisterInfoMap::getRegistersInModule( std::string const & moduleName){
