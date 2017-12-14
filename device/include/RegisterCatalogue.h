@@ -17,7 +17,7 @@ namespace mtca4u {
 
   /** Catalogue of register information */
   class RegisterCatalogue {
-  
+
     public:
 
       /** Get register information for a given full path name. */
@@ -44,7 +44,14 @@ namespace mtca4u {
 
       /** Const iterator for iterating through the registers in the catalogue */
       class const_iterator {
+
         public:
+
+          const_iterator() {}
+
+          const_iterator(std::vector< boost::shared_ptr<RegisterInfo> >::const_iterator theIterator_)
+          : theIterator(theIterator_) {}
+
           const_iterator& operator++() {    // ++it
             ++theIterator;
             return *this;
@@ -78,26 +85,31 @@ namespace mtca4u {
           bool operator!=(const const_iterator &rightHandSide) const {
             return rightHandSide.theIterator != theIterator;
           }
+
         protected:
+
           std::vector< boost::shared_ptr<RegisterInfo> >::const_iterator theIterator;
-          friend class RegisterCatalogue;
+
       };
 
       /** Return iterators for iterating through the registers in the catalogue */
       const_iterator begin() const {
-        const_iterator it;
-        it.theIterator = catalogue.cbegin();
-        return it;
+        return {catalogue.cbegin()};
       }
       const_iterator end() const {
-        const_iterator it;
-        it.theIterator = catalogue.cend();
-        return it;
+        return {catalogue.cend()};
       }
 
       /** Non-const iterator for iterating through the registers in the catalogue */
       class iterator {
+
         public:
+
+          iterator() {}
+
+          iterator(std::vector< boost::shared_ptr<RegisterInfo> >::iterator theIterator_)
+          : theIterator(theIterator_) {}
+
           iterator& operator++() {    // ++it
             ++theIterator;
             return *this;
@@ -126,9 +138,7 @@ namespace mtca4u {
             return *theIterator;
           }
           operator const_iterator() {
-            const_iterator it;
-            it.theIterator = theIterator;
-            return it;
+            return {theIterator};
           }
           bool operator==(const iterator &rightHandSide) const {
             return rightHandSide.theIterator == theIterator;
@@ -136,21 +146,19 @@ namespace mtca4u {
           bool operator!=(const iterator &rightHandSide) const {
             return rightHandSide.theIterator != theIterator;
           }
-        protected:
+
+      protected:
+
           std::vector< boost::shared_ptr<RegisterInfo> >::iterator theIterator;
-          friend class RegisterCatalogue;
+
       };
-      
+
       /** Return iterators for iterating through the registers in the catalogue */
       iterator begin() {
-        iterator it;
-        it.theIterator = catalogue.begin();
-        return it;
+        return {catalogue.begin()};
       }
       iterator end() {
-        iterator it;
-        it.theIterator = catalogue.end();
-        return it;
+        return {catalogue.end()};
       }
 
       /** Iterators for meta data */
@@ -160,9 +168,9 @@ namespace mtca4u {
       metadata_const_iterator metadata_begin() const;
       metadata_iterator metadata_end();
       metadata_const_iterator metadata_end() const;
-  
+
     protected:
-    
+
       /** Vector of RegisterInfo entries. A more efficient way to store this information
        *  would be a tree-like structure, but this can be optimised later without an interface change.
        *
@@ -174,7 +182,7 @@ namespace mtca4u {
 
       /** Map of meta data */
       std::map< std::string, std::string > metadata;
-  
+
   };
 
 
