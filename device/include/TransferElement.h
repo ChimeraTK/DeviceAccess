@@ -230,20 +230,34 @@ namespace mtca4u {
       virtual bool isWriteable() const = 0;
 
       /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
-       *  function followed by postRead() is exactly equivalent to a call to just read().
+       *  function after preRead() and followed by postRead() is exactly equivalent to a call to just read().
+       *
+       *  Important: Anyone calling doReadTransfer() must make sure that postRead() or - in case of an exception -
+       *  cancelRead() is called afterwards. Otherwise subsequent read and write operations result in undefined
+       *  behaviour.
        *
        *  Implementation note: This function must return within ~1 second after boost::thread::interrupt() has been
        *  called on the thread calling this function. */
       virtual void doReadTransfer() = 0;
 
       /** Read the data from the device without blocking but do not fill it into the user buffer of this
-       *  TransferElement. Calling this function followed by postRead() is exactly equivalent to a call to just
-       *  readNonBlocking(). For the return value, see readNonBlocking(). */
+       *  TransferElement. Calling this function after preRead() and followed by postRead() is exactly equivalent to a
+       *  call to just readNonBlocking(). For the return value, see readNonBlocking().
+       *
+       *  Important: Anyone calling doReadTransferNonBlocking() must make sure that postRead() or - in case of an
+       *  exception - cancelRead() is called afterwards. Otherwise subsequent read and write operations result in
+       *  undefined behaviour.
+       */
       virtual bool doReadTransferNonBlocking() = 0;
 
       /** Read the latest data from the device without blocking but do not fill it into the user buffer of this
-       *  TransferElement. Calling this function followed by postRead() is exactly equivalent to a call to just
-       *  readLatest(). For the return value, see readNonBlocking(). */
+       *  TransferElement. Calling this function after preRead() and followed by postRead() is exactly equivalent to a
+       *  call to just readLatest(). For the return value, see readNonBlocking().
+       *
+       *  Important: Anyone calling doReadTransferLatest() must make sure that postRead() or - in case of an
+       *  exception - cancelRead() is called afterwards. Otherwise subsequent read and write operations result in
+       *  undefined behaviour.
+       */
       virtual bool doReadTransferLatest() = 0;
 
       /** Perform any pre-read tasks if necessary.
@@ -350,13 +364,6 @@ namespace mtca4u {
        *  by decorators etc. inside their implementation of replaceTransferElement() to determine if they might swap
        *  their implementation(s).
        *
-       *  Beware that this function is non-commutative! In other words, the result of a->mayReplaceOther(b) might be
-       *  different to the result of b->mayReplaceOther(a). Both implementations and users have to take special care to
-       *  strictly follow this definition. Note that in many cases the result will be the same, so it can be difficult
-       *  to test for correct usage. One example of a non-commutative implementation is @todo COMPLETE DOCUMENTATION
-       *
-       *  @todo probably this function must actually be commutative!!!
-       *
        *  Note for decorators and similar implementations: This function must not be decorated. It should only return
        *  true if this should actually be replaced with other in the call to replaceTransferElement() one level up in
        *  the hierarchy. If the replacement should be done further down in the hierarchy, simply return false. It
@@ -455,6 +462,26 @@ namespace mtca4u {
        * accessing the very same register.
        */
       ID getId() const { return _id; };
+
+      /** Cancel the current read transaction after doReadTransfer() etc. has thrown an exception. This must be called
+       *  in this case instead of postRead(). This function must also be called after doReadTransferNonBlocking() or
+       *  doReadTransferLatest(), if they have returned false.
+       *  @todo Discuss whether doReadTransfer() etc. should be changed to noexcept instead and the exception shall
+       *  be thrown instead by postRead(). This would also solve problems with exceptions inside readAsync().
+       */
+      void cancelRead() noexcept {
+        assert(readTransactionInProgress == true);
+        readTransactionInProgress = false;
+      }
+
+      /** Cancel the current write transaction after doWriteTransfer() has thrown an exception. This must be called
+       *  in this case instead of postWrite().
+       *  @todo see todo of cancelRead()
+       */
+      void cancelWrite() noexcept {
+        assert(writeTransactionInProgress == true);
+        writeTransactionInProgress = false;
+      }
 
     protected:
 

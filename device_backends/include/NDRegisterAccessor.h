@@ -89,7 +89,13 @@ namespace mtca4u {
           return;
         }
         preRead();
-        doReadTransfer();
+        try {
+          doReadTransfer();
+        }
+        catch(...) {
+          cancelRead();
+          throw;
+        }
         postRead();
       }
 
@@ -107,8 +113,20 @@ namespace mtca4u {
           }
         }
         preRead();
-        bool ret = doReadTransferNonBlocking();
-        if(ret) postRead();     // must only be called if new data was read
+        bool ret;
+        try {
+          ret = doReadTransferNonBlocking();
+        }
+        catch(...) {
+          cancelRead();
+          throw;
+        }
+        if(ret) {
+          postRead();
+        }
+        else {
+          cancelRead();
+        }
         return ret;
       }
 
@@ -127,8 +145,20 @@ namespace mtca4u {
           }
         }
         preRead();
-        bool ret2 = doReadTransferLatest();
-        if(ret2) postRead();     // only needs to be called if new data was read
+        bool ret2;
+        try {
+          ret2 = doReadTransferLatest();
+        }
+        catch(...) {
+          cancelRead();
+          throw;
+        }
+        if(ret2) {
+          postRead();
+        }
+        else {
+          cancelRead();
+        }
         return ret || ret2;
       }
 
@@ -141,7 +171,14 @@ namespace mtca4u {
               DeviceException::NOT_IMPLEMENTED);
         }
         preWrite();
-        bool ret = doWriteTransfer(versionNumber);
+        bool ret;
+        try {
+          ret = doWriteTransfer(versionNumber);
+        }
+        catch(...) {
+          cancelWrite();
+          throw;
+        }
         postWrite();
         return ret;
       }
