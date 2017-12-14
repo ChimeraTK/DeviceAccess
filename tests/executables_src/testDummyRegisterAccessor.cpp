@@ -21,11 +21,11 @@ using namespace mtca4u;
 class DummyRegisterTest;
 class TestableDummyBackend : public DummyBackend {
   public:
-    TestableDummyBackend(std::string mapFileName)
-  : DummyBackend(mapFileName),
-    someRegister(this,"APP0","SOME_REGISTER"),
-    someMuxedRegister(this,"APP0","DAQ0_ADCA")
-  {}
+    explicit TestableDummyBackend(std::string mapFileName)
+    : DummyBackend(mapFileName),
+      someRegister(this,"APP0","SOME_REGISTER"),
+      someMuxedRegister(this,"APP0","DAQ0_ADCA")
+    {}
 
     DummyRegisterAccessor<int> someRegister;
     DummyMultiplexedRegisterAccessor<int> someMuxedRegister;
@@ -36,10 +36,10 @@ class TestableDummyBackend : public DummyBackend {
 // Test implementation of the dummy backend for the invalid map file
 class InvalidDummyBackend : public DummyBackend {
   public:
-    InvalidDummyBackend(std::string mapFileName)
-  : DummyBackend(mapFileName),
-    invalidRegister(this,"INVALID","NO_WORDS")
-  {}
+    explicit InvalidDummyBackend(std::string mapFileName)
+    : DummyBackend(mapFileName),
+      invalidRegister(this,"INVALID","NO_WORDS")
+    {}
 
     DummyMultiplexedRegisterAccessor<int> invalidRegister;
 

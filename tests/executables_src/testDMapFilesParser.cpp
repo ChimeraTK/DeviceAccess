@@ -515,13 +515,13 @@ void DMapFilesParserTest::testIteratorBeginEnd() {
   uint8_t i;
   for (iter = filesParser.begin(), i = 0;
       (iter != filesParser.end()) && (i < 3);
-      i++, iter++) {
+      ++i, ++iter) {
     BOOST_CHECK(compareDeviceInfos(*tmpArray1[i], (*iter).first) == true);
     BOOST_CHECK(*tmpArray2[i] == (*iter).second->getMapFileName());
   }
   for (const_iter = constfilesParser.begin(), i = 0;
       (const_iter != constfilesParser.end()) && (i < 3);
-      i++, const_iter++) {
+      ++i, ++const_iter) {
     BOOST_CHECK(compareDeviceInfos(*tmpArray1[i], (*const_iter).first) ==
         true);
     BOOST_CHECK(*tmpArray2[i] == (*const_iter).second->getMapFileName());

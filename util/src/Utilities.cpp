@@ -214,9 +214,9 @@ namespace mtca4u {
   void Utilities::printStackTrace() {
 
     void *trace[16];
-    char **messages = (char **)NULL;
+    char **messages;
     int i, trace_size = 0;
-  
+
     trace_size = backtrace(trace, 16);
     messages = backtrace_symbols(trace, trace_size);
     printf("[bt] Execution path:\n");

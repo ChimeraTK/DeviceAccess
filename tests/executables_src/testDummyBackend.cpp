@@ -32,7 +32,7 @@ class DummyBackendTest;
  */
 class TestableDummyBackend : public DummyBackend {
   public:
-    TestableDummyBackend(std::string mapFileName)
+    explicit TestableDummyBackend(std::string mapFileName)
     : DummyBackend(mapFileName)
     {}
     friend class DummyBackendTest;
@@ -76,7 +76,6 @@ class DummyBackendTest {
 
   private:
     boost::shared_ptr<TestableDummyBackend> _dummyBackend;
-    void freshlyopenice();
     TestableDummyBackend* getBackendInstance(bool reOpen = false);
     friend class DummyBackendTestSuite;
 
@@ -178,7 +177,6 @@ void DummyBackendTest::testCheckSizeIsMultipleOfWordSize() {
 }
 
 void DummyBackendTest::testReadWriteSingleWordRegister() {
-  // freshlyopenice();
   TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
@@ -204,7 +202,6 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
 }
 
 void DummyBackendTest::testReadWriteMultiWordRegister() {
-  // freshlyopenice();
   TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
@@ -259,26 +256,6 @@ void DummyBackendTest::testReadWriteMultiWordRegister() {
   BOOST_CHECK_THROW( dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1), DummyBackendException);
 }
 
-void DummyBackendTest::freshlyopenice() {
-  try {
-    _dummyBackend->open();
-  }
-  catch (DummyBackendException&) {
-    // make sure the backend was freshly opened, so
-    // registers are set to 0.
-    _dummyBackend->close();
-    _dummyBackend->open();
-  }
-}
-/*
-void DummyBackendTest::testWriteDMA() {
-	// will probably never be implemented
-	TestableDummyBackend* dummyBackend = getBackendInstance();
-	BOOST_CHECK_THROW(dummyBackend->writeDMA(0, 0, NULL, 0),
-			NotImplementedException);
-}
- */
-
 TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
   if (_backendInstance == 0)
     _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
@@ -305,7 +282,6 @@ void DummyBackendTest::testReadDeviceInfo() {
 }
 
 void DummyBackendTest::testReadOnly() {
-  // freshlyopenice();
   TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);

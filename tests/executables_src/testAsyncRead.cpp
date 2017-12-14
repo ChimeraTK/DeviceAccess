@@ -28,7 +28,7 @@ std::set<std::string> sdmList = { "sdm://./AsyncDefaultImplTestDummy=goodMapFile
 
 class AsyncDefaultImplTestDummy : public DummyBackend {
   public:
-    AsyncDefaultImplTestDummy(std::string mapFileName) : DummyBackend(mapFileName) {}
+    explicit AsyncDefaultImplTestDummy(std::string mapFileName) : DummyBackend(mapFileName) {}
 
     static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::string, std::list<std::string> parameters, std::string) {
       return boost::shared_ptr<DeviceBackend>(new AsyncDefaultImplTestDummy(parameters.front()));
@@ -49,7 +49,7 @@ class AsyncDefaultImplTestDummy : public DummyBackend {
 
 class AsyncTestDummy : public AsyncDefaultImplTestDummy {
   public:
-    AsyncTestDummy(std::string mapFileName) : AsyncDefaultImplTestDummy(mapFileName) {
+    explicit AsyncTestDummy(std::string mapFileName) : AsyncDefaultImplTestDummy(mapFileName) {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     }
 

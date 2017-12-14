@@ -17,47 +17,47 @@ using mtca4u::numeric_address::BAR;
 typedef mtca4u::DeviceInfoMap::DeviceInfo DeviceInfo;
 
 /******************************************************************************/
-struct RebotServerDetails{
-  std::string ip;
-  int port;
+struct RebotServerDetails {
+    std::string ip;
+    int port;
 
-  RebotServerDetails() : ip(), port(0) {};
-  RebotServerDetails(std::string& ipAddress, int portNumber)
-      : ip(ipAddress), port(portNumber) {};
+    RebotServerDetails() : ip(), port(0) {};
+    RebotServerDetails(std::string& ipAddress, int portNumber)
+        : ip(ipAddress), port(portNumber) {};
 };
 
 class RebotTestClass {
-private:
-  std::string _cardAlias;
-  RebotServerDetails _rebotServer;
+  private:
+    std::string _cardAlias;
+    RebotServerDetails _rebotServer;
 
-public:
-  RebotTestClass(std::string const& cardAlias);
-  void testConnection();
-  void testReadWriteAPIOfRebotBackend();
+  public:
+    explicit RebotTestClass(std::string const& cardAlias);
+    void testConnection();
+    void testReadWriteAPIOfRebotBackend();
 
-private:
-  /*
-  * parse the relevant dmap file to extract ip and port which would be required
-  * for testing the rebot backend
-  */
-  RebotServerDetails getServerDetails(const std::string& cardAlias);
+  private:
+    /*
+    * parse the relevant dmap file to extract ip and port which would be required
+    * for testing the rebot backend
+    */
+    RebotServerDetails getServerDetails(const std::string& cardAlias);
 
-  DeviceInfo getDeviceDetailsFromDMap(const std::string& cardAlias);
-  RebotServerDetails extractServerDetailsFromUri(std::string &uri);
+    DeviceInfo getDeviceDetailsFromDMap(const std::string& cardAlias);
+    RebotServerDetails extractServerDetailsFromUri(std::string &uri);
 
-  void checkWriteReadFromRegister(mtca4u::Device &rebotDevice);
+    void checkWriteReadFromRegister(mtca4u::Device &rebotDevice);
 };
 
 /******************************************************************************/
 class RebotDeviceTestSuite : public test_suite {
-public:
-  RebotDeviceTestSuite(std::string const& cardAlias)
-          : test_suite("RebotDeviceTestSuite") {
-    boost::shared_ptr<RebotTestClass> rebotTest(new RebotTestClass(cardAlias));
-    add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testConnection, rebotTest));
-    add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testReadWriteAPIOfRebotBackend, rebotTest));
-  }
+  public:
+    explicit RebotDeviceTestSuite(std::string const& cardAlias)
+    : test_suite("RebotDeviceTestSuite") {
+      boost::shared_ptr<RebotTestClass> rebotTest(new RebotTestClass(cardAlias));
+      add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testConnection, rebotTest));
+      add(BOOST_CLASS_TEST_CASE(&RebotTestClass::testReadWriteAPIOfRebotBackend, rebotTest));
+    }
 };
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
@@ -80,7 +80,7 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
 /******************************************************************************/
 
 RebotTestClass::RebotTestClass(std::string const& cardAlias)
-    : _cardAlias(cardAlias), _rebotServer(getServerDetails(cardAlias)) {}
+: _cardAlias(cardAlias), _rebotServer(getServerDetails(cardAlias)) {}
 
 
 RebotServerDetails RebotTestClass::getServerDetails(

@@ -155,9 +155,8 @@ void MtcaDeviceTest::testOpenClose() {
   BOOST_CHECK(readValue==0x444D4D59);
   BOOST_CHECK_NO_THROW(device->close());
 
-  // you can open a device without using the factory, but you have to provide an instance 
+  // you can open a device without using the factory, but you have to provide an instance
   // of the backend and the registerMapping yourself
-  std::list<std::string> parameters;
   boost::shared_ptr<DeviceBackend> manualBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME, VALID_MAPPING_FILE_NAME));
   BOOST_CHECK_NO_THROW(device->open(manualBackend));
   BOOST_CHECK_NO_THROW(device->getRegisterAccessor("WORD_CLK_DUMMY","")->read(&readValue));
@@ -233,7 +232,7 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   BOOST_CHECK(registerInfo.signedFlag == true);
   BOOST_CHECK(registerInfo.name == "AREA_DMAABLE");
 
-  // also kind of register information, so I sweezed this line in here. 
+  // also kind of register information, so I sweezed this line in here.
   // did not want to write a new function...
   BOOST_CHECK(registerAccessor->getNumberOfElements() == 1024);
 
@@ -280,7 +279,7 @@ void MtcaDeviceTest::testRegisterAccessor_getFixedPointConverter(){
   BOOST_CHECK( fixedPointConverter.getNBits() == 18 );
   // check again, should still work but cover the second branch
   auto fixedPointConverter2 =  registerAccessor->getFixedPointConverter();
-  BOOST_CHECK( fixedPointConverter2.getNBits() == 18 );  
+  BOOST_CHECK( fixedPointConverter2.getNBits() == 18 );
 }
 
 void MtcaDeviceTest::testRegisterAccessor_readBlock() {
@@ -409,7 +408,7 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
 			 std::string("ID is not WRONG_PARAMETER, Message is: " )
 			 + e.what());
   }
-  
+
  // same for write
   try{
     registerAccessor->write(buffer.data(), registerAccessor->getNumberOfElements(), 1);
@@ -419,7 +418,7 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
 			 std::string("ID is not WRONG_PARAMETER, Message is: " )
 			 + e.what());
   }
-  
+
   // OK, and the same drill for raw access
   std::vector<int32_t> rawBuffer(registerAccessor->getNumberOfElements());
   // add an offset of 1 and read the full size of the register: should fail
@@ -440,7 +439,7 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
 			 std::string("ID is not WRONG_PARAMETER, Message is: " )
 			 + e.what());
   }
-  
+
 
 }
 

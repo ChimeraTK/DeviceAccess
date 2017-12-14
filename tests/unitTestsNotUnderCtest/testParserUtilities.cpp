@@ -12,34 +12,34 @@ namespace parsutils = mtca4u::parserUtilities;
 /*                  Code for setting up test suite                            */
 /******************************************************************************/
 class ParserUtilsTestClass {
-public:
-  ParserUtilsTestClass(std::string const& currentWorkingDirectory);
-  void testGetCurrentWorkingDir();
-  void testConvertToAbsPath();
-  void testExtractDirectory();
-  void testExtractFileName();
-  void testConcatenatePaths();
-private:
-  std::string _currentWorkingDir;
+  public:
+    explicit ParserUtilsTestClass(std::string const& currentWorkingDirectory);
+    void testGetCurrentWorkingDir();
+    void testConvertToAbsPath();
+    void testExtractDirectory();
+    void testExtractFileName();
+    void testConcatenatePaths();
+  private:
+    std::string _currentWorkingDir;
 };
 
 class ParserUtilitiesTestSuite : public test_suite {
-public:
-  ParserUtilitiesTestSuite(std::string const& currentWorkingDirectory)
-      : test_suite("ParserUtilitiesTestSuite") {
+  public:
+    explicit ParserUtilitiesTestSuite(std::string const& currentWorkingDirectory)
+    : test_suite("ParserUtilitiesTestSuite") {
 
-    boost::shared_ptr<ParserUtilsTestClass> parserUtilTest( new ParserUtilsTestClass(currentWorkingDirectory));
-    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testGetCurrentWorkingDir,
-                              parserUtilTest));
-    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConvertToAbsPath,
-                              parserUtilTest));
-    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractDirectory,
-                              parserUtilTest));
-    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractFileName,
-                              parserUtilTest));
-    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConcatenatePaths,
-                              parserUtilTest));
-  }
+      boost::shared_ptr<ParserUtilsTestClass> parserUtilTest( new ParserUtilsTestClass(currentWorkingDirectory));
+      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testGetCurrentWorkingDir,
+                                parserUtilTest));
+      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConvertToAbsPath,
+                                parserUtilTest));
+      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractDirectory,
+                                parserUtilTest));
+      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractFileName,
+                                parserUtilTest));
+      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConcatenatePaths,
+                                parserUtilTest));
+    }
 };
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
