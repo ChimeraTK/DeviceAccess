@@ -5,9 +5,9 @@
 #include <chrono>
 
 namespace ChimeraTK{
-  
+
   struct RebotProtocol1 : public RebotProtocol0{
-    RebotProtocol1(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
+    explicit RebotProtocol1(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
     virtual ~RebotProtocol1(){};
 
     virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;

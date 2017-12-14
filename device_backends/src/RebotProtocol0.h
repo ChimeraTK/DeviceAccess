@@ -8,9 +8,9 @@
 
 namespace ChimeraTK{
   class TcpCtrl;
-  
+
   struct RebotProtocol0 : RebotProtocolImplementor{
-    RebotProtocol0(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
+    explicit RebotProtocol0(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
     virtual ~RebotProtocol0(){};
 
     virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
@@ -31,7 +31,7 @@ namespace ChimeraTK{
     void sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead);
     void transferVectorToDataPtr(std::vector<int32_t> source, int32_t* destination);
   };
-  
+
 }// namespace ChimeraTK
 
 #endif // CHIMERATK_REBOT_PROTOCOL_0
