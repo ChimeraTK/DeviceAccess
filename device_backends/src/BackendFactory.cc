@@ -78,11 +78,11 @@ namespace ChimeraTK {
 
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(
       std::string aliasOrUri) {
-    
+
     std::lock_guard<std::mutex> lock(_mutex);
 
     loadAllPluginsFromDMapFile();
-    
+
     if(aliasOrUri.substr(0, 6) == "sdm://"){
       // it is a URI, directly create a deviceinfo and call the internal creator function
       DeviceInfoMap::DeviceInfo deviceInfo;
@@ -164,7 +164,7 @@ namespace ChimeraTK {
     // registerer (or the programmer forgot the signature function). In this case we would leave the
     // factory with a dangling function pointer which causes a segfault if the backend is opened.
     auto originalCreatorMap = creatorMap;
-    
+
     // first do an open which does not load the symbols yet
     // FIXME: Only works for functions, not for variables = registerer :-(
     void *hndl = dlopen(soFile.c_str() , RTLD_LAZY );
@@ -200,9 +200,9 @@ namespace ChimeraTK {
     }
 
     // it is a correct plugin, load all the symbols now
-    hndl = dlopen(soFile.c_str() , RTLD_NOW);
+    dlopen(soFile.c_str() , RTLD_NOW);
   }
-  
+
   void BackendFactory::loadAllPluginsFromDMapFile(){
     if (_dMapFile.empty()){
       return;
