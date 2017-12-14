@@ -25,9 +25,11 @@ namespace {
   // instantiate all needed implementations of the createCopyDecorator<T>() function
   template<typename T>
   struct CreateCopyDecoratorInstancer {
-      CreateCopyDecoratorInstancer<T>() {
-        std::bind(mtca4u::detail::createCopyDecorator<T>, _1);
-      }
+      CreateCopyDecoratorInstancer<T>()
+      : ptr(&mtca4u::detail::createCopyDecorator<T>)
+      {}
+
+      boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> (*ptr)(boost::shared_ptr<mtca4u::NDRegisterAccessor<T>>);
   };
   mtca4u::TemplateUserTypeMap<CreateCopyDecoratorInstancer> createCopyDecoratorInstancer;
 
