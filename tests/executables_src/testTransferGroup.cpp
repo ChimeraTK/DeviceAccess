@@ -705,21 +705,29 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   group.read();
 
   BOOST_CHECK_EQUAL( (int)mux0, 18 );
-  BOOST_CHECK_EQUAL( mux0d->nPreRead, 1 );
-  BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
+  BOOST_CHECK_EQUAL( (int)mux0_2, 18 );
+
+  // we don't know which of the accessors has been eliminated (and this is actually a random choice at runtime)
+  BOOST_CHECK( (mux0d->nPreRead == 1 && mux0_2d->nPreRead == 0) || (mux0d->nPreRead == 0 && mux0_2d->nPreRead == 1) );
+  if(mux0d->nPreRead == 1) {
+    BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
+    BOOST_CHECK_EQUAL( mux0_2d->nPreRead, 0 );
+    BOOST_CHECK_EQUAL( mux0_2d->nPostRead, 0 );
+  }
+  else {
+    BOOST_CHECK_EQUAL( mux0_2d->nPostRead, 1 );
+    BOOST_CHECK_EQUAL( mux0d->nPreRead, 0 );
+    BOOST_CHECK_EQUAL( mux0d->nPostRead, 0 );
+  }
+  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nRead, 0 );
   BOOST_CHECK_EQUAL( mux0d->nPreWrite, 0 );
   BOOST_CHECK_EQUAL( mux0d->nPostWrite, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nRead, 0 );
   BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
   BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
   BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
-
-  BOOST_CHECK_EQUAL( (int)mux0_2, 18 );
-  BOOST_CHECK_EQUAL( mux0_2d->nPreRead, 0 );      // this accessor is no longer used...
-  BOOST_CHECK_EQUAL( mux0_2d->nPostRead, 0 );
   BOOST_CHECK_EQUAL( mux0_2d->nPreWrite, 0 );
   BOOST_CHECK_EQUAL( mux0_2d->nPostWrite, 0 );
-  BOOST_CHECK_EQUAL( mux0_2d->nRead, 0 );
   BOOST_CHECK_EQUAL( mux0_2d->nReadNonBlocking, 0 );
   BOOST_CHECK_EQUAL( mux0_2d->nReadLatest, 0 );
   BOOST_CHECK_EQUAL( mux0_2d->nWrite, 0 );
@@ -830,14 +838,31 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
 
   BOOST_CHECK_EQUAL( (int)mux0, 18 );
   BOOST_CHECK_EQUAL( (int)mux0_2, 18 );
-  BOOST_CHECK_EQUAL( mux0d->nPreRead, 1 );
-  BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
+
+  // we don't know which of the accessors has been eliminated (and this is actually a random choice at runtime)
+  BOOST_CHECK( (mux0d->nRead == 1 && mux0_2d->nRead == 0) || (mux0d->nRead == 0 && mux0_2d->nRead == 1) );
+  if(mux0d->nRead == 1) {
+    BOOST_CHECK_EQUAL( mux0d->nPreRead, 1 );
+    BOOST_CHECK_EQUAL( mux0d->nPostRead, 1 );
+    BOOST_CHECK_EQUAL( mux0_2d->nPreRead, 0 );
+    BOOST_CHECK_EQUAL( mux0_2d->nPostRead, 0 );
+  }
+  else {
+    BOOST_CHECK_EQUAL( mux0_2d->nPreRead, 1 );
+    BOOST_CHECK_EQUAL( mux0_2d->nPostRead, 1 );
+    BOOST_CHECK_EQUAL( mux0d->nPreRead, 0 );
+    BOOST_CHECK_EQUAL( mux0d->nPostRead, 0 );
+  }
   BOOST_CHECK_EQUAL( mux0d->nPreWrite, 0 );
   BOOST_CHECK_EQUAL( mux0d->nPostWrite, 0 );
-  BOOST_CHECK_EQUAL( mux0d->nRead, 1 );
   BOOST_CHECK_EQUAL( mux0d->nReadNonBlocking, 0 );
   BOOST_CHECK_EQUAL( mux0d->nReadLatest, 0 );
   BOOST_CHECK_EQUAL( mux0d->nWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nPreWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nPostWrite, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nReadNonBlocking, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nReadLatest, 0 );
+  BOOST_CHECK_EQUAL( mux0_2d->nWrite, 0 );
 
   BOOST_CHECK_EQUAL( (int)mux2, 22 );
   BOOST_CHECK_EQUAL( mux2d->nPreRead, 1 );
