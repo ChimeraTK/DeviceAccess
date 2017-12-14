@@ -48,15 +48,6 @@ namespace mtca4u {
        *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
-      bool write() {
-        return NDRegisterAccessorBridge<UserType>::_impl->write();
-      }
-
-      /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
-       *  \deprecated
-       *  This class is deprecated. Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
-       *  @todo Add printed runtime warning after release of version 0.9
-       */
       UserType& operator[](unsigned int index) {
         return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,index);
       }
