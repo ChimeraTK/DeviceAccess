@@ -180,11 +180,12 @@ namespace mtca4u {
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
        *  without launching a thread.
        *
-       *  Note for implementations: Inside this function and before launching the actual transfer, preRead() has
-       *  to be called, otherwise postRead() will not get executed after the transfer. postRead() on the other hand
-       *  must not be called inside this function, since this would update the user buffer, which should only happen
-       *  when waiting on the TransferFuture. TransferFuture::wait() will automatically call postRead() before
-       *  returning. Decorators must also call preRead() in their implementations of readAsync()!
+       *  Note for implementations: Inside this function and before launching the actual transfer, the flag
+       *  readTransactionInProgress must be cleared, then preRead() has to be called. Otherwise postRead() will not
+       *  get executed after the transfer. postRead() on the other hand must not be called inside this function,
+       *  since this would update the user buffer, which should only happen when waiting on the TransferFuture.
+       *  TransferFuture::wait() will automatically call postRead() before returning. Decorators must also call
+       *  preRead() in their implementations of readAsync()!
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
       virtual TransferFuture readAsync() = 0;
