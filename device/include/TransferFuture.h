@@ -110,8 +110,8 @@ namespace ChimeraTK {
 
     //protected:    /// @todo make protected after changing tests and ControlSystemAdapter
 
-      friend mtca4u::TransferElement;
-      friend mtca4u::TransferFutureIterator;
+      friend ::mtca4u::TransferElement;
+      friend ::mtca4u::TransferFutureIterator;
 
       /** Return the underlying BOOST future. Be careful when using it. Simply waiting on that future is not sufficient
        *  since the very purpose of this class is to add functionality. Always call TransferFuture::wait() before
