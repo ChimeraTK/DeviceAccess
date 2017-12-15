@@ -232,10 +232,6 @@ namespace mtca4u {
       /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
        *  function after preRead() and followed by postRead() is exactly equivalent to a call to just read().
        *
-       *  Important: Anyone calling doReadTransfer() must make sure that postRead() or - in case of an exception -
-       *  cancelRead() is called afterwards. Otherwise subsequent read and write operations result in undefined
-       *  behaviour.
-       *
        *  Implementation note: This function must return within ~1 second after boost::thread::interrupt() has been
        *  called on the thread calling this function. */
       virtual void doReadTransfer() = 0;
@@ -243,20 +239,12 @@ namespace mtca4u {
       /** Read the data from the device without blocking but do not fill it into the user buffer of this
        *  TransferElement. Calling this function after preRead() and followed by postRead() is exactly equivalent to a
        *  call to just readNonBlocking(). For the return value, see readNonBlocking().
-       *
-       *  Important: Anyone calling doReadTransferNonBlocking() must make sure that postRead() or - in case of an
-       *  exception - cancelRead() is called afterwards. Otherwise subsequent read and write operations result in
-       *  undefined behaviour.
        */
       virtual bool doReadTransferNonBlocking() = 0;
 
       /** Read the latest data from the device without blocking but do not fill it into the user buffer of this
        *  TransferElement. Calling this function after preRead() and followed by postRead() is exactly equivalent to a
        *  call to just readLatest(). For the return value, see readNonBlocking().
-       *
-       *  Important: Anyone calling doReadTransferLatest() must make sure that postRead() or - in case of an
-       *  exception - cancelRead() is called afterwards. Otherwise subsequent read and write operations result in
-       *  undefined behaviour.
        */
       virtual bool doReadTransferLatest() = 0;
 
@@ -265,7 +253,6 @@ namespace mtca4u {
        *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly
        *  on the underlying accessor. */
       void preRead() {
-        assert(!writeTransactionInProgress);
         if(readTransactionInProgress) return;
         doPreRead();
         readTransactionInProgress = true;
@@ -284,10 +271,9 @@ namespace mtca4u {
        *  the underlying accessor. This function must be implemented to extract the read data from the underlying
        *  accessor and expose it to the user. */
       void postRead() {
-        assert(!writeTransactionInProgress);
         if(!readTransactionInProgress) return;
-        doPostRead();
         readTransactionInProgress = false;
+        doPostRead();
       };
 
       /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
@@ -314,7 +300,6 @@ namespace mtca4u {
        *  on the underlying accessor. This function implemented be used to transfer the data to be written into the
        *  underlying accessor. */
       void preWrite() {
-        assert(!readTransactionInProgress);
         if(writeTransactionInProgress) return;
         doPreWrite();
         writeTransactionInProgress = true;
@@ -333,10 +318,9 @@ namespace mtca4u {
        *  Called by write(). Also the TransferGroup will call this function after a write was executed directly
        *  on the underlying accessor. */
       void postWrite() {
-        assert(!readTransactionInProgress);
         if(!writeTransactionInProgress) return;
-        doPostWrite();
         writeTransactionInProgress = false;
+        doPostWrite();
       };
 
       /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
@@ -463,26 +447,6 @@ namespace mtca4u {
        */
       ID getId() const { return _id; };
 
-      /** Cancel the current read transaction after doReadTransfer() etc. has thrown an exception. This must be called
-       *  in this case instead of postRead(). This function must also be called after doReadTransferNonBlocking() or
-       *  doReadTransferLatest(), if they have returned false.
-       *  @todo Discuss whether doReadTransfer() etc. should be changed to noexcept instead and the exception shall
-       *  be thrown instead by postRead(). This would also solve problems with exceptions inside readAsync().
-       */
-      void cancelRead() noexcept {
-        assert(readTransactionInProgress == true);
-        readTransactionInProgress = false;
-      }
-
-      /** Cancel the current write transaction after doWriteTransfer() has thrown an exception. This must be called
-       *  in this case instead of postWrite().
-       *  @todo see todo of cancelRead()
-       */
-      void cancelWrite() noexcept {
-        assert(writeTransactionInProgress == true);
-        writeTransactionInProgress = false;
-      }
-
     protected:
 
       /** Identifier uniquely identifying the TransferElement */
@@ -508,9 +472,14 @@ namespace mtca4u {
       friend class TransferGroup;
       friend class TransferFuture;
 
-  private:
-
+      /** Flag whether a read transaction is in progress. This flag will be set in preRead() and cleared in postRead()
+       *  and is used to prevent multiple calls to these functions during a single transfer. It should also be reset
+       *  before starting a new read transaction - this happens only inside the implementation of read() etc. and in
+       *  the TransferGroup. */
       bool readTransactionInProgress{false};
+
+      /** Flag whether a write transaction is in progress. This flag is similar to readTransactionInProgress but
+       *  affects preWrite() and postWrite(). */
       bool writeTransactionInProgress{false};
   };
 

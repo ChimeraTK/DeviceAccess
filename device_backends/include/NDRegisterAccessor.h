@@ -88,14 +88,9 @@ namespace mtca4u {
           readAsync().wait();
           return;
         }
+        this->readTransactionInProgress = false;
         preRead();
-        try {
-          doReadTransfer();
-        }
-        catch(...) {
-          cancelRead();
-          throw;
-        }
+        doReadTransfer();
         postRead();
       }
 
@@ -112,21 +107,10 @@ namespace mtca4u {
             return false;
           }
         }
+        this->readTransactionInProgress = false;
         preRead();
-        bool ret;
-        try {
-          ret = doReadTransferNonBlocking();
-        }
-        catch(...) {
-          cancelRead();
-          throw;
-        }
-        if(ret) {
-          postRead();
-        }
-        else {
-          cancelRead();
-        }
+        bool ret = doReadTransferNonBlocking();
+        if(ret) postRead();
         return ret;
       }
 
@@ -144,21 +128,10 @@ namespace mtca4u {
             return false;
           }
         }
+        this->readTransactionInProgress = false;
         preRead();
-        bool ret2;
-        try {
-          ret2 = doReadTransferLatest();
-        }
-        catch(...) {
-          cancelRead();
-          throw;
-        }
-        if(ret2) {
-          postRead();
-        }
-        else {
-          cancelRead();
-        }
+        bool ret2 = doReadTransferLatest();
+        if(ret2) postRead();
         return ret || ret2;
       }
 
@@ -170,15 +143,9 @@ namespace mtca4u {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);
         }
+        this->writeTransactionInProgress = false;
         preWrite();
-        bool ret;
-        try {
-          ret = doWriteTransfer(versionNumber);
-        }
-        catch(...) {
-          cancelWrite();
-          throw;
-        }
+        bool ret = doWriteTransfer(versionNumber);
         postWrite();
         return ret;
       }

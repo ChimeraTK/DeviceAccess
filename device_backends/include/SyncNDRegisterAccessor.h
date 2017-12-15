@@ -62,6 +62,7 @@ namespace mtca4u {
           return activeFuture;  // the last future given out by this fuction is still active
         }
 
+        this->readTransactionInProgress = false;
         this->preRead();
         // create promise future pair and launch doReadTransfer in separate thread
         readAsyncPromise = TransferFuture::PromiseType();
