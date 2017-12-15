@@ -92,20 +92,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
   app.testModule.feedingToDevice >> app.devMymodule("actuator");
   app.initialise();
 
-  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
-  regacc->accessData(0) = 0;
+  regacc = 0;
   app.testModule.feedingToDevice = 42;
   app.testModule.feedingToDevice.write();
-  regacc->read();
-  BOOST_CHECK(regacc->accessData(0) == 42);
+  regacc.read();
+  BOOST_CHECK(regacc == 42);
   app.testModule.feedingToDevice = 120;
-  regacc->read();
-  BOOST_CHECK(regacc->accessData(0) == 42);
+  regacc.read();
+  BOOST_CHECK(regacc == 42);
   app.testModule.feedingToDevice.write();
-  regacc->read();
-  BOOST_CHECK(regacc->accessData(0) == 120);
+  regacc.read();
+  BOOST_CHECK(regacc == 120);
 
 }
 
@@ -123,28 +124,29 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDeviceFanOut, T, test_types ) {
                                  >> app.devMymodule("readBack");
   app.initialise();
 
-  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regac = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
-  auto regrb = backend->getRegisterAccessor<int>("/MyModule/readBack",1,0,{});
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  auto regac = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
+  auto regrb = dev.getScalarRegisterAccessor<int>("/MyModule/readBack");
 
-  regac->accessData(0) = 0;
-  regrb->accessData(0) = 0;
+  regac = 0;
+  regrb = 0;
   app.testModule.feedingToDevice = 42;
   app.testModule.feedingToDevice.write();
-  regac->read();
-  BOOST_CHECK(regac->accessData(0) == 42);
-  regrb->read();
-  BOOST_CHECK(regrb->accessData(0) == 42);
+  regac.read();
+  BOOST_CHECK(regac == 42);
+  regrb.read();
+  BOOST_CHECK(regrb == 42);
   app.testModule.feedingToDevice = 120;
-  regac->read();
-  BOOST_CHECK(regac->accessData(0) == 42);
-  regrb->read();
-  BOOST_CHECK(regrb->accessData(0) == 42);
+  regac.read();
+  BOOST_CHECK(regac == 42);
+  regrb.read();
+  BOOST_CHECK(regrb == 42);
   app.testModule.feedingToDevice.write();
-  regac->read();
-  BOOST_CHECK(regac->accessData(0) == 120);
-  regrb->read();
-  BOOST_CHECK(regrb->accessData(0) == 120);
+  regac.read();
+  BOOST_CHECK(regac == 120);
+  regrb.read();
+  BOOST_CHECK(regrb == 120);
 
 }
 
@@ -161,13 +163,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   app.initialise();
 
-  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;
-  regacc->accessData(0) = 42;
-  regacc->write();
+  regacc = 42;
+  regacc.write();
   BOOST_CHECK(app.testModule.consumingPoll == 0);
   app.testModule.consumingPoll.read();
   BOOST_CHECK(app.testModule.consumingPoll == 42);
@@ -175,8 +178,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
   BOOST_CHECK(app.testModule.consumingPoll == 42);
   app.testModule.consumingPoll.read();
   BOOST_CHECK(app.testModule.consumingPoll == 42);
-  regacc->accessData(0) = 120;
-  regacc->write();
+  regacc = 120;
+  regacc.write();
   BOOST_CHECK(app.testModule.consumingPoll == 42);
   app.testModule.consumingPoll.read();
   BOOST_CHECK( app.testModule.consumingPoll == 120 );
@@ -203,13 +206,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumingFanOut, T, test_types ) {
                                 >> app.testModule.consumingPush2;
   app.initialise();
 
-  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;
-  regacc->accessData(0) = 42;
-  regacc->write();
+  regacc = 42;
+  regacc.write();
+
   BOOST_CHECK(app.testModule.consumingPoll == 0);
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
   BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
@@ -239,8 +244,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumingFanOut, T, test_types ) {
   BOOST_CHECK(app.testModule.consumingPush2 == 42);
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
   BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
-  regacc->accessData(0) = 120;
-  regacc->write();
+  regacc = 120;
+  regacc.write();
   BOOST_CHECK(app.testModule.consumingPoll == 42);
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
   BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
@@ -307,14 +312,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
   // run the application to see if everything still behaves as expected
   app.run();
 
-  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPush = 0;
   app.testModule.consumingPush2 = 0;
-  regacc->accessData(0) = 42;
-  regacc->write();
+  regacc = 42;
+  regacc.write();
   BOOST_CHECK(app.testModule.consumingPush == 0);
   BOOST_CHECK(app.testModule.consumingPush2 == 0);
   app.testModule.feedingToDevice.write();
@@ -322,8 +328,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
   app.testModule.consumingPush2.read();
   BOOST_CHECK(app.testModule.consumingPush == 42);
   BOOST_CHECK(app.testModule.consumingPush2 == 42);
-  regacc->accessData(0) = 120;
-  regacc->write();
+  regacc = 120;
+  regacc.write();
   BOOST_CHECK(app.testModule.consumingPush == 42);
   BOOST_CHECK(app.testModule.consumingPush2 == 42);
   app.testModule.feedingToDevice.write();
@@ -391,20 +397,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDeviceModuleSubscriptOp, T, test_types ) {
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
   app.initialise();
 
-  boost::shared_ptr<mtca4u::DeviceBackend> backend = app.deviceMap["Dummy0"];
-  auto regacc = backend->getRegisterAccessor<int>("/MyModule/actuator",1,0,{});
+  mtca4u::Device dev;
+  dev.open("Dummy0");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
-  regacc->accessData(0) = 0;
+  regacc = 0;
   app.testModule.feedingToDevice = 42;
   app.testModule.feedingToDevice.write();
-  regacc->read();
-  BOOST_CHECK(regacc->accessData(0) == 42);
+  regacc.read();
+  BOOST_CHECK(regacc == 42);
   app.testModule.feedingToDevice = 120;
-  regacc->read();
-  BOOST_CHECK(regacc->accessData(0) == 42);
+  regacc.read();
+  BOOST_CHECK(regacc == 42);
   app.testModule.feedingToDevice.write();
-  regacc->read();
-  BOOST_CHECK(regacc->accessData(0) == 120);
+  regacc.read();
+  BOOST_CHECK(regacc == 120);
 
 }
 
