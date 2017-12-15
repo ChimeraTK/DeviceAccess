@@ -62,7 +62,7 @@ class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserTyp
       usleep(1000000);
     }
 
-    void postRead() override {
+    void doPostRead() override {
       mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
     }
 
@@ -75,16 +75,18 @@ class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserTyp
     bool isReadable() const override { return true; }
     bool isWriteable() const override { return false; }
 
-    bool isSameRegister(const boost::shared_ptr<mtca4u::TransferElement const> &) const override { return false; }
+    bool mayReplaceOther(const boost::shared_ptr<mtca4u::TransferElement const> &) const override { return false; }
 
     std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override { return { this->shared_from_this() }; }
 
     void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {}
 
+    std::list<boost::shared_ptr<mtca4u::TransferElement> > getInternalElements() override { return {}; }
+
 };
 
 template<>
-void TimerDummyRegisterAccessor<std::string>::postRead() {
+void TimerDummyRegisterAccessor<std::string>::doPostRead() {
 }
 
 

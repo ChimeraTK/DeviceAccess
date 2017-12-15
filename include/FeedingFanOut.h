@@ -71,7 +71,11 @@ namespace ChimeraTK {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 
-      void postRead() override {
+      void doPreRead() override {
+        throw std::logic_error("Read operation called on write-only variable.");
+      }
+
+      void doPostRead() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 
@@ -87,7 +91,7 @@ namespace ChimeraTK {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 
-      void preWrite() override {
+      void doPreWrite() override {
         for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
           if(slave->getNumberOfSamples() != 0) {          // do not send copy if no data is expected (e.g. trigger)
             if(slave == FanOut<UserType>::slaves.front()) {     // in case of first slave, swap instead of copy
@@ -114,24 +118,28 @@ namespace ChimeraTK {
         return dataLost;
       }
 
-      void postWrite() override {
+      void doPostWrite() override {
         for(auto &slave : FanOut<UserType>::slaves) {
           slave->postWrite();
         }
         FanOut<UserType>::slaves.front()->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
       }
 
-      bool isSameRegister(const boost::shared_ptr<const mtca4u::TransferElement>& e) const override {
-        // only true if the very instance of the transfer element is the same
-        return e.get() == this;
+      bool mayReplaceOther(const boost::shared_ptr<const mtca4u::TransferElement>&) const override {
+        return false;   /// @todo implement properly?
+      }
+
+      std::list<boost::shared_ptr<mtca4u::TransferElement> > getInternalElements() override {
+        return {};    /// @todo implement properly?
       }
 
       std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
-        return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() };
+        return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() }; /// @todo implement properly?
       }
 
       void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {
         // You can't replace anything here. Just do nothing.
+        /// @todo implement properly?
       }
 
   };

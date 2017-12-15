@@ -56,24 +56,24 @@ namespace ChimeraTK {
         return mtca4u::NDRegisterAccessorDecorator<UserType>::readAsync();
       }
 
-      void preRead() override {
+      void doPreRead() override {
         std::cout << "preRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-        mtca4u::NDRegisterAccessorDecorator<UserType>::preRead();
+        mtca4u::NDRegisterAccessorDecorator<UserType>::doPreRead();
       }
 
-      void postRead() override {
+      void doPostRead() override {
         std::cout << "postRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-        mtca4u::NDRegisterAccessorDecorator<UserType>::postRead();
+        mtca4u::NDRegisterAccessorDecorator<UserType>::doPostRead();
       }
 
-      void preWrite() override {
+      void doPreWrite() override {
         std::cout << "preWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-        mtca4u::NDRegisterAccessorDecorator<UserType>::preWrite();
+        mtca4u::NDRegisterAccessorDecorator<UserType>::doPreWrite();
       }
 
-      void postWrite() override {
+      void doPostWrite() override {
         std::cout << "postWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-        mtca4u::NDRegisterAccessorDecorator<UserType>::postWrite();
+        mtca4u::NDRegisterAccessorDecorator<UserType>::doPostWrite();
       }
 
     protected:

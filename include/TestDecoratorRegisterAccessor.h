@@ -119,9 +119,9 @@ namespace ChimeraTK {
         return true;
       }
 
-      void postRead() override {
+      void doPostRead() override {
         obtainLockAndDecrementCounter();
-        mtca4u::NDRegisterAccessorDecorator<UserType>::postRead();
+        mtca4u::NDRegisterAccessorDecorator<UserType>::doPostRead();
       }
 
     protected:

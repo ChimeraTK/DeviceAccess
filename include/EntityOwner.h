@@ -116,8 +116,7 @@ namespace ChimeraTK {
        *  hierarchy level to appear as if there were direct childs of the next higher hierarchy level. If e.g. there is
        *  a variable on the third level "A.B.C" and one selects to eliminate the second level of hierarchy (e.g. calls
        *  B.eliminateHierarchy()), the structure would look like "A.C". This of course only affects the "dynamic" data
-       *  model, while the static C++ model is fixed at compile time.
-       *  @todo Also use in VariableGroup::operator() and VariableGroup::operator[] ??? */
+       *  model, while the static C++ model is fixed at compile time. */
       void setEliminateHierarchy() { _eliminateHierarchy = true; }
 
       /** Returns the flag whether this level of hierarchy should be eliminated */
