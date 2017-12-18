@@ -1,33 +1,5 @@
-set(SOURCE
-   ${SOURCE}
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/Device.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceException.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterAccessor.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/FixedPointConverter.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferElement.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferFuture.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/TransferGroup.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RegisterCatalogue.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/ExperimentalFeatures.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/VersionNumber.cc
-   PARENT_SCOPE
-)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src sources)
+set(SOURCE ${SOURCE} ${sources} PARENT_SCOPE)
 
-set(HEADERS
-   ${HEADERS}
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/Device.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceException.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/RegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/TwoDRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/BufferingRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/MultiplexedDataAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/MultiplexedDataAccessorException.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/FixedPointConverter.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferGroup.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/TransferElement.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/RegisterCatalogue.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/AccessMode.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/VersionNumber.h
-   PARENT_SCOPE
-)
-
+file (GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+set(HEADERS ${HEADERS} ${headers} PARENT_SCOPE)

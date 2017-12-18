@@ -72,7 +72,7 @@ set(LIBXML++_VERSION "libxml++-2.6")
 PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
-  
+
 include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
@@ -82,7 +82,7 @@ include_directories("${PROJECT_SOURCE_DIR}/device/include")
 configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
 include_directories("${PROJECT_BINARY_DIR}/generated_include")
 
-# Only these include directories should be copied for examples. 
+# Only these include directories should be copied for examples.
 get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
@@ -143,7 +143,7 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 
 add_subdirectory ("${PROJECT_SOURCE_DIR}/plugin_example")
 
-#change the install prefix to the source directory in case the user has not specified a destination 
+#change the install prefix to the source directory in case the user has not specified a destination
 #i. e. CMAKE_INSTALL_PREFIX is not set manually
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   SET(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR} CACHE PATH "Install directory
@@ -190,7 +190,7 @@ endif(DOXYGEN_FOUND)
 
 # Keep the testing section at the end. It will include boost test, which will modify the Boost_LIBRARIES variable.
 # We don't want to link client applications to the boost testing library. This might give trouble.
-enable_testing()  
+enable_testing()
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
 

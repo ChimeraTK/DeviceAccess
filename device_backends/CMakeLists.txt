@@ -1,43 +1,5 @@
-set(SOURCE
-   ${SOURCE}
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/DeviceBackendImpl.cc
-   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackend.cc>
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/NumericAddressedBackendRegisterAccessor.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/DummyBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/LogicalNameMappingBackend.cc
-   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/src/PcieBackendException.cc>
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/BackendFactory.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotBackend.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/TcpCtrl.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol0.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/RebotProtocol1.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/testableRebotSleep.cc
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/NDRegisterAccessorDecorator.cc
-   PARENT_SCOPE
-)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src sources)
+set(SOURCE ${SOURCE} ${sources} PARENT_SCOPE)
 
-include_directories()
-set(HEADERS
-   ${HEADERS}
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackend.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceBackendImpl.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/NDRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/NumericAddressedBackend.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/NumericAddressedBackendRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/NumericAddressedBackendMuxedRegisterAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendChannelAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/LNMBackendVariableAccessor.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/BackendFactory.h
-   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackend.h>
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/LogicalNameMappingBackend.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/DummyBackend.h
-   $<${HAVE_PCIE_BACKEND}:${CMAKE_CURRENT_SOURCE_DIR}/include/PcieBackendException.h>
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/llrfdrv_io_compat.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/pciedev_io.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/pcieuni_io_compat.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/RebotBackend.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/RebotBackendException.h
-   PARENT_SCOPE
-)
+file (GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+set(HEADERS ${HEADERS} ${headers} PARENT_SCOPE)
