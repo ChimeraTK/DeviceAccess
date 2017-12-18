@@ -20,24 +20,24 @@ using namespace mtca4u;
 
 // we need to access the private implementation of the accessor (see accessPrivateData.h)
 struct BufferingRegisterAccessor_int_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int> >(NDRegisterAccessorBridge<int>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<int> >(NDRegisterAccessorAbstractor<int>::*type);
 };
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorBridge<int>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorAbstractor<int>::_impl>;
 
 struct BufferingRegisterAccessor_int32_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorBridge<int32_t>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorAbstractor<int32_t>::*type);
 };
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32_impl, &mtca4u::NDRegisterAccessorAbstractor<int32_t>::_impl>;
 
 struct BufferingRegisterAccessor_uint16_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<uint16_t> >(NDRegisterAccessorBridge<uint16_t>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<uint16_t> >(NDRegisterAccessorAbstractor<uint16_t>::*type);
 };
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_uint16_impl, &mtca4u::NDRegisterAccessorBridge<uint16_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_uint16_impl, &mtca4u::NDRegisterAccessorAbstractor<uint16_t>::_impl>;
 
 struct BufferingRegisterAccessor_int64_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int64_t> >(NDRegisterAccessorBridge<int64_t>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<int64_t> >(NDRegisterAccessorAbstractor<int64_t>::*type);
 };
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorBridge<int64_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorAbstractor<int64_t>::_impl>;
 
 struct NumericAddressedLowLevelTransferElement_startAddress {
     typedef size_t (NumericAddressedLowLevelTransferElement::*type);

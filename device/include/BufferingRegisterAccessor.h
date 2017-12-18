@@ -8,7 +8,7 @@
 #ifndef MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 #define MTCA4U_BUFFERING_REGISTER_ACCESSOR_H
 
-#include "NDRegisterAccessorBridge.h"
+#include "NDRegisterAccessorAbstractor.h"
 #include "DeviceException.h"
 
 namespace mtca4u {
@@ -19,7 +19,7 @@ namespace mtca4u {
    *  @todo Add printed runtime warning after release of version 0.9
    */
   template<typename UserType>
-  class BufferingRegisterAccessor : public  NDRegisterAccessorBridge<UserType> {
+  class BufferingRegisterAccessor : public  NDRegisterAccessorAbstractor<UserType> {
     public:
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -28,9 +28,9 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       BufferingRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
-      : NDRegisterAccessorBridge<UserType>(impl)
+      : NDRegisterAccessorAbstractor<UserType>(impl)
       {
-        if(NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels() != 1) {
+        if(NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfChannels() != 1) {
           throw DeviceException("The BufferingRegisterAccessor has a too low dimension to access this register.",
               DeviceException::WRONG_ACCESSOR);
         }
@@ -49,7 +49,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType& operator[](unsigned int index) {
-        return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,index);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,index);
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -58,7 +58,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       unsigned int getNumberOfElements() {
-        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfSamples();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -67,7 +67,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       operator UserType&() {
-        return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -77,7 +77,7 @@ namespace mtca4u {
        */
       BufferingRegisterAccessor<UserType>& operator=(UserType rightHandSide)
       {
-        NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) = rightHandSide;
+        NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) = rightHandSide;
         return *this;
       }
 
@@ -87,7 +87,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       BufferingRegisterAccessor<UserType>& operator++() {
-        return operator=( NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) + 1 );
+        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) + 1 );
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -96,7 +96,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       BufferingRegisterAccessor<UserType>& operator--() {
-        return operator=( NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) - 1 );
+        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) - 1 );
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -105,7 +105,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType operator++(int) {
-        UserType v = NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
+        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
         operator=( v + 1 );
         return v;
       }
@@ -116,7 +116,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType operator--(int) {
-        UserType v = NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
+        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
         operator=( v - 1 );
         return v;
       }
@@ -130,18 +130,18 @@ namespace mtca4u {
       typedef typename std::vector<UserType>::const_iterator const_iterator;
       typedef typename std::vector<UserType>::reverse_iterator reverse_iterator;
       typedef typename std::vector<UserType>::const_reverse_iterator const_reverse_iterator;
-      iterator begin() { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).begin(); }
-      const_iterator begin() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).cbegin(); }
-      const_iterator cbegin() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).cbegin(); }
-      iterator end() { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).end(); }
-      const_iterator end() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).cend(); }
-      const_iterator cend() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).cend(); }
-      reverse_iterator rbegin() { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).rbegin(); }
-      const_reverse_iterator rbegin() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).crbegin(); }
-      const_reverse_iterator crbegin() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).crbegin(); }
-      reverse_iterator rend() { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).rend(); }
-      const_reverse_iterator rend() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).crend(); }
-      const_reverse_iterator crend() const { return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).crend(); }
+      iterator begin() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).begin(); }
+      const_iterator begin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cbegin(); }
+      const_iterator cbegin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cbegin(); }
+      iterator end() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).end(); }
+      const_iterator end() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cend(); }
+      const_iterator cend() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cend(); }
+      reverse_iterator rbegin() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).rbegin(); }
+      const_reverse_iterator rbegin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crbegin(); }
+      const_reverse_iterator crbegin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crbegin(); }
+      reverse_iterator rend() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).rend(); }
+      const_reverse_iterator rend() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crend(); }
+      const_reverse_iterator crend() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crend(); }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
        *  \deprecated
@@ -149,11 +149,11 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       void swap(std::vector<UserType> &x) {
-        if(x.size() != NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).size()) {
+        if(x.size() != NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).size()) {
           throw DeviceException("Swapping with a buffer of a different size is not allowed.",
               DeviceException::WRONG_PARAMETER);
         }
-        NDRegisterAccessorBridge<UserType>::_impl->accessChannel(0).swap(x);
+        NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).swap(x);
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -162,7 +162,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isReadOnly() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->isReadOnly();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -171,7 +171,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isReadable() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->isReadable();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -180,7 +180,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isWriteable() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->isWriteable();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -189,7 +189,7 @@ namespace mtca4u {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isInitialised() const {
-        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
+        return NDRegisterAccessorAbstractor<UserType>::_impl != NULL;
       }
 
       friend class TransferGroup;

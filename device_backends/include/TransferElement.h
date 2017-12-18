@@ -25,6 +25,7 @@
 #include "TimeStamp.h"
 #include "TransferFuture.h"
 #include "VersionNumber.h"
+#include "TransferElementID.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -64,58 +65,6 @@ namespace mtca4u {
 
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
-
-      /**
-       * Simple class holding a unique ID for a TransferElement. The ID is guaranteed to be unique for all accessors
-       * throughout the lifetime of the process.
-       */
-      class ID {
-
-        public:
-
-          /** Default constructor constructs an invalid ID, which may be assigned with another ID */
-          ID() : _id(0) {}
-
-          /** Copy ID from another */
-          ID(const ID& other) : _id(other._id) {}
-
-          /** Compare ID with another. Will always return false, if the ID is invalid (i.e. setId() was never called). */
-          bool operator==(const ID& other) const { return (_id != 0) && (_id == other._id); }
-          bool operator!=(const ID& other) const { return !(operator==(other)); }
-
-          /** Assign ID from another. May only be called if currently no ID has been assigned. */
-          ID& operator=(const ID& other) { _id = other._id; return *this; }
-
-          /** Streaming operator to stream the ID e.g. to std::cout */
-          friend std::ostream& operator<<(std::ostream &os, const ID& me) {
-            std::stringstream ss;
-            ss << std::hex << std::showbase << me._id;
-            os << ss.str();
-            return os;
-          }
-
-          /** Hash function for putting TransferElement::ID e.g. into an std::unordered_map */
-          friend struct std::hash<ID>;
-
-          /** Comparison for putting TransferElement::ID e.g. into an std::map */
-          friend struct std::less<ID>;
-
-        protected:
-
-          /** Assign an ID to this instance. May only be called if currently no ID has been assigned. */
-          void makeUnique() {
-            static std::atomic<size_t> nextId{0};
-            assert(_id == 0);
-            ++nextId;
-            assert(nextId != 0);
-            _id = nextId;
-          }
-
-          /** The actual ID value */
-          size_t _id;
-
-          friend class TransferElement;
-      };
 
       /** A typedef for more compact syntax */
       typedef boost::shared_ptr<TransferElement> SharedPtr;
@@ -194,18 +143,6 @@ namespace mtca4u {
        *  active from the call to readAsync() until wait() has been called on the future (directly or indirectly
        *  by successfully calling another read function on the TransferElement). */
       virtual bool asyncTransferActive() = 0;
-
-      /** Read data asynchronously from all given TransferElements and wait until one of the TransferElements has
-       *  new data. The ID of the TransferElement which received new data is returned as a reference. In case multiple
-       *  TransferElements receive new data simultaneously (or already have new data available before the call to
-       *  readAny()), the ID of the TransferElement with the oldest VersionNumber (see getVersionNumber()) will be returned
-       *  by this function. This ensures that data is received in the order of sending (unless data is "dated back"
-       *  and sent with an older version number, which might be the case e.g. when using the ControlSystemAdapter).
-       *
-       *  Note that the behaviour is undefined when putting the same TransferElement into the list - a result might
-       *  be e.g. that it blocks for ever. This is due to a limitation in the underlying boost::wait_for_any()
-       *  function. */
-      static TransferElement::ID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
 
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
@@ -446,7 +383,7 @@ namespace mtca4u {
        * obtained by to difference calls to Device::getScalarRegisterAccessor() will have a different ID even when
        * accessing the very same register.
        */
-      ID getId() const { return _id; };
+      TransferElementID getId() const { return _id; };
 
     protected:
 
@@ -460,7 +397,7 @@ namespace mtca4u {
       std::string _description;
 
       /** The ID of this TransferElement */
-      ID _id;
+      TransferElementID _id;
 
       /** Allow generating a unique ID from derived classes*/
       void makeUniqueId() {
@@ -484,98 +421,29 @@ namespace mtca4u {
       bool writeTransactionInProgress{false};
   };
 
-  /*******************************************************************************************************************/
-
-  // Note: the %iterator in the third line prevents doxygen from creating a link which it cannot resolve.
-  // It reads: std::list<TransferFuture::PlainFutureType>::iterator
-  /** Internal class needed for TransferElement::readAny(): Provide a wrapper around the list iterator to effectivly
-   *  allow passing std::list<TransferFuture>::iterator to boost::wait_for_any() which otherwise expects e.g.
-   *  std::list<TransferFuture::PlainFutureType>::%iterator. This class provides the same interface as an interator of
-   *  the expected type but adds the function getTransferFuture(), so we can obtain the TransferElement from the
-   *  return value of boost::wait_for_any(). */
-  class TransferFutureIterator {
-    public:
-      TransferFutureIterator(const std::list<TransferFuture>::iterator &it) : _it(it) {}
-      TransferFutureIterator operator++() { TransferFutureIterator ret(_it); ++_it; return ret; }
-      TransferFutureIterator operator++(int) { ++_it; return *this; }
-      bool operator!=(const TransferFutureIterator &rhs) {return _it != rhs._it;}
-      bool operator==(const TransferFutureIterator &rhs) {return _it == rhs._it;}
-      TransferFuture::PlainFutureType& operator*() {return _it->getBoostFuture();}
-      TransferFuture::PlainFutureType& operator->() {return _it->getBoostFuture();}
-      TransferFuture& getTransferFuture() const {return *_it;}
-    private:
-      std::list<TransferFuture>::iterator _it;
-  };
-
-} /* namespace mtca4u */
-namespace std {
-  template<>
-  struct iterator_traits<mtca4u::TransferFutureIterator> {
-      typedef ChimeraTK::TransferFuture::PlainFutureType value_type;
-      typedef size_t difference_type;
-      typedef std::forward_iterator_tag iterator_category;
-  };
-} /* namespace std */
-namespace mtca4u {
-
-  /*******************************************************************************************************************/
-
-  inline TransferElement::ID TransferElement::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-
-    // build list of TransferFutures for all elements. Since readAsync() is a virtual call and we need to visit all
-    // elements at least twice (once in wait_for_any and a second time for sorting by version number), this is assumed
-    // to be less expensive than calling readAsync() on the fly in the TransferFutureIterator instead.
-    std::list<TransferFuture> futureList;
-    for(auto &elem : elementsToRead) {
-      futureList.push_back(elem.get().readAsync());
-    }
-    // wait until any future is ready
-    auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
-
-    // Find the variable which has the oldest version number (to guarantee the order of updates).
-    // Start with assuming that the future returned by boost::wait_for_any() has the oldes version number.
-    TransferFuture theUpdate = iter.getTransferFuture();
-    for(auto future : futureList) {
-      // skip if this is the future returned by boost::wait_for_any()
-      if(future == theUpdate) continue;
-      // also skip if the future is not yet ready
-      if(!future.hasNewData()) continue;
-      // compare  version number with the version number of the stored future
-      if(future.getBoostFuture().get()->_versionNumber < theUpdate.getBoostFuture().get()->_versionNumber) {
-        theUpdate = future;
-      }
-    }
-
-    // complete the transfer (i.e. run postRead())
-    theUpdate.wait();
-
-    // return the transfer element as a shared pointer
-    return theUpdate.getTransferElement().getId();
-  }
-
 } /* namespace mtca4u */
 namespace std {
 
   /*******************************************************************************************************************/
 
-  /** Hash function for putting TransferElement::ID e.g. into an std::unordered_map */
+  /** Hash function for putting TransferElementID e.g. into an std::unordered_map */
   template<>
-  struct hash<mtca4u::TransferElement::ID> {
-      std::size_t operator()(const mtca4u::TransferElement::ID &f) const {
+  struct hash<mtca4u::TransferElementID> {
+      std::size_t operator()(const mtca4u::TransferElementID &f) const {
           return std::hash<size_t>{}(f._id);
       }
   };
 
   /*******************************************************************************************************************/
 
-  /** Comparison for putting TransferElement::ID e.g. into an std::map */
+  /** Comparison for putting TransferElementID e.g. into an std::map */
   template<>
-  struct less<mtca4u::TransferElement::ID> {
+  struct less<mtca4u::TransferElementID> {
     // these typedefs are mandatory before C++17, even though they seem to be unused by gcc
     typedef bool result_type;
-    typedef mtca4u::TransferElement::ID first_argument_type;
-    typedef mtca4u::TransferElement::ID second_argument_type;
-    bool operator()(const mtca4u::TransferElement::ID &a, const mtca4u::TransferElement::ID &b) const {
+    typedef mtca4u::TransferElementID first_argument_type;
+    typedef mtca4u::TransferElementID second_argument_type;
+    bool operator()(const mtca4u::TransferElementID &a, const mtca4u::TransferElementID &b) const {
       return a._id < b._id;
     }
   };

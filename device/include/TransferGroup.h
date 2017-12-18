@@ -10,7 +10,7 @@
 
 #include <set>
 
-#include "TransferElement.h"
+#include "TransferElementAbstractor.h"
 
 namespace mtca4u {
 
@@ -44,11 +44,7 @@ namespace mtca4u {
       /** Add a register accessor to the group. The register accessor might internally be altered so that accessors
        *  accessing the same hardware register will share their buffers. Register accessors must not be placed into
        *  multiple TransferGroups. */
-      template<class AnyBufferingAccessorType>
-      void addAccessor(AnyBufferingAccessorType &accessor) {
-        // just call the template specialisation for TransferElement, which we actually implement
-        addAccessor<TransferElement>(accessor);
-      }
+      void addAccessor(TransferElementAbstractor &accessor);
 
       /** Trigger read transfer for all accessors in the group */
       void read();
@@ -79,13 +75,6 @@ namespace mtca4u {
       /** Flag if group is read-only */
       bool readOnly;
   };
-
-  /** Template specialisation for adding a TransferElement. TransferElement is a base class of the supported register
-   *  accessor classes but normally inaccessible due to protected inheritance. Thus the user could not call this
-   *  function without this template trick. The TransferGroup class need to be friend of the accessor classes!
-    */
-  template<>
-  void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor);
 
 } /* namespace mtca4u */
 

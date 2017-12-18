@@ -19,9 +19,9 @@ using namespace mtca4u;
 
 // we need to access the private implementation of the accessor (see accessPrivateData.h)
 struct OneDRegisterAccessor_double_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<double> >(NDRegisterAccessorBridge<double>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<double> >(NDRegisterAccessorAbstractor<double>::*type);
 };
-template struct accessPrivateData::stow_private<OneDRegisterAccessor_double_impl, &mtca4u::NDRegisterAccessorBridge<double>::_impl>;
+template struct accessPrivateData::stow_private<OneDRegisterAccessor_double_impl, &mtca4u::NDRegisterAccessorAbstractor<double>::_impl>;
 
 /**********************************************************************************************************************/
 class OneDRegisterTest {

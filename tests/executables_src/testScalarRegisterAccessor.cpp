@@ -99,7 +99,7 @@ void ScalarRegisterTest::testIntRegisterAccessor() {
   BOOST_CHECK( accessor.isReadOnly() == false );
   BOOST_CHECK( accessor.isReadable() );
   BOOST_CHECK( accessor.isWriteable() );
-  
+
 
   // dummy register accessor for comparison
   DummyRegisterAccessor<int> dummy(backend.get(),"APP0","WORD_STATUS");
@@ -249,14 +249,14 @@ void ScalarRegisterTest::testWordOffset(){
 /**********************************************************************************************************************/
 void ScalarRegisterTest::testUniqueID() {
   std::cout << "testUniqueID" << std::endl;
-  
+
   Device device;
   device.open("DUMMYD2");
 
   // get register accessors
   ScalarRegisterAccessor<int> accessor1  = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, true);
   ScalarRegisterAccessor<int> accessor2  = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, true);
-  
+
   // self consistency check
   BOOST_CHECK(   accessor1.getId() == accessor1.getId()  );
   BOOST_CHECK( !(accessor1.getId() != accessor1.getId()) );
@@ -266,7 +266,7 @@ void ScalarRegisterTest::testUniqueID() {
   BOOST_CHECK( !(accessor1.getId() == accessor2.getId()) );
   BOOST_CHECK(   accessor2.getId() != accessor1.getId()  );
   BOOST_CHECK( !(accessor2.getId() == accessor1.getId()) );
-  
+
   // copy the abstractor and check if unique ID stays the same
   ScalarRegisterAccessor<int> accessor1Copied;
   accessor1Copied.replace(accessor1);
@@ -276,47 +276,47 @@ void ScalarRegisterTest::testUniqueID() {
   accessor2Copied.replace(accessor2);
   BOOST_CHECK( accessor2Copied.getId() == accessor2.getId() );
   BOOST_CHECK( accessor2Copied.getId() != accessor1.getId() );
-  
+
   // compare with accessor for same register but created another time
   ScalarRegisterAccessor<int> accessor1a = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, true);
   BOOST_CHECK( accessor1a.getId() == accessor1a.getId() );
   BOOST_CHECK( accessor1.getId() != accessor1a.getId() );
   BOOST_CHECK( accessor2.getId() != accessor1a.getId() );
-  
+
   // test storing the ID
-  TransferElement::ID myId;
+  TransferElementID myId;
   BOOST_CHECK( myId != myId );
   myId = accessor1.getId();
   BOOST_CHECK(myId == accessor1.getId());
   BOOST_CHECK(myId == accessor1Copied.getId());
   BOOST_CHECK(myId != accessor2.getId());
   BOOST_CHECK(myId != accessor1a.getId());
-  
+
   // check if we can put the ID into an std::unordered_map as a key
-  std::unordered_map<TransferElement::ID, std::string> map1;
+  std::unordered_map<TransferElementID, std::string> map1;
   map1.insert({myId, "SomeTest"});
   BOOST_CHECK(map1[accessor1.getId()] == "SomeTest");
-  
+
   // check if we can put the ID into an std::unordered_map as a value
-  std::unordered_map<std::string, TransferElement::ID> map2;
+  std::unordered_map<std::string, TransferElementID> map2;
   map2.insert({"AnotherTest", myId});
   BOOST_CHECK(map2["AnotherTest"] == accessor1.getId());
-  
+
   // check if we can put the ID into an std::map as a key
-  std::map<TransferElement::ID, std::string> map3;
+  std::map<TransferElementID, std::string> map3;
   map3.insert({myId, "SomeTest"});
   BOOST_CHECK(map3[accessor1.getId()] == "SomeTest");
-  
+
   // check if we can put the ID into an std::map as a value
-  std::unordered_map<std::string, TransferElement::ID> map4;
+  std::unordered_map<std::string, TransferElementID> map4;
   map4.insert({"AnotherTest", myId});
   BOOST_CHECK(map4["AnotherTest"] == accessor1.getId());
-  
+
   // check if we can put the ID into an std::vector
-  std::vector<TransferElement::ID> vector;
+  std::vector<TransferElementID> vector;
   vector.push_back(myId);
   BOOST_CHECK(vector[0] == accessor1.getId());
 
-  device.close();  
-  
+  device.close();
+
 }

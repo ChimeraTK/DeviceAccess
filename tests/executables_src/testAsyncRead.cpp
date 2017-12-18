@@ -77,7 +77,7 @@ class AsyncReadTest {
     /// test normal asychronous read
     void testAsyncRead();
 
-    /// test the TransferElement::readAny() function
+    /// test the readAny() function
     void testReadAny();
 
     /// test mixing the various read functions
@@ -235,7 +235,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -252,7 +252,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -269,7 +269,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -287,7 +287,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -304,7 +304,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -321,7 +321,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -338,7 +338,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { TransferElement::readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -374,12 +374,12 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK_EQUAL((int)a2, 123);
 
       // no point to use a thread here
-      auto r = TransferElement::readAny({a1,a2,a3,a4});
+      auto r = readAny({a1,a2,a3,a4});
       BOOST_CHECK(a1.getId() == r);
       BOOST_CHECK_EQUAL((int)a1, 55);
       BOOST_CHECK_EQUAL((int)a2, 123);
 
-      r = TransferElement::readAny({a1,a2,a3,a4});
+      r = readAny({a1,a2,a3,a4});
       BOOST_CHECK(a2.getId() == r);
       BOOST_CHECK(a1 == 55);
       BOOST_CHECK(a2 == 66);
@@ -416,28 +416,28 @@ void AsyncReadTest::testReadAny() {
       backend->readMutex[0x10].lock();
 
       // no point to use a thread here
-      auto r = TransferElement::readAny({a1,a2,a3,a4});
+      auto r = readAny({a1,a2,a3,a4});
       BOOST_CHECK(a4.getId() == r);
       BOOST_CHECK(a1 == 55);
       BOOST_CHECK(a2 == 66);
       BOOST_CHECK(a3 == 122);
       BOOST_CHECK(a4 == 11);
 
-      r = TransferElement::readAny({a1,a2,a3,a4});
+      r = readAny({a1,a2,a3,a4});
       BOOST_CHECK(a2.getId() == r);
       BOOST_CHECK(a1 == 55);
       BOOST_CHECK(a2 == 22);
       BOOST_CHECK(a3 == 122);
       BOOST_CHECK(a4 == 11);
 
-      r = TransferElement::readAny({a1,a2,a3,a4});
+      r = readAny({a1,a2,a3,a4});
       BOOST_CHECK(a3.getId() == r);
       BOOST_CHECK(a1 == 55);
       BOOST_CHECK(a2 == 22);
       BOOST_CHECK(a3 == 33);
       BOOST_CHECK(a4 == 11);
 
-      r = TransferElement::readAny({a1,a2,a3,a4});
+      r = readAny({a1,a2,a3,a4});
       BOOST_CHECK(a1.getId() == r);
       BOOST_CHECK(a1 == 44);
       BOOST_CHECK(a2 == 22);

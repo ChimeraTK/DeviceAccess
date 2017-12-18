@@ -17,9 +17,9 @@ using namespace mtca4u;
 
 // we need to access the private implementation of the accessor (see accessPrivateData.h)
 struct BufferingRegisterAccessor_int32t_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorBridge<int32_t>::*type);
+    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorAbstractor<int32_t>::*type);
 };
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_impl, &mtca4u::NDRegisterAccessorBridge<int32_t>::_impl>;
+template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_impl, &mtca4u::NDRegisterAccessorAbstractor<int32_t>::_impl>;
 
 
 class LMapBackendTest {

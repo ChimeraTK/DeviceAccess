@@ -6,9 +6,9 @@
  */
 
 #include "TransferGroup.h"
-#include "TransferElement.h"
+#include "TransferElementAbstractor.h"
 #include "DeviceException.h"
-#include "NDRegisterAccessorBridge.h"
+#include "NDRegisterAccessorAbstractor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "CopyRegisterDecorator.h"
 
@@ -57,8 +57,7 @@ namespace mtca4u {
 
   /*********************************************************************************************************************/
 
-  template<>
-  void TransferGroup::addAccessor<TransferElement>(TransferElement &accessor) {
+  void TransferGroup::addAccessor(TransferElementAbstractor &accessor) {
 
     // check if accessor is already in a transfer group
     if(accessor.getHighLevelImplElement()->isInTransferGroup) {

@@ -1,25 +1,25 @@
 /*
- * NDRegisterAccessorBridge.h
+ * NDRegisterAccessorAbstractor.h
  *
  *  Created on: Mar 23, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_N_D_REGISTER_ACCESSOR_BRIDGE_H
-#define MTCA4U_N_D_REGISTER_ACCESSOR_BRIDGE_H
+#ifndef MTCA4U_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
+#define MTCA4U_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
 
 #include "ForwardDeclarations.h"
-#include "TransferElement.h"
+#include "TransferElementAbstractor.h"
 #include "NDRegisterAccessor.h"
 #include "CopyRegisterDecorator.h"
 
 namespace mtca4u {
 
-  /** Base class for the reigster accessor bridges (ScalarRegisterAccessor, OneDRegisterAccessor and
+  /** Base class for the reigster accessor abstractors (ScalarRegisterAccessor, OneDRegisterAccessor and
    *  TwoDRegisterAccessor). Provides a private implementation of the TransferElement interface to allow the bridges
    *  to be added to a TransferGroup. Also stores the shared pointer to the NDRegisterAccessor implementation. */
   template<typename UserType>
-  class NDRegisterAccessorBridge : public TransferElement {
+  class NDRegisterAccessorAbstractor : public TransferElementAbstractor {
 
     public:
 
@@ -32,100 +32,100 @@ namespace mtca4u {
         return _impl->getNInputQueueElements();
       }
 
-      /** Assign a new accessor to this NDRegisterAccessorBridge. Since another NDRegisterAccessorBridge is passed as
-       *  argument, both NDRegisterAccessorBridges will then point to the same accessor and thus are sharing the
+      /** Assign a new accessor to this NDRegisterAccessorAbstractor. Since another NDRegisterAccessorAbstractor is passed as
+       *  argument, both NDRegisterAccessorAbstractors will then point to the same accessor and thus are sharing the
        *  same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding
        *  getXXRegisterAccessor() function of Device must be called. */
-      void replace(const NDRegisterAccessorBridge<UserType> &newAccessor) {
+      void replace(const NDRegisterAccessorAbstractor<UserType> &newAccessor) {
         _impl = newAccessor._impl;
-        TransferElement::_id = _impl->getId();
+        TransferElementAbstractor::_id = _impl->getId();
       }
 
       /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
-       *  has been obtained directly (instead of a NDRegisterAccessorBridge). */
+       *  has been obtained directly (instead of a NDRegisterAccessorAbstractor). */
       void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
         _impl = newImpl;
-        TransferElement::_id = _impl->getId();
+        TransferElementAbstractor::_id = _impl->getId();
       }
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
        *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
        *  placeholder constructor without arguments. */
       bool isInitialised() const {
-        return NDRegisterAccessorBridge<UserType>::_impl != NULL;
+        return NDRegisterAccessorAbstractor<UserType>::_impl != NULL;
       }
 
       void read() override {
-        NDRegisterAccessorBridge<UserType>::_impl->read();
+        NDRegisterAccessorAbstractor<UserType>::_impl->read();
       }
 
       bool readNonBlocking() override {
-        return NDRegisterAccessorBridge<UserType>::_impl->readNonBlocking();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->readNonBlocking();
       }
 
       bool readLatest() override {
-        return NDRegisterAccessorBridge<UserType>::_impl->readLatest();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->readLatest();
       }
 
       void doReadTransfer() override {
-        NDRegisterAccessorBridge<UserType>::_impl->doReadTransfer();
+        NDRegisterAccessorAbstractor<UserType>::_impl->doReadTransfer();
       }
 
       bool doReadTransferNonBlocking() override {
-        return NDRegisterAccessorBridge<UserType>::_impl->doReadTransferNonBlocking();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->doReadTransferNonBlocking();
       }
 
       bool doReadTransferLatest() override {
-        return NDRegisterAccessorBridge<UserType>::_impl->doReadTransferLatest();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->doReadTransferLatest();
       }
 
       void doPreRead() override {
-        NDRegisterAccessorBridge<UserType>::_impl->preRead();
+        NDRegisterAccessorAbstractor<UserType>::_impl->preRead();
       }
 
       void doPostRead() override {
-        NDRegisterAccessorBridge<UserType>::_impl->postRead();
+        NDRegisterAccessorAbstractor<UserType>::_impl->postRead();
       }
 
       void doPreWrite() override {
-        NDRegisterAccessorBridge<UserType>::_impl->preWrite();
+        NDRegisterAccessorAbstractor<UserType>::_impl->preWrite();
       }
 
       void doPostWrite() override {
-        NDRegisterAccessorBridge<UserType>::_impl->postWrite();
+        NDRegisterAccessorAbstractor<UserType>::_impl->postWrite();
       }
 
       TransferFuture readAsync() override {
-        return NDRegisterAccessorBridge<UserType>::_impl->readAsync();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->readAsync();
       }
 
       bool asyncTransferActive() override {
-        return NDRegisterAccessorBridge<UserType>::_impl->asyncTransferActive();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->asyncTransferActive();
       }
 
       ChimeraTK::VersionNumber getVersionNumber() const override {
-        return NDRegisterAccessorBridge<UserType>::_impl->getVersionNumber();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getVersionNumber();
       }
 
       bool write(ChimeraTK::VersionNumber versionNumber={}) override {
-        return NDRegisterAccessorBridge<UserType>::_impl->write(versionNumber);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->write(versionNumber);
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
-        return NDRegisterAccessorBridge<UserType>::_impl->doWriteTransfer(versionNumber);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->doWriteTransfer(versionNumber);
       }
 
       /** Return if the register accessor allows only reading */
       bool isReadOnly() const override {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadOnly();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->isReadOnly();
       }
 
       bool isReadable() const override {
-        return NDRegisterAccessorBridge<UserType>::_impl->isReadable();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->isReadable();
       }
 
       bool isWriteable() const override {
-        return NDRegisterAccessorBridge<UserType>::_impl->isWriteable();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->isWriteable();
       }
 
       bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
@@ -152,7 +152,7 @@ namespace mtca4u {
         else {
           _impl->replaceTransferElement(newElement);
         }
-        TransferElement::_id = _impl->getId();
+        TransferElementAbstractor::_id = _impl->getId();
       }
 
       boost::shared_ptr<TransferElement> getHighLevelImplElement() override {
@@ -164,22 +164,22 @@ namespace mtca4u {
       }
 
       void clearAsyncTransferActive() override {
-        throw std::logic_error("NDRegisterAccessorBridge::clearAsyncTransferActive(): Users should never call this function!");
+        throw std::logic_error("NDRegisterAccessorAbstractor::clearAsyncTransferActive(): Users should never call this function!");
       }
 
       void transferFutureWaitCallback() override {
-        throw std::logic_error("NDRegisterAccessorBridge::clearAsyncTransferActive(): Users should never call this function!");
+        throw std::logic_error("NDRegisterAccessorAbstractor::clearAsyncTransferActive(): Users should never call this function!");
       }
 
     protected:
 
-      NDRegisterAccessorBridge(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
+      NDRegisterAccessorAbstractor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : _impl(impl)
       {
-        TransferElement::_id = _impl->getId();
+        TransferElementAbstractor::_id = _impl->getId();
       }
 
-      NDRegisterAccessorBridge() {}
+      NDRegisterAccessorAbstractor() {}
 
       /** pointer to the implementation */
       boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
@@ -190,7 +190,7 @@ namespace mtca4u {
 
       /** prevent copying by operator=, since it will be confusing (operator= may also be overloaded to access the
        *  content of the buffer!) */
-      const NDRegisterAccessorBridge& operator=(const NDRegisterAccessorBridge& rightHandSide) const;
+      const NDRegisterAccessorAbstractor& operator=(const NDRegisterAccessorAbstractor& rightHandSide) const;
 
   };
 }

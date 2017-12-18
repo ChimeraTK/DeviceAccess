@@ -10,20 +10,20 @@
 
 #include <boost/smart_ptr.hpp>
 
-#include "NDRegisterAccessorBridge.h"
+#include "NDRegisterAccessorAbstractor.h"
 
 namespace mtca4u {
 
   /** TODO add documentation
    */
   template<class UserType>
-  class TwoDRegisterAccessor : public NDRegisterAccessorBridge<UserType> {
+  class TwoDRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
 
     public:
 
       /** Do not use this constructor directly. Instead call Device::getTwoDRegisterAccessor(). */
       TwoDRegisterAccessor( boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor )
-      : NDRegisterAccessorBridge<UserType>(_accessor)
+      : NDRegisterAccessorAbstractor<UserType>(_accessor)
       {}
 
       /** Placeholder constructer, to allow late initialisation of the accessor, e.g. in the open function.
@@ -34,22 +34,22 @@ namespace mtca4u {
 
       /** Operator to access individual sequences/channels. */
       std::vector<UserType> & operator[](size_t channel) {
-        return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(channel);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(channel);
       }
 
       /** Const operator to access individual sequences/channels. */
       const std::vector<UserType> & operator[](size_t channel) const {
-        return NDRegisterAccessorBridge<UserType>::_impl->accessChannel(channel);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(channel);
       }
 
       /** Return the number of channels (formerly called sequences) */
       size_t getNChannels() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfChannels();
       }
 
       /** Return number of elements/samples per channel */
       size_t getNElementsPerChannel() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfSamples();
       }
 
       /** DEPRECATED DO NOT USE
@@ -57,7 +57,7 @@ namespace mtca4u {
        *  \deprecated
        *  This function is deprecated. Use getNChannels() instead! */
       size_t getNumberOfDataSequences() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfChannels();
       }
 
       /** DEPRECATED DO NOT USE
@@ -65,7 +65,7 @@ namespace mtca4u {
        *  \deprecated
        *  This function is deprecated. Use getNChannels() instead! */
       size_t getNumberOfChannels() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfChannels();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfChannels();
       }
 
       /** DEPRECATED DO NOT USE
@@ -73,7 +73,7 @@ namespace mtca4u {
        *  \deprecated
        *  This function is deprecated. Use getNElementsPerChannel() instead! */
       size_t getNumberOfSamples() const {
-        return NDRegisterAccessorBridge<UserType>::_impl->getNumberOfSamples();
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfSamples();
       }
 
       friend class TransferGroup;

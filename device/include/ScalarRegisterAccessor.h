@@ -8,7 +8,7 @@
 #ifndef MTCA4U_SCALAR_REGISTER_ACCESSOR_H
 #define MTCA4U_SCALAR_REGISTER_ACCESSOR_H
 
-#include "NDRegisterAccessorBridge.h"
+#include "NDRegisterAccessorAbstractor.h"
 #include "DeviceException.h"
 
 namespace mtca4u {
@@ -23,13 +23,13 @@ namespace mtca4u {
    *  functions before reading from resp. after writing to the buffer using the operators.
    */
   template<typename UserType>
-  class ScalarRegisterAccessor : public NDRegisterAccessorBridge<UserType> {
+  class ScalarRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
     public:
 
       /** Constructor. @attention Do not normally use directly.
        *  Users should call Device::getScalarRegisterAccessor() to obtain an instance instead. */
       ScalarRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
-      : NDRegisterAccessorBridge<UserType>(impl)
+      : NDRegisterAccessorAbstractor<UserType>(impl)
       {}
 
       /** Placeholder constructor, to allow late initialisation of the accessor, e.g. in the open function.
@@ -40,36 +40,36 @@ namespace mtca4u {
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
       operator UserType&() {
-        return NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
       }
 
       /** Assignment operator, assigns the first element. */
       ScalarRegisterAccessor<UserType>& operator=(UserType rightHandSide)
       {
-        NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) = rightHandSide;
+        NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator for the first element. */
       ScalarRegisterAccessor<UserType>& operator++() {
-        return operator=( NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) + 1 );
+        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) + 1 );
       }
 
       /** Pre-decrement operator for the first element. */
       ScalarRegisterAccessor<UserType>& operator--() {
-        return operator=( NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0) - 1 );
+        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) - 1 );
       }
 
       /** Post-increment operator for the first element. */
       UserType operator++(int) {
-        UserType v = NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
+        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
         operator=( v + 1 );
         return v;
       }
 
       /** Post-decrement operator for the first element. */
       UserType operator--(int) {
-        UserType v = NDRegisterAccessorBridge<UserType>::_impl->accessData(0,0);
+        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
         operator=( v - 1 );
         return v;
       }

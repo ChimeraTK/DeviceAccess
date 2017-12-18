@@ -28,6 +28,9 @@
 namespace mtca4u {
   class TransferElement;
   class TransferFutureIterator;
+  class TransferElementAbstractor;
+  class TransferElementID;
+  TransferElementID readAny(std::list<std::reference_wrapper<TransferElementAbstractor>>);
 }
 
 namespace ChimeraTK {
@@ -112,6 +115,7 @@ namespace ChimeraTK {
 
       friend ::mtca4u::TransferElement;
       friend ::mtca4u::TransferFutureIterator;
+      friend mtca4u::TransferElementID mtca4u::readAny(std::list<std::reference_wrapper<mtca4u::TransferElementAbstractor>>);
 
       /** Return the underlying BOOST future. Be careful when using it. Simply waiting on that future is not sufficient
        *  since the very purpose of this class is to add functionality. Always call TransferFuture::wait() before
