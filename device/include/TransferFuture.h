@@ -91,16 +91,16 @@ namespace ChimeraTK {
       : _theFuture(std::move(other._theFuture)), _transferElement(transferElement) {}
 
       /** Copy constructor */
-      TransferFuture(const TransferFuture &other) = default;
+      TransferFuture(const TransferFuture &) = default;
 
       /** Move constructor */
-      TransferFuture(TransferFuture &&other) = default;
+      TransferFuture(TransferFuture &&) = default;
 
       /** Copy assignment operator */
-      TransferFuture& operator=(const TransferFuture &other) = default;
+      TransferFuture& operator=(const TransferFuture &) = default;
 
       /** Move assignment operator */
-      TransferFuture& operator=(TransferFuture &&other) = default;
+      TransferFuture& operator=(TransferFuture &&) = default;
 
       /** Comparison operator: Returns true if the two TransferFutures belong to the same TransferElement. This is
        *  usually sufficient, since only one valid TransferFuture can belong to a TransferElement at a time. */
