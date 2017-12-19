@@ -35,12 +35,6 @@ namespace mtca4u {
         TransferElement::makeUniqueId();
       }
 
-      /** Copying and moving is not allowed */
-      NDRegisterAccessor(const NDRegisterAccessor &other) = delete;
-      NDRegisterAccessor(NDRegisterAccessor &&other) = delete;
-      NDRegisterAccessor& operator=(const NDRegisterAccessor &other) = delete;
-      NDRegisterAccessor& operator=(NDRegisterAccessor &&other) = delete;
-
       /** Get or set register accessor's buffer content (1D version).
        *  @attention No bounds checking is performed, use getNumberOfSamples() to obtain the number of elements in
        *  the register. */
@@ -74,80 +68,6 @@ namespace mtca4u {
 
       const std::type_info& getValueType() const override {
         return typeid(UserType);
-      }
-
-      void read() final {
-        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
-        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
-        // implementation.
-        if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
-        }
-        if(this->asyncTransferActive()) {
-          readAsync().wait();
-          return;
-        }
-        this->readTransactionInProgress = false;
-        preRead();
-        doReadTransfer();
-        postRead();
-      }
-
-      bool readNonBlocking() final {
-        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
-        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
-        // implementation.
-        if(this->asyncTransferActive()) {
-          if(readAsync().hasNewData()) {
-            readAsync().wait();
-            return true;
-          }
-          else {
-            return false;
-          }
-        }
-        this->readTransactionInProgress = false;
-        preRead();
-        bool ret = doReadTransferNonBlocking();
-        if(ret) postRead();
-        return ret;
-      }
-
-      bool readLatest() final {
-        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
-        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
-        // implementation.
-        bool ret = false;
-        if(this->asyncTransferActive()) {
-          if(readAsync().hasNewData()) {
-            readAsync().wait();
-            ret = true;
-          }
-          else {
-            return false;
-          }
-        }
-        this->readTransactionInProgress = false;
-        preRead();
-        bool ret2 = doReadTransferLatest();
-        if(ret2) postRead();
-        return ret || ret2;
-      }
-
-      bool write(ChimeraTK::VersionNumber versionNumber={}) final {
-        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
-        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
-        // implementation.
-        if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
-        }
-        this->writeTransactionInProgress = false;
-        preWrite();
-        bool ret = doWriteTransfer(versionNumber);
-        postWrite();
-        return ret;
       }
 
       /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.

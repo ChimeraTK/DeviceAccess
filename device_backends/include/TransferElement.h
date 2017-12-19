@@ -49,19 +49,11 @@ namespace mtca4u {
                       std::string const &description = std::string())
       : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
 
-      /** Copy constructor: do not allow copying when in TransferGroup, remove asynchronous read state */
-      TransferElement(const TransferElement &other)
-      : boost::enable_shared_from_this<TransferElement>(),
-        _name(other._name),
-        _unit(other._unit),
-        _description(other._description),
-        isInTransferGroup{false}
-      {
-        if(other.isInTransferGroup) {
-          throw DeviceException("Copying a TransferElement which is part of a TransferGroup is not allowed.",
-              DeviceException::WRONG_PARAMETER);
-        }
-      }
+      /** Copying and moving is not allowed */
+      TransferElement(const TransferElement &other) = delete;
+      TransferElement(TransferElement &&other) = delete;
+      TransferElement& operator=(const TransferElement &other) = delete;
+      TransferElement& operator=(TransferElement &&other) = delete;
 
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElement() {}
@@ -91,7 +83,20 @@ namespace mtca4u {
 
       /** Read the data from the device. If AccessMode::wait_for_new_data was set, this function will block until new
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
-      virtual void read() = 0;
+      void read() {
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
+        if(this->asyncTransferActive()) {
+          readAsync().wait();
+          return;
+        }
+        this->readTransactionInProgress = false;
+        preRead();
+        doReadTransfer();
+        postRead();
+      }
 
       /** Read the next value, if available in the input buffer.
        *
@@ -102,12 +107,60 @@ namespace mtca4u {
        *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
        *  the current value before returning. Also this function is not guaranteed to be lock free. The return value
        *  will be always true in this mode. */
-      virtual bool readNonBlocking() = 0;
+      bool readNonBlocking() {
+        if(this->asyncTransferActive()) {
+          if(readAsync().hasNewData()) {
+            readAsync().wait();
+            return true;
+          }
+          else {
+            return false;
+          }
+        }
+        this->readTransactionInProgress = false;
+        preRead();
+        bool ret = doReadTransferNonBlocking();
+        if(ret) postRead();
+        return ret;
+      }
 
       /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
        *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
        *  new value was available if AccessMode::wait_for_new_data is set. */
-      virtual bool readLatest() = 0;
+      bool readLatest() {
+        bool ret = false;
+        if(this->asyncTransferActive()) {
+          if(readAsync().hasNewData()) {
+            readAsync().wait();
+            ret = true;
+          }
+          else {
+            return false;
+          }
+        }
+        this->readTransactionInProgress = false;
+        preRead();
+        bool ret2 = doReadTransferLatest();
+        if(ret2) postRead();
+        return ret || ret2;
+      }
+
+      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
+       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
+      bool write(ChimeraTK::VersionNumber versionNumber={}) {
+        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
+        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
+        // implementation.
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
+        this->writeTransactionInProgress = false;
+        preWrite();
+        bool ret = doWriteTransfer(versionNumber);
+        postWrite();
+        return ret;
+      }
 
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
@@ -151,10 +204,6 @@ namespace mtca4u {
       virtual ChimeraTK::VersionNumber getVersionNumber() const {
         return ChimeraTK::VersionNumber();
       }
-
-      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
-       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
-      virtual bool write(ChimeraTK::VersionNumber versionNumber={}) = 0;
 
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
       virtual bool isReadOnly() const = 0;
