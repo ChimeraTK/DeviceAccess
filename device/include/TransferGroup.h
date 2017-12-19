@@ -45,6 +45,7 @@ namespace mtca4u {
        *  accessing the same hardware register will share their buffers. Register accessors must not be placed into
        *  multiple TransferGroups. */
       void addAccessor(TransferElementAbstractor &accessor);
+      void addAccessor(const boost::shared_ptr<TransferElement> &accessor);
 
       /** Trigger read transfer for all accessors in the group */
       void read();

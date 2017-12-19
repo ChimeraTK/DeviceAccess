@@ -117,6 +117,28 @@ namespace mtca4u {
 
   /*********************************************************************************************************************/
 
+  namespace detail {
+    /// just used in TransferGroup::addAccessor(const boost::shared_ptr<TransferElement> &accessor)
+    struct TransferGroupTransferElementAbstractor : TransferElementAbstractor {
+      TransferGroupTransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
+      : TransferElementAbstractor(impl) {}
+
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
+        _implUntyped->replaceTransferElement(newElement);
+      };
+    };
+  }
+
+  /*********************************************************************************************************************/
+
+  void TransferGroup::addAccessor(const boost::shared_ptr<TransferElement> &accessor) {
+    /// @todo implement smarter and more efficient!
+    auto x = detail::TransferGroupTransferElementAbstractor(accessor);
+    addAccessor(x);
+  }
+
+  /*********************************************************************************************************************/
+
   void TransferGroup::dump() {
 
     std::cout << "=== Accessors added to this group: " << std::endl;
