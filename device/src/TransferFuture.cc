@@ -17,4 +17,8 @@ namespace ChimeraTK {
     return (status != boost::future_status::timeout);
   }
 
+  mtca4u::TransferElementID TransferFuture::getTransferElementID() {
+    return _transferElement->getId();
+  }
+
 }

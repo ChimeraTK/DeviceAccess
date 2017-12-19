@@ -24,13 +24,11 @@
 #include "VersionNumber.h"
 #include "DeviceException.h"
 #include "TimeStamp.h"
+#include "TransferElementID.h"
 
 namespace mtca4u {
   class TransferElement;
-  class TransferFutureIterator;
   class TransferElementAbstractor;
-  class TransferElementID;
-  TransferElementID readAny(std::list<std::reference_wrapper<TransferElementAbstractor>>);
 }
 
 namespace ChimeraTK {
@@ -111,11 +109,10 @@ namespace ChimeraTK {
         return _transferElement == other._transferElement;
       }
 
-    //protected:    /// @todo make protected after changing tests and ControlSystemAdapter
+      /** Return the TransferElementID of the associated TransferElement */
+      mtca4u::TransferElementID getTransferElementID();
 
-      friend ::mtca4u::TransferElement;
-      friend ::mtca4u::TransferFutureIterator;
-      friend mtca4u::TransferElementID mtca4u::readAny(std::list<std::reference_wrapper<mtca4u::TransferElementAbstractor>>);
+    //protected:    /// @todo make protected after changing tests and ControlSystemAdapter
 
       /** Return the underlying BOOST future. Be careful when using it. Simply waiting on that future is not sufficient
        *  since the very purpose of this class is to add functionality. Always call TransferFuture::wait() before
@@ -123,9 +120,6 @@ namespace ChimeraTK {
       PlainFutureType& getBoostFuture() { return _theFuture; }
 
     protected:
-
-      /** Return the corresponding TransferElement */
-      mtca4u::TransferElement& getTransferElement() { return *_transferElement; }
 
       /** The plain boost future */
       PlainFutureType _theFuture;

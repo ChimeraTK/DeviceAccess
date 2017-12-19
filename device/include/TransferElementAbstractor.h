@@ -298,7 +298,43 @@ namespace mtca4u {
     theUpdate.wait();
 
     // return the transfer element as a shared pointer
-    return theUpdate.getTransferElement().getId();
+    return theUpdate.getTransferElementID();
+
+  }
+
+  /*******************************************************************************************************************/
+
+  inline TransferElementID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+
+    // build list of TransferFutures for all elements. Since readAsync() is a virtual call and we need to visit all
+    // elements at least twice (once in wait_for_any and a second time for sorting by version number), this is assumed
+    // to be less expensive than calling readAsync() on the fly in the TransferFutureIterator instead.
+    std::list<TransferFuture> futureList;
+    for(auto &elem : elementsToRead) {
+      futureList.push_back(elem.get().readAsync());
+    }
+    // wait until any future is ready
+    auto iter = boost::wait_for_any(TransferFutureIterator(futureList.begin()), TransferFutureIterator(futureList.end()));
+
+    // Find the variable which has the oldest version number (to guarantee the order of updates).
+    // Start with assuming that the future returned by boost::wait_for_any() has the oldes version number.
+    TransferFuture theUpdate = iter.getTransferFuture();
+    for(auto future : futureList) {
+      // skip if this is the future returned by boost::wait_for_any()
+      if(future == theUpdate) continue;
+      // also skip if the future is not yet ready
+      if(!future.hasNewData()) continue;
+      // compare  version number with the version number of the stored future
+      if(future.getBoostFuture().get()->_versionNumber < theUpdate.getBoostFuture().get()->_versionNumber) {
+        theUpdate = future;
+      }
+    }
+
+    // complete the transfer (i.e. run postRead())
+    theUpdate.wait();
+
+    // return the transfer element as a shared pointer
+    return theUpdate.getTransferElementID();
 
   }
 
