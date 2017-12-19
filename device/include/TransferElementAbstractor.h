@@ -45,51 +45,28 @@ namespace mtca4u {
 
     public:
 
-      /** Creates a transfer element with the specified name. */
-      TransferElementAbstractor( std::string const &name = std::string(),
-                                 std::string const &unit = std::string(TransferElement::unitNotSet),
-                                 std::string const &description = std::string() )
-      : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
-
-      /** Copy constructor: do not allow copying when in TransferGroup, remove asynchronous read state */
-      TransferElementAbstractor(const TransferElementAbstractor &other)
-      : _name(other._name),
-        _unit(other._unit),
-        _description(other._description),
-        isInTransferGroup{false}
-      {
-        if(other.isInTransferGroup) {
-          throw DeviceException("Copying a TransferElement which is part of a TransferGroup is not allowed.",
-              DeviceException::WRONG_PARAMETER);
-        }
-      }
+      /** Create an uninitialised abstractor - just for late initialisation */
+      TransferElementAbstractor() {}
 
       /** Abstract base classes need a virtual destructor. */
       virtual ~TransferElementAbstractor() {}
 
       /** Returns the name that identifies the process variable. */
-      const std::string& getName() const {
-        return _name;
-      }
+      const std::string& getName() const { return _implUntyped->getName(); }
 
       /** Returns the engineering unit. If none was specified, it will default to "n./a." */
-      const std::string& getUnit() const {
-        return _unit;
-      }
+      const std::string& getUnit() const { return _implUntyped->getUnit(); }
 
       /** Returns the description of this variable/register */
-      const std::string& getDescription() const {
-        return _description;
-      }
+      const std::string& getDescription() const { return _implUntyped->getDescription(); }
 
       /** Returns the \c std::type_info for the value type of this transfer element.
-       *  This can be used to determine the type at runtime.
-       */
-      virtual const std::type_info& getValueType() const = 0;
+       *  This can be used to determine the type at runtime. */
+      const std::type_info& getValueType() const { return _implUntyped->getValueType(); }
 
       /** Read the data from the device. If AccessMode::wait_for_new_data was set, this function will block until new
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
-      virtual void read() = 0;
+      void read() { _implUntyped->read(); }
 
       /** Read the next value, if available in the input buffer.
        *
@@ -100,12 +77,12 @@ namespace mtca4u {
        *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
        *  the current value before returning. Also this function is not guaranteed to be lock free. The return value
        *  will be always true in this mode. */
-      virtual bool readNonBlocking() = 0;
+      bool readNonBlocking() { return _implUntyped->readNonBlocking(); }
 
       /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
        *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
        *  new value was available if AccessMode::wait_for_new_data is set. */
-      virtual bool readLatest() = 0;
+      bool readLatest() { return _implUntyped->readLatest(); }
 
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
@@ -135,185 +112,28 @@ namespace mtca4u {
        *  preRead() in their implementations of readAsync()!
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture readAsync() = 0;
-
-      /** Check whether there is an ongoing active asynchronous transfer. An asynchronous transfer is considered
-       *  active from the call to readAsync() until wait() has been called on the future (directly or indirectly
-       *  by successfully calling another read function on the TransferElement). */
-      virtual bool asyncTransferActive() = 0;
+      TransferFuture readAsync() { return _implUntyped->readAsync(); }
 
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
       * ChimeraTK::VersionNumber for details.
       */
-      virtual ChimeraTK::VersionNumber getVersionNumber() const {
-        return ChimeraTK::VersionNumber();
-      }
+      ChimeraTK::VersionNumber getVersionNumber() const { return _implUntyped->getVersionNumber(); }
 
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
        *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
-      virtual bool write(ChimeraTK::VersionNumber versionNumber={}) = 0;
+      bool write(ChimeraTK::VersionNumber versionNumber={}) { return _implUntyped->write(versionNumber); }
 
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
-      virtual bool isReadOnly() const = 0;
+      bool isReadOnly() const { return _implUntyped->isReadOnly(); }
 
       /** Check if transfer element is readable. It throws an acception if you try to read and
        *  isReadable() is not true.*/
-      virtual bool isReadable() const = 0;
+      bool isReadable() const { return _implUntyped->isReadable(); }
 
       /** Check if transfer element is writeable. It throws an acception if you try to write and
        *  isWriteable() is not true.*/
-      virtual bool isWriteable() const = 0;
-
-      /** Read the data from the device but do not fill it into the user buffer of this TransferElement. Calling this
-       *  function after preRead() and followed by postRead() is exactly equivalent to a call to just read().
-       *
-       *  Implementation note: This function must return within ~1 second after boost::thread::interrupt() has been
-       *  called on the thread calling this function. */
-      virtual void doReadTransfer() = 0;
-
-      /** Read the data from the device without blocking but do not fill it into the user buffer of this
-       *  TransferElement. Calling this function after preRead() and followed by postRead() is exactly equivalent to a
-       *  call to just readNonBlocking(). For the return value, see readNonBlocking().
-       */
-      virtual bool doReadTransferNonBlocking() = 0;
-
-      /** Read the latest data from the device without blocking but do not fill it into the user buffer of this
-       *  TransferElement. Calling this function after preRead() and followed by postRead() is exactly equivalent to a
-       *  call to just readLatest(). For the return value, see readNonBlocking().
-       */
-      virtual bool doReadTransferLatest() = 0;
-
-      /** Perform any pre-read tasks if necessary.
-       *
-       *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly
-       *  on the underlying accessor. */
-      void preRead() {
-        if(readTransactionInProgress) return;
-        doPreRead();
-        readTransactionInProgress = true;
-      };
-
-      /** Backend specific implementation of preRead(). preRead() will call this function, but it will make sure that
-       *  it gets called only once per transfer. */
-    protected:
-      virtual void doPreRead() {};
-    public:
-
-      /** Transfer the data from the device receive buffer into the user buffer, while converting the data into the
-       *  user data format if needed.
-       *
-       *  Called by read() etc. Also the TransferGroup will call this function after a read was executed directly on
-       *  the underlying accessor. This function must be implemented to extract the read data from the underlying
-       *  accessor and expose it to the user. */
-      void postRead() {
-        if(!readTransactionInProgress) return;
-        readTransactionInProgress = false;
-        doPostRead();
-      };
-
-      /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
-       *  it gets called only once per transfer. */
-    protected:
-      virtual void doPostRead() {};
-    public:
-
-      /** Function called by the TransferFuture before entering a potentially blocking wait(). In contrast to a wait
-       *  callback of a boost::future/promise, this function is not called when just checking whether the result is
-       *  ready or not. Usually it is not necessary to implement this function, but decorators should pass it on. One
-       *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
-       *  the thread execution. */
-      virtual void transferFutureWaitCallback() {};
-
-      /** Clear the flag that there is an ongoing asynchronous transfer. This function will be called by
-       *  TransferFuture::wait() and must be passed on in decorators. Do not otherwise use this function! */
-      virtual void clearAsyncTransferActive() = 0;
-
-      /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
-       *  user data format if needed.
-       *
-       *  Called by write(). Also the TransferGroup will call this function before a write will be executed directly
-       *  on the underlying accessor. This function implemented be used to transfer the data to be written into the
-       *  underlying accessor. */
-      void preWrite() {
-        if(writeTransactionInProgress) return;
-        doPreWrite();
-        writeTransactionInProgress = true;
-      };
-
-      /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
-       *  it gets called only once per transfer. */
-    protected:
-      virtual void doPreWrite() {};
-    public:
-
-      /** Perform any post-write cleanups if necessary. If during preWrite() e.g. the user data buffer was swapped
-       *  away, it must be swapped back in this function so the just sent data is available again to the calling
-       *  program.
-       *
-       *  Called by write(). Also the TransferGroup will call this function after a write was executed directly
-       *  on the underlying accessor. */
-      void postWrite() {
-        if(!writeTransactionInProgress) return;
-        writeTransactionInProgress = false;
-        doPostWrite();
-      };
-
-      /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
-       *  it gets called only once per transfer. */
-    protected:
-      virtual void doPostWrite() {};
-    public:
-
-      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
-       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false.
-       *
-       *  Calling this function after preWrite() and followed by postWrite() is exactly equivalent to a call to
-       *  write(). */
-      virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) = 0;
-
-      /**
-       *  Check whether the TransferElement can be used in places where the TransferElement "other" is currently used,
-       *  e.g. to merge the two transfers. This function must be used in replaceTransferElement() by implementations
-       *  which use other TransferElements, to determine if a used TransferElement shall be replaced with the
-       *  TransferElement "other".
-       *
-       *  The purpose of this function is not to determine if at any point in the hierarchy an replacement could be
-       *  done. This function only works on a single level. It is not used by the TransferGroup to determine
-       *  replaceTransferElement() whether shall be used (it is always called). Instead this function can be used
-       *  by decorators etc. inside their implementation of replaceTransferElement() to determine if they might swap
-       *  their implementation(s).
-       *
-       *  Note for decorators and similar implementations: This function must not be decorated. It should only return
-       *  true if this should actually be replaced with other in the call to replaceTransferElement() one level up in
-       *  the hierarchy. If the replacement should be done further down in the hierarchy, simply return false. It
-       *  should only return if other is fully identical to this (i.e. behaves identical in all situations but might be
-       *  another instance).
-       */
-      virtual bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const {
-        (void) other; // prevent warning
-        return false;
-      }
-
-      /** @brief Deprecated, do not use
-       *  @deprecated The time stamp will be replaced with a unique counter.
-       *  Only used for backward compatibility with the control system adapter. All implementations
-       *  in DeviceAccess will throw an exception with DeviceException::NOT_IMPLEMENTED.
-       *
-       *  Returns the time stamp associated with the current value of the transfer element.
-       *  Typically, this is the time when the value was updated.
-       */
-      virtual TimeStamp getTimeStamp() const{
-        throw DeviceException("getTimeStamp is not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
-      }
-
-      /** @brief Deprecated, do not use
-       *  @deprecated Only used for backward compatibility with the control system adapter.
-       *  This feature will be removed soon, maybe even before the next tag. DO NOT USE IT!!
-       */
-      virtual bool isArray() const{
-        throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
-      }
+      bool isWriteable() const { return _implUntyped->isWriteable(); }
 
       /**
        *  Obtain the underlying TransferElements with actual hardware access. If this transfer element
@@ -322,7 +142,9 @@ namespace mtca4u {
        *
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
-      virtual std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() = 0;
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
+        return _implUntyped->getHardwareAccessingElements();
+      }
 
       /**
        *  Obtain the full list of TransferElements internally used by this TransferElement. The function is recursive,
@@ -338,7 +160,11 @@ namespace mtca4u {
        *
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
-      virtual std::list< boost::shared_ptr<TransferElement> > getInternalElements() = 0;
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() {
+        auto result = _implUntyped->getInternalElements();
+        result.push_front(_implUntyped);
+        return result;
+      }
 
       /**
        *  Obtain the highest level implementation TransferElement. For TransferElements which are itself an
@@ -347,16 +173,21 @@ namespace mtca4u {
        *
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
-      virtual boost::shared_ptr<TransferElement> getHighLevelImplElement() = 0;
+      boost::shared_ptr<TransferElement> getHighLevelImplElement() { return _implUntyped; }
+
+      /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
+       *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
+       *  placeholder constructor without arguments. */
+      bool isInitialised() const {
+        return _implUntyped != nullptr;
+      }
 
       /**
        *  Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
        *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
        *  element matches the new element, this function has no effect.
        */
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
-        (void) newElement; // prevent warning
-      }
+      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
 
       /**
       *  Associate a persistent data storage object to be updated on each write operation of this ProcessArray. If no
@@ -366,7 +197,9 @@ namespace mtca4u {
       *  Note: A call to this function will be ignored, if the TransferElement does not support persistent data
       *  storage (e.g. read-only variables or device registers) @todo TODO does this make sense?
       */
-      virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {};
+      void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) {
+        _implUntyped->setPersistentDataStorage(storage);
+      };
 
       /**
        * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
@@ -376,37 +209,17 @@ namespace mtca4u {
        * obtained by to difference calls to Device::getScalarRegisterAccessor() will have a different ID even when
        * accessing the very same register.
        */
-      TransferElementID getId() const { return _id; };
+      TransferElementID getId() const { return _implUntyped->getId(); };
 
     protected:
 
-      /** Identifier uniquely identifying the TransferElement */
-      std::string _name;
+      /** Construct from TransferElement implementation */
+      explicit TransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
+      : _implUntyped(impl)
+      {}
 
-      /** Engineering unit. Defaults to "n./a.", if none was specified */
-      std::string _unit;
-
-      /** Description of this variable/register */
-      std::string _description;
-
-      /** The ID of this TransferElement */
-      TransferElementID _id;
-
-      /** Flag whether this TransferElement has been added to a TransferGroup or not */
-      bool isInTransferGroup;
-
-      friend class TransferGroup;
-      friend class TransferFuture;
-
-      /** Flag whether a read transaction is in progress. This flag will be set in preRead() and cleared in postRead()
-       *  and is used to prevent multiple calls to these functions during a single transfer. It should also be reset
-       *  before starting a new read transaction - this happens only inside the implementation of read() etc. and in
-       *  the TransferGroup. */
-      bool readTransactionInProgress{false};
-
-      /** Flag whether a write transaction is in progress. This flag is similar to readTransactionInProgress but
-       *  affects preWrite() and postWrite(). */
-      bool writeTransactionInProgress{false};
+      /** Untyped pointer to implementation */
+      boost::shared_ptr< TransferElement > _implUntyped;
   };
 
   /*******************************************************************************************************************/
@@ -486,6 +299,7 @@ namespace mtca4u {
 
     // return the transfer element as a shared pointer
     return theUpdate.getTransferElement().getId();
+
   }
 
 } /* namespace mtca4u */
