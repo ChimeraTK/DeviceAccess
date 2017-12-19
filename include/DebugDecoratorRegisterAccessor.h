@@ -46,13 +46,8 @@ namespace ChimeraTK {
         return mtca4u::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
       }
 
-      TransferFuture readAsync() override {
-        if(this->asyncTransferActive()) {
-          std::cout << "readAsync() called on '" << _fullyQualifiedName << "' (pre-existing future)." << std::endl;
-        }
-        else {
-          std::cout << "readAsync() called on '" << _fullyQualifiedName << "' (new future)." << std::endl;
-        }
+      TransferFuture doReadTransferAsync() override {
+        std::cout << "doReadTransferAsync() called on '" << _fullyQualifiedName << std::endl;
         return mtca4u::NDRegisterAccessorDecorator<UserType>::readAsync();
       }
 

@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::operator VariableNetworkNode;
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::operator>>;
-      void replace(const mtca4u::NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
+      void replace(const mtca4u::NDRegisterAccessorAbstractor<UserType> &newAccessor) = delete;
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::replace;
       ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &other) = delete;
       using mtca4u::OneDRegisterAccessor<UserType>::operator=;
@@ -46,12 +46,6 @@ namespace ChimeraTK {
         InversionOfControlAccessor<ArrayAccessor<UserType>>::replace(std::move(other));
         return *this;
       };
-
-      void read() override {
-        Profiler::stopMeasurement();
-        mtca4u::OneDRegisterAccessor<UserType>::read();
-        Profiler::startMeasurement();
-      }
 
   protected:
 
@@ -90,8 +84,8 @@ namespace ChimeraTK {
                               description, tags)
     {}
     ArrayPollInput() : ArrayAccessor<UserType>() {}
-    void doReadTransfer() override { this->doReadTransferLatest(); }
-    void read() override { this->readLatest(); }
+    void doReadTransfer() { this->doReadTransferLatest(); }
+    void read() { this->readLatest(); }
     using ArrayAccessor<UserType>::operator=;
   };
 

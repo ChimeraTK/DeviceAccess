@@ -38,10 +38,10 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  TransferElement::ID Module::readAny() {
+  mtca4u::TransferElementID Module::readAny() {
     auto accessorList = getAccessorListRecursive();
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
-    std::list<std::reference_wrapper<mtca4u::TransferElement>> transferElementList;
+    std::list<std::reference_wrapper<mtca4u::TransferElementAbstractor>> transferElementList;
     for(auto &accessor : accessorList) {
       if(accessor.getDirection() != VariableDirection::consuming) continue;
       if(accessor.getMode() == UpdateMode::push) {

@@ -849,13 +849,27 @@ void Application::stepApplication() {
 
 /*********************************************************************************************************************/
 
-TransferElement::ID Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+mtca4u::TransferElementID Application::readAny(std::list<std::reference_wrapper<TransferElementAbstractor>> elementsToRead) {
   if(!Application::getInstance().testableMode) {
-    return mtca4u::TransferElement::readAny(elementsToRead);
+    return ChimeraTK::readAny(elementsToRead);
   }
   else {
     testableModeUnlock("readAny");
-    auto ret = mtca4u::TransferElement::readAny(elementsToRead);
+    auto ret = ChimeraTK::readAny(elementsToRead);
+    assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
+    return ret;
+  }
+}
+
+/*********************************************************************************************************************/
+
+mtca4u::TransferElementID Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
+  if(!Application::getInstance().testableMode) {
+    return ChimeraTK::readAny(elementsToRead);
+  }
+  else {
+    testableModeUnlock("readAny");
+    auto ret = ChimeraTK::readAny(elementsToRead);
     assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
     return ret;
   }

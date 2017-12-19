@@ -79,15 +79,7 @@ namespace ChimeraTK {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 
-      ChimeraTK::TransferFuture readAsync() override {
-        throw std::logic_error("Read operation called on write-only variable.");
-      }
-
-      bool asyncTransferActive() override {
-        throw std::logic_error("Read operation called on write-only variable.");
-      }
-
-      void clearAsyncTransferActive() override {
+      ChimeraTK::TransferFuture doReadTransferAsync() override {
         throw std::logic_error("Read operation called on write-only variable.");
       }
 

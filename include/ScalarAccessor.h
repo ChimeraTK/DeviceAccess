@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::operator VariableNetworkNode;
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::operator>>;
-      void replace(const mtca4u::NDRegisterAccessorBridge<UserType> &newAccessor) = delete;
+      void replace(const mtca4u::NDRegisterAccessorAbstractor<UserType> &newAccessor) = delete;
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::replace;
       ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &other) = delete;
       using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
@@ -45,12 +45,6 @@ namespace ChimeraTK {
         // an accessor.
         InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
         return *this;
-      }
-
-      void read() override {
-        Profiler::stopMeasurement();
-        mtca4u::ScalarRegisterAccessor<UserType>::read();
-        Profiler::startMeasurement();
       }
 
   protected:
@@ -90,8 +84,8 @@ namespace ChimeraTK {
                                description, tags)
     {}
     ScalarPollInput() : ScalarAccessor<UserType>() {}
-    void doReadTransfer() override { this->doReadTransferLatest(); }
-    void read() override { this->readLatest(); }
+    void doReadTransfer() { this->doReadTransferLatest(); }
+    void read() { this->readLatest(); }
     using ScalarAccessor<UserType>::operator=;
   };
 
