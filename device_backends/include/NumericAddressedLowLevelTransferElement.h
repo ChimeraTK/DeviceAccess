@@ -55,23 +55,12 @@ namespace mtca4u {
         return true;
       }
 
-      TransferFuture readAsync() override {                                                                 // LCOV_EXCL_LINE
+      TransferFuture doReadTransferAsync() override {                                                                 // LCOV_EXCL_LINE
         // This function is not needed and will never be called. If readAsync() is called on the high-level accessor,
         // the transfer will be "backgrounded" already on that level.
         throw DeviceException("NumericAddressedLowLevelTransferElement::readAsync() is not implemented",    // LCOV_EXCL_LINE
                               DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
       }                                                                                                     // LCOV_EXCL_LINE
-
-      bool asyncTransferActive() override {
-        return false;
-      }
-
-      void clearAsyncTransferActive() override {                                                            // LCOV_EXCL_LINE
-        // This function is not needed and will never be called.
-        throw DeviceException("NumericAddressedLowLevelTransferElement::readAsync() is not implemented",    // LCOV_EXCL_LINE
-                              DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
-      }                                                                                                     // LCOV_EXCL_LINE
-
 
       /** Check if the address areas are adjacent and/or overlapping.
        *  NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes care of replacing the

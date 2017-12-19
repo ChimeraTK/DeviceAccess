@@ -10,7 +10,6 @@ namespace ChimeraTK {
     _transferElement->transferFutureWaitCallback();
     _theFuture.wait();
     _transferElement->postRead();
-    _transferElement->clearAsyncTransferActive();
   }
 
   bool TransferFuture::hasNewData() {

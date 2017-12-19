@@ -88,16 +88,8 @@ namespace mtca4u {
         accessor->buffer_2D.swap(NDRegisterAccessor<UserType>::buffer_2D);
       }
 
-      ChimeraTK::TransferFuture readAsync() override {
-        throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
-      }
-
-      bool asyncTransferActive() override {
-        return false;
-      }
-
-      void clearAsyncTransferActive() override {
-        throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
+      ChimeraTK::TransferFuture doReadTransferAsync() override {
+        throw DeviceException("Deprecated MultiplexedDataAccessor does not implement doReadTransferAsync().", DeviceException::NOT_IMPLEMENTED);
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {

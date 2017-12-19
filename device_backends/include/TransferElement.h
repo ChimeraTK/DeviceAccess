@@ -26,6 +26,7 @@
 #include "TransferFuture.h"
 #include "VersionNumber.h"
 #include "TransferElementID.h"
+#include "ExperimentalFeatures.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -88,8 +89,8 @@ namespace mtca4u {
           throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
               DeviceException::NOT_IMPLEMENTED);
         }
-        if(this->asyncTransferActive()) {
-          readAsync().wait();
+        if(hasActiveFuture) {
+          activeFuture.wait();
           return;
         }
         this->readTransactionInProgress = false;
@@ -108,9 +109,9 @@ namespace mtca4u {
        *  the current value before returning. Also this function is not guaranteed to be lock free. The return value
        *  will be always true in this mode. */
       bool readNonBlocking() {
-        if(this->asyncTransferActive()) {
-          if(readAsync().hasNewData()) {
-            readAsync().wait();
+        if(hasActiveFuture) {
+          if(activeFuture.hasNewData()) {
+            activeFuture.wait();
             return true;
           }
           else {
@@ -129,9 +130,9 @@ namespace mtca4u {
        *  new value was available if AccessMode::wait_for_new_data is set. */
       bool readLatest() {
         bool ret = false;
-        if(this->asyncTransferActive()) {
-          if(readAsync().hasNewData()) {
-            readAsync().wait();
+        if(hasActiveFuture) {
+          if(activeFuture.hasNewData()) {
+            activeFuture.wait();
             ret = true;
           }
           else {
@@ -143,23 +144,6 @@ namespace mtca4u {
         bool ret2 = doReadTransferLatest();
         if(ret2) postRead();
         return ret || ret2;
-      }
-
-      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
-       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
-      bool write(ChimeraTK::VersionNumber versionNumber={}) {
-        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
-        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
-        // implementation.
-        if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
-        }
-        this->writeTransactionInProgress = false;
-        preWrite();
-        bool ret = doWriteTransfer(versionNumber);
-        postWrite();
-        return ret;
       }
 
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
@@ -182,20 +166,38 @@ namespace mtca4u {
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
        *  without launching a thread.
        *
-       *  Note for implementations: Inside this function and before launching the actual transfer, the flag
-       *  readTransactionInProgress must be cleared, then preRead() has to be called. Otherwise postRead() will not
-       *  get executed after the transfer. postRead() on the other hand must not be called inside this function,
-       *  since this would update the user buffer, which should only happen when waiting on the TransferFuture.
-       *  TransferFuture::wait() will automatically call postRead() before returning. Decorators must also call
-       *  preRead() in their implementations of readAsync()!
-       *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      virtual TransferFuture readAsync() = 0;
+      TransferFuture& readAsync() {
+        if(!hasActiveFuture) {
+          ChimeraTK::ExperimentalFeatures::check("asynchronous read");
 
-      /** Check whether there is an ongoing active asynchronous transfer. An asynchronous transfer is considered
-       *  active from the call to readAsync() until wait() has been called on the future (directly or indirectly
-       *  by successfully calling another read function on the TransferElement). */
-      virtual bool asyncTransferActive() = 0;
+          // call preRead
+          this->readTransactionInProgress = false;
+          this->preRead();
+
+          // initiate asynchronous transfer and return future
+          activeFuture = doReadTransferAsync();
+          hasActiveFuture = true;
+        }
+        return activeFuture;
+      }
+
+      /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
+       *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
+      bool write(ChimeraTK::VersionNumber versionNumber={}) {
+        // Note: this override is final to prevent implementations from implementing this logic incorrectly. Originally
+        // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
+        // implementation.
+        if(TransferElement::isInTransferGroup) {
+          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
+              DeviceException::NOT_IMPLEMENTED);
+        }
+        this->writeTransactionInProgress = false;
+        preWrite();
+        bool ret = doWriteTransfer(versionNumber);
+        postWrite();
+        return ret;
+      }
 
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
@@ -235,6 +237,18 @@ namespace mtca4u {
        */
       virtual bool doReadTransferLatest() = 0;
 
+      /** Start the actual asynchronous read transfer. This function must be implemented by the backends and will be
+       *  called inside readAsync(). At that point, it is guaranteed that there is no unfinished transfer still ongoing
+       *  (i.e. no still-valid TransferFuture is present) and preRead() has already been called.
+       *
+       *  The backend must never touch the user buffer (i.e. NDRegisterAccessor::buffer_2D) inside this function, as it
+       *  may only be filled inside postRead(). postRead() will get called by the TransferFuture when the user calls
+       *  wait().
+       *
+       *  Note: The TransferFuture returned by this function must have been constructed with this TransferElement as
+       *  the transferElement in the constructor. Otherwise postRead() will not be properly called! */
+      virtual TransferFuture doReadTransferAsync() = 0;
+
       /** Perform any pre-read tasks if necessary.
        *
        *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly
@@ -261,6 +275,7 @@ namespace mtca4u {
         if(!readTransactionInProgress) return;
         readTransactionInProgress = false;
         doPostRead();
+        hasActiveFuture = false;
       };
 
       /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
@@ -275,10 +290,6 @@ namespace mtca4u {
        *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
        *  the thread execution. */
       virtual void transferFutureWaitCallback() {};
-
-      /** Clear the flag that there is an ongoing asynchronous transfer. This function will be called by
-       *  TransferFuture::wait() and must be passed on in decorators. Do not otherwise use this function! */
-      virtual void clearAsyncTransferActive() = 0;
 
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
        *  user data format if needed.
@@ -468,6 +479,13 @@ namespace mtca4u {
       /** Flag whether a write transaction is in progress. This flag is similar to readTransactionInProgress but
        *  affects preWrite() and postWrite(). */
       bool writeTransactionInProgress{false};
+
+      /// Flag whether there is a valid activeFuture or not
+      bool hasActiveFuture{false};
+
+      /// last future returned by doReadTransferAsync() (valid if hasActiveFuture == true)
+      TransferFuture activeFuture;
+
   };
 
 } /* namespace mtca4u */

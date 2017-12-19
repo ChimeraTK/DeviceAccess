@@ -120,13 +120,8 @@ namespace mtca4u {
         return _target->doReadTransferLatest();
       }
 
-      TransferFuture readAsync() override {
-        this->preRead();
+      TransferFuture doReadTransferAsync() override {
         return TransferFuture(_target->readAsync(), this);
-      }
-
-      bool asyncTransferActive() override {
-        return _target->asyncTransferActive();
       }
 
       void doPreRead() override {
@@ -135,10 +130,6 @@ namespace mtca4u {
 
       void transferFutureWaitCallback() override {
         _target->transferFutureWaitCallback();
-      }
-
-      void clearAsyncTransferActive() override {
-        _target->clearAsyncTransferActive();
       }
 
       bool isReadOnly() const override {
