@@ -12,11 +12,11 @@ include(cmake/set_version_numbers.cmake)
 
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(mtca4u-deviceaccess 00.27 REQUIRED)
+add_dependency(mtca4u-deviceaccess 00.29 REQUIRED)
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(ChimeraTK-ControlSystemAdapter 00.09 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 00.11 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -41,7 +41,7 @@ ENDIF()
 FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
-add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.04)
+add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.06)
 IF(ChimeraTK-ControlSystemAdapter-DoocsAdapter_FOUND)
   set(DEMO_IS_ENABLED "true")
   ENABLE_TESTING()
