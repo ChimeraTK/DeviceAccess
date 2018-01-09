@@ -32,6 +32,7 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
   ctk::ScalarPushInput<double> varDouble{this, "varDouble", "MV/m", "Desc"};
   ctk::ScalarPushInput<std::string> varString{this, "varString", "MV/m", "Desc"};
   ctk::ScalarPushInput<int32_t> varAnotherInt{this, "varAnotherInt", "MV/m", "Desc"};
+  ctk::ArrayPushInput<int32_t> intArray{this, "intArray", "MV/m", 10, "Desc"};
 
   std::atomic<bool> done{false};
 
@@ -50,6 +51,9 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
     BOOST_CHECK_CLOSE((double)varDouble, -2.8, 0.000001);
     BOOST_CHECK_EQUAL((std::string)varString, "My dear mister singing club!");
 
+    BOOST_CHECK_EQUAL(intArray.getNElements(), 10);
+    for(size_t i=0; i<10; ++i) BOOST_CHECK_EQUAL(intArray[i], 10-i);
+
     // no further update shall be received
     usleep(1000000);   // 1 second
     BOOST_CHECK( !var8.readNonBlocking() );
@@ -63,6 +67,7 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
     BOOST_CHECK( !varFloat.readNonBlocking() );
     BOOST_CHECK( !varDouble.readNonBlocking() );
     BOOST_CHECK( !varString.readNonBlocking() );
+    BOOST_CHECK( !intArray.readNonBlocking() );
 
     // inform main thread that we are done
     done = true;
@@ -104,6 +109,10 @@ BOOST_AUTO_TEST_CASE( testConfigReader ) {
   BOOST_CHECK_CLOSE(app.config.get<float>("varFloat"), 3.1415, 0.000001);
   BOOST_CHECK_CLOSE(app.config.get<double>("varDouble"), -2.8, 0.000001);
   BOOST_CHECK_EQUAL(app.config.get<std::string>("varString"), "My dear mister singing club!");
+
+  std::vector<int> arrayValue = app.config.get<std::vector<int>>("intArray");
+  BOOST_CHECK_EQUAL(arrayValue.size(), 10);
+  for(size_t i=0; i<10; ++i) BOOST_CHECK_EQUAL(arrayValue[i], 10-i);
 
   app.config.connectTo(app.testModule);
 
