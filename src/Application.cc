@@ -73,6 +73,7 @@ void Application::initialise() {
 /** Functor class to create a constant for otherwise unconnected variables, suitable for boost::fusion::for_each(). */
 namespace {
   struct CreateConstantForUnconnectedVar {
+    /// @todo test unconnected variables for all types!
     CreateConstantForUnconnectedVar(const std::type_info &typeInfo, bool makeFeeder, size_t length)
     : _typeInfo(typeInfo), _makeFeeder(makeFeeder), _length(length) {}
 
