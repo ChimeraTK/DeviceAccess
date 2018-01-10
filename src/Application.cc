@@ -79,7 +79,7 @@ namespace {
     template<typename PAIR>
     void operator()(PAIR&) const {
       if(typeid(typename PAIR::first_type) != _typeInfo) return;
-      theNode = VariableNetworkNode::makeConstant<typename PAIR::first_type>(_makeFeeder, 0, _length);
+      theNode = VariableNetworkNode::makeConstant<typename PAIR::first_type>(_makeFeeder, typename PAIR::first_type(), _length);
       done = true;
     }
 
