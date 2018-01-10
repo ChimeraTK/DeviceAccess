@@ -33,6 +33,7 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
   ctk::ScalarPushInput<std::string> varString{this, "varString", "MV/m", "Desc"};
   ctk::ScalarPushInput<int32_t> varAnotherInt{this, "varAnotherInt", "MV/m", "Desc"};
   ctk::ArrayPushInput<int32_t> intArray{this, "intArray", "MV/m", 10, "Desc"};
+  ctk::ArrayPushInput<std::string> stringArray{this, "stringArray", "", 8, "Desc"};
 
   std::atomic<bool> done{false};
 
@@ -53,6 +54,9 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
 
     BOOST_CHECK_EQUAL(intArray.getNElements(), 10);
     for(size_t i=0; i<10; ++i) BOOST_CHECK_EQUAL(intArray[i], 10-i);
+
+    BOOST_CHECK_EQUAL(stringArray.getNElements(), 8);
+    for(size_t i=0; i<8; ++i) BOOST_CHECK_EQUAL(stringArray[i], "Hallo"+std::to_string(i+1));
 
     // no further update shall be received
     usleep(1000000);   // 1 second
@@ -113,6 +117,10 @@ BOOST_AUTO_TEST_CASE( testConfigReader ) {
   std::vector<int> arrayValue = app.config.get<std::vector<int>>("intArray");
   BOOST_CHECK_EQUAL(arrayValue.size(), 10);
   for(size_t i=0; i<10; ++i) BOOST_CHECK_EQUAL(arrayValue[i], 10-i);
+
+  std::vector<std::string> arrayValueString = app.config.get<std::vector<std::string>>("stringArray");
+  BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
+  for(size_t i=0; i<8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo"+std::to_string(i+1));
 
   app.config.connectTo(app.testModule);
 

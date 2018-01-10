@@ -28,6 +28,16 @@
     <value i="5" v="5"/>
     <value i="6" v="4"/>
   </variable>
+  <variable name="stringArray" type="string">
+    <value i="0" v="Hallo1"/>
+    <value i="1" v="Hallo2"/>
+    <value i="2" v="Hallo3"/>
+    <value i="3" v="Hallo4"/>
+    <value i="4" v="Hallo5"/>
+    <value i="5" v="Hallo6"/>
+    <value i="6" v="Hallo7"/>
+    <value i="7" v="Hallo8"/>
+  </variable>
   <!-- Just a random comment -->
 </configuration>
 <!-- Just a random comment -->
