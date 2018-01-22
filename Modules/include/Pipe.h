@@ -14,7 +14,7 @@ namespace ChimeraTK {
   */
   template<typename Type>
   struct ScalarPipe : public ApplicationModule {
-      
+
       ScalarPipe(EntityOwner *owner, const std::string &name, const std::string &unit, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
       : ApplicationModule(owner, name, description, true)
@@ -22,7 +22,7 @@ namespace ChimeraTK {
         input.replace(ScalarPushInput<Type>(this, name, unit, description, tagsInput));
         output.replace(ScalarOutput<Type>(this, name, unit, description, tagsOutput));
       }
-      
+
       ScalarPipe(EntityOwner *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
                 const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
@@ -31,12 +31,12 @@ namespace ChimeraTK {
         input.replace(ScalarPushInput<Type>(this, inputName, unit, description, tagsInput));
         output.replace(ScalarOutput<Type>(this, outputName, unit, description, tagsOutput));
       }
-      
+
       ScalarPipe() {}
 
       ScalarPushInput<Type> input;
       ScalarOutput<Type> output;
-      
+
       void mainLoop() {
         while(true) {
           output = static_cast<Type>(input);
@@ -53,7 +53,7 @@ namespace ChimeraTK {
   */
   template<typename Type>
   struct ArrayPipe : public ApplicationModule {
-      
+
       ArrayPipe(EntityOwner *owner, const std::string &name, const std::string &unit, size_t nElements, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
       : ApplicationModule(owner, name, description, true)
@@ -61,7 +61,7 @@ namespace ChimeraTK {
         input.replace(ArrayPushInput<Type>(this, name, unit, nElements, description, tagsInput));
         output.replace(ArrayOutput<Type>(this, name, unit, nElements, description, tagsOutput));
       }
-      
+
       ArrayPipe(EntityOwner *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
                 size_t nElements, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
@@ -75,9 +75,9 @@ namespace ChimeraTK {
 
       ArrayPushInput<Type> input;
       ArrayOutput<Type> output;
-      
+
       void mainLoop() {
-        std::vector<int> temp(input.getNElements());
+        std::vector<Type> temp(input.getNElements());
         while(true) {
           input.swap(temp);
           output.swap(temp);
