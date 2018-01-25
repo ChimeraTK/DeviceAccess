@@ -1,4 +1,4 @@
-#ChimeraTK DeviceAccess
+# ChimeraTK DeviceAccess
 
 The ChimeraTK DeviceAccess library provides an abstract interface for register based devices. Registers are identified by a name and usually accessed though an accessor object.
 
