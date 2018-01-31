@@ -6,6 +6,7 @@
 #include "BackendFactory.h"
 #include "DeviceException.h"
 #include "MapFileParser.h"
+#include "NDRegisterAccessorDecorator.h"
 
 using namespace mtca4u;
 
@@ -112,6 +113,61 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  template<typename UserType, typename TargetUserType>
+  class FixedPointConvertingDecorator : public NDRegisterAccessorDecorator<UserType, TargetUserType> {
+
+    public:
+
+      FixedPointConvertingDecorator(const boost::shared_ptr<mtca4u::NDRegisterAccessor<TargetUserType>> &target,
+                                    FixedPointConverter fixedPointConverter)
+      : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter)
+      {}
+
+      void doPostRead() override {
+        _target->postRead();
+        size_t chnr = 0;
+        for(auto &itdstCh : buffer_2D) {
+          auto itsrcSmp = _target->accessChannel(chnr).begin();
+          std::cout << "chnr = " << chnr << std::endl;
+          for(auto &itdstSmp : itdstCh) {
+            itdstSmp = _fixedPointConverter.toCooked<UserType>(*itsrcSmp);
+            std::cout << " v = " << *itsrcSmp << " -> " << itdstSmp << std::endl;
+            ++itsrcSmp;
+          }
+          ++chnr;
+        }
+      };
+
+      void doPreWrite() override {
+        size_t chnr = 0;
+        for(auto &itsrcCh : buffer_2D) {
+          auto itdstSmp = _target->accessChannel(chnr).begin();
+          std::cout << "chnr = " << chnr << std::endl;
+          for(auto &itsrcSmp : itsrcCh) {
+            *itdstSmp = _fixedPointConverter.toRaw<UserType>(itsrcSmp);
+            std::cout << " v = " << itsrcSmp  << " -> " << *itdstSmp<< std::endl;
+            ++itdstSmp;
+          }
+          ++chnr;
+        }
+        _target->preWrite();
+      }
+
+      void doPostWrite() override {
+        _target->postWrite();
+      }
+
+    protected:
+
+      FixedPointConverter _fixedPointConverter;
+
+      using NDRegisterAccessorDecorator<UserType, TargetUserType>::_target;
+      using NDRegisterAccessor<UserType>::buffer_2D;
+
+  };
+
+  /********************************************************************************************************************/
+
   template<typename UserType>
   boost::shared_ptr< NDRegisterAccessor<UserType> > SubdeviceBackend::getRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
@@ -144,8 +200,16 @@ namespace ChimeraTK {
                             " elements.", DeviceException::WRONG_PARAMETER);
     }
 
-    // obtain accessor from target device
-    return targetDevice->getRegisterAccessor<UserType>(targetArea, numberOfWords, wordOffset, flags);
+    // raw transfer: directly return accessor from target device
+    if(flags.has(AccessMode::raw)) {
+      return targetDevice->getRegisterAccessor<UserType>(targetArea, numberOfWords, wordOffset, flags);
+    }
+
+    // if not a raw transfer: obtain raw accessor from target device and decorate with fixed-point-converting decorator
+    /// @todo keep other flags!!!
+    auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, {AccessMode::raw});
+    return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
+                  FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
   }
 
 
