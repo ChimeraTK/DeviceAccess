@@ -126,7 +126,7 @@ namespace mtca4u {
 
   template<typename UserType>
   boost::shared_ptr< NDRegisterAccessor<UserType> > NumericAddressedBackend::getRegisterAccessor_impl(
-      const RegisterPath &registerPathName, size_t wordOffsetInRegister, size_t numberOfWords, AccessModeFlags flags) {
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     boost::shared_ptr< NDRegisterAccessor<UserType> >  accessor;
     // obtain register info
     boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
@@ -134,13 +134,13 @@ namespace mtca4u {
     if(info->getNumberOfDimensions() <= 1) {
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
           new NumericAddressedBackendRegisterAccessor<UserType>(shared_from_this(), registerPathName,
-              wordOffsetInRegister, numberOfWords, flags) );
+              numberOfWords, wordOffsetInRegister, flags) );
     }
     // 2D multiplexed register
     else {
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-          new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister,
-              numberOfWords, shared_from_this()) );
+          new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName, numberOfWords,
+              wordOffsetInRegister, shared_from_this()) );
     }
     // allow plugins to decorate the accessor and return it
     return decorateRegisterAccessor(registerPathName, accessor);
