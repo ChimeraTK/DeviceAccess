@@ -16,6 +16,7 @@
 #endif
 #include "DummyBackend.h"
 #include "LogicalNameMappingBackend.h"
+#include "SubdeviceBackend.h"
 #include "DMapFileParser.h"
 #include "DMapFileDefaults.h"
 #include "DeviceException.h"
@@ -66,6 +67,7 @@ namespace ChimeraTK {
     registerBackendType("dummy","",&DummyBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("rebot","",&RebotBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("subdevice","",&SubdeviceBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
   }
 
   BackendFactory & BackendFactory::getInstance(){

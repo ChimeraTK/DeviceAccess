@@ -1,0 +1,2 @@
+TARGET1   sdm://./dummy SubdeviceTarget.map
+SUBDEV1   sdm://./subdevice:area,TARGET1,APP.0.THE_AREA Subdevice.map
