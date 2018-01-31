@@ -17,6 +17,7 @@
 #include "TwoDRegisterAccessor.h"
 #include "BufferingRegisterAccessor.h"
 #include "AccessMode.h"
+#include "Utilities.h"      // make setDMapFilePath() available
 
 // Note: for backwards compatibility there is RegisterAccessor.h and MultiplexedDataAccessor.h included at the end
 // of this file.
