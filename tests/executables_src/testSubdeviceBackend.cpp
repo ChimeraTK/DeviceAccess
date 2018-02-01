@@ -34,6 +34,8 @@ BOOST_AUTO_TEST_CASE( testOpenClose ) {
 
 }
 
+/// @todo Test exception handling!
+
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE( testMayReplaceOther ) {
