@@ -123,32 +123,24 @@ namespace ChimeraTK {
       : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter)
       {}
 
+      void doPreRead() override {
+        _target->preRead();
+      }
+
       void doPostRead() override {
         _target->postRead();
-        size_t chnr = 0;
-        for(auto &itdstCh : buffer_2D) {
-          auto itsrcSmp = _target->accessChannel(chnr).begin();
-          std::cout << "chnr = " << chnr << std::endl;
-          for(auto &itdstSmp : itdstCh) {
-            itdstSmp = _fixedPointConverter.toCooked<UserType>(*itsrcSmp);
-            std::cout << " v = " << *itsrcSmp << " -> " << itdstSmp << std::endl;
-            ++itsrcSmp;
+        for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
+          for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
+            buffer_2D[i][j] = _fixedPointConverter.toCooked<UserType>(_target->accessChannel(i)[j]);
           }
-          ++chnr;
         }
-      };
+      }
 
       void doPreWrite() override {
-        size_t chnr = 0;
-        for(auto &itsrcCh : buffer_2D) {
-          auto itdstSmp = _target->accessChannel(chnr).begin();
-          std::cout << "chnr = " << chnr << std::endl;
-          for(auto &itsrcSmp : itsrcCh) {
-            *itdstSmp = _fixedPointConverter.toRaw<UserType>(itsrcSmp);
-            std::cout << " v = " << itsrcSmp  << " -> " << *itdstSmp<< std::endl;
-            ++itdstSmp;
+        for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
+          for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
+            _target->accessChannel(i)[j] = _fixedPointConverter.toRaw<UserType>(buffer_2D[i][j]);
           }
-          ++chnr;
         }
         _target->preWrite();
       }
@@ -180,6 +172,12 @@ namespace ChimeraTK {
     if(info->bar != 0) {
       throw DeviceException("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
                             "' is in BAR "+std::to_string(info->bar)+".", DeviceException::WRONG_PARAMETER);
+    }
+
+    // check that the register is not a 2D multiplexed register, which is not yet supported
+    if(info->is2DMultiplexed) {
+      throw DeviceException("SubdeviceBackend: 2D multiplexed registers are not yet supported.",
+                            DeviceException::NOT_IMPLEMENTED);
     }
 
     // compute full offset (from map file and function arguments)

@@ -1,2 +1,2 @@
 # name                    number of elements       address          size           bar    width   fracbits  signed
-APP.0.THE_AREA            10                       1024             40             3      0       0         0
+APP.0.THE_AREA            10                       1024             40             3      32      0         0

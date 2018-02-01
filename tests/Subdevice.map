@@ -1,5 +1,5 @@
-# name                    number of elements       address          size           bar    width   fracbits  signed
-APP.0.MY_REGISTER1        1                        0                4              0      32      0         1
-APP.0.MY_REGISTER2        1                        4                4              0      18      2         1
-APP.0.MY_AREA1            6                        8                24             0      32      0         1
-APP.0.MY_AREA2            2                        32               8              0      32      0         0
+# name                      number of elements        address          size           bar    width   fracbits  signed
+APP.0.MY_REGISTER1          1                         0                4              0      32      0         1
+APP.0.MY_REGISTER2          1                         4                4              0      18      2         1
+APP.0.MY_AREA1              6                         8                24             0      32      16        1
+APP.0.MY_AREA2              2                         32               8              0      32      0         0
