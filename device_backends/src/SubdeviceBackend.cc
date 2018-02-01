@@ -149,6 +149,13 @@ namespace ChimeraTK {
         _target->postWrite();
       }
 
+      bool mayReplaceOther(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
+        auto casted = boost::dynamic_pointer_cast<FixedPointConvertingDecorator<UserType,TargetUserType> const>(other);
+        if(!casted) return false;
+        if(_fixedPointConverter != casted->_fixedPointConverter) return false;
+        return _target->mayReplaceOther(casted->_target);
+      }
+
     protected:
 
       FixedPointConverter _fixedPointConverter;

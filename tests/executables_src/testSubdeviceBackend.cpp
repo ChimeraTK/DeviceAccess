@@ -36,6 +36,54 @@ BOOST_AUTO_TEST_CASE( testOpenClose ) {
 
 /*********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE( testMayReplaceOther ) {
+
+    setDMapFilePath("subdeviceTest.dmap");
+
+    Device dev;
+    dev.open("SUBDEV1");
+    Device target;
+    target.open("TARGET1");
+
+    {
+      auto acc1  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
+      auto acc1_2  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
+      BOOST_CHECK(acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
+      BOOST_CHECK(acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    }
+
+    {
+      auto acc1  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
+      auto acc1_2  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1");
+      BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
+      BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    }
+
+    {
+      auto acc1  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
+      auto acc1_2  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
+      BOOST_CHECK(acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
+      BOOST_CHECK(acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    }
+
+    {
+      auto acc1  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1");
+      auto acc1_2  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
+      BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
+      BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    }
+
+    {
+      auto acc1  = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
+      auto acc1_2  = dev.getScalarRegisterAccessor<int16_t>("APP.0.MY_REGISTER2");
+      BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
+      BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    }
+
+}
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE( testWriteScalarRaw ) {
 
     setDMapFilePath("subdeviceTest.dmap");
