@@ -20,7 +20,7 @@ namespace ChimeraTK {
    *
    *  URI scheme for the "area" type:
    *
-   *    sdm://./subdevice:area,<targetDevice>,<targetRegister>=<mapFile>
+   *    sdm://./subdevice:area,\<targetDevice\>,\<targetRegister\>=\<mapFile\>
    *
    *  Example: We like to use the register "APP.0.EXT_PZ16M" of the device with the alias name "TCK7_0" in our dmap
    *  file as a target and the file piezo_pz16m_acc1_r0.mapp as a map file. The file contains addresses relative to the
