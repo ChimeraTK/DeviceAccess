@@ -6,7 +6,7 @@
 #include "Device.h"
 #include "Utilities.h"
 
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 /**
  *

@@ -11,7 +11,7 @@
 #include "RegisterInfoMap.h"
 #include "DeviceInfoMap.h"
 
-void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
+void populateDummyDeviceInfo(ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string dmapFileName,
                               std::string deviceName = "card",
                               std::string dev_file =
@@ -19,10 +19,10 @@ void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string map_file_name =
                                   "/dev/dummy_map_file");
 std::string appendNumberToName(std::string name, int cardNumber);
-bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
-                         const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo2);
+bool compareDeviceInfos(const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1,
+                         const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2);
 
-bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
-                        const mtca4u::RegisterInfoMap::RegisterInfo& element2);
+bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& element1,
+                        const ChimeraTK::RegisterInfoMap::RegisterInfo& element2);
 
 #endif /* HELPERFUNCTIONS_H_ */

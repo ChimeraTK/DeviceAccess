@@ -9,9 +9,12 @@ using namespace boost::unit_test_framework;
 #include "DeviceException.h"
 #include "DummyBackend.h"
 #include "MapException.h"
-using namespace mtca4u;
 
 #include "DeviceAccessVersion.h"
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
+using namespace mtca4u;
 
 //#undef TEST_DMAP_FILE_PATH
 //#define TEST_DMAP_FILE_PATH "/testDummies.dmap"

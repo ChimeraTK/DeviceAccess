@@ -20,6 +20,9 @@ using namespace boost::unit_test_framework;
 #define INVALID_DEVICE_STRING_2 "/dev"
 #define INVALID_DEVICE_STRING_3 "testfile.mappp"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 
 class UtilitiesTest

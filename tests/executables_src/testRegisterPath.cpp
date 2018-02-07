@@ -9,6 +9,9 @@
 
 #include "RegisterPath.h"
 #include "NumericAddress.h"
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
