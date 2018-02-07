@@ -1,6 +1,9 @@
 #include <boost/test/included/unit_test.hpp>
 #include "parserUtilities.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace boost::unit_test_framework;
 namespace parsutils = mtca4u::parserUtilities;
 

@@ -9,6 +9,9 @@
 
 namespace ip = boost::asio::ip;
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 namespace ChimeraTK {
   using namespace mtca4u;
   

@@ -4,6 +4,9 @@
 using namespace boost::unit_test_framework;
 
 #include "predicates.h"
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 
 BOOST_AUTO_TEST_SUITE(  PredicatesTestSuite )
 

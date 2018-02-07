@@ -16,6 +16,9 @@
 #include "accessPrivateData.h"
 
 using namespace boost::unit_test_framework;
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 
 // we need to access the private implementation of the accessor (see accessPrivateData.h)

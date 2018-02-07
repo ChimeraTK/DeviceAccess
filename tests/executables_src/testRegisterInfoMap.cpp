@@ -3,6 +3,9 @@ using namespace boost::unit_test_framework;
 
 #include "helperFunctions.h"
 #include "MapException.h"
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 
 class MapFileTest {
   public:

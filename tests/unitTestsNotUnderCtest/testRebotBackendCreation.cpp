@@ -14,6 +14,10 @@ using namespace boost::unit_test_framework;
 #include "DMapFileParser.h"
 #include "NumericAddress.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
+
 void checkWriteReadFromRegister(mtca4u::Device& rebotDevice);
 
 BOOST_AUTO_TEST_SUITE(RebotDeviceTestSuite)

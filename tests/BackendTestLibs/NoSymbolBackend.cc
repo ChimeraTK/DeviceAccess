@@ -2,6 +2,9 @@
 #include "BackendFactory.h"
 #include "DeviceAccessVersion.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 
 /// This backend does not have the deviceAccessVersionUsedToCompile symbol, needed to load at runtime.

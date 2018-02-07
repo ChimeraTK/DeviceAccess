@@ -6,6 +6,9 @@
 #include "parserUtilities.h"
 #include "Utilities.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace boost::unit_test_framework;
 
 class DMapFileParserTest {

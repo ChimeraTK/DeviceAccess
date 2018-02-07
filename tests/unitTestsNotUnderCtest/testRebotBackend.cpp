@@ -11,6 +11,9 @@
 #include "DMapFileParser.h"
 #include "NumericAddress.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace boost::unit_test_framework;
 using mtca4u::numeric_address::BAR;
 

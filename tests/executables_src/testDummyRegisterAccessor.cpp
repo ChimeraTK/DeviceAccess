@@ -11,8 +11,7 @@
 #include "DummyRegisterAccessor.h"
 
 using namespace boost::unit_test_framework;
-
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 #define TEST_MAPPING_FILE "testDummyRegisterAccessors.map"
 #define INVALID_MAPPING_FILE "invalidSequences.map"

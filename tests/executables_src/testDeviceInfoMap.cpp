@@ -5,6 +5,9 @@
 #include "helperFunctions.h"
 
 using namespace boost::unit_test_framework;
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 
 class DeviceInfoMapTest {
   public:
