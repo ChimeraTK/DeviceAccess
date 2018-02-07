@@ -1,5 +1,5 @@
 #pragma once
-#include <ChimeraTK/REPLACE_ME>
+#include <ChimeraTK/DataModifierPlugin.h>
 
 //#warning You are using the deprecated namespace 'mtca4u'. Please change to namespace 'ChimeraTK'.
 

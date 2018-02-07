@@ -1,3 +1,4 @@
+
 cmake_minimum_required (VERSION 3.0.2)
 
 Project(mtca4u-deviceaccess)
@@ -131,11 +132,12 @@ target_link_libraries( ${PROJECT_NAME}  ${LibXML++_LDFLAGS} -Wl,$<$<PLATFORM_ID:
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/mtca4u)
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/ChimeraTK)
 
 foreach(dir ${inc_dirs} )
     file(GLOB headerFiles  "${dir}/*.h")
     foreach(headerFile ${headerFiles} )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/mtca4u)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/ChimeraTK)
     endforeach(headerFile)
 endforeach(dir)
 
@@ -157,6 +159,9 @@ install( TARGETS ${PROJECT_NAME}
          ARCHIVE DESTINATION lib )
 
 #all include files go into include/PROJECT_NAME
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ChimeraTK/ DESTINATION include/ChimeraTK)
+#The compatibility files
+file(COPY ${PROJECT_SOURCE_DIR}/mtca4u_compatibility_headers/ DESTINATION ${PROJECT_BINARY_DIR}/include/mtca4u)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include/mtca4u/ DESTINATION include/mtca4u)
 
 #Create the config files by filling the correct variables into the template (*.cmake.in).
