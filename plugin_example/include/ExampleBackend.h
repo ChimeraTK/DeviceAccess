@@ -16,11 +16,6 @@
 #include <mtca4u/BackendFactory.h>
 #include <mtca4u/DeviceAccessVersion.h>
 
-#warning This does not belong in user/example code. Fix the CMAKE to install compatibility headers!
-namespace mtca4u{
-  using namespace ChimeraTK;
-}
-
 /** An Example to show how to write a backend device class and add it to the factory.
  *
  */
