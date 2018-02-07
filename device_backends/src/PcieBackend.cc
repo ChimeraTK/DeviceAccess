@@ -17,7 +17,7 @@
 #include "PcieBackend.h"
 #include "PcieBackendException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   PcieBackend::PcieBackend(std::string deviceNodeName, std::string mapFileName)
   : NumericAddressedBackend(mapFileName),
@@ -346,4 +346,4 @@ namespace mtca4u {
     return boost::shared_ptr<DeviceBackend> (new PcieBackend("/dev/"+instance, mapFileName));
   }
 
-} // namespace mtca4u
+} // namespace ChimeraTK

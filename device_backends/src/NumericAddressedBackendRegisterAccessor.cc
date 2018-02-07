@@ -7,7 +7,7 @@
 
 #include "NumericAddressedBackendRegisterAccessor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   template<>
   void NumericAddressedBackendRegisterAccessor<int32_t>::doPostRead() {
@@ -65,4 +65,4 @@ namespace mtca4u {
     }
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

@@ -17,7 +17,7 @@
 #include "ExperimentalFeatures.h"
 #include "NDRegisterAccessor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** NDRegisterAccessor for backends with only synchronous transfers (so readAsync() must be implemented with a
    *  thread). This class just provides a default implementation of readAsync() for those backends. */

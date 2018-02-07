@@ -7,7 +7,7 @@
 #include "DeviceException.h"
 #include "DataModifierPlugin.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *  DeviceBackendImpl implements some basic functionality which should be available for all backends. This is
@@ -81,6 +81,6 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif /*MTCA4U_DEVICE_BACKEND_IMPL_H*/

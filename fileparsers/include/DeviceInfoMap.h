@@ -14,7 +14,7 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @brief  Provides container to store information about devices described in DMAP file.
@@ -209,6 +209,6 @@ namespace mtca4u {
    */
   typedef boost::shared_ptr<DeviceInfoMap> DeviceInfoMapPointer;
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_DEVICE_INFO_MAP_H */

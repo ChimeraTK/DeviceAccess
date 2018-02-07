@@ -6,7 +6,7 @@
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   // Class backwards compatibility only. DEPCRECATED, DO NOT USE
   // @todo change runtime warning into error after release of 0.9

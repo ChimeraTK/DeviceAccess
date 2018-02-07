@@ -13,7 +13,7 @@
 #include "Exception.h"
 #include "DeviceInfoMap.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
 ///
 /// @brief Returns the dmap file name which the library currently uses for
@@ -84,6 +84,6 @@ void setDMapFilePath(std::string dmapFilePath);
 
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_UTILITES_H */

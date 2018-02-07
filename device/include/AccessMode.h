@@ -12,7 +12,7 @@
 
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Enum type with access mode flags for register accessors.
    *
@@ -92,6 +92,6 @@ namespace mtca4u {
        }
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_ACCESS_MODE_H */

@@ -10,7 +10,7 @@
 #include <exception>
 #include <string>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @brief  Provides base class for exception handling .
@@ -50,7 +50,7 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_EXCEPTION_H */
 

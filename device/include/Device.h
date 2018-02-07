@@ -22,7 +22,7 @@
 // Note: for backwards compatibility there is RegisterAccessor.h and MultiplexedDataAccessor.h included at the end
 // of this file.
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @class  Device
@@ -324,7 +324,7 @@ namespace mtca4u {
        *  This function is deprecated. Use the getBufferingRegisterAccessor instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
-      boost::shared_ptr<mtca4u::RegisterAccessor> getRegisterAccessor(const std::string &registerName,
+      boost::shared_ptr<ChimeraTK::RegisterAccessor> getRegisterAccessor(const std::string &registerName,
           const std::string &module = std::string()) const;
 
       /** \brief <b>DEPRECATED</b>
@@ -333,7 +333,7 @@ namespace mtca4u {
        *  This function is deprecated. Use the RegisterCatalogue (see getRegisterCatalogue()) instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
-      std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
+      std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
       /** \brief <b>DEPRECATED</b>
@@ -343,7 +343,7 @@ namespace mtca4u {
        *  registers and create accessors using getBufferingRegisterAccessor instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
-      std::list<  boost::shared_ptr<mtca4u::RegisterAccessor> > getRegisterAccessorsInModule(
+      std::list<  boost::shared_ptr<ChimeraTK::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) const;
 
       /** \brief <b>DEPRECATED</b>
@@ -360,7 +360,7 @@ namespace mtca4u {
        *  This function is deprecated. Open by alias name instead.
        *  @todo Change warning into runtime error after release of version 0.9
        */
-      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap);
+      virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<ChimeraTK::RegisterInfoMap> &registerMap);
 
       /** \brief <b>DEPRECATED</b>
        *
@@ -462,9 +462,9 @@ namespace mtca4u {
        *
        *  \deprecated
        *  A typedef for backward compatibility. Don't use this in new code. It will be removed in a future release.
-       *  Use mtca4u::BufferingRegisterAccessor instead
+       *  Use ChimeraTK::BufferingRegisterAccessor instead
        */
-      typedef mtca4u::RegisterAccessor RegisterAccessor;
+      typedef ChimeraTK::RegisterAccessor RegisterAccessor;
 
     protected:
 
@@ -648,7 +648,7 @@ namespace mtca4u {
         RegisterPath(module)/registerName, 0,0, false));
   }
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif /* MTCA4U_DEVICE_H */
 

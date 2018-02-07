@@ -11,7 +11,7 @@
 #include "DataModifierPlugin.h"
 #include "NDRegisterAccessor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** RegisterPlugin to scale the register content with a given factor. */
   class ScaleRegisterPlugin : public DataModifierPlugin {
@@ -40,6 +40,6 @@ namespace mtca4u {
 
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_REGISTER_PLUGIN_H */

@@ -11,7 +11,7 @@
 #include "NDRegisterAccessorAbstractor.h"
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
    *  \deprecated
@@ -195,6 +195,6 @@ namespace mtca4u {
       friend class TransferGroup;
   };
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_BUFFERING_REGISTER_ACCESSOR_H */

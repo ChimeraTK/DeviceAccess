@@ -3,7 +3,7 @@
 
 #include "DeviceBackendException.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
 
   /** A class to provide exceptions for Device. */
   class DeviceException : public DeviceBackendException {
@@ -77,7 +77,7 @@ namespace mtca4u{
   typedef DeviceException TwoDRegisterAccessorException;
   typedef DeviceException MultiplexedDataAccessorException;
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_DEVICE_EXCEPTION_H */
 

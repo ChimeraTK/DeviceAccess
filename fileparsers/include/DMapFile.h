@@ -5,7 +5,7 @@
 
 #include "DeviceInfoMap.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Using DMapFile is deprecated. The class has been renamed to DeviceInfoMap.
    *  @deprecated Using DMapFile is deprecated. The class has been renamed to DeviceInfoMap.
@@ -19,6 +19,6 @@ namespace mtca4u {
       typedef DeviceInfo DRegisterInfo;
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif /* _MTCA4U_DMAPFILE_H_ */

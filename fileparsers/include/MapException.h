@@ -11,7 +11,7 @@
 
 #include "Exception.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @brief  Provides base class for all exceptions from libmap
@@ -100,7 +100,7 @@ namespace mtca4u {
       DMapFileParserException(const std::string &_exMessage, unsigned int _exID);
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_MAP_EXCEPTION_H */
 

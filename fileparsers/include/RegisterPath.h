@@ -13,7 +13,7 @@
 
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Class to store a register path name. Elements of the path are separated by a "/" character, but an alternative
    *  separation character (e.g. ".") can optionally be specified as well. Different equivalent notations will be
@@ -238,6 +238,6 @@ namespace mtca4u {
   /** streaming operator */
   std::ostream& operator<<(std::ostream &os, const RegisterPath& me);
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_REGISTER_PATH_H */

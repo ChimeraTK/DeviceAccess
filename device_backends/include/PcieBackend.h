@@ -7,7 +7,7 @@
 
 #include "NumericAddressedBackend.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** A class to provide the Pcie device functionality."
    *
@@ -68,7 +68,7 @@ namespace mtca4u {
       static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName);
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_PCIE_BACKEND_H */
 

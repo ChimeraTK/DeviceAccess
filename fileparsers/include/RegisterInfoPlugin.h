@@ -12,7 +12,7 @@
 
 #include "ForwardDeclarations.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Base class for plugins providing additional information in a RegisterInfo, e.g. coming from the map file. This
    *  base class is essentially empty, the derived plugin classes should contain public data members and implement the
@@ -32,6 +32,6 @@ namespace mtca4u {
   
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_REGISTER_INFO_PLUGIN_H */

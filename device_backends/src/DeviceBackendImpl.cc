@@ -4,7 +4,7 @@
 
 #include "DeviceBackendImpl.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   DeviceBackendImpl::DeviceBackendImpl()
   : _opened(false), _connected(true)
@@ -15,4 +15,4 @@ namespace mtca4u {
   DeviceBackendImpl::~DeviceBackendImpl() {
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

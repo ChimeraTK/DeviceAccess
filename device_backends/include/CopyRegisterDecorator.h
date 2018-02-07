@@ -23,20 +23,20 @@ namespace ChimeraTK {
    *  to use exactly this implementation (potentially extended by inheritance) and not reimplement it directly based
    *  on the NDRegisterAccessorDecorator<T>. */
   template<typename T>
-  struct CopyRegisterDecorator : mtca4u::NDRegisterAccessorDecorator<T>, CopyRegisterDecoratorTrait {
+  struct CopyRegisterDecorator : ChimeraTK::NDRegisterAccessorDecorator<T>, CopyRegisterDecoratorTrait {
 
-      CopyRegisterDecorator(const boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> &target)
-      : mtca4u::NDRegisterAccessorDecorator<T>(target)
+      CopyRegisterDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> &target)
+      : ChimeraTK::NDRegisterAccessorDecorator<T>(target)
       {
         if(!target->isReadable()) {
-          throw mtca4u::DeviceException("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.",
-              mtca4u::DeviceException::WRONG_PARAMETER);
+          throw ChimeraTK::DeviceException("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.",
+              ChimeraTK::DeviceException::WRONG_PARAMETER);
         }
       }
 
       void doPreWrite() override {
-        throw mtca4u::DeviceException("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.",
-            mtca4u::DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::DeviceException("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.",
+            ChimeraTK::DeviceException::WRONG_PARAMETER);
       }
 
       void doPostRead() override {
@@ -52,8 +52,8 @@ namespace ChimeraTK {
         return false;
       }
 
-      using mtca4u::NDRegisterAccessorDecorator<T>::_target;
-      using mtca4u::NDRegisterAccessorDecorator<T>::buffer_2D;
+      using ChimeraTK::NDRegisterAccessorDecorator<T>::_target;
+      using ChimeraTK::NDRegisterAccessorDecorator<T>::buffer_2D;
   };
 
 

@@ -11,7 +11,7 @@
 #include "NDRegisterAccessorAbstractor.h"
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write scalar registers transparently by using the accessor object like a variable of
@@ -78,6 +78,6 @@ namespace mtca4u {
 
   };
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_SCALAR_REGISTER_ACCESSOR_H */

@@ -10,7 +10,7 @@
 #include "LogicalNameMappingBackend.h"
 #include "LogicalNameMapParser.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   LogicalNameMappingBackend::LogicalNameMappingBackend(std::string lmapFileName)
   : hasParsed(false), _lmapFileName(lmapFileName)
@@ -144,4 +144,4 @@ namespace mtca4u {
   }
 
 
-} // namespace mtca4u
+} // namespace ChimeraTK

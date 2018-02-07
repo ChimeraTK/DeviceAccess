@@ -18,7 +18,7 @@
 #include "SupportedUserTypes.h"
 #include "NotImplementedException.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
 
   /** The fixed point converter provides conversion functions
    *  between a user type and up to 32 bit fixed point (signed or unsigned).
@@ -62,7 +62,7 @@ namespace mtca4u{
        *  @todo Add printed runtime warning after release of version 0.6
        */
       double toDouble(uint32_t rawValue) const {
-        //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toDouble()." << std::endl;
+        //std::cerr << " *** You are using the deprecated function ChimeraTK::FixedPointConverter::toDouble()." << std::endl;
         //std::cerr << "    Please use toCooked() instead." << std::endl;
         return toCooked<double>(rawValue);
       }
@@ -72,7 +72,7 @@ namespace mtca4u{
        *  @todo Add printed runtime warning after release of version 0.6
        */
       uint32_t toFixedPoint(double cookedValue) const {
-        //std::cerr << " *** You are using the deprecated function mtca4u::FixedPointConverter::toFixedPoint()." << std::endl;
+        //std::cerr << " *** You are using the deprecated function ChimeraTK::FixedPointConverter::toFixedPoint()." << std::endl;
         //std::cerr << "    Please use toRaw() instead." << std::endl;
         return toRaw<double>(cookedValue);
       }
@@ -369,6 +369,6 @@ namespace mtca4u{
   template<>
   uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const;
 
-}// namespace mtca4u
+}// namespace ChimeraTK
 
 #endif // MTCA4U_FIXED_POINT_CONVERTER_H

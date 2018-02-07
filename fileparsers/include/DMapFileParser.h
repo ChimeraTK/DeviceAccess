@@ -12,7 +12,7 @@
 #include <string>
 #include "DeviceInfoMap.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    * @brief  Provides method to parse DMAP file.
@@ -49,7 +49,7 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_DMAP_FILE_PARSER_H */
 

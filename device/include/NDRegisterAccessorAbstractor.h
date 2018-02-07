@@ -14,7 +14,7 @@
 #include "CopyRegisterDecorator.h"
 #include "ReadAny.h"    // just for convenience...
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Base class for the reigster accessor abstractors (ScalarRegisterAccessor, OneDRegisterAccessor and
    *  TwoDRegisterAccessor). Provides a private implementation of the TransferElement interface to allow the bridges

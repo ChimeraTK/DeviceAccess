@@ -2,7 +2,6 @@
 
 namespace ChimeraTK{
 
-  using namespace mtca4u;
   namespace boost_ip = boost::asio::ip;
   typedef boost::asio::ip::tcp::resolver  resolver_t;
   typedef boost::asio::ip::tcp::resolver::query  query_t;

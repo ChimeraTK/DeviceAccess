@@ -14,7 +14,7 @@
 #include "DeviceBackend.h"
 #include "RegisterPluginFactory.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   template<>
   DynamicValue<std::string> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
@@ -273,4 +273,4 @@ namespace mtca4u {
     throw DeviceException("Error parsing the xlmap file '"+_fileName+"': "+message, DeviceException::CANNOT_OPEN_MAP_FILE);
   }
 
-} // namespace mtca4u
+} // namespace ChimeraTK

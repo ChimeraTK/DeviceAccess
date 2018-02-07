@@ -12,7 +12,7 @@
 #include "NumericAddress.h"
 #include "MapFileParser.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
@@ -90,7 +90,7 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegistersInModule(
+  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> NumericAddressedBackend::getRegistersInModule(
       const std::string &moduleName) const {
     return _registerMap->getRegistersInModule(moduleName);
   }
@@ -146,4 +146,4 @@ namespace mtca4u {
     return decorateRegisterAccessor(registerPathName, accessor);
   }
 
-} // namespace mtca4u
+} // namespace ChimeraTK

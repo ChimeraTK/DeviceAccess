@@ -26,7 +26,7 @@
 #include "TimeStamp.h"
 #include "TransferElementID.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
   class TransferElement;
   class TransferElementAbstractor;
 }
@@ -78,17 +78,17 @@ namespace ChimeraTK {
       : _transferElement(nullptr) {}
 
       /** Construct from boost future */
-      TransferFuture(PlainFutureType plainFuture, mtca4u::TransferElement *transferElement)
+      TransferFuture(PlainFutureType plainFuture, ChimeraTK::TransferElement *transferElement)
       : _theFuture(plainFuture), _transferElement(transferElement) {}
 
       /** "Decorating copy constructor": copy from other TransferFuture but override the transfer element. The
        *  typical use case is a decorating TransferElement. */
-      TransferFuture(const TransferFuture &other, mtca4u::TransferElement *transferElement)
+      TransferFuture(const TransferFuture &other, ChimeraTK::TransferElement *transferElement)
       : _theFuture(other._theFuture), _transferElement(transferElement) {}
 
       /** "Decorating move constructor": move from other TransferFuture but override the transfer element. The
        *  typical use case is a decorating TransferElement. */
-      TransferFuture(TransferFuture &&other, mtca4u::TransferElement *transferElement)
+      TransferFuture(TransferFuture &&other, ChimeraTK::TransferElement *transferElement)
       : _theFuture(std::move(other._theFuture)), _transferElement(transferElement) {}
 
       /** Copy constructor */
@@ -110,7 +110,7 @@ namespace ChimeraTK {
       }
 
       /** Return the TransferElementID of the associated TransferElement */
-      mtca4u::TransferElementID getTransferElementID();
+      ChimeraTK::TransferElementID getTransferElementID();
 
     //protected:    /// @todo make protected after changing tests and ControlSystemAdapter
 
@@ -125,7 +125,7 @@ namespace ChimeraTK {
       PlainFutureType _theFuture;
 
       /** Pointer to the TransferElement */
-      mtca4u::TransferElement *_transferElement;
+      ChimeraTK::TransferElement *_transferElement;
   };
 
 } /* namespace ChimeraTK */

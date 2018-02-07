@@ -14,9 +14,9 @@
 #include "MapException.h"
 
 
-namespace utilities = mtca4u::parserUtilities;
+namespace utilities = ChimeraTK::parserUtilities;
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   void DMapFilesParser::parse_dirs(const std::vector<std::string> &dirs) {
     std::vector<std::string>::const_iterator iter;
@@ -294,6 +294,6 @@ namespace mtca4u {
   DMapFilesParser::const_iterator DMapFilesParser::end() const{
     return _dmapElements.end();
   }
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 

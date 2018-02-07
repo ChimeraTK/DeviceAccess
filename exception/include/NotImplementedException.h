@@ -3,7 +3,7 @@
 
 #include "Exception.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   class NotImplementedException: public Exception {
     public:
@@ -13,6 +13,6 @@ namespace mtca4u {
       virtual ~NotImplementedException() throw(){}      // LCOV_EXCL_LINE
   };
 
-}// namespace mtca4u
+}// namespace ChimeraTK
 
 #endif// MTCA4U_NOT_IMPLEMENTED_EXCEPTION_H

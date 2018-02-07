@@ -16,7 +16,7 @@
 #include <typeinfo>
 #include <boost/fusion/include/at_key.hpp>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
    *  \deprecated
@@ -257,6 +257,6 @@ namespace mtca4u {
       mutable AccessorHandler<int32_t> _rawAccessorHandler;
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif /* MTCA4U_REGISTER_ACCESSOR_H */

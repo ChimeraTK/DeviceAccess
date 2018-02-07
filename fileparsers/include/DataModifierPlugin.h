@@ -11,7 +11,7 @@
 #include "RegisterInfoPlugin.h"
 #include "VirtualFunctionTemplate.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Base class for RegisterInfoPlugins which manipulate the data content of a register. Those plugins are no longer
    *  mere RegisterInfoPlugins but they still can provide additional information about the register. */
@@ -31,7 +31,7 @@ namespace mtca4u {
 
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 
 #endif /* MTCA4U_DATA_MODIFIER_PLUGIN_H */

@@ -12,7 +12,7 @@
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** To provide exception for DummyBackend.
    *
@@ -115,8 +115,8 @@ namespace mtca4u {
       void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
 
       /** map of instance names and pointers to allow re-connecting to the same instance with multiple Devices */
-      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {
-        static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;
+      static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> >& getInstanceMap() {
+        static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> > instanceMap;
         return instanceMap;
       }
 
@@ -167,6 +167,6 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif // MTCA4U_DUMMY_BACKEND_H

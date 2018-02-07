@@ -4,7 +4,7 @@
 
 #include "parserUtilities.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   namespace parserUtilities{
 
     /*
@@ -75,4 +75,4 @@ namespace mtca4u{
     }
 
   }// namespace parserUtilities
-}//namespace mtca4u
+}//namespace ChimeraTK

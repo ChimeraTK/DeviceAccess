@@ -6,8 +6,7 @@
 #include "DeviceBackendException.h"
 
 namespace ChimeraTK {
-  using namespace mtca4u;
-  
+
   /// Provides class for exceptions related to RebotDevice
   class RebotBackendException : public DeviceBackendException {
     public:
@@ -30,10 +29,5 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-// backward compatibility
-namespace mtca4u{
-  using namespace ChimeraTK;
-}
 
 #endif /* CHIMERATK_REBOT_BACKEND_EXCEPTION_H */

@@ -17,7 +17,7 @@
 #include <fstream>
 
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    * @brief  Provides method to parse MAP file
@@ -47,7 +47,7 @@ namespace mtca4u {
       static std::pair<std::string, std::string> splitStringAtLastDot( std::string moduleDotName);
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_MAPFILEPARSER_H */
 

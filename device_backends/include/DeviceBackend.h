@@ -18,7 +18,6 @@
 #include "AccessMode.h"
 
 namespace ChimeraTK {
-  using namespace mtca4u;
 
   /** The base class for backends providing IO functionality for the Device class. Note that most backends should
    *  actually be based on the DeviceBackendImpl class (unless it is a decorator backend).
@@ -163,9 +162,5 @@ namespace ChimeraTK {
   }
 
 }// namespace ChimeraTK
-
-namespace mtca4u{
-  using namespace ChimeraTK;
-} // namespace mtca4u
 
 #endif /*CHIMERATK_DEVICE_BACKEND_H*/

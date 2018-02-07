@@ -20,7 +20,6 @@
 #define ENV_VAR_DMAP_FILE "DMAP_PATH_ENV"   // FIXME remove
 
 namespace ChimeraTK{
-  using namespace mtca4u;
   
   /** A class to provide exception for BackendFactory.
    *
@@ -108,9 +107,5 @@ namespace ChimeraTK{
   };
 
 }// namespace ChimeraTK
-
-namespace mtca4u{
-  using namespace ChimeraTK;
-} // namespace mtca4u
 
 #endif /* MTCA4U_BACKEND_FACTORY_H */

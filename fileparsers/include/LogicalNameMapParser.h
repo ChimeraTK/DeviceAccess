@@ -22,7 +22,7 @@ namespace xmlpp {
   class Element;
 }
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Logical name map: store information from xlmap file and provide it to the LogicalNameMappingBackend and
    *  its register accessors. */
@@ -74,6 +74,6 @@ namespace mtca4u {
 
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif /* MTCA4U_LOGICAL_NAME_MAP_PARSER_H */

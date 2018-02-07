@@ -2,7 +2,7 @@
 
 #include "MapException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   LibMapException::~LibMapException() throw()
     {
@@ -45,4 +45,4 @@ namespace mtca4u {
 
   }
 
-}//namespace mtca4u
+}//namespace ChimeraTK

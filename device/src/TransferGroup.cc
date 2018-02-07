@@ -12,7 +12,7 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "CopyRegisterDecorator.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
@@ -153,4 +153,4 @@ namespace mtca4u {
 
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

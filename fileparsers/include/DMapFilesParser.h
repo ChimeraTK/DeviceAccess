@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "DMapFileParser.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    * @brief  Provides method to parse DMAP files and MAP files associeted with
@@ -188,7 +188,7 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /*  MTCA4U_DMAPFILESPARSER_H */
 

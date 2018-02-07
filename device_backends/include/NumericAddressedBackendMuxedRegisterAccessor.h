@@ -13,7 +13,7 @@
 #include "NotImplementedException.h"
 #include "MapFileParser.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
   static const std::string SEQUENCE_PREFIX="SEQUENCE_";
@@ -310,6 +310,6 @@ namespace mtca4u {
       }
   }
 
-}  //namespace mtca4u
+}  //namespace ChimeraTK
 
 #endif // MTCA4U_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H

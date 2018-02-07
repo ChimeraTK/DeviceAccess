@@ -6,7 +6,7 @@
 #include "MapException.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"        // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   RegisterInfoMapPointer MapFileParser::parse(const std::string &file_name)
   {
@@ -180,5 +180,5 @@ namespace mtca4u {
         moduleDotName.substr(lastDotPosition+1) );
   }
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 

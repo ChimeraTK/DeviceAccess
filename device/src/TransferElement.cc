@@ -7,7 +7,7 @@
 
 #include "TransferElement.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   constexpr char TransferElement::unitNotSet[];
 

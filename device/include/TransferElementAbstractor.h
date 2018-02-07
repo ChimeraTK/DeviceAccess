@@ -32,7 +32,7 @@ namespace ChimeraTK {
   class PersistentDataStorage;
 }
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   class TransferGroup;
 
@@ -222,6 +222,6 @@ namespace mtca4u {
       boost::shared_ptr< TransferElement > _implUntyped;
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_TRANSFER_ELEMENT_BRIDGE_H */

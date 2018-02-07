@@ -1,7 +1,7 @@
 #include "FixedPointConverter.h"
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   const int FixedPointConverter::zero = 0;
 

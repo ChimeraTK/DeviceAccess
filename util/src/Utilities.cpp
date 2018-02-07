@@ -17,7 +17,7 @@
 #include "BackendFactory.h"
 #include "DMapFileDefaults.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   size_t Utilities::countOccurence(std::string theString, char delimiter)
   {
@@ -237,4 +237,4 @@ namespace mtca4u {
     }
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

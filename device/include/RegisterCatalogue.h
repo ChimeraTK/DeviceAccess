@@ -13,7 +13,7 @@
 #include "RegisterInfo.h"
 #include "RegisterPath.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Catalogue of register information */
   class RegisterCatalogue {
@@ -186,6 +186,6 @@ namespace mtca4u {
   };
 
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_REGISTER_CATALOGUE_H */

@@ -10,7 +10,7 @@
 
 #include "Exception.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Exception class for all device backends to inherit.
    */

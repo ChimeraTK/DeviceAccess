@@ -32,7 +32,7 @@ namespace ChimeraTK {
   class PersistentDataStorage;
 }
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   class TransferGroup;
 
@@ -488,15 +488,15 @@ namespace mtca4u {
 
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 namespace std {
 
   /*******************************************************************************************************************/
 
   /** Hash function for putting TransferElementID e.g. into an std::unordered_map */
   template<>
-  struct hash<mtca4u::TransferElementID> {
-      std::size_t operator()(const mtca4u::TransferElementID &f) const {
+  struct hash<ChimeraTK::TransferElementID> {
+      std::size_t operator()(const ChimeraTK::TransferElementID &f) const {
           return std::hash<size_t>{}(f._id);
       }
   };
@@ -505,12 +505,12 @@ namespace std {
 
   /** Comparison for putting TransferElementID e.g. into an std::map */
   template<>
-  struct less<mtca4u::TransferElementID> {
+  struct less<ChimeraTK::TransferElementID> {
     // these typedefs are mandatory before C++17, even though they seem to be unused by gcc
     typedef bool result_type;
-    typedef mtca4u::TransferElementID first_argument_type;
-    typedef mtca4u::TransferElementID second_argument_type;
-    bool operator()(const mtca4u::TransferElementID &a, const mtca4u::TransferElementID &b) const {
+    typedef ChimeraTK::TransferElementID first_argument_type;
+    typedef ChimeraTK::TransferElementID second_argument_type;
+    bool operator()(const ChimeraTK::TransferElementID &a, const ChimeraTK::TransferElementID &b) const {
       return a._id < b._id;
     }
   };

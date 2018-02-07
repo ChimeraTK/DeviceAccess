@@ -10,7 +10,7 @@
 
 #include "RegisterPath.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
   namespace numeric_address {
   
     /** The numeric_address::BAR constant can be used to directly access registers by numeric addresses, instead of

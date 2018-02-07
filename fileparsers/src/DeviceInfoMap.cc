@@ -4,7 +4,7 @@
 #include "MapException.h"
 #include "DeviceInfoMap.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   DeviceInfoMap::DeviceInfoMap(const std::string &fileName)
   : _dmapFileName(fileName) {
@@ -149,4 +149,4 @@ namespace mtca4u {
     return _pluginLibraries;
   }
 
-}//namespace mtca4u
+}//namespace ChimeraTK

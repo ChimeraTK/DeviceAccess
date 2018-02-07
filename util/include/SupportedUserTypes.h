@@ -10,7 +10,7 @@
 
 #include <boost/fusion/container/map.hpp>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */
@@ -64,6 +64,6 @@ namespace mtca4u {
                                     boost::fusion::pair<std::string,T>
                                 > ;
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_SUPPORTED_USER_TYPES_H */
