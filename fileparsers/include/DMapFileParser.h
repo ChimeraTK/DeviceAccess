@@ -1,10 +1,3 @@
-/**
- *      @file           DMapFileParser.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
- *      @brief          Provides method to parse DMAP file
- *                  
- */
 #ifndef MTCA4U_DMAP_FILE_PARSER_H
 #define MTCA4U_DMAP_FILE_PARSER_H
 

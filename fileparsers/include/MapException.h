@@ -1,9 +1,3 @@
-/**
- *      @file           Exception.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
- *      @brief          Provides exception classess for libmap                
- */
 #ifndef MTCA4U_MAP_EXCEPTION_H
 #define MTCA4U_MAP_EXCEPTION_H
 

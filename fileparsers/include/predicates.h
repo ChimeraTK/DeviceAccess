@@ -1,7 +1,4 @@
 /**
- *      @file           predicates.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
  *      @brief          Provides set of predicates for stl algorithms                
  */
 #ifndef MTCA4U_PREDICATES_H

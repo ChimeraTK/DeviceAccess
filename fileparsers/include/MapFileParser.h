@@ -1,10 +1,3 @@
-/**
- *      @file           MapFileParser.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @brief          Provides method to parse MAP file
- *                  
- */
-
 #ifndef MTCA4U_MAPFILEPARSER_H
 #define MTCA4U_MAPFILEPARSER_H
 
