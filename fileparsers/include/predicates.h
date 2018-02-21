@@ -1,7 +1,4 @@
 /**
- *      @file           predicates.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
  *      @brief          Provides set of predicates for stl algorithms                
  */
 #ifndef MTCA4U_PREDICATES_H
@@ -10,7 +7,7 @@
 #include "DeviceInfoMap.h"
 #include "RegisterInfoMap.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @brief  Provides predicate to search registers by name
@@ -149,7 +146,7 @@ namespace mtca4u {
       std::string _moduleName;
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_PREDICATES_H */
 

@@ -5,12 +5,12 @@
 // the DMAP_FILE_PREFIX constant which is defined as compile paramter by CMAKE. You don't
 // want to expose this detail to user code.
 
-namespace mtca4u {
+namespace ChimeraTK {
   static const std::string DMAP_FILE_ENVIROMENT_VARIABLE("DMAP_FILE"); ///< The envorinment variable which contains the dmap file
   static const std::string DMAP_FILE_DEFAULT_DIRECTORY(std::string(DMAP_FILE_PREFIX)
-                                                       +"/etc/mtca4u/"); ///< The default dmap file directorY (without file name)
+                                                       +"/etc/ChimeraTK/"); ///< The default dmap file directorY (without file name)
   static const std::string DMAP_FILE_DEFAULT_NAME("devices.dmap"); ///< The default dmap file name (without directory)
   
-}// namespace mtca4u
+}// namespace ChimeraTK
 
 #endif //MTCA4U_DMAP_FILE_DEFAULTS_H

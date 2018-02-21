@@ -12,7 +12,7 @@
 
 #include "NDRegisterAccessorAbstractor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** TODO add documentation
    */
@@ -80,6 +80,6 @@ namespace mtca4u {
 
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif /* MTCA4U_TWO_DREGISTER_ACCESSOR_H */

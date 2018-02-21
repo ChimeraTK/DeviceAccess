@@ -7,7 +7,7 @@
 
 #include <typeinfo>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   RegisterAccessor::RegisterAccessor(boost::shared_ptr<DeviceBackend> deviceBackendPointer,
       const RegisterPath &registerPathName)

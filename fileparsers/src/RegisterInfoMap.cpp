@@ -8,7 +8,7 @@
 #include "MapException.h"
 #include "MapFileParser.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   std::ostream& operator<<(std::ostream &os, const RegisterInfoMap& registerInfoMap) {
     os << "=======================================" << std::endl;
@@ -329,4 +329,4 @@ namespace mtca4u {
     return _catalogue;
   }
 
-}//namespace mtca4u
+}//namespace ChimeraTK

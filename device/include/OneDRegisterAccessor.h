@@ -11,7 +11,7 @@
 #include "NDRegisterAccessorAbstractor.h"
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a vector of the
@@ -108,6 +108,6 @@ namespace mtca4u {
       friend class TransferGroup;
   };
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_ONE_D_REGISTER_ACCESSOR_H */

@@ -7,7 +7,7 @@
 
 #include "RegisterPluginFactory.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   RegisterPluginFactory::RegisterPluginFactory() {
   }
@@ -39,4 +39,4 @@ namespace mtca4u {
     }
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

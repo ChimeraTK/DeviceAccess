@@ -14,7 +14,7 @@
 #include "RegisterPath.h"
 #include "ForwardDeclarations.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** DeviceBackend-independent register description. */
   class RegisterInfo {
@@ -209,6 +209,6 @@ namespace mtca4u {
     _nFractionalDigits(nFractionalDigits_)
   {}
   
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_REGISTER_INFO_H */

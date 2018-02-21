@@ -13,7 +13,7 @@
 #include "FixedPointConverter.h"
 #include "ForwardDeclarations.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /*********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
@@ -224,6 +224,6 @@ namespace mtca4u {
   template<>
   void NumericAddressedBackendRegisterAccessor<int32_t>::doPostWrite();
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_NUMERIC_ADDRESSED_BACKEND_REGISTER_ACCESSOR_H */

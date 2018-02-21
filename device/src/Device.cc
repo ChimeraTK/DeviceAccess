@@ -9,9 +9,9 @@
 
 // for compatibility only:
 #include "NumericAddress.h"
-using mtca4u::numeric_address::BAR;
+using ChimeraTK::numeric_address::BAR;
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   Device::~Device() {
     // Do NOT close the Backend here. Another device might be using the same
@@ -59,11 +59,11 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  std::list< boost::shared_ptr<mtca4u::RegisterAccessor> >
+  std::list< boost::shared_ptr<ChimeraTK::RegisterAccessor> >
   Device::getRegisterAccessorsInModule(const std::string &moduleName) const {
     checkPointersAreNotNull();
     auto reglist = getRegistersInModule(moduleName);
-    std::list< boost::shared_ptr<mtca4u::RegisterAccessor> > acclist;
+    std::list< boost::shared_ptr<ChimeraTK::RegisterAccessor> > acclist;
     for(auto it = reglist.begin(); it != reglist.end(); ++it) {
       acclist.push_back( getRegisterAccessor(it->getRegisterName(), "") );
     }
@@ -94,7 +94,7 @@ namespace mtca4u {
     }
     catch(DeviceException &e) { // translate exception for compatibility
       if(e.getID() == DeviceException::REGISTER_DOES_NOT_EXIST) {
-        throw mtca4u::MapFileException(e.what(), mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+        throw ChimeraTK::MapFileException(e.what(), ChimeraTK::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
       }
       throw;
     }
@@ -261,11 +261,11 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<mtca4u::RegisterInfoMap> &registerMap) {// LCOV_EXCL_LINE
+  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<ChimeraTK::RegisterInfoMap> &registerMap) {// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Usage of deprecated function detected.                                                      **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Signature:                                                                                  **" << std::endl;// LCOV_EXCL_LINE
-    std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>, boost::shared_ptr<mtca4u::RegisterInfoMap>&) **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>, boost::shared_ptr<ChimeraTK::RegisterInfoMap>&) **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "**                                                                                             **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
@@ -289,4 +289,4 @@ namespace mtca4u {
 
   /********************************************************************************************************************/
 
-}// namespace mtca4u
+}// namespace ChimeraTK

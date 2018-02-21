@@ -8,8 +8,6 @@
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 
-using namespace mtca4u;
-
 namespace ChimeraTK {
 
   boost::shared_ptr<DeviceBackend> SubdeviceBackend::createInstance(std::string /*host*/, std::string instance,
@@ -118,7 +116,7 @@ namespace ChimeraTK {
 
     public:
 
-      FixedPointConvertingDecorator(const boost::shared_ptr<mtca4u::NDRegisterAccessor<TargetUserType>> &target,
+      FixedPointConvertingDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> &target,
                                     FixedPointConverter fixedPointConverter)
       : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter)
       {}
@@ -149,7 +147,7 @@ namespace ChimeraTK {
         _target->postWrite();
       }
 
-      bool mayReplaceOther(const boost::shared_ptr<mtca4u::TransferElement const> &other) const override {
+      bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const> &other) const override {
         auto casted = boost::dynamic_pointer_cast<FixedPointConvertingDecorator<UserType,TargetUserType> const>(other);
         if(!casted) return false;
         if(_fixedPointConverter != casted->_fixedPointConverter) return false;

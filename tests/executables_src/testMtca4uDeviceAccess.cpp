@@ -6,6 +6,9 @@
 #include "PcieBackend.h"
 
 using namespace boost::unit_test_framework;
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 
 #define VALID_MAPPING_FILE_NAME "mtcadummy_withoutModules.map"

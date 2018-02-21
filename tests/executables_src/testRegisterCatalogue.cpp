@@ -3,7 +3,7 @@ using namespace boost::unit_test_framework;
 
 #include "RegisterCatalogue.h"
 
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 class RegisterCatalogueTest {
   public:

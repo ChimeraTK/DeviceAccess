@@ -17,7 +17,7 @@
 #include "Device.h"
 #include "SyncNDRegisterAccessor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
@@ -136,6 +136,6 @@ namespace mtca4u {
 
   };
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H */

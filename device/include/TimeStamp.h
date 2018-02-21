@@ -3,7 +3,7 @@
 
 #include <boost/date_time.hpp>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    * The MTCA4U time stamp consists of the unix time stamp (number of seconds
@@ -73,6 +73,6 @@ namespace mtca4u {
 
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif // MTCA4U_TIME_STAMP_H

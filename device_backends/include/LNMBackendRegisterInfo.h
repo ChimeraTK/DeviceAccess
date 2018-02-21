@@ -12,7 +12,7 @@
 #include "DynamicValue.h"
 #include "ForwardDeclarations.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
   class LNMBackendRegisterInfo : public RegisterInfo {
@@ -125,6 +125,6 @@ namespace mtca4u {
       
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_LNM_BACKEND_REGISTER_INFO_H */

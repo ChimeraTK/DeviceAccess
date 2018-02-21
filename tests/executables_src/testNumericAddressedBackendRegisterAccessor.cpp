@@ -6,6 +6,9 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "TransferGroup.h"
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 
 // Create a test suite which holds all your tests.

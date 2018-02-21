@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-void populateDummyDeviceInfo(mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo,
+void populateDummyDeviceInfo(ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo,
                               std::string dmapFileName, std::string deviceName,
                               std::string deviceFile, std::string mapFileName) {
   static int lineNumber = 1;
@@ -26,8 +26,8 @@ std::string appendNumberToName(std::string name, int suffixNumber) {
   return (deviceName.str());
 }
 
-bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
-                         const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo2) {
+bool compareDeviceInfos(const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1,
+                         const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo2) {
   bool result =
       (deviceInfo1.deviceName == deviceInfo2.deviceName) &&
       (deviceInfo1.uri == deviceInfo2.uri) &&
@@ -37,8 +37,8 @@ bool compareDeviceInfos(const mtca4u::DeviceInfoMap::DeviceInfo& deviceInfo1,
   return result;
 }
 
-bool compareRegisterInfoents(const mtca4u::RegisterInfoMap::RegisterInfo& element1,
-                        const mtca4u::RegisterInfoMap::RegisterInfo& element2) {
+bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& element1,
+                        const ChimeraTK::RegisterInfoMap::RegisterInfo& element2) {
   bool result = (element1.lineNumber == element2.lineNumber) &&
                 (element1.address == element2.address) &&
                 (element1.bar == element2.bar) &&

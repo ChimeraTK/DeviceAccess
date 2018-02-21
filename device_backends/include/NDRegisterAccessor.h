@@ -16,7 +16,7 @@
 #include "DeviceException.h"
 #include "ExperimentalFeatures.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** N-dimensional register accessor. Base class for all register accessor implementations. The user frontend classes
    *  BufferingRegisterAccessor and TwoDRegisterAccessor are using implementations based on this class to perform

@@ -21,7 +21,6 @@
 
 
 namespace ChimeraTK {
-  using namespace mtca4u;
 
   class TcpCtrl;
   struct RebotProtocolImplementor;
@@ -78,10 +77,5 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-// backward compartibility definition
-namespace mtca4u{
-  using namespace ChimeraTK;
-}
 
 #endif /*CHIMERATK_REBOT_BACKEND_H*/

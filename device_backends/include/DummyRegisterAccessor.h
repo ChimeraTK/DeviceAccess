@@ -11,7 +11,7 @@
 #include "DummyBackend.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"    // for the prefixes to the register names
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /// Exception class
   class DummyRegisterException : public Exception {
@@ -328,6 +328,6 @@ namespace mtca4u {
 
   };
 
-}// namespace mtca4u
+}// namespace ChimeraTK
 
 #endif /* MTCA4U_DUMMY_REGISTER_ACCESSOR_H */

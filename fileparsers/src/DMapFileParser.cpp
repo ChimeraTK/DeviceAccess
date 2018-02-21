@@ -8,9 +8,9 @@
 #include "parserUtilities.h"
 #include "MapException.h"
 
-namespace utilities = mtca4u::parserUtilities;
+namespace utilities = ChimeraTK::parserUtilities;
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   DeviceInfoMapPointer DMapFileParser::parse(const std::string &file_name) {
     std::ifstream file;
@@ -99,4 +99,4 @@ namespace mtca4u {
   }
 
   
-}//namespace mtca4u
+}//namespace ChimeraTK

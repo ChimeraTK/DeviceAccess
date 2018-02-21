@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"
 #include "DeviceBackendException.h"
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(BackendLoadingTestSuite)
 

@@ -3,7 +3,7 @@
 
 #include "DeviceBackend.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** A class to provide the exceptions for Pcie device."
    *
@@ -18,7 +18,7 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_PCIE_BACKEND_EXCEPTION_H */
 

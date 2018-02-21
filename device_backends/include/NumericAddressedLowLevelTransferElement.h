@@ -12,7 +12,7 @@
 #include "NumericAddressedBackend.h"
 #include "FixedPointConverter.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   template<typename UserType>
   class NumericAddressedBackendRegisterAccessor;
@@ -171,6 +171,6 @@ namespace mtca4u {
 
   };
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_NUMERIC_ADDRESSED_LOW_LEVEL_TRANSFER_ELEMENT_H */

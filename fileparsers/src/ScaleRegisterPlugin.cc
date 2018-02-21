@@ -9,7 +9,7 @@
 #include "ScaleRegisterPlugin.h"
 #include "NDRegisterAccessorDecorator.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
@@ -124,4 +124,4 @@ namespace mtca4u {
     }
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

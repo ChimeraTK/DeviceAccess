@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   //! common utility methods for dmap file parsing
   namespace parserUtilities {

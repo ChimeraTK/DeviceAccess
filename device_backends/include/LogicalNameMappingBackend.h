@@ -11,7 +11,7 @@
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Backend to map logical register names onto real hardware registers. It reads the logical name map from an xml
    *  file and will open internally additional Devices as they are reference in that file.

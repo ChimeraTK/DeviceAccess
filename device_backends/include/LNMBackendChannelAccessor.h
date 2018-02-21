@@ -16,7 +16,7 @@
 #include "FixedPointConverter.h"
 #include "Device.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
@@ -158,6 +158,6 @@ namespace mtca4u {
 
   };
 
-}    // namespace mtca4u
+}    // namespace ChimeraTK
 
 #endif /* MTCA4U_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H */

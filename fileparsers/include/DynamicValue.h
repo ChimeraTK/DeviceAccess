@@ -15,7 +15,7 @@
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Hold a value of a RegisterInfo field (with proper resolution of dynamic references to other registers) */
   template<typename ValueType>
@@ -135,6 +135,6 @@ namespace mtca4u {
   template<>
   DynamicValue<std::string>& DynamicValue<std::string>::operator=(const DynamicValue<std::string> &rightHandSide);
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_DYNAMIC_VALUE_H */

@@ -7,7 +7,7 @@
 
 #include "DeviceException.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   DeviceException::DeviceException(const std::string &_exMessage, unsigned int _exID)
   : DeviceBackendException(_exMessage, _exID) {
@@ -16,4 +16,4 @@ namespace mtca4u {
   DeviceException::~DeviceException() throw() {
   }
 
-} //namespace mtca4u
+} //namespace ChimeraTK

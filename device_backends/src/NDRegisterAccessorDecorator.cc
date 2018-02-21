@@ -9,11 +9,11 @@
 #include "CopyRegisterDecorator.h"
 #include "SupportedUserTypes.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
   namespace detail {
 
     template<typename T>
-    boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> createCopyDecorator(boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> target) {
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> createCopyDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> target) {
       return boost::make_shared<CopyRegisterDecorator<T>>(target);
     }
 
@@ -26,11 +26,11 @@ namespace {
   template<typename T>
   struct CreateCopyDecoratorInstancer {
       CreateCopyDecoratorInstancer<T>()
-      : ptr(&mtca4u::detail::createCopyDecorator<T>)
+      : ptr(&ChimeraTK::detail::createCopyDecorator<T>)
       {}
 
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> (*ptr)(boost::shared_ptr<mtca4u::NDRegisterAccessor<T>>);
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> (*ptr)(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>);
   };
-  mtca4u::TemplateUserTypeMap<CreateCopyDecoratorInstancer> createCopyDecoratorInstancer;
+  ChimeraTK::TemplateUserTypeMap<CreateCopyDecoratorInstancer> createCopyDecoratorInstancer;
 
 }

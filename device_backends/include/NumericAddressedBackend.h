@@ -8,7 +8,7 @@
 
 #include "DeviceBackendImpl.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Base class for address-based device backends (e.g. PICe, Rebot, ...) */
   class NumericAddressedBackend : public DeviceBackendImpl {
@@ -33,7 +33,7 @@ namespace mtca4u {
 
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
-      std::list<mtca4u::RegisterInfoMap::RegisterInfo> getRegistersInModule(
+      std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath &registerPathName);
@@ -62,6 +62,6 @@ namespace mtca4u {
 
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif /*MTCA4U_MEMORY_ADDRESSED_BACKEND_H*/

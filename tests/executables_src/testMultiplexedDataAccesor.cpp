@@ -14,6 +14,9 @@ using namespace boost::unit_test_framework;
 #include "MultiplexedDataAccessor.h"
 #include "Device.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 
 static const std::string DMAP_FILE_NAME("dummies.dmap");

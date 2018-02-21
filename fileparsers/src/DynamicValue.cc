@@ -7,7 +7,7 @@
 
 #include "DynamicValue.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   template<>
   DynamicValue<std::string>& DynamicValue<std::string>::operator=(const DynamicValue<std::string> &rightHandSide) {
@@ -24,4 +24,4 @@ namespace mtca4u {
     return *this;
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

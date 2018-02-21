@@ -1,7 +1,4 @@
 /**
- *      @file           DMapFilesParser.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
  *      @brief          Provides method to parse DMAP files and MAP files associeted with 
  *                      devices listed in DMAP files. Additionally, provides storage for
  *                      infomration taken from DMAP and MAP files.                 
@@ -15,7 +12,7 @@
 #include <stdint.h>
 #include "DMapFileParser.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    * @brief  Provides method to parse DMAP files and MAP files associeted with
@@ -188,7 +185,7 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /*  MTCA4U_DMAPFILESPARSER_H */
 

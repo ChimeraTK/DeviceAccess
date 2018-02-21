@@ -10,7 +10,7 @@
 
 #include <ostream>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
     * Simple class holding a unique ID for a TransferElement. The ID is guaranteed to be unique for all accessors
@@ -64,6 +64,6 @@ namespace mtca4u {
       friend class TransferElement;
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif // MTCA4U_TRANSFER_ELEMENT_ID_H

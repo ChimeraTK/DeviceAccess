@@ -1,10 +1,3 @@
-/**
- *      @file           DMapFileParser.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
- *      @brief          Provides method to parse DMAP file
- *                  
- */
 #ifndef MTCA4U_DMAP_FILE_PARSER_H
 #define MTCA4U_DMAP_FILE_PARSER_H
 
@@ -12,7 +5,7 @@
 #include <string>
 #include "DeviceInfoMap.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    * @brief  Provides method to parse DMAP file.
@@ -49,7 +42,7 @@ namespace mtca4u {
 
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_DMAP_FILE_PARSER_H */
 

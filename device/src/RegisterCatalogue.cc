@@ -1,7 +1,7 @@
 #include "Device.h"
 #include "RegisterCatalogue.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   boost::shared_ptr<RegisterInfo> RegisterCatalogue::getRegister(const RegisterPath& registerPathName) const {
     auto it = std::find_if(catalogue.begin(),catalogue.end(),
@@ -84,4 +84,4 @@ namespace mtca4u {
     return metadata.cend();
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

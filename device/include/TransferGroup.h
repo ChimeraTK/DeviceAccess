@@ -12,7 +12,7 @@
 
 #include "TransferElementAbstractor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Group multiple data accessors to efficiently trigger data transfers on the whole group. In case of some backends
    *  like the LogicalNameMappingBackend, grouping data accessors can avoid unnecessary transfers of the same data.
@@ -77,6 +77,6 @@ namespace mtca4u {
       bool readOnly;
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_TRANSFER_GROUP_H */

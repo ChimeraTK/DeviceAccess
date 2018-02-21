@@ -61,7 +61,7 @@ namespace ChimeraTK {
 
       /// The target device backend itself. We are using directly a backend since we want to obtain
       //  NDRegisterAccessors which we can directly return in getRegisterAccessor_impl().
-      boost::shared_ptr<mtca4u::DeviceBackend> targetDevice;
+      boost::shared_ptr<ChimeraTK::DeviceBackend> targetDevice;
 
       /// for type == area: the name of the target register
       std::string targetArea;

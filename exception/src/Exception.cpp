@@ -3,7 +3,7 @@
 #include <string>
 #include <iostream>
 
-namespace mtca4u{
+namespace ChimeraTK{
 
 Exception::Exception(const std::string &_exMessage, unsigned int _exID)
 : exMessage(_exMessage), exID(_exID)
@@ -25,4 +25,4 @@ unsigned int Exception::getID() const
 	return exID;
 }
 
-}//namespace mtca4u
+}//namespace ChimeraTK

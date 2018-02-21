@@ -1,6 +1,4 @@
 /**
- *      @file           RegisterInfoMap.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
  *      @brief          Provides storage object for registers description taken from MAP file
  */
 #ifndef MTCA4U_MAP_FILE_H
@@ -16,7 +14,7 @@
 #include "RegisterCatalogue.h"
 #include "RegisterInfo.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @brief  Provides container to store information about registers described in MAP file.
@@ -52,7 +50,7 @@ namespace mtca4u {
        *
        * Stores detailed information about PCIe register and location of its description in MAP file.
        */
-      class RegisterInfo : public mtca4u::RegisterInfo {
+      class RegisterInfo : public ChimeraTK::RegisterInfo {
 
         public:
 
@@ -394,7 +392,7 @@ namespace mtca4u {
   typedef boost::shared_ptr<RegisterInfoMap> RegisterInfoMapPointer;
 
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_MAP_FILE_H */
 

@@ -12,7 +12,7 @@
 
 #include "NDRegisterAccessor.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   namespace detail {
 
@@ -41,7 +41,7 @@ namespace mtca4u {
       protected:
 
         /// The accessor to be decorated
-        boost::shared_ptr<mtca4u::NDRegisterAccessor<TargetUserType>> _target;
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> _target;
 
     };
 
@@ -73,10 +73,10 @@ namespace mtca4u {
 
       protected:
 
-        using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
+        using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
         /// The accessor to be decorated
-        boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> _target;
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _target;
 
     };
 
@@ -90,7 +90,7 @@ namespace mtca4u {
 
     public:
 
-      NDRegisterAccessorDecorator(const boost::shared_ptr<mtca4u::NDRegisterAccessor<TargetUserType>> &target)
+      NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> &target)
       :  detail::NDRegisterAccessorDecoratorImpl<UserType,TargetUserType>( target->getName(), target->getUnit(),
                                                                            target->getDescription()              )
       {
@@ -144,7 +144,7 @@ namespace mtca4u {
         return _target->isWriteable();
       }
 
-      std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
+      std::vector< boost::shared_ptr<ChimeraTK::TransferElement> > getHardwareAccessingElements() override {
         return _target->getHardwareAccessingElements();
       }
 
@@ -158,11 +158,11 @@ namespace mtca4u {
         _target->setPersistentDataStorage(storage);
       }
 
-      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement> newElement) override;
+      void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
 
     protected:
 
-      using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
+      using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
 
       using detail::NDRegisterAccessorDecoratorImpl<UserType,TargetUserType>::_target;
 
@@ -174,17 +174,17 @@ namespace mtca4u {
      *  dependency between this include file and CopyRegisterDecorator.h, which would occur if we would just create
      *  the instance here. */
     template<typename T>
-    boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> createCopyDecorator(boost::shared_ptr<mtca4u::NDRegisterAccessor<T>> target);
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> createCopyDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> target);
 
   }
 
 }
 
 template<typename UserType, typename TargetUserType>
-void mtca4u::NDRegisterAccessorDecorator<UserType,TargetUserType>::replaceTransferElement(
-                                                boost::shared_ptr<mtca4u::TransferElement> newElement) {
+void ChimeraTK::NDRegisterAccessorDecorator<UserType,TargetUserType>::replaceTransferElement(
+                                                boost::shared_ptr<ChimeraTK::TransferElement> newElement) {
 
-    auto casted = boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<TargetUserType>>(newElement);
+    auto casted = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<TargetUserType>>(newElement);
     if(casted && newElement->mayReplaceOther(_target)) {
       if(_target != newElement) {
         _target = detail::createCopyDecorator<TargetUserType>(casted);

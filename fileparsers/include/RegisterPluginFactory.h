@@ -13,7 +13,7 @@
 #include "RegisterInfoPlugin.h"
 #include "DynamicValue.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /** Factory for register plugins. Plugins need to register with the factory. */
   class RegisterPluginFactory {
@@ -47,6 +47,6 @@ namespace mtca4u {
   
   };
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */
 
 #endif /* MTCA4U_REGISTER_PLUGIN_FACTORY_H */

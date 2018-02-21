@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   const char RegisterPath::separator[] = "/";
 
@@ -59,4 +59,4 @@ namespace mtca4u {
     return os << std::string(me);
   }
 
-} /* namespace mtca4u */
+} /* namespace ChimeraTK */

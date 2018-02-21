@@ -13,6 +13,9 @@ using namespace boost::unit_test_framework;
 #include "DeviceException.h"
 #include "NumericAddress.h"
 
+namespace mtca4u{
+  using namespace ChimeraTK;
+}
 using namespace mtca4u;
 using mtca4u::numeric_address::BAR;
 

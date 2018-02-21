@@ -1,9 +1,3 @@
-/**
- *      @file           Exception.h
- *      @author         Adam Piotrowski <adam.piotrowski@desy.de>
- *      @version        1.0
- *      @brief          Provides exception classess for libmap                
- */
 #ifndef MTCA4U_MAP_EXCEPTION_H
 #define MTCA4U_MAP_EXCEPTION_H
 
@@ -11,7 +5,7 @@
 
 #include "Exception.h"
 
-namespace mtca4u {
+namespace ChimeraTK {
 
   /**
    *      @brief  Provides base class for all exceptions from libmap
@@ -100,7 +94,7 @@ namespace mtca4u {
       DMapFileParserException(const std::string &_exMessage, unsigned int _exID);
   };
 
-}//namespace mtca4u
+}//namespace ChimeraTK
 
 #endif  /* MTCA4U_MAP_EXCEPTION_H */
 

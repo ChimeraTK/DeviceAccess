@@ -22,8 +22,8 @@ namespace ChimeraTK {
     *  Note that the behaviour is undefined when putting the same TransferElement into the list - a result might
     *  be e.g. that it blocks for ever. This is due to a limitation in the underlying boost::wait_for_any()
     *  function. */
-  mtca4u::TransferElementID readAny(std::list<std::reference_wrapper<mtca4u::TransferElementAbstractor>> elementsToRead);
-  mtca4u::TransferElementID readAny(std::list<std::reference_wrapper<mtca4u::TransferElement>> elementsToRead);
+  ChimeraTK::TransferElementID readAny(std::list<std::reference_wrapper<ChimeraTK::TransferElementAbstractor>> elementsToRead);
+  ChimeraTK::TransferElementID readAny(std::list<std::reference_wrapper<ChimeraTK::TransferElement>> elementsToRead);
 
 /*******************************************************************************************************************/
 
@@ -74,7 +74,7 @@ namespace ChimeraTK {
   namespace detail {
 
     template<class TransferElementType>
-    mtca4u::TransferElementID readAny(
+    ChimeraTK::TransferElementID readAny(
               std::list<std::reference_wrapper<TransferElementType>> elementsToRead) {
 
       // build list of TransferFutures for all elements. Since readAsync() is a virtual call and we need to visit all
@@ -114,15 +114,15 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  inline mtca4u::TransferElementID readAny(
-          std::list<std::reference_wrapper<mtca4u::TransferElement>> elementsToRead) {
+  inline ChimeraTK::TransferElementID readAny(
+          std::list<std::reference_wrapper<ChimeraTK::TransferElement>> elementsToRead) {
     return detail::readAny(elementsToRead);
   }
 
   /*******************************************************************************************************************/
 
-  inline mtca4u::TransferElementID readAny(
-          std::list<std::reference_wrapper<mtca4u::TransferElementAbstractor>> elementsToRead) {
+  inline ChimeraTK::TransferElementID readAny(
+          std::list<std::reference_wrapper<ChimeraTK::TransferElementAbstractor>> elementsToRead) {
     return detail::readAny(elementsToRead);
   }
 
