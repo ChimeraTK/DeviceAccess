@@ -2,8 +2,8 @@
  * RegisterAccessor.h - Non-buffering accessor for device registers
  */
 
-#ifndef MTCA4U_REGISTER_ACCESSOR_H
-#define MTCA4U_REGISTER_ACCESSOR_H
+#ifndef CHIMERA_TK_REGISTER_ACCESSOR_H
+#define CHIMERA_TK_REGISTER_ACCESSOR_H
 
 #include "VirtualFunctionTemplate.h"
 #include "FixedPointConverter.h"
@@ -259,4 +259,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* MTCA4U_REGISTER_ACCESSOR_H */
+#endif /* CHIMERA_TK_REGISTER_ACCESSOR_H */

@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_SCALE_REGISTER_PLUGIN_H
-#define MTCA4U_SCALE_REGISTER_PLUGIN_H
+#ifndef CHIMERA_TK_SCALE_REGISTER_PLUGIN_H
+#define CHIMERA_TK_SCALE_REGISTER_PLUGIN_H
 
 #include "DataModifierPlugin.h"
 #include "NDRegisterAccessor.h"
@@ -42,4 +42,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_REGISTER_PLUGIN_H */
+#endif /* CHIMERA_TK_REGISTER_PLUGIN_H */

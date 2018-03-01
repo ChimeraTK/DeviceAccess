@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_REGISTER_PLUGIN_FACTORY_H
-#define MTCA4U_REGISTER_PLUGIN_FACTORY_H
+#ifndef CHIMERA_TK_REGISTER_PLUGIN_FACTORY_H
+#define CHIMERA_TK_REGISTER_PLUGIN_FACTORY_H
 
 #include <map>
 
@@ -49,4 +49,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_REGISTER_PLUGIN_FACTORY_H */
+#endif /* CHIMERA_TK_REGISTER_PLUGIN_FACTORY_H */

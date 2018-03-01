@@ -5,8 +5,8 @@
  *      Author: nshehzad
  */
 
-#ifndef MTCA4U_UTILITES_H
-#define MTCA4U_UTILITES_H
+#ifndef CHIMERA_TK_UTILITES_H
+#define CHIMERA_TK_UTILITES_H
 
 #include <list>
 
@@ -86,4 +86,4 @@ void setDMapFilePath(std::string dmapFilePath);
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_UTILITES_H */
+#endif /* CHIMERA_TK_UTILITES_H */

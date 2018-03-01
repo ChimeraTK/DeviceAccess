@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H
-#define MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H
+#ifndef CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H
+#define CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H
 
 /* We need special compiler flags for boost fusion.
  * Make sure they are set before the functions are included.
@@ -115,4 +115,4 @@
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName )                                                   \
       boost::fusion::for_each(functionName ## _vtable.table, functionName ## _vtable_filler(this))
 
-#endif /* MTCA4U_VIRTUAL_FUNCTION_TEMPLATE_H */
+#endif /* CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H */

@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_LOGICAL_NAME_MAP_PARSER_H
-#define MTCA4U_LOGICAL_NAME_MAP_PARSER_H
+#ifndef CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H
+#define CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H
 
 #include <map>
 #include <unordered_set>
@@ -76,4 +76,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* MTCA4U_LOGICAL_NAME_MAP_PARSER_H */
+#endif /* CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H */

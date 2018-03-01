@@ -1,5 +1,5 @@
-#ifndef MTCA4U_DMAP_FILE_PARSER_H
-#define MTCA4U_DMAP_FILE_PARSER_H
+#ifndef CHIMERA_TK_DMAP_FILE_PARSER_H
+#define CHIMERA_TK_DMAP_FILE_PARSER_H
 
 #include <stdint.h>
 #include <string>
@@ -44,5 +44,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_DMAP_FILE_PARSER_H */
+#endif  /* CHIMERA_TK_DMAP_FILE_PARSER_H */
 

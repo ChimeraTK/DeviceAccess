@@ -1,12 +1,12 @@
-#ifndef MTCA4U_TIME_STAMP_H
-#define MTCA4U_TIME_STAMP_H
+#ifndef CHIMERA_TK_TIME_STAMP_H
+#define CHIMERA_TK_TIME_STAMP_H
 
 #include <boost/date_time.hpp>
 
 namespace ChimeraTK {
 
   /**
-   * The MTCA4U time stamp consists of the unix time stamp (number of seconds
+   * The CHIMERA_TK time stamp consists of the unix time stamp (number of seconds
    * since 01.01.1970 00:00:00 UTC).
    * The unsigned 32 bit value will have an overflow on Sun, 7 February 2106.
    * If you need higher resolution than once per second, the nanoseconds field
@@ -75,4 +75,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif // MTCA4U_TIME_STAMP_H
+#endif // CHIMERA_TK_TIME_STAMP_H

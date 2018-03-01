@@ -1,8 +1,8 @@
 /**
  *      @brief          Provides storage object for registers description taken from MAP file
  */
-#ifndef MTCA4U_MAP_FILE_H
-#define MTCA4U_MAP_FILE_H
+#ifndef CHIMERA_TK_MAP_FILE_H
+#define CHIMERA_TK_MAP_FILE_H
 
 #include <stdint.h>
 #include <string>
@@ -394,5 +394,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_MAP_FILE_H */
+#endif  /* CHIMERA_TK_MAP_FILE_H */
 

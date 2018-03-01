@@ -1,5 +1,5 @@
-#ifndef _MTCA4U_DMAPFILE_H_
-#define _MTCA4U_DMAPFILE_H_
+#ifndef _CHIMERA_TK_DMAPFILE_H_
+#define _CHIMERA_TK_DMAPFILE_H_
 
 #warning Using DMapFile is deprecated. The class has been renamed to DeviceInfoMap.
 
@@ -21,4 +21,4 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif /* _MTCA4U_DMAPFILE_H_ */
+#endif /* _CHIMERA_TK_DMAPFILE_H_ */

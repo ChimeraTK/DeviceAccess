@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_NUMERIC_ADDRESS_H
-#define MTCA4U_NUMERIC_ADDRESS_H
+#ifndef CHIMERA_TK_NUMERIC_ADDRESS_H
+#define CHIMERA_TK_NUMERIC_ADDRESS_H
 
 #include "RegisterPath.h"
 
@@ -25,4 +25,4 @@ namespace ChimeraTK {
 
 }
 
-#endif /* MTCA4U_NUMERIC_ADDRESS_H */
+#endif /* CHIMERA_TK_NUMERIC_ADDRESS_H */

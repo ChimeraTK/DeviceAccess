@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_H
-#define MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_H
+#ifndef CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
+#define CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
 
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
@@ -78,4 +78,4 @@ namespace ChimeraTK {
 
 }
 
-#endif /* MTCA4U_LOGICAL_NAME_MAPPING_BACKEND_H */
+#endif /* CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H */

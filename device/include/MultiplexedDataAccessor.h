@@ -1,5 +1,5 @@
-#ifndef MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H
-#define MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H
+#ifndef CHIMERA_TK_MULTIPLEXED_DATA_ACCESSOR_H
+#define CHIMERA_TK_MULTIPLEXED_DATA_ACCESSOR_H
 
 // @todo enable warning after a depcrecation warning for MultiplexedDataAccessor etc. has been released.
 //#warning Including MultiplexDataAccessor.h is deprecated, include RegisterAccessor2D.h instead.
@@ -125,4 +125,4 @@ namespace ChimeraTK {
 
 }
 
-#endif /* MTCA4U_MULTIPLEXED_DATA_ACCESSOR_H */
+#endif /* CHIMERA_TK_MULTIPLEXED_DATA_ACCESSOR_H */

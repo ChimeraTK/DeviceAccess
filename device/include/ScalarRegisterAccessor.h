@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer <martin.hierholzer@desy.de>
  */
 
-#ifndef MTCA4U_SCALAR_REGISTER_ACCESSOR_H
-#define MTCA4U_SCALAR_REGISTER_ACCESSOR_H
+#ifndef CHIMERA_TK_SCALAR_REGISTER_ACCESSOR_H
+#define CHIMERA_TK_SCALAR_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessorAbstractor.h"
 #include "DeviceException.h"
@@ -80,4 +80,4 @@ namespace ChimeraTK {
 
 }    // namespace ChimeraTK
 
-#endif /* MTCA4U_SCALAR_REGISTER_ACCESSOR_H */
+#endif /* CHIMERA_TK_SCALAR_REGISTER_ACCESSOR_H */

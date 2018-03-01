@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_TRANSFER_ELEMENT_H
-#define MTCA4U_TRANSFER_ELEMENT_H
+#ifndef CHIMERA_TK_TRANSFER_ELEMENT_H
+#define CHIMERA_TK_TRANSFER_ELEMENT_H
 
 #include <vector>
 #include <string>
@@ -515,4 +515,4 @@ namespace std {
     }
   };
 }
-#endif /* MTCA4U_TRANSFER_ELEMENT_H */
+#endif /* CHIMERA_TK_TRANSFER_ELEMENT_H */

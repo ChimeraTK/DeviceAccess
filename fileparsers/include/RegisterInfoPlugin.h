@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_REGISTER_INFO_PLUGIN_H
-#define MTCA4U_REGISTER_INFO_PLUGIN_H
+#ifndef CHIMERA_TK_REGISTER_INFO_PLUGIN_H
+#define CHIMERA_TK_REGISTER_INFO_PLUGIN_H
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 
@@ -34,4 +34,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_REGISTER_INFO_PLUGIN_H */
+#endif /* CHIMERA_TK_REGISTER_INFO_PLUGIN_H */

@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_TRANSFER_GROUP_H
-#define MTCA4U_TRANSFER_GROUP_H
+#ifndef CHIMERA_TK_TRANSFER_GROUP_H
+#define CHIMERA_TK_TRANSFER_GROUP_H
 
 #include <set>
 
@@ -79,4 +79,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_TRANSFER_GROUP_H */
+#endif /* CHIMERA_TK_TRANSFER_GROUP_H */

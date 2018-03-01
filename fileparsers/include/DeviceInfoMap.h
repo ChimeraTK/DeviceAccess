@@ -4,8 +4,8 @@
  *      @version        1.0
  *      @brief          Provides storage object for devices descriptions                
  */
-#ifndef MTCA4U_DEVICE_INFO_MAP_H
-#define MTCA4U_DEVICE_INFO_MAP_H
+#ifndef CHIMERA_TK_DEVICE_INFO_MAP_H
+#define CHIMERA_TK_DEVICE_INFO_MAP_H
 
 #include <string>
 #include <stdint.h>
@@ -211,4 +211,4 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_DEVICE_INFO_MAP_H */
+#endif  /* CHIMERA_TK_DEVICE_INFO_MAP_H */

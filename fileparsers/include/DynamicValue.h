@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_DYNAMIC_VALUE_H
-#define MTCA4U_DYNAMIC_VALUE_H
+#ifndef CHIMERA_TK_DYNAMIC_VALUE_H
+#define CHIMERA_TK_DYNAMIC_VALUE_H
 
 #include <type_traits>
 #include <string>
@@ -137,4 +137,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_DYNAMIC_VALUE_H */
+#endif /* CHIMERA_TK_DYNAMIC_VALUE_H */

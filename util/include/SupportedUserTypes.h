@@ -1,12 +1,12 @@
 /*
- * SupportedUserTypes.h - Define boost::fusion::maps of the user data types supported by the MTCA4U library.
+ * SupportedUserTypes.h - Define boost::fusion::maps of the user data types supported by the CHIMERA_TK library.
  *
  *  Created on: Feb 29, 2016
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_SUPPORTED_USER_TYPES_H
-#define MTCA4U_SUPPORTED_USER_TYPES_H
+#ifndef CHIMERA_TK_SUPPORTED_USER_TYPES_H
+#define CHIMERA_TK_SUPPORTED_USER_TYPES_H
 
 #include <boost/fusion/container/map.hpp>
 
@@ -66,4 +66,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_SUPPORTED_USER_TYPES_H */
+#endif /* CHIMERA_TK_SUPPORTED_USER_TYPES_H */

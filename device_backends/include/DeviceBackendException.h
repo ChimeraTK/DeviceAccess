@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_DEVICE_BACKEND_EXCEPTION_H
-#define MTCA4U_DEVICE_BACKEND_EXCEPTION_H
+#ifndef CHIMERA_TK_DEVICE_BACKEND_EXCEPTION_H
+#define CHIMERA_TK_DEVICE_BACKEND_EXCEPTION_H
 
 #include "Exception.h"
 
@@ -25,4 +25,4 @@ namespace ChimeraTK {
 
 }
 
-#endif /* MTCA4U_DEVICE_BACKEND_EXCEPTION_H */
+#endif /* CHIMERA_TK_DEVICE_BACKEND_EXCEPTION_H */

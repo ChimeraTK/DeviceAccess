@@ -1,5 +1,5 @@
-#ifndef MTCA4U_PARSER_UTILITIES_H
-#define MTCA4U_PARSER_UTILITIES_H
+#ifndef CHIMERA_TK_PARSER_UTILITIES_H
+#define CHIMERA_TK_PARSER_UTILITIES_H
 
 #include <string>
 
@@ -75,4 +75,4 @@ namespace ChimeraTK {
   }
 }
 
-#endif /* MTCA4U_PARSER_UTILITIES_H */
+#endif /* CHIMERA_TK_PARSER_UTILITIES_H */

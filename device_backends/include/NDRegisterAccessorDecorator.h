@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_N_D_REGISTER_ACCESSOR_DECORATOR_H
-#define MTCA4U_N_D_REGISTER_ACCESSOR_DECORATOR_H
+#ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
+#define CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H
 
 #include <boost/make_shared.hpp>
 
@@ -196,5 +196,5 @@ void ChimeraTK::NDRegisterAccessorDecorator<UserType,TargetUserType>::replaceTra
 
 }
 
-#endif /* MTCA4U_N_D_REGISTER_ACCESSOR_DECORATOR_H */
+#endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_DECORATOR_H */
 

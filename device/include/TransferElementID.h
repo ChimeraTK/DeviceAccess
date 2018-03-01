@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_TRANSFER_ELEMENT_ID_H
-#define MTCA4U_TRANSFER_ELEMENT_ID_H
+#ifndef CHIMERA_TK_TRANSFER_ELEMENT_ID_H
+#define CHIMERA_TK_TRANSFER_ELEMENT_ID_H
 
 #include <ostream>
 
@@ -66,4 +66,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif // MTCA4U_TRANSFER_ELEMENT_ID_H
+#endif // CHIMERA_TK_TRANSFER_ELEMENT_ID_H

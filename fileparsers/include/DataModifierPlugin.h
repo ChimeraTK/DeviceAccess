@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_DATA_MODIFIER_PLUGIN_H
-#define MTCA4U_DATA_MODIFIER_PLUGIN_H
+#ifndef CHIMERA_TK_DATA_MODIFIER_PLUGIN_H
+#define CHIMERA_TK_DATA_MODIFIER_PLUGIN_H
 
 #include "RegisterInfoPlugin.h"
 #include "VirtualFunctionTemplate.h"
@@ -34,4 +34,4 @@ namespace ChimeraTK {
 } /* namespace ChimeraTK */
 
 
-#endif /* MTCA4U_DATA_MODIFIER_PLUGIN_H */
+#endif /* CHIMERA_TK_DATA_MODIFIER_PLUGIN_H */

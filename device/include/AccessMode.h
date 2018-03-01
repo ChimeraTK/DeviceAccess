@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_ACCESS_MODE_H
-#define MTCA4U_ACCESS_MODE_H
+#ifndef CHIMERA_TK_ACCESS_MODE_H
+#define CHIMERA_TK_ACCESS_MODE_H
 
 #include <set>
 
@@ -94,4 +94,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_ACCESS_MODE_H */
+#endif /* CHIMERA_TK_ACCESS_MODE_H */

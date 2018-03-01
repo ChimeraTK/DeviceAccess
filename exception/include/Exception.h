@@ -1,5 +1,5 @@
-#ifndef MTCA4U_EXCEPTION_H
-#define MTCA4U_EXCEPTION_H
+#ifndef CHIMERA_TK_EXCEPTION_H
+#define CHIMERA_TK_EXCEPTION_H
 
 #include <exception>
 #include <string>
@@ -46,5 +46,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_EXCEPTION_H */
+#endif  /* CHIMERA_TK_EXCEPTION_H */
 

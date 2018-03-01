@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_REGISTER_INFO_H
-#define MTCA4U_REGISTER_INFO_H
+#ifndef CHIMERA_TK_REGISTER_INFO_H
+#define CHIMERA_TK_REGISTER_INFO_H
 
 #include <iostream>
 
@@ -211,4 +211,4 @@ namespace ChimeraTK {
   
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_REGISTER_INFO_H */
+#endif /* CHIMERA_TK_REGISTER_INFO_H */

@@ -1,5 +1,5 @@
-#ifndef MTCA4U_DMAP_FILE_DEFAULTS_H
-#define MTCA4U_DMAP_FILE_DEFAULTS_H
+#ifndef CHIMERA_TK_DMAP_FILE_DEFAULTS_H
+#define CHIMERA_TK_DMAP_FILE_DEFAULTS_H
 
 // This header should only be included in implementations because it contains
 // the DMAP_FILE_PREFIX constant which is defined as compile paramter by CMAKE. You don't
@@ -13,4 +13,4 @@ namespace ChimeraTK {
   
 }// namespace ChimeraTK
 
-#endif //MTCA4U_DMAP_FILE_DEFAULTS_H
+#endif //CHIMERA_TK_DMAP_FILE_DEFAULTS_H

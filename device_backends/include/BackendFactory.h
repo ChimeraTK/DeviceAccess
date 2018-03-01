@@ -1,5 +1,5 @@
-#ifndef MTCA4U_BACKEND_FACTORY_H
-#define MTCA4U_BACKEND_FACTORY_H
+#ifndef CHIMERA_TK_BACKEND_FACTORY_H
+#define CHIMERA_TK_BACKEND_FACTORY_H
 
 #ifdef _DEBUG
 #include <iostream>
@@ -108,4 +108,4 @@ namespace ChimeraTK{
 
 }// namespace ChimeraTK
 
-#endif /* MTCA4U_BACKEND_FACTORY_H */
+#endif /* CHIMERA_TK_BACKEND_FACTORY_H */

@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
-#define MTCA4U_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
+#ifndef CHIMERA_TK_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
+#define CHIMERA_TK_N_D_REGISTER_ACCESSOR_ABSTRACTOR_H
 
 #include "ForwardDeclarations.h"
 #include "TransferElementAbstractor.h"
@@ -72,4 +72,4 @@ namespace ChimeraTK {
   };
 }
 
-#endif /* MTCA4U_N_D_REGISTER_ACCESSOR_BRIDGE_H */
+#endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_BRIDGE_H */

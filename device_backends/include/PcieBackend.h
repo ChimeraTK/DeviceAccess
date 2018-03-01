@@ -1,5 +1,5 @@
-#ifndef MTCA4U_PCIE_BACKEND_H
-#define MTCA4U_PCIE_BACKEND_H
+#ifndef CHIMERA_TK_PCIE_BACKEND_H
+#define CHIMERA_TK_PCIE_BACKEND_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -70,5 +70,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_PCIE_BACKEND_H */
+#endif  /* CHIMERA_TK_PCIE_BACKEND_H */
 

@@ -1,5 +1,5 @@
-#ifndef MTCA4U_MAPFILEPARSER_H
-#define MTCA4U_MAPFILEPARSER_H
+#ifndef CHIMERA_TK_MAPFILEPARSER_H
+#define CHIMERA_TK_MAPFILEPARSER_H
 
 
 #include "RegisterInfoMap.h"
@@ -42,5 +42,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_MAPFILEPARSER_H */
+#endif  /* CHIMERA_TK_MAPFILEPARSER_H */
 

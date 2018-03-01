@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_TRANSFER_ELEMENT_ABSTRACTOR_H
-#define MTCA4U_TRANSFER_ELEMENT_ABSTRACTOR_H
+#ifndef CHIMERA_TK_TRANSFER_ELEMENT_ABSTRACTOR_H
+#define CHIMERA_TK_TRANSFER_ELEMENT_ABSTRACTOR_H
 
 #include <vector>
 #include <string>
@@ -224,4 +224,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_TRANSFER_ELEMENT_BRIDGE_H */
+#endif /* CHIMERA_TK_TRANSFER_ELEMENT_BRIDGE_H */

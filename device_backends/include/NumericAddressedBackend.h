@@ -1,5 +1,5 @@
-#ifndef MTCA4U_MEMORY_ADDRESSED_BACKEND_H
-#define MTCA4U_MEMORY_ADDRESSED_BACKEND_H
+#ifndef CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_H
+#define CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_H
 
 #include <string>
 #include <stdint.h>
@@ -64,4 +64,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /*MTCA4U_MEMORY_ADDRESSED_BACKEND_H*/
+#endif /*CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_H*/

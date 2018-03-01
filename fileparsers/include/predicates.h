@@ -1,8 +1,8 @@
 /**
  *      @brief          Provides set of predicates for stl algorithms                
  */
-#ifndef MTCA4U_PREDICATES_H
-#define MTCA4U_PREDICATES_H
+#ifndef CHIMERA_TK_PREDICATES_H
+#define CHIMERA_TK_PREDICATES_H
 
 #include "DeviceInfoMap.h"
 #include "RegisterInfoMap.h"
@@ -148,5 +148,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_PREDICATES_H */
+#endif  /* CHIMERA_TK_PREDICATES_H */
 

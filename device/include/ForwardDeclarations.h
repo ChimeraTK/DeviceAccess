@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_FORWARD_DECLARATIONS_H
-#define MTCA4U_FORWARD_DECLARATIONS_H
+#ifndef CHIMERA_TK_FORWARD_DECLARATIONS_H
+#define CHIMERA_TK_FORWARD_DECLARATIONS_H
 
 #include <vector>
 
@@ -34,4 +34,4 @@ namespace ChimeraTK{
 
 }
 
-#endif /* MTCA4U_FORWARD_DECLARATIONS_H */
+#endif /* CHIMERA_TK_FORWARD_DECLARATIONS_H */

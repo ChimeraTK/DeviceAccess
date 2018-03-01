@@ -3,8 +3,8 @@
  *                      devices listed in DMAP files. Additionally, provides storage for
  *                      infomration taken from DMAP and MAP files.                 
  */
-#ifndef MTCA4U_DMAPFILESPARSER_H
-#define MTCA4U_DMAPFILESPARSER_H
+#ifndef CHIMERA_TK_DMAPFILESPARSER_H
+#define CHIMERA_TK_DMAPFILESPARSER_H
 
 #include "RegisterInfoMap.h"
 #include "MapFileParser.h"
@@ -187,5 +187,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /*  MTCA4U_DMAPFILESPARSER_H */
+#endif  /*  CHIMERA_TK_DMAPFILESPARSER_H */
 

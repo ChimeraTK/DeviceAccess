@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_TWO_DREGISTER_ACCESSOR_H
-#define MTCA4U_TWO_DREGISTER_ACCESSOR_H
+#ifndef CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H
+#define CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H
 
 #include <boost/smart_ptr.hpp>
 
@@ -82,4 +82,4 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* MTCA4U_TWO_DREGISTER_ACCESSOR_H */
+#endif /* CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H */

@@ -1,5 +1,5 @@
-#ifndef MTCA4U_FIXED_POINT_CONVERTER_H
-#define MTCA4U_FIXED_POINT_CONVERTER_H
+#ifndef CHIMERA_TK_FIXED_POINT_CONVERTER_H
+#define CHIMERA_TK_FIXED_POINT_CONVERTER_H
 
 #include <string>
 #include <stdint.h>
@@ -371,4 +371,4 @@ namespace ChimeraTK{
 
 }// namespace ChimeraTK
 
-#endif // MTCA4U_FIXED_POINT_CONVERTER_H
+#endif // CHIMERA_TK_FIXED_POINT_CONVERTER_H

@@ -2,8 +2,8 @@
  * Device.h
  */
 
-#ifndef MTCA4U_DEVICE_H
-#define MTCA4U_DEVICE_H
+#ifndef CHIMERA_TK_DEVICE_H
+#define CHIMERA_TK_DEVICE_H
 
 #include <boost/algorithm/string.hpp>
 #include <boost/shared_ptr.hpp>
@@ -650,7 +650,7 @@ namespace ChimeraTK {
 
 } // namespace ChimeraTK
 
-#endif /* MTCA4U_DEVICE_H */
+#endif /* CHIMERA_TK_DEVICE_H */
 
 //
 // Include the register accessor header for backwards compatibility, as it used to be part of the Device class.

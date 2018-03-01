@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_DUMMY_REGISTER_ACCESSOR_H
-#define MTCA4U_DUMMY_REGISTER_ACCESSOR_H
+#ifndef CHIMERA_TK_DUMMY_REGISTER_ACCESSOR_H
+#define CHIMERA_TK_DUMMY_REGISTER_ACCESSOR_H
 
 #include "DummyBackend.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"    // for the prefixes to the register names
@@ -330,4 +330,4 @@ namespace ChimeraTK {
 
 }// namespace ChimeraTK
 
-#endif /* MTCA4U_DUMMY_REGISTER_ACCESSOR_H */
+#endif /* CHIMERA_TK_DUMMY_REGISTER_ACCESSOR_H */

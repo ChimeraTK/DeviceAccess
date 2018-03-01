@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_SYNC_N_D_REGISTER_ACCESSOR_H
-#define MTCA4U_SYNC_N_D_REGISTER_ACCESSOR_H
+#ifndef CHIMERA_TK_SYNC_N_D_REGISTER_ACCESSOR_H
+#define CHIMERA_TK_SYNC_N_D_REGISTER_ACCESSOR_H
 
 #include <boost/make_shared.hpp>
 
@@ -92,5 +92,5 @@ namespace ChimeraTK {
 
 }
 
-#endif /* MTCA4U_SYNC_N_D_REGISTER_ACCESSOR_H */
+#endif /* CHIMERA_TK_SYNC_N_D_REGISTER_ACCESSOR_H */
 

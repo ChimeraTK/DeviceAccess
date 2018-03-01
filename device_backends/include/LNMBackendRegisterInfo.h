@@ -5,8 +5,8 @@
  *      Author: mhier
  */
 
-#ifndef MTCA4U_LNM_BACKEND_REGISTER_INFO_H
-#define MTCA4U_LNM_BACKEND_REGISTER_INFO_H
+#ifndef CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
+#define CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
 
 #include "RegisterInfo.h"
 #include "DynamicValue.h"
@@ -127,4 +127,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_LNM_BACKEND_REGISTER_INFO_H */
+#endif /* CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H */

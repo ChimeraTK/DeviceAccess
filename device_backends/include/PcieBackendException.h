@@ -1,5 +1,5 @@
-#ifndef MTCA4U_PCIE_BACKEND_EXCEPTION_H
-#define MTCA4U_PCIE_BACKEND_EXCEPTION_H
+#ifndef CHIMERA_TK_PCIE_BACKEND_EXCEPTION_H
+#define CHIMERA_TK_PCIE_BACKEND_EXCEPTION_H
 
 #include "DeviceBackend.h"
 
@@ -20,5 +20,5 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif  /* MTCA4U_PCIE_BACKEND_EXCEPTION_H */
+#endif  /* CHIMERA_TK_PCIE_BACKEND_EXCEPTION_H */
 

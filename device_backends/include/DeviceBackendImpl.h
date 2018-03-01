@@ -1,5 +1,5 @@
-#ifndef MTCA4U_DEVICE_BACKEND_IMPL_H
-#define MTCA4U_DEVICE_BACKEND_IMPL_H
+#ifndef CHIMERA_TK_DEVICE_BACKEND_IMPL_H
+#define CHIMERA_TK_DEVICE_BACKEND_IMPL_H
 
 #include <list>
 
@@ -83,4 +83,4 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif /*MTCA4U_DEVICE_BACKEND_IMPL_H*/
+#endif /*CHIMERA_TK_DEVICE_BACKEND_IMPL_H*/

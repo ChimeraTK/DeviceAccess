@@ -1,5 +1,5 @@
-#ifndef MTCA4U_DUMMY_BACKEND_H
-#define MTCA4U_DUMMY_BACKEND_H
+#ifndef CHIMERA_TK_DUMMY_BACKEND_H
+#define CHIMERA_TK_DUMMY_BACKEND_H
 
 #include <vector>
 #include <map>
@@ -169,4 +169,4 @@ namespace ChimeraTK {
 
 }//namespace ChimeraTK
 
-#endif // MTCA4U_DUMMY_BACKEND_H
+#endif // CHIMERA_TK_DUMMY_BACKEND_H

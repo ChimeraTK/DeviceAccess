@@ -5,8 +5,8 @@
  *      Author: Martin Hierholzer
  */
 
-#ifndef MTCA4U_REGISTER_PATH_H
-#define MTCA4U_REGISTER_PATH_H
+#ifndef CHIMERA_TK_REGISTER_PATH_H
+#define CHIMERA_TK_REGISTER_PATH_H
 
 #include <string>
 #include <vector>
@@ -63,14 +63,18 @@ namespace ChimeraTK {
         return *this;
       }
 
-      /** < operator: comparison used for sorting e.g. in std::map */
+      /** < operator: comparison used for sorting e.g.\ in std::map */
       bool operator<(const RegisterPath &rightHandSide) const {
         std::string sepalt = getCommonAltSeparator(rightHandSide);
         return getWithOtherSeparatorReplaced(sepalt) < rightHandSide.getWithOtherSeparatorReplaced(sepalt);
       }
 
-      /** Post-decrement operator, e.g.: registerPath--
-       *  Remove the last element from the path */
+      /** Cut-right operator, e.g.\ \c registerPath--
+       *
+       *  Remove the last element from the path and return the modified path.
+       *  @attention In contrast to the \c xx-- operator on numeric types this is NOT a post operator! It 
+       *  returns the already modified register path.
+       */
       RegisterPath& operator--(int) {
         std::size_t found = path.find_last_of(std::string(separator));
         if(found != std::string::npos && found > 0) {               // don't find the leading separator...
@@ -82,8 +86,9 @@ namespace ChimeraTK {
         return *this;
       }
 
-      /** Pre-decrement operator, e.g.: --registerPath
-       *  Remove the first element form the path */
+      /** Cut-left operator, e.g.\ \c --registerPath
+       *
+       *  Remove the first element form the path and return the modified path. */
       RegisterPath& operator--() {
         std::size_t found = path.find_first_of(std::string(separator),1);        // don't find the leading separator...
         if(found != std::string::npos) {
@@ -240,4 +245,4 @@ namespace ChimeraTK {
 
 } /* namespace ChimeraTK */
 
-#endif /* MTCA4U_REGISTER_PATH_H */
+#endif /* CHIMERA_TK_REGISTER_PATH_H */
