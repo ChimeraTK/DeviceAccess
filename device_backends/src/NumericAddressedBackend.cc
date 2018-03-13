@@ -34,25 +34,25 @@ namespace ChimeraTK {
       return boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
     }
     else {
-      boost::shared_ptr<RegisterInfoMap::RegisterInfo> info(new RegisterInfoMap::RegisterInfo());
       auto components = registerPathName.getComponents();
       if(components.size() != 3) {
         throw DeviceException("Illegal numeric address: '"+(registerPathName)+"'", DeviceException::REGISTER_DOES_NOT_EXIST);
       }
-      info->bar = std::stoi(components[1]);
+      auto bar = std::stoi(components[1]);
       size_t pos = components[2].find_first_of("*");
-      info->address = std::stoi(components[2].substr(0,pos));
+      auto address = std::stoi(components[2].substr(0,pos));
+      size_t nBytes;
       if(pos != std::string::npos) {
-        info->nBytes = std::stoi(components[2].substr(pos+1));
+        nBytes = std::stoi(components[2].substr(pos+1));
       }
       else {
-        info->nBytes = sizeof(int32_t);
+        nBytes = sizeof(int32_t);
       }
-      info->nElements = info->nBytes/sizeof(int32_t);
-      if(info->nBytes == 0 || info->nBytes % sizeof(int32_t) != 0) {
+      auto nElements = nBytes/sizeof(int32_t);
+      if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
         throw DeviceException("Illegal numeric address: '"+(registerPathName)+"'", DeviceException::REGISTER_DOES_NOT_EXIST);
       }
-      return info;
+      return boost::make_shared<RegisterInfoMap::RegisterInfo>(registerPathName, nElements, address, nBytes, bar);
     }
   }
 

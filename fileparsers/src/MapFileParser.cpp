@@ -20,7 +20,16 @@ namespace ChimeraTK {
       throw MapFileException("Cannot open file \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_MAP_FILE);
     }
     RegisterInfoMapPointer pmap(new RegisterInfoMap(file_name));
-    RegisterInfoMap::RegisterInfo registerInfo;
+    std::string name; /**< Name of register */
+    uint32_t nElements; /**< Number of elements in register */
+    uint32_t address; /**< Relative address in bytes from beginning  of the bar(Base Address Range)*/
+    uint32_t nBytes; /**< Size of register expressed in bytes */
+    uint32_t bar; /**< Number of bar with register */
+    uint32_t width; /**< Number of significant bits in the register */
+    int32_t  nFractionalBits; /**< Number of fractional bits */
+    bool     signedFlag; /**< Signed/Unsigned flag */
+    uint32_t lineNumber; /**< Number of line with description of register in MAP file */
+    std::string module; /**< Name of the module this register is in*/
 
     while (std::getline(file, line)) {
       bool failed = false;
@@ -56,35 +65,35 @@ namespace ChimeraTK {
       is >> moduleAndRegisterName;
 
       std::pair<std::string, std::string> moduleAndNamePair = splitStringAtLastDot(moduleAndRegisterName);
-      registerInfo.module = moduleAndNamePair.first;
-      registerInfo.name = moduleAndNamePair.second;
-      if ( registerInfo.name.empty() ){
+      module = moduleAndNamePair.first;
+      name = moduleAndNamePair.second;
+      if ( name.empty() ){
         std::ostringstream errorMessage;
         errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
         throw MapFileParserException(errorMessage.str(), LibMapException::EX_MAP_FILE_PARSE_ERROR);
       }
 
-      is >> std::setbase(0) >> registerInfo.nElements >> std::setbase(0) >> registerInfo.address >> std::setbase(0) >> registerInfo.nBytes;
+      is >> std::setbase(0) >> nElements >> std::setbase(0) >> address >> std::setbase(0) >> nBytes;
       if (!is){
         std::ostringstream os;
         os << line_nr;
         throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
       }
       // first, set default values for 'optional' fields
-      registerInfo.bar = 0x0;
-      registerInfo.width= 32;
-      registerInfo.nFractionalBits = 0;
-      registerInfo.signedFlag = true;
-      is >> std::setbase(0) >> registerInfo.bar;
+      bar = 0x0;
+      width= 32;
+      nFractionalBits = 0;
+      signedFlag = true;
+      is >> std::setbase(0) >> bar;
       if (is.fail()){
         failed = true;
       }
       if (!failed) {
-        is >> std::setbase(0) >> registerInfo.width;
+        is >> std::setbase(0) >> width;
         if (is.fail()){
           failed = true;
         } else {
-          if (registerInfo.width > 32) {
+          if (width > 32) {
             std::ostringstream os;
             os << line_nr;
             throw MapFileParserException("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
@@ -92,11 +101,11 @@ namespace ChimeraTK {
         }
       }
       if (!failed) {
-        is >> std::setbase(0) >> registerInfo.nFractionalBits;
+        is >> std::setbase(0) >> nFractionalBits;
         if (is.fail()){
           failed = true;
         } else {
-          if (registerInfo.nFractionalBits > 1023 || registerInfo.nFractionalBits < -1024) {
+          if (nFractionalBits > 1023 || nFractionalBits < -1024) {
             std::ostringstream os;
             os << line_nr;
             throw MapFileParserException("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
@@ -105,14 +114,17 @@ namespace ChimeraTK {
       }
 
       if (!failed) {
-        is >> std::setbase(0) >> registerInfo.signedFlag;
+        is >> std::setbase(0) >> signedFlag;
         // no need to check if 'is' failed. Insert a check to set the failed flags if more fields are added
         //if (is.fail()){
         //  failed = true;
         //}
       }
       is.clear();
-      registerInfo.lineNumber = line_nr;
+      lineNumber = line_nr;
+
+      RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
+                                                 signedFlag, lineNumber, module);
       pmap->insert(registerInfo);
     }
 
@@ -121,25 +133,22 @@ namespace ChimeraTK {
     for(auto &info: *pmap) {
       // check if 2D register, otherwise ignore
       if(info.name.substr(0, MULTIPLEXED_SEQUENCE_PREFIX.length()) != MULTIPLEXED_SEQUENCE_PREFIX) continue;
-      // create copy of the entry
-      RegisterInfoMap::RegisterInfo newEntry = info;
       // name of the 2D register is the name without the sequence prefix
-      newEntry.name = info.name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
+      name = info.name.substr(MULTIPLEXED_SEQUENCE_PREFIX.length());
       // count number of channels and number of entries per channel
       size_t nChannels = 0;
       size_t nBytesPerEntry = 0;        // nb. of bytes per entry for all channels together
       auto cat = pmap->getRegisterCatalogue();
-      while(cat.hasRegister( RegisterPath(info.module)/(SEQUENCE_PREFIX+newEntry.name+"_"+std::to_string(nChannels)) )) {
+      while(cat.hasRegister( RegisterPath(info.module)/(SEQUENCE_PREFIX+name+"_"+std::to_string(nChannels)) )) {
         RegisterInfoMap::RegisterInfo subInfo;
-        pmap->getRegisterInfo(RegisterPath(info.module)/(SEQUENCE_PREFIX+newEntry.name+"_"+std::to_string(nChannels)), subInfo);
+        pmap->getRegisterInfo(RegisterPath(info.module)/(SEQUENCE_PREFIX+name+"_"+std::to_string(nChannels)), subInfo);
         nBytesPerEntry += subInfo.nBytes;
         nChannels++;
       }
-      newEntry.nChannels = nChannels;
-      if(nChannels > 0) newEntry.nElements = newEntry.nBytes / nBytesPerEntry;
-      // mark it as 2D multiplexed
-      newEntry.is2DMultiplexed = true;
+      if(nChannels > 0) nElements = info.nBytes / nBytesPerEntry;
       // add it to the map
+      RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, info.nBytes, info.bar, info.width, info.nFractionalBits,
+                                             info.signedFlag, info.lineNumber, info.module, nChannels, true);
       newInfos.push_back(newEntry);
     }
     // insert the new entries to the catalogue

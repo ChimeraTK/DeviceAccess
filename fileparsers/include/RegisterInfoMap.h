@@ -79,24 +79,22 @@ namespace ChimeraTK {
             return dataDescriptor;
           }
 
-          std::string name; /**< Name of register */
-          uint32_t nElements; /**< Number of elements in register */
-          uint32_t nChannels; /**< Number of channels/sequences */
-          bool     is2DMultiplexed; /**< Flag if register is a 2D multiplexed register (otherwise it is 1D or scalar) */
-          uint32_t address; /**< Relative address in bytes from beginning  of the bar(Base Address Range)*/
-          uint32_t nBytes; /**< Size of register expressed in bytes */
-          uint32_t bar; /**< Number of bar with register */
-          uint32_t width; /**< Number of significant bits in the register */
-          int32_t  nFractionalBits; /**< Number of fractional bits */
-          bool     signedFlag; /**< Signed/Unsigned flag */
-          uint32_t lineNumber; /**< Number of line with description of register in MAP file */
-          std::string module; /**< Name of the module this register is in*/
-
-          DataDescriptor dataDescriptor;
+          const std::string name; /**< Name of register */
+          const uint32_t nElements; /**< Number of elements in register */
+          const uint32_t nChannels; /**< Number of channels/sequences */
+          const bool     is2DMultiplexed; /**< Flag if register is a 2D multiplexed register (otherwise it is 1D or scalar) */
+          const uint32_t address; /**< Relative address in bytes from beginning  of the bar(Base Address Range)*/
+          const uint32_t nBytes; /**< Size of register expressed in bytes */
+          const uint32_t bar; /**< Number of bar with register */
+          const uint32_t width; /**< Number of significant bits in the register */
+          const int32_t  nFractionalBits; /**< Number of fractional bits */
+          const bool     signedFlag; /**< Signed/Unsigned flag */
+          const uint32_t lineNumber; /**< Number of line with description of register in MAP file */
+          const std::string module; /**< Name of the module this register is in*/
 
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
-          /// Convenience constructor which sets all data members. They all have default values, so this
+          /// Constructor to set all data members. They all have default values, so this
           /// also acts as default constructor.
           RegisterInfo(std::string const & name_ = std::string(), // an empty string
               uint32_t nElements_ = 0,
@@ -110,6 +108,20 @@ namespace ChimeraTK {
               std::string const & module_ = std::string(),
               uint32_t nChannels_ = 1,
               bool is2DMultiplexed_ = false );
+
+          // Copy assignment
+          RegisterInfo& operator=(const RegisterInfo &other) {
+            // Copy assignment is implemented to in-place destroy and then in-place copy-construct the object.
+            // This is needed since all our members are const.
+            this->~RegisterInfo();
+            new(this) RegisterInfo(other);
+            return *this;
+          }
+
+        protected:
+
+          DataDescriptor dataDescriptor;
+
       };
 
 
