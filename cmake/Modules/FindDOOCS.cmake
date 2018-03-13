@@ -58,6 +58,13 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";server;")
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} EqServer)
 endif()
 
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";ddaq;")
+  FIND_PATH(DOOCS_DIR_SERVER libDOOCSddaq.so
+    ${DOOCS_DIR}
+  )
+  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSddaq timinginfo daqevstat DAQFSM TTF2XML xerces-c BM TTF2evutl)
+endif()
+
 set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap)
 
 # now set the required variables based on the determined DOOCS_DIR
