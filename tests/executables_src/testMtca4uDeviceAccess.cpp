@@ -226,7 +226,7 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   RegisterInfoMap::RegisterInfo registerInfo = registerAccessor->getRegisterInfo();
   BOOST_CHECK(registerInfo.address == 0x0);
   BOOST_CHECK(registerInfo.nElements == 0x400);
-  BOOST_CHECK(registerInfo.nBytes = 0x1000);
+  BOOST_CHECK(registerInfo.nBytes == 0x1000);
   BOOST_CHECK(registerInfo.bar == 2);
   // the dmaable area has no fixed point settings, which has to result in
   // the default 32 0 true (like raw words)
@@ -244,7 +244,7 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   BOOST_CHECK(registerInfo.name == "WORD_FIRMWARE");
   BOOST_CHECK(registerInfo.address == 0x0);
   BOOST_CHECK(registerInfo.nElements == 0x1);
-  BOOST_CHECK(registerInfo.nBytes = 0x4);
+  BOOST_CHECK(registerInfo.nBytes == 0x4);
   BOOST_CHECK(registerInfo.bar == 0);
   BOOST_CHECK(registerInfo.width == 32);
   BOOST_CHECK(registerInfo.nFractionalBits == 0);
@@ -255,7 +255,7 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   BOOST_CHECK(registerInfo.name == "WORD_INCOMPLETE_1");
   BOOST_CHECK(registerInfo.address == 0x60);
   BOOST_CHECK(registerInfo.nElements == 0x1);
-  BOOST_CHECK(registerInfo.nBytes = 0x4);
+  BOOST_CHECK(registerInfo.nBytes == 0x4);
   BOOST_CHECK(registerInfo.bar == 0);
   BOOST_CHECK(registerInfo.width == 13);
   BOOST_CHECK(registerInfo.nFractionalBits == 0);
@@ -266,7 +266,7 @@ void MtcaDeviceTest::testRegisterAccessor_getRegisterInfo() {
   BOOST_CHECK(registerInfo.name == "WORD_INCOMPLETE_2");
   BOOST_CHECK(registerInfo.address == 0x64);
   BOOST_CHECK(registerInfo.nElements == 0x1);
-  BOOST_CHECK(registerInfo.nBytes = 0x4);
+  BOOST_CHECK(registerInfo.nBytes == 0x4);
   BOOST_CHECK(registerInfo.bar == 0);
   BOOST_CHECK(registerInfo.width == 13);
   BOOST_CHECK(registerInfo.nFractionalBits == 8);
