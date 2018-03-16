@@ -138,17 +138,29 @@ namespace ChimeraTK {
       // count number of channels and number of entries per channel
       size_t nChannels = 0;
       size_t nBytesPerEntry = 0;        // nb. of bytes per entry for all channels together
+      // We have to aggregate the fractional/ signed information of all cannels. Afterwards we set fractional to 9999 (way out of range, max allowed is 1023) 
+      // if there are fractional bits, just to indicate that the register is not integer and probablu a floating point accessor should be used (e.g. in QtHardMon).
+      bool isSigned = false;
+      bool isInteger = true;
+      uint32_t maxWidth=0;
       auto cat = pmap->getRegisterCatalogue();
       while(cat.hasRegister( RegisterPath(info.module)/(SEQUENCE_PREFIX+name+"_"+std::to_string(nChannels)) )) {
         RegisterInfoMap::RegisterInfo subInfo;
         pmap->getRegisterInfo(RegisterPath(info.module)/(SEQUENCE_PREFIX+name+"_"+std::to_string(nChannels)), subInfo);
         nBytesPerEntry += subInfo.nBytes;
         nChannels++;
+        if (subInfo.signedFlag){
+          isSigned=true;
+        }
+        if (subInfo.nFractionalBits > 0){
+          isInteger = false;
+        }
+        maxWidth=std::max(maxWidth, subInfo.width);
       }
       if(nChannels > 0) nElements = info.nBytes / nBytesPerEntry;
       // add it to the map
-      RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, info.nBytes, info.bar, info.width, info.nFractionalBits,
-                                             info.signedFlag, info.lineNumber, info.module, nChannels, true);
+      RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, info.nBytes, info.bar, maxWidth, (isInteger?0:9999) /*fractional bits*/,
+                                             isSigned, info.lineNumber, info.module, nChannels, true);
       newInfos.push_back(newEntry);
     }
     // insert the new entries to the catalogue
