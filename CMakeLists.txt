@@ -178,7 +178,11 @@ set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUD
 set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+else()
 set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
+endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
