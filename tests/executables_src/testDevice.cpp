@@ -1,4 +1,6 @@
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
+
 #include <cstring>
 
 #include "Device.h"
@@ -76,11 +78,12 @@ class DeviceTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&DeviceTest::testGetRegisterAccessorsInModule, DeviceTestPtr) );
     }
 };
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "Device class test suite";
   framework::master_test_suite().add(new DeviceTestSuite());
 
-  return NULL;
+  return true;
 }
 
 void DeviceTest::testDeviceReadRegisterByName() {

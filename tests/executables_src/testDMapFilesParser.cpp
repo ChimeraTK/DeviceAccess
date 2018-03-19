@@ -1,10 +1,13 @@
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 
 #include "DMapFilesParser.h"
 #include "helperFunctions.h"
 #include "parserUtilities.h"
 #include "MapException.h"
 #include "Utilities.h"
+
+#include <boost/bind.hpp>
 
 using namespace boost::unit_test_framework;
 namespace mtca4u{
@@ -113,12 +116,12 @@ class DMapFilesParserTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value =
       "dMapFilesParser class test suite";
   framework::master_test_suite().add(new DMapFilesParserTestSuite());
 
-  return NULL;
+  return true;
 }
 
 void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {

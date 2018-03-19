@@ -1,4 +1,6 @@
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
+
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -151,11 +153,11 @@ class DummyBackendTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "DummyBackend test suite";
   framework::master_test_suite().add(new DummyBackendTestSuite);
 
-  return NULL;
+  return true;
 }
 
 void DummyBackendTest::testCalculateVirtualAddress() {

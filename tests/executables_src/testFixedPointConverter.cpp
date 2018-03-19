@@ -1,3 +1,8 @@
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE FixedPointConverterTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
+
 /*  Test requirements:
  *  Test to and from double for the follwing cases:
  *  int32, uint32, int16, uint16, int8, uint8. No fractional bits (standard data types)
@@ -26,11 +31,6 @@
     checkToFixedPoint( converter, -3.25, -3 );\
     checkToFixedPoint( converter, 5.75, 6 );\
     checkToFixedPoint( converter, -5.75, -6 );
-
-
-#define BOOST_TEST_MODULE FixedPointConverterTest
-#include <boost/test/included/unit_test.hpp>
-using namespace boost::unit_test_framework;
 
 #include <sstream>
 #include "DeviceException.h"

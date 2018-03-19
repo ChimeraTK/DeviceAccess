@@ -1,11 +1,5 @@
-/*
- * testTransferGroup.cpp
- *
- *  Created on: Feb 11, 2016
- *      Author: Martin Hierholzer
- */
-
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 
 #include "TransferGroup.h"
 #include "BufferingRegisterAccessor.h"
@@ -79,11 +73,11 @@ class TransferGroupTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "TransferGroup class test suite";
   framework::master_test_suite().add(new TransferGroupTestSuite());
 
-  return NULL;
+  return true;
 }
 
 void TransferGroupTest::testAdding() {

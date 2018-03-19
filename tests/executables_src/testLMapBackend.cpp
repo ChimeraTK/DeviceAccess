@@ -1,11 +1,5 @@
-/*
- * testLMapBackend.cpp
- *
- *  Created on: Feb 8, 2016
- *      Author: Martin Hierholzer
- */
-
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 
 #include "Device.h"
 #include "BufferingRegisterAccessor.h"
@@ -63,11 +57,11 @@ class LMapBackendTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "LogicalNameMappingBackend test suite";
   framework::master_test_suite().add(new LMapBackendTestSuite());
 
-  return NULL;
+  return true;
 }
 
 /********************************************************************************************************************/

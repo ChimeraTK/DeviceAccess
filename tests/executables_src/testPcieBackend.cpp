@@ -1,4 +1,5 @@
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 using namespace boost::unit_test_framework;
 
 #define PCIEDEV_TEST_SLOT 0
@@ -163,9 +164,7 @@ class PcieBackendTestSuite : public test_suite {
 
 };
 
-test_suite*
-init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
-{
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "PcieBackend test suite";
 
   std::stringstream llrfdummyFileName;
@@ -182,7 +181,7 @@ init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
   framework::master_test_suite().add( new PcieBackendTestSuite(PCIE_UNI_DEVICE, PCIEUNI_TEST_SLOT) );
 
 
-  return NULL;
+  return true;
 }
 
 // The implementations of the individual tests

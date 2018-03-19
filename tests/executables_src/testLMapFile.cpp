@@ -1,11 +1,5 @@
-/*
- * testLMapFile.cpp
- *
- *  Created on: Feb 8, 2016
- *      Author: Martin Hierholzer
- */
-
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 
 #include "LogicalNameMapParser.h"
 #include "LNMBackendRegisterInfo.h"
@@ -35,11 +29,11 @@ class LMapFileTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "LogicalNameMap class test suite";
   framework::master_test_suite().add(new LMapFileTestSuite());
 
-  return NULL;
+  return true;
 }
 
 void testErrorInDmapFileSingle(std::string fileName) {

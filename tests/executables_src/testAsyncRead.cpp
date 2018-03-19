@@ -1,9 +1,11 @@
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
+
 #include <algorithm>
 #include <thread>
 #include <atomic>
 
 #include <boost/thread.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include "Device.h"
 #include "DummyRegisterAccessor.h"
@@ -102,8 +104,8 @@ class  AsyncReadTestSuite : public test_suite {
     }};
 
 /**********************************************************************************************************************/
-test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
-{
+bool init_unit_test(){
+  std::cout << "This is the alternative init" << std::endl;
   BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance,
                                                     CHIMERATK_DEVICEACCESS_VERSION);
   BackendFactory::getInstance().registerBackendType("AsyncDefaultImplTestDummy","",&AsyncDefaultImplTestDummy::createInstance,
@@ -113,8 +115,9 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
   framework::master_test_suite().p_name.value = "Async read test suite";
   framework::master_test_suite().add(new AsyncReadTestSuite);
 
-  return NULL;
+  return true;
 }
+
 
 /**********************************************************************************************************************/
 void AsyncReadTest::testAsyncRead() {

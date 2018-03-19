@@ -1,4 +1,5 @@
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 using namespace boost::unit_test_framework;
 
 #include "RegisterCatalogue.h"
@@ -19,12 +20,11 @@ class registerCatalogueTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
-{
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "RegisterCatalogue class test suite";
   framework::master_test_suite().add(new registerCatalogueTestSuite());
 
-  return NULL;
+  return true;
 }
 
 class myRegisterInfo : public RegisterInfo {

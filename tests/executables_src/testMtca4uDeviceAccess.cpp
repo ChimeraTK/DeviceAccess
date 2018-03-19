@@ -1,5 +1,7 @@
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
+
 #include <cmath>
-#include <boost/test/included/unit_test.hpp>
 
 #include "Device.h"
 #include "MapFileParser.h"
@@ -133,10 +135,11 @@ class MtcaDeviceTestSuite : public test_suite {
 };
 
 // Register the test suite with the testing system so it is executed.
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value = "mtca4u-deviceaccess test suite";
+  framework::master_test_suite().add(new MtcaDeviceTestSuite);
 
-  return new MtcaDeviceTestSuite;
+  return true;
 }
 
 // The implementations of the individual tests

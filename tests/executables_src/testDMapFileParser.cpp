@@ -1,4 +1,5 @@
-#include <boost/test/included/unit_test.hpp>
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
 
 #include "DMapFileParser.h"
 #include "MapException.h"
@@ -41,12 +42,12 @@ class DMapFileParserTestSuite : public test_suite {
     }
 };
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+bool init_unit_test(){
   framework::master_test_suite().p_name.value =
       "DMapFileParser class test suite";
   framework::master_test_suite().add(new DMapFileParserTestSuite());
 
-  return NULL;
+  return true;
 }
 
 void DMapFileParserTest::testFileNotFound() {

@@ -1,6 +1,8 @@
+///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#include "boost_dynamic_init_test.h"
+
 #include <algorithm>
 #include <math.h>
-#include <boost/test/included/unit_test.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -56,12 +58,12 @@ class  BufferingRegisterTestSuite : public test_suite {
     }};
 
 /**********************************************************************************************************************/
-test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
+bool init_unit_test()
 {
   framework::master_test_suite().p_name.value = "DummyRegister test suite";
   framework::master_test_suite().add(new BufferingRegisterTestSuite);
 
-  return NULL;
+  return true;
 }
 
 
