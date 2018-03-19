@@ -74,18 +74,6 @@ PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
 
-include_directories(${PROJECT_SOURCE_DIR}/exception/include)
-include_directories("${PROJECT_SOURCE_DIR}/util/include")
-include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
-include_directories("${PROJECT_SOURCE_DIR}/device_backends/include")
-include_directories("${PROJECT_SOURCE_DIR}/device/include")
-
-configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
-include_directories("${PROJECT_BINARY_DIR}/generated_include")
-
-# Only these include directories should be copied for examples.
-get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -94,6 +82,21 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 else()
   set(HAVE_PCIE_BACKEND 0)
 endif()
+
+include_directories(${PROJECT_SOURCE_DIR}/exception/include)
+include_directories("${PROJECT_SOURCE_DIR}/util/include")
+include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
+include_directories("${PROJECT_SOURCE_DIR}/device_backends/include")
+if(HAVE_PCIE_BACKEND)
+include_directories("${PROJECT_SOURCE_DIR}/device_backends/pcie/include")
+endif()
+include_directories("${PROJECT_SOURCE_DIR}/device/include")
+
+configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
+include_directories("${PROJECT_BINARY_DIR}/generated_include")
+
+# Only these include directories should be copied for examples.
+get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
 # Now add other includes; headers added after this point will  not be copied as
 # part of the installation
@@ -110,6 +113,9 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends")
+if(HAVE_PCIE_BACKEND)
+add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends/pcie")
+endif()
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
 
@@ -172,7 +178,11 @@ set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUD
 set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+else()
 set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
+endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
