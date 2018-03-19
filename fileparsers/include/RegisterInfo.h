@@ -29,11 +29,11 @@ namespace ChimeraTK {
        *  data type on the device. This conversion does not change the shape of the data but
        *  descibes the data type of a single data point.
        * 
-       *  \li Example 1:\br
+       *  \li Example 1:<br>
        *  If
        *  the raw data on the transport layer is multiplexed with fixed point conversion, this only describes
        *  what the raw type of the fixed point conversion is, but not the multiplexing.
-       *  \li Example 2: (possible, currently not implemented scenario)\br
+       *  \li Example 2: (possible, currently not implemented scenario)<br>
        *  If the raw data on the transport layer is text and the data words have to be interpreted 
        *  from the received string, the raw data will only be the text snippet representing the
        *  one data point.
@@ -53,7 +53,7 @@ namespace ChimeraTK {
        *  \li A text string containing data for multiple scalars which are mapped to different registers
        *  \li The byte sequence of a "struct" with data for multiple registers of different data types
        * 
-       *  @notice This enum is not used anywhere yet. Transport layer data cannot be accessed with
+       *  Notice: This enum is not used anywhere yet. Transport layer data cannot be accessed with
        *  the current implementation. This data type is put here for conceputal completeness.
        */
       enum class TransportLayerRawType { none, int32 };
