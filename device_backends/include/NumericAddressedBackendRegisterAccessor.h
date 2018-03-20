@@ -68,16 +68,18 @@ namespace ChimeraTK {
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
 
           // configure fixed point converter
-          if(!flags.has(AccessMode::raw)) {
-            _fixedPointConverter = FixedPointConverter(_registerPathName, _registerInfo->width, _registerInfo->nFractionalBits,
-                _registerInfo->signedFlag);
-          }
-          else {
+	  // We don't have to fill it in a special way if the accessor is raw
+	  // because we have an overloaded, more efficient implementation
+	  // in this case. So we can use it in setAsCoocked() and getAsCoocked()
+	  _fixedPointConverter = FixedPointConverter(_registerPathName,
+						     _registerInfo->width,
+						     _registerInfo->nFractionalBits,
+						     _registerInfo->signedFlag);
+          if(flags.has(AccessMode::raw)) {
             if(typeid(UserType) != typeid(int32_t)) {
               throw DeviceException("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
                   "match the expected type. Use an int32_t instead! (Register name: "+_registerPathName+"')", DeviceException::WRONG_PARAMETER);
             }
-            _fixedPointConverter = FixedPointConverter(_registerPathName, 32, 0, true);
             isRaw = true;
           }
         }
@@ -162,6 +164,9 @@ namespace ChimeraTK {
         return true;
       }
 
+      /** Get the FixedPointConverter. In case of a raw accessor this is the
+       *  conversion that would be used if the data should be coocked.
+       */
       FixedPointConverter getFixedPointConverter() const override {
         return _fixedPointConverter;
       }
