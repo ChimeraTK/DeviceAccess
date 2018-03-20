@@ -1,9 +1,6 @@
-#define BOOST_TEST_MAIN
 #define BOOST_TEST_DYN_LINK
-// Reason for the above define:
-// http://stackoverflow.com/questions/17024143/boost-test-does-not-init-unit-test-suite
-
-#include <boost/test/included/unit_test.hpp>
+#define BOOST_TEST_MODULE testRebotBackendCreation
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
 #include "BackendFactory.h"

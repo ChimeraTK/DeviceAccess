@@ -2,7 +2,7 @@
  * Keep this file in a way that the tests also run with real hardware.
  ******************************************************************************/
 
-#include <boost/test/included/unit_test.hpp>
+#include "boost_dynamic_init_test.h"
 #include "BackendFactory.h"
 #include "RebotBackend.h"
 #include "Device.h"
@@ -63,20 +63,22 @@ class RebotDeviceTestSuite : public test_suite {
     }
 };
 
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
-  if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << " cardAlias [dmapFile]" << std::endl;
-    return nullptr;
+bool init_unit_test(){
+  if (framework::master_test_suite().argc < 2) {
+    std::cout << "Usage: " << framework::master_test_suite().argv[0] << " cardAlias [dmapFile]" << std::endl;
+    return false;
   }
-  bool hasSecondArgument = (argv[2] != nullptr);
-
+  auto cardAlias = framework::master_test_suite().argv[1];
+  
   // take dmap file location if given, else search for cardAlias in the
   // factory default dmap file
-  if (hasSecondArgument) {
-    mtca4u::BackendFactory::getInstance().setDMapFilePath(argv[2]);
+  if (framework::master_test_suite().argc > 2) {// there is a second argument
+    mtca4u::BackendFactory::getInstance().setDMapFilePath(framework::master_test_suite().argv[2]);
   }
 
-  return new RebotDeviceTestSuite(argv[1]);
+  framework::master_test_suite().p_name.value = "Rebot backend test suite";
+  framework::master_test_suite().add(new RebotDeviceTestSuite(cardAlias));
+  return true;
 
 }
 

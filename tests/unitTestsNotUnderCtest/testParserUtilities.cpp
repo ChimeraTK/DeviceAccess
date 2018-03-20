@@ -1,5 +1,7 @@
-#include <boost/test/included/unit_test.hpp>
+#include "boost_dynamic_init_test.h"
 #include "parserUtilities.h"
+
+#include <iostream>
 
 namespace mtca4u{
   using namespace ChimeraTK;
@@ -45,13 +47,17 @@ class ParserUtilitiesTestSuite : public test_suite {
     }
 };
 
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char** argv) {
-  if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << "currentWorkingDir" << std::endl;
-    return NULL;
+bool init_unit_test(){
+  if (framework::master_test_suite().argc < 2) {
+    std::cout << "Usage: " << framework::master_test_suite().argv[0] << "currentWorkingDir" << std::endl;
+    return false;
   }
+  auto currentWorkingDir = framework::master_test_suite().argv[1];
+  
+  framework::master_test_suite().p_name.value = "Rebot backend test suite";
+  framework::master_test_suite().add(new ParserUtilitiesTestSuite(currentWorkingDir));
 
-  return new ParserUtilitiesTestSuite(argv[1]);
+  return true;
 }
 
 ParserUtilsTestClass::ParserUtilsTestClass(const std::string& currentWorkingDirectory)

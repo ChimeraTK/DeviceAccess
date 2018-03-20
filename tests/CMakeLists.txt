@@ -52,9 +52,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/unitTestsNotUnderCtest  executa
 foreach( executablesrc ${executables})
   get_filename_component(exename ${executablesrc} NAME_WE)
   add_executable(${exename} ${executablesrc})
-  # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
-  # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
-  target_link_libraries(${exename} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
+  target_link_libraries(${exename} ${PROJECT_NAME} ${Boost_LIBRARIES} ${PROJECT_NAME}_TEST_LIBRARY)
 endforeach(executablesrc)
 
 
