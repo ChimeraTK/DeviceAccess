@@ -87,6 +87,9 @@ namespace ChimeraTK {
           this->shutdown();
           throw;
         }
+        
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
       }
 
       virtual ~NumericAddressedBackendRegisterAccessor() {
@@ -171,6 +174,15 @@ namespace ChimeraTK {
         return _fixedPointConverter;
       }
 
+      template<typename COOCKED_TYPE>
+      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample);
+
+      template<typename COOCKED_TYPE>
+      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
+
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackendRegisterAccessor<UserType>, getAsCoocked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackendRegisterAccessor<UserType>, setAsCoocked_impl, 3 );
+
     protected:
 
       /** Address, size and fixed-point representation information of the register from the map file */
@@ -219,6 +231,22 @@ namespace ChimeraTK {
       }
 
   };
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  template<typename UserType> template<typename COOCKED_TYPE>
+  COOCKED_TYPE NumericAddressedBackendRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
+    return COOCKED_TYPE();
+  }
+  
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  template<typename UserType> template<typename COOCKED_TYPE>
+  void NumericAddressedBackendRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
+    
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   template<>
   void NumericAddressedBackendRegisterAccessor<int32_t>::doPostRead();

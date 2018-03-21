@@ -15,6 +15,7 @@
 #include "FixedPointConverter.h"
 #include "DeviceException.h"
 #include "ExperimentalFeatures.h"
+#include "VirtualFunctionTemplate.h"
 
 namespace ChimeraTK {
 
@@ -33,6 +34,8 @@ namespace ChimeraTK {
       : TransferElement(name, unit, description)
       {
         TransferElement::makeUniqueId();
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
       }
 
       /** Get or set register accessor's buffer content (1D version).
@@ -69,6 +72,18 @@ namespace ChimeraTK {
       const std::type_info& getValueType() const override {
         return typeid(UserType);
       }
+
+      template<typename COOCKED_TYPE>
+      COOCKED_TYPE getAsCoocked(unsigned int channel, unsigned int sample);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getAsCoocked_impl, T (unsigned int, unsigned int) );
+      template<typename COOCKED_TYPE>
+      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample);
+
+      template<typename COOCKED_TYPE>
+      void setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( setAsCoocked_impl, void (unsigned int, unsigned int, T) );
+      template<typename COOCKED_TYPE>
+      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
 
       /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
        *  \deprecated This function is deprecated, remove it at some point!
@@ -108,8 +123,31 @@ namespace ChimeraTK {
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
 
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NDRegisterAccessor<UserType>, getAsCoocked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NDRegisterAccessor<UserType>, setAsCoocked_impl, 3 );
+
   };
 
+  template<typename UserType> template<typename COOCKED_TYPE>
+  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked(unsigned int channel, unsigned int sample){
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCoocked_impl, COOCKED_TYPE, channel, sample);
+  }
+
+  template<typename UserType> template<typename COOCKED_TYPE>
+  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
+    throw DeviceException("Reading as coocked is not available with this accessor", DeviceException::NOT_AVAILABLE);
+  }
+  
+  template<typename UserType> template<typename COOCKED_TYPE>
+  void NDRegisterAccessor<UserType>::setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
+    CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCoocked_impl, COOCKED_TYPE, channel, sample);
+  }
+
+  template<typename UserType> template<typename COOCKED_TYPE>
+  void NDRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
+    throw DeviceException("Setting as coocked is not available with this accessor", DeviceException::NOT_AVAILABLE);
+  }
+ 
 }
 
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_H */

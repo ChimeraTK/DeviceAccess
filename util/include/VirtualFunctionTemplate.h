@@ -113,6 +113,6 @@
 /** Fill the vtable of a virtual function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro
  *  inside the constructor of the derived class. */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName )                                                   \
-      boost::fusion::for_each(functionName ## _vtable.table, functionName ## _vtable_filler(this))
+      boost::fusion::for_each(this->functionName ## _vtable.table, functionName ## _vtable_filler(this))
 
 #endif /* CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H */
