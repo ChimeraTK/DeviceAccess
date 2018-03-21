@@ -135,7 +135,7 @@ namespace ChimeraTK {
 
   template<typename UserType> template<typename COOCKED_TYPE>
   COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
-    throw DeviceException("Reading as coocked is not available with this accessor", DeviceException::NOT_AVAILABLE);
+    throw DeviceException("Reading as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
   }
   
   template<typename UserType> template<typename COOCKED_TYPE>
@@ -145,7 +145,7 @@ namespace ChimeraTK {
 
   template<typename UserType> template<typename COOCKED_TYPE>
   void NDRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
-    throw DeviceException("Setting as coocked is not available with this accessor", DeviceException::NOT_AVAILABLE);
+    throw DeviceException("Setting as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
   }
  
 }

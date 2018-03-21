@@ -236,14 +236,34 @@ namespace ChimeraTK {
   
   template<typename UserType> template<typename COOCKED_TYPE>
   COOCKED_TYPE NumericAddressedBackendRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
-    return COOCKED_TYPE();
+    // This is a coocked accessor. For the only possible raw type (int32_t) we have a
+    // template specialisation (instead of a throwing one for strings).
+    throw DeviceException("Getting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+  }
+  template<> template<typename COOCKED_TYPE>
+  COOCKED_TYPE NumericAddressedBackendRegisterAccessor<int32_t>::getAsCoocked_impl(unsigned int channel, unsigned int sample){
+    if(isRaw){
+      return _fixedPointConverter.toCooked<COOCKED_TYPE>(NDRegisterAccessor<int32_t>::buffer_2D[channel][sample]);
+    }else{
+      throw DeviceException("Getting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+    }
   }
   
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   template<typename UserType> template<typename COOCKED_TYPE>
   void NumericAddressedBackendRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
-    
+    // This is a coocked accessor. For the only possible raw type (int32_t) we have a
+    // template specialisation (instead of a throwing one for strings).
+    throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+  }
+  template<> template<typename COOCKED_TYPE>
+  void NumericAddressedBackendRegisterAccessor<int32_t>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
+    if(isRaw){
+      NDRegisterAccessor<int32_t>::buffer_2D[channel][sample] = _fixedPointConverter.toRaw(value);
+    }else{
+      throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
