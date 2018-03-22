@@ -56,7 +56,7 @@ namespace ChimeraTK {
        *  This returns the converted data from the use buffer. It does not do any read or write transfer.
        */
       template <typename COOCKED_TYPE>
-      UserType getAsCoocked(unsigned int channel, unsigned int sample){
+      COOCKED_TYPE getAsCoocked(unsigned int channel, unsigned int sample){
         return NDRegisterAccessorAbstractor<UserType>::_impl->getAsCoocked<COOCKED_TYPE>(channel, sample);
       }
 
