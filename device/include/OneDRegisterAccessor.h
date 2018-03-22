@@ -105,6 +105,22 @@ namespace ChimeraTK {
         return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).data();
       }
 
+      /** Get the coocked values in case the accessor is a raw accessor (which does not do data conversion).
+       *  This returns the converted data from the use buffer. It does not do any read or write transfer.
+       */
+      template <typename COOCKED_TYPE>
+      UserType getAsCoocked(unsigned int sample){
+        return NDRegisterAccessorAbstractor<UserType>::_impl->getAsCoocked<COOCKED_TYPE>(0,sample);
+      }
+     
+      /** Set the coocked values in case the accessor is a raw accessor (which does not do data conversion).
+       *  This converts to raw and writes the data to the user buffer. It does not do any read or write transfer.
+       */
+      template <typename COOCKED_TYPE>
+      void setAsCoocked(unsigned int sample, COOCKED_TYPE value){
+        return NDRegisterAccessorAbstractor<UserType>::_impl->setAsCoocked<COOCKED_TYPE>(0,sample,value);
+      }
+
       friend class TransferGroup;
   };
 

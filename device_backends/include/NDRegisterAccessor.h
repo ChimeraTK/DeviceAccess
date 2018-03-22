@@ -140,7 +140,7 @@ namespace ChimeraTK {
   
   template<typename UserType> template<typename COOCKED_TYPE>
   void NDRegisterAccessor<UserType>::setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
-    CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCoocked_impl, COOCKED_TYPE, channel, sample);
+    CALL_VIRTUAL_FUNCTION_TEMPLATE(setAsCoocked_impl, COOCKED_TYPE, channel, sample, value);
   }
 
   template<typename UserType> template<typename COOCKED_TYPE>
