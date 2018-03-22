@@ -158,6 +158,8 @@ namespace ChimeraTK {
 
   };
 
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendChannelAccessor);
+
 }    // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_LNM_BACKEND_BUFFERING_CHANNEL_ACCESSOR_H */

@@ -309,6 +309,7 @@ namespace ChimeraTK {
         }
       }
   }
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendMuxedRegisterAccessor);
 
 }  //namespace ChimeraTK
 

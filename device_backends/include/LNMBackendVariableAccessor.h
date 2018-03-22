@@ -136,6 +136,8 @@ namespace ChimeraTK {
 
   };
 
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(LNMBackendVariableAccessor);
+
 }    // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_LNM_BACKEND_BUFFERING_VARIABLE_ACCESSOR_H */
