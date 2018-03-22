@@ -258,13 +258,14 @@ namespace ChimeraTK {
     throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
   }
   template<> template<typename COOCKED_TYPE>
-  void NumericAddressedBackendRegisterAccessor<int32_t>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
+    void NumericAddressedBackendRegisterAccessor<int32_t>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
     if(isRaw){
       NDRegisterAccessor<int32_t>::buffer_2D[channel][sample] = _fixedPointConverter.toRaw(value);
     }else{
       throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
     }
   }
+  
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -276,6 +277,9 @@ namespace ChimeraTK {
 
   template<>
   void NumericAddressedBackendRegisterAccessor<int32_t>::doPostWrite();
+
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor);
+
 
 }    // namespace ChimeraTK
 

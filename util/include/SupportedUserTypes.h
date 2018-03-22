@@ -64,6 +64,32 @@ namespace ChimeraTK {
                                     boost::fusion::pair<std::string,T>
                                 > ;
 
+#define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES( TemplateClass ) \
+  extern template class TemplateClass<int8_t>;  \
+  extern template class TemplateClass<uint8_t>;  \
+  extern template class TemplateClass<int16_t>; \
+  extern template class TemplateClass<uint16_t>; \
+  extern template class TemplateClass<int32_t>; \
+  extern template class TemplateClass<uint32_t>; \
+  extern template class TemplateClass<int64_t>; \
+  extern template class TemplateClass<uint64_t>; \
+  extern template class TemplateClass<float>;   \
+  extern template class TemplateClass<double>;  \
+  extern template class TemplateClass<std::string>// the last semicolon is added by the user
+
+#define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES( TemplateClass )      \
+  template class TemplateClass<int8_t>;  \
+  template class TemplateClass<uint8_t>;  \
+  template class TemplateClass<int16_t>; \
+  template class TemplateClass<uint16_t>; \
+  template class TemplateClass<int32_t>; \
+  template class TemplateClass<uint32_t>; \
+  template class TemplateClass<int64_t>; \
+  template class TemplateClass<uint64_t>; \
+  template class TemplateClass<float>;   \
+  template class TemplateClass<double>;  \
+  template class TemplateClass<std::string>// the last semicolon is added by the user
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERA_TK_SUPPORTED_USER_TYPES_H */

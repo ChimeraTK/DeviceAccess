@@ -147,7 +147,9 @@ namespace ChimeraTK {
   void NDRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
     throw DeviceException("Setting as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
   }
- 
+
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);
+  
 }
 
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_H */
