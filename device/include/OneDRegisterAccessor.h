@@ -108,6 +108,9 @@ namespace ChimeraTK {
       friend class TransferGroup;
   };
 
+  // Do not declare the template for all user types as extern here.
+  // This could avoid optimisation of the inline code.
+
 }    // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_ONE_D_REGISTER_ACCESSOR_H */

@@ -78,6 +78,31 @@ namespace ChimeraTK {
 
   };
 
+  // Template specialisation for string. It does not have the ++ and -- operators
+  template<>
+    class ScalarRegisterAccessor<std::string> : public NDRegisterAccessorAbstractor<std::string> {
+    public:
+    inline ScalarRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<std::string> > impl)
+      : NDRegisterAccessorAbstractor<std::string>(impl)
+      {}
+
+    inline ScalarRegisterAccessor() {}
+
+    inline operator std::string&() {
+      return NDRegisterAccessorAbstractor<std::string>::_impl->accessData(0,0);
+    }
+
+    inline ScalarRegisterAccessor<std::string>& operator=(std::string rightHandSide){
+      NDRegisterAccessorAbstractor<std::string>::_impl->accessData(0,0) = rightHandSide;
+      return *this;
+    }
+
+    friend class TransferGroup;
+  };
+
+  // Do not declare the template for all user types as extern here.
+  // This could avoid optimisation of the inline code.
+
 }    // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_SCALAR_REGISTER_ACCESSOR_H */

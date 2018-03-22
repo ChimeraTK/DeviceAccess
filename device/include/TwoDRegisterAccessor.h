@@ -80,6 +80,9 @@ namespace ChimeraTK {
 
   };
 
+  // Do not declare the template for all user types as extern here.
+  // This could avoid optimisation of the inline code.
+
 } // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_TWO_DREGISTER_ACCESSOR_H */

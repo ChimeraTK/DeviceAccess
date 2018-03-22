@@ -70,6 +70,10 @@ namespace ChimeraTK {
       boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
 
   };
+
+  // Do not declare the template for all user types as extern here.
+  // This could avoid optimisation of the inline code.
+
 }
 
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_BRIDGE_H */
