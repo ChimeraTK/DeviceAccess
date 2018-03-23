@@ -6,6 +6,7 @@
 #include <list>
 #include <set>
 #include <mutex>
+#include <utility>
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/containers/vector.hpp>
@@ -17,7 +18,11 @@
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
 
-namespace mtca4u {
+
+/*FIXME Correct approach to set namespace? */
+#define _DEBUG
+//namespace mtca4u {
+namespace ChimeraTK {
 
   /** TODO DOCUMENTATION
    */
@@ -45,7 +50,7 @@ namespace mtca4u {
 
       RegisterInfoMapPointer _registerMapping;
 
-      // Define shared-memory compatible vector type
+      // Define shared-memory compatible vector type and corresponding allocator
       typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
       typedef boost::interprocess::vector<int32_t, ShmemAllocator> MyVector;
       
@@ -57,21 +62,28 @@ namespace mtca4u {
       std::map<uint8_t, size_t> _barSizes;
       
 
-      // helper class to manage the shared memory: automatically construct if necessary, automatically destroy if
-      // last using process closes.
-      struct MyShm {
+      // Helper class to manage the shared memory: automatically construct if necessary,
+      // automatically destroy if last using process closes.
+      /*\
+       * TODO: * Include User and URI in hashes
+       *       * Evaluate use of distinct allocator for UseCounter, PIDs,...
+       *         -> Additional overhead?
+       *       * Include method to compute required space /w overhead
+       */
+      class MyShm {
         
-        MyShm() {}
-
-        void setup(const std::string &name, size_t maxSize) {
-          
-          _name = name;
-          
-          segment = {boost::interprocess::open_or_create, name.c_str(), maxSize};
-
-          // lock gurad with the interprocess mutex        
+      public:
+        MyShm(const std::string instanceId, const std::string mapFileName, size_t maxSize) :
+          mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
+          instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId))),
+          name("ChimeraTK_SharedDummy_"+mapFileHash+"_"+instanceIdHash),
+          segment(boost::interprocess::open_or_create, name.c_str(), maxSize),
+          alloc_inst(segment.get_segment_manager()),
+          globalMutex(boost::interprocess::open_or_create, name.c_str())
+        {
+          // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
-        
+
           // find the use counter
           auto res = segment.find<size_t>("UseCounter");
           if(res.second != 1) {  // if not found: create it
@@ -80,15 +92,19 @@ namespace mtca4u {
           else {
             useCount = res.first;
           }
-          
+
           // increment use counter
           (*useCount)++;
-          
+
+#ifdef _DEBUG
+          std::cout << "Created shared memory with a size of " << maxSize << " bytes." << std::endl;
+          std::cout << "useCount is: " << *useCount << std::endl << std::flush;
+#endif
         }
 
         ~MyShm() {
 
-          // lock gurad with the interprocess mutex        
+          // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
           
           // decrement use counter
@@ -96,42 +112,52 @@ namespace mtca4u {
           
           // if use count at 0, destroy shared memory and the interprocess mutex
           if(*useCount == 0) {
-            boost::interprocess::shared_memory_object::remove(_name.c_str());
-            boost::interprocess::named_mutex::remove(_name.c_str());
+            boost::interprocess::shared_memory_object::remove(name.c_str());
+            boost::interprocess::named_mutex::remove(name.c_str());
           }
         }
         
+      private:
+
+        // Hashes to assure match of shared memory accessing processes
+        std::string mapFileHash;
+        std::string instanceIdHash;
+
         // the name of the segment
-        std::string _name;
+        std::string name;
 
         // the shared memory segment
         boost::interprocess::managed_shared_memory segment;
 
         // the allocator instance
-        const ShmemAllocator alloc_inst{segment.get_segment_manager()};
+        const ShmemAllocator alloc_inst;
         
         // global (interprocess) mutex
-        boost::interprocess::named_mutex globalMutex{boost::interprocess::open_or_create, _name.c_str()};
+        boost::interprocess::named_mutex globalMutex;
 
         // pointer to the use count on shared memory;
         size_t *useCount{nullptr};
 
       };
       
-      // define our shared memory
-      MyShm shm;
+      // Managed shared memory object
+      MyShm sharedMemoryManager;
       
-      // shared memory name
-      std::string shmName;
+      void resizeBarContents();
+      std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
 
+      // Helper routines called in init list
+      std::map<uint8_t, size_t> getBarSizesInWords();
+      size_t getTotalRegisterSizeInWords();
 
       static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
       static std::string convertPathRelativeToDmapToAbs(std::string const & mapfileName);
 
       /** map of instance names and pointers to allow re-connecting to the same instance with multiple Devices */
-      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {
-        static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;
+      /* FIXME Namespace change ok? */
+      static std::map< std::string, boost::shared_ptr<DeviceBackend> >& getInstanceMap() {
+        static std::map< std::string, boost::shared_ptr<DeviceBackend> > instanceMap;
         return instanceMap;
       }
 
@@ -172,6 +198,6 @@ namespace mtca4u {
 
   };
 
-} // namespace mtca4u
+} // namespace ChimeraTK
 
 #endif // MTCA4U_SHARED_DUMMY_BACKEND_H
