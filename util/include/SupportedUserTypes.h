@@ -90,24 +90,51 @@ namespace ChimeraTK {
   template class TemplateClass<double>;  \
   template class TemplateClass<std::string>// the last semicolon is added by the user
 
+  /** A class to describe which of the supported data types is used.
+   *  There is the additional type 'none' to indicate that the data type is not available in
+   *  the current context. For instance if DataType is used to identify the raw data type
+   *  of an accessor, the value is none if the accessor does not have a raw transfer mechanism.
+   *
+   *  The DataType behaves almost like a class enum due to the plain enum inside it
+   *  (see description of the <tt>operator TheType & ()</tt> ).
+   */
   class DataType{
     public:
+      /** The actual enum representing the data type. It is a plain enum so 
+       *  the data type class can be used like a class enum, i.e. types are 
+       *  identified for instance as DataType::int32.
+       */
       enum TheType{ none, ///< The data type/concept does not exist. e.g. there is no raw transfer 
-                    int8,
-                    uint8,
-                    int16,
-                    uint16,
-                    int32,
-                    uint32,
-                    int64,
-                    uint64,
-                    float32,
-                    float64,
-                    string };
+                    int8, ///< Signed 8 bit integer
+                    uint8, ///< Unsigned 8 bit integer
+                    int16,///< Signed 16 bit integer
+                    uint16,///< Unsigned 16 bit integer
+                    int32,///< Signed 32 bit integer
+                    uint32,///< Unsigned 32 bit integer
+                    int64,///< Signed 64 bit integer
+                    uint64,///< Unsigned 64 bit integer
+                    float32,///< Single precision float
+                    float64,///< Double precision float
+                    string ///< std::string
+      };
+
+      /** Implicit conversion operator to make DataType behave like a class enum.
+       *  Allows for instance comparison or assigment with members of the TheType enum.
+       *  \code
+       DataType myDataType; // default constructor. The type now is 'none'.
+
+       // DataType::int32 is of type DataType::TheType. The implicit conversion of \c myDataType
+       // allows the assignment.
+       myDataType = DataType::int32;
+       \endcode
+       */
       inline operator TheType & (){
         return _value;
       }
 
+      /** Return whether the raw data type is an integer.
+       *  False is also returned for non-numerical types and 'none'.
+       */
       inline bool isInteger() const{
         switch (_value){
           case int8:
@@ -124,6 +151,10 @@ namespace ChimeraTK {
         }
       }
 
+      /** Return whether the raw data type is signed. True for signed integers and 
+       *  floating point types (currently only signed implementations).
+       *  False otherwise (also for non-numerical types and 'none').
+       */
       inline bool isSigned() const{
         switch (_value){
           case int8:
@@ -138,6 +169,9 @@ namespace ChimeraTK {
         }
       }
 
+      /** Returns whether the data type is numeric.
+       *  Type 'none' returns false.
+       */
       inline bool isNumeric() const{
         // I inverted the logic to minimise the amout of code. If you add non-numeric types
         // this has to be adapted.
@@ -150,7 +184,8 @@ namespace ChimeraTK {
         }
       }
       
-      
+      /** The constructor can get the type as an argument. It defaults to 'none'.
+       */
       inline DataType( TheType const & value = none ): _value(value){}
       
     protected:

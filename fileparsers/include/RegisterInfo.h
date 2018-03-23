@@ -26,41 +26,6 @@ namespace ChimeraTK {
        *  prevent too long fully qualified names. */
       enum class FundamentalType { numeric, string, boolean, nodata, undefined };
 
-      /** Enum for the raw data type. This is the data conversion from 'coocked' to the raw
-       *  data type on the device. This conversion does not change the shape of the data but
-       *  descibes the data type of a single data point.
-       * 
-       *  \li Example 1:<br>
-       *  If
-       *  the raw data on the transport layer is multiplexed with fixed point conversion, this only describes
-       *  what the raw type of the fixed point conversion is, but not the multiplexing.
-       *  \li Example 2: (possible, currently not implemented scenario)<br>
-       *  If the raw data on the transport layer is text and the data words have to be interpreted 
-       *  from the received string, the raw data will only be the text snippet representing the
-       *  one data point.
-
-       *  Most backends will have type none, i.e. no raw data conversion available. At the moment
-       *  only the NumericalAddressedBackend has int32_t raw transfer with raw/coocked conversion. Can be extended if needed,
-       *  but this partily breaks abstraction because it exposes details of the (transport) layer below. It should be
-       *  avoided if possible.
-       */
-      /* NOTICE: Adapt the helper functions if you extend the enum! */
-      enum class RawDataType { none, int32 };
-
-      /** The raw data type on the transport layer. This is always a 1D array of the specific
-       *  data type. This raw transfer might contain for more than one register.
-       *
-       *  Examples:
-       *  \li The multiplexed data of a 2D array
-       *  \li A text string containing data for multiple scalars which are mapped to different registers
-       *  \li The byte sequence of a "struct" with data for multiple registers of different data types
-       * 
-       *  Notice: This enum is not used anywhere yet. Transport layer data cannot be accessed with
-       *  the current implementation. This data type is put here for conceputal completeness.
-       */
-      /* NOTICE: Adapt the helper functions if you extend the enum! */
-      enum class TransportLayerRawType { none, int32 };
-      
       /** Class describing the actual payload data format of a register in an abstract manner. It gives information
        *  about the underlying data type without fully describing it, to prevent a loss of abstraction on the
        *  application level. The returned information always refers to the data type and thus is completely independent
@@ -96,8 +61,38 @@ namespace ChimeraTK {
            *  Again beware that this number might be rather large (e.g. 300). */
           size_t nFractionalDigits() const;
           
-          /** Get the raw transfer type. */
+          /** Get the raw data type. This is the data conversion from 'coocked' to the raw
+           *  data type on the device. This conversion does not change the shape of the data but
+           *  descibes the data type of a single data point.
+           *  \li Example 1:<br>
+           *  If
+           *  the raw data on the transport layer is multiplexed with fixed point conversion, this only describes
+           *  what the raw type of the fixed point conversion is, but not the multiplexing.
+           *  \li Example 2: (possible, currently not implemented scenario)<br>
+           *  If the raw data on the transport layer is text and the data words have to be interpreted 
+           *  from the received string, the raw data will only be the text snippet representing the
+           *  one data point.
+           
+           *  Most backends will have type none, i.e. no raw data conversion available. At the moment
+           *  only the NumericalAddressedBackend has int32_t raw transfer with raw/coocked conversion. Can be extended if needed,
+           *  but this partily breaks abstraction because it exposes details of the (transport) layer below. It should be
+           *  avoided if possible.
+           */
           DataType rawDataType() const;
+
+          /** Get the data type on the transport layer. This is always a 1D array of the specific
+           *  data type. This raw transfer might contain data for more than one register.
+           *
+           *  Examples:
+           *  \li The multiplexed data of a 2D array
+           *  \li A text string containing data for multiple scalars which are mapped to different registers
+           *  \li The byte sequence of a "struct" with data for multiple registers of different data types
+           * 
+           *  Notice: Currently all implementations return 'none'. From the interface there is no way
+           *  to access the transport layer data (yet).
+           *  The function is put here for conceputal completeness.
+           */          
+          DataType transportLayerDataType() const;
 
           /** Default constructor sets fundamental type to "undefined" */
           DataDescriptor();
@@ -105,15 +100,18 @@ namespace ChimeraTK {
           /** Constructor setting all members. */
           DataDescriptor(FundamentalType fundamentalType, bool isIntegral=false, bool isSigned=false,
                          size_t nDigits=0, size_t nFractionalDigits=0,
-                         DataType rawDataType = DataType::none);
+                         DataType rawDataType = DataType::none, DataType transportLayerDataType_ = DataType::none);
           
         private:
 
           /** The fundamental data type */
           FundamentalType _fundamentalType;
 
-          /** The raw transfer type */
+          /** The raw data type.*/
           DataType _rawDataType;
+
+          /** The transport layer data type.*/
+          DataType _transportLayerDataType;
           
           /** Numeric types only: is the number integral or not */
           bool _isIntegral;
@@ -194,19 +192,6 @@ namespace ChimeraTK {
         return i;
       }
 
-      /* **** Helper functions for RawDataType and TransportLayerRawType. ***********************/
-
-      /** Returns whether the raw data type is integral */
-      template<class TYPE_ENUM>
-      static bool isInteger(TYPE_ENUM const & type){
-        switch (type){
-          case TYPE_ENUM::int32:
-            return true;
-          default:
-            return false;
-        }
-      }
-                 
     protected:
 
       /** list of plugins */
@@ -227,6 +212,10 @@ namespace ChimeraTK {
   
   inline DataType RegisterInfo::DataDescriptor::rawDataType() const {
     return _rawDataType;
+  }
+
+  inline DataType RegisterInfo::DataDescriptor::transportLayerDataType() const {
+    return _transportLayerDataType;
   }
   
   /*******************************************************************************************************************/
@@ -265,10 +254,16 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
 
-  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_, bool isSigned_,
-                                                      size_t nDigits_, size_t nFractionalDigits_, DataType rawDataType_)
+  inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType_,
+                                                      bool isIntegral_,
+                                                      bool isSigned_,
+                                                      size_t nDigits_,
+                                                      size_t nFractionalDigits_,
+                                                      DataType rawDataType_,
+                                                      DataType transportLayerDataType_ )
   : _fundamentalType(fundamentalType_),
     _rawDataType(rawDataType_),
+    _transportLayerDataType(transportLayerDataType_),
     _isIntegral(isIntegral_),
     _isSigned(isSigned_),
     _nDigits(nDigits_),
