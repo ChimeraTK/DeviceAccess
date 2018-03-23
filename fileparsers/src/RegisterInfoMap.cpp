@@ -305,7 +305,8 @@ namespace ChimeraTK {
                                         false,                                    // isIntegral
                                         signedFlag_,                              // isSigned
                                         nDigits,
-                                        nFractionalDigits);
+                                        nFractionalDigits,
+                                        DataType::int32);
       }
       else {
         size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
@@ -314,7 +315,9 @@ namespace ChimeraTK {
         dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
                                         true,                                     // isIntegral
                                         signedFlag_,                              // isSigned
-                                        nDigits);
+                                        nDigits,
+                                        0,
+                                        DataType::int32);
       }
     }
     else if(width == 1) {    // boolean

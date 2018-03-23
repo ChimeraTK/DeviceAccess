@@ -67,7 +67,7 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().nFractionalDigits() == 3 );
   BOOST_CHECK( info->getDataDescriptor().rawDataType() == DataType::int32 );
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() );
-  BOOST_CHECK( info->getDataDescriptor().rawDataType().isInteger() );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isIntegral() );
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() );
 
   RegisterInfo::DataDescriptor dataDescriptor2(RegisterInfo::FundamentalType::numeric, true, false, 12);
@@ -83,7 +83,7 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().nDigits() == 12 );
   BOOST_CHECK( info->getDataDescriptor().rawDataType() == DataType::none );
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() == false);
-  BOOST_CHECK( info->getDataDescriptor().rawDataType().isInteger() == false);
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isIntegral() == false);
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() == false);
 
   RegisterInfo::DataDescriptor dataDescriptor3(RegisterInfo::FundamentalType::string);
@@ -96,7 +96,7 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().fundamentalType() == RegisterInfo::FundamentalType::string );
   BOOST_CHECK( info->getDataDescriptor().rawDataType() == DataType::none );
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() == false);
-  BOOST_CHECK( info->getDataDescriptor().rawDataType().isInteger() == false);
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isIntegral() == false);
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() == false);
   
 }

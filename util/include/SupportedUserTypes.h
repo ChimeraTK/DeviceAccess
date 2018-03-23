@@ -135,7 +135,7 @@ namespace ChimeraTK {
       /** Return whether the raw data type is an integer.
        *  False is also returned for non-numerical types and 'none'.
        */
-      inline bool isInteger() const{
+      inline bool isIntegral() const{
         switch (_value){
           case int8:
           case uint8:
