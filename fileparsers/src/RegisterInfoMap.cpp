@@ -296,6 +296,8 @@ namespace ChimeraTK {
     signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
   {
     if(width > 1) {    // numeric type
+      DataType rawDataInfo = (is2DMultiplexed_ ? DataType::none :  DataType::int32);
+
       if(nFractionalBits_ > 0) {
         size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
                           ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
@@ -306,7 +308,7 @@ namespace ChimeraTK {
                                         signedFlag_,                              // isSigned
                                         nDigits,
                                         nFractionalDigits,
-                                        DataType::int32);
+                                        rawDataInfo);
       }
       else {
         size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
@@ -317,7 +319,7 @@ namespace ChimeraTK {
                                         signedFlag_,                              // isSigned
                                         nDigits,
                                         0,
-                                        DataType::int32);
+                                        rawDataInfo);
       }
     }
     else if(width == 1) {    // boolean

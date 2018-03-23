@@ -30,8 +30,13 @@ BOOST_AUTO_TEST_CASE( testRawAccessor ){
   BOOST_CHECK( registerInfo->getDataDescriptor().rawDataType().isIntegral() );
   BOOST_CHECK( registerInfo->getDataDescriptor().rawDataType().isSigned() );
 
+  Device d2;
+  d2.open("SEQUENCES");
 
-  setDMapFilePath("dummies.dmap");
+  auto registerCatalogue2 = d2.getRegisterCatalogue();
+  registerInfo = registerCatalogue2.getRegister("TEST/DMA");
+
+  BOOST_CHECK( registerInfo->getDataDescriptor().rawDataType() == DataType::none );
 
   ///@todo FIXME Test something that does not have raw data transfer
 }
