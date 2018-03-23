@@ -53,7 +53,7 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   RegisterCatalogue catalogue;
   boost::shared_ptr<RegisterInfo> info;
 
-  RegisterInfo::DataDescriptor dataDescriptor(RegisterInfo::FundamentalType::numeric, false, false, 8, 3, RegisterInfo::RawDataType::int32);
+  RegisterInfo::DataDescriptor dataDescriptor(RegisterInfo::FundamentalType::numeric, false, false, 8, 3, DataType::int32);
   catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/some/register/name",42, 3, 2, dataDescriptor)) );
   info = catalogue.getRegister("/some/register/name");
   BOOST_CHECK( info->getRegisterName() == "/some/register/name" );
@@ -65,7 +65,10 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().isIntegral() == false );
   BOOST_CHECK( info->getDataDescriptor().nDigits() == 8 );
   BOOST_CHECK( info->getDataDescriptor().nFractionalDigits() == 3 );
-  BOOST_CHECK( info->getDataDescriptor().rawDataType() == RegisterInfo::RawDataType::int32 );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType() == DataType::int32 );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isInteger() );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() );
 
   RegisterInfo::DataDescriptor dataDescriptor2(RegisterInfo::FundamentalType::numeric, true, false, 12);
   catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/some/other/name",1, 1, 0, dataDescriptor2)) );
@@ -78,7 +81,10 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().isSigned() == false );
   BOOST_CHECK( info->getDataDescriptor().isIntegral() == true );
   BOOST_CHECK( info->getDataDescriptor().nDigits() == 12 );
-  BOOST_CHECK( info->getDataDescriptor().rawDataType() == RegisterInfo::RawDataType::none );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType() == DataType::none );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() == false);
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isInteger() == false);
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() == false);
 
   RegisterInfo::DataDescriptor dataDescriptor3(RegisterInfo::FundamentalType::string);
   catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/justAName",1, 1, 0, dataDescriptor3)) );
@@ -88,6 +94,9 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getNumberOfChannels() == 1 );
   BOOST_CHECK( info->getNumberOfDimensions() == 0 );
   BOOST_CHECK( info->getDataDescriptor().fundamentalType() == RegisterInfo::FundamentalType::string );
-  BOOST_CHECK( info->getDataDescriptor().rawDataType() == RegisterInfo::RawDataType::none );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType() == DataType::none );
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() == false);
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isInteger() == false);
+  BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() == false);
   
 }

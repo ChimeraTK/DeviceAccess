@@ -90,6 +90,73 @@ namespace ChimeraTK {
   template class TemplateClass<double>;  \
   template class TemplateClass<std::string>// the last semicolon is added by the user
 
+  class DataType{
+    public:
+      enum TheType{ none, ///< The data type/concept does not exist. e.g. there is no raw transfer 
+                    int8,
+                    uint8,
+                    int16,
+                    uint16,
+                    int32,
+                    uint32,
+                    int64,
+                    uint64,
+                    float32,
+                    float64,
+                    string };
+      inline operator TheType & (){
+        return _value;
+      }
+
+      inline bool isInteger() const{
+        switch (_value){
+          case int8:
+          case uint8:
+          case int16:
+          case uint16:
+          case int32:
+          case uint32:
+          case int64:
+          case uint64:
+            return true;
+          default:
+            return false;
+        }
+      }
+
+      inline bool isSigned() const{
+        switch (_value){
+          case int8:
+          case int16:
+          case int32:
+          case int64:
+          case float32:
+          case float64:
+            return true;
+          default:
+            return false;
+        }
+      }
+
+      inline bool isNumeric() const{
+        // I inverted the logic to minimise the amout of code. If you add non-numeric types
+        // this has to be adapted.
+        switch (_value){
+          case none:
+          case string:
+            return false;
+          default:
+            return true;
+        }
+      }
+      
+      
+      inline DataType( TheType const & value = none ): _value(value){}
+      
+    protected:
+      TheType _value;
+  };
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERA_TK_SUPPORTED_USER_TYPES_H */

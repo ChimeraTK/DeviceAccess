@@ -13,6 +13,7 @@
 #include "RegisterInfoPlugin.h"
 #include "RegisterPath.h"
 #include "ForwardDeclarations.h"
+#include "SupportedUserTypes.h"
 
 namespace ChimeraTK {
 
@@ -43,6 +44,7 @@ namespace ChimeraTK {
        *  but this partily breaks abstraction because it exposes details of the (transport) layer below. It should be
        *  avoided if possible.
        */
+      /* NOTICE: Adapt the helper functions if you extend the enum! */
       enum class RawDataType { none, int32 };
 
       /** The raw data type on the transport layer. This is always a 1D array of the specific
@@ -56,6 +58,7 @@ namespace ChimeraTK {
        *  Notice: This enum is not used anywhere yet. Transport layer data cannot be accessed with
        *  the current implementation. This data type is put here for conceputal completeness.
        */
+      /* NOTICE: Adapt the helper functions if you extend the enum! */
       enum class TransportLayerRawType { none, int32 };
       
       /** Class describing the actual payload data format of a register in an abstract manner. It gives information
@@ -94,7 +97,7 @@ namespace ChimeraTK {
           size_t nFractionalDigits() const;
           
           /** Get the raw transfer type. */
-          RawDataType rawDataType() const;
+          DataType rawDataType() const;
 
           /** Default constructor sets fundamental type to "undefined" */
           DataDescriptor();
@@ -102,7 +105,7 @@ namespace ChimeraTK {
           /** Constructor setting all members. */
           DataDescriptor(FundamentalType fundamentalType, bool isIntegral=false, bool isSigned=false,
                          size_t nDigits=0, size_t nFractionalDigits=0,
-                         RawDataType rawDataType = RegisterInfo::RawDataType::none);
+                         DataType rawDataType = DataType::none);
           
         private:
 
@@ -110,7 +113,7 @@ namespace ChimeraTK {
           FundamentalType _fundamentalType;
 
           /** The raw transfer type */
-          RawDataType _rawDataType;
+          DataType _rawDataType;
           
           /** Numeric types only: is the number integral or not */
           bool _isIntegral;
@@ -191,6 +194,19 @@ namespace ChimeraTK {
         return i;
       }
 
+      /* **** Helper functions for RawDataType and TransportLayerRawType. ***********************/
+
+      /** Returns whether the raw data type is integral */
+      template<class TYPE_ENUM>
+      static bool isInteger(TYPE_ENUM const & type){
+        switch (type){
+          case TYPE_ENUM::int32:
+            return true;
+          default:
+            return false;
+        }
+      }
+                 
     protected:
 
       /** list of plugins */
@@ -198,6 +214,9 @@ namespace ChimeraTK {
 
   };
 
+
+  /*******************************************************************************************************************/
+  /***** IMPELMENTATIONS **************/
   /*******************************************************************************************************************/
   
   inline RegisterInfo::FundamentalType RegisterInfo::DataDescriptor::fundamentalType() const {
@@ -206,7 +225,7 @@ namespace ChimeraTK {
   
   /*******************************************************************************************************************/
   
-  inline RegisterInfo::RawDataType RegisterInfo::DataDescriptor::rawDataType() const {
+  inline DataType RegisterInfo::DataDescriptor::rawDataType() const {
     return _rawDataType;
   }
   
@@ -247,7 +266,7 @@ namespace ChimeraTK {
   /*******************************************************************************************************************/
 
   inline RegisterInfo::DataDescriptor::DataDescriptor(FundamentalType fundamentalType_, bool isIntegral_, bool isSigned_,
-                                                      size_t nDigits_, size_t nFractionalDigits_, RawDataType rawDataType_)
+                                                      size_t nDigits_, size_t nFractionalDigits_, DataType rawDataType_)
   : _fundamentalType(fundamentalType_),
     _rawDataType(rawDataType_),
     _isIntegral(isIntegral_),
