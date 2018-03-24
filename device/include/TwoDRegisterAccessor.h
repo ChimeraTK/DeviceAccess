@@ -57,7 +57,7 @@ namespace ChimeraTK {
        */
       template <typename COOCKED_TYPE>
       COOCKED_TYPE getAsCoocked(unsigned int channel, unsigned int sample){
-        return NDRegisterAccessorAbstractor<UserType>::_impl->getAsCoocked<COOCKED_TYPE>(channel, sample);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->template getAsCoocked<COOCKED_TYPE>(channel, sample);
       }
 
        /** Set the coocked values in case the accessor is a raw accessor (which does not do data conversion).
@@ -65,7 +65,7 @@ namespace ChimeraTK {
        */
       template <typename COOCKED_TYPE>
       void setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
-        return NDRegisterAccessorAbstractor<UserType>::_impl->setAsCoocked<COOCKED_TYPE>(channel,sample,value);
+        return NDRegisterAccessorAbstractor<UserType>::_impl->template setAsCoocked<COOCKED_TYPE>(channel,sample,value);
       }
      /** DEPRECATED DO NOT USE
        *
