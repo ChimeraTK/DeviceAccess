@@ -131,6 +131,9 @@ namespace ChimeraTK {
       inline operator TheType & (){
         return _value;
       }
+      inline operator TheType const & () const{
+        return _value;
+      }
 
       /** Return whether the raw data type is an integer.
        *  False is also returned for non-numerical types and 'none'.
