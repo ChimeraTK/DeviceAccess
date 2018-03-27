@@ -217,10 +217,10 @@ namespace ChimeraTK {
   };
 
   /**
-   *  Helper function for running code using some compile-time type which is specified as a runtime type_info. The code
-   *  is written in a lambda with a single auto-typed argument (this requires C++ 14). This argument will have the type
-   *  specified by the argument "type". The type must be one of the user types supported by ChimeraTK DeviceAccess.
-   *  Otherwise, std::bad_cast is thrown.
+   *  Helper function for running code which uses some compile-time type that is specified at runtime as a type_info.
+   *  The code has to be written in a lambda with a single auto-typed argument (this requires C++ 14). This argument
+   *  will have the type specified by the argument "type". The type must be one of the user types supported by
+   *  ChimeraTK DeviceAccess. Otherwise, std::bad_cast is thrown.
    *
    *  The lamda should be declared like this:
    *
@@ -252,6 +252,58 @@ namespace ChimeraTK {
         std::string _desc;
       };
       throw myBadCast(std::string("ChimeraTK::callForType(): type is not known: ")+type.name());
+    }
+  }
+
+  /**
+   *  Alternate form of callForType() which takes a DataType as a runtime type description. If DataType::none is
+   *  passed, std::bad_cast is thrown. For more details have a look at the other form.
+   */
+  template<typename LAMBDATYPE>
+  void callForType(const DataType &type, LAMBDATYPE lambda) throw(std::bad_cast) {
+    switch(DataType::TheType(type)) {
+      case DataType::int8:
+        { int8_t x; lambda(x); }
+        break;
+      case DataType::uint8:
+        { uint8_t x; lambda(x); }
+        break;
+      case DataType::int16:
+        { int16_t x; lambda(x); }
+        break;
+      case DataType::uint16:
+        { uint16_t x; lambda(x); }
+        break;
+      case DataType::int32:
+        { int32_t x; lambda(x); }
+        break;
+      case DataType::uint32:
+        { uint32_t x; lambda(x); }
+        break;
+      case DataType::int64:
+        { int64_t x; lambda(x); }
+        break;
+      case DataType::uint64:
+        { uint64_t x; lambda(x); }
+        break;
+      case DataType::float32:
+        { float x; lambda(x); }
+        break;
+      case DataType::float64:
+        { double x; lambda(x); }
+        break;
+      case DataType::string:
+        { std::string x; lambda(x); }
+        break;
+      case DataType::none:
+        class myBadCast : public std::bad_cast {
+          myBadCast(const std::string &desc) : _desc(desc) {}
+          const char* what() const noexcept override {
+            return _desc.c_str();
+          }
+          std::string _desc;
+        };
+        throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
     }
   }
 
