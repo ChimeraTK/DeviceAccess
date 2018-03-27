@@ -65,26 +65,6 @@ namespace ChimeraTK {
                                     boost::fusion::pair<std::string,T>
                                 > ;
 
-  /** Helper class for callForType. */
-  namespace detail {
-    template<typename X>
-    class callForType_callable {
-      public:
-        callForType_callable(const std::type_info &type, X &fn): type_(type), fn_(fn) {}
-
-        template <typename Pair>
-        void operator()(Pair &ppp) const {
-          if(type_ != typeid(ppp.second)) return;
-          fn_(ppp.second);
-          done_ = true;
-        }
-
-        const std::type_info &type_;
-        X &fn_;
-        mutable bool done_{false};
-    };
-  }
-
 #define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES( TemplateClass ) \
   extern template class TemplateClass<int8_t>;  \
   extern template class TemplateClass<uint8_t>;  \
@@ -215,6 +195,26 @@ namespace ChimeraTK {
     protected:
       TheType _value;
   };
+
+  /** Helper class for callForType. */
+  namespace detail {
+    template<typename X>
+    class callForType_callable {
+      public:
+        callForType_callable(const std::type_info &type, X &fn): type_(type), fn_(fn) {}
+
+        template <typename Pair>
+        void operator()(Pair &ppp) const {
+          if(type_ != typeid(ppp.second)) return;
+          fn_(ppp.second);
+          done_ = true;
+        }
+
+        const std::type_info &type_;
+        X &fn_;
+        mutable bool done_{false};
+    };
+  }
 
   /**
    *  Helper function for running code which uses some compile-time type that is specified at runtime as a type_info.
