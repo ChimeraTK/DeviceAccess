@@ -196,30 +196,29 @@ namespace ChimeraTK {
       TheType _value;
   };
 
-  /** Helper class for callForType. */
+  /** Helper class for for_each(). */
   namespace detail {
     template<typename X>
-    class callForType_callable {
+    class for_each_callable {
       public:
-        callForType_callable(const std::type_info &type, X &fn): type_(type), fn_(fn) {}
+        for_each_callable(X &fn): fn_(fn) {}
 
-        template <typename Pair>
-        void operator()(Pair &ppp) const {
-          if(type_ != typeid(ppp.second)) return;
-          fn_(ppp.second);
-          done_ = true;
+        template <typename ARG_TYPE>
+        void operator()(ARG_TYPE &argument) const {
+          fn_(argument);
         }
 
       private:
-
-        const std::type_info &type_;
         X &fn_;
-        mutable bool done_{false};
-
-        template<typename LAMBDATYPE>
-        friend void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast);
-
     };
+  }
+
+  /** Variant of boost::fusion::for_each() to iterate a boost::fusion::map, which accepts a lambda instead of the
+   *  callable class requred by the boost version. The lambda must have one single argument of the type auto, which
+   *  will be a boost::fusion::pair<>. */
+  template<typename MAPTYPE, typename LAMBDATYPE>
+  void for_each(MAPTYPE &map, LAMBDATYPE &lambda) {
+    boost::fusion::for_each(map, detail::for_each_callable<LAMBDATYPE>(lambda));
   }
 
   /**
@@ -246,10 +245,18 @@ namespace ChimeraTK {
    */
   template<typename LAMBDATYPE>
   void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast) {
-    userTypeMap map;
-    detail::callForType_callable<LAMBDATYPE> callable(type, lambda);
-    boost::fusion::for_each(map, callable);
-    if(!callable.done_) {
+    bool done = false;
+
+    // iterate through a userTypeMap() and test all types
+    for_each(userTypeMap(), [&type, &lambda, &done] (auto pair) {
+      if(type != typeid(pair.second)) return;
+      // if the right type has been found, call the original lambda
+      lambda(pair.second);
+      done = true;
+    });
+
+    // Check if done flag has been set. If not, an unknown type has been passed.
+    if(!done) {
       class myBadCast : public std::bad_cast {
         myBadCast(const std::string &desc) : _desc(desc) {}
         const char* what() const noexcept override {
@@ -312,33 +319,6 @@ namespace ChimeraTK {
         throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
     }
   }
-
-
-  /** Helper class for for_each(). */
-  namespace detail {
-    template<typename X>
-    class for_each_callable {
-      public:
-        for_each_callable(X &fn): fn_(fn) {}
-
-        template <typename ARG_TYPE>
-        void operator()(ARG_TYPE &argument) const {
-          fn_(argument);
-        }
-
-      private:
-        X &fn_;
-    };
-  }
-
-  /** Variant of boost::fusion::for_each() to iterate a boost::fusion::map, which accepts a lambda instead of the
-   *  callable class requred by the boost version. The lambda must have one single argument of the type auto, which
-   *  will be a boost::fusion::pair<>. */
-  template<typename MAPTYPE, typename LAMBDATYPE>
-  void for_each(MAPTYPE &map, LAMBDATYPE &lambda) {
-    boost::fusion::for_each(map, detail::for_each_callable<LAMBDATYPE>(lambda));
-  }
-
 
 } /* namespace ChimeraTK */
 
