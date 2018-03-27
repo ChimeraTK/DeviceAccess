@@ -17,6 +17,7 @@
 #include "DummyBackend.h"
 #include "LogicalNameMappingBackend.h"
 #include "SubdeviceBackend.h"
+#include "SharedDummyBackend.h"
 #include "DMapFileParser.h"
 #include "DMapFileDefaults.h"
 #include "DeviceException.h"
@@ -68,6 +69,7 @@ namespace ChimeraTK {
     registerBackendType("rebot","",&RebotBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     registerBackendType("subdevice","",&SubdeviceBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("sharedMemoryDummy", "", &SharedDummyBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
   }
 
   BackendFactory & BackendFactory::getInstance(){
@@ -158,7 +160,7 @@ namespace ChimeraTK {
     throw BackendFactoryException("Unregistered device: Interface = "+sdm._Interface+" Protocol = "+sdm._Protocol,
                                   BackendFactoryException::UNREGISTERED_DEVICE);
       return boost::shared_ptr<DeviceBackend>(); //won't execute
-    }
+  }
 
   void BackendFactory::loadPluginLibrary(std::string soFile){
     // Create a copy of the original creator map. If we unload the library because the signature is not

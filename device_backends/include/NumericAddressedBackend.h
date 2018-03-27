@@ -58,7 +58,6 @@ namespace ChimeraTK {
       template<typename UserType>
       boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
           const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackend, getRegisterAccessor_impl, 4 );
 
   };
 
