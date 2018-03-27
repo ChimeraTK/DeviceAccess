@@ -19,9 +19,11 @@
 #include "NumericAddressedBackend.h"
 
 
-/*FIXME Correct approach to set namespace? */
-#define _DEBUG
-//namespace mtca4u {
+// Define shared-memory compatible vector type and corresponding allocator
+typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
+typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
+
+
 namespace ChimeraTK {
 
   /** TODO DOCUMENTATION
@@ -49,35 +51,33 @@ namespace ChimeraTK {
       std::string _mapFile;
 
       RegisterInfoMapPointer _registerMapping;
-
-      // Define shared-memory compatible vector type and corresponding allocator
-      typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
-      typedef boost::interprocess::vector<int32_t, ShmemAllocator> MyVector;
       
       // Bar contents with shared-memory compatible vector type. Plain pointers are used here since this is what we
       // get from the shared memory allocation.
-      std::map<uint8_t, MyVector*> _barContents;
+      std::map<uint8_t, SharedMemoryVector*> _barContents;
       
-      // bar sizes in words
-      std::map<uint8_t, size_t> _barSizes;
+      // Bar sizes
+      std::map<uint8_t, size_t> _barSizesInBytes;
       
 
       // Helper class to manage the shared memory: automatically construct if necessary,
       // automatically destroy if last using process closes.
       /*\
        * TODO: * Include User and URI in hashes
-       *       * Evaluate use of distinct allocator for UseCounter, PIDs,...
        *         -> Additional overhead?
-       *       * Include method to compute required space /w overhead
+       *
        */
-      class MyShm {
+      class SharedMemoryManager {
         
       public:
-        MyShm(const std::string instanceId, const std::string mapFileName, size_t maxSize) :
+        SharedMemoryManager(SharedDummyBackend &sharedDummyBackend_,
+                            const std::string instanceId,
+                            const std::string mapFileName) :
+          sharedDummyBackend(sharedDummyBackend_),
           mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
           instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId))),
           name("ChimeraTK_SharedDummy_"+mapFileHash+"_"+instanceIdHash),
-          segment(boost::interprocess::open_or_create, name.c_str(), maxSize),
+          segment(boost::interprocess::open_or_create, name.c_str(), getRequiredMemoryWithOverhead()),
           alloc_inst(segment.get_segment_manager()),
           globalMutex(boost::interprocess::open_or_create, name.c_str())
         {
@@ -97,12 +97,13 @@ namespace ChimeraTK {
           (*useCount)++;
 
 #ifdef _DEBUG
-          std::cout << "Created shared memory with a size of " << maxSize << " bytes." << std::endl;
-          std::cout << "useCount is: " << *useCount << std::endl << std::flush;
+          std::cout << "Created shared memory with a size of " << segment.get_size() << " bytes." << std::endl;
+          std::cout << "    Free space : " << segment.get_free_memory() << std::endl;
+          std::cout << "    useCount is: " << *useCount << std::endl << std::flush;
 #endif
         }
 
-        ~MyShm() {
+        ~SharedMemoryManager() {
 
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
@@ -117,7 +118,26 @@ namespace ChimeraTK {
           }
         }
         
+        /**
+         * Finds or constructs a vector object in the shared memory.
+         */
+        SharedMemoryVector* findOrConstructVector(const std::string& objName, const size_t size);
+
+        /**
+         * Get information on the shared memory segment
+         * @retval std::pair<size_t, size_t> first: Size of the memory segment, second: free memory in segment
+         */
+        std::pair<size_t, size_t> getInfoOnMemory();
+
       private:
+
+        // Constants to take overhead of managed shared memory into respect
+        // (approx. linear function, evaluated using Boost 1.58)
+        // TODO Adjust for additional overhead (PIDs, ...)
+        static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
+        static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 80;
+
+        SharedDummyBackend& sharedDummyBackend;
 
         // Hashes to assure match of shared memory accessing processes
         std::string mapFileHash;
@@ -138,17 +158,19 @@ namespace ChimeraTK {
         // pointer to the use count on shared memory;
         size_t *useCount{nullptr};
 
-      };
+        size_t getRequiredMemoryWithOverhead();
+
+      };  /* class SharedMemoryManager */
       
       // Managed shared memory object
-      MyShm sharedMemoryManager;
+      SharedMemoryManager sharedMemoryManager;
       
-      void resizeBarContents();
+      void setupBarContents();
       std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
 
       // Helper routines called in init list
-      std::map<uint8_t, size_t> getBarSizesInWords();
-      size_t getTotalRegisterSizeInWords();
+      // TODO Remove std::map<uint8_t, size_t> getBarSizesInWords() const;
+      size_t getTotalRegisterSizeInBytes() const;
 
       static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
