@@ -9,6 +9,7 @@
 #define CHIMERA_TK_SUPPORTED_USER_TYPES_H
 
 #include <boost/fusion/container/map.hpp>
+#include <boost/fusion/algorithm.hpp>
 
 namespace ChimeraTK {
 
@@ -100,11 +101,11 @@ namespace ChimeraTK {
    */
   class DataType{
     public:
-      /** The actual enum representing the data type. It is a plain enum so 
-       *  the data type class can be used like a class enum, i.e. types are 
+      /** The actual enum representing the data type. It is a plain enum so
+       *  the data type class can be used like a class enum, i.e. types are
        *  identified for instance as DataType::int32.
        */
-      enum TheType{ none, ///< The data type/concept does not exist. e.g. there is no raw transfer 
+      enum TheType{ none, ///< The data type/concept does not exist. e.g. there is no raw transfer
                     int8, ///< Signed 8 bit integer
                     uint8, ///< Unsigned 8 bit integer
                     int16,///< Signed 16 bit integer
@@ -154,7 +155,7 @@ namespace ChimeraTK {
         }
       }
 
-      /** Return whether the raw data type is signed. True for signed integers and 
+      /** Return whether the raw data type is signed. True for signed integers and
        *  floating point types (currently only signed implementations).
        *  False otherwise (also for non-numerical types and 'none').
        */
@@ -186,14 +187,138 @@ namespace ChimeraTK {
             return true;
         }
       }
-      
+
       /** The constructor can get the type as an argument. It defaults to 'none'.
        */
       inline DataType( TheType const & value = none ): _value(value){}
-      
+
     protected:
       TheType _value;
   };
+
+  /** Helper class for for_each(). */
+  namespace detail {
+    template<typename X>
+    class for_each_callable {
+      public:
+        for_each_callable(X &fn): fn_(fn) {}
+
+        template <typename ARG_TYPE>
+        void operator()(ARG_TYPE &argument) const {
+          fn_(argument);
+        }
+
+      private:
+        X &fn_;
+    };
+  }
+
+  /** Variant of boost::fusion::for_each() to iterate a boost::fusion::map, which accepts a lambda instead of the
+   *  callable class requred by the boost version. The lambda must have one single argument of the type auto, which
+   *  will be a boost::fusion::pair<>. */
+  template<typename MAPTYPE, typename LAMBDATYPE>
+  void for_each(MAPTYPE &map, LAMBDATYPE &lambda) {
+    boost::fusion::for_each(map, detail::for_each_callable<LAMBDATYPE>(lambda));
+  }
+
+  /**
+   *  Helper function for running code which uses some compile-time type that is specified at runtime as a type_info.
+   *  The code has to be written in a lambda with a single auto-typed argument (this requires C++ 14). This argument
+   *  will have the type specified by the argument "type". The type must be one of the user types supported by
+   *  ChimeraTK DeviceAccess. Otherwise, std::bad_cast is thrown.
+   *
+   *  The lamda should be declared like this:
+   *
+   *    auto myLambda [](auto arg) { std::cout << typeid(decltype(arg)).name() << std::endl; });
+   *
+   *  The value of the argument "arg" is undefined, only its type should be used (via decltype(arg)). This lambda can
+   *  then be called like this:
+   *
+   *    callForType(typeid(int), myLambda);
+   *
+   *  This will effectively execute the following code:
+   *
+   *    std::cout << typeid(int).name() << std::endl;
+   *
+   *  Please note that this call is not as efficient as a direct call to a template. For each call all allowed user
+   *  types have to be tested against the given type_info.
+   */
+  template<typename LAMBDATYPE>
+  void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast) {
+    bool done = false;
+
+    // iterate through a userTypeMap() and test all types
+    for_each(userTypeMap(), [&type, &lambda, &done] (auto pair) {
+      if(type != typeid(pair.second)) return;
+      // if the right type has been found, call the original lambda
+      lambda(pair.second);
+      done = true;
+    });
+
+    // Check if done flag has been set. If not, an unknown type has been passed.
+    if(!done) {
+      class myBadCast : public std::bad_cast {
+        myBadCast(const std::string &desc) : _desc(desc) {}
+        const char* what() const noexcept override {
+          return _desc.c_str();
+        }
+        std::string _desc;
+      };
+      throw myBadCast(std::string("ChimeraTK::callForType(): type is not known: ")+type.name());
+    }
+  }
+
+  /**
+   *  Alternate form of callForType() which takes a DataType as a runtime type description. If DataType::none is
+   *  passed, std::bad_cast is thrown. For more details have a look at the other form.
+   */
+  template<typename LAMBDATYPE>
+  void callForType(const DataType &type, LAMBDATYPE lambda) throw(std::bad_cast) {
+    switch(DataType::TheType(type)) {
+      case DataType::int8:
+        { int8_t x; lambda(x); }
+        break;
+      case DataType::uint8:
+        { uint8_t x; lambda(x); }
+        break;
+      case DataType::int16:
+        { int16_t x; lambda(x); }
+        break;
+      case DataType::uint16:
+        { uint16_t x; lambda(x); }
+        break;
+      case DataType::int32:
+        { int32_t x; lambda(x); }
+        break;
+      case DataType::uint32:
+        { uint32_t x; lambda(x); }
+        break;
+      case DataType::int64:
+        { int64_t x; lambda(x); }
+        break;
+      case DataType::uint64:
+        { uint64_t x; lambda(x); }
+        break;
+      case DataType::float32:
+        { float x; lambda(x); }
+        break;
+      case DataType::float64:
+        { double x; lambda(x); }
+        break;
+      case DataType::string:
+        { std::string x; lambda(x); }
+        break;
+      case DataType::none:
+        class myBadCast : public std::bad_cast {
+          myBadCast(const std::string &desc) : _desc(desc) {}
+          const char* what() const noexcept override {
+            return _desc.c_str();
+          }
+          std::string _desc;
+        };
+        throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
+    }
+  }
 
 } /* namespace ChimeraTK */
 
