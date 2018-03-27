@@ -112,7 +112,7 @@ namespace ChimeraTK {
        *  this change is postponed. */
       template<typename UserType>
       TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(const RegisterPath &registerPathName,
-          size_t numberOfElements=0, size_t elementsOffset=0) const;
+          size_t numberOfElements=0, size_t elementsOffset=0, const AccessModeFlags &flags=AccessModeFlags({})) const;
 
       /** Return the register catalogue with detailed information on all registers. */
       const RegisterCatalogue& getRegisterCatalogue() const;
@@ -540,10 +540,10 @@ namespace ChimeraTK {
 
   template<typename UserType>
   TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(const RegisterPath &registerPathName,
-      size_t numberOfElements, size_t elementsOffset) const {
+      size_t numberOfElements, size_t elementsOffset, const AccessModeFlags &flags) const {
     checkPointersAreNotNull();
     return TwoDRegisterAccessor<UserType>(_deviceBackendPointer->getRegisterAccessor<UserType>(
-        registerPathName, numberOfElements, elementsOffset, false));
+        registerPathName, numberOfElements, elementsOffset, flags));
   }
 
   /********************************************************************************************************************/
