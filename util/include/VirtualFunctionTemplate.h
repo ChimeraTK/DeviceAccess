@@ -109,10 +109,19 @@
         className *object;                                                                                      \
     }
 
-
 /** Fill the vtable of a virtual function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro
  *  inside the constructor of the derived class. */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( functionName )                                                   \
       boost::fusion::for_each(this->functionName ## _vtable.table, functionName ## _vtable_filler(this))
+
+/** Fill the vtable of a virtual function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro
+ *  inside the constructor of the derived class. This version does not require to use the
+ *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER macro! */
+#define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_STANDALONE( functionName, numberOfArguments )                     \
+      typedef std::remove_reference<decltype(*this)>::type className;                                           \
+      for_each(this->functionName ## _vtable.table, [this] (auto pair) {                                        \
+          pair.second = boost::bind(&className::functionName<typename decltype(pair)::first_type>, this,        \
+              DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_ ## numberOfArguments);                                      \
+      });
 
 #endif /* CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H */
