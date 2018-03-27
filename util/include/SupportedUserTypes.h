@@ -210,9 +210,15 @@ namespace ChimeraTK {
           done_ = true;
         }
 
+      private:
+
         const std::type_info &type_;
         X &fn_;
         mutable bool done_{false};
+
+        template<typename LAMBDATYPE>
+        friend void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast);
+
     };
   }
 
@@ -306,6 +312,33 @@ namespace ChimeraTK {
         throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
     }
   }
+
+
+  /** Helper class for for_each(). */
+  namespace detail {
+    template<typename X>
+    class for_each_callable {
+      public:
+        for_each_callable(X &fn): fn_(fn) {}
+
+        template <typename ARG_TYPE>
+        void operator()(ARG_TYPE &argument) const {
+          fn_(argument);
+        }
+
+      private:
+        X &fn_;
+    };
+  }
+
+  /** Variant of boost::fusion::for_each() to iterate a boost::fusion::map, which accepts a lambda instead of the
+   *  callable class requred by the boost version. The lambda must have one single argument of the type auto, which
+   *  will be a boost::fusion::pair<>. */
+  template<typename MAPTYPE, typename LAMBDATYPE>
+  void for_each(MAPTYPE &map, LAMBDATYPE &lambda) {
+    boost::fusion::for_each(map, detail::for_each_callable<LAMBDATYPE>(lambda));
+  }
+
 
 } /* namespace ChimeraTK */
 
