@@ -85,45 +85,6 @@ namespace ChimeraTK {
     };
   }
 
-  /**
-   *  Helper function for running code using some compile-time type which is specified as a runtime type_info. The code
-   *  is written in a lambda with a single auto-typed argument (this requires C++ 14). This argument will have the type
-   *  specified by the argument "type". The type must be one of the user types supported by ChimeraTK DeviceAccess.
-   *  Otherwise, std::bad_cast is thrown.
-   *
-   *  The lamda should be declared like this:
-   *
-   *    auto myLambda [](auto arg) { std::cout << typeid(decltype(arg)).name() << std::endl; });
-   *
-   *  The value of the argument "arg" is undefined, only its type should be used (via decltype(arg)). This lambda can
-   *  then be called like this:
-   *
-   *    callForType(typeid(int), myLambda);
-   *
-   *  This will effectively execute the following code:
-   *
-   *    std::cout << typeid(int).name() << std::endl;
-   *
-   *  Please note that this call is not as efficient as a direct call to a template. For each call all allowed user
-   *  types have to be tested against the given type_info.
-   */
-  template<typename LAMBDATYPE>
-  void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast) {
-    userTypeMap map;
-    detail::callForType_callable<LAMBDATYPE> callable(type, lambda);
-    boost::fusion::for_each(map, callable);
-    if(!callable.done_) {
-      class myBadCast : public std::bad_cast {
-        myBadCast(const std::string &desc) : _desc(desc) {}
-        const char* what() const noexcept override {
-          return _desc.c_str();
-        }
-        std::string _desc;
-      };
-      throw myBadCast(std::string("ChimeraTK::callForType(): type is not known: ")+type.name());
-    }
-  }
-
 #define DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES( TemplateClass ) \
   extern template class TemplateClass<int8_t>;  \
   extern template class TemplateClass<uint8_t>;  \
@@ -254,6 +215,45 @@ namespace ChimeraTK {
     protected:
       TheType _value;
   };
+
+  /**
+   *  Helper function for running code using some compile-time type which is specified as a runtime type_info. The code
+   *  is written in a lambda with a single auto-typed argument (this requires C++ 14). This argument will have the type
+   *  specified by the argument "type". The type must be one of the user types supported by ChimeraTK DeviceAccess.
+   *  Otherwise, std::bad_cast is thrown.
+   *
+   *  The lamda should be declared like this:
+   *
+   *    auto myLambda [](auto arg) { std::cout << typeid(decltype(arg)).name() << std::endl; });
+   *
+   *  The value of the argument "arg" is undefined, only its type should be used (via decltype(arg)). This lambda can
+   *  then be called like this:
+   *
+   *    callForType(typeid(int), myLambda);
+   *
+   *  This will effectively execute the following code:
+   *
+   *    std::cout << typeid(int).name() << std::endl;
+   *
+   *  Please note that this call is not as efficient as a direct call to a template. For each call all allowed user
+   *  types have to be tested against the given type_info.
+   */
+  template<typename LAMBDATYPE>
+  void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast) {
+    userTypeMap map;
+    detail::callForType_callable<LAMBDATYPE> callable(type, lambda);
+    boost::fusion::for_each(map, callable);
+    if(!callable.done_) {
+      class myBadCast : public std::bad_cast {
+        myBadCast(const std::string &desc) : _desc(desc) {}
+        const char* what() const noexcept override {
+          return _desc.c_str();
+        }
+        std::string _desc;
+      };
+      throw myBadCast(std::string("ChimeraTK::callForType(): type is not known: ")+type.name());
+    }
+  }
 
 } /* namespace ChimeraTK */
 
