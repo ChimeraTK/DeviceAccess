@@ -118,10 +118,11 @@
  *  inside the constructor of the derived class. This version does not require to use the
  *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER macro! */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_STANDALONE( functionName, numberOfArguments )                     \
-      typedef std::remove_reference<decltype(*this)>::type className;                                           \
-      for_each(this->functionName ## _vtable.table, [this] (auto pair) {                                        \
-          pair.second = boost::bind(&className::functionName<typename decltype(pair)::first_type>, this,        \
-              DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_ ## numberOfArguments);                                      \
+      typedef std::remove_reference<decltype(*this)>::type ClassName;                                           \
+      for_each(this->functionName ## _vtable.table, [this] (auto &pair) {                                       \
+        typedef typename std::remove_reference<decltype(pair)>::type::first_type UserType;                      \
+        pair.second = boost::bind(&ClassName::functionName<UserType>, this,                                     \
+                          DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_ ## numberOfArguments);                          \
       });
 
 #endif /* CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H */
