@@ -244,7 +244,7 @@ namespace ChimeraTK {
    *  types have to be tested against the given type_info.
    */
   template<typename LAMBDATYPE>
-  void callForType(const std::type_info &type, LAMBDATYPE lambda) throw(std::bad_cast) {
+  void callForType(const std::type_info &type, LAMBDATYPE lambda) {
     bool done = false;
 
     // iterate through a userTypeMap() and test all types
@@ -273,7 +273,7 @@ namespace ChimeraTK {
    *  passed, std::bad_cast is thrown. For more details have a look at the other form.
    */
   template<typename LAMBDATYPE>
-  void callForType(const DataType &type, LAMBDATYPE lambda) throw(std::bad_cast) {
+  void callForType(const DataType &type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
       case DataType::int8:
         { int8_t x; lambda(x); }
