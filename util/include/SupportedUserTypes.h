@@ -258,10 +258,12 @@ namespace ChimeraTK {
     // Check if done flag has been set. If not, an unknown type has been passed.
     if(!done) {
       class myBadCast : public std::bad_cast {
+      public:
         myBadCast(const std::string &desc) : _desc(desc) {}
         const char* what() const noexcept override {
           return _desc.c_str();
         }
+      private:
         std::string _desc;
       };
       throw myBadCast(std::string("ChimeraTK::callForType(): type is not known: ")+type.name());
@@ -310,10 +312,12 @@ namespace ChimeraTK {
         break;
       case DataType::none:
         class myBadCast : public std::bad_cast {
+        public:
           myBadCast(const std::string &desc) : _desc(desc) {}
           const char* what() const noexcept override {
             return _desc.c_str();
           }
+        private:
           std::string _desc;
         };
         throw myBadCast(std::string("ChimeraTK::callForType() has been called for DataType::none"));
