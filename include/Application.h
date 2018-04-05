@@ -81,9 +81,9 @@ namespace ChimeraTK {
        *  Note: Enabling the testable mode will have a singificant impact on the performance, since it will prevent
        *  any module threads to run at the same time! */
       void enableTestableMode() {
+        threadName() = "TEST THREAD";
         testableMode = true;
         testableModeLock("enableTestableMode");
-        threadName() = "TEST THREAD";
       }
 
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
@@ -127,8 +127,33 @@ namespace ChimeraTK {
       /** Get string holding the name of the current thread. This is used e.g. for debugging output of the testable
        *  mode and for the internal profiler. */
       static std::string& threadName() {
-        thread_local static std::string name{"**UNNAMED**"};
-        return name;
+        /*
+         *  The code below is equivalent to the following code:
+         *
+         *    thread_local std::string name{"**UNNAMED**"};
+         *    return name;
+         *
+         *  There seem to be a bug in gcc (at least in gcc 5.4.0 and 7.3.1) in connection with thread_local and
+         *  optimisations, which results in different objects returned for the same thread. Therefore as a work-around
+         *  the following code is used.
+         */
+
+
+        // Define a map of unique_locks depending on the thread id
+        static std::unordered_map< std::thread::id, std::string > mapOfNames;
+
+        // Search the map, if object for the current thread is found, return it. This is thread safe, since we only
+        // read at this point.
+        auto it = mapOfNames.find(std::this_thread::get_id());
+        if(it != mapOfNames.end()) return it->second;
+
+        // Object not found for current thread: create entry under mutex. Simultaneous reads of other elements in the
+        // map by other threads are not affected.
+        static std::mutex mapModificationMutex;
+        std::unique_lock<std::mutex> mapModificationLock(mapModificationMutex);
+        auto &returnValue = ( mapOfNames[std::this_thread::get_id()] = {"**UNNAMED**"} );
+        return returnValue;
+
       }
 
       /** Register the thread in the application system and give it a name. This should be done for all threads used by
@@ -174,8 +199,33 @@ namespace ChimeraTK {
        *  the first call in one particular thread) the lock will not be owned by the returned object, so it is
        *  important to catch the corresponding exception when calling std::unique_lock::unlock(). */
       static std::unique_lock<std::mutex>& getTestableModeLockObject() {
-        thread_local static std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
-        return myLock;
+
+        /*
+         *  The code below is equivalent to the following code:
+         *
+         *    thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
+         *    std::cout << "Thread ID " << std::this_thread::get_id() << " " << threadName() << " -> " << (&myLock) << std::endl;
+         *    return myLock;
+         *
+         *  There seem to be a bug in gcc (at least in gcc 5.4.0 and 7.3.1) in connection with thread_local and
+         *  optimisations, which results in different objects returned for the same thread. Therefore as a work-around
+         *  the following code is used.
+         */
+
+        // Define a map of unique_locks depending on the thread id
+        static std::unordered_map< std::thread::id, std::unique_lock<std::mutex> > mapOfLocks;
+
+        // Search the map, if object for the current thread is found, return it. This is thread safe, since we only
+        // read at this point.
+        auto it = mapOfLocks.find(std::this_thread::get_id());
+        if(it != mapOfLocks.end()) return it->second;
+
+        // Object not found for current thread: create entry under mutex. Simultaneous reads of other elements in the
+        // map by other threads are not affected.
+        static std::mutex mapModificationMutex;
+        std::unique_lock<std::mutex> mapModificationLock(mapModificationMutex);
+        auto &returnValue = ( mapOfLocks[std::this_thread::get_id()] = {Application::testableMode_mutex, std::defer_lock} );
+        return returnValue;
       }
 
       /** Register the connections to constants for previously unconnected nodes. */
