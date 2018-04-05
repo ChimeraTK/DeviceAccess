@@ -962,3 +962,22 @@ void Application::testableModeUnlock(const std::string& name) {
   }                                                                                                 // LCOV_EXCL_LINE (only cout)
   getTestableModeLockObject().unlock();
 }
+/*********************************************************************************************************************/
+
+std::string& Application::threadName() {
+    // Note: due to a presumed bug in gcc (still present in gcc 7), the thread_local definition must be in the cc file
+    // to prevent seeing different objects in the same thread under some conditions.
+    // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
+    thread_local std::string name{"**UNNAMED**"};
+    return name;
+}
+
+/*********************************************************************************************************************/
+
+std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
+    // Note: due to a presumed bug in gcc (still present in gcc 7), the thread_local definition must be in the cc file
+    // to prevent seeing different objects in the same thread under some conditions.
+    // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
+    thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
+    return myLock;
+}
