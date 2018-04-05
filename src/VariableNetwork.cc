@@ -71,6 +71,7 @@ namespace ChimeraTK {
   void VariableNetwork::removeNode(const VariableNetworkNode &a) {
     auto nNodes = nodeList.size();
     nodeList.remove(a);
+    (void)nNodes;
     assert(nodeList.size() != nNodes);
   }
 
