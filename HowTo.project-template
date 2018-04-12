@@ -1,0 +1,38 @@
+This project uses the ChimeraTK project-template.
+
+This file descibes how to corretly use the template project.
+
+Concept:
+The project template is merged via git. The idea is to have the whole project-template repository merged into the project which uses it, incl. all the history. Like this updates and improvements in the template scripts can easily be propagated to all client projects by simply merging the head of project template.
+
+Instructions:
+
+A) Preparing your project to use the project template
+
+1. Add the project template repository as a git remote to your project. This only is done once for each local repository.
+$ git remote add project-template https://github.com/ChimeraTK/project-template.git
+
+We intentionally use the read-only https version here. Never write to the project template from one of the client projects!
+
+2. Update the remote on you hard disk so git knows what is in project-template
+$ git remote update
+
+3. Merge the project template master into your project
+$ git merge project-template/master
+
+Not you can use the files which are provided in the cmake directory in your CMakeLists.txt
+
+B) Getting updates of project template
+
+Just repeat steps 2. and 3. of section A. If you are on a different computer with a different checkout directory, you might have to repeat step 1 if the remote is not there (check with 'git remote show').
+
+C) Updating/Improving the project template.
+
+Never write to the project template from one of the client projects!
+If you have improvements or additions to the project template, check out the project-template repository separately, make the modifications and commit/push them.
+
+Be careful not to break functionality for other project which are using the template!
+
+After the project template is updated you can merge the changes into your project as described in section B).
+
+Note: For testing you might want to add your local repository of project-template as a remote to your project, so you don't have to push untested changes. Be careful that everything is pushed to github when you are done in order not to lose consistency of the repositories.
