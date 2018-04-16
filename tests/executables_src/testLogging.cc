@@ -19,7 +19,7 @@
 #include "Logging.h"
 using namespace logging;
 
-#include "ChimeraTK/ApplicationCore/TestFacility.h"
+#include "TestFacility.h"
 
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
