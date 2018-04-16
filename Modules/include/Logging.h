@@ -85,7 +85,7 @@
 #define MODULES_LOGGING_H_
 
 #undef GENERATE_XML
-#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include "ApplicationCore.h"
 
 namespace ctk = ChimeraTK;
 
