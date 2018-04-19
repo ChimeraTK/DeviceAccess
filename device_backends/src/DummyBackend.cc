@@ -44,6 +44,7 @@ namespace ChimeraTK {
 
   void DummyBackend::open()
   {
+    std::lock_guard<std::mutex> lock(mutex);
     if (_opened){
       throw DummyBackendException("Device is already open.", DummyBackendException::ALREADY_OPEN);
     }
@@ -51,6 +52,7 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::resizeBarContents(){
+    std::lock_guard<std::mutex> lock(mutex);
     std::map< uint8_t, size_t > barSizesInBytes
     = getBarSizesInBytesFromRegisterMapping();
 
@@ -77,6 +79,7 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::close(){
+    std::lock_guard<std::mutex> lock(mutex);
     if (!_opened){
       throw DummyBackendException("Device is already closed.", DummyBackendException::ALREADY_CLOSED);
     }
@@ -87,10 +90,12 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data){
+    std::lock_guard<std::mutex> lock(mutex);
     TRY_REGISTER_ACCESS( _barContents[bar].at(address/sizeof(int32_t)) = data; );
   }
 
   void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
+    std::lock_guard<std::mutex> lock(mutex);
     if (!_opened){
       throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
     }
@@ -102,17 +107,22 @@ namespace ChimeraTK {
   }
 
   void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
-    if (!_opened){
-      throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
-    }
-    checkSizeIsMultipleOfWordSize( sizeInBytes );
-    unsigned int wordBaseIndex = address/sizeof(int32_t);
-    for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
-      if (isReadOnly( bar, address + wordIndex*sizeof(int32_t) ) ){
-        continue;
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      if (!_opened){
+        throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
       }
-      TRY_REGISTER_ACCESS( _barContents[bar].at(wordBaseIndex+wordIndex) = data[wordIndex]; );
+      checkSizeIsMultipleOfWordSize( sizeInBytes );
+      unsigned int wordBaseIndex = address/sizeof(int32_t);
+      for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
+        if (isReadOnly( bar, address + wordIndex*sizeof(int32_t) ) ){
+          continue;
+        }
+        TRY_REGISTER_ACCESS( _barContents[bar].at(wordBaseIndex+wordIndex) = data[wordIndex]; );
+      }
     }
+    // we call the callback functions after releasing the mutex in order to
+    // avoid the risk of deadlocks.
     runWriteCallbackFunctionsForAddressRange( AddressRange(bar, address, sizeInBytes ) );
   }
 
