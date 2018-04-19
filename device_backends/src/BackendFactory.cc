@@ -111,9 +111,9 @@ namespace ChimeraTK {
     auto iterator = _existingBackends.find(deviceInfo.uri);
     if (iterator != _existingBackends.end())
     {
-      if(!iterator->second.expired())
-      {
-        return iterator->second.lock();
+      auto strongPtr = iterator->second.lock();
+      if (strongPtr) {
+        return strongPtr;
       }
     }
     Sdm sdm;
