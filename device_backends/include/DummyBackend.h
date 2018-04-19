@@ -5,6 +5,7 @@
 #include <map>
 #include <list>
 #include <set>
+#include <mutex>
 
 #include <boost/function.hpp>
 
@@ -95,6 +96,7 @@ namespace ChimeraTK {
       std::set< uint64_t > _readOnlyAddresses;
       std::multimap< AddressRange, boost::function<void(void)> > _writeCallbackFunctions;
       RegisterInfoMapPointer _registerMapping;
+      std::mutex mutex;
 
       void resizeBarContents();
       std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
