@@ -60,10 +60,12 @@ namespace ChimeraTK {
       /**
        * @brief Class constructor
        *
-       * @param _exMessage exception reason expressed as a string
-       * @param _exID exception reason expressed as a identifier
+       * @param _fileName Name of the current file
+       * @param _lineNumber line number of the cause for the exception
+       * @param _line the line containing the error
+       * @param _errorMessage optional message with more details for the error
        */
-      MapFileParserException(const std::string &_exMessage, unsigned int _exID);
+      MapFileParserException(const std::string &_fileName, unsigned int _lineNumber, const std::string &_line, const std::string &_errorMessage = {});
   };
 
   /**

@@ -48,9 +48,7 @@ namespace ChimeraTK {
         is.str(line);
         is >> md.name;
         if (!is){
-          std::ostringstream os;
-          os << line_nr;
-          throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + org_line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+          throw MapFileParserException(file_name, line_nr, org_line);
         }
         line.erase(line.begin(), line.begin() + md.name.length());
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
@@ -68,16 +66,12 @@ namespace ChimeraTK {
       module = moduleAndNamePair.first;
       name = moduleAndNamePair.second;
       if ( name.empty() ){
-        std::ostringstream errorMessage;
-        errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
-        throw MapFileParserException(errorMessage.str(), LibMapException::EX_MAP_FILE_PARSE_ERROR);
+        throw MapFileParserException(file_name, line_nr, line, "empty register name");
       }
 
       is >> std::setbase(0) >> nElements >> std::setbase(0) >> address >> std::setbase(0) >> nBytes;
       if (!is){
-        std::ostringstream os;
-        os << line_nr;
-        throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+        throw MapFileParserException(file_name, line_nr, line);
       }
       // first, set default values for 'optional' fields
       bar = 0x0;
@@ -94,9 +88,7 @@ namespace ChimeraTK {
           failed = true;
         } else {
           if (width > 32) {
-            std::ostringstream os;
-            os << line_nr;
-            throw MapFileParserException("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+            throw MapFileParserException(file_name, line_nr, line, "register width too big");
           }
         }
       }
@@ -106,9 +98,7 @@ namespace ChimeraTK {
           failed = true;
         } else {
           if (nFractionalBits > 1023 || nFractionalBits < -1024) {
-            std::ostringstream os;
-            os << line_nr;
-            throw MapFileParserException("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+            throw MapFileParserException(file_name, line_nr, line, "too many fractional bits");
           }
         }
       }
