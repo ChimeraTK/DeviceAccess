@@ -29,6 +29,8 @@ namespace ChimeraTK {
     int32_t  nFractionalBits; /**< Number of fractional bits */
     bool     signedFlag; /**< Signed/Unsigned flag */
     uint32_t lineNumber; /**< Number of line with description of register in MAP file */
+    RegisterInfoMap::RegisterInfo::Access registerAccess;
+
     std::string module; /**< Name of the module this register is in*/
 
     while (std::getline(file, line)) {
@@ -78,6 +80,7 @@ namespace ChimeraTK {
       width= 32;
       nFractionalBits = 0;
       signedFlag = true;
+      registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
       is >> std::setbase(0) >> bar;
       if (is.fail()){
         failed = true;
@@ -105,16 +108,32 @@ namespace ChimeraTK {
 
       if (!failed) {
         is >> std::setbase(0) >> signedFlag;
-        // no need to check if 'is' failed. Insert a check to set the failed flags if more fields are added
-        //if (is.fail()){
-        //  failed = true;
-        //}
+        if (is.fail()){
+          failed = true;
+        }
+      }
+
+      if (!failed) {
+          std::string accessString;
+          is >> accessString;
+          if (is.fail()) {
+              failed = true;
+          } else {
+              if (accessString == "RO")
+                  registerAccess = RegisterInfoMap::RegisterInfo::Access::READ;
+              else if (accessString == "RW")
+                  registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
+              else if (accessString == "WO")
+                  registerAccess = RegisterInfoMap::RegisterInfo::Access::WRITE;
+              else
+                  throw MapFileParserException(file_name, line_nr, line, "invalid data access");
+          }
       }
       is.clear();
       lineNumber = line_nr;
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-                                                 signedFlag, lineNumber, module);
+                                                 signedFlag, lineNumber, module, 1, false, registerAccess);
       pmap->insert(registerInfo);
     }
 

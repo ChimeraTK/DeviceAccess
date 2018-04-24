@@ -54,6 +54,8 @@ namespace ChimeraTK {
 
         public:
 
+          enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE };
+
           RegisterPath getRegisterName() const override {
             RegisterPath path = RegisterPath(module)/name;
             path.setAltSeparator(".");
@@ -91,6 +93,7 @@ namespace ChimeraTK {
           const bool     signedFlag; /**< Signed/Unsigned flag */
           const uint32_t lineNumber; /**< Number of line with description of register in MAP file */
           const std::string module; /**< Name of the module this register is in*/
+          const Access registerAccess; /**< Data access direction: Read, write or read and write */
 
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
@@ -107,7 +110,8 @@ namespace ChimeraTK {
               uint32_t lineNumber_ = 0,
               std::string const & module_ = std::string(),
               uint32_t nChannels_ = 1,
-              bool is2DMultiplexed_ = false );
+              bool is2DMultiplexed_ = false,
+              Access dataAccess_ = Access::READWRITE);
 
           // Copy assignment
           RegisterInfo& operator=(const RegisterInfo &other) {
