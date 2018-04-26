@@ -323,6 +323,7 @@ void MapFileParserTest::testBadMappFileParse(){
   } catch (mtca4u::MapFileException& mapFileException){
     BOOST_CHECK(mapFileException.getID() ==
         mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-    BOOST_CHECK( std::string(mapFileException.what()) == "Error in mapp file: Empty register name in line 4!" );
+    std::cerr << mapFileException.what() << "\n";
+    BOOST_CHECK( std::string(mapFileException.what()) == "Error in map file: \"badMapFile.map\" (empty register name) in line (4) \"JUST_MOUDLE.      1                   0x0      4\"" );
   }
 }

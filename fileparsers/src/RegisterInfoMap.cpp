@@ -290,10 +290,11 @@ namespace ChimeraTK {
       uint32_t lineNumber_,
       std::string const & module_,
       uint32_t nChannels_,
-      bool is2DMultiplexed_ )
+      bool is2DMultiplexed_,
+      Access dataAccess_)
   : name( name_ ),  nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_),
     address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
-    signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_)
+    signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_), registerAccess(dataAccess_)
   {
     if(width > 1) {    // numeric type
       DataType rawDataInfo = (is2DMultiplexed_ ? DataType::none :  DataType::int32);
