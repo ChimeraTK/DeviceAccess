@@ -31,6 +31,8 @@ namespace ChimeraTK {
 
       virtual std::string readDeviceInfo() = 0;
 
+      virtual bool canMergeRequests() const { return true; }
+
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
       std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> getRegistersInModule(
