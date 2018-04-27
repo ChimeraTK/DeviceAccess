@@ -31,6 +31,15 @@ namespace ChimeraTK {
 
       virtual std::string readDeviceInfo() = 0;
 
+      /**
+       * @brief Determines whether the backend supports merging of requests (read or write)
+       *
+       * Should return true if the backend supports that several consecutive write or read operations
+       * are merged into one single read or write request. If a deriving backend cannot handle such
+       * requests, it can prevent this by returning false here.
+       *
+       * @return true if supported, false otherwise
+       */
       virtual bool canMergeRequests() const { return true; }
 
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
