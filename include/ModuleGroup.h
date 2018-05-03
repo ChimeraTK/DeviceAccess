@@ -29,8 +29,8 @@ namespace ChimeraTK {
       ModuleGroup(EntityOwner *owner, const std::string &name, const std::string &description,
              bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
 
-      /** Default constructor: Allows late initialisation of VariableGroups (e.g. when creating arrays of
-       *  VariableGroups).
+      /** Default constructor: Allows late initialisation of ModuleGroups (e.g. when creating arrays of
+       *  ModuleGroups).
        *
        *  This construtor also has to be here to mitigate a bug in gcc. It is needed to allow constructor
        *  inheritance of modules owning other modules. This constructor will not actually be called then.
