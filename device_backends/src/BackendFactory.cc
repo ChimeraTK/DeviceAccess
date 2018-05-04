@@ -223,7 +223,7 @@ namespace ChimeraTK {
         //Print a warning that the loading failed.
         std::cerr << "Error: Caught exception loading plugin '"<< lib <<"' specified in dmap file: "
                   << e.what() << std::endl;
-        std::cerr << "Some backends with not be available!" << std::endl;
+        std::cerr << "Some backends will not be available!" << std::endl;
       }
     }
   }
