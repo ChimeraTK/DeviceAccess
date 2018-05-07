@@ -9,6 +9,7 @@
 #define CHIMERA_TK_ACCESS_MODE_H
 
 #include <set>
+#include <map>
 
 #include "DeviceException.h"
 
@@ -73,8 +74,18 @@ namespace ChimeraTK {
         }
       }
 
+      /** Remove the given flag from the set */
+      void remove(const AccessMode flag) {
+        _flags.erase(flag);
+      }
+
+      /** Add the given flag to the set */
+      void add(const AccessMode flag) {
+        _flags.insert(flag);
+      }
+
       /** Get a string representation of the given flag */
-      const std::string& getString(const AccessMode flag) const {
+      static const std::string& getString(const AccessMode flag) {
         return getStringMap().at(flag);
       }
 
