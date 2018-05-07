@@ -29,6 +29,8 @@ namespace ChimeraTK {
     int32_t  nFractionalBits; /**< Number of fractional bits */
     bool     signedFlag; /**< Signed/Unsigned flag */
     uint32_t lineNumber; /**< Number of line with description of register in MAP file */
+    RegisterInfoMap::RegisterInfo::Access registerAccess;
+
     std::string module; /**< Name of the module this register is in*/
 
     while (std::getline(file, line)) {
@@ -48,9 +50,7 @@ namespace ChimeraTK {
         is.str(line);
         is >> md.name;
         if (!is){
-          std::ostringstream os;
-          os << line_nr;
-          throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + org_line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+          throw MapFileParserException(file_name, line_nr, org_line);
         }
         line.erase(line.begin(), line.begin() + md.name.length());
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
@@ -68,22 +68,19 @@ namespace ChimeraTK {
       module = moduleAndNamePair.first;
       name = moduleAndNamePair.second;
       if ( name.empty() ){
-        std::ostringstream errorMessage;
-        errorMessage << "Error in mapp file: Empty register name in line " << line_nr << "!";
-        throw MapFileParserException(errorMessage.str(), LibMapException::EX_MAP_FILE_PARSE_ERROR);
+        throw MapFileParserException(file_name, line_nr, line, "empty register name");
       }
 
       is >> std::setbase(0) >> nElements >> std::setbase(0) >> address >> std::setbase(0) >> nBytes;
       if (!is){
-        std::ostringstream os;
-        os << line_nr;
-        throw MapFileParserException("Error in map file: \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+        throw MapFileParserException(file_name, line_nr, line);
       }
       // first, set default values for 'optional' fields
       bar = 0x0;
       width= 32;
       nFractionalBits = 0;
       signedFlag = true;
+      registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
       is >> std::setbase(0) >> bar;
       if (is.fail()){
         failed = true;
@@ -94,9 +91,7 @@ namespace ChimeraTK {
           failed = true;
         } else {
           if (width > 32) {
-            std::ostringstream os;
-            os << line_nr;
-            throw MapFileParserException("Error in map file (register width too big): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+            throw MapFileParserException(file_name, line_nr, line, "register width too big");
           }
         }
       }
@@ -106,25 +101,39 @@ namespace ChimeraTK {
           failed = true;
         } else {
           if (nFractionalBits > 1023 || nFractionalBits < -1024) {
-            std::ostringstream os;
-            os << line_nr;
-            throw MapFileParserException("Error in map file (too many fractional bits): \"" + file_name + "\" in line (" + os.str() + ") \"" + line + "\"", LibMapException::EX_MAP_FILE_PARSE_ERROR);
+            throw MapFileParserException(file_name, line_nr, line, "too many fractional bits");
           }
         }
       }
 
       if (!failed) {
         is >> std::setbase(0) >> signedFlag;
-        // no need to check if 'is' failed. Insert a check to set the failed flags if more fields are added
-        //if (is.fail()){
-        //  failed = true;
-        //}
+        if (is.fail()){
+          failed = true;
+        }
+      }
+
+      if (!failed) {
+          std::string accessString;
+          is >> accessString;
+          if (is.fail()) {
+              failed = true;
+          } else {
+              if (accessString == "RO")
+                  registerAccess = RegisterInfoMap::RegisterInfo::Access::READ;
+              else if (accessString == "RW")
+                  registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
+              else if (accessString == "WO")
+                  registerAccess = RegisterInfoMap::RegisterInfo::Access::WRITE;
+              else
+                  throw MapFileParserException(file_name, line_nr, line, "invalid data access");
+          }
       }
       is.clear();
       lineNumber = line_nr;
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-                                                 signedFlag, lineNumber, module);
+                                                 signedFlag, lineNumber, module, 1, false, registerAccess);
       pmap->insert(registerInfo);
     }
 

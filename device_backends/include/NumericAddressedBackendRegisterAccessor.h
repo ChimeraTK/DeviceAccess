@@ -156,15 +156,15 @@ namespace ChimeraTK {
       }
 
       bool isReadOnly() const override {
-        return false;
+        return isReadable() && !isWriteable();
       }
 
       bool isReadable() const override {
-        return true;
+        return (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::READ) != 0;
       }
 
       bool isWriteable() const override {
-        return true;
+        return (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) != 0;
       }
 
       /** Get the FixedPointConverter. In case of a raw accessor this is the

@@ -67,6 +67,8 @@ namespace ChimeraTK {
        *  NumericAddressedBackendRawAccessors with a single NumericAddressedBackendRawAccessor covering the address
        *  space of both accessors. */
       bool isMergeable(const boost::shared_ptr<TransferElement const> &other) const {
+        if (!_dev->canMergeRequests()) return false;
+
         // accessor type, device and bar must be the same
         auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedLowLevelTransferElement >(other);
         if(!rhsCasted) return false;
