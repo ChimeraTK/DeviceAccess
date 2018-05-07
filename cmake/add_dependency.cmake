@@ -47,6 +47,6 @@ FUNCTION(add_dependency dependency_project_name required_version)
   SET(${dependency_project_name}_FOUND ${${dependency_project_name}_FOUND} PARENT_SCOPE)
   SET(${dependency_project_name}_VERSION ${${dependency_project_name}_VERSION} PARENT_SCOPE)
   SET(${dependency_project_name}_INCLUDE_DIRS ${${dependency_project_name}_INCLUDE_DIRS} PARENT_SCOPE)
-
+  SET(${dependency_project_name}_PREFIX ${${dependency_project_name}_PREFIX} PARENT_SCOPE)
 ENDFUNCTION(add_dependency)
 

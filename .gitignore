@@ -8,6 +8,7 @@ build
 .kdev4
 *.kdev4
 .vscode
+CMakeLists.txt.user
 #files ending with ~ are emacs backups
 *~
 #files ending with .swp might show up when using vi
