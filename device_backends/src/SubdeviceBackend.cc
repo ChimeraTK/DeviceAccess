@@ -118,7 +118,8 @@ namespace ChimeraTK {
 
       FixedPointConvertingDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> &target,
                                     FixedPointConverter fixedPointConverter)
-      : NDRegisterAccessorDecorator<UserType, TargetUserType>(target), _fixedPointConverter(fixedPointConverter)
+      : NDRegisterAccessorDecorator<UserType, TargetUserType>(target),
+        _fixedPointConverter(fixedPointConverter)
       {}
 
       void doPreRead() override {
@@ -165,6 +166,51 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  template<typename TargetUserType>
+  class FixedPointConvertingRawDecorator : public NDRegisterAccessorDecorator<TargetUserType> {
+
+    public:
+
+      FixedPointConvertingRawDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> &target,
+                                       FixedPointConverter fixedPointConverter)
+      : NDRegisterAccessorDecorator<TargetUserType>(target),
+        _fixedPointConverter(fixedPointConverter)
+      {
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
+      }
+
+      template<typename COOCKED_TYPE>
+      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample) {
+        return _fixedPointConverter.toCooked<COOCKED_TYPE>(buffer_2D[channel][sample]);
+      }
+
+      template<typename COOCKED_TYPE>
+      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value) {
+        buffer_2D[channel][sample] = _fixedPointConverter.toRaw<COOCKED_TYPE>(value);
+      }
+
+      bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const> &other) const override {
+        auto casted = boost::dynamic_pointer_cast<FixedPointConvertingRawDecorator<TargetUserType> const>(other);
+        if(!casted) return false;
+        if(_fixedPointConverter != casted->_fixedPointConverter) return false;
+        return _target->mayReplaceOther(casted->_target);
+      }
+
+    protected:
+
+      FixedPointConverter _fixedPointConverter;
+
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( FixedPointConvertingRawDecorator<TargetUserType>, getAsCoocked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( FixedPointConvertingRawDecorator<TargetUserType>, setAsCoocked_impl, 3 );
+
+      using NDRegisterAccessorDecorator<TargetUserType>::_target;
+      using NDRegisterAccessor<TargetUserType>::buffer_2D;
+
+  };
+
+  /********************************************************************************************************************/
+
   template<typename UserType>
   boost::shared_ptr< NDRegisterAccessor<UserType> > SubdeviceBackend::getRegisterAccessor_impl(
       const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
@@ -203,17 +249,83 @@ namespace ChimeraTK {
                             " elements.", DeviceException::WRONG_PARAMETER);
     }
 
-    // raw transfer: directly return accessor from target device
-    if(flags.has(AccessMode::raw)) {
-      return targetDevice->getRegisterAccessor<UserType>(targetArea, numberOfWords, wordOffset, flags);
-    }
+    // check if raw transfer?
+    bool isRaw = flags.has(AccessMode::raw);
 
-    // if not a raw transfer: obtain raw accessor from target device and decorate with fixed-point-converting decorator
-    /// @todo keep other flags!!!
-    auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, {AccessMode::raw});
-    return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>(rawAcc,
-                  FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
+    // obtain target accessor in raw mode
+    flags.add(AccessMode::raw);
+    auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
+
+    // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
+    // implement getAsCoocked()/setAsCooked().
+    if(!isRaw) {
+      return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>( rawAcc,
+                    FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
+    }
+    else {
+      // this is handled by the template specialisation for int32_t
+      throw DeviceException("Given UserType when obtaining the SubdeviceBackend in raw mode does not "
+          "match the expected type. Use an int32_t instead! (Register name: "+registerPathName+"')", DeviceException::WRONG_PARAMETER);
+    }
   }
 
+  /********************************************************************************************************************/
+
+  template<>
+  boost::shared_ptr< NDRegisterAccessor<int32_t> > SubdeviceBackend::getRegisterAccessor_impl<int32_t>(
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    assert(type == Type::area);
+
+    // obtain register info
+    auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
+
+    // check that the bar is 0
+    if(info->bar != 0) {
+      throw DeviceException("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
+                            "' is in BAR "+std::to_string(info->bar)+".", DeviceException::WRONG_PARAMETER);
+    }
+
+    // check that the register is not a 2D multiplexed register, which is not yet supported
+    if(info->is2DMultiplexed) {
+      throw DeviceException("SubdeviceBackend: 2D multiplexed registers are not yet supported.",
+                            DeviceException::NOT_IMPLEMENTED);
+    }
+
+    // compute full offset (from map file and function arguments)
+    size_t byteOffset = info->address + sizeof(int32_t)*wordOffsetInRegister;
+    if(byteOffset % 4 != 0) {
+      throw DeviceException("SubdeviceBackend: Only addresses which are a multiple of 4 are supported.",
+                            DeviceException::WRONG_PARAMETER);
+    }
+    size_t wordOffset = byteOffset / 4;
+
+    // compute effective length
+    if(numberOfWords == 0) {
+      numberOfWords = info->nElements;
+    }
+    else if(numberOfWords > info->nElements) {
+      throw DeviceException("SubdeviceBackend: Requested "+std::to_string(numberOfWords)+" elements from register '"+
+                            registerPathName+"', which only has a length of "+std::to_string(info->nElements)+
+                            " elements.", DeviceException::WRONG_PARAMETER);
+    }
+
+    // check if raw transfer?
+    bool isRaw = flags.has(AccessMode::raw);
+
+    // obtain target accessor in raw mode
+    flags.add(AccessMode::raw);
+    auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
+
+    // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
+    // implement getAsCoocked()/setAsCooked().
+    if(!isRaw) {
+      return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>( rawAcc,
+                    FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
+    }
+    else {
+      return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>( rawAcc,
+                    FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
+    }
+  }
 
 } // namespace ChimeraTK
