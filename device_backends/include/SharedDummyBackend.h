@@ -17,6 +17,8 @@
 #include "Exception.h"
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
+//TODO How to manage this files?
+#include "ProcessManagement.h"
 
 
 // Define shared-memory compatible vector type and corresponding allocator
