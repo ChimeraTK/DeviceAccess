@@ -10,9 +10,6 @@
 bool processExists(unsigned pid){
   
   return !kill((pid_t)pid, 0);
-  //boost::filesystem::path procdir = "/proc/" + std::to_string(pid);
-
-  //return boost::filesystem::exists(procdir) && boost::filesystem::is_directory(procdir);
   
 }
 

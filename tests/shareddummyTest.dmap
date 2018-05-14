@@ -1,0 +1,3 @@
+#SHD_MEM    sdm://./sharedMemoryDummy=mtcadummy.map mtcadummy.map
+
+SHDMEMDEV    sdm://./sharedMemoryDummy=shareddummy.map shareddummy.map
