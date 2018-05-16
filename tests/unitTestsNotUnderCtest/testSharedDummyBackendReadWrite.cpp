@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE( testReadWriteAccessor ) {
     ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
       = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
 
-    for(size_t i; i<processVarsRead.getNElements(); ++i){
+    for(size_t i=0; i<processVarsRead.getNElements(); ++i){
       processVarsWrite[i] = processVarsRead[i];
     }
     processVarsWrite.write();

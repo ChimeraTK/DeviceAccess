@@ -13,6 +13,7 @@
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/function.hpp>
+#include <boost/filesystem.hpp>
 
 #include "Exception.h"
 #include "RegisterInfoMap.h"
@@ -24,7 +25,6 @@
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-
 
 namespace ChimeraTK {
 
