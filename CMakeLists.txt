@@ -57,7 +57,7 @@ else(SUPPRESS_AUTO_DOC_BUILD)
     set(DOC_DEPENDENCY ALL)
 endif(SUPPRESS_AUTO_DOC_BUILD)
 
-FIND_PACKAGE(Boost COMPONENTS thread system chrono REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS thread system chrono filesystem REQUIRED)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -115,7 +115,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_
 
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries( ${PROJECT_NAME}  ${LibXML++_LDFLAGS} -Wl,$<$<PLATFORM_ID:Darwin>:-all_load>$<$<NOT:$<PLATFORM_ID:Darwin>>:--whole-archive> ${libexception} ${libfileparser} ${libutil}  -Wl,$<$<PLATFORM_ID:Darwin>:-noall_load>$<$<NOT:$<PLATFORM_ID:Darwin>>:--no-whole-archive> ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl)
+target_link_libraries( ${PROJECT_NAME}  ${LibXML++_LDFLAGS} -Wl,$<$<PLATFORM_ID:Darwin>:-all_load>$<$<NOT:$<PLATFORM_ID:Darwin>>:--whole-archive> ${libexception} ${libfileparser} ${libutil}  -Wl,$<$<PLATFORM_ID:Darwin>:-noall_load>$<$<NOT:$<PLATFORM_ID:Darwin>>:--no-whole-archive> ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl rt)
+
 
 #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
