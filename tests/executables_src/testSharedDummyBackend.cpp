@@ -4,7 +4,8 @@
 using namespace boost::unit_test_framework;
 
 #include "Device.h"
-#include <Utilities.h>
+#include "Utilities.h"
+#include "ProcessManagement.h"
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/filesystem.hpp>
@@ -97,7 +98,9 @@ BOOST_AUTO_TEST_SUITE_END()
 static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
   std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
   std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
-  return "ChimeraTK_SharedDummy_"+mapFileHash+"_"+instanceIdHash;
+  std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
+
+  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
 }
 
 static bool shm_exists(std::string shmName){

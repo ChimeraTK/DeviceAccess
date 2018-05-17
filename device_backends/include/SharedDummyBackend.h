@@ -76,13 +76,16 @@ namespace ChimeraTK {
                             const std::string instanceId,
                             const std::string mapFileName) :
           sharedDummyBackend(sharedDummyBackend_),
+          userHash(std::to_string(std::hash<std::string>{}(getUserName()))),
           mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
           instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId))),
-          name("ChimeraTK_SharedDummy_"+mapFileHash+"_"+instanceIdHash),
+          name("ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash),
           segment(boost::interprocess::open_or_create, name.c_str(), getRequiredMemoryWithOverhead()),
           alloc_inst(segment.get_segment_manager()),
           globalMutex(boost::interprocess::open_or_create, name.c_str())
         {
+          std::cout << "Created username hash " << userHash << " for user " << getUserName() << std::endl;
+
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
 
@@ -144,6 +147,7 @@ namespace ChimeraTK {
         SharedDummyBackend& sharedDummyBackend;
 
         // Hashes to assure match of shared memory accessing processes
+        std::string userHash;
         std::string mapFileHash;
         std::string instanceIdHash;
 

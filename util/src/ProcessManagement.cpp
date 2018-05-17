@@ -1,7 +1,6 @@
 // Utilities to manage Linux processes
 
 #include "ProcessManagement.h"
-//#include <boost/filesystem.hpp>
 #include <unistd.h>
 #include <string>
 #include <signal.h>
@@ -15,6 +14,10 @@ bool processExists(unsigned pid){
 
 unsigned getOwnPID(void){
   return (unsigned)getpid(); 
+}
+
+std::string getUserName(void){
+  return getlogin();
 }
 
 
