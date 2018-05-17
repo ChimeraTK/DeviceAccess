@@ -47,7 +47,6 @@ namespace ChimeraTK {
   //Nothing to clean up, all objects clean up for themselves when
   //they go out of scope.
   SharedDummyBackend::~SharedDummyBackend(){
-    std::cout << "Entered ~SharedDummyBackend()..." << std::endl;
   }
 
   // Construct a segment for each bar and set required size

@@ -107,7 +107,7 @@ namespace ChimeraTK {
 
         ~SharedMemoryManager() {
 
-          std::cout << "Entered ~SharedMemoryManager()..." << std::endl;
+          //std::cout << "Entered ~SharedMemoryManager()..." << std::endl;
 
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);

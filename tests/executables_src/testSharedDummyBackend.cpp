@@ -74,10 +74,7 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
       processVarsWrite.write();
 
       //start second accessing application
-      //FIXME Relative path does not work when running this with ctest
-      BOOST_CHECK(!std::system("./bin/testSharedDummyBackendReadWrite"));
-
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+      BOOST_CHECK(!std::system("../bin/testSharedDummyBackendReadWrite"));
 
       // Check if values have been written back by the other application
       ChimeraTK::OneDRegisterAccessor<int> processVarsRead
@@ -88,7 +85,7 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
       dev.close();
     }
 
-    //Test if memory is removed from /dev/shm
+    //Test if memory is removed
     BOOST_CHECK(!shm_exists(shmName));
 }
 
