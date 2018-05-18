@@ -16,7 +16,7 @@ using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE( SharedDummyBackendTestSuite )
 
-BOOST_AUTO_TEST_CASE( testReadWriteAccessor ) {
+BOOST_AUTO_TEST_CASE( testReadWrite ) {
 
     setDMapFilePath("shareddummyTest.dmap");
 

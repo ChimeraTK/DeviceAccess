@@ -26,10 +26,19 @@
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
 
+// Static variables
+static boost::interprocess::named_mutex *interprocessMutex{nullptr};
+
 namespace ChimeraTK {
 
-  /** TODO DOCUMENTATION
-   */
+/** The shared dummy device opens a mapping file defining the registers and implements
+ *  them in shared memory instead of connecting to the real device. Thus, it provides access
+ *  to the registers from several applications. The registers an application accesses can be
+ *  stimulated or monitored by another process, e.g. for development and testing.
+ *
+ *  Accessing applications are required to the same mapping file (matching absolute path) and
+ *  to be run by the same user.
+ */
   class SharedDummyBackend : public NumericAddressedBackend
   {
     public:
@@ -84,7 +93,7 @@ namespace ChimeraTK {
           alloc_inst(segment.get_segment_manager()),
           globalMutex(boost::interprocess::open_or_create, name.c_str())
         {
-          std::cout << "Created username hash " << userHash << " for user " << getUserName() << std::endl;
+          interprocessMutex = &globalMutex;
 
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
@@ -121,6 +130,8 @@ namespace ChimeraTK {
           // if use count at 0, destroy shared memory and the interprocess mutex
           if(*useCount == 0) {
             boost::interprocess::shared_memory_object::remove(name.c_str());
+
+            interprocessMutex = nullptr;
             boost::interprocess::named_mutex::remove(name.c_str());
           }
         }
@@ -177,7 +188,6 @@ namespace ChimeraTK {
       std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
 
       // Helper routines called in init list
-      // TODO Remove std::map<uint8_t, size_t> getBarSizesInWords() const;
       size_t getTotalRegisterSizeInBytes() const;
 
       static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
@@ -185,7 +195,6 @@ namespace ChimeraTK {
       static std::string convertPathRelativeToDmapToAbs(std::string const & mapfileName);
 
       /** map of instance names and pointers to allow re-connecting to the same instance with multiple Devices */
-      /* FIXME Namespace change ok? */
       static std::map< std::string, boost::shared_ptr<DeviceBackend> >& getInstanceMap() {
         static std::map< std::string, boost::shared_ptr<DeviceBackend> > instanceMap;
         return instanceMap;
