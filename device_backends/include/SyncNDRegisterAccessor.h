@@ -57,21 +57,26 @@ namespace ChimeraTK {
       }
 
       TransferFuture doReadTransferAsync() {
-        // create promise future pair and launch doReadTransfer in separate thread
-        readAsyncPromise = TransferFuture::PromiseType();
-        auto boostFuture = readAsyncPromise.get_future().share();
+        // create future_queue if not already created and continue it to enusre postRead is called (in the user thread,
+        // so we use the deferred launch policy)
+        if(!futureCreated) {
+          notifications = cppext::future_queue<void>(2);
+          activeFuture = TransferFuture(notifications, this);
+          futureCreated = true;
+        }
+
+        // launch doReadTransfer in separate thread
         readAsyncThread = boost::thread(
           [this] {
+            usleep(1000000);
             this->doReadTransfer();
-            // Do not call postRead() here. This thread is not allowed to touch the user space buffers.
-            // postRead() will be called in the user thread in TransferFuture::wait().
-            transferFutureData._versionNumber = VersionNumber();
-            readAsyncPromise.set_value(&transferFutureData);
+            usleep(1000000);
+            this->notifications.push();
           }
         );
 
-        // form TransferFuture, store it for later re-used and return it
-        return TransferFuture(boostFuture, this);
+        // return the TransferFuture
+        return activeFuture;
       }
 
     private:
@@ -79,14 +84,16 @@ namespace ChimeraTK {
       /// Thread which might be launched in readAsync()
       boost::thread readAsyncThread;
 
-      /// Promise used in readAsync()
-      TransferFuture::PromiseType readAsyncPromise;
+      /// future_queue used to notify the TransferFuture about completed transfers
+      cppext::future_queue<void> notifications;
 
-      /// Data transferred in the TransferFuture
-      TransferFuture::Data transferFutureData{{}};
+      /// Flag whether TransferFuture has been created
+      bool futureCreated{false};
 
       /// Flag whether shutdown() has been called or not
       bool shutdownCalled{false};
+
+      using TransferElement::activeFuture;
 
   };
 

@@ -29,7 +29,7 @@ namespace ChimeraTK {
       NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfElements, size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend );
 
-      virtual ~NumericAddressedBackendMuxedRegisterAccessor() {
+      ~NumericAddressedBackendMuxedRegisterAccessor() override {
         this->shutdown();
       }
 

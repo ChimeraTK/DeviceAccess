@@ -21,6 +21,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 
+#include <ChimeraTK/cppext/future_queue.hpp>
+
 #include "VersionNumber.h"
 #include "DeviceException.h"
 #include "TimeStamp.h"
@@ -29,9 +31,23 @@
 namespace ChimeraTK {
   class TransferElement;
   class TransferElementAbstractor;
+  class TransferFuture;
 }
 
 namespace ChimeraTK {
+
+  namespace detail {
+
+    /**
+     *  Non-member function to obtain the underlying future_queue from a TransferFuture. This function should only be
+     *  used internally or by implementations of DeviceBackend.
+     *
+     *  The queue can also be used for later transfers. Note that if AccessMode::wait_for_new_data is not used for the
+     *  accessor one must still trigger the transfers by calling readAsync().
+     */
+    cppext::future_queue<void> getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future);
+
+  } /* namespace detail */
 
   /**
    * Special future returned by TransferElement::readAsync(). See its function description for more details.
@@ -53,43 +69,27 @@ namespace ChimeraTK {
        *  has to call wait() to initiate the transfer to the user buffer in the accessor. */
       bool hasNewData();
 
-      /** Data class for the information transported by the future itself. This class will be extended by backends to
-       *  transport additional information, if needed. */
-      struct Data {
-
-          Data(VersionNumber versionNumber) : _versionNumber(versionNumber) {}
-
-          /** The version number associated with the transferred data. It must be set properly by the backend to allow
-           *  functions like readAny() to sort results properly. */
-          VersionNumber _versionNumber;
-
-      };
-
-      /** Shortcut for the plain boost::shared_future type. */
-      typedef boost::shared_future<Data*> PlainFutureType;
-
-      /** Shortcut for the corresponding boost::promise type. */
-      typedef boost::promise<Data*> PromiseType;
-
       /** Default constructor to generate a dysfunctional future. To initialise the future properly, reset() must be
        *  called afterwards. This pattern is used since the TransferFuture is a member of the TransferElement and only
        *  references are returned by readAsync(). */
       TransferFuture()
       : _transferElement(nullptr) {}
 
-      /** Construct from boost future */
-      TransferFuture(PlainFutureType plainFuture, ChimeraTK::TransferElement *transferElement)
-      : _theFuture(plainFuture), _transferElement(transferElement) {}
+      /** Construct from a future_queue<void>. The queue should contain notifications when a transfer is complete. It is
+       *  the responsibility of this TransferFuture to call the proper postRead() function, so the notification must
+       *  only be about the completion of the equivalent of doReadTransfer(). */
+      TransferFuture(cppext::future_queue<void> notifications, ChimeraTK::TransferElement *transferElement)
+      : _notifications(notifications), _transferElement(transferElement) {}
 
       /** "Decorating copy constructor": copy from other TransferFuture but override the transfer element. The
        *  typical use case is a decorating TransferElement. */
       TransferFuture(const TransferFuture &other, ChimeraTK::TransferElement *transferElement)
-      : _theFuture(other._theFuture), _transferElement(transferElement) {}
+      : _notifications(other._notifications), _transferElement(transferElement) {}
 
       /** "Decorating move constructor": move from other TransferFuture but override the transfer element. The
        *  typical use case is a decorating TransferElement. */
       TransferFuture(TransferFuture &&other, ChimeraTK::TransferElement *transferElement)
-      : _theFuture(std::move(other._theFuture)), _transferElement(transferElement) {}
+      : _notifications(std::move(other._notifications)), _transferElement(transferElement) {}
 
       /** Copy constructor */
       TransferFuture(const TransferFuture &) = default;
@@ -112,20 +112,20 @@ namespace ChimeraTK {
       /** Return the TransferElementID of the associated TransferElement */
       ChimeraTK::TransferElementID getTransferElementID();
 
-    //protected:    /// @todo make protected after changing tests and ControlSystemAdapter
-
-      /** Return the underlying BOOST future. Be careful when using it. Simply waiting on that future is not sufficient
-       *  since the very purpose of this class is to add functionality. Always call TransferFuture::wait() before
-       *  accessing the TransferElement again! */
-      PlainFutureType& getBoostFuture() { return _theFuture; }
+      /** Check if the TransferFuture is valid */
+      bool valid() const { return _transferElement != nullptr; }
 
     protected:
 
-      /** The plain boost future */
-      PlainFutureType _theFuture;
+      /** The plain future_queue used for the notifications */
+      cppext::future_queue<void> _notifications;
 
       /** Pointer to the TransferElement */
       ChimeraTK::TransferElement *_transferElement;
+
+      friend
+      cppext::future_queue<void> ChimeraTK::detail::getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future);
+
   };
 
 } /* namespace ChimeraTK */

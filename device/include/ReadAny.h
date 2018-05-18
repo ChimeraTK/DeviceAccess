@@ -26,7 +26,7 @@ namespace ChimeraTK {
   ChimeraTK::TransferElementID readAny(std::list<std::reference_wrapper<ChimeraTK::TransferElement>> elementsToRead);
 
 /*******************************************************************************************************************/
-
+#if 0
   namespace detail {
 
     // Note: the %iterator in the third line prevents doxygen from creating a link which it cannot resolve.
@@ -52,7 +52,7 @@ namespace ChimeraTK {
 
   } // namespace detail
 
-} /* namespace ChimeraTK */
+  } /* namespace ChimeraTK */
 
 /*******************************************************************************************************************/
 
@@ -111,19 +111,22 @@ namespace ChimeraTK {
     }
 
   } // namespace detail
+#endif
 
   /*******************************************************************************************************************/
 
   inline ChimeraTK::TransferElementID readAny(
-          std::list<std::reference_wrapper<ChimeraTK::TransferElement>> elementsToRead) {
-    return detail::readAny(elementsToRead);
+          std::list<std::reference_wrapper<ChimeraTK::TransferElement>> /* elementsToRead */) {
+    throw;
+    //return detail::readAny(elementsToRead);
   }
 
   /*******************************************************************************************************************/
 
   inline ChimeraTK::TransferElementID readAny(
-          std::list<std::reference_wrapper<ChimeraTK::TransferElementAbstractor>> elementsToRead) {
-    return detail::readAny(elementsToRead);
+          std::list<std::reference_wrapper<ChimeraTK::TransferElementAbstractor>> /* elementsToRead */) {
+    throw;
+    //return detail::readAny(elementsToRead);
   }
 
 } /* namespace ChimeraTK */

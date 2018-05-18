@@ -8,17 +8,24 @@ namespace ChimeraTK {
 
   void TransferFuture::wait() {
     _transferElement->transferFutureWaitCallback();
-    _theFuture.wait();
+    _notifications.pop_wait();
     _transferElement->postRead();
   }
 
   bool TransferFuture::hasNewData() {
-    auto status = _theFuture.wait_for(boost::chrono::duration<int, boost::centi>(0));
-    return (status != boost::future_status::timeout);
+    return !(_notifications.empty());
   }
 
   ChimeraTK::TransferElementID TransferFuture::getTransferElementID() {
     return _transferElement->getId();
   }
+
+  namespace detail {
+
+    cppext::future_queue<void>  getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future) {
+      return future._notifications;
+    }
+
+  } /* namespace detail */
 
 }

@@ -57,7 +57,7 @@ namespace ChimeraTK {
       TransferElement& operator=(TransferElement &&other) = delete;
 
       /** Abstract base classes need a virtual destructor. */
-      virtual ~TransferElement() {}
+      virtual ~TransferElement();
 
       /** A typedef for more compact syntax */
       typedef boost::shared_ptr<TransferElement> SharedPtr;
@@ -257,12 +257,12 @@ namespace ChimeraTK {
         if(readTransactionInProgress) return;
         doPreRead();
         readTransactionInProgress = true;
-      };
+      }
 
       /** Backend specific implementation of preRead(). preRead() will call this function, but it will make sure that
        *  it gets called only once per transfer. */
     protected:
-      virtual void doPreRead() {};
+      virtual void doPreRead() {}
     public:
 
       /** Transfer the data from the device receive buffer into the user buffer, while converting the data into the
@@ -276,12 +276,12 @@ namespace ChimeraTK {
         readTransactionInProgress = false;
         doPostRead();
         hasActiveFuture = false;
-      };
+      }
 
       /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
        *  it gets called only once per transfer. */
     protected:
-      virtual void doPostRead() {};
+      virtual void doPostRead() {}
     public:
 
       /** Function called by the TransferFuture before entering a potentially blocking wait(). In contrast to a wait
@@ -289,7 +289,7 @@ namespace ChimeraTK {
        *  ready or not. Usually it is not necessary to implement this function, but decorators should pass it on. One
        *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
        *  the thread execution. */
-      virtual void transferFutureWaitCallback() {};
+      virtual void transferFutureWaitCallback() {}
 
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then
        *  user data format if needed.
@@ -301,12 +301,12 @@ namespace ChimeraTK {
         if(writeTransactionInProgress) return;
         doPreWrite();
         writeTransactionInProgress = true;
-      };
+      }
 
       /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
        *  it gets called only once per transfer. */
     protected:
-      virtual void doPreWrite() {};
+      virtual void doPreWrite() {}
     public:
 
       /** Perform any post-write cleanups if necessary. If during preWrite() e.g. the user data buffer was swapped
@@ -319,12 +319,12 @@ namespace ChimeraTK {
         if(!writeTransactionInProgress) return;
         writeTransactionInProgress = false;
         doPostWrite();
-      };
+      }
 
       /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
        *  it gets called only once per transfer. */
     protected:
-      virtual void doPostWrite() {};
+      virtual void doPostWrite() {}
     public:
 
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
@@ -433,7 +433,7 @@ namespace ChimeraTK {
       *  Note: A call to this function will be ignored, if the TransferElement does not support persistent data
       *  storage (e.g. read-only variables or device registers) @todo TODO does this make sense?
       */
-      virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {};
+      virtual void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage>) {}
 
       /**
        * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
@@ -443,7 +443,7 @@ namespace ChimeraTK {
        * obtained by to difference calls to Device::getScalarRegisterAccessor() will have a different ID even when
        * accessing the very same register.
        */
-      TransferElementID getId() const { return _id; };
+      TransferElementID getId() const { return _id; }
 
     protected:
 

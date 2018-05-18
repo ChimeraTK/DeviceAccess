@@ -1,6 +1,4 @@
-
 cmake_minimum_required (VERSION 3.0.2)
-
 Project(mtca4u-deviceaccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
@@ -48,6 +46,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
 add_definitions(-DDMAP_FILE_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
+include(cmake/add_dependency.cmake)
+
 # use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
 # build. The 'make doc' target will still exist
 if(SUPPRESS_AUTO_DOC_BUILD)
@@ -64,6 +64,8 @@ set(LIBXML++_VERSION "libxml++-2.6")
 PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
+
+add_dependency(ChimeraTK-cppext REQUIRED)
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
