@@ -3,6 +3,7 @@
 #include <functional>
 
 #include <boost/lambda/lambda.hpp>
+#include <boost/filesystem.hpp>
 
 #include "SharedDummyBackend.h"
 #include "NotImplementedException.h"
@@ -40,9 +41,7 @@ namespace ChimeraTK {
   {
     // Note: Opposed to the other dummies, _registerMap is computed in the base class ctor
     //       because we rely on a fixed init-order for the boost::interprocess members
-    
     setupBarContents();
-
   }
 
   //Nothing to clean up, all objects clean up for themselves when
@@ -181,7 +180,10 @@ namespace ChimeraTK {
     std::string absPathToDmapDir = parserUtilities::convertToAbsolutePath(dmapDir);
     // the map file is relative to the dmap file location. Convert the relative
     // mapfilename to an absolute path
-    return parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
+    boost::filesystem::path absPathToMapFile{parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName)};
+    // Possible ./, ../ elements are removed, as the path may be constructed differently
+    // for different client applications
+    return boost::filesystem::canonical(absPathToMapFile).string();
   }
 
 

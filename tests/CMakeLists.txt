@@ -1,4 +1,4 @@
-FIND_PACKAGE(Boost COMPONENTS system unit_test_framework)
+FIND_PACKAGE(Boost COMPONENTS system unit_test_framework filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 #add check if boost not found
 
@@ -25,10 +25,11 @@ foreach( testExecutableSrcFile ${testExecutables})
     add_executable(${executableName} ${testExecutableSrcFile})
     # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
     # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
-    target_link_libraries(${executableName} ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
+    target_link_libraries(${executableName} ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY rt)
     add_test(${executableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${executableName})
   endif()
 endforeach(testExecutableSrcFile)
+
 
 #
 # Instructions for compiling the rebot dummy server
@@ -81,6 +82,7 @@ MACRO( COPY_MAPPING_FILES )
     performanceTest.map run_performance_test.sh
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     subdeviceTest.dmap Subdevice.map SubdeviceTarget.map
+    shareddummyTest.dmap shareddummy.map
     registerAccess.map
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake

@@ -13,16 +13,18 @@
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/function.hpp>
+#include <boost/filesystem.hpp>
 
 #include "Exception.h"
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
+//TODO How to manage this files?
+#include "ProcessManagement.h"
 
 
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-
 
 namespace ChimeraTK {
 
@@ -104,6 +106,8 @@ namespace ChimeraTK {
         }
 
         ~SharedMemoryManager() {
+
+          //std::cout << "Entered ~SharedMemoryManager()..." << std::endl;
 
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
