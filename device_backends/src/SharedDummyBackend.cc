@@ -163,7 +163,6 @@ namespace ChimeraTK {
     }
   }
 
-
   boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string /*host*/,
       std::string instance,
       std::list<std::string> parameters,
@@ -188,7 +187,7 @@ namespace ChimeraTK {
     // mapfilename to an absolute path
     boost::filesystem::path absPathToMapFile{parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName)};
     // Possible ./, ../ elements are removed, as the path may be constructed differently
-    // for different client applications
+    // in different client applications
     return boost::filesystem::canonical(absPathToMapFile).string();
   }
 
@@ -217,4 +216,20 @@ namespace ChimeraTK {
     return std::make_pair(segment.get_size(), segment.get_free_memory());
   }
 
-} // namespace mtca4u
+//  void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
+//    for(const auto ps : *pidSet){
+//      if(!processExists(ps)){
+//        std::cout << "Nonexistent PID " << ps << " found. "
+//        pidSet->erase(ps);
+//      }
+//      else{
+//        std::cout << "PID set consistent with PIDs:" << std::endl;
+//        for(const auto ps : *pidSet){
+//          std::cout << "  " << ps << std::endl;
+//        }
+//
+//      }
+//    }
+//  }
+
+} // Namespace ChimeraTK
