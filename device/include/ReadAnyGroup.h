@@ -14,7 +14,7 @@
 
 namespace ChimeraTK {
 
-  /** Group several TransferElements to allow waiting for an update of any of the TransferElements. */
+  /** Group several registers (= TransferElement) to allow waiting for an update of any of the registers. */
   class ReadAnyGroup {
 
     public:
@@ -22,10 +22,11 @@ namespace ChimeraTK {
       /** Construct empty group */
       ReadAnyGroup();
 
-      /** Add TransferElement to group. Note that calling this function is only allowed before finalise() has been
-       *  called. The given TransferElement may not yet be part of a ReadAnyGroup or a TransferGroup, otherwise an
+      /** Add register to group. Note that calling this function is only allowed before finalise() has been
+       *  called. The given register may not yet be part of a ReadAnyGroup or a TransferGroup, otherwise an
        *  exception is thrown.
-       *  The TransferElement must be must be readable. */
+       *
+       *  The register must be must be readable. */
       void add(TransferElementAbstractor &element);
 
       /** Finalise the group. From this point on, add() may no longer be called. Only after the group has been finalised
