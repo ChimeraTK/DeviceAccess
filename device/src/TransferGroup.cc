@@ -123,9 +123,9 @@ namespace ChimeraTK {
       TransferGroupTransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
       : TransferElementAbstractor(impl) {}
 
-      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-        _implUntyped->replaceTransferElement(newElement);
-      };
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        _impl->replaceTransferElement(newElement);
+      }
     };
   }
 

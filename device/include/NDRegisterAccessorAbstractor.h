@@ -33,27 +33,12 @@ namespace ChimeraTK {
        *  getXXRegisterAccessor() function of Device must be called. */
       void replace(const NDRegisterAccessorAbstractor<UserType> &newAccessor) {
         _impl = newAccessor._impl;
-        TransferElementAbstractor::_implUntyped = boost::static_pointer_cast<TransferElement>(_impl);
       }
 
       /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
        *  has been obtained directly (instead of a NDRegisterAccessorAbstractor). */
       void replace(boost::shared_ptr<NDRegisterAccessor<UserType>> newImpl) {
-        _impl = newImpl;
-        TransferElementAbstractor::_implUntyped = boost::static_pointer_cast<TransferElement>(_impl);
-      }
-
-      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-        if(newElement->mayReplaceOther(_impl)) {
-          if(newElement != _impl) {
-            auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<UserType>>(newElement);
-            _impl = boost::make_shared<ChimeraTK::CopyRegisterDecorator<UserType>>(casted);
-            TransferElementAbstractor::_implUntyped = boost::static_pointer_cast<TransferElement>(_impl);
-          }
-        }
-        else {
-          _impl->replaceTransferElement(newElement);
-        }
+        _impl = boost::static_pointer_cast<TransferElement>(newImpl);
       }
 
       /** prevent copying by operator=, since it will be confusing (operator= may also be overloaded to access the
@@ -63,11 +48,10 @@ namespace ChimeraTK {
     protected:
 
       NDRegisterAccessorAbstractor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
-      : TransferElementAbstractor(impl), _impl(impl)
+      : TransferElementAbstractor(impl)
       {}
 
-      /** pointer to the implementation */
-      boost::shared_ptr< NDRegisterAccessor<UserType> > _impl;
+      using TransferElementAbstractor::_impl;
 
   };
 

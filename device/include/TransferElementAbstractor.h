@@ -48,25 +48,22 @@ namespace ChimeraTK {
       /** Create an uninitialised abstractor - just for late initialisation */
       TransferElementAbstractor() {}
 
-      /** Abstract base classes need a virtual destructor. */
-      virtual ~TransferElementAbstractor() {}
-
       /** Returns the name that identifies the process variable. */
-      const std::string& getName() const { return _implUntyped->getName(); }
+      const std::string& getName() const { return _impl->getName(); }
 
       /** Returns the engineering unit. If none was specified, it will default to "n./a." */
-      const std::string& getUnit() const { return _implUntyped->getUnit(); }
+      const std::string& getUnit() const { return _impl->getUnit(); }
 
       /** Returns the description of this variable/register */
-      const std::string& getDescription() const { return _implUntyped->getDescription(); }
+      const std::string& getDescription() const { return _impl->getDescription(); }
 
       /** Returns the \c std::type_info for the value type of this transfer element.
        *  This can be used to determine the type at runtime. */
-      const std::type_info& getValueType() const { return _implUntyped->getValueType(); }
+      const std::type_info& getValueType() const { return _impl->getValueType(); }
 
       /** Read the data from the device. If AccessMode::wait_for_new_data was set, this function will block until new
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
-      void read() { _implUntyped->read(); }
+      void read() { _impl->read(); }
 
       /** Read the next value, if available in the input buffer.
        *
@@ -77,12 +74,12 @@ namespace ChimeraTK {
        *  quickly. Depending on the actual transfer implementation, the backend might need to transfer data to obtain
        *  the current value before returning. Also this function is not guaranteed to be lock free. The return value
        *  will be always true in this mode. */
-      bool readNonBlocking() { return _implUntyped->readNonBlocking(); }
+      bool readNonBlocking() { return _impl->readNonBlocking(); }
 
       /** Read the latest value, discarding any other update since the last read if present. Otherwise this function
        *  is identical to readNonBlocking(), i.e. it will never wait for new values and it will return whether a
        *  new value was available if AccessMode::wait_for_new_data is set. */
-      bool readLatest() { return _implUntyped->readLatest(); }
+      bool readLatest() { return _impl->readLatest(); }
 
       /** Read data from the device in the background and return a future which will be fulfilled when the data is
        *  ready. When the future is fulfilled, the transfer element will already contain the new data, there is no
@@ -112,28 +109,28 @@ namespace ChimeraTK {
        *  preRead() in their implementations of readAsync()!
        *
        *  Note: This feature is still experimental. Expect API changes without notice! */
-      TransferFuture readAsync() { return _implUntyped->readAsync(); }
+      TransferFuture readAsync() { return _impl->readAsync(); }
 
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
       * ChimeraTK::VersionNumber for details.
       */
-      ChimeraTK::VersionNumber getVersionNumber() const { return _implUntyped->getVersionNumber(); }
+      ChimeraTK::VersionNumber getVersionNumber() const { return _impl->getVersionNumber(); }
 
       /** Write the data to device. The return value is true, old data was lost on the write transfer (e.g. due to an
        *  buffer overflow). In case of an unbuffered write transfer, the return value will always be false. */
-      bool write(ChimeraTK::VersionNumber versionNumber={}) { return _implUntyped->write(versionNumber); }
+      bool write(ChimeraTK::VersionNumber versionNumber={}) { return _impl->write(versionNumber); }
 
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
-      bool isReadOnly() const { return _implUntyped->isReadOnly(); }
+      bool isReadOnly() const { return _impl->isReadOnly(); }
 
       /** Check if transfer element is readable. It throws an acception if you try to read and
        *  isReadable() is not true.*/
-      bool isReadable() const { return _implUntyped->isReadable(); }
+      bool isReadable() const { return _impl->isReadable(); }
 
       /** Check if transfer element is writeable. It throws an acception if you try to write and
        *  isWriteable() is not true.*/
-      bool isWriteable() const { return _implUntyped->isWriteable(); }
+      bool isWriteable() const { return _impl->isWriteable(); }
 
       /**
        *  Obtain the underlying TransferElements with actual hardware access. If this transfer element
@@ -143,7 +140,7 @@ namespace ChimeraTK {
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() {
-        return _implUntyped->getHardwareAccessingElements();
+        return _impl->getHardwareAccessingElements();
       }
 
       /**
@@ -161,8 +158,8 @@ namespace ChimeraTK {
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
       std::list< boost::shared_ptr<TransferElement> > getInternalElements() {
-        auto result = _implUntyped->getInternalElements();
-        result.push_front(_implUntyped);
+        auto result = _impl->getInternalElements();
+        result.push_front(_impl);
         return result;
       }
 
@@ -173,21 +170,44 @@ namespace ChimeraTK {
        *
        *  Note: Avoid using this in application code, since it will break the abstraction!
        */
-      boost::shared_ptr<TransferElement> getHighLevelImplElement() { return _implUntyped; }
+      boost::shared_ptr<TransferElement> getHighLevelImplElement() { return _impl; }
 
       /** Return if the accessor is properly initialised. It is initialised if it was constructed passing the pointer
        *  to an implementation (a NDRegisterAccessor), it is not initialised if it was constructed only using the
        *  placeholder constructor without arguments. */
       bool isInitialised() const {
-        return _implUntyped != nullptr;
+        return _impl != nullptr;
+      }
+
+      /** Assign a new accessor to this TransferElementAbstractor. Since another TransferElementAbstractor is passed as
+       *  argument, both TransferElementAbstractor will then point to the same accessor and thus are sharing the
+       *  same buffer. To obtain a new copy of the accessor with a distinct buffer, the corresponding
+       *  getXXRegisterAccessor() function of Device must be called. */
+      void replace(const TransferElementAbstractor &newAccessor) {
+        _impl = newAccessor._impl;
+      }
+
+      /** Alternative signature of relace() with the same functionality, used when a pointer to the implementation
+       *  has been obtained directly (instead of a TransferElementAbstractor). */
+      void replace(boost::shared_ptr<TransferElement> newImpl) {
+        _impl = newImpl;
       }
 
       /**
-       *  Search for all underlying TransferElements which are considered identicel (see sameRegister()) with
+       *  Search for all underlying TransferElements which are considered identicel (see mayReplaceOther()) with
        *  the given TransferElement. These TransferElements are then replaced with the new element. If no underlying
        *  element matches the new element, this function has no effect.
        */
-      virtual void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) = 0;
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
+        if(newElement->mayReplaceOther(_impl)) {
+          if(newElement != _impl) {
+            _impl = newElement;
+          }
+        }
+        else {
+          _impl->replaceTransferElement(newElement);
+        }
+      }
 
       /**
       *  Associate a persistent data storage object to be updated on each write operation of this ProcessArray. If no
@@ -198,8 +218,8 @@ namespace ChimeraTK {
       *  storage (e.g. read-only variables or device registers) @todo TODO does this make sense?
       */
       void setPersistentDataStorage(boost::shared_ptr<ChimeraTK::PersistentDataStorage> storage) {
-        _implUntyped->setPersistentDataStorage(storage);
-      };
+        _impl->setPersistentDataStorage(storage);
+      }
 
       /**
        * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
@@ -209,17 +229,17 @@ namespace ChimeraTK {
        * obtained by to difference calls to Device::getScalarRegisterAccessor() will have a different ID even when
        * accessing the very same register.
        */
-      TransferElementID getId() const { return _implUntyped->getId(); };
+      TransferElementID getId() const { return _impl->getId(); }
 
     protected:
 
       /** Construct from TransferElement implementation */
       explicit TransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
-      : _implUntyped(impl)
+      : _impl(impl)
       {}
 
       /** Untyped pointer to implementation */
-      boost::shared_ptr< TransferElement > _implUntyped;
+      boost::shared_ptr< TransferElement > _impl;
   };
 
 } /* namespace ChimeraTK */

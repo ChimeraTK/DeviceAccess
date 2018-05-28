@@ -14,19 +14,11 @@
 #include "DMapFileDefaults.h"
 #include "BackendFactory.h"
 
-#include "accessPrivateData.h"
-
 using namespace boost::unit_test_framework;
 namespace mtca4u{
   using namespace ChimeraTK;
 }
 using namespace mtca4u;
-
-// we need to access the private implementation of the accessor (see accessPrivateData.h)
-struct OneDRegisterAccessor_double_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<double> >(NDRegisterAccessorAbstractor<double>::*type);
-};
-template struct accessPrivateData::stow_private<OneDRegisterAccessor_double_impl, &mtca4u::NDRegisterAccessorAbstractor<double>::_impl>;
 
 /**********************************************************************************************************************/
 class OneDRegisterTest {

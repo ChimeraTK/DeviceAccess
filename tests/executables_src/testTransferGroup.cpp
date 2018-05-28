@@ -15,27 +15,7 @@ namespace mtca4u{
 }
 using namespace mtca4u;
 
-// we need to access the private implementation of the accessor (see accessPrivateData.h)
-struct BufferingRegisterAccessor_int_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int> >(NDRegisterAccessorAbstractor<int>::*type);
-};
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int_impl, &mtca4u::NDRegisterAccessorAbstractor<int>::_impl>;
-
-struct BufferingRegisterAccessor_int32_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorAbstractor<int32_t>::*type);
-};
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32_impl, &mtca4u::NDRegisterAccessorAbstractor<int32_t>::_impl>;
-
-struct BufferingRegisterAccessor_uint16_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<uint16_t> >(NDRegisterAccessorAbstractor<uint16_t>::*type);
-};
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_uint16_impl, &mtca4u::NDRegisterAccessorAbstractor<uint16_t>::_impl>;
-
-struct BufferingRegisterAccessor_int64_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int64_t> >(NDRegisterAccessorAbstractor<int64_t>::*type);
-};
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int64_impl, &mtca4u::NDRegisterAccessorAbstractor<int64_t>::_impl>;
-
+// we need to access some private data of the low level transfer element
 struct NumericAddressedLowLevelTransferElement_startAddress {
     typedef size_t (NumericAddressedLowLevelTransferElement::*type);
 };
@@ -219,7 +199,7 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   // obtain the private pointers to the implementation of the accessor
   boost::shared_ptr< NDRegisterAccessor<int> > impl[6];
   for(int i=0; i<6; i++) {
-    impl[i] = a[i].*accessPrivateData::stowed<BufferingRegisterAccessor_int_impl>::value;
+    impl[i] = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(a[i].getHighLevelImplElement());
   }
 
   // somewhat redundant check: underlying hardware accessors are different for all accessors
@@ -333,10 +313,10 @@ void TransferGroupTest::testMergeNumericRegisters() {
   auto mux3b = device.getScalarRegisterAccessor<int>("/ADC/WORD_CLK_MUX_3");
 
   // obtain the private pointers to the implementation of the accessor
-  auto mux0i = mux0.*accessPrivateData::stowed<BufferingRegisterAccessor_int_impl>::value;
-  auto mux1i = mux1.*accessPrivateData::stowed<BufferingRegisterAccessor_int_impl>::value;
-  auto mux2i = mux2.*accessPrivateData::stowed<BufferingRegisterAccessor_int_impl>::value;
-  auto mux3i = mux3.*accessPrivateData::stowed<BufferingRegisterAccessor_int_impl>::value;
+  auto mux0i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux0.getHighLevelImplElement());
+  auto mux1i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux1.getHighLevelImplElement());
+  auto mux2i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux2.getHighLevelImplElement());
+  auto mux3i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux3.getHighLevelImplElement());
 
   // check that all underlying raw accessors are still different
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] != mux1i->getHardwareAccessingElements()[0] );
@@ -449,10 +429,10 @@ void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
   auto mux3b = device.getScalarRegisterAccessor<int64_t>("/ADC/WORD_CLK_MUX_3");
 
   // obtain the private pointers to the implementation of the accessor
-  auto mux0i = mux0.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value;
-  auto mux1i = mux1.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value;
-  auto mux2i = mux2.*accessPrivateData::stowed<BufferingRegisterAccessor_int32_impl>::value;
-  auto mux3i = mux3.*accessPrivateData::stowed<BufferingRegisterAccessor_int64_impl>::value;
+  auto mux0i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux0.getHighLevelImplElement());
+  auto mux1i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux1.getHighLevelImplElement());
+  auto mux2i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux2.getHighLevelImplElement());
+  auto mux3i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux3.getHighLevelImplElement());
 
   // check that all underlying raw accessors are still different
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] != mux1i->getHardwareAccessingElements()[0] );
@@ -476,10 +456,10 @@ void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux3i->getHardwareAccessingElements()[0] );
 
   // also check that all high-level implementations are still the same as previously
-  BOOST_CHECK( mux0i == mux0.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value );
-  BOOST_CHECK( mux1i == mux1.*accessPrivateData::stowed<BufferingRegisterAccessor_uint16_impl>::value );
-  BOOST_CHECK( mux2i == mux2.*accessPrivateData::stowed<BufferingRegisterAccessor_int32_impl>::value );
-  BOOST_CHECK( mux3i == mux3.*accessPrivateData::stowed<BufferingRegisterAccessor_int64_impl>::value );
+  BOOST_CHECK( mux0i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux0.getHighLevelImplElement()) );
+  BOOST_CHECK( mux1i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux1.getHighLevelImplElement()) );
+  BOOST_CHECK( mux2i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux2.getHighLevelImplElement()) );
+  BOOST_CHECK( mux3i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux3.getHighLevelImplElement()) );
 
   // check that reading and writing works
   mux0 = 42;

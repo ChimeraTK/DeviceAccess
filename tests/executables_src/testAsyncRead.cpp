@@ -199,7 +199,7 @@ void AsyncReadTest::testAsyncRead() {
 /**********************************************************************************************************************/
 
 void AsyncReadTest::testReadAny() {
-
+/*
   for(auto &sdmToUse : sdmList) {
     std::cout << "testReadAny: " << sdmToUse << std::endl;
 
@@ -455,11 +455,12 @@ void AsyncReadTest::testReadAny() {
     device.close();
 
   }
+  */
 }
 
 /**********************************************************************************************************************/
 void AsyncReadTest::testMixing() {
-
+/*
   for(auto &sdmToUse : sdmList) {
     std::cout << "testMixing: " << sdmToUse << std::endl;
 
@@ -519,4 +520,5 @@ void AsyncReadTest::testMixing() {
 
     device.close();
   }
+  */
 }

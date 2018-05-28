@@ -14,20 +14,12 @@
 #include "DMapFileDefaults.h"
 #include "BackendFactory.h"
 
-#include "accessPrivateData.h"
-
 namespace mtca4u{
   using namespace ChimeraTK;
 }
 
 using namespace boost::unit_test_framework;
 using namespace mtca4u;
-
-// we need to access the private implementation of the accessor (see accessPrivateData.h)
-struct BufferingRegisterAccessor_double_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<double> >(NDRegisterAccessorAbstractor<double>::*type);
-};
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_double_impl, &mtca4u::NDRegisterAccessorAbstractor<double>::_impl>;
 
 /**********************************************************************************************************************/
 class BufferingRegisterTest {
@@ -181,8 +173,8 @@ void BufferingRegisterTest::testRegisterAccessor() {
   // test pre-increment operator
   BufferingRegisterAccessor<double> copy = ++floatRegister;
   boost::shared_ptr< NDRegisterAccessor<double> > impl, implCopy;
-  impl = floatRegister.*accessPrivateData::stowed< BufferingRegisterAccessor_double_impl >::value;
-  implCopy = copy.*accessPrivateData::stowed< BufferingRegisterAccessor_double_impl >::value;
+  impl = boost::dynamic_pointer_cast<NDRegisterAccessor<double>>(floatRegister.getHighLevelImplElement());
+  implCopy = boost::dynamic_pointer_cast<NDRegisterAccessor<double>>(copy.getHighLevelImplElement());
 
   BOOST_CHECK( implCopy->getHardwareAccessingElements()[0] == impl->getHardwareAccessingElements()[0] );
   BOOST_CHECK( floatRegister == 23. );

@@ -4,19 +4,11 @@
 #include "Device.h"
 #include "BufferingRegisterAccessor.h"
 
-#include "accessPrivateData.h"
-
 using namespace boost::unit_test_framework;
 namespace mtca4u{
   using namespace ChimeraTK;
 }
 using namespace mtca4u;
-
-// we need to access the private implementation of the accessor (see accessPrivateData.h)
-struct BufferingRegisterAccessor_int32t_impl {
-    typedef boost::shared_ptr< NDRegisterAccessor<int32_t> >(NDRegisterAccessorAbstractor<int32_t>::*type);
-};
-template struct accessPrivateData::stow_private<BufferingRegisterAccessor_int32t_impl, &mtca4u::NDRegisterAccessorAbstractor<int32_t>::_impl>;
 
 
 class LMapBackendTest {
@@ -212,9 +204,9 @@ void LMapBackendTest::testExceptions() {
     mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
 
     boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2, impl3;
-    impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-    impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-    impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+    impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
+    impl2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc2.getHighLevelImplElement());
+    impl3 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3.getHighLevelImplElement());
 
     //BOOST_CHECK( impl->mayReplaceOther(impl2) == true );    // this is currently always set to false, since it doesn't really make any difference...
     BOOST_CHECK( impl->mayReplaceOther(impl3) == false );
@@ -387,8 +379,8 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
 
   boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2;
-  impl = acc.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-  impl2 = acc2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
+  impl2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
 
   BOOST_CHECK( impl->mayReplaceOther( impl ) == true );
   BOOST_CHECK( impl2->mayReplaceOther( impl ) == false );
@@ -554,9 +546,9 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   mtca4u::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
 
   boost::shared_ptr< NDRegisterAccessor<int32_t> > impl3,impl4,impl3_2;
-  impl3 = acc3.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-  impl4 = acc4.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
-  impl3_2 = acc3_2.*accessPrivateData::stowed< BufferingRegisterAccessor_int32t_impl >::value;
+  impl3 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3.getHighLevelImplElement());
+  impl4 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc4.getHighLevelImplElement());
+  impl3_2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3_2.getHighLevelImplElement());
   BOOST_CHECK( impl3->mayReplaceOther( impl3_2 ) == true );
   BOOST_CHECK( impl3->mayReplaceOther( impl4 ) == false );
 

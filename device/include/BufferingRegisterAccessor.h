@@ -30,7 +30,7 @@ namespace ChimeraTK {
       BufferingRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : NDRegisterAccessorAbstractor<UserType>(impl)
       {
-        if(NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfChannels() != 1) {
+        if(boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->getNumberOfChannels() != 1) {
           throw DeviceException("The BufferingRegisterAccessor has a too low dimension to access this register.",
               DeviceException::WRONG_ACCESSOR);
         }
@@ -49,7 +49,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType& operator[](unsigned int index) {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,index);
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,index);
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -58,7 +58,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       unsigned int getNumberOfElements() {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->getNumberOfSamples();
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->getNumberOfSamples();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -67,7 +67,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       operator UserType&() {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0);
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -77,7 +77,7 @@ namespace ChimeraTK {
        */
       BufferingRegisterAccessor<UserType>& operator=(UserType rightHandSide)
       {
-        NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) = rightHandSide;
+        boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0) = rightHandSide;
         return *this;
       }
 
@@ -87,7 +87,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       BufferingRegisterAccessor<UserType>& operator++() {
-        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) + 1 );
+        return operator=( boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0) + 1 );
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -96,7 +96,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       BufferingRegisterAccessor<UserType>& operator--() {
-        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) - 1 );
+        return operator=( boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0) - 1 );
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -105,7 +105,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType operator++(int) {
-        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
+        UserType v = boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0);
         operator=( v + 1 );
         return v;
       }
@@ -116,7 +116,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       UserType operator--(int) {
-        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
+        UserType v = boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0);
         operator=( v - 1 );
         return v;
       }
@@ -130,18 +130,18 @@ namespace ChimeraTK {
       typedef typename std::vector<UserType>::const_iterator const_iterator;
       typedef typename std::vector<UserType>::reverse_iterator reverse_iterator;
       typedef typename std::vector<UserType>::const_reverse_iterator const_reverse_iterator;
-      iterator begin() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).begin(); }
-      const_iterator begin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cbegin(); }
-      const_iterator cbegin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cbegin(); }
-      iterator end() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).end(); }
-      const_iterator end() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cend(); }
-      const_iterator cend() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).cend(); }
-      reverse_iterator rbegin() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).rbegin(); }
-      const_reverse_iterator rbegin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crbegin(); }
-      const_reverse_iterator crbegin() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crbegin(); }
-      reverse_iterator rend() { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).rend(); }
-      const_reverse_iterator rend() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crend(); }
-      const_reverse_iterator crend() const { return NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).crend(); }
+      iterator begin() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).begin(); }
+      const_iterator begin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cbegin(); }
+      const_iterator cbegin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cbegin(); }
+      iterator end() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).end(); }
+      const_iterator end() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cend(); }
+      const_iterator cend() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cend(); }
+      reverse_iterator rbegin() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).rbegin(); }
+      const_reverse_iterator rbegin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crbegin(); }
+      const_reverse_iterator crbegin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crbegin(); }
+      reverse_iterator rend() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).rend(); }
+      const_reverse_iterator rend() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crend(); }
+      const_reverse_iterator crend() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crend(); }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
        *  \deprecated
@@ -149,11 +149,11 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       void swap(std::vector<UserType> &x) {
-        if(x.size() != NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).size()) {
+        if(x.size() != boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).size()) {
           throw DeviceException("Swapping with a buffer of a different size is not allowed.",
               DeviceException::WRONG_PARAMETER);
         }
-        NDRegisterAccessorAbstractor<UserType>::_impl->accessChannel(0).swap(x);
+        boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).swap(x);
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -162,7 +162,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isReadOnly() const {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->isReadOnly();
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->isReadOnly();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -171,7 +171,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isReadable() const {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->isReadable();
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->isReadable();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -180,7 +180,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isWriteable() const {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->isWriteable();
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->isWriteable();
       }
 
       /** \brief DEPRECATED! Use OneDRegisterAccessor or ScalarRegisterAccessor instead!
@@ -189,10 +189,13 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       bool isInitialised() const {
-        return NDRegisterAccessorAbstractor<UserType>::_impl != NULL;
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl) != NULL;
       }
 
       friend class TransferGroup;
+
+      using TransferElementAbstractor::_impl;
+
   };
 
 }    // namespace ChimeraTK

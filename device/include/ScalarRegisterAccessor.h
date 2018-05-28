@@ -40,36 +40,36 @@ namespace ChimeraTK {
       /** Implicit type conversion to user type T to access the first element (often the only element).
        *  This covers already a lot of operations like arithmetics and comparison */
       operator UserType&() {
-        return NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0);
       }
 
       /** Assignment operator, assigns the first element. */
       ScalarRegisterAccessor<UserType>& operator=(UserType rightHandSide)
       {
-        NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) = rightHandSide;
+        boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0) = rightHandSide;
         return *this;
       }
 
       /** Pre-increment operator for the first element. */
       ScalarRegisterAccessor<UserType>& operator++() {
-        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) + 1 );
+        return operator=( boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0) + 1 );
       }
 
       /** Pre-decrement operator for the first element. */
       ScalarRegisterAccessor<UserType>& operator--() {
-        return operator=( NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0) - 1 );
+        return operator=( boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0) - 1 );
       }
 
       /** Post-increment operator for the first element. */
       UserType operator++(int) {
-        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
+        UserType v = boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0);
         operator=( v + 1 );
         return v;
       }
 
       /** Post-decrement operator for the first element. */
       UserType operator--(int) {
-        UserType v = NDRegisterAccessorAbstractor<UserType>::_impl->accessData(0,0);
+        UserType v = boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,0);
         operator=( v - 1 );
         return v;
       }
@@ -79,7 +79,7 @@ namespace ChimeraTK {
        */
       template <typename COOCKED_TYPE>
       COOCKED_TYPE getAsCoocked(){
-        return NDRegisterAccessorAbstractor<UserType>::_impl->template getAsCoocked<COOCKED_TYPE>(0,0);
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->template getAsCoocked<COOCKED_TYPE>(0,0);
       }
 
       /** Set the coocked values in case the accessor is a raw accessor (which does not do data conversion).
@@ -87,10 +87,12 @@ namespace ChimeraTK {
        */
       template <typename COOCKED_TYPE>
       void setAsCoocked(COOCKED_TYPE value){
-        return NDRegisterAccessorAbstractor<UserType>::_impl->template setAsCoocked<COOCKED_TYPE>(0,0,value);
+        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->template setAsCoocked<COOCKED_TYPE>(0,0,value);
       }
 
       friend class TransferGroup;
+
+      using TransferElementAbstractor::_impl;
 
   };
 
@@ -105,11 +107,11 @@ namespace ChimeraTK {
     inline ScalarRegisterAccessor() {}
 
     inline operator std::string&() {
-      return NDRegisterAccessorAbstractor<std::string>::_impl->accessData(0,0);
+      return boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0,0);
     }
 
     inline ScalarRegisterAccessor<std::string>& operator=(std::string rightHandSide){
-      NDRegisterAccessorAbstractor<std::string>::_impl->accessData(0,0) = rightHandSide;
+      boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0,0) = rightHandSide;
       return *this;
     }
 
