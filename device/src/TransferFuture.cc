@@ -22,7 +22,7 @@ namespace ChimeraTK {
 
   namespace detail {
 
-    cppext::future_queue<void>  getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future) {
+    cppext::future_queue<void> getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future) {
       return future._notifications;
     }
 
