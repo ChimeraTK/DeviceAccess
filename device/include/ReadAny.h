@@ -14,8 +14,7 @@
 
 namespace ChimeraTK {
 
-  /** Group several TransferElements to allow waiting for an update of any of the TransferElements. The TransferElements
-   *  must be created with the AccessModeFlag::wait_for_new_data and must be readable. */
+  /** Group several TransferElements to allow waiting for an update of any of the TransferElements. */
   class ReadAnyGroup {
 
     public:
@@ -25,7 +24,8 @@ namespace ChimeraTK {
 
       /** Add TransferElement to group. Note that calling this function is only allowed before finalise() has been
        *  called. The given TransferElement may not yet be part of a ReadAnyGroup or a TransferGroup, otherwise an
-       *  exception is thrown. */
+       *  exception is thrown.
+       *  The TransferElement must be must be readable. */
       void add(TransferElementAbstractor &element);
 
       /** Finalise the group. From this point on, add() may no longer be called. Only after the group has been finalised
@@ -36,7 +36,10 @@ namespace ChimeraTK {
        *  finalise(). Any unread values which are present in the TransferElements when this function is called will not
        *  be processed in the correct sequence. Only the sequence within each TransferElement can be guaranteed. For any
        *  updates which arrive after the call to finalise() the correct sequence will be guaranteed even accross
-       *  TransferElements. */
+       *  TransferElements.
+       *
+       *  This function will call readAsync() on all elements in the group. For elements which have not been created
+       *  with TransferModeFlag::wait_for_new_data, readAsync() must be called to initiate new transfers when needed. */
       void finalise();
 
       /** Wait until one of the elements in this group has received an update. The function will return the
@@ -108,6 +111,7 @@ namespace ChimeraTK {
   inline TransferElementID ReadAnyGroup::waitAny() {
     size_t idx;
     notification_queue.pop_wait(idx);
+    elements[idx].readAsync().wait();
     return elements[idx].getId();
   }
 
