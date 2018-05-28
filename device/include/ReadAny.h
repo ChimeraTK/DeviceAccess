@@ -46,27 +46,31 @@ namespace ChimeraTK {
        *
        *  Before returning, the postRead action will be called on the TransferElement whose ID is returned, so the read
        *  data will already be present in the user buffer. All other TransferElements in this group will not be
-       *  altered. */
+       *  altered.
+       *
+       *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
       TransferElementID waitAny();
 
       /** Wait until the given TransferElement has received an update and store it to its user buffer. All updates of
        *  other elements which are received before the update of the given element will be processed and are thus
        *  visible in the user buffers when this function returns.
        *
-       *  The specified TransferElement must be part of this ReadAnyGroup, otherwise an exception is thrown.
+       *  The specified TransferElement must be part of this ReadAnyGroup, otherwise the behaviour is undefined.
        *
        *  This is merely a convenience function calling waitAny() in a loop until the ID of the given element is
-       *  returned. */
-      void waitUntil(TransferElementAbstractor &element);
+       *  returned.
+       *
+       *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
       void waitUntil(TransferElementID id);
+      void waitUntil(TransferElementAbstractor &element);
 
     private:
 
       bool isFinalised{false};
 
+      std::vector<TransferElementAbstractor> elements;
 
-
-      cppext::future_queue<void> notification_queue;
+      cppext::future_queue<size_t> notification_queue;
 
   };
 
@@ -74,6 +78,55 @@ namespace ChimeraTK {
 
   inline ReadAnyGroup::ReadAnyGroup() {}
 
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::add(TransferElementAbstractor &element) {
+    if(isFinalised) {
+      throw std::logic_error("ReadAnyGroup has already been finalised, calling add() is no longer allowed.");
+    }
+    if(!element.isReadable()) {
+      throw std::logic_error("Cannot add non-readable accessor for register "+element.getName()+" to ReadAnyGroup.");
+    }
+    elements.push_back(element);
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::finalise() {
+    if(isFinalised) throw std::logic_error("ReadAnyGroup has already been finalised, calling finalise() is no longer allowed.");
+    std::vector<cppext::future_queue<void>> queueList;
+    for(auto &e : elements) {
+      auto tf = e.readAsync();
+      queueList.push_back( detail::getFutureQueueFromTransferFuture(tf) );
+    }
+    notification_queue = cppext::when_any(queueList.begin(), queueList.end());
+    isFinalised = true;
+  }
+
+  /********************************************************************************************************************/
+
+  inline TransferElementID ReadAnyGroup::waitAny() {
+    size_t idx;
+    notification_queue.pop_wait(idx);
+    return elements[idx].getId();
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::waitUntil(TransferElementID id) {
+    while(true) {
+      auto read = waitAny();
+      if(read == id) return;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::waitUntil(TransferElementAbstractor &element) {
+    waitUntil(element.getId());
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
 

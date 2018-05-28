@@ -45,10 +45,12 @@ class AsyncDefaultImplTestDummy : public DummyBackend {
         boost::this_thread::interruption_point();
       }
       DummyBackend::read(bar,address,data,sizeInBytes);
+      ++readCount.at(address);
       readMutex.at(address).unlock();
     }
 
-    std::map<int, std::timed_mutex> readMutex;
+    std::map<uint32_t, std::timed_mutex> readMutex;
+    std::map<uint32_t, size_t> readCount;
 };
 
 /**********************************************************************************************************************/
@@ -138,6 +140,7 @@ void AsyncReadTest::testAsyncRead() {
 
     // create the mutex for the register
     backend->readMutex[0x08].unlock();
+    backend->readCount[0x08] = 0;
 
     // simple reading through readAsync without actual need
     TransferFuture future;
@@ -145,11 +148,13 @@ void AsyncReadTest::testAsyncRead() {
     future = accessor.readAsync();
     future.wait();
     BOOST_CHECK( accessor == 5 );
+    BOOST_CHECK( backend->readCount[0x08] == 1 );
 
     dummy = 6;
     TransferFuture future2 = accessor.readAsync();
     future2.wait();
     BOOST_CHECK( accessor == 6 );
+    BOOST_CHECK( backend->readCount[0x08] == 2 );
 
     // check that future's wait() function won't return before the read is complete
     for(int i=0; i<5; ++i) {
@@ -164,6 +169,7 @@ void AsyncReadTest::testAsyncRead() {
       backend->readMutex[0x08].unlock();
       thread.join();
       BOOST_CHECK( accessor == 42+i );
+      BOOST_CHECK( backend->readCount[0x08] == 3+(unsigned)i );
     }
 
     // check that obtaining the same future multiple times works properly
@@ -199,7 +205,7 @@ void AsyncReadTest::testAsyncRead() {
 /**********************************************************************************************************************/
 
 void AsyncReadTest::testReadAny() {
-/*
+
   for(auto &sdmToUse : sdmList) {
     std::cout << "testReadAny: " << sdmToUse << std::endl;
 
@@ -225,6 +231,10 @@ void AsyncReadTest::testReadAny() {
     backend->readMutex[0x14].lock();  // MODULE0/WORD_USER2
     backend->readMutex[0x20].lock();  // MODULE1/WORD_USER1
     backend->readMutex[0x24].lock();  // MODULE1/WORD_USER2
+    backend->readCount[0x10] = 0;
+    backend->readCount[0x14] = 0;
+    backend->readCount[0x20] = 0;
+    backend->readCount[0x14] = 0;
 
     // initialise the buffers of the accessors
     a1 = 1;
@@ -238,11 +248,19 @@ void AsyncReadTest::testReadAny() {
     dummy3 = 120;
     dummy4 = 345;
 
+    // Create ReadAnyGroup
+    ReadAnyGroup group;
+    group.add(a1);
+    group.add(a2);
+    group.add(a3);
+    group.add(a4);
+    group.finalise();
+
     // register 1
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -259,7 +277,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -276,7 +294,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -294,7 +312,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -311,7 +329,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -328,7 +346,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -345,7 +363,7 @@ void AsyncReadTest::testReadAny() {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&a1,&a2,&a3,&a4,&flag] { readAny({a1,a2,a3,a4}); flag = true; });
+      std::thread thread([&group,&flag] { group.waitAny(); flag = true; });
 
       // check that it doesn't return too soon
       usleep(100000);
@@ -358,7 +376,7 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK( a3 == 122 );
       backend->readMutex[0x20].lock();
     }
-
+/*
     // register 1 and then register 2 (order should be guaranteed)
     {
       // write to register 1 and launch the asynchronous read on it - but only wait on the underlying BOOST future
@@ -451,11 +469,11 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK(a3 == 33);
       BOOST_CHECK(a4 == 11);
     }
-
+*/
     device.close();
 
   }
-  */
+
 }
 
 /**********************************************************************************************************************/
