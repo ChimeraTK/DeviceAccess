@@ -77,6 +77,7 @@ namespace ChimeraTK {
         // but this requires that the shd mem is unmapped in all processes.
         std::cout << "Caught " << e.what() << " while constructing/resizing " + barName << std::endl
                   << "    Shared memory size: " << sharedMemoryManager.getInfoOnMemory().first << std::endl
+                  << "    Free memory: " << sharedMemoryManager.getInfoOnMemory().second << std::endl
                   << "    Memory required: " << getTotalRegisterSizeInBytes()
                   << std::endl << std::flush;
 
@@ -119,7 +120,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
 
-    std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+    //std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
 
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( data[wordIndex] = _barContents[bar]->at(wordBaseIndex+wordIndex); );
@@ -133,7 +134,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
 
-    std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+    //std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
 
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( _barContents[bar]->at(wordBaseIndex+wordIndex) = data[wordIndex]; );

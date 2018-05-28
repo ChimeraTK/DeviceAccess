@@ -180,7 +180,7 @@ namespace ChimeraTK {
         // Constants to take overhead of managed shared memory into respect
         // (approx. linear function, evaluated using Boost 1.58)
         // TODO Adjust for additional overhead (PIDs, ...)
-        static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
+        static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000 + 1000;
         static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 80;
 
         SharedDummyBackend& sharedDummyBackend;
