@@ -13,6 +13,7 @@
 #include "DeviceAccessVersion.h"
 #include "ExperimentalFeatures.h"
 #include "NDRegisterAccessorDecorator.h"
+#include "ReadAnyGroup.h"
 
 namespace mtca4u{
   using namespace ChimeraTK;
