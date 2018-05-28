@@ -422,6 +422,11 @@ namespace ChimeraTK {
         (void) newElement; // prevent warning
       }
 
+      /** Create a CopyRegisterDecorator of the right type decorating this TransferElement. This is used by
+       *  TransferElementAbstractor::replaceTransferElement() to decouple two accessors which are replaced on the
+       *  abstractor level. */
+      virtual boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() = 0;
+
       /** Constant string to be used as a unit when the unit is not provided or known */
       static constexpr char unitNotSet[] = "n./a.";
 

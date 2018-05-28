@@ -201,7 +201,7 @@ namespace ChimeraTK {
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         if(newElement->mayReplaceOther(_impl)) {
           if(newElement != _impl) {
-            _impl = newElement;
+            _impl = newElement->makeCopyRegisterDecorator();
           }
         }
         else {

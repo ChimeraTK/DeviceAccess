@@ -85,6 +85,9 @@ namespace ChimeraTK {
       template<typename COOCKED_TYPE>
       void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
 
+      boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override;
+
+
       /** DEPRECATED DO NOT USE! Instead make a call to readNonBlocking() and check the return value.
        *  \deprecated This function is deprecated, remove it at some point!
        *
@@ -137,7 +140,7 @@ namespace ChimeraTK {
   COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
     throw DeviceException("Reading as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
   }
-  
+
   template<typename UserType> template<typename COOCKED_TYPE>
   void NDRegisterAccessor<UserType>::setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
     CALL_VIRTUAL_FUNCTION_TEMPLATE(setAsCoocked_impl, COOCKED_TYPE, channel, sample, value);
@@ -149,7 +152,7 @@ namespace ChimeraTK {
   }
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);
-  
-}
+
+} /* namespace ChimeraTK */
 
 #endif /* CHIMERA_TK_N_D_REGISTER_ACCESSOR_H */

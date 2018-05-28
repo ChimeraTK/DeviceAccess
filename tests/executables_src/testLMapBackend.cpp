@@ -380,8 +380,9 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2;
   impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
-  impl2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
+  impl2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc2.getHighLevelImplElement());
 
+  BOOST_CHECK( impl != impl2 );
   BOOST_CHECK( impl->mayReplaceOther( impl ) == true );
   BOOST_CHECK( impl2->mayReplaceOther( impl ) == false );
   BOOST_CHECK( impl->mayReplaceOther( impl2 ) == false );

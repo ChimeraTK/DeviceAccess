@@ -429,10 +429,10 @@ void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
   auto mux3b = device.getScalarRegisterAccessor<int64_t>("/ADC/WORD_CLK_MUX_3");
 
   // obtain the private pointers to the implementation of the accessor
-  auto mux0i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux0.getHighLevelImplElement());
-  auto mux1i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux1.getHighLevelImplElement());
-  auto mux2i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux2.getHighLevelImplElement());
-  auto mux3i = boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux3.getHighLevelImplElement());
+  auto mux0i = boost::dynamic_pointer_cast<NDRegisterAccessor<uint16_t>>(mux0.getHighLevelImplElement());
+  auto mux1i = boost::dynamic_pointer_cast<NDRegisterAccessor<uint16_t>>(mux1.getHighLevelImplElement());
+  auto mux2i = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(mux2.getHighLevelImplElement());
+  auto mux3i = boost::dynamic_pointer_cast<NDRegisterAccessor<int64_t>>(mux3.getHighLevelImplElement());
 
   // check that all underlying raw accessors are still different
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] != mux1i->getHardwareAccessingElements()[0] );
@@ -456,10 +456,10 @@ void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
   BOOST_CHECK( mux0i->getHardwareAccessingElements()[0] == mux3i->getHardwareAccessingElements()[0] );
 
   // also check that all high-level implementations are still the same as previously
-  BOOST_CHECK( mux0i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux0.getHighLevelImplElement()) );
-  BOOST_CHECK( mux1i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux1.getHighLevelImplElement()) );
-  BOOST_CHECK( mux2i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux2.getHighLevelImplElement()) );
-  BOOST_CHECK( mux3i == boost::dynamic_pointer_cast<NDRegisterAccessor<int>>(mux3.getHighLevelImplElement()) );
+  BOOST_CHECK( mux0i == boost::dynamic_pointer_cast<NDRegisterAccessor<uint16_t>>(mux0.getHighLevelImplElement()) );
+  BOOST_CHECK( mux1i == boost::dynamic_pointer_cast<NDRegisterAccessor<uint16_t>>(mux1.getHighLevelImplElement()) );
+  BOOST_CHECK( mux2i == boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(mux2.getHighLevelImplElement()) );
+  BOOST_CHECK( mux3i == boost::dynamic_pointer_cast<NDRegisterAccessor<int64_t>>(mux3.getHighLevelImplElement()) );
 
   // check that reading and writing works
   mux0 = 42;

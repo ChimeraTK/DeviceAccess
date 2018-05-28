@@ -118,6 +118,11 @@ namespace ChimeraTK {
         isShared = true;
       }
 
+      boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override {                             // LCOV_EXCL_LINE
+        throw DeviceException("NumericAddressedLowLevelTransferElement::makeCopyRegisterDecorator() is not implemented",    // LCOV_EXCL_LINE
+                              DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
+      }                                                                                                     // LCOV_EXCL_LINE
+
     protected:
 
       /** Set the start address (inside the bar given in the constructor) and number of words of this accessor. */
