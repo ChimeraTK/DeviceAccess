@@ -68,13 +68,13 @@ namespace ChimeraTK {
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
 
           // configure fixed point converter
-	  // We don't have to fill it in a special way if the accessor is raw
-	  // because we have an overloaded, more efficient implementation
-	  // in this case. So we can use it in setAsCoocked() and getAsCoocked()
-	  _fixedPointConverter = FixedPointConverter(_registerPathName,
-						     _registerInfo->width,
-						     _registerInfo->nFractionalBits,
-						     _registerInfo->signedFlag);
+          // We don't have to fill it in a special way if the accessor is raw
+          // because we have an overloaded, more efficient implementation
+          // in this case. So we can use it in setAsCoocked() and getAsCoocked()
+          _fixedPointConverter = FixedPointConverter(_registerPathName,
+                                                     _registerInfo->width,
+                                                     _registerInfo->nFractionalBits,
+                                                     _registerInfo->signedFlag);
           if(flags.has(AccessMode::raw)) {
             if(typeid(UserType) != typeid(int32_t)) {
               throw DeviceException("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
@@ -87,14 +87,14 @@ namespace ChimeraTK {
           this->shutdown();
           throw;
         }
-        
+
         FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
         FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
       }
 
       virtual ~NumericAddressedBackendRegisterAccessor() {
         this->shutdown();
-      };
+      }
 
       void doReadTransfer() override {
         _rawAccessor->read();
@@ -128,7 +128,7 @@ namespace ChimeraTK {
           ++itsrc;
         }
         SyncNDRegisterAccessor<UserType>::doPostRead();
-      };
+      }
 
       void doPreWrite() override {
         auto itsrc = _rawAccessor->begin(_startAddress);
@@ -138,7 +138,7 @@ namespace ChimeraTK {
           *itsrc = _fixedPointConverter.toRaw<UserType>(*itdst);
           ++itsrc;
         }
-      };
+      }
 
       void doPostWrite() override {
       }
@@ -233,7 +233,7 @@ namespace ChimeraTK {
   };
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
   template<typename UserType> template<typename COOCKED_TYPE>
   COOCKED_TYPE NumericAddressedBackendRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
     // This is a coocked accessor. For the only possible raw type (int32_t) we have a
@@ -248,7 +248,7 @@ namespace ChimeraTK {
       throw DeviceException("Getting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
     }
   }
-  
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   template<typename UserType> template<typename COOCKED_TYPE>
@@ -265,7 +265,7 @@ namespace ChimeraTK {
       throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
     }
   }
-  
+
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -34,7 +34,7 @@ namespace ChimeraTK {
         setAddress(startAddress, numberOfWords);
       }
 
-      virtual ~NumericAddressedLowLevelTransferElement() {};
+      virtual ~NumericAddressedLowLevelTransferElement() {}
 
       void doReadTransfer() override {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
