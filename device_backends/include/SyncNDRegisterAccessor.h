@@ -68,9 +68,7 @@ namespace ChimeraTK {
         // launch doReadTransfer in separate thread
         readAsyncThread = boost::thread(
           [this] {
-            usleep(1000000);
             this->doReadTransfer();
-            usleep(1000000);
             this->notifications.push();
           }
         );
