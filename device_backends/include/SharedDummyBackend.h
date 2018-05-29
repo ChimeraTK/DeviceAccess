@@ -85,8 +85,8 @@ namespace ChimeraTK {
         
       public:
         SharedMemoryManager(SharedDummyBackend &sharedDummyBackend_,
-                            const std::string instanceId,
-                            const std::string mapFileName) :
+                            const std::string &instanceId,
+                            const std::string &mapFileName) :
           sharedDummyBackend(sharedDummyBackend_),
           userHash(std::to_string(std::hash<std::string>{}(getUserName()))),
           mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
