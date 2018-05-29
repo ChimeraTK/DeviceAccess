@@ -129,11 +129,11 @@ namespace ChimeraTK {
           //checkPidSetConsistency();
           pidSet->insert(getOwnPID());
 
-          std::cout << "Size of the pidSet is " << pidSet->size() << std::endl
-                    << "Size max is " << pidSet->max_size() << std::endl
-                    << "Bucket cnt is " << pidSet->bucket_count() << std::endl
-                    << "Max cnt is  " << pidSet->max_bucket_count() << std::endl
-                    << "Max load factor is " << pidSet->max_load_factor() << std::endl;
+//          std::cout << "Size of the pidSet is " << pidSet->size() << std::endl
+//                    << "Size max is " << pidSet->max_size() << std::endl
+//                    << "Bucket cnt is " << pidSet->bucket_count() << std::endl
+//                    << "Max cnt is  " << pidSet->max_bucket_count() << std::endl
+//                    << "Max load factor is " << pidSet->max_load_factor() << std::endl;
 
 
 #ifdef _DEBUG
@@ -180,7 +180,7 @@ namespace ChimeraTK {
         // Constants to take overhead of managed shared memory into respect
         // (approx. linear function, evaluated using Boost 1.58)
         // TODO Adjust for additional overhead (PIDs, ...)
-        static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000 + 1000;
+        static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
         static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 80;
 
         SharedDummyBackend& sharedDummyBackend;

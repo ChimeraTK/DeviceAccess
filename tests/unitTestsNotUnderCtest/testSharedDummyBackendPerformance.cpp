@@ -62,6 +62,7 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
     const unsigned maxIncorrectIterations = 10; /* Timeout while waiting for 2nd application */
     unsigned iterations = 0;
     unsigned incorrectIterations = 0;
+    std::vector<int> processVarsOld (0);
 
     {
       Device dev;
@@ -76,7 +77,7 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
         ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
           = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
         for(size_t i=0; i<processVarsWrite.getNElements(); ++i){
-          processVarsWrite[i] = i;
+          processVarsWrite[i] = i + iterations;
         }
         processVarsWrite.write();
 
@@ -84,12 +85,15 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
         // Check if values have been written back by the other application
         ChimeraTK::OneDRegisterAccessor<int> processVarsRead
           = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
-        processVarsRead.read();
+        // Read as long as the readback from last iteration has been overwritten
+        do{
+          processVarsRead.read();
+        }
+        while((std::vector<int>)processVarsRead == (std::vector<int>)processVarsOld && !waitingForResponse);
 
         if((std::vector<int>)processVarsWrite == (std::vector<int>)processVarsRead){
           if(waitingForResponse){
             waitingForResponse = false;
-
           }
           readbackCorrect = true;
         }
@@ -109,12 +113,13 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
         else{
           iterations++;
         }
+        processVarsOld = processVarsWrite;
       }
       while((readbackCorrect || waitingForResponse) &&
             incorrectIterations != maxIncorrectIterations && iterations != nIterations);
 
       BOOST_CHECK(readbackCorrect);
-      std::cout << "Finshed test after " << iterations
+      std::cout << "Finished test after " << iterations
                 << " of " << nIterations << " Iterations." << std::endl;
 
       dev.close();

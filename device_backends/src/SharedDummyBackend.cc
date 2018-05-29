@@ -62,6 +62,7 @@ namespace ChimeraTK {
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
 
       try{
+        std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
 
 #ifdef _DEBUG
@@ -120,7 +121,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
 
-    //std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+    std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
 
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( data[wordIndex] = _barContents[bar]->at(wordBaseIndex+wordIndex); );
@@ -134,7 +135,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
 
-    //std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+    std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
 
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( _barContents[bar]->at(wordBaseIndex+wordIndex) = data[wordIndex]; );
