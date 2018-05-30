@@ -45,6 +45,8 @@ namespace ChimeraTK {
 
       ~Application() {}
 
+      using ApplicationBase::getName;
+
       /** This will remove the global pointer to the instance and allows creating another instance
        *  afterwards. This is mostly useful for writing tests, as it allows to run several applications sequentially
        *  in the same executable. Note that any ApplicationModules etc. owned by this Application are no longer
