@@ -57,12 +57,12 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
 
     std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
 
+    //FIXME Move to scope below
     bool readbackCorrect = false;
     bool waitingForResponse = true;
     const unsigned maxIncorrectIterations = 10; /* Timeout while waiting for 2nd application */
     unsigned iterations = 0;
     unsigned incorrectIterations = 0;
-    std::vector<int> processVarsOld (0);
 
     {
       Device dev;
@@ -72,10 +72,12 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
 
       BOOST_CHECK(shm_exists(shmName));
 
+      ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
+        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+      std::vector<int> processVarsOld (processVarsWrite.getNElements(), 0);
+
       do{
         // Write some values to the shared memory
-        ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
-          = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
         for(size_t i=0; i<processVarsWrite.getNElements(); ++i){
           processVarsWrite[i] = i + iterations;
         }

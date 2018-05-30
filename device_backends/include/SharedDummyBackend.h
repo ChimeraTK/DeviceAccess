@@ -19,15 +19,18 @@
 #include "Exception.h"
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
+#include "SharedDummyBackendException.h"
 //TODO How to manage this files?
 #include "ProcessManagement.h"
 
 
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
+//FIXME Use unsigned allocator?
+//typedef boost::interprocess::allocator<uint32_t, boost::interprocess::managed_shared_memory::segment_manager> ShmemAllocatorUint;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-typedef boost::unordered_set<int32_t, boost::hash<int32_t>, std::equal_to<int32_t>, ShmemAllocator> PidSet;
-
+//typedef boost::unordered_set<int32_t, boost::hash<int32_t>, std::equal_to<int32_t>, ShmemAllocator> PidSet;
+typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
 
 // Static variables
 static boost::interprocess::named_mutex *interprocessMutex{nullptr};
@@ -105,35 +108,35 @@ namespace ChimeraTK {
           auto useCounterData = segment.find<size_t>("UseCounter");
           if(useCounterData.second != 1) {  // if not found: create it
             useCount = segment.construct<size_t>("UseCounter")(0);
-            pidSet   = segment.construct<PidSet>("PidSet")
-                ((10), boost::hash<int32_t>(), std::equal_to<int32_t>(),segment.get_allocator<int32_t>());
+            //FIXME REMOVE COMMENTS
+//            pidSet   = segment.construct<PidSet>("PidSet")
+//                ((10), boost::hash<int32_t>(), std::equal_to<int32_t>(),segment.get_allocator<int32_t>());
+            pidSet   = segment.construct<SharedMemoryVector>("PidSet")(SHARED_MEMORY_N_MAX_MEMBER, alloc_inst);
+            pidSet->clear();
 
-            pidSet->insert(1);
-            pidSet->insert(2);
-//            pidSet->insert(3);
-//            pidSet->insert(4);
-//            pidSet->insert(5);
-//            pidSet->insert(6);
-//            pidSet->insert(7);
-//            pidSet->insert(8);
-          }
-          else {
+//            std::cout << "Created shdmem with " << getRequiredMemoryWithOverhead() << "." << std::endl;
+           }
+          else{
             useCount        = useCounterData.first;
-            auto pidSetData = segment.find<PidSet>("PidSet");
+//            auto pidSetData = segment.find<PidSet>("PidSet");
+            auto pidSetData = segment.find<SharedMemoryVector>("PidSet");
             pidSet          = pidSetData.first;
           }
+
 
           // increment use counter
           (*useCount)++;
 
-          //checkPidSetConsistency();
-          pidSet->insert(getOwnPID());
+          checkPidSetConsistency();
 
-//          std::cout << "Size of the pidSet is " << pidSet->size() << std::endl
-//                    << "Size max is " << pidSet->max_size() << std::endl
-//                    << "Bucket cnt is " << pidSet->bucket_count() << std::endl
-//                    << "Max cnt is  " << pidSet->max_bucket_count() << std::endl
-//                    << "Max load factor is " << pidSet->max_load_factor() << std::endl;
+          if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER-1){
+            std::string errMsg{"Maximum number of accessing members reached."};
+            throw SharedDummyBackendException(errMsg,
+                      SharedDummyBackendException::EX_MAX_NUMBER_OF_MEMBERS_REACHED);
+          }
+
+          pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
+          std::cout << "PidSet size and capacity: " << pidSet->size() << ", " << pidSet->capacity() << std::endl;
 
 
 #ifdef _DEBUG
@@ -152,12 +155,21 @@ namespace ChimeraTK {
           
           // decrement use counter
           (*useCount)--;
+          checkPidSetConsistency();
           
+          int32_t ownPid = static_cast<int32_t>(getOwnPID());
+          for(auto it = pidSet->begin(); it != pidSet->end(); ){
+            if(*it == ownPid){
+              it = pidSet->erase(it);
+            }
+            else{
+              ++it;
+            }
+          }
+
           // if use count at 0, destroy shared memory and the interprocess mutex
           if(*useCount == 0) {
             boost::interprocess::shared_memory_object::remove(name.c_str());
-            pidSet->erase(getOwnPID());
-//            checkPidSetConsistency();
 
             interprocessMutex = nullptr;
             boost::interprocess::named_mutex::remove(name.c_str());
@@ -175,13 +187,24 @@ namespace ChimeraTK {
          */
         std::pair<size_t, size_t> getInfoOnMemory();
 
+//        void printPIDInfo(void){
+//          std::cout << "Size of the pidSet is " << pidSet->size() << std::endl
+//                    << "Size max is " << pidSet->max_size() << std::endl
+//                    << "Bucket cnt is " << pidSet->bucket_count() << std::endl
+//                    << "Max bucket cnt is  " << pidSet->max_bucket_count() << std::endl
+//                    << "Load factor is " << pidSet->load_factor() << std::endl
+//                    << "Max load factor is " << pidSet->max_load_factor() << std::endl;
+//        }
+
       private:
 
         // Constants to take overhead of managed shared memory into respect
-        // (approx. linear function, evaluated using Boost 1.58)
-        // TODO Adjust for additional overhead (PIDs, ...)
+        // (approx. linear function, meta data for memory and meta data per vector)
+        // Uses overestimates for robustness
         static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
-        static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 80;
+        static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 160;
+
+        const size_t SHARED_MEMORY_N_MAX_MEMBER = 10;
 
         SharedDummyBackend& sharedDummyBackend;
 
@@ -207,7 +230,7 @@ namespace ChimeraTK {
         PidSet *pidSet{nullptr};
 
         size_t getRequiredMemoryWithOverhead();
-//        void checkPidSetConsistency();
+        void checkPidSetConsistency();
 
       };  /* class SharedMemoryManager */
       

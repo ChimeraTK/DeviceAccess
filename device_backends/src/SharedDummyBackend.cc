@@ -61,6 +61,8 @@ namespace ChimeraTK {
 
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
 
+      //sharedMemoryManager.printPIDInfo();
+
       try{
         std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
@@ -73,7 +75,7 @@ namespace ChimeraTK {
                   << std::endl << std::flush;
 #endif
       }
-      catch(boost::interprocess::bad_alloc &e){\
+      catch(boost::interprocess::bad_alloc &e){
         // TODO Decide if we trigger grow() on the shd mem from here,
         // but this requires that the shd mem is unmapped in all processes.
         std::cout << "Caught " << e.what() << " while constructing/resizing " + barName << std::endl
@@ -81,8 +83,12 @@ namespace ChimeraTK {
                   << "    Free memory: " << sharedMemoryManager.getInfoOnMemory().second << std::endl
                   << "    Memory required: " << getTotalRegisterSizeInBytes()
                   << std::endl << std::flush;
-
         sharedMemoryManager.~SharedMemoryManager();
+
+        std::string errMsg{"Could not allocate shared memory while constructing registers. "
+                           "Please file a bug report at https://github.com/ChimeraTK/DeviceAccess."};
+        throw SharedDummyBackendException(errMsg,
+                  SharedDummyBackendException::EX_BAD_ALLOC);
       }
     } /* for(barSizesInBytesIter) */
   }
@@ -218,6 +224,7 @@ namespace ChimeraTK {
     return std::make_pair(segment.get_size(), segment.get_free_memory());
   }
 
+  //FIXME delete
 //  void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
 //    for(const auto ps : *pidSet){
 //      if(!processExists(ps)){
@@ -233,5 +240,29 @@ namespace ChimeraTK {
 //      }
 //    }
 //  }
+
+    void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
+
+      bool pidSetConistent = true;
+
+      for(auto it = pidSet->begin(); it != pidSet->end(); ){
+        if(!processExists(*it)){
+          pidSetConistent = false;
+          std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
+          it = pidSet->erase(it);
+        }
+        else{
+          it++;
+        }
+      }
+      if(pidSetConistent){
+        std::cout << "PID set consistent with PIDs:" << std::endl;
+        for(const auto ps : *pidSet){
+          std::cout << "  " << ps << std::endl;
+        }
+        std::cout << "  Size of pidSet is " << pidSet->size() << std::endl
+                  << "  Size of the useCounter is " << *useCount << std::endl;
+      }
+    }
 
 } // Namespace ChimeraTK
