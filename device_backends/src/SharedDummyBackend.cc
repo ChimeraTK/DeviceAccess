@@ -224,45 +224,26 @@ namespace ChimeraTK {
     return std::make_pair(segment.get_size(), segment.get_free_memory());
   }
 
-  //FIXME delete
-//  void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
-//    for(const auto ps : *pidSet){
-//      if(!processExists(ps)){
-//        std::cout << "Nonexistent PID " << ps << " found. "
-//        pidSet->erase(ps);
-//      }
-//      else{
-//        std::cout << "PID set consistent with PIDs:" << std::endl;
-//        for(const auto ps : *pidSet){
-//          std::cout << "  " << ps << std::endl;
-//        }
-//
-//      }
-//    }
-//  }
+  /**
+   * Checks and if needed corrects the state of the pid set, i.e
+   * if accessing processes have been terminated and could not clean up for themselves,
+   * their entries are removed. This way, if at least the last accessing process exits
+   * gracefully, the shared memory will be removed.
+   */
+  void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
 
-    void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
+    bool pidSetConistent = true;
 
-      bool pidSetConistent = true;
-
-      for(auto it = pidSet->begin(); it != pidSet->end(); ){
-        if(!processExists(*it)){
-          pidSetConistent = false;
-          std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
-          it = pidSet->erase(it);
-        }
-        else{
-          it++;
-        }
+    for(auto it = pidSet->begin(); it != pidSet->end(); ){
+      if(!processExists(*it)){
+        pidSetConistent = false;
+        std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
+        it = pidSet->erase(it);
       }
-      if(pidSetConistent){
-        std::cout << "PID set consistent with PIDs:" << std::endl;
-        for(const auto ps : *pidSet){
-          std::cout << "  " << ps << std::endl;
-        }
-        std::cout << "  Size of pidSet is " << pidSet->size() << std::endl
-                  << "  Size of the useCounter is " << *useCount << std::endl;
+      else{
+        it++;
       }
     }
+  }
 
 } // Namespace ChimeraTK

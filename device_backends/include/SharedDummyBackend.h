@@ -26,10 +26,7 @@
 
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
-//FIXME Use unsigned allocator?
-//typedef boost::interprocess::allocator<uint32_t, boost::interprocess::managed_shared_memory::segment_manager> ShmemAllocatorUint;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
-//typedef boost::unordered_set<int32_t, boost::hash<int32_t>, std::equal_to<int32_t>, ShmemAllocator> PidSet;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
 
 // Static variables
@@ -79,11 +76,6 @@ namespace ChimeraTK {
 
       // Helper class to manage the shared memory: automatically construct if necessary,
       // automatically destroy if last using process closes.
-      /*\
-       * TODO: * Include User and URI in hashes
-       *         -> Additional overhead?
-       *
-       */
       class SharedMemoryManager {
         
       public:
@@ -104,29 +96,17 @@ namespace ChimeraTK {
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
 
-          // find the use counter
-          auto useCounterData = segment.find<size_t>("UseCounter");
-          if(useCounterData.second != 1) {  // if not found: create it
-            useCount = segment.construct<size_t>("UseCounter")(0);
-            //FIXME REMOVE COMMENTS
-//            pidSet   = segment.construct<PidSet>("PidSet")
-//                ((10), boost::hash<int32_t>(), std::equal_to<int32_t>(),segment.get_allocator<int32_t>());
+          // Determine, if shared memory has already been created
+          auto pidSetData = segment.find<SharedMemoryVector>("PidSet");
+          if(pidSetData.second != 1) {  // if not found: create it
             pidSet   = segment.construct<SharedMemoryVector>("PidSet")(SHARED_MEMORY_N_MAX_MEMBER, alloc_inst);
             pidSet->clear();
-
-//            std::cout << "Created shdmem with " << getRequiredMemoryWithOverhead() << "." << std::endl;
-           }
+          }
           else{
-            useCount        = useCounterData.first;
-//            auto pidSetData = segment.find<PidSet>("PidSet");
-            auto pidSetData = segment.find<SharedMemoryVector>("PidSet");
-            pidSet          = pidSetData.first;
+            pidSet = pidSetData.first;
           }
 
-
-          // increment use counter
-          (*useCount)++;
-
+          // Clean up pidSet, if needed
           checkPidSetConsistency();
 
           if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER-1){
@@ -136,8 +116,6 @@ namespace ChimeraTK {
           }
 
           pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
-          std::cout << "PidSet size and capacity: " << pidSet->size() << ", " << pidSet->capacity() << std::endl;
-
 
 #ifdef _DEBUG
           std::cout << "Created shared memory with a size of " << segment.get_size() << " bytes." << std::endl;
@@ -148,13 +126,10 @@ namespace ChimeraTK {
 
         ~SharedMemoryManager() {
 
-          //std::cout << "Entered ~SharedMemoryManager()..." << std::endl;
-
           // lock guard with the interprocess mutex
           std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
           
-          // decrement use counter
-          (*useCount)--;
+          // Clean up
           checkPidSetConsistency();
           
           int32_t ownPid = static_cast<int32_t>(getOwnPID());
@@ -167,10 +142,10 @@ namespace ChimeraTK {
             }
           }
 
-          // if use count at 0, destroy shared memory and the interprocess mutex
-          if(*useCount == 0) {
+          // If size of pidSet is 0 (i.e, the instance belongs to the last accessing process),
+          // destroy shared memory and the interprocess mutex
+          if(pidSet->size()) {
             boost::interprocess::shared_memory_object::remove(name.c_str());
-
             interprocessMutex = nullptr;
             boost::interprocess::named_mutex::remove(name.c_str());
           }
@@ -225,8 +200,7 @@ namespace ChimeraTK {
         // global (interprocess) mutex
         boost::interprocess::named_mutex globalMutex;
 
-        // pointer to the use count on shared memory;
-        size_t *useCount{nullptr};
+        // Pointer to the set of process IDs in shared memory;
         PidSet *pidSet{nullptr};
 
         size_t getRequiredMemoryWithOverhead();
