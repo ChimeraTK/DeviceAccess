@@ -109,7 +109,7 @@ namespace ChimeraTK {
           // Clean up pidSet, if needed
           checkPidSetConsistency();
 
-          if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER-1){
+          if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER){
             std::string errMsg{"Maximum number of accessing members reached."};
             throw SharedDummyBackendException(errMsg,
                       SharedDummyBackendException::EX_MAX_NUMBER_OF_MEMBERS_REACHED);

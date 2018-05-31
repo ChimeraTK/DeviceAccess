@@ -182,6 +182,31 @@ BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
 }
 
+/**
+ * This test is called from the script testing the process ID
+ * management. It verifies that the registers do not contain
+ * any nonzero content that was written by another process.
+ */
+BOOST_AUTO_TEST_CASE( testVerifyCleanup ) {
+
+    setDMapFilePath("shareddummyTest.dmap");
+
+    Device dev;
+    dev.open("SHDMEMDEV");
+
+    ChimeraTK::OneDRegisterAccessor<int> processVarsRead
+      = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+    for(size_t i=0; i<processVarsRead.getNElements(); ++i){
+      processVarsRead[i] = i;
+    }
+    processVarsRead.read();
+
+    //TODO Check if nonzero content
+
+    dev.close();
+
+}
+
 /*********************************************************************************************************************/
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -195,28 +220,3 @@ static void interrupt_handler(int signal){
             << signal << "). Terminating..." << std::endl;
   terminationCaught = true;
 }
-
-
-// FIXME Remove
-//// Static helper functions
-//static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
-//  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
-//  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
-//  std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
-//
-//  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
-//}
-//
-//static bool shm_exists(std::string shmName){
-//
-//  bool result;
-//
-//  try{
-//    boost::interprocess::managed_shared_memory shm{boost::interprocess::open_only, shmName.c_str()};
-//    result =  shm.check_sanity();
-//  }
-//  catch(const std::exception & ex){
-//    result = false;
-//  }
-//  return result;
-//}

@@ -188,6 +188,7 @@ namespace ChimeraTK {
 
   SharedMemoryVector* SharedDummyBackend::SharedMemoryManager::findOrConstructVector(const std::string& objName, const size_t size){
 
+    //FIXME Set size in constructor
     SharedMemoryVector* vector = segment.find_or_construct<SharedMemoryVector>(objName.c_str())(alloc_inst);
 
     vector->resize(size, 0);
