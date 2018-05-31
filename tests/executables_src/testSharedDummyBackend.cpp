@@ -66,23 +66,42 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
 
       BOOST_CHECK(shm_exists(shmName));
 
-      // Write some values to the shared memory
-      ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
-        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
-      for(size_t i=0; i<processVarsWrite.getNElements(); ++i){
-        processVarsWrite[i] = i;
+      // Write/read some values to/from the shared memory
+      ChimeraTK::OneDRegisterAccessor<int> processVars11
+        = dev.getOneDRegisterAccessor<int>("FEATURE1/AREA");
+      for(size_t i=0; i<processVars11.getNElements(); ++i){
+        processVars11[i] = i;
       }
-      processVarsWrite.write();
+      processVars11.write();
+      processVars11.read();
+
+      ChimeraTK::OneDRegisterAccessor<int> processVars23
+        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA3");
+      for(size_t i=0; i<processVars23.getNElements(); ++i){
+        processVars23[i] = i;
+      }
+      processVars23.write();
+      processVars23.read();
+
+
+      // Write to memory and check values mirrored by another process
+      ChimeraTK::OneDRegisterAccessor<int> processVarsWrite21
+        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+      for(size_t i=0; i<processVarsWrite21.getNElements(); ++i){
+        processVarsWrite21[i] = i;
+      }
+      processVarsWrite21.write();
 
       //start second accessing application
-      BOOST_CHECK(!std::system("../bin/testSharedDummyBackend2ndApp --run_test=SharedDummyBackendTestSuite/testReadWrite"));
+//      BOOST_CHECK(!std::system("../bin/testSharedDummyBackend2ndApp --run_test=SharedDummyBackendTestSuite/testReadWrite"));
+      BOOST_CHECK(!std::system("../bin/testSharedDummyBackendPerformance --run_test=SharedDummyBackendTestSuite/testReadWrite"));
 
       // Check if values have been written back by the other application
       ChimeraTK::OneDRegisterAccessor<int> processVarsRead
         = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
       processVarsRead.read();
 
-      BOOST_CHECK((std::vector<int>)processVarsWrite == (std::vector<int>)processVarsRead);
+      BOOST_CHECK((std::vector<int>)processVarsWrite21 == (std::vector<int>)processVarsRead);
       dev.close();
     }
 

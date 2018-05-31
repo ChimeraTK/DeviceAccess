@@ -13,15 +13,21 @@ using namespace boost::unit_test_framework;
 #include <vector>
 #include <unistd.h>
 #include <cstdlib>
+#include <csignal>
 #include <thread>
 #include <chrono>
 #include <utility>
 
 using namespace ChimeraTK;
 
-// Static function prototypes
-static std::string createExpectedShmName(std::string, std::string);
-static bool shm_exists(std::string);
+//TODO remove
+//// Static function prototypes
+//static std::string createExpectedShmName(std::string, std::string);
+//static bool shm_exists(std::string);
+
+static void interrupt_handler(int);
+
+static bool terminationCaught = false;
 
 BOOST_AUTO_TEST_SUITE( SharedDummyBackendTestSuite )
 
@@ -55,7 +61,8 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
 
     boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
 
-    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
+    //TODO remove
+    //std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
 
     //FIXME Move to scope below
     bool readbackCorrect = false;
@@ -70,7 +77,8 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
       dev.open("SHDMEMDEV");
       BOOST_CHECK(dev.isOpened());
 
-      BOOST_CHECK(shm_exists(shmName));
+      //TODO remove
+      //BOOST_CHECK(shm_exists(shmName));
 
       ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
         = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
@@ -128,29 +136,87 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
     }
 }
 
+
+/**
+ * This test case implements a second application accessing the shared memory
+ * which mirrors the values to another register bar.
+ * For a robustness test, it can be called with the argument "KEEP_RUNNING", so
+ * that it constantly operates on the shared memory. In this case, it can be terminated
+ * gracefully by sending SIGINT.
+ */
+BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
+
+    signal(SIGINT, interrupt_handler);
+
+    bool keepRunning = false;
+
+    if(argc == 2 && strcmp(argv[1], "KEEP_RUNING")){
+      keepRunning = true;
+    }
+
+    setDMapFilePath("shareddummyTest.dmap");
+
+    Device dev;
+    BOOST_CHECK(!dev.isOpened());
+    dev.open("SHDMEMDEV");
+    BOOST_CHECK(dev.isOpened());
+
+    do{
+      ChimeraTK::OneDRegisterAccessor<int> processVarsRead
+        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+      for(size_t i=0; i<processVarsRead.getNElements(); ++i){
+        processVarsRead[i] = i;
+      }
+      processVarsRead.read();
+
+      ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
+        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
+
+      for(size_t i=0; i<processVarsRead.getNElements(); ++i){
+        processVarsWrite[i] = processVarsRead[i];
+      }
+      processVarsWrite.write();
+    }
+    while(keepRunning && !terminationCaught);
+    dev.close();
+
+}
+
 /*********************************************************************************************************************/
 BOOST_AUTO_TEST_SUITE_END()
 
+/**
+ * Catch interrupt signal, so we can terminate the test and still
+ * clean up the shared memory.
+ */
+static void interrupt_handler(int signal){
 
-// Static helper functions
-static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
-  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
-  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
-  std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
-
-  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
+  std::cout << "Caught interrupt signal ("
+            << signal << "). Terminating..." << std::endl;
+  terminationCaught = true;
 }
 
-static bool shm_exists(std::string shmName){
 
-  bool result;
-
-  try{
-    boost::interprocess::managed_shared_memory shm{boost::interprocess::open_only, shmName.c_str()};
-    result =  shm.check_sanity();
-  }
-  catch(const std::exception & ex){
-    result = false;
-  }
-  return result;
-}
+// FIXME Remove
+//// Static helper functions
+//static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
+//  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
+//  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
+//  std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
+//
+//  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
+//}
+//
+//static bool shm_exists(std::string shmName){
+//
+//  bool result;
+//
+//  try{
+//    boost::interprocess::managed_shared_memory shm{boost::interprocess::open_only, shmName.c_str()};
+//    result =  shm.check_sanity();
+//  }
+//  catch(const std::exception & ex){
+//    result = false;
+//  }
+//  return result;
+//}

@@ -1,5 +1,5 @@
 #name               n_words  address  n_bytes  BAR  n_bits  n_fractionalBits  signed
-FEATURE1.AREA           201        0      402    0      16                 0       0
+FEATURE1.AREA           201        0      804    0      16                 0       0
 
 FEATURE2.AREA1          100        0      400   13      32                 0       0
 

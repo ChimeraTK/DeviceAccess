@@ -116,12 +116,6 @@ namespace ChimeraTK {
           }
 
           pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
-
-#ifdef _DEBUG
-          std::cout << "Created shared memory with a size of " << segment.get_size() << " bytes." << std::endl;
-          std::cout << "    Free space : " << segment.get_free_memory() << std::endl;
-          std::cout << "    useCount is: " << *useCount << std::endl << std::flush;
-#endif
         }
 
         ~SharedMemoryManager() {
@@ -144,7 +138,7 @@ namespace ChimeraTK {
 
           // If size of pidSet is 0 (i.e, the instance belongs to the last accessing process),
           // destroy shared memory and the interprocess mutex
-          if(pidSet->size()) {
+          if(pidSet->size() == 0) {
             boost::interprocess::shared_memory_object::remove(name.c_str());
             interprocessMutex = nullptr;
             boost::interprocess::named_mutex::remove(name.c_str());
@@ -162,20 +156,12 @@ namespace ChimeraTK {
          */
         std::pair<size_t, size_t> getInfoOnMemory();
 
-//        void printPIDInfo(void){
-//          std::cout << "Size of the pidSet is " << pidSet->size() << std::endl
-//                    << "Size max is " << pidSet->max_size() << std::endl
-//                    << "Bucket cnt is " << pidSet->bucket_count() << std::endl
-//                    << "Max bucket cnt is  " << pidSet->max_bucket_count() << std::endl
-//                    << "Load factor is " << pidSet->load_factor() << std::endl
-//                    << "Max load factor is " << pidSet->max_load_factor() << std::endl;
-//        }
 
       private:
 
         // Constants to take overhead of managed shared memory into respect
         // (approx. linear function, meta data for memory and meta data per vector)
-        // Uses overestimates for robustness
+        // Uses overestimates for robustness.
         static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
         static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 160;
 
@@ -208,6 +194,7 @@ namespace ChimeraTK {
 
       };  /* class SharedMemoryManager */
       
+
       // Managed shared memory object
       SharedMemoryManager sharedMemoryManager;
       
@@ -226,6 +213,7 @@ namespace ChimeraTK {
         static std::map< std::string, boost::shared_ptr<DeviceBackend> > instanceMap;
         return instanceMap;
       }
+
 
       /**
        * @brief Method looks up and returns an existing instance of class 'T'

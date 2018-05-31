@@ -1,4 +1,4 @@
-#!/bin/bash
+    #!/bin/bash
 # Script to call the robustness/performance test processes for the SharedDummyBackend
 # TODO The whole test should be cycled several times to test creation and
 #      destruction of the shared memory
@@ -10,10 +10,10 @@ CNT=0
 
 while [ $CNT -lt $N_CYCLES ]; do 
 
-    ../bin/testSharedDummyBackend2ndApp KEEP_RUNNING & >/dev/null
+    ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
     PID=$!
 
-    ../bin/testSharedDummyBackendPerformance $N_RW_CYCLES
+    ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testRobustnessMain $N_RW_CYCLES
     RET_MAIN=$?
 
     kill -s SIGINT $PID

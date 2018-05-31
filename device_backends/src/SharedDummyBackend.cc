@@ -61,28 +61,12 @@ namespace ChimeraTK {
 
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
 
-      //sharedMemoryManager.printPIDInfo();
-
       try{
         std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
-
-#ifdef _DEBUG
-        std::cout << "Constructed bar: " << barName << std::endl
-                  << "    with a size of " << barSizeInBytesIter->second << std::endl
-                  << "    Memory size: " << sharedMemoryManager.getInfoOnMemory().first << std::endl
-                  << "    Free memory is: " << sharedMemoryManager.getInfoOnMemory().second
-                  << std::endl << std::flush;
-#endif
       }
       catch(boost::interprocess::bad_alloc &e){
-        // TODO Decide if we trigger grow() on the shd mem from here,
-        // but this requires that the shd mem is unmapped in all processes.
-        std::cout << "Caught " << e.what() << " while constructing/resizing " + barName << std::endl
-                  << "    Shared memory size: " << sharedMemoryManager.getInfoOnMemory().first << std::endl
-                  << "    Free memory: " << sharedMemoryManager.getInfoOnMemory().second << std::endl
-                  << "    Memory required: " << getTotalRegisterSizeInBytes()
-                  << std::endl << std::flush;
+        // Clean up
         sharedMemoryManager.~SharedMemoryManager();
 
         std::string errMsg{"Could not allocate shared memory while constructing registers. "
@@ -232,12 +216,9 @@ namespace ChimeraTK {
    */
   void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
 
-    bool pidSetConistent = true;
-
     for(auto it = pidSet->begin(); it != pidSet->end(); ){
       if(!processExists(*it)){
-        pidSetConistent = false;
-        std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
+        //std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
         it = pidSet->erase(it);
       }
       else{
