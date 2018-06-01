@@ -5,12 +5,11 @@
  *      Author: Martin Hierholzer
  */
 
-#include <libxml++/libxml++.h>
-
 #include "VariableNetworkNode.h"
 #include "VariableNetwork.h"
 #include "Application.h"
 #include "EntityOwner.h"
+#include "Visitor.h"
 
 namespace ChimeraTK {
 
@@ -125,104 +124,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::dump(std::ostream& stream) const {
-    if(pdata->type == NodeType::Application) stream << " type = Application ('" << pdata->name << "')";
-    if(pdata->type == NodeType::ControlSystem) stream << " type = ControlSystem ('" << pdata->publicName << "')";
-    if(pdata->type == NodeType::Device) stream << " type = Device (" << pdata->deviceAlias << ": " << pdata->registerName << ")";
-    if(pdata->type == NodeType::TriggerReceiver) stream << " type = TriggerReceiver";
-    if(pdata->type == NodeType::Constant) stream << " type = Constant";
-    if(pdata->type == NodeType::invalid) stream << " type = **invalid**";
-
-    if(pdata->mode == UpdateMode::push) stream << " pushing";
-    if(pdata->mode == UpdateMode::poll) stream << " polling";
-
-    stream << " data type: " << pdata->valueType->name();
-    stream << " length: " << pdata->nElements;
-
-    stream << " [ptr: " << &(*pdata) << "]";
-
-    stream << " { ";
-    for(auto &tag : pdata->tags) stream << tag << " ";
-    stream << "}";
-
-    stream << std::endl;
-}
-
-  /*********************************************************************************************************************/
-
-  void VariableNetworkNode::createXML(xmlpp::Element *rootElement) const {
-    if(pdata->type != NodeType::ControlSystem) return;
-
-    // Create the directory for the path name in the XML document with all parent directories, if not yet existing:
-    // First split the publication name into components and loop over each component. For each component, try to find
-    // the directory node and create it it does not exist. After the loop, the "current" will point to the Element
-    // representing the directory.
-
-    // strip the variable name from the path
-    mtca4u::RegisterPath directory(pdata->publicName);
-    directory--;
-
-    // the namespace map is needed to properly refer to elements with an xpath expression in xmlpp::Element::find()
-    /// @todo TODO move this somewhere else, or at least take the namespace URI from a common place!
-    xmlpp::Node::PrefixNsMap nsMap{{"ac", "https://github.com/ChimeraTK/ApplicationCore"}};
-
-    // go through each directory path component
-    xmlpp::Element *current = rootElement;
-    for(auto pathComponent : directory.getComponents()) {
-      // find directory for this path component in the current directory
-      std::string xpath = std::string("ac:directory[@name='")+pathComponent+std::string("']");
-      auto list = current->find(xpath, nsMap);
-      if(list.size() == 0) {  // not found: create it
-        xmlpp::Element *newChild = current->add_child("directory");
-        newChild->set_attribute("name",pathComponent);
-        current = newChild;
-      }
-      else {
-        assert(list.size() == 1);
-        current = dynamic_cast<xmlpp::Element*>(list[0]);
-        assert(current != nullptr);
-      }
-    }
-
-    // now add the variable to the directory
-    xmlpp::Element *variable = current->add_child("variable");
-    mtca4u::RegisterPath pathName(pdata->publicName);
-    auto pathComponents = pathName.getComponents();
-
-    // set the name attribute
-    variable->set_attribute("name",pathComponents[pathComponents.size()-1]);
-
-    // add sub-element containing the data type
-    std::string dataTypeName{"unknown"};
-    if(pdata->network->getValueType() == typeid(int8_t)) { dataTypeName = "int8"; }
-    else if(pdata->network->getValueType() == typeid(uint8_t)) { dataTypeName = "uint8"; }
-    else if(pdata->network->getValueType() == typeid(int16_t)) { dataTypeName = "int16"; }
-    else if(pdata->network->getValueType() == typeid(uint16_t)) { dataTypeName = "uint16"; }
-    else if(pdata->network->getValueType() == typeid(int32_t)) { dataTypeName = "int32"; }
-    else if(pdata->network->getValueType() == typeid(uint32_t)) { dataTypeName = "uint32"; }
-    else if(pdata->network->getValueType() == typeid(float)) { dataTypeName = "float"; }
-    else if(pdata->network->getValueType() == typeid(double)) { dataTypeName = "double"; }
-    else if(pdata->network->getValueType() == typeid(std::string)) { dataTypeName = "string"; }
-    xmlpp::Element *valueTypeElement = variable->add_child("value_type");
-    valueTypeElement->set_child_text(dataTypeName);
-
-    // add sub-element containing the data flow direction
-    std::string dataFlowName{"application_to_control_system"};
-    if(pdata->network->getFeedingNode() == *this) { dataFlowName = "control_system_to_application"; }
-    xmlpp::Element *directionElement = variable->add_child("direction");
-    directionElement->set_child_text(dataFlowName);
-
-    // add sub-element containing the engineering unit
-    xmlpp::Element *unitElement = variable->add_child("unit");
-    unitElement->set_child_text(pdata->network->getUnit());
-
-    // add sub-element containing the description
-    xmlpp::Element *descriptionElement = variable->add_child("description");
-    descriptionElement->set_child_text(pdata->network->getDescription());
-
-    // add sub-element containing the description
-    xmlpp::Element *nElementsElement = variable->add_child("numberOfElements");
-    nElementsElement->set_child_text(std::to_string(pdata->network->getFeedingNode().getNumberOfElements()));
+  void VariableNetworkNode::accept( Visitor<VariableNetworkNode>& visitor) const {
+      visitor.dispatch(*this);
   }
 
   /*********************************************************************************************************************/
@@ -343,6 +246,13 @@ namespace ChimeraTK {
   VariableNetworkNode VariableNetworkNode::getExternalTrigger() {
     assert(pdata->externalTrigger.getType() != NodeType::invalid);
     return pdata->externalTrigger;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::dump(std::ostream& stream) const {
+      VariableNetworkNodeDumpingVisitor visitor(stream, " ");
+      visitor.dispatch(*this);
   }
 
   /*********************************************************************************************************************/

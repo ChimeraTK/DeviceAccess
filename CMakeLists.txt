@@ -10,6 +10,19 @@ set(${PROJECT_NAME}_MINOR_VERSION 13)
 set(${PROJECT_NAME}_PATCH_VERSION 02)
 include(cmake/set_version_numbers.cmake)
 
+include(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
+check_cxx_source_compiles("#include <cxxabi.h>
+    int main(int argc, char *argv[]) {
+        int status = 0;
+        abi::__cxa_demangle(argv[0], 0, 0, &status);
+        return 0;
+    }" DEMANGLE_FOUND)
+if (DEMANGLE_FOUND)
+    set(DEMANGLE_CFLAGS "-DHAVE_DEMANGLE=1")
+else()
+    set(DEMANGLE_CFLAGS "-DHAVE_DEMANGLE=0")
+endif()
+
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
 add_dependency(mtca4u-deviceaccess 00.29 REQUIRED)
@@ -65,7 +78,7 @@ ENDIF()
 
 
 # Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -Wuninitialized")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -Wuninitialized ${DEMANGLE_CFLAGS} ")
 
 # use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
@@ -74,6 +87,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${mtca4u-deviceaccess_LINK_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+set(${PEOJECT_NAME}_CXX_FLAGS ${${PROJECT_NAME}_CXX_FLAGS} ${DEMANGLE_CFLAGS})
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/Modules/include/)
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
 

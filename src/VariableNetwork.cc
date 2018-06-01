@@ -11,6 +11,7 @@
 
 #include "VariableNetwork.h"
 #include "Application.h"
+#include "Visitor.h"
 
 namespace ChimeraTK {
 
@@ -90,42 +91,12 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::dump(const std::string& linePrefix, std::ostream& stream) const {
-    stream << linePrefix << "VariableNetwork";
-    stream << " [ptr: " << this << "]";
-    stream << " {" << std::endl;
-    stream << linePrefix << "  value type = " << valueType->name() << ", engineering unit = " << engineeringUnit << std::endl;
-    stream << linePrefix << "  trigger type = ";
-    try {
-      TriggerType tt = getTriggerType(false);
-      if(tt == TriggerType::feeder) stream << "feeder" << std::endl;
-      if(tt == TriggerType::pollingConsumer) stream << "pollingConsumer" << std::endl;
-      if(tt == TriggerType::external) stream << "external" << std::endl;
-      if(tt == TriggerType::none) stream << "none" << std::endl;
-    }
-    catch(ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork> &e) {
-      stream << "**error**" << std::endl;
-    }
-    stream << linePrefix << "  feeder";
-    if(hasFeedingNode()) {
-      getFeedingNode().dump(stream);
-    }
-    else {
-      stream << " **error, no feeder found**" << std::endl;
-    }
-    stream << linePrefix << "  consumers: " << countConsumingNodes() << std::endl;
-    size_t count = 0;
-    for(auto &consumer : nodeList) {
-      if(consumer.getDirection() != VariableDirection::consuming) continue;
-      stream << linePrefix << "    # " << ++count << ":";
-      consumer.dump(stream);
-    }
-    if(hasFeedingNode()) {
-      if(getFeedingNode().hasExternalTrigger()) {
-        stream << linePrefix << "  external trigger node: ";
-        getFeedingNode().getExternalTrigger().dump(stream);
-      }
-    }
-    stream << linePrefix << "}" << std::endl;
+      VariableNetworkDumpingVisitor visitor{linePrefix, stream};
+      accept(visitor);
+  }
+
+  void VariableNetwork::accept(Visitor<VariableNetwork> &visitor) const {
+      visitor.dispatch(*this);
   }
 
   /*********************************************************************************************************************/
@@ -177,7 +148,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::check() {
+  void VariableNetwork::check() const {
     // must have consuming nodes
     if(countConsumingNodes() == 0) {
       std::stringstream msg;

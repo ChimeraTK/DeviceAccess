@@ -67,6 +67,10 @@ namespace ChimeraTK {
        *  makeConnections() has been called. */
       void dumpConnections();
 
+      /** Create Graphviz dot graph and write to file. The graph will contain the connections made in the initilise()
+       * function. @see dumpConnections */
+      void dumpConnectionGraph(const std::string &filename = {"connections-graph.dot"});
+
       /** Enable warning about unconnected variables. This can be helpful to identify missing connections but is
        *  disabled by default since it may often be very noisy. */
       void warnUnconnectedVariables() { enableUnconnectedVariablesWarning = true; }
@@ -161,6 +165,8 @@ namespace ChimeraTK {
       friend class Module;
       friend class VariableNetwork;
       friend class VariableNetworkNode;
+      friend class VariableNetworkGraphDumpingVisitor;
+      friend class XMLGeneratorVisitor;
 
       template<typename UserType>
       friend class Accessor;

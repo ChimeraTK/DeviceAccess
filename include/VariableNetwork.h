@@ -18,6 +18,7 @@
 
 #include "Flags.h"
 #include "VariableNetworkNode.h"
+#include "Visitor.h"
 
 namespace ChimeraTK {
 
@@ -77,6 +78,8 @@ namespace ChimeraTK {
       /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
       void dump(const std::string& linePrefix="", std::ostream& stream=std::cout) const;
 
+      void accept(Visitor<VariableNetwork> &visitor) const;
+
       /** Compare two networks */
       bool operator==(const VariableNetwork &other) const {
         if(other.valueType != valueType) return false;
@@ -109,7 +112,7 @@ namespace ChimeraTK {
       //void addTrigger(VariableNetworkNode trigger);
 
       /** Check if the network is legally configured */
-      void check();
+      void check() const;
 
       /** Check the flag if the network connections has been created already */
       bool isCreated() const { return flagIsCreated; }

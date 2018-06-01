@@ -19,10 +19,7 @@
 
 #include "Flags.h"
 #include "ConstantAccessor.h"
-
-namespace xmlpp {
-  class Element;
-}
+#include "Visitor.h"
 
 namespace ChimeraTK {
 
@@ -112,12 +109,6 @@ namespace ChimeraTK {
       /** Print node information to std::cout */
       void dump(std::ostream& stream=std::cout) const;
 
-      /** Create an XML node describing this network node as seen by the control syste. If the type is not
-       *  NodeType::ControlSystem, this function does nothing. Otherwise the correct directory hierarchy will be
-       *  created (if not yet existing) and a variable tag will be created containing the externally visible
-       *  properties of this variable. */
-      void createXML(xmlpp::Element *rootElement) const;
-
       /** Check if the node already has an owner */
       bool hasOwner() const;
 
@@ -160,6 +151,8 @@ namespace ChimeraTK {
       EntityOwner* getOwningModule() const;
 
       void setOwningModule(EntityOwner *newOwner) const;
+
+      void accept(Visitor<VariableNetworkNode> &visitor) const;
 
     //protected:  @todo make protected again (with proper interface extension)
 

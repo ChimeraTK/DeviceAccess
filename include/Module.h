@@ -109,6 +109,11 @@ namespace ChimeraTK {
 
       EntityOwner* getOwner() const { return _owner; }
 
+      /**
+       * Explcitly add accept() method so that we can distinguish between a Module and an EntityOwner in the Visitor.
+       */
+      void accept(Visitor<Module>& visitor) const { visitor.dispatch(*this); }
+
     protected:
 
       /** Owner of this instance */

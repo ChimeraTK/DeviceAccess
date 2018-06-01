@@ -11,8 +11,6 @@
 
 #include <boost/fusion/container/map.hpp>
 
-#include <libxml++/libxml++.h>
-
 #include <mtca4u/BackendFactory.h>
 
 #include "Application.h"
@@ -206,27 +204,9 @@ void Application::generateXML() {
   // also search for unconnected nodes - this is here only executed to print the warnings
   processUnconnectedNodes();
 
-  // create XML document with root node
-  xmlpp::Document doc;
-  xmlpp::Element *rootElement = doc.create_root_node("application", "https://github.com/ChimeraTK/ApplicationCore");
-  rootElement->set_attribute("name",applicationName);
-
-  for(auto &network : networkList) {
-
-    // perform checks
-    network.check();
-
-    // create xml code for the feeder (if it is a control system node)
-    auto feeder = network.getFeedingNode();
-    feeder.createXML(rootElement);
-
-    // create xml code for the consumers
-    for(auto &consumer : network.getConsumingNodes()) {
-      consumer.createXML(rootElement);
-    }
-
-  }
-  doc.write_to_file_formatted(applicationName+".xml");
+  XMLGeneratorVisitor visitor;
+  visitor.dispatch(*this);
+  visitor.save(applicationName + ".xml");
 }
 
 /*********************************************************************************************************************/
@@ -517,6 +497,13 @@ void Application::dumpConnections() {                                           
   }                                                                                                   // LCOV_EXCL_LINE
   std::cout << "=====================================================================" << std::endl;  // LCOV_EXCL_LINE
 }                                                                                                     // LCOV_EXCL_LINE
+
+void Application::dumpConnectionGraph(const std::string& fileName) {
+    std::fstream file{fileName, std::ios_base::out};
+
+    VariableNetworkGraphDumpingVisitor visitor{file};
+    visitor.dispatch(*this);
+}
 
 /*********************************************************************************************************************/
 

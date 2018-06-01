@@ -9,6 +9,7 @@
 #define CHIMERATK_APPLICATION_EXCEPTION_H
 
 #include <exception>
+#include <string>
 
 namespace ChimeraTK {
 
