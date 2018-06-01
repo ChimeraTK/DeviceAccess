@@ -15,6 +15,7 @@ using namespace boost::unit_test_framework;
 #include <cstdlib>
 #include <csignal>
 #include <thread>
+#include <algorithm>
 #include <chrono>
 #include <utility>
 
@@ -184,24 +185,52 @@ BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
 /**
  * This test is called from the script testing the process ID
+ * management. It writes some values to the shared memory and
+ * is to be killed from the script so that the shared memory does
+ * not get removed properly. This should then be achieved by "testVerifyCleanup".
+ */
+BOOST_AUTO_TEST_CASE( testMakeMess ) {
+
+  setDMapFilePath("shareddummyTest.dmap");
+
+  Device dev;
+  dev.open("SHDMEMDEV");
+
+  ChimeraTK::OneDRegisterAccessor<int> processVars
+    = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+
+  int n = 0;
+  std::generate(processVars.begin(), processVars.end(), [n] () mutable { return n++; });
+  processVars.write();
+
+  // Wait to be killed or timeout...
+  std::this_thread::sleep_until(std::chrono::system_clock::now()
+                                + std::chrono::seconds(2));
+
+  dev.close();
+
+}
+
+/**
+ * This test is called from the script testing the process ID
  * management. It verifies that the registers do not contain
  * any nonzero content that was written by another process.
  */
 BOOST_AUTO_TEST_CASE( testVerifyCleanup ) {
+
+    signal(SIGINT, interrupt_handler);
 
     setDMapFilePath("shareddummyTest.dmap");
 
     Device dev;
     dev.open("SHDMEMDEV");
 
-    ChimeraTK::OneDRegisterAccessor<int> processVarsRead
+    ChimeraTK::OneDRegisterAccessor<int> processVars
       = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
-    for(size_t i=0; i<processVarsRead.getNElements(); ++i){
-      processVarsRead[i] = i;
-    }
-    processVarsRead.read();
+    processVars.read();
 
-    //TODO Check if nonzero content
+    // Check if content is all zero
+    BOOST_CHECK( std::all_of(processVars.begin(), processVars.end(), [](int i){ return i == 0; }) );
 
     dev.close();
 

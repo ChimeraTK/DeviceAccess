@@ -185,13 +185,11 @@ namespace ChimeraTK {
 
 
   // Member functions of nested shared memory class
-
   SharedMemoryVector* SharedDummyBackend::SharedMemoryManager::findOrConstructVector(const std::string& objName, const size_t size){
 
-    //FIXME Set size in constructor
-    SharedMemoryVector* vector = segment.find_or_construct<SharedMemoryVector>(objName.c_str())(alloc_inst);
+    SharedMemoryVector* vector = segment.find_or_construct<SharedMemoryVector>(objName.c_str())
+        (size, 0, alloc_inst);
 
-    vector->resize(size, 0);
     return vector;
   }
 
