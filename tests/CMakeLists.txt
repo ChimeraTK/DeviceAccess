@@ -69,6 +69,8 @@ FILE(GLOB location_of_script_files
     "${PROJECT_BINARY_DIR}/scripts/*.sh")
 ADD_SCRIPTS_AS_TESTS( "${location_of_script_files}" )
 
+# Copy manual tests to the build location
+COPY_CONTENT_TO_BUILD_DIR("${CMAKE_CURRENT_SOURCE_DIR}/manualTests")
 
 MACRO( COPY_MAPPING_FILES )
   # run_performance_test.sh is not a map file but should be copied also into the tests directory

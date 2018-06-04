@@ -15,7 +15,6 @@ while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
     ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
     PID[$CNT]=$!
 
-    echo "Started process #$CNT with PID: ${PID[$CNT]}"
     let CNT+=1
 done
 
@@ -65,7 +64,7 @@ kill $!
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
 CLEANUP_RESULT=$?
 
-if [[ CLEANUP_RESULT -ne 0 ]]; then
+if [[ $CLEANUP_RESULT -ne 0 ]]; then
     echo "Testing PID Management of SharedDummyBackend failed. Shared memory has not been cleaned up properly."
     TEST_RESULT=$(( $TEST_RESULT + 4))
 fi
@@ -75,11 +74,23 @@ fi
 
 # Start processes, kill one of them. The still running one should clean up on exit
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
+PID_STILL_RUNNING_PROCESS=$!
+
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
 sleep .2
 kill $!
 
+sleep .2
+kill -s SIGINT $PID_STILL_RUNNING_PROCESS
 
+#TODO Move shm_exists to the other test module and test cleanup from testReadWrite
+../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyMemoryDeleted
+CLEANUP_RESULT=$?
+
+if [[ $CLEANUP_RESULT -ne 0  ]]; then
+    echo "Testing PID management if SharedDummyBackend failed. Shared memory has not been cleaned up properly."
+	    TEST_RESULT=$(( $TEST_RESULT + 8 ))
+fi
 
 exit $TEST_RESULT
 

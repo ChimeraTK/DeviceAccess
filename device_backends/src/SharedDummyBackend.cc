@@ -215,6 +215,8 @@ namespace ChimeraTK {
    */
   void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
 
+    unsigned pidSetSizeBeforeCleanup = pidSet->size();
+
     for(auto it = pidSet->begin(); it != pidSet->end(); ){
       if(!processExists(*it)){
         //std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
@@ -224,6 +226,34 @@ namespace ChimeraTK {
         it++;
       }
     }
+
+    if(pidSetSizeBeforeCleanup != 0 && pidSet->size() == 0){
+      _reInitRequired = true;
+    }
+  }
+
+  /**
+   * Resets all elements in shared memory except for the pidSet.
+   */
+  void SharedDummyBackend::SharedMemoryManager::reInitMemory(){
+
+    std::vector<std::string> nameList = listNamedElements();
+
+    for(auto item = nameList.begin(); item != nameList.end(); ++item){
+      if(item->compare("PidSet") != 0){
+        segment.destroy<SharedMemoryVector>(item->c_str());
+      }
+    }
+  }
+
+  std::vector<std::string> SharedDummyBackend::SharedMemoryManager::listNamedElements(){
+
+    std::vector<std::string> list;
+
+    for(auto seg = segment.named_begin(); seg != segment.named_end(); ++seg){
+      list.push_back(seg->name());
+    }
+    return list;
   }
 
 } // Namespace ChimeraTK

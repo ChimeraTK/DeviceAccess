@@ -21,12 +21,10 @@ using namespace boost::unit_test_framework;
 
 using namespace ChimeraTK;
 
-//TODO remove
-//// Static function prototypes
-//static std::string createExpectedShmName(std::string, std::string);
-//static bool shm_exists(std::string);
-
+// Static function prototypes
 static void interrupt_handler(int);
+static std::string createExpectedShmName(std::string, std::string);
+static bool shm_exists(std::string);
 
 static bool terminationCaught = false;
 
@@ -157,30 +155,42 @@ BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
     setDMapFilePath("shareddummyTest.dmap");
 
-    Device dev;
-    BOOST_CHECK(!dev.isOpened());
-    dev.open("SHDMEMDEV");
-    BOOST_CHECK(dev.isOpened());
+    // Use hardcoded information from the dmap-file to
+    // only use public interface here
+    std::string instanceId{""};
+    std::string mapFileName{"shareddummy.map"};
 
-    do{
-      ChimeraTK::OneDRegisterAccessor<int> processVarsRead
-        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
-      for(size_t i=0; i<processVarsRead.getNElements(); ++i){
-        processVarsRead[i] = i;
+    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
+
+    std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
+
+    {
+      Device dev;
+      BOOST_CHECK(!dev.isOpened());
+      dev.open("SHDMEMDEV");
+      BOOST_CHECK(dev.isOpened());
+
+      BOOST_CHECK(shm_exists(shmName));
+
+      do{
+        ChimeraTK::OneDRegisterAccessor<int> processVarsRead
+          = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+        for(size_t i=0; i<processVarsRead.getNElements(); ++i){
+          processVarsRead[i] = i;
+        }
+        processVarsRead.read();
+
+        ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
+          = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
+
+        for(size_t i=0; i<processVarsRead.getNElements(); ++i){
+          processVarsWrite[i] = processVarsRead[i];
+        }
+        processVarsWrite.write();
       }
-      processVarsRead.read();
-
-      ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
-        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
-
-      for(size_t i=0; i<processVarsRead.getNElements(); ++i){
-        processVarsWrite[i] = processVarsRead[i];
-      }
-      processVarsWrite.write();
+      while(keepRunning && !terminationCaught);
+      dev.close();
     }
-    while(keepRunning && !terminationCaught);
-    dev.close();
-
 }
 
 /**
@@ -233,7 +243,26 @@ BOOST_AUTO_TEST_CASE( testVerifyCleanup ) {
     BOOST_CHECK( std::all_of(processVars.begin(), processVars.end(), [](int i){ return i == 0; }) );
 
     dev.close();
+}
 
+/**
+ * Just checks if the shared memory has been removed.
+ */
+BOOST_AUTO_TEST_CASE( testVerifyMemoryDeleted ){
+
+  setDMapFilePath("shareddummyTest.dmap");
+
+  // Use hardcoded information from the dmap-file to
+  // only use public interface here
+  std::string instanceId{""};
+  std::string mapFileName{"shareddummy.map"};
+
+  boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
+
+  std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
+
+  //Test if memory is removed
+  BOOST_CHECK(!shm_exists(shmName));
 }
 
 /*********************************************************************************************************************/
@@ -249,3 +278,27 @@ static void interrupt_handler(int signal){
             << signal << "). Terminating..." << std::endl;
   terminationCaught = true;
 }
+
+// Static helper functions
+static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
+  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
+  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
+  std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
+
+  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
+}
+
+static bool shm_exists(std::string shmName){
+
+  bool result;
+
+  try{
+    boost::interprocess::managed_shared_memory shm{boost::interprocess::open_only, shmName.c_str()};
+    result =  shm.check_sanity();
+  }
+  catch(const std::exception & ex){
+    result = false;
+  }
+  return result;
+}
+

@@ -109,6 +109,14 @@ namespace ChimeraTK {
           // Clean up pidSet, if needed
           checkPidSetConsistency();
 
+          // If only "zombie" processes where found in PidSet,
+          // reset data entries in shared memory.
+          if(_reInitRequired){
+            reInitMemory();
+          }
+
+          // Protect against too many accessing processes to prevent
+          // overflow of pidSet in shared memory.
           if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER){
             std::string errMsg{"Maximum number of accessing members reached."};
             throw SharedDummyBackendException(errMsg,
@@ -189,8 +197,12 @@ namespace ChimeraTK {
         // Pointer to the set of process IDs in shared memory;
         PidSet *pidSet{nullptr};
 
-        size_t getRequiredMemoryWithOverhead();
-        void checkPidSetConsistency();
+        bool _reInitRequired = false;
+
+        size_t getRequiredMemoryWithOverhead(void);
+        void checkPidSetConsistency(void);
+        void reInitMemory(void);
+        std::vector<std::string> listNamedElements(void);
 
       };  /* class SharedMemoryManager */
       

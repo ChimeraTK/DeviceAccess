@@ -1,7 +1,5 @@
-    #!/bin/bash
+#!/bin/bash
 # Script to call the robustness/performance test processes for the SharedDummyBackend
-# TODO The whole test should be cycled several times to test creation and
-#      destruction of the shared memory
 
 N_CYCLES=$1
 N_RW_CYCLES=$2
