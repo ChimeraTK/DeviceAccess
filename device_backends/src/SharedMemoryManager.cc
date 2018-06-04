@@ -29,9 +29,10 @@ namespace ChimeraTK{
     std::lock_guard<boost::interprocess::named_mutex> lock(interprocessMutex);
 
     // Determine, if shared memory has already been created
-    auto pidSetData = segment.find<SharedMemoryVector>("PidSet");
+    auto pidSetData = segment.find<SharedMemoryVector>(SHARED_MEMORY_PID_SET_NAME);
     if(pidSetData.second != 1) {  // if not found: create it
-      pidSet   = segment.construct<SharedMemoryVector>("PidSet")(SHARED_MEMORY_N_MAX_MEMBER, sharedMemoryIntAllocator);
+      pidSet   = segment.construct<SharedMemoryVector>(SHARED_MEMORY_PID_SET_NAME)
+                    (SHARED_MEMORY_N_MAX_MEMBER, sharedMemoryIntAllocator);
       pidSet->clear();
     }
     else{

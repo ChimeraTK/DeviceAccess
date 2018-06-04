@@ -34,7 +34,6 @@ namespace ChimeraTK {
   SharedDummyBackend::SharedDummyBackend(std::string instanceId, std::string mapFileName)
   : NumericAddressedBackend(mapFileName),
     _mapFile(mapFileName),
-    //TODO Nasty to use base class member as argument here?
     _registerMapping(_registerMap),
     _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
     sharedMemoryManager(*this, instanceId, mapFileName)

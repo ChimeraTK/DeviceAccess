@@ -26,6 +26,12 @@ static void interrupt_handler(int);
 static std::string createExpectedShmName(std::string, std::string);
 static bool shm_exists(std::string);
 
+//Static variables
+//  Use hardcoded information from the dmap-file to
+//  only use public interface here
+static std::string instanceId{""};
+static std::string mapFileName{"shareddummy.map"};
+
 static bool terminationCaught = false;
 
 BOOST_AUTO_TEST_SUITE( SharedDummyBackendTestSuite )
@@ -53,86 +59,71 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
     }
 
     setDMapFilePath("shareddummyTest.dmap");
-    // Use hardcoded information from the dmap-file to
-    // only use public interface here
-    std::string instanceId{""};
-    std::string mapFileName{"shareddummy.map"};
 
-    boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
-
-    //TODO remove
-    //std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
-
-    //FIXME Move to scope below
     bool readbackCorrect = false;
     bool waitingForResponse = true;
     const unsigned maxIncorrectIterations = 10; /* Timeout while waiting for 2nd application */
     unsigned iterations = 0;
     unsigned incorrectIterations = 0;
 
-    {
-      Device dev;
-      BOOST_CHECK(!dev.isOpened());
-      dev.open("SHDMEMDEV");
-      BOOST_CHECK(dev.isOpened());
+    Device dev;
+    BOOST_CHECK(!dev.isOpened());
+    dev.open("SHDMEMDEV");
+    BOOST_CHECK(dev.isOpened());
 
-      //TODO remove
-      //BOOST_CHECK(shm_exists(shmName));
+    ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
+      = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
+    std::vector<int> processVarsOld (processVarsWrite.getNElements(), 0);
 
-      ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
-        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
-      std::vector<int> processVarsOld (processVarsWrite.getNElements(), 0);
-
-      do{
-        // Write some values to the shared memory
-        for(size_t i=0; i<processVarsWrite.getNElements(); ++i){
-          processVarsWrite[i] = i + iterations;
-        }
-        processVarsWrite.write();
-
-
-        // Check if values have been written back by the other application
-        ChimeraTK::OneDRegisterAccessor<int> processVarsRead
-          = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
-        // Read as long as the readback from last iteration has been overwritten
-        do{
-          processVarsRead.read();
-        }
-        while((std::vector<int>)processVarsRead == (std::vector<int>)processVarsOld && !waitingForResponse);
-
-        if((std::vector<int>)processVarsWrite == (std::vector<int>)processVarsRead){
-          if(waitingForResponse){
-            waitingForResponse = false;
-          }
-          readbackCorrect = true;
-        }
-        else{
-          readbackCorrect = false;
-          if(!waitingForResponse){
-            std::cout << "Corrupted data detected:" << std::endl;
-            for(const auto pvr : processVarsRead){
-              std::cout << "    " << pvr << std::endl;
-            }
-          }
-        }
-
-        if(waitingForResponse){
-          incorrectIterations++;
-        }
-        else{
-          iterations++;
-        }
-        processVarsOld = processVarsWrite;
+    do{
+      // Write some values to the shared memory
+      for(size_t i=0; i<processVarsWrite.getNElements(); ++i){
+        processVarsWrite[i] = i + iterations;
       }
-      while((readbackCorrect || waitingForResponse) &&
-            incorrectIterations != maxIncorrectIterations && iterations != nIterations);
+      processVarsWrite.write();
 
-      BOOST_CHECK(readbackCorrect);
-      std::cout << "Finished test after " << iterations
-                << " of " << nIterations << " Iterations." << std::endl;
 
-      dev.close();
+      // Check if values have been written back by the other application
+      ChimeraTK::OneDRegisterAccessor<int> processVarsRead
+        = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
+      // Read as long as the readback from last iteration has been overwritten
+      do{
+        processVarsRead.read();
+      }
+      while((std::vector<int>)processVarsRead == (std::vector<int>)processVarsOld && !waitingForResponse);
+
+      if((std::vector<int>)processVarsWrite == (std::vector<int>)processVarsRead){
+        if(waitingForResponse){
+          waitingForResponse = false;
+        }
+        readbackCorrect = true;
+      }
+      else{
+        readbackCorrect = false;
+        if(!waitingForResponse){
+          std::cout << "Corrupted data detected:" << std::endl;
+          for(const auto pvr : processVarsRead){
+            std::cout << "    " << pvr << std::endl;
+          }
+        }
+      }
+
+      if(waitingForResponse){
+        incorrectIterations++;
+      }
+      else{
+        iterations++;
+      }
+      processVarsOld = processVarsWrite;
     }
+    while((readbackCorrect || waitingForResponse) &&
+          incorrectIterations != maxIncorrectIterations && iterations != nIterations);
+
+    BOOST_CHECK(readbackCorrect);
+    std::cout << "Finished test after " << iterations
+              << " of " << nIterations << " Iterations." << std::endl;
+
+    dev.close();
 }
 
 
@@ -155,11 +146,6 @@ BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
     setDMapFilePath("shareddummyTest.dmap");
 
-    // Use hardcoded information from the dmap-file to
-    // only use public interface here
-    std::string instanceId{""};
-    std::string mapFileName{"shareddummy.map"};
-
     boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
 
     std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
@@ -175,9 +161,6 @@ BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
       do{
         ChimeraTK::OneDRegisterAccessor<int> processVarsRead
           = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
-        for(size_t i=0; i<processVarsRead.getNElements(); ++i){
-          processVarsRead[i] = i;
-        }
         processVarsRead.read();
 
         ChimeraTK::OneDRegisterAccessor<int> processVarsWrite
@@ -252,11 +235,6 @@ BOOST_AUTO_TEST_CASE( testVerifyMemoryDeleted ){
 
   setDMapFilePath("shareddummyTest.dmap");
 
-  // Use hardcoded information from the dmap-file to
-  // only use public interface here
-  std::string instanceId{""};
-  std::string mapFileName{"shareddummy.map"};
-
   boost::filesystem::path absPathToMapFile = boost::filesystem::absolute(mapFileName);
 
   std::string shmName{createExpectedShmName(instanceId, absPathToMapFile.string())};
@@ -280,9 +258,9 @@ static void interrupt_handler(int signal){
 }
 
 // Static helper functions
-static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
-  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
-  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
+static std::string createExpectedShmName(std::string instanceId_, std::string mapFileName_){
+  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName_))};
+  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId_))};
   std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
 
   return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;

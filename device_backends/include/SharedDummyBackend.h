@@ -20,7 +20,6 @@
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
 #include "SharedDummyBackendException.h"
-//TODO How to manage this files?
 #include "ProcessManagement.h"
 
 
@@ -102,6 +101,8 @@ namespace ChimeraTK {
         static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 160;
 
         const size_t SHARED_MEMORY_N_MAX_MEMBER = 10;
+
+        const char* SHARED_MEMORY_PID_SET_NAME = "PidSet";
 
         SharedDummyBackend& sharedDummyBackend;
 

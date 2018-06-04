@@ -15,13 +15,11 @@ using namespace boost::unit_test_framework;
 #include <cstdlib>
 #include <thread>
 #include <chrono>
+#include <algorithm>
 #include <utility>
 
 using namespace ChimeraTK;
 
-// Static function prototypes
-//static std::string createExpectedShmName(std::string, std::string);
-//static bool shm_exists(std::string);
 
 BOOST_AUTO_TEST_SUITE( SharedDummyBackendTestSuite )
 
@@ -58,17 +56,15 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
     // Write/read some values to/from the shared memory
     ChimeraTK::OneDRegisterAccessor<int> processVars11
       = dev.getOneDRegisterAccessor<int>("FEATURE1/AREA");
-    for(size_t i=0; i<processVars11.getNElements(); ++i){
-      processVars11[i] = i;
-    }
+    int n = 0;
+    std::generate(processVars11.begin(), processVars11.end(), [n] () mutable { return n++; });
     processVars11.write();
     processVars11.read();
 
     ChimeraTK::OneDRegisterAccessor<int> processVars23
       = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA3");
-    for(size_t i=0; i<processVars23.getNElements(); ++i){
-      processVars23[i] = i;
-    }
+    n = 0;
+    std::generate(processVars23.begin(), processVars23.end(), [n] () mutable { return n++; });
     processVars23.write();
     processVars23.read();
 
@@ -76,9 +72,8 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
     // Write to memory and check values mirrored by another process
     ChimeraTK::OneDRegisterAccessor<int> processVarsWrite21
       = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA1");
-    for(size_t i=0; i<processVarsWrite21.getNElements(); ++i){
-      processVarsWrite21[i] = i;
-    }
+    n = 0;
+    std::generate(processVarsWrite21.begin(), processVarsWrite21.end(), [n] () mutable { return n++; });
     processVarsWrite21.write();
 
     //start second accessing application
@@ -97,26 +92,3 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
 /*********************************************************************************************************************/
 BOOST_AUTO_TEST_SUITE_END()
 
-
-//// Static helper functions
-//static std::string createExpectedShmName(std::string instanceId, std::string mapFileName){
-//  std::string mapFileHash{std::to_string(std::hash<std::string>{}(mapFileName))};
-//  std::string instanceIdHash{std::to_string(std::hash<std::string>{}(instanceId))};
-//  std::string userHash{std::to_string(std::hash<std::string>{}(getUserName()))};
-//
-//  return "ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash;
-//}
-//
-//static bool shm_exists(std::string shmName){
-//
-//  bool result;
-//
-//  try{
-//    boost::interprocess::managed_shared_memory shm{boost::interprocess::open_only, shmName.c_str()};
-//    result =  shm.check_sanity();
-//  }
-//  catch(const std::exception & ex){
-//    result = false;
-//  }
-//  return result;
-//}
