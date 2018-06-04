@@ -142,7 +142,7 @@ namespace ChimeraTK{
     std::vector<std::string> nameList = listNamedElements();
 
     for(auto item = nameList.begin(); item != nameList.end(); ++item){
-      if(item->compare("PidSet") != 0){
+      if(item->compare(SHARED_MEMORY_PID_SET_NAME) != 0){
         segment.destroy<SharedMemoryVector>(item->c_str());
       }
     }

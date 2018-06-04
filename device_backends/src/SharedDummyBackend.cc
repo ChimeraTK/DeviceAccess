@@ -56,7 +56,7 @@ namespace ChimeraTK {
          barSizeInBytesIter != _barSizesInBytes.end();
          ++barSizeInBytesIter){
 
-      std::string barName = "Bar"+std::to_string(barSizeInBytesIter->first);
+      std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(barSizeInBytesIter->first);
 
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
 

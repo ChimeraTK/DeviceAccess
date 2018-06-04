@@ -70,6 +70,8 @@ namespace ChimeraTK {
       // Bar sizes
       std::map<uint8_t, size_t> _barSizesInBytes;
       
+      // Naming of bars as shared memory elements
+      const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
 
       // Helper class to manage the shared memory: automatically construct if necessary,
       // automatically destroy if last using process closes.
