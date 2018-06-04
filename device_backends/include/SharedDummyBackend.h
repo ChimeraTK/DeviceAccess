@@ -29,8 +29,6 @@ typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_sha
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
 
-// Static variables
-static boost::interprocess::named_mutex *interprocessMutex{nullptr};
 
 namespace ChimeraTK {
 
@@ -78,81 +76,12 @@ namespace ChimeraTK {
       // automatically destroy if last using process closes.
       class SharedMemoryManager {
         
+      friend class SharedDummyBackend;
+
       public:
-        SharedMemoryManager(SharedDummyBackend &sharedDummyBackend_,
-                            const std::string &instanceId,
-                            const std::string &mapFileName) :
-          sharedDummyBackend(sharedDummyBackend_),
-          userHash(std::to_string(std::hash<std::string>{}(getUserName()))),
-          mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
-          instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId))),
-          name("ChimeraTK_SharedDummy_" + instanceIdHash + "_" + mapFileHash + "_" + userHash),
-          segment(boost::interprocess::open_or_create, name.c_str(), getRequiredMemoryWithOverhead()),
-          alloc_inst(segment.get_segment_manager()),
-          globalMutex(boost::interprocess::open_or_create, name.c_str())
-        {
-          interprocessMutex = &globalMutex;
+        SharedMemoryManager(SharedDummyBackend&, const std::string&, const std::string&);
+        ~SharedMemoryManager();
 
-          // lock guard with the interprocess mutex
-          std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
-
-          // Determine, if shared memory has already been created
-          auto pidSetData = segment.find<SharedMemoryVector>("PidSet");
-          if(pidSetData.second != 1) {  // if not found: create it
-            pidSet   = segment.construct<SharedMemoryVector>("PidSet")(SHARED_MEMORY_N_MAX_MEMBER, alloc_inst);
-            pidSet->clear();
-          }
-          else{
-            pidSet = pidSetData.first;
-          }
-
-          // Clean up pidSet, if needed
-          checkPidSetConsistency();
-
-          // If only "zombie" processes where found in PidSet,
-          // reset data entries in shared memory.
-          if(_reInitRequired){
-            reInitMemory();
-          }
-
-          // Protect against too many accessing processes to prevent
-          // overflow of pidSet in shared memory.
-          if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER){
-            std::string errMsg{"Maximum number of accessing members reached."};
-            throw SharedDummyBackendException(errMsg,
-                      SharedDummyBackendException::EX_MAX_NUMBER_OF_MEMBERS_REACHED);
-          }
-
-          pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));
-        }
-
-        ~SharedMemoryManager() {
-
-          // lock guard with the interprocess mutex
-          std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
-          
-          // Clean up
-          checkPidSetConsistency();
-          
-          int32_t ownPid = static_cast<int32_t>(getOwnPID());
-          for(auto it = pidSet->begin(); it != pidSet->end(); ){
-            if(*it == ownPid){
-              it = pidSet->erase(it);
-            }
-            else{
-              ++it;
-            }
-          }
-
-          // If size of pidSet is 0 (i.e, the instance belongs to the last accessing process),
-          // destroy shared memory and the interprocess mutex
-          if(pidSet->size() == 0) {
-            boost::interprocess::shared_memory_object::remove(name.c_str());
-            interprocessMutex = nullptr;
-            boost::interprocess::named_mutex::remove(name.c_str());
-          }
-        }
-        
         /**
          * Finds or constructs a vector object in the shared memory.
          */
@@ -163,7 +92,6 @@ namespace ChimeraTK {
          * @retval std::pair<size_t, size_t> first: Size of the memory segment, second: free memory in segment
          */
         std::pair<size_t, size_t> getInfoOnMemory();
-
 
       private:
 
@@ -189,10 +117,7 @@ namespace ChimeraTK {
         boost::interprocess::managed_shared_memory segment;
 
         // the allocator instance
-        const ShmemAllocator alloc_inst;
-        
-        // global (interprocess) mutex
-        boost::interprocess::named_mutex globalMutex;
+        const ShmemAllocator sharedMemoryIntAllocator;
 
         // Pointer to the set of process IDs in shared memory;
         PidSet *pidSet{nullptr};
@@ -203,6 +128,10 @@ namespace ChimeraTK {
         void checkPidSetConsistency(void);
         void reInitMemory(void);
         std::vector<std::string> listNamedElements(void);
+
+      protected:
+        // interprocess mutex, has to be accessible by SharedDummyBackend class
+        boost::interprocess::named_mutex interprocessMutex;
 
       };  /* class SharedMemoryManager */
       

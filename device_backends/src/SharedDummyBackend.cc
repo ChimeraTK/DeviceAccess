@@ -62,7 +62,7 @@ namespace ChimeraTK {
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
 
       try{
-        std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+        std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
       }
       catch(boost::interprocess::bad_alloc &e){
@@ -111,7 +111,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
 
-    std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
 
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( data[wordIndex] = _barContents[bar]->at(wordBaseIndex+wordIndex); );
@@ -125,7 +125,7 @@ namespace ChimeraTK {
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
 
-    std::lock_guard<boost::interprocess::named_mutex> lock(*interprocessMutex);
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
 
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( _barContents[bar]->at(wordBaseIndex+wordIndex) = data[wordIndex]; );
@@ -183,77 +183,5 @@ namespace ChimeraTK {
     return boost::filesystem::canonical(absPathToMapFile).string();
   }
 
-
-  // Member functions of nested shared memory class
-  SharedMemoryVector* SharedDummyBackend::SharedMemoryManager::findOrConstructVector(const std::string& objName, const size_t size){
-
-    SharedMemoryVector* vector = segment.find_or_construct<SharedMemoryVector>(objName.c_str())
-        (size, 0, alloc_inst);
-
-    return vector;
-  }
-
-  size_t SharedDummyBackend::SharedMemoryManager::getRequiredMemoryWithOverhead(){
-
-
-    // Note: This uses _barSizeInBytes to determine number of vectors used,
-    //       as it is initialized when this method gets called in the init list.
-    return SHARED_MEMORY_OVERHEAD_PER_VECTOR * sharedDummyBackend._barSizesInBytes.size()  \
-           + SHARED_MEMORY_CONST_OVERHEAD                                                  \
-           + sharedDummyBackend.getTotalRegisterSizeInBytes();
-  }
-
-  std::pair<size_t, size_t> SharedDummyBackend::SharedMemoryManager::getInfoOnMemory(){
-    return std::make_pair(segment.get_size(), segment.get_free_memory());
-  }
-
-  /**
-   * Checks and if needed corrects the state of the pid set, i.e
-   * if accessing processes have been terminated and could not clean up for themselves,
-   * their entries are removed. This way, if at least the last accessing process exits
-   * gracefully, the shared memory will be removed.
-   */
-  void SharedDummyBackend::SharedMemoryManager::checkPidSetConsistency(){
-
-    unsigned pidSetSizeBeforeCleanup = pidSet->size();
-
-    for(auto it = pidSet->begin(); it != pidSet->end(); ){
-      if(!processExists(*it)){
-        //std::cout << "Nonexistent PID " << *it << " found. " <<std::endl;
-        it = pidSet->erase(it);
-      }
-      else{
-        it++;
-      }
-    }
-
-    if(pidSetSizeBeforeCleanup != 0 && pidSet->size() == 0){
-      _reInitRequired = true;
-    }
-  }
-
-  /**
-   * Resets all elements in shared memory except for the pidSet.
-   */
-  void SharedDummyBackend::SharedMemoryManager::reInitMemory(){
-
-    std::vector<std::string> nameList = listNamedElements();
-
-    for(auto item = nameList.begin(); item != nameList.end(); ++item){
-      if(item->compare("PidSet") != 0){
-        segment.destroy<SharedMemoryVector>(item->c_str());
-      }
-    }
-  }
-
-  std::vector<std::string> SharedDummyBackend::SharedMemoryManager::listNamedElements(){
-
-    std::vector<std::string> list;
-
-    for(auto seg = segment.named_begin(); seg != segment.named_end(); ++seg){
-      list.push_back(seg->name());
-    }
-    return list;
-  }
 
 } // Namespace ChimeraTK
