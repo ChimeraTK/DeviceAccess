@@ -105,6 +105,7 @@ namespace ChimeraTK {
         const size_t SHARED_MEMORY_N_MAX_MEMBER = 10;
 
         const char* SHARED_MEMORY_PID_SET_NAME = "PidSet";
+        const char* SHARED_MEMORY_REQUIRED_VERSION_NAME = "RequiredVersion";
 
         SharedDummyBackend& sharedDummyBackend;
 
@@ -122,8 +123,12 @@ namespace ChimeraTK {
         // the allocator instance
         const ShmemAllocator sharedMemoryIntAllocator;
 
-        // Pointer to the set of process IDs in shared memory;
+        // Pointers to the set of process IDs and the required version
+        // specifier in shared memory
         PidSet *pidSet{nullptr};
+        // Version number is not used for now, but included in shared memory
+        // to facilitate compatibility checks later
+        unsigned *requiredVersion{nullptr};
 
         bool _reInitRequired = false;
 

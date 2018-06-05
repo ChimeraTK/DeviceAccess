@@ -62,7 +62,7 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
 
     bool readbackCorrect = false;
     bool waitingForResponse = true;
-    const unsigned maxIncorrectIterations = 10; /* Timeout while waiting for 2nd application */
+    const unsigned maxIncorrectIterations = 20; /* Timeout while waiting for 2nd application */
     unsigned iterations = 0;
     unsigned incorrectIterations = 0;
 
@@ -122,6 +122,9 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
     BOOST_CHECK(readbackCorrect);
     std::cout << "Finished test after " << iterations
               << " of " << nIterations << " Iterations." << std::endl;
+    if(incorrectIterations == maxIncorrectIterations){
+      std::cout << "Test cancelled because echoing process did not respond!" << std::endl;
+    }
 
     dev.close();
 }
@@ -132,7 +135,8 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
  * which mirrors the values to another register bar.
  * For a robustness test, it can be called with the argument "KEEP_RUNNING", so
  * that it constantly operates on the shared memory. In this case, it can be terminated
- * gracefully by sending SIGINT.
+ * gracefully by sending SIGINT or will timeout after a duration in minutes given as a
+ * second argument in minutes.
  */
 BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
@@ -140,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
     bool keepRunning = false;
 
-    if(argc == 2 && strcmp(argv[1], "KEEP_RUNING")){
+    if(argc >= 2 && !strcmp(argv[1], "KEEP_RUNNING")){
       keepRunning = true;
     }
 
@@ -210,8 +214,6 @@ BOOST_AUTO_TEST_CASE( testMakeMess ) {
  * any nonzero content that was written by another process.
  */
 BOOST_AUTO_TEST_CASE( testVerifyCleanup ) {
-
-    signal(SIGINT, interrupt_handler);
 
     setDMapFilePath("shareddummyTest.dmap");
 

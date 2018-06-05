@@ -11,6 +11,8 @@ while [ $CNT -lt $N_CYCLES ]; do
     ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
     PID=$!
 
+    sleep .2
+
     ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testRobustnessMain $N_RW_CYCLES
     RET_MAIN=$?
 

@@ -48,6 +48,9 @@ namespace ChimeraTK{
       reInitMemory();
     }
 
+    // Get memory item for version number
+    requiredVersion = segment.find_or_construct<unsigned>(SHARED_MEMORY_REQUIRED_VERSION_NAME)(0);
+
     // Protect against too many accessing processes to prevent
     // overflow of pidSet in shared memory.
     if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER){
@@ -142,7 +145,10 @@ namespace ChimeraTK{
     std::vector<std::string> nameList = listNamedElements();
 
     for(auto item = nameList.begin(); item != nameList.end(); ++item){
-      if(item->compare(SHARED_MEMORY_PID_SET_NAME) != 0){
+      if(item->compare(SHARED_MEMORY_REQUIRED_VERSION_NAME) == 0){
+        segment.destroy<unsigned>(item->c_str());
+      }
+      else if(item->compare(SHARED_MEMORY_PID_SET_NAME) != 0){
         segment.destroy<SharedMemoryVector>(item->c_str());
       }
     }

@@ -5,8 +5,20 @@ N_SUPPORTED_PROCESSES=10
 CNT=0
 
 declare -a PID
+declare -a BGPIDS
 
 TEST_RESULT=0
+
+# Avoid processes continuing after termination 
+# of this script
+cleanup() {
+    for pid in ${BGPIDS[@]}; do
+        kill -9 $pid
+    done
+    # Call this test again, so leaked memory should be cleaned. 
+    ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
+}
+trap "cleanup" SIGINT SIGTERM EXIT
 
 ##### Test capturing of starting supernumerous processes #####
 # Start the supported number of processes in parallel
@@ -14,6 +26,7 @@ while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
 
     ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
     PID[$CNT]=$!
+    BGPIDS+=("$!")
 
     let CNT+=1
 done
@@ -35,6 +48,7 @@ done
 # Attempt to start another process, this should fail
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
 PID_SURPLUS=$!
+BGPIDS+=("$1")
 
 sleep .5 
 
@@ -51,13 +65,13 @@ while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
     let CNT+=1
 done
 
-
+sleep .5
 
 ###### Test removal of processes, which were terminated but still have an entry in the PID list. #####
 
 # Start process writing some values, kill it
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
-sleep .2
+sleep .3
 kill $!
 
 # Test, if memory has been cleaned up. This should happen, when this test constructs the SharedMemoryManager
@@ -69,12 +83,13 @@ if [[ $CLEANUP_RESULT -ne 0 ]]; then
     TEST_RESULT=$(( $TEST_RESULT + 4))
 fi
 
-
+sleep .2
 
 
 # Start processes, kill one of them. The still running one should clean up on exit
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
 PID_STILL_RUNNING_PROCESS=$!
+BGPIDS+=("$!")
 
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
 sleep .2
