@@ -61,6 +61,9 @@ namespace ChimeraTK {
        *  This can be used to determine the type at runtime. */
       const std::type_info& getValueType() const { return _impl->getValueType(); }
 
+      /** Return the AccessModeFlags for this TransferElement. */
+      AccessModeFlags getAccessModeFlags() const { return _impl->getAccessModeFlags(); }
+
       /** Read the data from the device. If AccessMode::wait_for_new_data was set, this function will block until new
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
       void read() { _impl->read(); }
