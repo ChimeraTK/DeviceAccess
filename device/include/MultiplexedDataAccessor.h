@@ -108,6 +108,8 @@ namespace ChimeraTK {
         return accessor->isWriteable();// LCOV_EXCL_LINE
       }// LCOV_EXCL_LINE
 
+      AccessModeFlags getAccessModeFlags() const override { return{}; }
+
     protected:
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {// LCOV_EXCL_LINE

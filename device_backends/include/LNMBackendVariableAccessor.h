@@ -107,6 +107,10 @@ namespace ChimeraTK {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
       }
 
+      AccessModeFlags getAccessModeFlags() const override {
+        return {};
+      }
+
     protected:
 
       /// register and module name

@@ -123,6 +123,10 @@ namespace ChimeraTK {
                               DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
       }                                                                                                     // LCOV_EXCL_LINE
 
+      AccessModeFlags getAccessModeFlags() const override {
+        return { AccessMode::raw };
+      }
+
     protected:
 
       /** Set the start address (inside the bar given in the constructor) and number of words of this accessor. */

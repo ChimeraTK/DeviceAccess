@@ -81,6 +81,10 @@ namespace ChimeraTK {
             "registers).", DeviceException::NOT_IMPLEMENTED);
       }
 
+      AccessModeFlags getAccessModeFlags() const override {
+        return {};
+      }
+
     protected:
 
       /** One fixed point converter for each sequence. */

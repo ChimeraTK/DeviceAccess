@@ -183,6 +183,11 @@ namespace ChimeraTK {
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackendRegisterAccessor<UserType>, getAsCoocked_impl, 2 );
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NumericAddressedBackendRegisterAccessor<UserType>, setAsCoocked_impl, 3 );
 
+      AccessModeFlags getAccessModeFlags() const override {
+        if(isRaw) return { AccessMode::raw };
+        return {};
+      }
+
     protected:
 
       /** Address, size and fixed-point representation information of the register from the map file */

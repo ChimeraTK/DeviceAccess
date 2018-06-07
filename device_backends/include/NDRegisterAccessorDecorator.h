@@ -160,6 +160,10 @@ namespace ChimeraTK {
 
       void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) override;
 
+      AccessModeFlags getAccessModeFlags() const override {
+        return _target->getAccessModeFlags();
+      }
+
     protected:
 
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;

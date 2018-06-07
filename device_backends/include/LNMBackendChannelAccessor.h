@@ -121,6 +121,10 @@ namespace ChimeraTK {
                               DeviceException::NOT_AVAILABLE);
       }
 
+      AccessModeFlags getAccessModeFlags() const override {
+        return _accessor->getAccessModeFlags();
+      }
+
     protected:
 
       /// pointer to underlying accessor

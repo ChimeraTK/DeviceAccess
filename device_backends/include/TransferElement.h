@@ -27,6 +27,7 @@
 #include "VersionNumber.h"
 #include "TransferElementID.h"
 #include "ExperimentalFeatures.h"
+#include "AccessMode.h"
 
 namespace ChimeraTK {
   class PersistentDataStorage;
@@ -81,6 +82,9 @@ namespace ChimeraTK {
        *  This can be used to determine the type at runtime.
        */
       virtual const std::type_info& getValueType() const = 0;
+
+      /** Return the AccessModeFlags for this TransferElement. */
+      virtual AccessModeFlags getAccessModeFlags() const = 0;
 
       /** Read the data from the device. If AccessMode::wait_for_new_data was set, this function will block until new
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
