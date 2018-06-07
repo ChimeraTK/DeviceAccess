@@ -25,6 +25,9 @@
 #include "ConstantAccessor.h"
 #include "TestDecoratorRegisterAccessor.h"
 #include "DebugDecoratorRegisterAccessor.h"
+#include "Visitor.h"
+#include "VariableNetworkGraphDumpingVisitor.h"
+#include "XMLGeneratorVisitor.h"
 
 using namespace ChimeraTK;
 

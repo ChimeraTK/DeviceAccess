@@ -7,11 +7,9 @@
 
 #include <sstream>
 
-#include <libxml++/libxml++.h>
-
 #include "VariableNetwork.h"
 #include "Application.h"
-#include "Visitor.h"
+#include "VariableNetworkDumpingVisitor.h"
 
 namespace ChimeraTK {
 

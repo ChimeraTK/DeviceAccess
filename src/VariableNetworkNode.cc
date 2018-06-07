@@ -10,6 +10,7 @@
 #include "Application.h"
 #include "EntityOwner.h"
 #include "Visitor.h"
+#include "VariableNetworkNodeDumpingVisitor.h"
 
 namespace ChimeraTK {
 

@@ -11,6 +11,7 @@
 
 #include "EntityOwner.h"
 #include "Module.h"
+#include "ModuleGraphVisitor.h"
 #include "VirtualModule.h"
 
 namespace ChimeraTK {
