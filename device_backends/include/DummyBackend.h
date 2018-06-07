@@ -31,7 +31,7 @@ namespace ChimeraTK {
   template<typename T> class DummyMultiplexedRegisterAccessor;
 
   /** The dummy device opens a mapping file instead of a device, and
-   *  implements all registers defined in the mapping file im memory.
+   *  implements all registers defined in the mapping file in memory.
    *  Like this it mimiks the real PCIe device.
    *
    *  Deriving from this class, you can write dedicated implementations
@@ -56,7 +56,7 @@ namespace ChimeraTK {
 
       virtual void open();
 
-      /** This closes the device, clears all internal regsiters, read-only settings and
+      /** This closes the device, clears all internal registers, read-only settings and
        *  callback functions. As the device could be opened with another mapping file later,
        *  these will most probably be invalid in this case. This is why the read-only  settings
        *  and callback functions have to be set again when reopening the file.

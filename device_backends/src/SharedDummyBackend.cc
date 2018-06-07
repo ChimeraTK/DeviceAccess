@@ -34,7 +34,6 @@ namespace ChimeraTK {
   SharedDummyBackend::SharedDummyBackend(std::string instanceId, std::string mapFileName)
   : NumericAddressedBackend(mapFileName),
     _mapFile(mapFileName),
-    //TODO Nasty to use base class member as argument here?
     _registerMapping(_registerMap),
     _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
     sharedMemoryManager(*this, instanceId, mapFileName)
@@ -57,30 +56,22 @@ namespace ChimeraTK {
          barSizeInBytesIter != _barSizesInBytes.end();
          ++barSizeInBytesIter){
 
-      std::string barName = "Bar"+std::to_string(barSizeInBytesIter->first);
+      std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(barSizeInBytesIter->first);
 
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
 
       try{
+        std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
-
-#ifdef _DEBUG
-        std::cout << "Constructed bar: " << barName << std::endl
-                  << "    with a size of " << barSizeInBytesIter->second << std::endl
-                  << "    Memory size: " << sharedMemoryManager.getInfoOnMemory().first << std::endl
-                  << "    Free memory is: " << sharedMemoryManager.getInfoOnMemory().second
-                  << std::endl << std::flush;
-#endif
       }
-      catch(boost::interprocess::bad_alloc &e){\
-        // TODO Decide if we trigger grow() on the shd mem from here,
-        // but this requires that the shd mem is unmapped in all processes.
-        std::cout << "Caught " << e.what() << " while constructing/resizing " + barName << std::endl
-                  << "    Shared memory size: " << sharedMemoryManager.getInfoOnMemory().first << std::endl
-                  << "    Memory required: " << getTotalRegisterSizeInBytes()
-                  << std::endl << std::flush;
-
+      catch(boost::interprocess::bad_alloc &e){
+        // Clean up
         sharedMemoryManager.~SharedMemoryManager();
+
+        std::string errMsg{"Could not allocate shared memory while constructing registers. "
+                           "Please file a bug report at https://github.com/ChimeraTK/DeviceAccess."};
+        throw SharedDummyBackendException(errMsg,
+                  SharedDummyBackendException::EX_BAD_ALLOC);
       }
     } /* for(barSizesInBytesIter) */
   }
@@ -118,6 +109,9 @@ namespace ChimeraTK {
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
+
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
+
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( data[wordIndex] = _barContents[bar]->at(wordBaseIndex+wordIndex); );
     }
@@ -129,6 +123,9 @@ namespace ChimeraTK {
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
+
+    std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
+
     for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
       TRY_REGISTER_ACCESS( _barContents[bar]->at(wordBaseIndex+wordIndex) = data[wordIndex]; );
     }
@@ -157,7 +154,6 @@ namespace ChimeraTK {
     }
   }
 
-
   boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string /*host*/,
       std::string instance,
       std::list<std::string> parameters,
@@ -182,33 +178,9 @@ namespace ChimeraTK {
     // mapfilename to an absolute path
     boost::filesystem::path absPathToMapFile{parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName)};
     // Possible ./, ../ elements are removed, as the path may be constructed differently
-    // for different client applications
+    // in different client applications
     return boost::filesystem::canonical(absPathToMapFile).string();
   }
 
 
-  // Member functions of nested shared memory class
-
-  SharedMemoryVector* SharedDummyBackend::SharedMemoryManager::findOrConstructVector(const std::string& objName, const size_t size){
-
-    SharedMemoryVector* vector = segment.find_or_construct<SharedMemoryVector>(objName.c_str())(alloc_inst);
-
-    vector->resize(size, 0);
-    return vector;
-  }
-
-  size_t SharedDummyBackend::SharedMemoryManager::getRequiredMemoryWithOverhead(){
-
-
-    // Note: This uses _barSizeInBytes to determine number of vectors used,
-    //       as it is initialized when this method gets called in the init list.
-    return SHARED_MEMORY_OVERHEAD_PER_VECTOR * sharedDummyBackend._barSizesInBytes.size()  \
-           + SHARED_MEMORY_CONST_OVERHEAD                                                  \
-           + sharedDummyBackend.getTotalRegisterSizeInBytes();
-  }
-
-  std::pair<size_t, size_t> SharedDummyBackend::SharedMemoryManager::getInfoOnMemory(){
-    return std::make_pair(segment.get_size(), segment.get_free_memory());
-  }
-
-} // namespace mtca4u
+} // Namespace ChimeraTK

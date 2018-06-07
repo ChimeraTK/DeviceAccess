@@ -12,24 +12,33 @@
 #include <boost/interprocess/containers/vector.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/unordered_set.hpp>
 #include <boost/function.hpp>
 #include <boost/filesystem.hpp>
 
 #include "Exception.h"
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
-//TODO How to manage this files?
+#include "SharedDummyBackendException.h"
 #include "ProcessManagement.h"
 
 
 // Define shared-memory compatible vector type and corresponding allocator
 typedef boost::interprocess::allocator<int32_t, boost::interprocess::managed_shared_memory::segment_manager>  ShmemAllocator;
 typedef boost::interprocess::vector<int32_t, ShmemAllocator> SharedMemoryVector;
+typedef boost::interprocess::vector<int32_t, ShmemAllocator> PidSet;
+
 
 namespace ChimeraTK {
 
-  /** TODO DOCUMENTATION
-   */
+/** The shared dummy device opens a mapping file defining the registers and implements
+ *  them in shared memory instead of connecting to the real device. Thus, it provides access
+ *  to the registers from several applications. The registers an application accesses can be
+ *  stimulated or monitored by another process, e.g. for development and testing.
+ *
+ *  Accessing applications are required to the same mapping file (matching absolute path) and
+ *  to be run by the same user.
+ */
   class SharedDummyBackend : public NumericAddressedBackend
   {
     public:
@@ -61,67 +70,19 @@ namespace ChimeraTK {
       // Bar sizes
       std::map<uint8_t, size_t> _barSizesInBytes;
       
+      // Naming of bars as shared memory elements
+      const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
 
       // Helper class to manage the shared memory: automatically construct if necessary,
       // automatically destroy if last using process closes.
-      /*\
-       * TODO: * Include User and URI in hashes
-       *         -> Additional overhead?
-       *
-       */
       class SharedMemoryManager {
         
+      friend class SharedDummyBackend;
+
       public:
-        SharedMemoryManager(SharedDummyBackend &sharedDummyBackend_,
-                            const std::string instanceId,
-                            const std::string mapFileName) :
-          sharedDummyBackend(sharedDummyBackend_),
-          mapFileHash(std::to_string(std::hash<std::string>{}(mapFileName))),
-          instanceIdHash(std::to_string(std::hash<std::string>{}(instanceId))),
-          name("ChimeraTK_SharedDummy_"+mapFileHash+"_"+instanceIdHash),
-          segment(boost::interprocess::open_or_create, name.c_str(), getRequiredMemoryWithOverhead()),
-          alloc_inst(segment.get_segment_manager()),
-          globalMutex(boost::interprocess::open_or_create, name.c_str())
-        {
-          // lock guard with the interprocess mutex
-          std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
+        SharedMemoryManager(SharedDummyBackend&, const std::string&, const std::string&);
+        ~SharedMemoryManager();
 
-          // find the use counter
-          auto res = segment.find<size_t>("UseCounter");
-          if(res.second != 1) {  // if not found: create it
-            useCount = segment.construct<size_t>("UseCounter")(0);
-          }
-          else {
-            useCount = res.first;
-          }
-
-          // increment use counter
-          (*useCount)++;
-
-#ifdef _DEBUG
-          std::cout << "Created shared memory with a size of " << segment.get_size() << " bytes." << std::endl;
-          std::cout << "    Free space : " << segment.get_free_memory() << std::endl;
-          std::cout << "    useCount is: " << *useCount << std::endl << std::flush;
-#endif
-        }
-
-        ~SharedMemoryManager() {
-
-          //std::cout << "Entered ~SharedMemoryManager()..." << std::endl;
-
-          // lock guard with the interprocess mutex
-          std::lock_guard<boost::interprocess::named_mutex> lock(globalMutex);
-          
-          // decrement use counter
-          (*useCount)--;
-          
-          // if use count at 0, destroy shared memory and the interprocess mutex
-          if(*useCount == 0) {
-            boost::interprocess::shared_memory_object::remove(name.c_str());
-            boost::interprocess::named_mutex::remove(name.c_str());
-          }
-        }
-        
         /**
          * Finds or constructs a vector object in the shared memory.
          */
@@ -136,14 +97,20 @@ namespace ChimeraTK {
       private:
 
         // Constants to take overhead of managed shared memory into respect
-        // (approx. linear function, evaluated using Boost 1.58)
-        // TODO Adjust for additional overhead (PIDs, ...)
+        // (approx. linear function, meta data for memory and meta data per vector)
+        // Uses overestimates for robustness.
         static const size_t SHARED_MEMORY_CONST_OVERHEAD = 1000;
-        static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 80;
+        static const size_t SHARED_MEMORY_OVERHEAD_PER_VECTOR = 160;
+
+        const size_t SHARED_MEMORY_N_MAX_MEMBER = 10;
+
+        const char* SHARED_MEMORY_PID_SET_NAME = "PidSet";
+        const char* SHARED_MEMORY_REQUIRED_VERSION_NAME = "RequiredVersion";
 
         SharedDummyBackend& sharedDummyBackend;
 
         // Hashes to assure match of shared memory accessing processes
+        std::string userHash;
         std::string mapFileHash;
         std::string instanceIdHash;
 
@@ -154,18 +121,29 @@ namespace ChimeraTK {
         boost::interprocess::managed_shared_memory segment;
 
         // the allocator instance
-        const ShmemAllocator alloc_inst;
-        
-        // global (interprocess) mutex
-        boost::interprocess::named_mutex globalMutex;
+        const ShmemAllocator sharedMemoryIntAllocator;
 
-        // pointer to the use count on shared memory;
-        size_t *useCount{nullptr};
+        // Pointers to the set of process IDs and the required version
+        // specifier in shared memory
+        PidSet *pidSet{nullptr};
+        // Version number is not used for now, but included in shared memory
+        // to facilitate compatibility checks later
+        unsigned *requiredVersion{nullptr};
 
-        size_t getRequiredMemoryWithOverhead();
+        bool _reInitRequired = false;
+
+        size_t getRequiredMemoryWithOverhead(void);
+        void checkPidSetConsistency(void);
+        void reInitMemory(void);
+        std::vector<std::string> listNamedElements(void);
+
+      protected:
+        // interprocess mutex, has to be accessible by SharedDummyBackend class
+        boost::interprocess::named_mutex interprocessMutex;
 
       };  /* class SharedMemoryManager */
       
+
       // Managed shared memory object
       SharedMemoryManager sharedMemoryManager;
       
@@ -173,7 +151,6 @@ namespace ChimeraTK {
       std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
 
       // Helper routines called in init list
-      // TODO Remove std::map<uint8_t, size_t> getBarSizesInWords() const;
       size_t getTotalRegisterSizeInBytes() const;
 
       static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
@@ -181,11 +158,11 @@ namespace ChimeraTK {
       static std::string convertPathRelativeToDmapToAbs(std::string const & mapfileName);
 
       /** map of instance names and pointers to allow re-connecting to the same instance with multiple Devices */
-      /* FIXME Namespace change ok? */
       static std::map< std::string, boost::shared_ptr<DeviceBackend> >& getInstanceMap() {
         static std::map< std::string, boost::shared_ptr<DeviceBackend> > instanceMap;
         return instanceMap;
       }
+
 
       /**
        * @brief Method looks up and returns an existing instance of class 'T'
