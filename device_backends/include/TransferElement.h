@@ -454,6 +454,19 @@ namespace ChimeraTK {
        */
       TransferElementID getId() const { return _id; }
 
+      /**
+       *  Cancel any pending transfer and throw boost::thread_interrupted in its postRead. This function can be used to
+       *  shutdown a thread waiting on the transfer to complete (which might never happen due to the sending part of
+       *  the application already shut down).
+       *
+       *  Note: there is no guarantee that the exception is actually thrown if no transfer is currently running or if
+       *  the transfer completes while this function is called. Also for transfer elements which never block for an
+       *  extended period of time this function may just do nothing. To really shut down the receiving thread, a
+       *  interrupt request should be sent to the thread and boost::this_thread::interruption_point() shall be called
+       *  after each transfer.
+       */
+      virtual void interrupt() {}
+
     protected:
 
       /** Identifier uniquely identifying the TransferElement */
