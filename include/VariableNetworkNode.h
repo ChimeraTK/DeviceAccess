@@ -265,7 +265,7 @@ namespace ChimeraTK {
   mtca4u::NDRegisterAccessorAbstractor<UserType>& VariableNetworkNode::getAppAccessor() const {
     assert(typeid(UserType) == getValueType());
     assert(pdata->type == NodeType::Application);
-    auto accessor = dynamic_cast<mtca4u::NDRegisterAccessorAbstractor<UserType>*>(pdata->appNode);
+    auto accessor = static_cast<mtca4u::NDRegisterAccessorAbstractor<UserType>*>(pdata->appNode);
     assert(accessor != nullptr);
     return *accessor;
   }

@@ -110,8 +110,9 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<uint32_t> index{this, "index", "", "The index (1..4) of the input where the last value was received"};
 
     void mainLoop() {
+      auto group = inputs.readAnyGroup();
       while(true) {
-        auto justRead = inputs.readAny();
+        auto justRead = group.waitAny();
         if(inputs.v1.getId() == justRead) {
           index = 1;
           value = (T)inputs.v1;

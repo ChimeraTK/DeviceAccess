@@ -38,29 +38,19 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  mtca4u::TransferElementID Module::readAny() {
+  ChimeraTK::ReadAnyGroup Module::readAnyGroup() {
+
     auto accessorList = getAccessorListRecursive();
+
     // put push-type transfer elements into a list suitable for TransferElement::readAny()
-    std::list<std::reference_wrapper<mtca4u::TransferElementAbstractor>> transferElementList;
+    std::list<mtca4u::TransferElementAbstractor> transferElementList;
     for(auto &accessor : accessorList) {
       if(accessor.getDirection() != VariableDirection::consuming) continue;
-      if(accessor.getMode() == UpdateMode::push) {
-        transferElementList.emplace_back(accessor.getAppAccessorNoType());
-      }
+      transferElementList.emplace_back(accessor.getAppAccessorNoType());
     }
 
-    // wait until one of the push-type accessors receives an update
-    auto ret = Application::getInstance().readAny(transferElementList);
+    return {transferElementList.begin(), transferElementList.end()};
 
-    // trigger read on the poll-type accessors
-    for(auto accessor : accessorList) {
-      if(accessor.getDirection() != VariableDirection::consuming) continue;
-      if(accessor.getMode() == UpdateMode::poll) {
-        accessor.getAppAccessorNoType().readLatest();
-      }
-    }
-
-    return ret;
   }
 
 /*********************************************************************************************************************/

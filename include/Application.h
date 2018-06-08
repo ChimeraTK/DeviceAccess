@@ -96,13 +96,6 @@ namespace ChimeraTK {
        *  of applications seem to hang for no reason in stepApplication. */
       void debugTestableMode() { enableDebugTestableMode = true; }
 
-      /** This is a testable version of mtca4u::TransferElement::readAny(). Always use this version instead of the
-       *  original version provided by DeviceAccess. If the testable mode is not enabled, just the original version
-       *  is called instead. Only with the testable mode enabled, special precautions are taken to make this blocking
-       *  call testable. */
-      static mtca4u::TransferElementID readAny(std::list<std::reference_wrapper<TransferElementAbstractor>> elementsToRead);
-      static mtca4u::TransferElementID readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead);
-
       /** Lock the testable mode mutex for the current thread. Internally, a thread-local std::unique_lock<std::mutex>
        *  will be created and re-used in subsequent calls within the same thread to this function and to
        *  testableModeUnlock().

@@ -80,6 +80,8 @@ namespace ChimeraTK {
 
       std::list<boost::shared_ptr<mtca4u::TransferElement> > getInternalElements() override {return {};}
 
+      AccessModeFlags getAccessModeFlags() const override { return {}; }
+
     protected:
 
       std::vector<UserType> _value;

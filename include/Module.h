@@ -10,7 +10,8 @@
 
 #include "VariableNetworkNode.h"
 #include "EntityOwner.h"
-#include <mtca4u/TransferElement.h>
+#include <ChimeraTK/TransferElement.h>
+#include <ChimeraTK/ReadAnyGroup.h>
 
 namespace ChimeraTK {
 
@@ -53,10 +54,8 @@ namespace ChimeraTK {
       /** Terminate the module. Must/will be called before destruction, if run() was called previously. */
       virtual void terminate() {};
 
-      /** Wait for receiving an update for any of the push-type variables in the group. Any poll-type variables are
-       *  read after receiving the update. If no push-type variables are in the group, this function will just read
-       *  all variables. The return value will be the ID of the push-type variable which has been updated. */
-      mtca4u::TransferElementID readAny();
+      /** Create a ChimeraTK::ReadAnyGroup for all readable variables in this Module. */
+      ChimeraTK::ReadAnyGroup readAnyGroup();
 
       /** Read all readable variables in the group. If there are push-type variables in the group, this call will block
        *  until all of the variables have received an update. All push-type variables are read first, the poll-type

@@ -134,6 +134,8 @@ namespace ChimeraTK {
         /// @todo implement properly?
       }
 
+      AccessModeFlags getAccessModeFlags() const override { return {}; }
+
   };
 
 } /* namespace ChimeraTK */

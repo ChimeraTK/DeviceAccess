@@ -97,8 +97,9 @@ void LoggingModule::mainLoop(){
   for(auto &module : msg_list){
     broadcastMessage(std::string("\t - ") + module.first);
   }
+  auto group = readAnyGroup();
   while(1){
-    auto id = readAny();
+    auto id = group.waitAny();
     auto sender = UpdatePair(id);
     if(targetStream == 3)
       continue;

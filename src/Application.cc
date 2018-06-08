@@ -375,11 +375,14 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   size_t nElements = node.getNumberOfElements();
   std::string name = node.getName();
   assert(name != "");
+  AccessModeFlags flags = {};
+  if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
 
   // create the ProcessArray for the proper UserType
   std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
             boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
-  pvarPair = createSynchronizedProcessArray<UserType>(nElements, name);
+  pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
+                                                      {}, 3, false, {}, {}, flags);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
 
@@ -845,34 +848,6 @@ void Application::stepApplication() {
     testableModeUnlock("stepApplication");
     boost::this_thread::yield();
     testableModeLock("stepApplication");
-  }
-}
-
-/*********************************************************************************************************************/
-
-mtca4u::TransferElementID Application::readAny(std::list<std::reference_wrapper<TransferElementAbstractor>> elementsToRead) {
-  if(!Application::getInstance().testableMode) {
-    return ChimeraTK::readAny(elementsToRead);
-  }
-  else {
-    testableModeUnlock("readAny");
-    auto ret = ChimeraTK::readAny(elementsToRead);
-    assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
-    return ret;
-  }
-}
-
-/*********************************************************************************************************************/
-
-mtca4u::TransferElementID Application::readAny(std::list<std::reference_wrapper<TransferElement>> elementsToRead) {
-  if(!Application::getInstance().testableMode) {
-    return ChimeraTK::readAny(elementsToRead);
-  }
-  else {
-    testableModeUnlock("readAny");
-    auto ret = ChimeraTK::readAny(elementsToRead);
-    assert(testableModeTestLock());  // lock is acquired inside readAny(), since TestDecoratorTransferFuture::wait() is called there.
-    return ret;
   }
 }
 

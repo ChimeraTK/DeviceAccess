@@ -41,6 +41,7 @@ namespace ChimeraTK {
       void deactivate() override {
         if(_thread.joinable()) {
           _thread.interrupt();
+          externalTrigger->interrupt();
           _thread.join();
         }
         assert(!_thread.joinable());
