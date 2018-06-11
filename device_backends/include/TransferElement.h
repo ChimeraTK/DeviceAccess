@@ -292,7 +292,9 @@ namespace ChimeraTK {
        *  callback of a boost::future/promise, this function is not called when just checking whether the result is
        *  ready or not. Usually it is not necessary to implement this function, but decorators should pass it on. One
        *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
-       *  the thread execution. */
+       *  the thread execution.
+       *  Note: The ReadAnyGroup will trigger a call to this function of the first TransferElement with
+       *  AccessMode::wait_for_new_data in the group before potentially blocking. */
       virtual void transferFutureWaitCallback() {}
 
       /** Transfer the data from the user buffer into the device send buffer, while converting the data from then

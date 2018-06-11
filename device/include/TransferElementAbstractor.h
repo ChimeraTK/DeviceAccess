@@ -239,8 +239,8 @@ namespace ChimeraTK {
        *  ready or not. Usually it is not necessary to implement this function, but decorators should pass it on. One
        *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
        *  the thread execution.
-       *  Note: The ReadAnyGroup will trigger a call to this function of the first TransferElement in the group before
-       *  potentially blocking. */
+       *  Note: The ReadAnyGroup will trigger a call to this function of the first TransferElement with
+       *  AccessMode::wait_for_new_data in the group before potentially blocking. */
       void transferFutureWaitCallback() {
         _impl->transferFutureWaitCallback();
       }
