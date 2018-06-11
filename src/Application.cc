@@ -328,10 +328,20 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
   else {
     dir = SynchronizationDirection::deviceToControlSystem;
   }
+  AccessModeFlags flags = {};
+  if(node.getDirection() == VariableDirection::consuming) {   // Application-to-controlsystem must be push-type
+    flags = {AccessMode::wait_for_new_data};
+  }
+  else {
+    for(auto &consumer : node.getOwner().getConsumingNodes()) {
+      if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+    }
+  }
 
   // create the ProcessArray for the proper UserType
-  auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(), node.getNumberOfElements(),
-                                                                    node.getOwner().getUnit(), node.getOwner().getDescription());
+  auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(),
+                    node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(),
+                    {}, false, 3, flags);
   assert(pvar->getName() != "");
 
   // create variable ID
