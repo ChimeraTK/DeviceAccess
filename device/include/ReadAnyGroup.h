@@ -82,11 +82,17 @@ namespace ChimeraTK {
 
     private:
 
+      /// Flag if this group has been finalised already
       bool isFinalised{false};
 
+      /// Vector of elements in this group
       std::vector<TransferElementAbstractor> elements;
 
+      /// The notification queue, will be valid only if isFinalised == true
       cppext::future_queue<size_t> notification_queue;
+
+      /// Element to call the transferFutureWaitCallback on - this is the first element with wait_for_new_data
+      TransferElementAbstractor elementToCallTransferFutureWaitCallback;
 
   };
 
@@ -119,6 +125,10 @@ namespace ChimeraTK {
       throw std::logic_error("Cannot add non-readable accessor for register "+element.getName()+" to ReadAnyGroup.");
     }
     elements.push_back(element);
+    if( !elementToCallTransferFutureWaitCallback.isInitialised() &&
+        element.getAccessModeFlags().has(AccessMode::wait_for_new_data) ) {
+      elementToCallTransferFutureWaitCallback = element;
+    }
   }
 
   /********************************************************************************************************************/
@@ -145,6 +155,7 @@ namespace ChimeraTK {
 
   inline TransferElementID ReadAnyGroup::waitAny() {
     size_t idx;
+    elementToCallTransferFutureWaitCallback.transferFutureWaitCallback();
     notification_queue.pop_wait(idx);
     elements[idx].readAsync().wait();
     for(auto &e : elements) {
