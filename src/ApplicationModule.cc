@@ -35,6 +35,9 @@ namespace ChimeraTK {
   void ApplicationModule::terminate() {
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
+      for(auto var : getAccessorListRecursive()) {
+        var.getAppAccessorNoType().getHighLevelImplElement()->interrupt();
+      }
       moduleThread.join();
     }
     assert(!moduleThread.joinable());
