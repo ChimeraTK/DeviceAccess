@@ -234,6 +234,17 @@ namespace ChimeraTK {
        */
       TransferElementID getId() const { return _impl->getId(); }
 
+      /** Function called by the TransferFuture before entering a potentially blocking wait(). In contrast to a wait
+       *  callback of a boost::future/promise, this function is not called when just checking whether the result is
+       *  ready or not. Usually it is not necessary to implement this function, but decorators should pass it on. One
+       *  use case is the ApplicationCore TestDecoratorRegisterAccessor, which needs to be informed before blocking
+       *  the thread execution.
+       *  Note: The ReadAnyGroup will trigger a call to this function of the first TransferElement in the group before
+       *  potentially blocking. */
+      void transferFutureWaitCallback() {
+        _impl->transferFutureWaitCallback();
+      }
+
     protected:
 
       /** Construct from TransferElement implementation */
