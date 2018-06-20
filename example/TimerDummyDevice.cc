@@ -75,6 +75,8 @@ class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserTyp
     bool isReadable() const override { return true; }
     bool isWriteable() const override { return false; }
 
+    mtca4u::AccessModeFlags getAccessModeFlags() const override { return {mtca4u::AccessMode::wait_for_new_data}; }
+
     bool mayReplaceOther(const boost::shared_ptr<mtca4u::TransferElement const> &) const override { return false; }
 
     std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override { return { this->shared_from_this() }; }

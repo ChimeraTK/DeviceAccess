@@ -17,7 +17,7 @@ struct Automation : public ctk::ApplicationModule {
     ctk::ScalarPollInput<double> opSP{this, "opSP", "MV", "..."};
     ctk::ScalarOutput<double> curSP{this, "curSP", "MV", "..."};
     ctk::ScalarPushInput<int> trigger{this, "trigger", "", "..."};
-    
+
     void mainLoop() {
       while(true) {
         trigger.read();
@@ -42,14 +42,15 @@ struct TableGeneration : public ctk::ApplicationModule {
       ctk::ScalarPushInput<double> setpoint{this, "setpoint", "MV", "..."};
     };
     TableParameters tableParameters{this, "tableParameters", "..."};
-    
+
     ctk::ArrayOutput<int32_t> setpointTable{this, "setpointTable", "bits", tableLength, "..."};
     ctk::ArrayOutput<int32_t> feedforwardTable{this, "feedforwardTable", "bits", tableLength, "..."};
-    
+
     void mainLoop() {
+      ctk::ReadAnyGroup tableParametersReadGroup = tableParameters.readAnyGroup();
       while(true) {
-        tableParameters.readAny();    // block until the any table parameter is changed
-        
+        tableParametersReadGroup.waitAny();    // block until the any table parameter is changed
+
         for(size_t i = 0; i < tableLength; ++i) {
           if(i < tableParameters.pulseLength * samplingFrequency) {
             setpointTable[i] = tableParameters.setpoint * bitScalingFactor;
@@ -60,7 +61,7 @@ struct TableGeneration : public ctk::ApplicationModule {
             feedforwardTable[i] = 0;
           }
         }
-        
+
         setpointTable.write();
         feedforwardTable.write();
       }
@@ -76,9 +77,9 @@ struct ExampleApp : public ctk::Application {
     ctk::DeviceModule dev{"Device"};
     ctk::DeviceModule timer{"Timer"};
     ctk::ControlSystemModule cs{"MyLocation"};
-    
+
     void defineConnections();
-    
+
 };
 ExampleApp theExampleApp;
 
@@ -88,17 +89,17 @@ void ExampleApp::defineConnections() {
 
     cs("setpoint") >> automation.opSP;
     automation.curSP >> tableGeneration.tableParameters.setpoint >> cs("currentSetpoint");
-    
+
     auto macropulseNr = timer("macropulseNr", typeid(int), 1, ctk::UpdateMode::push);
     macropulseNr >> automation.trigger;
-    
+
     cs("pulseLength") >> tableGeneration.tableParameters.pulseLength;
-    
+
     tableGeneration.setpointTable >> dev("setpointTable");
     tableGeneration.feedforwardTable >> dev("feedforwardTable");
-    
+
     dev("probeSignal", typeid(int), tableLength) [ macropulseNr ] >> cs("probeSignal");
-    
+
     dumpConnections();
 
 }
