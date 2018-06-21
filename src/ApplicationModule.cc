@@ -35,10 +35,16 @@ namespace ChimeraTK {
   void ApplicationModule::terminate() {
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
-      for(auto var : getAccessorListRecursive()) {
-        var.getAppAccessorNoType().getHighLevelImplElement()->interrupt();
+      // try joining the thread
+      while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
+        // if thread is not yet joined, send interrupt() to all variables.
+        for(auto &var : getAccessorListRecursive()) {
+          if(var.getDirection() != VariableDirection::consuming) continue;
+          var.getAppAccessorNoType().getHighLevelImplElement()->interrupt();
+        }
+        // it may not suffice to send interrupt() once, as the exception might get overwritten in the queue, thus we
+        // repeat this until the thread was joined.
       }
-      moduleThread.join();
     }
     assert(!moduleThread.joinable());
   }
