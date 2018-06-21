@@ -38,6 +38,8 @@ namespace ChimeraTK {
 
         void doPostWrite() override = 0;
 
+        void interrupt() override { _target->interrupt(); }
+
       protected:
 
         /// The accessor to be decorated
@@ -70,6 +72,8 @@ namespace ChimeraTK {
           _target->postWrite();
           for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i].swap(_target->accessChannel(i));
         }
+
+        void interrupt() override { _target->interrupt(); }
 
       protected:
 
