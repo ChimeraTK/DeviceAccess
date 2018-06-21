@@ -41,7 +41,9 @@ namespace ChimeraTK {
           return;
         }
         // block forever
-        boost::promise<void>().get_future().wait();
+        promise.get_future().wait();
+        // if we get here, interrupt() has been called
+        throw boost::thread_interrupted();
       }
 
       bool doReadTransferNonBlocking() override {
@@ -82,11 +84,15 @@ namespace ChimeraTK {
 
       AccessModeFlags getAccessModeFlags() const override { return {}; }
 
+      void interrupt() override { promise.set_value(); }
+
     protected:
 
       std::vector<UserType> _value;
 
       bool firstRead{true};
+
+      boost::promise<void> promise;
 
   };
 
