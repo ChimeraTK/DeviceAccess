@@ -42,14 +42,15 @@ namespace ChimeraTK {
 
     auto accessorList = getAccessorListRecursive();
 
-    // put push-type transfer elements into a list suitable for TransferElement::readAny()
-    std::list<mtca4u::TransferElementAbstractor> transferElementList;
+    // put push-type transfer elements into a ReadAnyGroup
+    ChimeraTK::ReadAnyGroup group;
     for(auto &accessor : accessorList) {
       if(accessor.getDirection() != VariableDirection::consuming) continue;
-      transferElementList.emplace_back(accessor.getAppAccessorNoType());
+      group.add(accessor.getAppAccessorNoType());
     }
 
-    return {transferElementList.begin(), transferElementList.end()};
+    group.finalise();
+    return group;
 
   }
 
