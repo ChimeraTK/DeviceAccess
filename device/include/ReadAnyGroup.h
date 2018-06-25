@@ -85,14 +85,14 @@ namespace ChimeraTK {
       /// Flag if this group has been finalised already
       bool isFinalised{false};
 
-      /// Vector of elements in this group
-      std::vector<TransferElementAbstractor> elements;
+      /// Vector of push-type elements in this group
+      std::vector<TransferElementAbstractor> push_elements;
+
+      /// Vector of poll-type elements in this group
+      std::vector<TransferElementAbstractor> poll_elements;
 
       /// The notification queue, will be valid only if isFinalised == true
       cppext::future_queue<size_t> notification_queue;
-
-      /// Element to call the transferFutureWaitCallback on - this is the first element with wait_for_new_data
-      TransferElementAbstractor elementToCallTransferFutureWaitCallback;
 
   };
 
@@ -124,10 +124,11 @@ namespace ChimeraTK {
     if(!element.isReadable()) {
       throw std::logic_error("Cannot add non-readable accessor for register "+element.getName()+" to ReadAnyGroup.");
     }
-    elements.push_back(element);
-    if( !elementToCallTransferFutureWaitCallback.isInitialised() &&
-        element.getAccessModeFlags().has(AccessMode::wait_for_new_data) ) {
-      elementToCallTransferFutureWaitCallback = element;
+    if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+      push_elements.push_back(element);
+    }
+    else {
+      poll_elements.push_back(element);
     }
   }
 
@@ -137,12 +138,10 @@ namespace ChimeraTK {
     if(isFinalised) throw std::logic_error("ReadAnyGroup has already been finalised, calling finalise() is no longer allowed.");
     std::vector<cppext::future_queue<void>> queueList;
     bool groupEmpty = true;
-    for(auto &e : elements) {
-      if(e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-        auto tf = e.readAsync();
-        queueList.push_back( detail::getFutureQueueFromTransferFuture(tf) );
-        groupEmpty = false;
-      }
+    for(auto &e : push_elements) {
+      auto tf = e.readAsync();
+      queueList.push_back( detail::getFutureQueueFromTransferFuture(tf) );
+      groupEmpty = false;
     }
     if(groupEmpty) {
       throw std::logic_error("ReadAnyGroup has no element with AccessMode::wait_for_new_data.");
@@ -155,13 +154,13 @@ namespace ChimeraTK {
 
   inline TransferElementID ReadAnyGroup::waitAny() {
     size_t idx;
-    elementToCallTransferFutureWaitCallback.transferFutureWaitCallback();
+    push_elements[0].transferFutureWaitCallback();
     notification_queue.pop_wait(idx);
-    elements[idx].readAsync().wait();
-    for(auto &e : elements) {
+    push_elements[idx].readAsync().wait();
+    for(auto &e : poll_elements) {
       if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
     }
-    return elements[idx].getId();
+    return push_elements[idx].getId();
   }
 
   /********************************************************************************************************************/
