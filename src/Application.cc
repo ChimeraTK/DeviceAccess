@@ -386,7 +386,12 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   std::string name = node.getName();
   assert(name != "");
   AccessModeFlags flags = {};
-  if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+  if(consumer.getType() != NodeType::invalid) {
+    if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+  }
+  else {
+    if(node.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+  }
 
   // create the ProcessArray for the proper UserType
   std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,

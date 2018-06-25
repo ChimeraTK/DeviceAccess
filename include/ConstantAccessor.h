@@ -41,6 +41,7 @@ namespace ChimeraTK {
           return;
         }
         // block forever
+        isInterrupted = false;
         promise.get_future().wait();
         // if we get here, interrupt() has been called
         throw boost::thread_interrupted();
@@ -84,7 +85,11 @@ namespace ChimeraTK {
 
       AccessModeFlags getAccessModeFlags() const override { return {}; }
 
-      void interrupt() override { promise.set_value(); }
+      void interrupt() override {
+        if(isInterrupted) return;
+        promise.set_value();
+        isInterrupted = true;
+      }
 
     protected:
 
@@ -92,6 +97,7 @@ namespace ChimeraTK {
 
       bool firstRead{true};
 
+      bool isInterrupted{false};
       boost::promise<void> promise;
 
   };
