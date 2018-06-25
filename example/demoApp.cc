@@ -101,6 +101,8 @@ void ExampleApp::defineConnections() {
     dev("probeSignal", typeid(int), tableLength) [ macropulseNr ] >> cs("probeSignal");
 
     dumpConnections();
-
+    dumpConnectionGraph();
+    dumpGraph();
+    dumpModuleGraph("module-graph.dot");
 }
 

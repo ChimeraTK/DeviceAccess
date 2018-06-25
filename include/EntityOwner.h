@@ -126,6 +126,8 @@ namespace ChimeraTK {
        *  through all sub-modules and add all found variables directly to the VirtualModule. */
       VirtualModule flatten();
 
+      void accept(Visitor<EntityOwner>& visitor) const { visitor.dispatch(*this); }
+
       /** Print the full hierarchy to stdout. */
       void dump(const std::string &prefix="") const;
 
@@ -153,12 +155,6 @@ namespace ChimeraTK {
        *  findTag() instead. "tag" is interpreted as a regular expression (see std::regex_match). */
       void findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies=false,
                                     bool eliminateFirstHierarchy=false, bool negate=false) const;
-
-      /** Create Graphviz dot graph write to stream, excluding the surrounding digraph command */
-      void dumpGraphInternal(std::ostream &stream, bool showVariables) const;
-
-      /** Clean a fully qualified entity name so it can be used as a dot node name (i.e. strip slashes etc.) */
-      std::string cleanDotNode(std::string fullName) const;
 
       /** The name of this instance */
       std::string _name;
