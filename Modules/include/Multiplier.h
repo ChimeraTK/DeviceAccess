@@ -75,7 +75,7 @@ namespace ChimeraTK {
           output.write();
 
           // wait for new input value (at the end, since we want to process the initial values first)
-          group.waitAny();
+          group.readAny();
         }
       }
 
@@ -110,7 +110,7 @@ namespace ChimeraTK {
           output.write();
 
           // wait for new input value (at the end, since we want to process the initial values first)
-          group.waitAny();
+          group.readAny();
         }
       }
 

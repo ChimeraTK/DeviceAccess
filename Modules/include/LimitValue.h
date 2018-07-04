@@ -1,5 +1,5 @@
 /*
- *  Generic module to restrict a value into a certain range. 
+ *  Generic module to restrict a value into a certain range.
  */
 
 #ifndef CHIMERATK_APPLICATION_CORE_LIMIT_VALUE_H
@@ -19,7 +19,7 @@ namespace ChimeraTK {
 
       void applyLimit(UserType min, UserType max) {
         bool wasLimited = isLimited;
-        
+
         // clamp input value into given range
         UserType value = input;
         if(value > max) {
@@ -34,12 +34,12 @@ namespace ChimeraTK {
           output = value;
           isLimited = false;
         }
-        
+
         // write output. isLimited is only written when changed
         output.write();
         if(isLimited != wasLimited) isLimited.write();
         wasLimited = isLimited;
-        
+
       }
 
   };
@@ -51,12 +51,13 @@ namespace ChimeraTK {
       ScalarPushInput<UserType> max{this, "max", "", "The maximum allowed value."};
       using LimitValueModuleBase<UserType>::input;
       using LimitValueModuleBase<UserType>::applyLimit;
-      
+
       void mainLoop() {
+        auto readGroup = this->readAnyGroup();
         while(true) {
           applyLimit(min,max);
           // wait for new input values (at the end, since we want to process the initial values first)
-          Application::readAny({input, min, max});
+          readGroup.readAny();
         }
       }
   };
@@ -67,7 +68,7 @@ namespace ChimeraTK {
       using LimitValueModuleBase<UserType>::LimitValueModuleBase;
       using LimitValueModuleBase<UserType>::input;
       using LimitValueModuleBase<UserType>::applyLimit;
-      
+
       void mainLoop() {
         while(true) {
           applyLimit(min,max);

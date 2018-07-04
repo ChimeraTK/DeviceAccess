@@ -49,7 +49,7 @@ struct TableGeneration : public ctk::ApplicationModule {
     void mainLoop() {
       ctk::ReadAnyGroup tableParametersReadGroup = tableParameters.readAnyGroup();
       while(true) {
-        tableParametersReadGroup.waitAny();    // block until the any table parameter is changed
+        tableParametersReadGroup.readAny();    // block until the any table parameter is changed
 
         for(size_t i = 0; i < tableLength; ++i) {
           if(i < tableParameters.pulseLength * samplingFrequency) {

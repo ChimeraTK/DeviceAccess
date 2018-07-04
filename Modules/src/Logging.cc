@@ -99,7 +99,7 @@ void LoggingModule::mainLoop(){
   }
   auto group = readAnyGroup();
   while(1){
-    auto id = group.waitAny();
+    auto id = group.readAny();
     auto sender = UpdatePair(id);
     if(targetStream == 3)
       continue;

@@ -112,7 +112,7 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
     void mainLoop() {
       auto group = inputs.readAnyGroup();
       while(true) {
-        auto justRead = group.waitAny();
+        auto justRead = group.readAny();
         if(inputs.v1.getId() == justRead) {
           index = 1;
           value = (T)inputs.v1;
