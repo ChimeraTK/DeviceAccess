@@ -65,7 +65,7 @@ namespace ChimeraTK {
        *  altered.
        *
        *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
-      TransferElementID waitAny();
+      TransferElementID readAny();
 
       /** Wait until the given TransferElement has received an update and store it to its user buffer. All updates of
        *  other elements which are received before the update of the given element will be processed and are thus
@@ -77,8 +77,21 @@ namespace ChimeraTK {
        *  returned.
        *
        *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
-      void waitUntil(TransferElementID id);
-      void waitUntil(TransferElementAbstractor &element);
+      void readUntil(const TransferElementID &id);
+      void readUntil(const TransferElementAbstractor &element);
+
+      /** Wait until all of the given TransferElements has received an update and store it to its user buffer. All
+       *  updates of other elements which are received before the update of the given element will be processed and are
+       *  thus visible in the user buffers when this function returns.
+       *
+       *  The specified TransferElement must be part of this ReadAnyGroup, otherwise the behaviour is undefined.
+       *
+       *  This is merely a convenience function calling waitAny() in a loop until the ID of the given element is
+       *  returned.
+       *
+       *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+      void readUntilAll(const std::vector<TransferElementID> &ids);
+      void readUntilAll(const std::vector<TransferElementAbstractor> &elements);
 
     private:
 
@@ -152,7 +165,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline TransferElementID ReadAnyGroup::waitAny() {
+  inline TransferElementID ReadAnyGroup::readAny() {
     size_t idx;
     push_elements[0].transferFutureWaitCallback();
     notification_queue.pop_wait(idx);
@@ -165,17 +178,49 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::waitUntil(TransferElementID id) {
+  inline void ReadAnyGroup::readUntil(const TransferElementID &id) {
     while(true) {
-      auto read = waitAny();
+      auto read = readAny();
       if(read == id) return;
     }
   }
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::waitUntil(TransferElementAbstractor &element) {
-    waitUntil(element.getId());
+  inline void ReadAnyGroup::readUntil(const TransferElementAbstractor &element) {
+    readUntil(element.getId());
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::readUntilAll(const std::vector<TransferElementID> &ids) {
+    std::map<TransferElementID, bool> found;
+    for(auto &id : ids) found[id] = false;    // initialise map so we can tell from the map if a variable is in the vector
+    size_t leftToFind = ids.size();
+    while(true) {
+      auto read = readAny();
+      if(found.count(read) == 0) continue;    // variable is not in the vector ids
+      if(found[read] == true) continue;       // variable has been read already
+      found[read] = true;
+      --leftToFind;
+      if(leftToFind == 0) return;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::readUntilAll(const std::vector<TransferElementAbstractor> &elements) {
+    std::map<TransferElementID, bool> found;
+    for(auto &elem : elements) found[elem.getId()] = false;    // initialise map so we can tell from the map if a variable is in the vector
+    size_t leftToFind = elements.size();
+    while(true) {
+      auto read = readAny();
+      if(found.count(read) == 0) continue;    // variable is not in the vector elements
+      if(found[read] == true) continue;       // variable has been read already
+      found[read] = true;
+      --leftToFind;
+      if(leftToFind == 0) return;
+    }
   }
 
   /********************************************************************************************************************/
