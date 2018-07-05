@@ -32,6 +32,9 @@ namespace ChimeraTK {
       ScalarOutput<int32_t> bitmask{this, "bitmask", "", "Output bit mask."};
 
       void mainLoop() {
+
+        auto readGroup = input.readAnyGroup();
+
         while(true) {
 
           // create bit mask
@@ -44,7 +47,7 @@ namespace ChimeraTK {
           bitmask.write();
 
           // wait for new input values (at the end, since we want to process the initial values first)
-          input.readAny();
+          readGroup.readAny();
         }
       }
 
