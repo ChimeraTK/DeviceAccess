@@ -113,6 +113,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
         const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
       assert(numberOfWords == 1);
       assert(wordOffsetInRegister == 0);
+      (void)numberOfWords;
+      (void)wordOffsetInRegister;
       return boost::make_shared<Accessor<UserType>>( this, registerPathName, flags );
     }
 
