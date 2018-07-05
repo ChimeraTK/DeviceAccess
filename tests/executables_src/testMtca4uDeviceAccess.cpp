@@ -214,7 +214,7 @@ void MtcaDeviceTest::testMapFileParser_parse() {
   BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_2_MAPPING_FILE_NAME),MapFileParserException);
   BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_3_MAPPING_FILE_NAME),MapFileParserException);
   /*BOOST_CHECK_THROW(virginDevice->open(testBackend,
- 																						 registerMapping), //FXPNT_ERROR_1_MAPPING_FILE_NAME),
+                                                                                                                                                                                 registerMapping), //FXPNT_ERROR_1_MAPPING_FILE_NAME),
                      MapFileParserException);*/
 
 }
@@ -395,7 +395,7 @@ void MtcaDeviceTest::testRegisterAccessor_checkBlockBoundaries() {
   testRegisterAccessor_typedCheckBlockBoundaries<uint64_t>();
   testRegisterAccessor_typedCheckBlockBoundaries<float>();
   testRegisterAccessor_typedCheckBlockBoundaries<double>();
-  testRegisterAccessor_typedCheckBlockBoundaries<std::string>();
+  //testRegisterAccessor_typedCheckBlockBoundaries<std::string>();  // doesn't work since it uses the deprecated RegisterAccessor
 }
 
 template<typename DataType>
@@ -411,8 +411,8 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
     BOOST_ERROR( "Reading over the end of the register did not throw" );
   }catch(DeviceException &e){
     BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-			 std::string("ID is not WRONG_PARAMETER, Message is: " )
-			 + e.what());
+                         std::string("ID is not WRONG_PARAMETER, Message is: " )
+                         + e.what());
   }
 
  // same for write
@@ -421,8 +421,8 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
     BOOST_ERROR( "Writing over the end of the register did not throw" );
   }catch(DeviceException &e){
     BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-			 std::string("ID is not WRONG_PARAMETER, Message is: " )
-			 + e.what());
+                         std::string("ID is not WRONG_PARAMETER, Message is: " )
+                         + e.what());
   }
 
   // OK, and the same drill for raw access
@@ -433,8 +433,8 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
     BOOST_ERROR( "Reading over the end of the register did not throw" );
   }catch(DeviceException &e){
     BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-			 std::string("ID is not WRONG_PARAMETER, Message is: " )
-			 + e.what());
+                         std::string("ID is not WRONG_PARAMETER, Message is: " )
+                         + e.what());
   }
   // and write...
   try{
@@ -442,8 +442,8 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
     BOOST_ERROR( "Writing over the end of the register did not throw" );
   }catch(DeviceException &e){
     BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-			 std::string("ID is not WRONG_PARAMETER, Message is: " )
-			 + e.what());
+                         std::string("ID is not WRONG_PARAMETER, Message is: " )
+                         + e.what());
   }
 
 

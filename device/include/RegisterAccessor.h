@@ -245,17 +245,30 @@ namespace ChimeraTK {
         }
       };
 
-      /** The converting accessors used under the hood. 
+      /** The converting accessors used under the hood.
           They are not initialised in the constructor but only when first used
           to safe memory. Usually you will not use read or write of all user
-          data types. Thus the variable is mutable to allow initialisation 
+          data types. Thus the variable is mutable to allow initialisation
           in the const read and write function.
       */
       mutable TemplateUserTypeMap<AccessorHandler> _convertingAccessorHandlers;
-            
+
       /** There only is one possible raw accessor: int32_t */
       mutable AccessorHandler<int32_t> _rawAccessorHandler;
   };
+
+  template<>
+  inline void RegisterAccessor::read<std::string>(std::string*, size_t, uint32_t) const {
+    std::cout << "Do not use the deprecated mtca4u::RegisterAccessor with strings!" << std::endl;
+    std::terminate();
+  }
+
+  template<>
+  inline void RegisterAccessor::write<std::string>(std::string const*, size_t, uint32_t) {
+    std::cout << "Do not use the deprecated mtca4u::RegisterAccessor with strings!" << std::endl;
+    std::terminate();
+  }
+
 
 } // namespace ChimeraTK
 
