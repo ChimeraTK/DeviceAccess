@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
       TestApp app("");
       BOOST_FAIL("Exception expected.");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
     }
 
     // names with spaces and special characters are forbidden
@@ -67,13 +67,13 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
       TestApp app("With space");
       BOOST_FAIL("Exception expected.");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
     }
     try {
       TestApp app("WithExclamationMark!");
       BOOST_FAIL("Exception expected.");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
     }
 
     // all allowed characters in the name
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
       TestApp app2("SecondInstance");
       BOOST_FAIL("Exception expected.");
     }
-    catch(std::runtime_error) {
+    catch(std::runtime_error&) {
     }
 
 }

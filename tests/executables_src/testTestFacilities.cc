@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testReadAny, T, test_types ) {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
   }
 
   // check that we still don't receive anything anymore
@@ -549,7 +549,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testChainedModules, T, test_types ) {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
   }
 
   // check that we still don't receive anything anymore
@@ -653,7 +653,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithFanOut, T, test_types ) {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
   }
 
   // check that we still don't receive anything anymore
@@ -744,7 +744,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithTrigger, T, test_types ) {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
   }
 
   // check that we still don't receive anything anymore
@@ -862,7 +862,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testWithTriggerFanOut, T, test_types ) {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>) {
+  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
   }
 
   // check that we still don't receive anything anymore
