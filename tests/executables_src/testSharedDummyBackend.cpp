@@ -39,19 +39,18 @@ BOOST_AUTO_TEST_CASE( testOpenClose ) {
     std::cerr << "*************************************************************************************" << std::endl;
 
 
-    /*dev.open("SHDMEMDEV");
+    dev.open("SHDMEMDEV");
     BOOST_CHECK(dev.isOpened());
     dev.close();
     BOOST_CHECK(!dev.isOpened());
     dev.open();
     BOOST_CHECK(dev.isOpened());
     dev.close();
-    BOOST_CHECK(!dev.isOpened());*/
+    BOOST_CHECK(!dev.isOpened());
 
 }
 
 /*********************************************************************************************************************/
-#if 0
 
 BOOST_AUTO_TEST_CASE( testReadWrite ) {
 
@@ -96,7 +95,6 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
     BOOST_CHECK((std::vector<int>)processVarsWrite21 == (std::vector<int>)processVarsRead);
     dev.close();
 }
-#endif
 
 /*********************************************************************************************************************/
 BOOST_AUTO_TEST_SUITE_END()

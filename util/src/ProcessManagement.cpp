@@ -7,17 +7,21 @@
 #include <sys/types.h>
 
 bool processExists(unsigned pid){
-  
+
   return !kill((pid_t)pid, 0);
-  
+
 }
 
 unsigned getOwnPID(void){
-  return (unsigned)getpid(); 
+  return (unsigned)getpid();
 }
 
 std::string getUserName(void){
-  return getlogin();
+  auto *login = getlogin();
+  if(login == nullptr) {
+    return "**unknown*user*name**";
+  }
+  return std::string(login);
 }
 
 
