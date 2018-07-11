@@ -135,8 +135,7 @@ BOOST_FIXTURE_TEST_CASE( testRobustnessMain, TestFixture ) {
  * which mirrors the values to another register bar.
  * For a robustness test, it can be called with the argument "KEEP_RUNNING", so
  * that it constantly operates on the shared memory. In this case, it can be terminated
- * gracefully by sending SIGINT or will timeout after a duration in minutes given as a
- * second argument in minutes.
+ * gracefully by sending SIGINT.
  */
 BOOST_FIXTURE_TEST_CASE( testReadWrite, TestFixture ) {
 
@@ -202,7 +201,7 @@ BOOST_AUTO_TEST_CASE( testMakeMess ) {
 
   // Wait to be killed or timeout...
   std::this_thread::sleep_until(std::chrono::system_clock::now()
-                                + std::chrono::seconds(2));
+                                + std::chrono::seconds(20));
 
   dev.close();
 

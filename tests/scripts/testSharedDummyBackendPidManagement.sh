@@ -20,7 +20,29 @@ cleanup() {
 }
 trap "cleanup" SIGINT SIGTERM EXIT
 
-##### Test capturing of starting supernumerous processes #####
+
+check_process_termination() {
+    PID=$1
+    MAX_EVAL_CNT=$2
+    TIMEOUT_CNT=0
+
+    while [ $TIMEOUT_CNT -lt $MAX_EVAL_CNT ]; do
+        sleep .2
+        if ps -p $PID > /dev/null ; then
+            let TIMEOUT_CNT+=1
+            if [ $TIMEOUT_CNT -eq $MAX_EVAL_CNT ]; then
+                echo "    Failed to remove process $PID created for testing."
+                echo "    Further results may be corrupted!"
+            fi
+        else 
+            break
+        fi
+    done     
+}
+
+
+### Test capturing of supernumerous processes
+printf "\n##### Test capturing of starting supernumerous processes #####\n"
 # Start the supported number of processes in parallel
 while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do 
 
@@ -48,31 +70,50 @@ done
 # Attempt to start another process, this should fail
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
 PID_SURPLUS=$!
-BGPIDS+=("$1")
+BGPIDS+=("$!")
 
-sleep .5 
 
-if ps -p $PID_SURPLUS >/dev/null
-then
-    echo "Testint PID Management of SharedDummyBackend failed. Starting a supernumerous process has not been catched."
-    kill -s SIGINT $PID_SURPLUS
-    TEST_RESULT=$(( $TEST_RESULT + 2 ))
-fi
+MAX_EVAL_CNT=10
+TIMEOUT_CNT=0
+while [ $TIMEOUT_CNT -lt $MAX_EVAL_CNT  ]; do 
+    if ps -p $PID_SURPLUS >/dev/null ; # Process still exists
+    then
+        sleep .5
+    else
+        echo "    Supernumerous process was successfully terminated."
+        break
+    fi
+    let TIMEOUT_CNT+=1
 
+    if [ $TIMEOUT_CNT -eq $MAX_EVAL_CNT ]; then
+        echo "Testing PID Management of SharedDummyBackend failed. Starting a supernumerous process has not been catched."
+        kill -s SIGINT $PID_SURPLUS
+        TEST_RESULT=$(( $TEST_RESULT + 2 ))
+    fi
+done
+
+
+# Kill all of the started processes and verify their termination
 CNT=0
 while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do
     kill -s SIGINT ${PID[$CNT]}
+    check_process_termination ${PID[$CNT]} 10
     let CNT+=1
 done
 
 sleep .5
 
+
+
 ###### Test removal of processes, which were terminated but still have an entry in the PID list. #####
+printf "\n#####Test removal of dead processes from the PID list on construction.\n"
 
 # Start process writing some values, kill it
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
-sleep .3
-kill $!
+PID_MAKEMESS=$!
+sleep 1
+kill -9 $PID_MAKEMESS
+check_process_termination $PID_MAKEMESS 5
 
 # Test, if memory has been cleaned up. This should happen, when this test constructs the SharedMemoryManager
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
@@ -83,22 +124,27 @@ if [[ $CLEANUP_RESULT -ne 0 ]]; then
     TEST_RESULT=$(( $TEST_RESULT + 4))
 fi
 
-sleep .2
+sleep .5
 
 
 # Start processes, kill one of them. The still running one should clean up on exit
+printf "\n#####Test removal of dead processes from the PID list on deconstruction.\n"
+
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
 PID_STILL_RUNNING_PROCESS=$!
 BGPIDS+=("$!")
 
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
 sleep .2
-kill $!
+PID_MAKEMESS=$!
+kill -9 $PID_MAKEMESS
+check_process_termination $PID_MAKEMESS 5
 
-sleep .2
 kill -s SIGINT $PID_STILL_RUNNING_PROCESS
 
-#TODO Move shm_exists to the other test module and test cleanup from testReadWrite
+check_process_termination $PID_STILL_RUNNING_PROCESS 5
+
+# Test if memory has been deleted.
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyMemoryDeleted
 CLEANUP_RESULT=$?
 
