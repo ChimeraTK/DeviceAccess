@@ -17,6 +17,7 @@
 
 #include "InversionOfControlAccessor.h"
 #include "Profiler.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
@@ -45,6 +46,12 @@ namespace ChimeraTK {
         // an accessor.
         InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
         return *this;
+      }
+
+      bool write(ChimeraTK::VersionNumber versionNumber={}) {
+        bool dataLoss = mtca4u::ScalarRegisterAccessor<UserType>::write(versionNumber);
+        if(dataLoss) Application::incrementDataLossCounter();
+        return dataLoss;
       }
 
   protected:

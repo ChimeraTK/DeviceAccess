@@ -63,7 +63,8 @@ namespace ChimeraTK {
             if(slave->getNumberOfSamples() != 0) {
               slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
             }
-            slave->write();
+            bool dataLoss = slave->write();
+            if(dataLoss) Application::incrementDataLossCounter();
           }
         }
       }

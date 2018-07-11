@@ -153,6 +153,18 @@ namespace ChimeraTK {
         debugMode_variableList.insert(node.getUniqueId());
       }
 
+      /** Incremenet counter for how many write() operations have overwritten unread data */
+      static void incrementDataLossCounter() {
+        getInstance().dataLossCounter++;
+      }
+
+      static size_t getAndResetDataLossCounter() {
+        size_t counter = getInstance().dataLossCounter.load(std::memory_order_relaxed);
+        while(!getInstance().dataLossCounter.compare_exchange_weak( counter, 0, std::memory_order_release,
+                                                                                std::memory_order_relaxed ));
+        return counter;
+      }
+
     protected:
 
       friend class Module;
@@ -319,6 +331,9 @@ namespace ChimeraTK {
 
       template<typename UserType>
       friend class DebugDecoratorRegisterAccessor;   // needs access to the idMap
+
+      /** Counter for how many write() operations have overwritten unread data */
+      std::atomic<size_t> dataLossCounter{0};
 
   };
 
