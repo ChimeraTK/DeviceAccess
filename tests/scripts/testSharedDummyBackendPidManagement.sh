@@ -68,6 +68,8 @@ done
 
 
 # Attempt to start another process, this should fail
+#FIXME Boost 1.60 introduces a change in the command line interface, this call
+#      will issue an warning.
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
 PID_SURPLUS=$!
 BGPIDS+=("$!")
@@ -130,6 +132,7 @@ sleep .5
 # Start processes, kill one of them. The still running one should clean up on exit
 printf "\n#####Test removal of dead processes from the PID list on deconstruction.\n"
 
+#FIXME Interface change in Boost 1.60, see above
 ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
 PID_STILL_RUNNING_PROCESS=$!
 BGPIDS+=("$!")
