@@ -30,7 +30,7 @@ namespace ChimeraTK {
       OneDRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : NDRegisterAccessorAbstractor<UserType>(impl)
       {
-        if(boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->getNumberOfChannels() != 1) {
+        if(get()->getNumberOfChannels() != 1) {
           throw DeviceException("The OneDRegisterAccessor has a too low dimension to access this register.",
               DeviceException::WRONG_ACCESSOR);
         }
@@ -46,12 +46,12 @@ namespace ChimeraTK {
        *  the register.
        *  Note: Using the iterators is slightly more efficient than using this operator! */
       UserType& operator[](unsigned int element) {
-        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessData(0,element);
+        return get()->accessData(0,element);
       }
 
       /** Return number of elements/samples in the register */
       unsigned int getNElements() {
-        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->getNumberOfSamples();
+        return get()->getNumberOfSamples();
       }
 
       /** Access data with std::vector-like iterators */
@@ -59,41 +59,41 @@ namespace ChimeraTK {
       typedef typename std::vector<UserType>::const_iterator const_iterator;
       typedef typename std::vector<UserType>::reverse_iterator reverse_iterator;
       typedef typename std::vector<UserType>::const_reverse_iterator const_reverse_iterator;
-      iterator begin() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).begin(); }
-      const_iterator begin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cbegin(); }
-      const_iterator cbegin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cbegin(); }
-      iterator end() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).end(); }
-      const_iterator end() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cend(); }
-      const_iterator cend() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).cend(); }
-      reverse_iterator rbegin() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).rbegin(); }
-      const_reverse_iterator rbegin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crbegin(); }
-      const_reverse_iterator crbegin() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crbegin(); }
-      reverse_iterator rend() { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).rend(); }
-      const_reverse_iterator rend() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crend(); }
-      const_reverse_iterator crend() const { return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).crend(); }
+      iterator begin() { return get()->accessChannel(0).begin(); }
+      const_iterator begin() const { return get()->accessChannel(0).cbegin(); }
+      const_iterator cbegin() const { return get()->accessChannel(0).cbegin(); }
+      iterator end() { return get()->accessChannel(0).end(); }
+      const_iterator end() const { return get()->accessChannel(0).cend(); }
+      const_iterator cend() const { return get()->accessChannel(0).cend(); }
+      reverse_iterator rbegin() { return get()->accessChannel(0).rbegin(); }
+      const_reverse_iterator rbegin() const { return get()->accessChannel(0).crbegin(); }
+      const_reverse_iterator crbegin() const { return get()->accessChannel(0).crbegin(); }
+      reverse_iterator rend() { return get()->accessChannel(0).rend(); }
+      const_reverse_iterator rend() const { return get()->accessChannel(0).crend(); }
+      const_reverse_iterator crend() const { return get()->accessChannel(0).crend(); }
 
       /* Swap content of (cooked) buffer with std::vector */
       void swap(std::vector<UserType> &x) {
-        if(x.size() != boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).size()) {
+        if(x.size() != get()->accessChannel(0).size()) {
           throw DeviceException("Swapping with a buffer of a different size is not allowed.",
               DeviceException::WRONG_PARAMETER);
         }
-        boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).swap(x);
+        get()->accessChannel(0).swap(x);
       }
 
       /* Copy content of (cooked) buffer from std::vector */
       OneDRegisterAccessor<UserType>& operator=(const std::vector<UserType> &x) {
-        if(x.size() != boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).size()) {
+        if(x.size() != get()->accessChannel(0).size()) {
           throw DeviceException("Copying in a buffer of a different size is not allowed.",
               DeviceException::WRONG_PARAMETER);
         }
-        boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0) = x;
+        get()->accessChannel(0) = x;
         return *this;
       }
 
       /* Convert content of (cooked) buffer into std::vector */
       operator const std::vector<UserType>&() {
-        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0);
+        return get()->accessChannel(0);
       }
 
 
@@ -102,7 +102,7 @@ namespace ChimeraTK {
        *  part of a TransferGroup, any call to one of these functions on any element of the TransferGroup or the
        *  TransferGroup itself may invalidate the pointer! */
       UserType* data() {
-        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->accessChannel(0).data();
+        return get()->accessChannel(0).data();
       }
 
       /** Get the coocked values in case the accessor is a raw accessor (which does not do data conversion).
@@ -110,7 +110,7 @@ namespace ChimeraTK {
        */
       template <typename COOCKED_TYPE>
       COOCKED_TYPE getAsCoocked(unsigned int sample){
-        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->template getAsCoocked<COOCKED_TYPE>(0,sample);
+        return get()->template getAsCoocked<COOCKED_TYPE>(0,sample);
       }
 
       /** Set the coocked values in case the accessor is a raw accessor (which does not do data conversion).
@@ -118,12 +118,12 @@ namespace ChimeraTK {
        */
       template <typename COOCKED_TYPE>
       void setAsCoocked(unsigned int sample, COOCKED_TYPE value){
-        return boost::static_pointer_cast<NDRegisterAccessor<UserType>>(_impl)->template setAsCoocked<COOCKED_TYPE>(0,sample,value);
+        return get()->template setAsCoocked<COOCKED_TYPE>(0,sample,value);
       }
 
       friend class TransferGroup;
 
-      using TransferElementAbstractor::_impl;
+      using NDRegisterAccessorAbstractor<UserType>::get;
   };
 
   // Do not declare the template for all user types as extern here.

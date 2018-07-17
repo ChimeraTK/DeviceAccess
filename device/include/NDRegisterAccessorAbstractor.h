@@ -46,11 +46,18 @@ namespace ChimeraTK {
 
     protected:
 
+      /** Obtain the plain pointer to the implementation. Use the pointer carefully only inside this class, since it
+       *  is not a shared pointer! */
+      NDRegisterAccessor<UserType>* get() {
+        return static_cast<NDRegisterAccessor<UserType>*>(TransferElementAbstractor::_impl.get());
+      }
+      const NDRegisterAccessor<UserType>* get() const {
+        return static_cast<NDRegisterAccessor<UserType>*>(TransferElementAbstractor::_impl.get());
+      }
+
       NDRegisterAccessorAbstractor(boost::shared_ptr< NDRegisterAccessor<UserType> > impl)
       : TransferElementAbstractor(impl)
       {}
-
-      using TransferElementAbstractor::_impl;
 
   };
 

@@ -58,6 +58,9 @@ namespace ChimeraTK {
       std::vector<UserType>& accessChannel(unsigned int channel) {
         return buffer_2D[channel];
       }
+      const std::vector<UserType>& accessChannel(unsigned int channel) const {
+        return buffer_2D[channel];
+      }
 
       /** Return number of elements per channel */
       unsigned int getNumberOfSamples() const {
