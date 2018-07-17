@@ -77,10 +77,10 @@ namespace ChimeraTK {
       }
 
       template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked(unsigned int channel, unsigned int sample);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getAsCoocked_impl, T (unsigned int, unsigned int) );
+      COOCKED_TYPE getAsCoocked(unsigned int channel, unsigned int sample) const;
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getAsCoocked_impl, T const (unsigned int, unsigned int) );
       template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample);
+      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample) const;
 
       template<typename COOCKED_TYPE>
       void setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
@@ -135,12 +135,12 @@ namespace ChimeraTK {
   };
 
   template<typename UserType> template<typename COOCKED_TYPE>
-  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked(unsigned int channel, unsigned int sample){
+  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked(unsigned int channel, unsigned int sample) const {
     return CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCoocked_impl, COOCKED_TYPE, channel, sample);
   }
 
   template<typename UserType> template<typename COOCKED_TYPE>
-  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
+  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/) const {
     throw DeviceException("Reading as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
   }
 
