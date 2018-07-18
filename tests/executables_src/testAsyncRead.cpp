@@ -42,27 +42,32 @@ class AsyncTestDummy : public DeviceBackendImpl {
     }
 
     template<typename UserType>
-    class Accessor : public SyncNDRegisterAccessor<UserType> {
+    class Accessor : public NDRegisterAccessor<UserType> {
       public:
         Accessor(AsyncTestDummy *backend, const RegisterPath &registerPathName, AccessModeFlags &flags)
-        : SyncNDRegisterAccessor<UserType>(registerPathName), _backend(backend), _flags(flags)
+        : NDRegisterAccessor<UserType>(registerPathName), _backend(backend), _flags(flags)
         {
           buffer_2D.resize(1);
           buffer_2D[0].resize(1);
         }
 
-        ~Accessor() override { this->shutdown(); }
+        ~Accessor() override { }
+
+        TransferFuture doReadTransferAsync() override {
+          // create future_queue if not already created and continue it to enusre postRead is called (in the user thread,
+          // so we use the deferred launch policy)
+          if(!futureCreated) {
+            _backend->notificationQueue[getName()] = cppext::future_queue<void>(2);
+            activeFuture = TransferFuture(_backend->notificationQueue[getName()], this);
+            futureCreated = true;
+          }
+
+          // return the TransferFuture
+          return activeFuture;
+        }
 
         void doReadTransfer() override {
-          if(_flags.has(AccessMode::wait_for_new_data)) {
-            while(!_backend->readMutex.at(getName()).try_lock_for(std::chrono::milliseconds(100))) {
-              boost::this_thread::interruption_point();
-            }
-          }
-          ++_backend->readCount.at(getName());
-          if(_flags.has(AccessMode::wait_for_new_data)) {
-            _backend->readMutex.at(getName()).unlock();
-          }
+          doReadTransferAsync().wait();
         }
 
         bool doReadTransferNonBlocking() override {
@@ -100,11 +105,15 @@ class AsyncTestDummy : public DeviceBackendImpl {
         }
         std::list< boost::shared_ptr<TransferElement> > getInternalElements() override { return {}; }
 
+        bool futureCreated{false};
+
+
       protected:
         AsyncTestDummy *_backend;
         AccessModeFlags _flags;
         using NDRegisterAccessor<UserType>::getName;
         using NDRegisterAccessor<UserType>::buffer_2D;
+        using TransferElement::activeFuture;
 
     };
 
@@ -128,8 +137,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
       _opened = false;
     }
 
-    std::map<std::string, std::timed_mutex> readMutex;
-    std::map<std::string, size_t> readCount;
+    std::map<std::string, cppext::future_queue<void>> notificationQueue;
     std::map<std::string, size_t> registers;
 };
 
@@ -175,7 +183,6 @@ bool init_unit_test(){
 
 /**********************************************************************************************************************/
 void AsyncReadTest::testAsyncRead() {
-
   for(auto &sdmToUse : sdmList) {
     std::cout << "testAsyncRead: " << sdmToUse << std::endl;
 
@@ -187,63 +194,60 @@ void AsyncReadTest::testAsyncRead() {
     // obtain register accessor with integral type
     auto accessor = device.getScalarRegisterAccessor<int>("REG", 0, {AccessMode::wait_for_new_data});
 
-    // create the mutex for the register
-    backend->readMutex["/REG"].unlock();
-    backend->readCount["/REG"] = 0;
-
     // simple reading through readAsync without actual need
     TransferFuture future;
     backend->registers["/REG"] = 5;
     future = accessor.readAsync();
+    backend->notificationQueue["/REG"].push();    // trigger transfer
     future.wait();
     BOOST_CHECK( accessor == 5 );
-    BOOST_CHECK( backend->readCount["/REG"] == 1 );
+    BOOST_CHECK( backend->notificationQueue["/REG"].empty() );
 
     backend->registers["/REG"] = 6;
     TransferFuture future2 = accessor.readAsync();
+    backend->notificationQueue["/REG"].push();    // trigger transfer
     future2.wait();
     BOOST_CHECK( accessor == 6 );
-    BOOST_CHECK( backend->readCount["/REG"] == 2 );
+    BOOST_CHECK( backend->notificationQueue["/REG"].empty() );
 
     // check that future's wait() function won't return before the read is complete
     for(int i=0; i<5; ++i) {
       backend->registers["/REG"] = 42+i;
-      backend->readMutex["/REG"].lock();
       future = accessor.readAsync();
       std::atomic<bool> flag;
       flag = false;
       std::thread thread([&future, &flag] { future.wait(); flag = true; });
       usleep(100000);
       BOOST_CHECK(flag == false);
-      backend->readMutex["/REG"].unlock();
+      backend->notificationQueue["/REG"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( accessor == 42+i );
-      BOOST_CHECK( backend->readCount["/REG"] == 3+(unsigned)i );
+      BOOST_CHECK( backend->notificationQueue["/REG"].empty() );
     }
 
     // check that obtaining the same future multiple times works properly
-    backend->readMutex["/REG"].lock();
     backend->registers["/REG"] = 666;
     for(int i=0; i<5; ++i) {
       future = accessor.readAsync();
       BOOST_CHECK( accessor == 46 );    // still the old value from the last test part
     }
-    backend->readMutex["/REG"].unlock();
+    backend->notificationQueue["/REG"].push();    // trigger transfer
     future.wait();
     BOOST_CHECK( accessor == 666 );
+    BOOST_CHECK( backend->notificationQueue["/REG"].empty() );
 
     // now try another asynchronous transfer
     backend->registers["/REG"] = 999;
-    backend->readMutex["/REG"].lock();
     future = accessor.readAsync();
     std::atomic<bool> flag;
     flag = false;
     std::thread thread([&future, &flag] { future.wait(); flag = true; });
     usleep(100000);
     BOOST_CHECK(flag == false);
-    backend->readMutex["/REG"].unlock();
+    backend->notificationQueue["/REG"].push();    // trigger transfer
     thread.join();
     BOOST_CHECK( accessor == 999 );
+    BOOST_CHECK( backend->notificationQueue["/REG"].empty() );
 
     device.close();
 
@@ -254,7 +258,6 @@ void AsyncReadTest::testAsyncRead() {
 /**********************************************************************************************************************/
 
 void AsyncReadTest::testReadAny() {
-
   for(auto &sdmToUse : sdmList) {
     std::cout << "testReadAny: " << sdmToUse << std::endl;
 
@@ -268,16 +271,6 @@ void AsyncReadTest::testReadAny() {
     auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
     auto a3 = device.getScalarRegisterAccessor<int32_t>("a3", 0, {AccessMode::wait_for_new_data});
     auto a4 = device.getScalarRegisterAccessor<int32_t>("a4", 0, {AccessMode::wait_for_new_data});
-
-    // lock all mutexes so no read can complete
-    backend->readMutex["/a1"].lock();
-    backend->readMutex["/a2"].lock();
-    backend->readMutex["/a3"].lock();
-    backend->readMutex["/a4"].lock();
-    backend->readCount["/a1"] = 0;
-    backend->readCount["/a2"] = 0;
-    backend->readCount["/a3"] = 0;
-    backend->readCount["/a4"] = 0;
 
     // initialise the buffers of the accessors
     a1 = 1;
@@ -312,14 +305,13 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex.at("/a1").unlock();
+      backend->notificationQueue["/a1"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 3 );
       BOOST_CHECK( a4 == 4 );
       BOOST_CHECK( id == a1.getId() );
-      backend->readMutex.at("/a1").lock();
 
       // retrigger the transfer
       a1.readAsync();
@@ -336,14 +328,13 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex.at("/a3").unlock();
+      backend->notificationQueue["/a3"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 120 );
       BOOST_CHECK( a4 == 4 );
       BOOST_CHECK( id == a3.getId() );
-      backend->readMutex.at("/a3").lock();
 
       // retrigger the transfer
       a3.readAsync();
@@ -361,14 +352,13 @@ void AsyncReadTest::testReadAny() {
 
       // write register and check that readAny() completes
       backend->registers["/a3"] = 121;
-      backend->readMutex["/a3"].unlock();
+      backend->notificationQueue["/a3"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 121 );
       BOOST_CHECK( a4 == 4 );
       BOOST_CHECK( id == a3.getId() );
-      backend->readMutex["/a3"].lock();
 
       // retrigger the transfer
       a3.readAsync();
@@ -385,14 +375,13 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex["/a2"].unlock();
+      backend->notificationQueue["/a2"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 123 );
       BOOST_CHECK( a3 == 121 );
       BOOST_CHECK( a4 == 4 );
       BOOST_CHECK( id == a2.getId() );
-      backend->readMutex["/a2"].lock();
 
       // retrigger the transfer
       a2.readAsync();
@@ -409,14 +398,13 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex["/a4"].unlock();
+      backend->notificationQueue["/a4"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 123 );
       BOOST_CHECK( a3 == 121 );
       BOOST_CHECK( a4 == 345 );
       BOOST_CHECK( id == a4.getId() );
-      backend->readMutex["/a4"].lock();
 
       // retrigger the transfer
       a4.readAsync();
@@ -433,14 +421,13 @@ void AsyncReadTest::testReadAny() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex["/a4"].unlock();
+      backend->notificationQueue["/a4"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 123 );
       BOOST_CHECK( a3 == 121 );
       BOOST_CHECK( a4 == 345 );
       BOOST_CHECK( id == a4.getId() );
-      backend->readMutex["/a4"].lock();
 
       // retrigger the transfer
       a4.readAsync();
@@ -458,14 +445,13 @@ void AsyncReadTest::testReadAny() {
 
       // write register and check that readAny() completes
       backend->registers["/a3"] = 122;
-      backend->readMutex["/a3"].unlock();
+      backend->notificationQueue["/a3"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 123 );
       BOOST_CHECK( a3 == 122 );
       BOOST_CHECK( a4 == 345 );
       BOOST_CHECK( id == a3.getId() );
-      backend->readMutex["/a3"].lock();
 
       // retrigger the transfer
       a3.readAsync();
@@ -473,22 +459,14 @@ void AsyncReadTest::testReadAny() {
 
     // register 1 and then register 2 (order should be guaranteed)
     {
-      // write to register 1 and launch the asynchronous read on it - but only wait on the underlying BOOST future
-      // so postRead() is not yet called.
+      // write to register 1 and trigger transfer
       backend->registers["/a1"] = 55;
-      backend->readCount["/a1"] = 0;
-      while(backend->readCount["/a1"] == 0) {
-        backend->readMutex["/a1"].unlock();
-        backend->readMutex["/a1"].lock();
-      }
+      backend->notificationQueue["/a1"].push();    // trigger transfer
 
       // same with register 2
       backend->registers["/a2"] = 66;
-      backend->readCount["/a2"] = 0;
-      while(backend->readCount["/a2"] == 0) {
-        backend->readMutex["/a2"].unlock();
-        backend->readMutex["/a2"].lock();
-      }
+      backend->notificationQueue["/a2"].push();    // trigger transfer
+
       BOOST_CHECK_EQUAL((int)a1, 42);
       BOOST_CHECK_EQUAL((int)a2, 123);
 
@@ -512,35 +490,19 @@ void AsyncReadTest::testReadAny() {
     {
       // register 4 (see above for explanation)
       backend->registers["/a4"] = 11;
-      backend->readCount["/a4"] = 0;
-      while(backend->readCount["/a4"] == 0) {
-        backend->readMutex["/a4"].unlock();
-        backend->readMutex["/a4"].lock();
-      }
+      backend->notificationQueue["/a4"].push();    // trigger transfer
 
       // register 2
       backend->registers["/a2"] = 22;
-      backend->readCount["/a2"] = 0;
-      while(backend->readCount["/a2"] == 0) {
-        backend->readMutex["/a2"].unlock();
-        backend->readMutex["/a2"].lock();
-      }
+      backend->notificationQueue["/a2"].push();    // trigger transfer
 
       // register 3
       backend->registers["/a3"] = 33;
-      backend->readCount["/a3"] = 0;
-      while(backend->readCount["/a3"] == 0) {
-        backend->readMutex["/a3"].unlock();
-        backend->readMutex["/a3"].lock();
-      }
+      backend->notificationQueue["/a3"].push();    // trigger transfer
 
       // register 1
       backend->registers["/a1"] = 44;
-      backend->readCount["/a1"] = 0;
-      while(backend->readCount["/a1"] == 0) {
-        backend->readMutex["/a1"].unlock();
-        backend->readMutex["/a1"].lock();
-      }
+      backend->notificationQueue["/a1"].push();    // trigger transfer
 
       // no point to use a thread here
       auto r = group.readAny();
@@ -575,13 +537,11 @@ void AsyncReadTest::testReadAny() {
     device.close();
 
   }
-
 }
 
 /**********************************************************************************************************************/
 
 void AsyncReadTest::testReadAnyWithPoll() {
-
   for(auto &sdmToUse : sdmList) {
     std::cout << "testReadAnyWithPoll: " << sdmToUse << std::endl;
 
@@ -595,16 +555,6 @@ void AsyncReadTest::testReadAnyWithPoll() {
     auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
     auto a3 = device.getScalarRegisterAccessor<int32_t>("a3");
     auto a4 = device.getScalarRegisterAccessor<int32_t>("a4");
-
-    // lock all mutexes so no read can complete
-    backend->readMutex["/a1"].lock();
-    backend->readMutex["/a2"].lock();
-    backend->readMutex["/a3"].unlock();
-    backend->readMutex["/a4"].unlock();
-    backend->readCount["/a1"] = 0;
-    backend->readCount["/a2"] = 0;
-    backend->readCount["/a3"] = 0;
-    backend->readCount["/a4"] = 0;
 
     // initialise the buffers of the accessors
     a1 = 1;
@@ -639,14 +589,13 @@ void AsyncReadTest::testReadAnyWithPoll() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex.at("/a1").unlock();
+      backend->notificationQueue["/a1"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 120 );
       BOOST_CHECK( a4 == 345 );
       BOOST_CHECK( id == a1.getId() );
-      backend->readMutex.at("/a1").lock();
 
       // retrigger the transfer
       a1.readAsync();
@@ -666,14 +615,13 @@ void AsyncReadTest::testReadAnyWithPoll() {
       BOOST_CHECK(flag == false);
 
       // write register and check that readAny() completes
-      backend->readMutex["/a2"].unlock();
+      backend->notificationQueue["/a2"].push();    // trigger transfer
       thread.join();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 123 );
       BOOST_CHECK( a3 == 121 );
       BOOST_CHECK( a4 == 346 );
       BOOST_CHECK( id == a2.getId() );
-      backend->readMutex["/a2"].lock();
 
       // retrigger the transfer
       a2.readAsync();
@@ -682,5 +630,4 @@ void AsyncReadTest::testReadAnyWithPoll() {
     device.close();
 
   }
-
 }
