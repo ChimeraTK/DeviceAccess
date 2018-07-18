@@ -6,17 +6,17 @@ include(cmake/add_dependency.cmake)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 13)
-set(${PROJECT_NAME}_PATCH_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 14)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 # Find the DeviceAccess library
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(mtca4u-deviceaccess 00.29 REQUIRED)
+add_dependency(mtca4u-deviceaccess 00.33 REQUIRED)
 
 # Find the ControlSystemAdapter
 # put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(ChimeraTK-ControlSystemAdapter 00.11 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 00.14 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -41,7 +41,7 @@ ENDIF()
 FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
-add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.06)
+add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.08)
 IF(ChimeraTK-ControlSystemAdapter-DoocsAdapter_FOUND)
   set(DEMO_IS_ENABLED "true")
   ENABLE_TESTING()
@@ -137,7 +137,7 @@ if(DEMO_IS_ENABLED)
                                              ${LibXML++_LIBRARIES}
                                              ${glib_LIBRARIES}
                                              ${HDF5_LIBRARIES})
-  
+
   add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator
                                     COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
