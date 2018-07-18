@@ -225,8 +225,7 @@ namespace ChimeraTK {
       }
 
       /**
-       * Obtain unique ID for this TransferElement. If this TransferElement is the abstractor side of the bridge, this
-       * function will return the unique ID of the actual implementation. This means that e.g. two instances of
+       * Obtain unique ID for the actual implementation of this TransferElement. This means that e.g. two instances of
        * ScalarRegisterAccessor created by the same call to Device::getScalarRegisterAccessor() (e.g. by copying the
        * accessor to another using NDRegisterAccessorBridge::replace()) will have the same ID, while two instances
        * obtained by to difference calls to Device::getScalarRegisterAccessor() will have a different ID even when

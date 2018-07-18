@@ -30,7 +30,7 @@ namespace ChimeraTK {
       bool operator==(const TransferElementID& other) const { return (_id != 0) && (_id == other._id); }
       bool operator!=(const TransferElementID& other) const { return !(operator==(other)); }
 
-      /** Assign ID from another. May only be called if currently no ID has been assigned. */
+      /** Assign ID from another. */
       TransferElementID& operator=(const TransferElementID& other) { _id = other._id; return *this; }
 
       /** Streaming operator to stream the ID e.g. to std::cout */
