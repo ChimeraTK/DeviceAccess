@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0.2)
 Project(mtca4u-deviceaccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 32)
+set(${PROJECT_NAME}_MINOR_VERSION 33)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 
 set(${PROJECT_NAME}_VERSION
@@ -65,7 +65,7 @@ PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
 
-add_dependency(ChimeraTK-cppext REQUIRED)
+add_dependency(ChimeraTK-cppext REQUIRED 01.01)
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
