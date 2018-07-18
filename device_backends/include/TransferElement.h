@@ -168,13 +168,9 @@ namespace ChimeraTK {
        *
        *  Design note: A special type of future has to be returned to allow an abstraction from the implementation
        *  details of the backend. This allows - depending on the backend type - a more efficient implementation
-       *  without launching a thread.
-       *
-       *  Note: This feature is still experimental. Expect API changes without notice! */
+       *  without launching a thread. */
       TransferFuture& readAsync() {
         if(!hasActiveFuture) {
-          ChimeraTK::ExperimentalFeatures::check("asynchronous read");
-
           // call preRead
           this->readTransactionInProgress = false;
           this->preRead();
