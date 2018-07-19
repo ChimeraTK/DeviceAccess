@@ -30,7 +30,7 @@ namespace ctk = ChimeraTK;
 /* Application without name */
 
 struct TestApp : public ctk::Application {
-    TestApp(const std::string &name) : ctk::Application(name) { ChimeraTK::ExperimentalFeatures::enable(); }
+    TestApp(const std::string &name) : ctk::Application(name) {}
     ~TestApp() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.

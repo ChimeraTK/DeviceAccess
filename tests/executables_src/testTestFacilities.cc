@@ -15,7 +15,6 @@
 #include <boost/mpl/list.hpp>
 
 #include <mtca4u/Device.h>
-#include <mtca4u/ExperimentalFeatures.h>
 
 #include "Application.h"
 #include "ScalarAccessor.h"
@@ -196,9 +195,7 @@ struct PollingReadModule : public ctk::ApplicationModule {
 
 template<typename T>
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("testApplication") {
-      ctk::ExperimentalFeatures::enable();
-    }
+    TestApplication() : Application("testApplication") {}
     ~TestApplication() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
