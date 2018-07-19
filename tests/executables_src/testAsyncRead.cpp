@@ -11,7 +11,6 @@
 #include "DummyRegisterAccessor.h"
 #include "DummyBackend.h"
 #include "DeviceAccessVersion.h"
-#include "ExperimentalFeatures.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "ReadAnyGroup.h"
 
@@ -172,8 +171,6 @@ bool init_unit_test(){
   std::cout << "This is the alternative init" << std::endl;
   BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance,
                                                     CHIMERATK_DEVICEACCESS_VERSION);
-  ChimeraTK::ExperimentalFeatures::enable();
-
   framework::master_test_suite().p_name.value = "Async read test suite";
   framework::master_test_suite().add(new AsyncReadTestSuite);
 

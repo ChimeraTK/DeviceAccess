@@ -26,7 +26,6 @@
 #include "TransferFuture.h"
 #include "VersionNumber.h"
 #include "TransferElementID.h"
-#include "ExperimentalFeatures.h"
 #include "AccessMode.h"
 
 namespace ChimeraTK {

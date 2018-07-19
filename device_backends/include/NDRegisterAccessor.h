@@ -14,7 +14,6 @@
 #include "TransferElement.h"
 #include "FixedPointConverter.h"
 #include "DeviceException.h"
-#include "ExperimentalFeatures.h"
 #include "VirtualFunctionTemplate.h"
 
 namespace ChimeraTK {
