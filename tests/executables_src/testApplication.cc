@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
           BOOST_CHECK_EQUAL(value_type, "double");
           BOOST_CHECK_EQUAL(direction, "application_to_control_system");
           BOOST_CHECK_EQUAL(unit, "");
-          BOOST_CHECK_EQUAL(description, "Output value after scaling");
+          BOOST_CHECK_EQUAL(description, "Some module");
           BOOST_CHECK_EQUAL(numberOfElements, "1");
         }
         else if(name == "myVarU16") {
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE( testXmlGeneration ) {
           BOOST_CHECK_EQUAL(value_type, "uint16");
           BOOST_CHECK_EQUAL(direction, "control_system_to_application");
           BOOST_CHECK_EQUAL(unit, "");
-          BOOST_CHECK_EQUAL(description, "Input value to be scaled");
+          BOOST_CHECK_EQUAL(description, "Some other module");
           BOOST_CHECK_EQUAL(numberOfElements, "120");
         }
         else {

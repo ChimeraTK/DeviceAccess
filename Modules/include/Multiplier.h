@@ -16,12 +16,16 @@ namespace ChimeraTK {
   struct ConstMultiplier : public ApplicationModule {
 
       ConstMultiplier(EntityOwner *owner, const std::string &name, const std::string &description, double factor)
-      : ApplicationModule(owner, name, description), _factor(factor) {
+      : ApplicationModule(owner, name, ""),
+        input(this, "input", "", NELEMS, description),
+        output(this, "output", "", NELEMS, description),
+        _factor(factor)
+      {
         setEliminateHierarchy();
       }
 
-      ArrayPushInput<InputType> input{this, "input", "", NELEMS, "Input value to be scaled"};
-      ArrayOutput<OutputType> output{this, "output", "", NELEMS, "Output value after scaling"};
+      ArrayPushInput<InputType> input;
+      ArrayOutput<OutputType> output;
 
       double _factor;
 
@@ -51,13 +55,17 @@ namespace ChimeraTK {
 
       using ApplicationModule::ApplicationModule;
       Multiplier(EntityOwner *owner, const std::string &name, const std::string &description)
-      : ApplicationModule(owner, name, description) {
+      : ApplicationModule(owner, name, ""),
+        input(this, "input", "", NELEMS, description),
+        factor(this, "factor", "", "Factor to scale the input value with"),
+        output(this, "output", "", NELEMS, description)
+      {
         setEliminateHierarchy();
       }
 
-      ArrayPushInput<InputType> input{this, "input", "", NELEMS, "Input value to be scaled"};
-      ScalarPushInput<double> factor{this, "factor", "", "Factor to scale the input value with"};
-      ArrayOutput<OutputType> output{this, "output", "", NELEMS, "Output value after scaling"};
+      ArrayPushInput<InputType> input;
+      ScalarPushInput<double> factor;
+      ArrayOutput<OutputType> output;
 
       void mainLoop() {
         ReadAnyGroup group{input, factor};
@@ -86,13 +94,17 @@ namespace ChimeraTK {
 
       using ApplicationModule::ApplicationModule;
       Divider(EntityOwner *owner, const std::string &name, const std::string &description)
-      : ApplicationModule(owner, name, description) {
+      : ApplicationModule(owner, name, ""),
+        input(this, "input", "", NELEMS, description),
+        divider(this, "divider", "", "Divider to scale the input value with"),
+        output(this, "output", "", NELEMS, description)
+      {
         setEliminateHierarchy();
       }
 
-      ArrayPushInput<InputType> input{this, "input", "", NELEMS, "Input value to be scaled"};
-      ScalarPushInput<double> divider{this, "divider", "", "Divider to scale the input value with"};
-      ArrayOutput<OutputType> output{this, "output", "", NELEMS, "Output value after scaling"};
+      ArrayPushInput<InputType> input;
+      ScalarPushInput<double> divider;
+      ArrayOutput<OutputType> output;
 
       void mainLoop() {
         ReadAnyGroup group{input, divider};

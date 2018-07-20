@@ -33,11 +33,11 @@ namespace ChimeraTK {
        *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
        *  tags, an empty set can be passed. */
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description) {
-        node.setMetaData(name, unit, description);
+        node.setMetaData(name, unit, completeDescription(getOwner(), description));
       }
       void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
                        const std::unordered_set<std::string> &tags) {
-        node.setMetaData(name, unit, description, tags);
+        node.setMetaData(name, unit, completeDescription(getOwner(), description), tags);
       }
 
       /** Add a tag. Valid names for tags only contain alpha-numeric characters (i.e. no spaces and no special
@@ -80,10 +80,19 @@ namespace ChimeraTK {
 
   protected:
 
+      /// complete the description with the full description from the owner
+      std::string completeDescription(EntityOwner *owner, const std::string &description) {
+        auto ownerDescription = owner->getFullDescription();
+        if(ownerDescription == "") return description;
+        if(description == "") return ownerDescription;
+        return ownerDescription + " - " + description;
+      }
+
       InversionOfControlAccessor(Module *owner, const std::string &name, VariableDirection direction, std::string unit,
           size_t nElements, UpdateMode mode, const std::string &description, const std::type_info* valueType,
           const std::unordered_set<std::string> &tags={})
-        : node(owner, static_cast<Derived*>(this), name, direction, unit, nElements, mode, description, valueType, tags)
+        : node(owner, static_cast<Derived*>(this), name, direction, unit, nElements, mode,
+               completeDescription(owner, description), valueType, tags)
       {
         static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
                       "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");

@@ -59,6 +59,9 @@ namespace ChimeraTK {
       /** Get the decription of the module instance */
       const std::string& getDescription() const { return _description; }
 
+      /** Obtain the full description including the full description of the owner. */
+      virtual std::string getFullDescription() const = 0;
+
       /** Obtain the list of accessors/variables directly associated with this instance */
       std::list<VariableNetworkNode>& getAccessorList() { return accessorList; }
       const std::list<VariableNetworkNode>& getAccessorList() const { return accessorList; }

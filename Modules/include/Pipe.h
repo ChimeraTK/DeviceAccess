@@ -17,7 +17,7 @@ namespace ChimeraTK {
 
       ScalarPipe(EntityOwner *owner, const std::string &name, const std::string &unit, const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
-      : ApplicationModule(owner, name, description, true)
+      : ApplicationModule(owner, name, "", true)
       {
         input.replace(ScalarPushInput<Type>(this, name, unit, description, tagsInput));
         output.replace(ScalarOutput<Type>(this, name, unit, description, tagsOutput));
@@ -26,7 +26,7 @@ namespace ChimeraTK {
       ScalarPipe(EntityOwner *owner, const std::string &inputName, const std::string &outputName, const std::string &unit,
                 const std::string &description,
                 const std::unordered_set<std::string> &tagsInput={}, const std::unordered_set<std::string> &tagsOutput={})
-      : ApplicationModule(owner, inputName, description, true)
+      : ApplicationModule(owner, inputName, "", true)
       {
         input.replace(ScalarPushInput<Type>(this, inputName, unit, description, tagsInput));
         output.replace(ScalarOutput<Type>(this, outputName, unit, description, tagsOutput));

@@ -100,6 +100,14 @@ namespace ChimeraTK {
         return ( (_owner != nullptr) ? _owner->getQualifiedName() : "" ) + "/" + _name;
       }
 
+      std::string getFullDescription() const override {
+        if(_owner == nullptr) return _description;
+        auto ownerDescription = _owner->getFullDescription();
+        if(ownerDescription == "") return _description;
+        if(_description == "") return ownerDescription;
+        return ownerDescription + " - " + _description;
+      }
+
       /** Set a new owner. The caller has to take care himself that the Module gets unregistered with the old owner
        *  and registered with the new one. Do not use in user code! */
       void setOwner(EntityOwner *newOwner) {

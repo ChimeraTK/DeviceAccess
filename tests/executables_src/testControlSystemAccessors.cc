@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToCS, T, test_types ) {
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK( myFeeder->getName() == "/myFeeder" );
   BOOST_CHECK( myFeeder->getUnit() == "MV/m" );
-  BOOST_CHECK( myFeeder->getDescription() == "Some fancy explanation about this variable" );
+  BOOST_CHECK( myFeeder->getDescription() == "The test module - Some fancy explanation about this variable" );
 
   app.testModule.feeder = 42;
   BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromCS, T, test_types ) {
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
   BOOST_CHECK( myConsumer->getName() == "/myConsumer" );
   BOOST_CHECK( myConsumer->getUnit() == "" );
-  BOOST_CHECK( myConsumer->getDescription() == "No comment." );
+  BOOST_CHECK( myConsumer->getDescription() == "The test module - No comment." );
 
   myConsumer->accessData(0) = 42;
   myConsumer->write();
@@ -168,19 +168,19 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultiplePublications, T, test_types ) {
 
   BOOST_CHECK( myFeeder0->getName() == "/myFeeder0" );
   BOOST_CHECK( myFeeder0->getUnit() == "MV/m" );
-  BOOST_CHECK( myFeeder0->getDescription() == "Some fancy explanation about this variable" );
+  BOOST_CHECK( myFeeder0->getDescription() == "The test module - Some fancy explanation about this variable" );
 
   BOOST_CHECK( myFeeder1->getName() == "/myFeeder1" );
   BOOST_CHECK( myFeeder1->getUnit() == "MV/m" );
-  BOOST_CHECK( myFeeder1->getDescription() == "Some fancy explanation about this variable" );
+  BOOST_CHECK( myFeeder1->getDescription() == "The test module - Some fancy explanation about this variable" );
 
   BOOST_CHECK( myFeeder2->getName() == "/myFeeder2" );
   BOOST_CHECK( myFeeder2->getUnit() == "MV/m" );
-  BOOST_CHECK( myFeeder2->getDescription() == "Some fancy explanation about this variable" );
+  BOOST_CHECK( myFeeder2->getDescription() == "The test module - Some fancy explanation about this variable" );
 
   BOOST_CHECK( myFeeder3->getName() == "/myFeeder3" );
   BOOST_CHECK( myFeeder3->getUnit() == "MV/m" );
-  BOOST_CHECK( myFeeder3->getDescription() == "Some fancy explanation about this variable" );
+  BOOST_CHECK( myFeeder3->getDescription() == "The test module - Some fancy explanation about this variable" );
 
   app.testModule.feeder = 42;
   BOOST_CHECK(myFeeder0->readNonBlocking() == false);
@@ -269,19 +269,19 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMultipleRePublications, T, test_types ) {
 
   BOOST_CHECK( myConsumer->getName() == "/myConsumer" );
   BOOST_CHECK( myConsumer->getUnit() == "" );
-  BOOST_CHECK( myConsumer->getDescription() == "No comment." );
+  BOOST_CHECK( myConsumer->getDescription() == "The test module - No comment." );
 
   BOOST_CHECK( myConsumer_copy1->getName() == "/myConsumer_copy1" );
   BOOST_CHECK( myConsumer_copy1->getUnit() == "" );
-  BOOST_CHECK( myConsumer_copy1->getDescription() == "No comment." );
+  BOOST_CHECK( myConsumer_copy1->getDescription() == "The test module - No comment." );
 
   BOOST_CHECK( myConsumer_copy2->getName() == "/myConsumer_copy2" );
   BOOST_CHECK( myConsumer_copy2->getUnit() == "" );
-  BOOST_CHECK( myConsumer_copy2->getDescription() == "No comment." );
+  BOOST_CHECK( myConsumer_copy2->getDescription() == "The test module - No comment." );
 
   BOOST_CHECK( myConsumer_copy3->getName() == "/myConsumer_copy3" );
   BOOST_CHECK( myConsumer_copy3->getUnit() == "" );
-  BOOST_CHECK( myConsumer_copy3->getDescription() == "No comment." );
+  BOOST_CHECK( myConsumer_copy3->getDescription() == "The test module - No comment." );
 
   myConsumer->accessData(0) = 42;
   BOOST_CHECK(myConsumer_copy1->readNonBlocking() == false);

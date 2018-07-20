@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleFnCallOp ) {
   BOOST_CHECK( app.testModule("nameOfSomeInput").getName() == "nameOfSomeInput" );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getQualifiedName() == "/myApp/testModule/nameOfSomeInput" );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getUnit() == "cm" );
-  BOOST_CHECK( app.testModule("nameOfSomeInput").getDescription() == "This is just some input for testing" );
+  BOOST_CHECK( app.testModule("nameOfSomeInput").getDescription() == "Module to test - This is just some input for testing" );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getTags() == std::unordered_set<std::string>({"A", "B"}) );
 
   // check exception if variable not found
