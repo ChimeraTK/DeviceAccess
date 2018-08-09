@@ -134,10 +134,10 @@ public:
    */
   Logger(ctk::Module *module);
   /** Message to be send to the logging module */
-  std::unique_ptr<ctk::ScalarOutput<std::string> > message;
+  ctk::ScalarOutput<std::string> message;
 
   /** Message to be send to the logging module */
-  std::unique_ptr<ctk::ScalarOutput<uint> > messageLevel;
+  ctk::ScalarOutput<uint> messageLevel;
 
   /**
    * \brief Send a message, which means to update the message and messageLevel member variables.

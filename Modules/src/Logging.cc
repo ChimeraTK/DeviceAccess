@@ -42,27 +42,26 @@ std::string logging::getTime(){
   return str;
 }
 
-Logger::Logger(ctk::Module* module){
-  message.reset(new ctk::ScalarOutput<std::string>{module, "message", "", "Message of the module to the logging System",
-      { "Logging", "OneWire", module->getName() } });
-  messageLevel.reset(new ctk::ScalarOutput<uint>{module,  "messageLevel", "", "Logging level of the message",
-      { "Logging", "OneWire", module->getName() } });
-}
+Logger::Logger(ctk::Module* module):
+    message(module, "message", "", "Message of the module to the logging System",
+        { "Logging", "OneWire", module->getName() }),
+    messageLevel(module,  "messageLevel", "", "Logging level of the message",
+        { "Logging", "OneWire", module->getName() }){}
 
 void Logger::sendMessage(const std::string &msg, const logging::LogLevel &level){
-  if(message->isInitialised()){
+  if(message.isInitialised()){
     while(!msg_buffer.empty()){
-        *message = msg_buffer.front().first;
-        *messageLevel = msg_buffer.front().second;
-        message->write();
-        messageLevel->write();
+        message = msg_buffer.front().first;
+        messageLevel = msg_buffer.front().second;
+        message.write();
+        messageLevel.write();
         msg_buffer.pop();
     }
 
-    *message = msg + "\n";
-    *messageLevel = level;
-    message->write();
-    messageLevel->write();
+    message = msg + "\n";
+    messageLevel = level;
+    message.write();
+    messageLevel.write();
   } else {
     // only use the buffer until ctk initialized the process variables
     msg_buffer.push(std::make_pair(msg + "\n", level));
@@ -144,9 +143,9 @@ void LoggingModule::mainLoop(){
 }
 
 void LoggingModule::addSource(Logger *logger){
-  auto acc = getAccessorPair(logger->message->getOwner()->getName());
-  *logger->message.get() >> acc.first;
-  *logger->messageLevel.get() >> acc.second;
+  auto acc = getAccessorPair(logger->message.getOwner()->getName());
+  logger->message >> acc.first;
+  logger->messageLevel >> acc.second;
 }
 
 std::pair<ctk::VariableNetworkNode,ctk::VariableNetworkNode> LoggingModule::getAccessorPair(const std::string &sender) {
