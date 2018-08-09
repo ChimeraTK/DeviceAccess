@@ -86,6 +86,7 @@
 
 #undef GENERATE_XML
 #include "ApplicationCore.h"
+#include <queue>
 
 namespace ctk = ChimeraTK;
 
@@ -108,8 +109,14 @@ std::string getTime();
  *
  * In principle this class only adds two output variables and provides simple method
  * to fill these variables. They are supposed to be connected to the LoggingModule via LoggingModule::addSource.
+ * If sendMessage is used before chimeraTK process variables are initialized an internal buffer is used to store those
+ * messages. Once the process variables are initialized the messages from the buffer are send.
+ * \attention This only happens once a message is send after chimeraTK process variables are initialized!
+ * In other words if no message is send in the mainLoop messages from defineConnections will never be shown.
  */
 class Logger{
+private:
+  std::queue<std::pair<std::string, logging::LogLevel> > msg_buffer;
 public:
   /**
    * \brief Default constructor: Allows late initialization of modules (e.g. when creating arrays of modules).
