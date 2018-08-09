@@ -107,7 +107,7 @@ std::string getTime();
 /**
  * \brief Class used to send messages in a convenient way to the LoggingModule.
  *
- * In principle this class only adds two output variables and provides simple method
+ * In principle this class only adds two output variables and provides a simple method
  * to fill these variables. They are supposed to be connected to the LoggingModule via LoggingModule::addSource.
  * If sendMessage is used before chimeraTK process variables are initialized an internal buffer is used to store those
  * messages. Once the process variables are initialized the messages from the buffer are send.
