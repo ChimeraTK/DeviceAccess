@@ -6,7 +6,7 @@
  */
 
 //#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE ProcessModuleTest
+#define BOOST_TEST_MODULE LoggingTest
 
 #include <fstream>
 
