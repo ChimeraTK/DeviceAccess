@@ -2,7 +2,7 @@
  * \author Klaus Zenker (HZDR)
  * \date 03.04.2018
  * \page loggingdoc Logging module and Logger
- * \section into Introduction to the logging mechanism
+ * \section logginintro Introduction to the logging mechanism
  * The logging provided here requires to add the LoggingModule to your Application.
  * The module introduces the following input variables, that need to be connected to the control system:
  * - targetStream: Allows to choose where messages send to the logging module end up:

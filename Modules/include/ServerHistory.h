@@ -2,7 +2,7 @@
  * \author Klaus Zenker (HZDR)
  * \date 10.08.2018
  * \page historydoc Server based history module
- * \section into Server based history
+ * \section historyintro Server based history
  *  Some control systems offer a variable history but some do not. In this case the \c ServerHistory can be used to
  *  create a history ring buffer on the server. If only a local history is needed consider to use the \c MicroDAQ module.
  * In order to do so you connect the variable that should have a history on the server
