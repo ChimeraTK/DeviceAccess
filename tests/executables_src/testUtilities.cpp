@@ -34,7 +34,6 @@ public:
   static void testcountOccurence();
   static void testIsSdm();
   static void testAliasLookUp();
-  static void testFindFirstOfAlias();
   static void testgetAliasList();
 };
 
@@ -48,7 +47,6 @@ class UtilitiesTestSuite : public test_suite {
       add(BOOST_TEST_CASE(UtilitiesTest::testcountOccurence));
       add(BOOST_TEST_CASE(UtilitiesTest::testIsSdm));
       add(BOOST_TEST_CASE(UtilitiesTest::testAliasLookUp));
-      add(BOOST_TEST_CASE(UtilitiesTest::testFindFirstOfAlias));
       add(BOOST_TEST_CASE(UtilitiesTest::testgetAliasList));
     }
 };
@@ -114,15 +112,6 @@ void UtilitiesTest::testAliasLookUp() {
   BOOST_CHECK_THROW(Utilities::aliasLookUp("test",testFilePath), LibMapException);
   auto deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
   BOOST_CHECK(deviceInfo.deviceName =="DUMMYD0");
-}
-
-void UtilitiesTest::testFindFirstOfAlias() {
-  setenv(ENV_VAR_DMAP_FILE, "/usr/local/include/dummies.dmap", 1);
-  std::string testFilePath = TEST_DMAP_FILE_PATH;
-  BackendFactory::getInstance().setDMapFilePath(testFilePath);
-  BOOST_CHECK_THROW(Utilities::findFirstOfAlias("test"), LibMapException);
-  auto dmapfile = Utilities::findFirstOfAlias("DUMMYD0");
-  BOOST_CHECK(!dmapfile.empty());
 }
 
 void UtilitiesTest::testgetAliasList() {

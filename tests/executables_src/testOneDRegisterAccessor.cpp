@@ -11,7 +11,6 @@
 
 #include "Device.h"
 #include "OneDRegisterAccessor.h"
-#include "DMapFileDefaults.h"
 #include "BackendFactory.h"
 
 using namespace boost::unit_test_framework;

@@ -68,12 +68,6 @@ void setDMapFilePath(std::string dmapFilePath);
       /// If the alias is not found, the DeviceInfo will have empty strings.
       DeviceInfoMap::DeviceInfo static aliasLookUp(std::string aliasName, std::string dmapFilePath);
 
-      /// Search for an alias in all possible dmap file.
-      /// The return value is the DeviceInfo where the alias was found (also
-      /// containg the DMap file where the entry was found)
-      // DeviceInfoMap::DeviceInfo static findFirstOfAlias(std::string aliasName);
-      std::string static findFirstOfAlias(std::string aliasName);
-
       /// Returns the list of device aliases from the DMap file set using
       /// @ref BackendFactory::setDMapFilePath
       static std::vector<std::string> getAliasList();

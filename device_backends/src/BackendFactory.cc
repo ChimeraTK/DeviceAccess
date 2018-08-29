@@ -19,7 +19,6 @@
 #include "SubdeviceBackend.h"
 #include "SharedDummyBackend.h"
 #include "DMapFileParser.h"
-#include "DMapFileDefaults.h"
 #include "DeviceException.h"
 #include "DeviceAccessVersion.h"
 #include <dlfcn.h>

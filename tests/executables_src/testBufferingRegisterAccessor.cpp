@@ -11,7 +11,6 @@
 
 #include "Device.h"
 #include "BufferingRegisterAccessor.h"
-#include "DMapFileDefaults.h"
 #include "BackendFactory.h"
 
 namespace mtca4u{

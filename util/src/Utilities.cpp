@@ -15,7 +15,6 @@
 #include "Utilities.h"
 #include "DMapFilesParser.h"
 #include "BackendFactory.h"
-#include "DMapFileDefaults.h"
 
 namespace ChimeraTK {
 
@@ -152,28 +151,6 @@ namespace ChimeraTK {
     auto deviceInfoPointer = fileParser.parse(dmapFilePath);
     deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
     return deviceInfo;
-  }
-
-  std::string Utilities::findFirstOfAlias(std::string aliasName)
-  {
-    std::string uri;
-    char const* dmapFileFromEnvironment = std::getenv( DMAP_FILE_ENVIROMENT_VARIABLE.c_str());
-    if ( dmapFileFromEnvironment != NULL ) {
-      uri = Utilities::aliasLookUp(aliasName, dmapFileFromEnvironment).uri;
-    }
-    if (!uri.empty())
-      return dmapFileFromEnvironment;
-
-    std::string dMapFilePath = BackendFactory::getInstance().getDMapFilePath();
-    uri = aliasLookUp(aliasName, dMapFilePath).uri;
-    if (!uri.empty())
-      return dMapFilePath;
-
-    uri = aliasLookUp(aliasName, DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME).uri;
-    if (!uri.empty())
-      return DMAP_FILE_DEFAULT_DIRECTORY + DMAP_FILE_DEFAULT_NAME;
-
-    return std::string(); // no alias found, return an empty string
   }
 
   std::vector<std::string> Utilities::getAliasList() {
