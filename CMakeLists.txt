@@ -80,9 +80,6 @@ include_directories(${PROJECT_SOURCE_DIR}/exception/include)
 include_directories("${PROJECT_SOURCE_DIR}/util/include")
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/include")
 include_directories("${PROJECT_SOURCE_DIR}/device_backends/include")
-if(HAVE_PCIE_BACKEND)
-include_directories("${PROJECT_SOURCE_DIR}/device_backends/pcie/include")
-endif()
 include_directories("${PROJECT_SOURCE_DIR}/device/include")
 
 configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
@@ -101,16 +98,14 @@ include_directories(${Boost_INCLUDE_DIRS} ${glib_INCLUDE_DIRS} ${LibXML++_INCLUD
 # path. Moving this header to a dedicated location may be considered later.
 include_directories("${PROJECT_SOURCE_DIR}/fileparsers/src")
 
-
 add_subdirectory ("${PROJECT_SOURCE_DIR}/exception")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/util")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/fileparsers")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends")
-if(HAVE_PCIE_BACKEND)
-add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends/pcie")
-endif()
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
+
+include_directories(${INCLUDE_DIRS})
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
