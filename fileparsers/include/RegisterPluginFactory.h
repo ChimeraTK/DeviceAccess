@@ -11,13 +11,12 @@
 #include <map>
 
 #include "RegisterInfoPlugin.h"
-#include "DynamicValue.h"
 
 namespace ChimeraTK {
 
   /** Factory for register plugins. Plugins need to register with the factory. */
   class RegisterPluginFactory {
-  
+
     public:
 
       /** Static function to get an instance of the factory */
@@ -25,26 +24,26 @@ namespace ChimeraTK {
 
       /** Function to create a plugin instance */
       boost::shared_ptr<RegisterInfoPlugin> createPlugin(const std::string &name,
-          const std::map<std::string, DynamicValue<std::string> > &parameters);
+          const std::map<std::string, std::string > &parameters);
 
       /** Function to register a plugin */
       void registerPlugin(std::string name,
-          boost::shared_ptr<RegisterInfoPlugin> (*creatorFunction)(const std::map<std::string, DynamicValue<std::string> > &parameters));
+          boost::shared_ptr<RegisterInfoPlugin> (*creatorFunction)(const std::map<std::string, std::string > &parameters));
 
     private:
 
-      /** Private constructor to avoid instantiation of this singleton */    
+      /** Private constructor to avoid instantiation of this singleton */
       RegisterPluginFactory();
 
       /** To avoid making copies */
       RegisterPluginFactory(RegisterPluginFactory const&);
       RegisterPluginFactory(RegisterPluginFactory const&&);
       void operator=(RegisterPluginFactory const&);
-      
+
       /** Map holding pointers to the creator functions for each plugin */
       std::map<std::string,
-          boost::shared_ptr<RegisterInfoPlugin> (*)(const std::map<std::string, DynamicValue<std::string> > &parameters)> creatorMap;
-  
+          boost::shared_ptr<RegisterInfoPlugin> (*)(const std::map<std::string, std::string > &parameters)> creatorMap;
+
   };
 
 } /* namespace ChimeraTK */

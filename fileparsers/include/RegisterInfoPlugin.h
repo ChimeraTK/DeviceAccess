@@ -19,7 +19,7 @@ namespace ChimeraTK {
    *  createInstance() function which is passed to RegisterPluginFactory::registerPlugin(). The data members should be
    *  filled by the createInstance() implementation. */
   class RegisterInfoPlugin {
-  
+
     public:
 
       /** Virtual destructor needed to make the class polymorphic */
@@ -28,8 +28,8 @@ namespace ChimeraTK {
       /** Derived classes need to implement this function to fill the data members from the parameter map. The pointer
        *  to this function needs to be passed to RegisterPluginFactory::registerPlugin(). */
       static boost::shared_ptr<RegisterInfoPlugin> createInstance(
-          const std::map<std::string, DynamicValue<std::string> > &parameters);
-  
+          const std::map<std::string, std::string > &parameters);
+
   };
 
 } /* namespace ChimeraTK */

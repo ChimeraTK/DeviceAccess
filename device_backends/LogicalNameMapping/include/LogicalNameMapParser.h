@@ -14,7 +14,6 @@
 
 #include "RegisterCatalogue.h"
 #include "RegisterPath.h"
-#include "DynamicValue.h"
 
 // forward declaration
 namespace xmlpp {
@@ -56,11 +55,11 @@ namespace ChimeraTK {
       void parseElement(RegisterPath currentPath, const xmlpp::Element *element);
 
       /** throw a parsing error with more information */
-      void parsingError(const std::string &message);
+      [[ noreturn ]] void parsingError(const std::string &message);
 
       /** Build a Value object for a given subnode. */
       template<typename ValueType>
-      DynamicValue<ValueType> getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName,
+      ValueType getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName,
           bool hasDefault=false, ValueType defaultValue=ValueType());
 
       /** file name of the logical map */

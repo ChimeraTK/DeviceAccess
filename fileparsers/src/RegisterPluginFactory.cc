@@ -6,6 +6,7 @@
  */
 
 #include "RegisterPluginFactory.h"
+#include "DeviceException.h"
 
 namespace ChimeraTK {
 
@@ -22,14 +23,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void RegisterPluginFactory::registerPlugin(std::string name,
-      boost::shared_ptr<RegisterInfoPlugin> (*creatorFunction)(const std::map<std::string, DynamicValue<std::string> > &parameters)) {
+      boost::shared_ptr<RegisterInfoPlugin> (*creatorFunction)(const std::map<std::string, std::string > &parameters)) {
     creatorMap[name] = creatorFunction;
   }
 
   /********************************************************************************************************************/
 
   boost::shared_ptr<RegisterInfoPlugin> RegisterPluginFactory::createPlugin(const std::string &name,
-      const std::map<std::string, DynamicValue<std::string> > &parameters) {
+      const std::map<std::string, std::string > &parameters) {
     try {
       return creatorMap.at(name)(parameters);
     }

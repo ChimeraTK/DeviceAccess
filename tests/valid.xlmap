@@ -55,7 +55,7 @@
       <redirectedChannel name="ConfigurableChannel">
         <targetDevice>PCIE3</targetDevice>
         <targetRegister>TEST.NODMA</targetRegister>
-        <targetChannel><ref>/MyModule/SomeSubmodule/Variable</ref></targetChannel>
+        <targetChannel><ref>/Constant</ref></targetChannel>
       </redirectedChannel>
     </module>
 </logicalNameMap>

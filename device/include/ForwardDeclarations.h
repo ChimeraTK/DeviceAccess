@@ -29,9 +29,6 @@ namespace ChimeraTK{
   template<typename UserType>
   class MultiplexedDataAccessor;
 
-  template<typename T>
-  class DynamicValue;
-
 }
 
 #endif /* CHIMERA_TK_FORWARD_DECLARATIONS_H */

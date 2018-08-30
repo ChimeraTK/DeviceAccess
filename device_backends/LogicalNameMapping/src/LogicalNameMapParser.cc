@@ -16,9 +16,9 @@
 
 namespace ChimeraTK {
 
-  template<>
-  DynamicValue<std::string> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
-      const std::string &subnodeName, bool hasDefault, std::string defaultValue) {
+  template<typename T>
+  T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
+      const std::string &subnodeName, bool hasDefault, T defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() != 1) {
       if(hasDefault) return defaultValue;
@@ -26,75 +26,53 @@ namespace ChimeraTK {
     }
     auto childList = list[0]->get_children();
     if(childList.size() != 1) {
-      parsingError("Node '"+subnodeName+"' should contain only text.");
+      parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead multiple childs "
+                                        "were found.");
     }
 
-    const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
-    if(!textNode) {
-      parsingError("Node '"+subnodeName+"' does not contain text.");
-    }
-
-    DynamicValue<std::string> value;
-    value = textNode->get_content();
-    return value;
-  }
-
-  /********************************************************************************************************************/
-
-  template<>
-  DynamicValue<int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
-      const std::string &subnodeName, bool hasDefault, int defaultValue) {
-    auto list = node->find(subnodeName);
-    if(list.size() != 1) {
-      if(hasDefault) return defaultValue;
-      parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
-    }
-    auto childList = list[0]->get_children();
-    if(childList.size() != 1) {
-      parsingError("Node '"+subnodeName+"' should contain only text or only one <ref></ref> sub-element.");
-    }
-
-    DynamicValue<int> value;
-
+    // check for plain text
     const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
     if(textNode) {
-      value = std::stoi(textNode->get_content());
-    }
-    else {
-      value.hasActualValue = false;
-      value.registerName = getValueFromXmlSubnode<std::string>(list[0], "ref");
-    }
-
-    return value;
-  }
-
-  /********************************************************************************************************************/
-
-  template<>
-  DynamicValue<unsigned int> LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
-      const std::string &subnodeName, bool hasDefault, unsigned int defaultValue) {
-    auto list = node->find(subnodeName);
-    if(list.size() != 1) {
-      if(hasDefault) return defaultValue;
-      parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
-    }
-    auto childList = list[0]->get_children();
-    if(childList.size() != 1) {
-      parsingError("Node '"+subnodeName+"' should contain only text.");
+      std::stringstream buf(textNode->get_content());
+      T value;
+      buf >> value;
+      return value;
     }
 
-    DynamicValue<unsigned int> value;
-
-    const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
-    if(textNode) {
-      value = std::stoi(textNode->get_content());
+    // check for reference
+    if(childList.front()->get_name() == "ref") {
+      auto childChildList = childList.front()->get_children();
+      const xmlpp::TextNode *refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+      if(refNameNode && childChildList.size() == 1) {
+        std::string regName = refNameNode->get_content();
+        if(!_catalogue.hasRegister(regName)) {
+          parsingError("Reference to constant '"+regName+"' could not be resolved.");
+        }
+        auto reg = _catalogue.getRegister(regName);
+        auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
+        assert(reg_casted != nullptr);    // this is our own catalogue
+        // fetch the value of the target constant
+        if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
+          // convert via string
+          std::stringstream buf;
+          buf << reg_casted->value;
+          T value;
+          buf >> value;
+          return value;
+        }
+        else {
+          parsingError("Reference to '"+regName+"' does not refer to a constant.");
+        }
+      }
+      else {
+        parsingError("The <ref> node must contain only text.");
+      }
     }
-    else {
-      value.hasActualValue = false;
-      value.registerName = getValueFromXmlSubnode<std::string>(list[0], "ref");
-    }
 
-    return value;
+    // neither found: throw error
+    parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead child '"+
+                 childList.front()->get_name()+"' was found.");
+
   }
 
   /********************************************************************************************************************/
@@ -228,9 +206,9 @@ namespace ChimeraTK {
           parsingError("Missing name attribute of 'plugin' tag.");
         }
         std::string pluginName = pluginNameAttr->get_value();
-        
+
         // collect parameters
-        std::map<std::string, DynamicValue<std::string> > parameters;
+        std::map<std::string, std::string > parameters;
         for(const auto& paramchild : childElement->get_children()) {
           // cast into element, ignore if not an element (e.g. comment)
           const xmlpp::Element *paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
@@ -238,12 +216,12 @@ namespace ChimeraTK {
 
           // get name of parameter
           std::string parameterName = paramElement->get_name();
-          
+
           // get value of parameter and store in map
           parameters[parameterName] = getValueFromXmlSubnode<std::string>(childElement,parameterName);
-          
+
         }
-        
+
         // create instance of plugin and add to the list in the register info
         boost::shared_ptr<RegisterInfoPlugin> plugin = RegisterPluginFactory::getInstance().createPlugin(pluginName, parameters);
         info->pluginList.push_back(plugin);

@@ -31,7 +31,7 @@ namespace ChimeraTK {
 
       /** The constructor takes the original accessor and the scaling factor as arguments */
       ScaleRegisterPluginRegisterAccessor(boost::shared_ptr< NDRegisterAccessor<UserType> > accessor,
-          DynamicValue<double> scalingFactor)
+          double scalingFactor)
       : NDRegisterAccessorDecorator<UserType>(accessor), _scalingFactor(scalingFactor)
       {}
 
@@ -58,7 +58,7 @@ namespace ChimeraTK {
     protected:
 
       /** The scaling factor */
-      DynamicValue<double> _scalingFactor;
+      double _scalingFactor;
 
       using NDRegisterAccessorDecorator<UserType>::_target;
 
@@ -72,10 +72,10 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, DynamicValue<std::string> > &parameters) {
+  ScaleRegisterPlugin::ScaleRegisterPlugin(const std::map<std::string, std::string > &parameters) {
     FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(decorateRegisterAccessor_impl);
     try {
-      scalingFactor = parameters.at("factor");
+      scalingFactor = std::stod(parameters.at("factor"));
     }
     catch(std::out_of_range &e) {
       throw DeviceException("ScaleRegisterPlugin: Missing parameter 'factor'.", DeviceException::WRONG_PARAMETER);
@@ -85,7 +85,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   boost::shared_ptr<RegisterInfoPlugin> ScaleRegisterPlugin::createInstance(
-      const std::map<std::string, DynamicValue<std::string> > &parameters) {
+      const std::map<std::string, std::string > &parameters) {
     return boost::shared_ptr<RegisterInfoPlugin>(new ScaleRegisterPlugin(parameters));
   }
 

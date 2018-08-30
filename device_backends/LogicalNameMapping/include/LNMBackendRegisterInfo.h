@@ -9,7 +9,6 @@
 #define CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
 
 #include "RegisterInfo.h"
-#include "DynamicValue.h"
 #include "ForwardDeclarations.h"
 
 namespace ChimeraTK {
@@ -53,28 +52,28 @@ namespace ChimeraTK {
       TargetType targetType;
 
       /** The target device alias */
-      DynamicValue<std::string> deviceName;
+      std::string deviceName;
 
       /** The target register name */
-      DynamicValue<std::string> registerName;
+      std::string registerName;
 
       /** The first index in the range */
-      DynamicValue<unsigned int> firstIndex;
+      unsigned int firstIndex;
 
       /** The length of the range (i.e. number of indices) */
-      DynamicValue<unsigned int> length;
+      unsigned int length;
 
       /** The channel of the target 2D register */
-      DynamicValue<unsigned int> channel;
+      unsigned int channel;
 
       /** The number of dimensions of the logical register */
-      DynamicValue<unsigned int> nDimensions;
+      unsigned int nDimensions;
 
       /** The number of channels of the logical register */
-      DynamicValue<unsigned int> nChannels;
+      unsigned int nChannels;
 
       /** The constant integer value */
-      DynamicValue<int> value;
+      int value;
 
       /** test if deviceName is set (depending on the targetType) */
       bool hasDeviceName() const {
@@ -106,23 +105,13 @@ namespace ChimeraTK {
         return targetType == TargetType::INT_CONSTANT || targetType == TargetType::INT_VARIABLE;
       }
 
-      /** create the internal register accessors */
-      void createInternalAccessors(boost::shared_ptr<DeviceBackend> &backend) {
-        deviceName.createInternalAccessors(backend);
-        registerName.createInternalAccessors(backend);
-        firstIndex.createInternalAccessors(backend);
-        length.createInternalAccessors(backend);
-        channel.createInternalAccessors(backend);
-        value.createInternalAccessors(backend);
-      }
-
     protected:
 
       friend class LogicalNameMapParser;
       friend class LogicalNameMappingBackend;
-      
+
       DataDescriptor _dataDescriptor;
-      
+
   };
 
 } /* namespace ChimeraTK */

@@ -40,7 +40,6 @@ namespace ChimeraTK {
           // copy the register info and create the internal accessors, if needed
           _info = *( boost::static_pointer_cast<LNMBackendRegisterInfo>(
               _dev->getRegisterCatalogue().getRegister(_registerPathName)) );
-          _info.createInternalAccessors(dev);
           // check for incorrect usage of this accessor
           if( _info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL ) {
             throw DeviceException("LNMBackendChannelAccessor used for wrong register type.",

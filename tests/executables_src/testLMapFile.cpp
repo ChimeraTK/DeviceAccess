@@ -150,15 +150,7 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
-  int temp;
-  BOOST_CHECK_THROW( temp = info->channel, DeviceException );  // resolving the reference is not possible without a device
-  try {
-    temp = info->channel;
-    (void) temp; // avoid warning
-  }
-  catch( DeviceException &e ) {
-    BOOST_CHECK( e.getID() == DeviceException::NOT_OPENED );
-  }
+  BOOST_CHECK( info->channel == 42);
   BOOST_CHECK( info->hasDeviceName() == true );
   BOOST_CHECK( info->hasRegisterName() == true );
   BOOST_CHECK( info->hasFirstIndex() == false );
