@@ -9,6 +9,7 @@
 #define CHIMERA_TK_REGISTER_INFO_H
 
 #include <iostream>
+#include <assert.h>
 
 #include "RegisterPath.h"
 #include "ForwardDeclarations.h"
