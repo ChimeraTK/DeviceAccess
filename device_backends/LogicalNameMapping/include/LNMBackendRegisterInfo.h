@@ -72,38 +72,8 @@ namespace ChimeraTK {
       /** The number of channels of the logical register */
       unsigned int nChannels;
 
-      /** The constant integer value */
-      int value;
-
-      /** test if deviceName is set (depending on the targetType) */
-      bool hasDeviceName() const {
-        return targetType != TargetType::INT_CONSTANT && targetType != TargetType::INT_VARIABLE;
-      }
-
-      /** test if registerName is set (depending on the targetType) */
-      bool hasRegisterName() const {
-        return targetType != TargetType::INT_CONSTANT && targetType != TargetType::INT_VARIABLE;
-      }
-
-      /** test if firstIndex is set (depending on the targetType) */
-      bool hasFirstIndex() const {
-        return targetType == TargetType::REGISTER;
-      }
-
-      /** test if length is set (depending on the targetType) */
-      bool hasLength() const {
-        return targetType == TargetType::REGISTER;
-      }
-
-      /** test if channel is set (depending on the targetType) */
-      bool hasChannel() const {
-        return targetType == TargetType::CHANNEL;
-      }
-
-      /** test if value is set (depending on the targetType) */
-      bool hasValue() const {
-        return targetType == TargetType::INT_CONSTANT || targetType == TargetType::INT_VARIABLE;
-      }
+      /** The integer value of a INT_CONSTANT or INT_VARIABLE */
+      std::vector<int> value_int;
 
     protected:
 

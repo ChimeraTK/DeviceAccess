@@ -61,6 +61,8 @@ namespace ChimeraTK {
       template<typename ValueType>
       ValueType getValueFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName,
           bool hasDefault=false, ValueType defaultValue=ValueType());
+      template<typename ValueType>
+      std::vector<ValueType> getValueVectorFromXmlSubnode(const xmlpp::Node *node, const std::string &subnodeName);
 
       /** file name of the logical map */
       std::string _fileName;

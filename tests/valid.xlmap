@@ -52,4 +52,13 @@
         <targetChannel><ref>/Constant</ref></targetChannel>
       </redirectedChannel>
     </module>
+    <constant name="ArrayConstant">
+        <type>integer</type>
+        <value index="0">1111</value>
+        <value index="4">5555</value>
+        <value index="1">2222</value>
+        <value index="3">4444</value>
+        <value index="2">3333</value>
+        <numberOfElements>5</numberOfElements>
+    </constant>
 </logicalNameMap>

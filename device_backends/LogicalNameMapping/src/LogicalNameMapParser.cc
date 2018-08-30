@@ -19,8 +19,8 @@ namespace ChimeraTK {
   T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
       const std::string &subnodeName, bool hasDefault, T defaultValue) {
     auto list = node->find(subnodeName);
+    if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {
-      if(hasDefault) return defaultValue;
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
     }
     auto childList = list[0]->get_children();
@@ -54,7 +54,7 @@ namespace ChimeraTK {
         if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
           // convert via string
           std::stringstream buf;
-          buf << reg_casted->value;
+          buf << reg_casted->value_int[0];
           T value;
           buf >> value;
           return value;
@@ -71,6 +71,84 @@ namespace ChimeraTK {
     // neither found: throw error
     parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead child '"+
                  childList.front()->get_name()+"' was found.");
+
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  std::vector<T> LogicalNameMapParser::getValueVectorFromXmlSubnode(const xmlpp::Node *node,
+      const std::string &subnodeName) {
+    auto list = node->find(subnodeName);
+    if(list.size() < 1) {
+      parsingError("Expected at least one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
+    }
+
+    std::vector<T> valueVector;
+
+    for(auto &child : list) {
+      const xmlpp::Element *childElement = dynamic_cast<const xmlpp::Element*>(child);
+      if(!childElement) continue;   // ignore comments etc.
+
+      // obtain index and resize valueVector if necessary
+      auto indexAttr = childElement->get_attribute("index");\
+      size_t index = 0;
+      if(indexAttr) {
+        index = std::stoi(indexAttr->get_value());
+      }
+      if(index >= valueVector.size()) valueVector.resize(index+1);
+
+      // get content
+      auto childList = childElement->get_children();
+      if(childList.size() != 1) {
+        parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead multiple childs "
+                                          "were found.");
+      }
+
+      // check for plain text
+      const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
+      if(textNode) {
+        std::stringstream buf(textNode->get_content());
+        buf >> valueVector[index];
+        continue;
+      }
+
+      // check for reference
+      if(childList.front()->get_name() == "ref") {
+        auto childChildList = childList.front()->get_children();
+        const xmlpp::TextNode *refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        if(refNameNode && childChildList.size() == 1) {
+          std::string regName = refNameNode->get_content();
+          if(!_catalogue.hasRegister(regName)) {
+            parsingError("Reference to constant '"+regName+"' could not be resolved.");
+          }
+          auto reg = _catalogue.getRegister(regName);
+          auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
+          assert(reg_casted != nullptr);    // this is our own catalogue
+          // fetch the value of the target constant
+          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
+            // convert via string
+            std::stringstream buf;
+            buf << reg_casted->value_int[0];
+            buf >> valueVector[index];
+            continue;
+          }
+          else {
+            parsingError("Reference to '"+regName+"' does not refer to a constant.");
+          }
+        }
+        else {
+          parsingError("The <ref> node must contain only text.");
+        }
+      }
+
+      // neither found: throw error
+      parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead child '"+
+                   childList.front()->get_name()+"' was found.");
+
+    }
+
+    return valueVector;
 
   }
 
@@ -159,9 +237,9 @@ namespace ChimeraTK {
           parsingError("Type '"+constantType+"' is not valid for a constant");
         }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
-        info->value = getValueFromXmlSubnode<int>(element, "value");
+        info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
-        info->length = 1;
+        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements",true,1);
         info->nDimensions = 0;
         info->nChannels = 1;
       }
@@ -171,9 +249,9 @@ namespace ChimeraTK {
           parsingError("Type '"+constantType+"' is not valid for a variable");
         }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_VARIABLE;
-        info->value = getValueFromXmlSubnode<int>(element, "value");
+        info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
-        info->length = 1;
+        info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements",true,1);;
         info->nDimensions = 0;
         info->nChannels = 1;
       }
@@ -201,10 +279,8 @@ namespace ChimeraTK {
     std::unordered_set<std::string> ret;
     for(auto it = _catalogue.begin(); it != _catalogue.end(); ++it) {
       auto info = boost::static_pointer_cast<const LNMBackendRegisterInfo>(it.get());
-      if(info->hasDeviceName()) {
-        std::string dev = info->deviceName;
-        if(dev != "this") ret.insert(dev);
-      }
+      std::string dev = info->deviceName;
+      if(dev != "this" && dev != "") ret.insert(dev);
     }
     return ret;
   }

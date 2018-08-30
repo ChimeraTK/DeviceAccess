@@ -57,7 +57,7 @@ namespace ChimeraTK {
           }
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(_info->value);
+          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(_info->value_int[0]);
         }
         catch(...) {
           this->shutdown();
@@ -65,7 +65,7 @@ namespace ChimeraTK {
         }
       }
 
-      virtual ~LNMBackendVariableAccessor() { this->shutdown(); };
+      virtual ~LNMBackendVariableAccessor() override { this->shutdown(); };
 
       void doReadTransfer() override {}
 
@@ -83,7 +83,7 @@ namespace ChimeraTK {
           throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
               DeviceException::REGISTER_IS_READ_ONLY);
         }
-        _info->value = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
+        _info->value_int[0] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
         return false;
       }
 
@@ -104,7 +104,7 @@ namespace ChimeraTK {
       }
 
       void doPostRead() override {
-        NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value);
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] =_fixedPointConverter.toCooked<UserType>(_info->value_int[0]);
       }
 
       AccessModeFlags getAccessModeFlags() const override {

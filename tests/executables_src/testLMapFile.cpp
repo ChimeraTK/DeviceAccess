@@ -71,12 +71,6 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
   BOOST_CHECK( info->deviceName == "PCIE2");
   BOOST_CHECK( info->registerName == "BOARD.WORD_USER");
-  BOOST_CHECK( info->hasDeviceName() == true );
-  BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == true );
-  BOOST_CHECK( info->hasLength() == true );
-  BOOST_CHECK( info->hasChannel() == false );
-  BOOST_CHECK( info->hasValue() == false );
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("PartOfArea"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
@@ -84,84 +78,49 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK( info->firstIndex == 10);
   BOOST_CHECK( info->length == 20);
-  BOOST_CHECK( info->hasDeviceName() == true );
-  BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == true );
-  BOOST_CHECK( info->hasLength() == true );
-  BOOST_CHECK( info->hasChannel() == false );
-  BOOST_CHECK( info->hasValue() == false );
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("FullArea"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
   BOOST_CHECK( info->deviceName == "PCIE2");
   BOOST_CHECK( info->registerName == "ADC.AREA_DMAABLE");
-  BOOST_CHECK( info->hasDeviceName() == true );
-  BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == true );
-  BOOST_CHECK( info->hasLength() == true );
-  BOOST_CHECK( info->hasChannel() == false );
-  BOOST_CHECK( info->hasValue() == false );
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Channel3"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
   BOOST_CHECK( info->channel == 3);
-  BOOST_CHECK( info->hasDeviceName() == true );
-  BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
-  BOOST_CHECK( info->hasChannel() == true );
-  BOOST_CHECK( info->hasValue() == false );
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Channel4"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
   BOOST_CHECK( info->channel == 4);
-  BOOST_CHECK( info->hasDeviceName() == true );
-  BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
-  BOOST_CHECK( info->hasChannel() == true );
-  BOOST_CHECK( info->hasValue() == false );
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Constant"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT );
-  BOOST_CHECK( info->value == 42);
-  BOOST_CHECK( info->hasDeviceName() == false );
-  BOOST_CHECK( info->hasRegisterName() == false );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
-  BOOST_CHECK( info->hasChannel() == false );
-  BOOST_CHECK( info->hasValue() == true );
+  BOOST_CHECK( info->value_int[0] == 42);
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("/MyModule/SomeSubmodule/Variable"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE );
-  BOOST_CHECK( info->value == 2);
-  BOOST_CHECK( info->hasDeviceName() == false );
-  BOOST_CHECK( info->hasRegisterName() == false );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
-  BOOST_CHECK( info->hasChannel() == false );
-  BOOST_CHECK( info->hasValue() == true );
-
+  BOOST_CHECK( info->value_int[0] == 2);
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("MyModule/ConfigurableChannel"));
   BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL );
   BOOST_CHECK( info->deviceName == "PCIE3");
   BOOST_CHECK( info->registerName == "TEST.NODMA");
   BOOST_CHECK( info->channel == 42);
-  BOOST_CHECK( info->hasDeviceName() == true );
-  BOOST_CHECK( info->hasRegisterName() == true );
-  BOOST_CHECK( info->hasFirstIndex() == false );
-  BOOST_CHECK( info->hasLength() == false );
-  BOOST_CHECK( info->hasChannel() == true );
-  BOOST_CHECK( info->hasValue() == false );
 
   std::unordered_set<std::string> targetDevices = lmap.getTargetDevices();
   BOOST_CHECK(targetDevices.size() == 2);
   BOOST_CHECK(targetDevices.count("PCIE2") == 1);
   BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
-
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("ArrayConstant"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT );
+  BOOST_CHECK( info->length == 5);
+  BOOST_CHECK( info->value_int.size() == 5);
+  BOOST_CHECK( info->value_int[0] == 1111);
+  BOOST_CHECK( info->value_int[1] == 2222);
+  BOOST_CHECK( info->value_int[2] == 3333);
+  BOOST_CHECK( info->value_int[3] == 4444);
+  BOOST_CHECK( info->value_int[4] == 5555);
 }
