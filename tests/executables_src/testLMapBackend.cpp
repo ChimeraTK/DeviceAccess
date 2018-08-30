@@ -207,6 +207,27 @@ void LMapBackendTest::testExceptions() {
     //BOOST_CHECK( impl->mayReplaceOther(impl2) == true );    // this is currently always set to false, since it doesn't really make any difference...
     BOOST_CHECK( impl->mayReplaceOther(impl3) == false );
 
+    auto arrayConstant = device.getOneDRegisterAccessor<int>("/ArrayConstant");
+    BOOST_CHECK_EQUAL( arrayConstant.getNElements(), 5 );
+    BOOST_CHECK_EQUAL( arrayConstant[0], 1111 );
+    BOOST_CHECK_EQUAL( arrayConstant[1], 2222 );
+    BOOST_CHECK_EQUAL( arrayConstant[2], 3333 );
+    BOOST_CHECK_EQUAL( arrayConstant[3], 4444 );
+    BOOST_CHECK_EQUAL( arrayConstant[4], 5555 );
+    arrayConstant.read();
+    BOOST_CHECK_EQUAL( arrayConstant[0], 1111 );
+    BOOST_CHECK_EQUAL( arrayConstant[1], 2222 );
+    BOOST_CHECK_EQUAL( arrayConstant[2], 3333 );
+    BOOST_CHECK_EQUAL( arrayConstant[3], 4444 );
+    BOOST_CHECK_EQUAL( arrayConstant[4], 5555 );
+    BOOST_CHECK_THROW( acc.write(), DeviceException );
+    try {
+      acc.write();
+    }
+    catch(DeviceException &e) {
+      BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
+    }
+
     device.close();
 
   }

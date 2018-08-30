@@ -56,8 +56,12 @@ namespace ChimeraTK {
                 DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
           }
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-          NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(_info->value_int[0]);
+          NDRegisterAccessor<UserType>::buffer_2D[0].resize(_info->length);
+          size_t m = _info->length;
+          if(_info->value_int.size() < m) _info->value_int.size();
+          for(size_t i=0; i < m; ++i) {
+            NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(_info->value_int[i]);
+          }
         }
         catch(...) {
           this->shutdown();
