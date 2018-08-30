@@ -69,7 +69,7 @@ namespace ChimeraTK {
         }
       }
 
-      virtual ~LNMBackendVariableAccessor() override { this->shutdown(); };
+      virtual ~LNMBackendVariableAccessor() override { this->shutdown(); }
 
       void doReadTransfer() override {}
 
