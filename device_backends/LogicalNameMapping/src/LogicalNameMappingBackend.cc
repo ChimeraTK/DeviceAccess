@@ -40,7 +40,7 @@ namespace ChimeraTK {
       auto targetType = info_cast.targetType;
       if(targetType != LNMBackendRegisterInfo::TargetType::REGISTER &&
          targetType != LNMBackendRegisterInfo::TargetType::CHANNEL     ) continue;
-      
+
       std::string devName = info_cast.deviceName;
       boost::shared_ptr<RegisterInfo> target_info;
       if(devName != "this") {
@@ -49,7 +49,7 @@ namespace ChimeraTK {
       else {
         target_info = getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
       }
-      
+
       info_cast._dataDescriptor = target_info->getDataDescriptor();
 
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
@@ -139,8 +139,7 @@ namespace ChimeraTK {
           registerPathName+").", DeviceException::NOT_IMPLEMENTED);
     }
 
-    // allow plugins to decorate the accessor and return it
-    return decorateRegisterAccessor<UserType>(registerPathName,ptr);
+    return ptr;
   }
 
 

@@ -12,7 +12,6 @@
 #include "LNMBackendRegisterInfo.h"
 #include "DeviceException.h"
 #include "DeviceBackend.h"
-#include "RegisterPluginFactory.h"
 
 namespace ChimeraTK {
 
@@ -192,41 +191,6 @@ namespace ChimeraTK {
 
       // add register to catalogue
       _catalogue.addRegister(info);
-
-      // iterate over childs of the register to find plugins
-      for(const auto& child : element->get_children()) {
-        // cast into element, ignore if not an element (e.g. comment)
-        const xmlpp::Element *childElement = dynamic_cast<const xmlpp::Element*>(child);
-        if(!childElement) continue;
-        if(childElement->get_name() != "plugin") continue;  // look only for plugins
-
-        // get name of plugin
-        auto pluginNameAttr = childElement->get_attribute("name");
-        if(!pluginNameAttr) {
-          parsingError("Missing name attribute of 'plugin' tag.");
-        }
-        std::string pluginName = pluginNameAttr->get_value();
-
-        // collect parameters
-        std::map<std::string, std::string > parameters;
-        for(const auto& paramchild : childElement->get_children()) {
-          // cast into element, ignore if not an element (e.g. comment)
-          const xmlpp::Element *paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
-          if(!paramElement) continue;
-
-          // get name of parameter
-          std::string parameterName = paramElement->get_name();
-
-          // get value of parameter and store in map
-          parameters[parameterName] = getValueFromXmlSubnode<std::string>(childElement,parameterName);
-
-        }
-
-        // create instance of plugin and add to the list in the register info
-        boost::shared_ptr<RegisterInfoPlugin> plugin = RegisterPluginFactory::getInstance().createPlugin(pluginName, parameters);
-        info->pluginList.push_back(plugin);
-
-      }
 
     }
   }

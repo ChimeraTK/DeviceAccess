@@ -142,8 +142,7 @@ namespace ChimeraTK {
           new NumericAddressedBackendMuxedRegisterAccessor<UserType>(registerPathName, numberOfWords,
               wordOffsetInRegister, shared_from_this()) );
     }
-    // allow plugins to decorate the accessor and return it
-    return decorateRegisterAccessor(registerPathName, accessor);
+    return accessor;
   }
 
 } // namespace ChimeraTK

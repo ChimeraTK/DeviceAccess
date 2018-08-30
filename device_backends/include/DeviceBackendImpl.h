@@ -5,7 +5,6 @@
 
 #include "DeviceBackend.h"
 #include "DeviceException.h"
-#include "DataModifierPlugin.h"
 
 namespace ChimeraTK {
 
@@ -55,29 +54,15 @@ namespace ChimeraTK {
       }
 
   protected:
-      
+
       /** the register catalogue containing describing the registers known by this backend */
       RegisterCatalogue _catalogue;
 
       /** flag if device is opened */
       bool        _opened;
-      
+
       /** flag if device is connected. */
       bool        _connected;
-
-      /** Add plugin-provided decorators to a NDRegisterAccessor */
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > decorateRegisterAccessor(
-          const RegisterPath &registerPathName, boost::shared_ptr< NDRegisterAccessor<UserType> > accessor) const {
-        if(!_catalogue.hasRegister(registerPathName)) return accessor;
-        auto info = _catalogue.getRegister(registerPathName);
-        for(auto i = info->plugins_begin(); i != info->plugins_end(); ++i) {
-          boost::shared_ptr<DataModifierPlugin> plugin = boost::dynamic_pointer_cast<DataModifierPlugin>(i.getPointer());
-          if(!plugin) continue;
-          accessor = plugin->decorateRegisterAccessor<UserType>(accessor);
-        }
-        return accessor;
-      }
 
   };
 
