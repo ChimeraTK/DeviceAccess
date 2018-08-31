@@ -27,7 +27,8 @@ namespace ChimeraTK {
       LNMBackendBitAccessor(boost::shared_ptr<DeviceBackend> dev, const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
       : SyncNDRegisterAccessor<UserType>(registerPathName),
-        _registerPathName(registerPathName)
+        _registerPathName(registerPathName),
+        _fixedPointConverter(registerPathName, 32, 0, 1)
       {
         try {
           // check for unknown flags
@@ -54,10 +55,11 @@ namespace ChimeraTK {
           else {
             targetDevice = dev;
           }
-          _accessor = targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
-          // allocate the buffer
+          _accessor = targetDevice->getRegisterAccessor<uint64_t>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
+          // allocate and initialise the buffer
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
+          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(false);
           // set the bit mask
           _bitMask = 1 << _info.bit;
         }
@@ -73,18 +75,16 @@ namespace ChimeraTK {
         _accessor->doReadTransfer();
       }
 
-      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
-        _accessor->doWriteTransfer();
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        return _accessor->doWriteTransfer(versionNumber);
       }
 
       bool doReadTransferNonBlocking() override {
-        doReadTransfer();
-        return true;
+        return doReadTransferNonBlocking();
       }
 
       bool doReadTransferLatest() override {
-        doReadTransfer();
-        return true;
+        return doReadTransferLatest();
       }
 
       void doPreRead() override {
@@ -93,17 +93,27 @@ namespace ChimeraTK {
 
       void doPostRead() override {
         _accessor->postRead();
-        NDRegisterAccessor<UserType>::buffer_2D[0] = _accessor->accessData(0) & _bitMask;
+        if(_accessor->accessData(0) & _bitMask) {
+          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(true);
+        }
+        else {
+          NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(false);
+        }
       }
 
       void doPreWrite() override {
-        _accessor->accessData(0)  !!!!!!!!!!!!!!!!!!
-        NDRegisterAccessor<UserType>::buffer_2D[0] =  & _bitMask;
-        _accessor->doPreWrite();
+        _accessor->readLatest();
+        if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
+          _accessor->accessData(0) &= ~(_bitMask);
+        }
+        else {
+          _accessor->accessData(0) |= _bitMask;
+        }
+        _accessor->preWrite();
       }
 
       void doPostWrite() override {
-        _accessor->doPostWrite();
+        _accessor->postWrite();
       }
 
       bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
@@ -138,7 +148,7 @@ namespace ChimeraTK {
     protected:
 
       /// pointer to underlying accessor
-      boost::shared_ptr< NDRegisterAccessor<UserType> > _accessor;
+      boost::shared_ptr< NDRegisterAccessor<uint64_t> > _accessor;
 
       /// register and module name
       RegisterPath _registerPathName;
@@ -149,6 +159,10 @@ namespace ChimeraTK {
       /// register information. We hold a copy of the RegisterInfo, since it might contain register accessors
       /// which may not be owned by the backend
       LNMBackendRegisterInfo _info;
+
+      /// fixed point converter to handle type conversions from our "raw" type int to the requested user type.
+      /// Note: no actual fixed point conversion is done, it is just used for the type conversion!
+      FixedPointConverter _fixedPointConverter;
 
       /// bit mask for the bit we want to access
       size_t _bitMask;
@@ -164,7 +178,7 @@ namespace ChimeraTK {
       }
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
-        auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<UserType> >(newElement);
+        auto casted = boost::dynamic_pointer_cast< NDRegisterAccessor<uint64_t> >(newElement);
         if(casted && _accessor->mayReplaceOther(newElement)) {
           _accessor = casted;
         }

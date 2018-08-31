@@ -72,6 +72,9 @@ namespace ChimeraTK {
       friend class LNMBackendChannelAccessor;
 
       template<typename T>
+      friend class LNMBackendBitAccessor;
+
+      template<typename T>
       friend class LNMBackendVariableAccessor;
 
   };

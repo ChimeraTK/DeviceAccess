@@ -22,6 +22,7 @@ class LMapBackendTest {
     void testRegisterAccessorForRegister();
     void testRegisterAccessorForRange();
     void testRegisterAccessorForChannel();
+    void testRegisterAccessorForBit();
     void testNonBufferingAccessor();
     void testOther();
 };
@@ -40,6 +41,7 @@ class LMapBackendTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRegister, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRange, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForChannel, lMapBackendTest) );
+      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForBit, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testNonBufferingAccessor, lMapBackendTest) );
       add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testOther, lMapBackendTest) );
     }
@@ -159,7 +161,6 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( info->getNumberOfElements() == 1 );
     BOOST_CHECK( info->getNumberOfChannels() == 1 );
     BOOST_CHECK( info->getNumberOfDimensions() == 0 );
-    target1.close();
     device.close();
 
   }
@@ -324,8 +325,6 @@ void LMapBackendTest::testReadWriteRegister() {
   for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
   device.close();
-  target1.close();
-
 
 }
 
@@ -370,7 +369,6 @@ void LMapBackendTest::testReadWriteRange() {
   for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == -876543210+42*i ); */
 
   device.close();
-  target1.close();
 
 }
 
@@ -470,7 +468,6 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   }
 
   device.close();
-  target1.close();
 
 }
 
@@ -543,13 +540,12 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] ==  24507+33*i );
 
   device.close();
-  target1.close();
 
 }
 
-  /********************************************************************************************************************/
+/********************************************************************************************************************/
 
-  void LMapBackendTest::testRegisterAccessorForChannel() {
+void LMapBackendTest::testRegisterAccessorForChannel() {
   std::vector<int> area(1024);
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
@@ -666,7 +662,164 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   }
 
   device.close();
-  target1.close();
+
+}
+
+/********************************************************************************************************************/
+
+void LMapBackendTest::testRegisterAccessorForBit() {
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  mtca4u::Device device;
+
+  device.open("LMAP0");
+
+  auto bitField = device.getScalarRegisterAccessor<int>("/MyModule/SomeSubmodule/Variable");
+  auto bit0 = device.getScalarRegisterAccessor<uint8_t>("/Bit0ofVar");
+  auto bit1 = device.getScalarRegisterAccessor<uint16_t>("/Bit1ofVar");
+  auto bit2 = device.getScalarRegisterAccessor<int32_t>("/Bit2ofVar");
+  auto bit3 = device.getScalarRegisterAccessor<std::string>("/Bit3ofVar");
+
+  bitField = 0;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 1;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 2;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 3;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 4;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 1 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 8;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "1" );
+
+  bitField = 15;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 1 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "1" );
+
+  bitField = 16;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 17;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bitField = 1;
+  bitField.write();
+
+  bit0.read();
+  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+  bit1.read();
+  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+  bit2.read();
+  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+  bit3.read();
+  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+  bit2 = 1;
+  bit2.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 5 );
+
+  bit1 = 1;
+  bit1.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 7 );
+
+  bit0 = 0;
+  bit0.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 6 );
+
+  bit3 = "1";
+  bit3.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 14 );
+
+  device.close();
 
 }
 
@@ -727,7 +880,6 @@ void LMapBackendTest::testNonBufferingAccessor() {
   for(int i=0; i<20; i++) BOOST_CHECK( area[i] == -876543210+42*(i+10) );
 
   device.close();
-  target1.close();
 
 }
 
