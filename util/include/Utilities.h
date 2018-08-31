@@ -42,15 +42,6 @@ void setDMapFilePath(std::string dmapFilePath);
       std::list<std::string> _Parameters;
       Sdm():_SdmVersion(0.1){}
   };
-  /** A dedicated exception for the sdm parser."
-   *
-   */
-  class SdmUriParseException : public Exception {
-    public:
-      enum {INVALID_SDM};
-      SdmUriParseException(const std::string &message, unsigned int exceptionID)
-      : Exception( message, exceptionID ){}
-  };
 
   /** A class to provide generic useful function accross the library."
    *

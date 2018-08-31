@@ -58,9 +58,8 @@ namespace ChimeraTK {
       TransferFuture doReadTransferAsync() override {                                                                 // LCOV_EXCL_LINE
         // This function is not needed and will never be called. If readAsync() is called on the high-level accessor,
         // the transfer will be "backgrounded" already on that level.
-        throw DeviceException("NumericAddressedLowLevelTransferElement::readAsync() is not implemented",    // LCOV_EXCL_LINE
-                              DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
-      }                                                                                                     // LCOV_EXCL_LINE
+        throw ChimeraTK::logic_error("NumericAddressedLowLevelTransferElement::readAsync() is not implemented");      // LCOV_EXCL_LINE
+      }                                                                                                               // LCOV_EXCL_LINE
 
       /** Check if the address areas are adjacent and/or overlapping.
        *  NumericAddressedBackendRegisterAccessor::replaceTransferElement() takes care of replacing the
@@ -119,8 +118,7 @@ namespace ChimeraTK {
       }
 
       boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override {                             // LCOV_EXCL_LINE
-        throw DeviceException("NumericAddressedLowLevelTransferElement::makeCopyRegisterDecorator() is not implemented",    // LCOV_EXCL_LINE
-                              DeviceException::NOT_IMPLEMENTED);                                            // LCOV_EXCL_LINE
+        throw ChimeraTK::logic_error("NumericAddressedLowLevelTransferElement::makeCopyRegisterDecorator() is not implemented");  // LCOV_EXCL_LINE
       }                                                                                                     // LCOV_EXCL_LINE
 
       AccessModeFlags getAccessModeFlags() const override {

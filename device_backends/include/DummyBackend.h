@@ -15,17 +15,6 @@
 
 namespace ChimeraTK {
 
-  /** To provide exception for DummyBackend.
-   *
-   */
-  class DummyBackendException : public DeviceBackendException {
-    public:
-      enum {WRONG_SIZE, ALREADY_OPEN, ALREADY_CLOSED, INVALID_ADDRESS, INVALID_PARAMETER};
-      DummyBackendException(const std::string &message, unsigned int exceptionID)
-      : DeviceBackendException( message, exceptionID ){}
-  };
-
-
   // foward declarations
   template<typename T> class DummyRegisterAccessor;
   template<typename T> class DummyMultiplexedRegisterAccessor;

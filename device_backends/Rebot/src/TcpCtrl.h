@@ -11,8 +11,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-#include "RebotBackendException.h"
-
 namespace ChimeraTK{
 
 ///Handles the communication over TCP protocol with RebotDevice-based devices

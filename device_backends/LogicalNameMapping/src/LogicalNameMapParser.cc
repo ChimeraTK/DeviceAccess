@@ -10,7 +10,7 @@
 
 #include "LogicalNameMapParser.h"
 #include "LNMBackendRegisterInfo.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "DeviceBackend.h"
 
 namespace ChimeraTK {
@@ -161,7 +161,7 @@ namespace ChimeraTK {
       parser.parse_file(fileName);
     }
     catch(xmlpp::exception &e) {
-      throw DeviceException("Error opening the xlmap file '"+fileName+"': "+e.what(), DeviceException::CANNOT_OPEN_MAP_FILE);
+      throw ChimeraTK::logic_error("Error opening the xlmap file '"+fileName+"': "+e.what());
     }
 
     // get root element
@@ -298,7 +298,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMapParser::parsingError(const std::string &message) {
-    throw DeviceException("Error parsing the xlmap file '"+_fileName+"': "+message, DeviceException::CANNOT_OPEN_MAP_FILE);
+    throw ChimeraTK::logic_error("Error parsing the xlmap file '"+_fileName+"': "+message);
   }
 
 } // namespace ChimeraTK

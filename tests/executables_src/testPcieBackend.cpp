@@ -7,11 +7,9 @@ using namespace boost::unit_test_framework;
 #define PCIEUNI_TEST_SLOT 6
 
 #include "PcieBackend.h"
-#include "PcieBackendException.h"
 #include "BackendFactory.h"
-#include "MapException.h"
 #include "Device.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "NumericAddress.h"
 
 namespace mtca4u{
@@ -234,23 +232,23 @@ void PcieBackendTest::testFailIfBackendClosed()
   _pcieBackendInstance->close();
   BOOST_CHECK_THROW( // _pcieBackendInstance->readReg(WORD_USER_OFFSET, &dataWord, /*bar*/ 0),
       _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4),
-      PcieBackendException );
+      ChimeraTK::logic_error );
   //BOOST_CHECK_THROW(  _pcieBackendInstance->read(WORD_USER_OFFSET, &dataWord, sizeof(dataWord), /*bar*/ 0),
   BOOST_CHECK_THROW(  _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
-      PcieBackendException );
+      ChimeraTK::logic_error );
   BOOST_CHECK_THROW( _pcieBackendInstance->read(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)),
-      PcieBackendException );
+      ChimeraTK::logic_error );
   //BOOST_CHECK_THROW(  _pcieBackendInstance->writeReg(/*bar*/ 0, WORD_USER_OFFSET, 0),
   BOOST_CHECK_THROW(  _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, 0, 4),
-      PcieBackendException );
+      ChimeraTK::logic_error );
   BOOST_CHECK_THROW(  _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord) ),
-      PcieBackendException );
+      ChimeraTK::logic_error );
   BOOST_CHECK_THROW(  _pcieBackendInstance->write( /*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)),
-      PcieBackendException );
+      ChimeraTK::logic_error );
 
   //std::string deviceInfo;
   BOOST_CHECK_THROW(  _pcieBackendInstance->readDeviceInfo(),
-      PcieBackendException );
+      ChimeraTK::logic_error );
 
 }
 
@@ -327,7 +325,7 @@ void PcieBackendTest::testRead(){
   // now try to read only six of the eight bytes. This should throw an exception because it is
   // not a multiple of 4.
   BOOST_CHECK_THROW( _pcieBackendInstance->read( /*bar*/ 0, /*offset*/ 0, twoWords, /*nBytes*/ 6 ),
-      PcieBackendException );
+      ChimeraTK::runtime_error );
 
   // also check another bar
   // Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer) with the default values (index^2) in the first 25 words.
@@ -361,7 +359,7 @@ void PcieBackendTest::testWriteArea(){
   // now try to write only six of the eight bytes. This should throw an exception because it is
   // not a multiple of 4.
   BOOST_CHECK_THROW( _pcieBackendInstance->write(  /*bar*/ 0 , WORD_CLK_CNT_OFFSET, originalClockCounts, /*nBytes*/ 6 ),
-      PcieBackendException );
+      ChimeraTK::runtime_error );
 
   // also test another bar (area in bar 2), the usual drill: write and read back,
   // we know that reading works from the previous test
@@ -383,18 +381,18 @@ void PcieBackendTest::testReadRegister()
   //check that the exception is thrown if the backend is not opened
   _pcieBackendInstance->close();
   BOOST_CHECK_THROW( _pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4),
-      PcieBackendException );
+      ChimeraTK::logic_error );
 
   _pcieBackendInstance->open();// no need to check if this works because we did the open test first
   //_pcieBackendInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
-  BOOST_CHECK_THROW(_pcieBackendInstance->open(),PcieBackendException);// try opening again will cause an exception
+  BOOST_CHECK_THROW(_pcieBackendInstance->open(),ChimeraTK::logic_error);// try opening again will cause an exception
   _pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4);
   BOOST_CHECK_EQUAL( dataWord, DMMY_AS_ASCII );
 
   /** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
   //BOOST_CHECK_THROW( _pcieBackendInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 6),
   BOOST_CHECK_THROW( _pcieBackendInstance->read( /*bar*/ 6, WORD_DUMMY_OFFSET, &dataWord, 4),
-      PcieBackendException );
+      ChimeraTK::logic_error );
 
 }
 
@@ -416,7 +414,7 @@ void PcieBackendTest::testWriteRegister()
   /** There has to be an exception if the bar is wrong. 6 is definitely out of range. */
   //BOOST_CHECK_THROW( _pcieBackendInstance->writeReg( /*bar*/ 6, WORD_DUMMY_OFFSET, newUserWord),
   BOOST_CHECK_THROW( _pcieBackendInstance->write( /*bar*/ 6, WORD_DUMMY_OFFSET, &newUserWord, 4),
-      PcieBackendException );
+      ChimeraTK::logic_error );
 }
 
 
@@ -441,7 +439,7 @@ void PcieBackendTest::testOpen(){
 void PcieBackendTest::testCreateBackend(){
   std::cout << "testCreateBackend" << std::endl;
   /** Try creating a non existing backend */
-  BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
+  BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
   /** Try creating an existing backend */
   _pcieBackendInstance = factoryInstance.createBackend(_deviceFileName);
   BOOST_CHECK(_pcieBackendInstance != 0);

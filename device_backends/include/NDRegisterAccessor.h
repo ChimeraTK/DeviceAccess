@@ -13,7 +13,7 @@
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
 #include "FixedPointConverter.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "VirtualFunctionTemplate.h"
 
 namespace ChimeraTK {
@@ -111,7 +111,7 @@ namespace ChimeraTK {
        *  Return the fixed point converter used to convert the raw data from the device to the type T. If no conversion
        *  by the fixed point converter is required, this function will throw an exception. */
       virtual FixedPointConverter getFixedPointConverter() const  {
-        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("Not implemented");
       }
 
     protected:
@@ -140,7 +140,7 @@ namespace ChimeraTK {
 
   template<typename UserType> template<typename COOCKED_TYPE>
   COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/) const {
-    throw DeviceException("Reading as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
+    throw ChimeraTK::logic_error("Reading as coocked is not available for this accessor");
   }
 
   template<typename UserType> template<typename COOCKED_TYPE>
@@ -150,7 +150,7 @@ namespace ChimeraTK {
 
   template<typename UserType> template<typename COOCKED_TYPE>
   void NDRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
-    throw DeviceException("Setting as coocked is not available for this accessor", DeviceException::NOT_AVAILABLE);
+    throw ChimeraTK::logic_error("Setting as coocked is not available for this accessor");
   }
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);

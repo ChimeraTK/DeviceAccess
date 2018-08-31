@@ -29,7 +29,7 @@ namespace ChimeraTK {
     {
       parseSdm(sdmString);
     }
-    catch(SdmUriParseException &ue)
+    catch(ChimeraTK::logic_error &ue)
     {
       return false;
     }
@@ -39,12 +39,9 @@ namespace ChimeraTK {
   Sdm Utilities::parseSdm(std::string sdmString) {
     Sdm sdmInfo;
     size_t signatureLen = 6;
-    if (sdmString.empty())
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
-    if (sdmString.length() < signatureLen)
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
-    if (sdmString.substr(0,6) !="sdm://")
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
+    if(sdmString.empty()) throw ChimeraTK::logic_error("Invalid sdm.");
+    if(sdmString.length() < signatureLen) throw ChimeraTK::logic_error("Invalid sdm.");
+    if(sdmString.substr(0,6) !="sdm://") throw ChimeraTK::logic_error("Invalid sdm.");
     int pos = 6;
 
     std::size_t found = sdmString.find_first_of("/", pos);
@@ -55,7 +52,7 @@ namespace ChimeraTK {
     }
     else
     {
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
+      throw ChimeraTK::logic_error("Invalid sdm.");
     }
     if (sdmString.length() < found+1)
       return sdmInfo;
@@ -63,15 +60,15 @@ namespace ChimeraTK {
     //let's do a sanity check, only one delimiter occurrence is allowed.
     if (countOccurence(subUri,':') > 1) /* check ':' */
     {
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
+      throw ChimeraTK::logic_error("Invalid sdm.");
     }
     if (countOccurence(subUri,';') > 1) /* check ';' */
     {
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
+      throw ChimeraTK::logic_error("Invalid sdm.");
     }
     if (countOccurence(subUri,'=') > 1) /* check '=' */
     {
-      throw SdmUriParseException("Invalid sdm.", SdmUriParseException::INVALID_SDM);
+      throw ChimeraTK::logic_error("Invalid sdm.");
     }
     std::vector<std::string> tokens;
     boost::split(tokens, subUri, boost::is_any_of(":;="));
@@ -157,7 +154,7 @@ namespace ChimeraTK {
 
     std::string dmapFileName = getDMapFilePath();
     if(dmapFileName.empty()){
-      throw DeviceException("Dmap file not set", DeviceException::NO_DMAP_FILE);
+      throw ChimeraTK::logic_error("Dmap file not set");
     }
 
     DMapFileParser fileParser;

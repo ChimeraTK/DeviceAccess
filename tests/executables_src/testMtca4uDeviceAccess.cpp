@@ -178,41 +178,41 @@ void MtcaDeviceTest::testThrowIfNeverOpened() {
   boost::shared_ptr<mtca4u::Device> virginDevice ( new mtca4u::Device());
 
   int32_t dataWord;
-  BOOST_CHECK_THROW(virginDevice->close(), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->readReg(0 /*regOffset*/, &dataWord, 0 /*bar*/), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->writeReg(0 /*regOffset*/, dataWord, 0 /*bar*/), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->readArea(0 /*regOffset*/, &dataWord, 0 /*bar*/,  4 /*size*/), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->writeArea(0 /*regOffset*/, &dataWord, 4 /*size*/, 0 /*bar*/), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->readDMA(0 /*regOffset*/, &dataWord, 4 /*size*/, 0 /*bar*/), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->writeDMA(0 /*regOffset*/, &dataWord, 4 /*size*/, 0 /*bar*/), DeviceException);
+  BOOST_CHECK_THROW(virginDevice->close(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->readReg(0 /*regOffset*/, &dataWord, 0 /*bar*/), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->writeReg(0 /*regOffset*/, dataWord, 0 /*bar*/), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->readArea(0 /*regOffset*/, &dataWord, 0 /*bar*/,  4 /*size*/), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->writeArea(0 /*regOffset*/, &dataWord, 4 /*size*/, 0 /*bar*/), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->readDMA(0 /*regOffset*/, &dataWord, 4 /*size*/, 0 /*bar*/), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->writeDMA(0 /*regOffset*/, &dataWord, 4 /*size*/, 0 /*bar*/), ChimeraTK::logic_error);
 
   //std::string deviceInfo;
   //BOOST_CHECK_THROW(virginDevice.readDeviceInfo(&deviceInfo), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->readDeviceInfo(), DeviceException);
+  BOOST_CHECK_THROW(virginDevice->readDeviceInfo(), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(virginDevice->readReg("irrelevant", &dataWord), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->writeReg("irrelevant", &dataWord), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->readDMA("irrelevant", &dataWord), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->writeDMA("irrelevant", &dataWord), DeviceException);
+  BOOST_CHECK_THROW(virginDevice->readReg("irrelevant", &dataWord), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->writeReg("irrelevant", &dataWord), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->readDMA("irrelevant", &dataWord), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->writeDMA("irrelevant", &dataWord), ChimeraTK::logic_error);
 
   //BOOST_CHECK_THROW(mtca4u::Device::regObject myRegObject = virginDevice->getRegObject("irrelevant"), DeviceException);
   BOOST_CHECK_THROW(
       boost::shared_ptr<mtca4u::Device::RegisterAccessor> myRegisterAccessor = virginDevice->getRegisterAccessor("irrelevant"),
-      DeviceException);
+      ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
       boost::shared_ptr<mtca4u::Device::RegisterAccessor> myRegisterAccessor = virginDevice->getRegisterAccessor("irrelevant"),
-      DeviceException);
-  BOOST_CHECK_THROW(virginDevice->getRegistersInModule("irrelevant"), DeviceException);
-  BOOST_CHECK_THROW(virginDevice->getRegisterAccessorsInModule("irrelevant"), DeviceException);
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->getRegistersInModule("irrelevant"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(virginDevice->getRegisterAccessorsInModule("irrelevant"), ChimeraTK::logic_error);
 }
 
 void MtcaDeviceTest::testMapFileParser_parse() {
   boost::shared_ptr<mtca4u::Device> virginDevice ( new mtca4u::Device());
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend(DUMMY_DEVICE_FILE_NAME));
   MapFileParser fileParser;
-  BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_1_MAPPING_FILE_NAME),MapFileParserException);
-  BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_2_MAPPING_FILE_NAME),MapFileParserException);
-  BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_3_MAPPING_FILE_NAME),MapFileParserException);
+  BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_1_MAPPING_FILE_NAME),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_2_MAPPING_FILE_NAME),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(boost::shared_ptr<RegisterInfoMap> registerMapping = fileParser.parse(FXPNT_ERROR_3_MAPPING_FILE_NAME),ChimeraTK::logic_error);
   /*BOOST_CHECK_THROW(virginDevice->open(testBackend,
                                                                                                                                                                                  registerMapping), //FXPNT_ERROR_1_MAPPING_FILE_NAME),
                      MapFileParserException);*/
@@ -406,47 +406,19 @@ void MtcaDeviceTest::testRegisterAccessor_typedCheckBlockBoundaries(){
   std::vector<DataType> buffer(registerAccessor->getNumberOfElements());
 
   // add an offset of 1 and read the full size of the register: should fail
-  try{
-    registerAccessor->read(buffer.data(), registerAccessor->getNumberOfElements(), 1);
-    BOOST_ERROR( "Reading over the end of the register did not throw" );
-  }catch(DeviceException &e){
-    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-                         std::string("ID is not WRONG_PARAMETER, Message is: " )
-                         + e.what());
-  }
+  BOOST_CHECK_THROW(registerAccessor->read(buffer.data(), registerAccessor->getNumberOfElements(), 1), ChimeraTK::logic_error);
 
- // same for write
-  try{
-    registerAccessor->write(buffer.data(), registerAccessor->getNumberOfElements(), 1);
-    BOOST_ERROR( "Writing over the end of the register did not throw" );
-  }catch(DeviceException &e){
-    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-                         std::string("ID is not WRONG_PARAMETER, Message is: " )
-                         + e.what());
-  }
+  // same for write
+  BOOST_CHECK_THROW(registerAccessor->write(buffer.data(), registerAccessor->getNumberOfElements(), 1), ChimeraTK::logic_error);
 
   // OK, and the same drill for raw access
   std::vector<int32_t> rawBuffer(registerAccessor->getNumberOfElements());
   // add an offset of 1 and read the full size of the register: should fail
-  try{
-    registerAccessor->readRaw(rawBuffer.data(), registerAccessor->getNumberOfElements()*sizeof(int32_t), 4);
-    BOOST_ERROR( "Reading over the end of the register did not throw" );
-  }catch(DeviceException &e){
-    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-                         std::string("ID is not WRONG_PARAMETER, Message is: " )
-                         + e.what());
-  }
+  BOOST_CHECK_THROW(registerAccessor->readRaw(rawBuffer.data(), registerAccessor->getNumberOfElements()*sizeof(int32_t), 4),
+                    ChimeraTK::logic_error);
   // and write...
-  try{
-    registerAccessor->writeRaw(rawBuffer.data(), registerAccessor->getNumberOfElements() *sizeof(int32_t), 4);
-    BOOST_ERROR( "Writing over the end of the register did not throw" );
-  }catch(DeviceException &e){
-    BOOST_CHECK_MESSAGE( e.getID() == DeviceException::WRONG_PARAMETER ,
-                         std::string("ID is not WRONG_PARAMETER, Message is: " )
-                         + e.what());
-  }
-
-
+  BOOST_CHECK_THROW(registerAccessor->writeRaw(rawBuffer.data(), registerAccessor->getNumberOfElements() *sizeof(int32_t), 4),
+                    ChimeraTK::logic_error);
 }
 
 void MtcaDeviceTest::testRegisterAccessor_readSimple() {

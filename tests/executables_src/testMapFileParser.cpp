@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "MapFileParser.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "helperFunctions.h"
 
 namespace mtca4u{
@@ -65,77 +65,34 @@ bool init_unit_test(){
 void MapFileParserTest::testFileDoesNotExist(){
   mtca4u::MapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("NonexistentFile.map"),
-      mtca4u::MapFileException);
-  try{
-    fileparser.parse("NonexistentFile.map");
-  } catch (mtca4u::MapFileException& mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_CANNOT_OPEN_MAP_FILE);
-  }
+      ChimeraTK::logic_error);
 }
 
 void MapFileParserTest::testInvalidMetadata(){
   mtca4u::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("invalid_metadata.map"),
-      mtca4u::MapFileException);
-
-  try{
-    map_file_parser.parse("invalid_metadata.map");
-  } catch (mtca4u::MapFileException &mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-  }
+      ChimeraTK::logic_error);
 }
 
 void MapFileParserTest::testMandatoryRegisterFieldMissing () {
   mtca4u::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("MandatoryRegisterfIeldMissing.map"),
-      mtca4u::MapFileException);
-  try{
-    map_file_parser.parse("MandatoryRegisterfIeldMissing.map");
-  }
-  catch (mtca4u::MapFileException &mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-  }
+      ChimeraTK::logic_error);
 }
 
 void MapFileParserTest::testIncorrectRegisterWidth () {
   mtca4u::MapFileParser map_file_parser;
   BOOST_CHECK_THROW(map_file_parser.parse("IncorrectRegisterWidth.map"),
-      mtca4u::MapFileException);
-  try{
-    map_file_parser.parse("IncorrectRegisterWidth.map");
-  }
-  catch (mtca4u::MapFileException &mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-  }
+      ChimeraTK::logic_error);
 }
 
 void MapFileParserTest::testFracBits () {
   mtca4u::MapFileParser map_file_parser1;
   mtca4u::MapFileParser map_file_parser2;
   BOOST_CHECK_THROW(map_file_parser1.parse("IncorrectFracBits1.map"),
-      mtca4u::MapFileException);
+      ChimeraTK::logic_error);
   BOOST_CHECK_THROW(map_file_parser2.parse("IncorrectFracBits2.map"),
-      mtca4u::MapFileException);
-  try{
-    map_file_parser1.parse("IncorrectFracBits1.map");
-  }
-  catch (mtca4u::MapFileException &mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-  }
-
-  try{
-    map_file_parser1.parse("IncorrectFracBits2.map");
-  }
-  catch (mtca4u::MapFileException &mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-  }
-
+      ChimeraTK::logic_error);
 }
 
 void MapFileParserTest::testGoodMapFileParse () {
@@ -317,13 +274,5 @@ void MapFileParserTest::testSplitStringAtLastDot(){
 void MapFileParserTest::testBadMappFileParse(){
   mtca4u::MapFileParser fileparser;
   BOOST_CHECK_THROW(fileparser.parse("badMapFile.map"),
-      mtca4u::MapFileException);
-  try{
-    fileparser.parse("badMapFile.map");
-  } catch (mtca4u::MapFileException& mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_MAP_FILE_PARSE_ERROR);
-    std::cerr << mapFileException.what() << "\n";
-    BOOST_CHECK( std::string(mapFileException.what()) == "Error in map file: \"badMapFile.map\" (empty register name) in line (4) \"JUST_MOUDLE.      1                   0x0      4\"" );
-  }
+      ChimeraTK::logic_error);
 }

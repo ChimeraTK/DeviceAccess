@@ -6,7 +6,7 @@
 #include "DMapFileParser.h"
 #include "Utilities.h"
 #include "parserUtilities.h"
-#include "MapException.h"
+#include "Exception.h"
 
 namespace utilities = ChimeraTK::parserUtilities;
 
@@ -21,7 +21,7 @@ namespace ChimeraTK {
 
     file.open(absPathToDMapFile.c_str());
     if (!file) {        
-      throw DMapFileParserException("Cannot open dmap file: \"" + absPathToDMapFile + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot open dmap file: \"" + absPathToDMapFile + "\"");
     }
 
     DeviceInfoMapPointer dmap(new DeviceInfoMap(absPathToDMapFile));
@@ -42,7 +42,8 @@ namespace ChimeraTK {
     }
     file.close();
     if (dmap->getSize() == 0) {
-      throw DMapFileParserException("No data in in dmap file: \"" + file_name + "\"", LibMapException::EX_NO_DMAP_DATA);
+      // need to throw special exception for the DMapFilesParser - this is actually a ChimeraTK::logic_error exception!
+      throw ChimeraTK::detail::EmptyDMapFileException("No data in in dmap file: \"" + file_name + "\"");
     }
     return dmap;
   }
@@ -95,7 +96,7 @@ namespace ChimeraTK {
     std::stringstream errorMessage;
     errorMessage << "Error in dmap file: \"" << file_name << "\" in line (" << line_nr
 		 << ") \"" << line << "\"";
-    throw DMapFileParserException(errorMessage.str(), LibMapException::EX_DMAP_FILE_PARSE_ERROR);
+    throw ChimeraTK::logic_error(errorMessage.str());
   }
 
   

@@ -117,8 +117,7 @@ namespace ChimeraTK {
       }
       // make sure the target device exists
       if(_targetDevice == nullptr) {
-        throw DeviceException("Target device for this logical register is not opened. See exception thrown in open()!",
-                              DeviceException::NOT_OPENED);
+        throw ChimeraTK::logic_error("Target device for this logical register is not opened. See exception thrown in open()!");
       }
       // determine the offset and length
       size_t actualOffset = size_t(info->firstIndex) + wordOffsetInRegister;
@@ -140,8 +139,8 @@ namespace ChimeraTK {
           registerPathName, numberOfWords, wordOffsetInRegister, flags));
     }
     else {
-      throw DeviceException("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
-          registerPathName+").", DeviceException::NOT_IMPLEMENTED);
+      throw ChimeraTK::logic_error("For this register type, a RegisterAccessor cannot be obtained (name of logical register: "+
+          registerPathName+").");
     }
 
     return ptr;

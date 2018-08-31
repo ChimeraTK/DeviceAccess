@@ -9,7 +9,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "ForwardDeclarations.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "BackendFactory.h"
 #include "DeviceBackend.h"
 #include "ScalarRegisterAccessor.h"

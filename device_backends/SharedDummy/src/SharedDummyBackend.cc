@@ -6,7 +6,7 @@
 #include <boost/filesystem.hpp>
 
 #include "SharedDummyBackend.h"
-#include "NotImplementedException.h"
+#include "Exception.h"
 #include "MapFileParser.h"
 #include "parserUtilities.h"
 #include "BackendFactory.h"
@@ -20,7 +20,7 @@
       errorMessage << "Invalid address offset " << address \
       << " in bar " << static_cast<int>(bar) << "."	\
       << "Caught out_of_range exception: " << outOfRangeException.what();\
-      throw DeviceException(errorMessage.str(), DeviceException::WRONG_PARAMETER);\
+      throw ChimeraTK::logic_error(errorMessage.str());\
     }
 
 
@@ -70,8 +70,7 @@ namespace ChimeraTK {
 
         std::string errMsg{"Could not allocate shared memory while constructing registers. "
                            "Please file a bug report at https://github.com/ChimeraTK/DeviceAccess."};
-        throw SharedDummyBackendException(errMsg,
-                  SharedDummyBackendException::EX_BAD_ALLOC);
+        throw ChimeraTK::logic_error(errMsg);
       }
     } /* for(barSizesInBytesIter) */
   }
@@ -91,21 +90,21 @@ namespace ChimeraTK {
   void SharedDummyBackend::open()
   {
     if (_opened){
-      throw DeviceException("Device is already open.", DeviceException::CANNOT_OPEN_DEVICEBACKEND);
+      throw ChimeraTK::logic_error("Device is already open.");
     }
     _opened=true;
   }
 
   void SharedDummyBackend::close(){
     if (!_opened){
-      throw DeviceException("Device is already closed.", DeviceException::NOT_OPENED);
+      throw ChimeraTK::logic_error("Device is already closed.");
     }
     _opened=false;
   }
 
   void SharedDummyBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
     if (!_opened){
-      throw DeviceException("Device is closed.", DeviceException::NOT_OPENED);
+      throw ChimeraTK::logic_error("Device is closed.");
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
@@ -119,7 +118,7 @@ namespace ChimeraTK {
 
   void SharedDummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
     if (!_opened){
-      throw DeviceException("Device is closed.", DeviceException::NOT_OPENED);
+      throw ChimeraTK::logic_error("Device is closed.");
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
@@ -150,7 +149,7 @@ namespace ChimeraTK {
 
   void SharedDummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
     if (sizeInBytes % sizeof(int32_t) ){
-      throw( DeviceException("Read/write size has to be a multiple of 4", DeviceException::WRONG_PARAMETER) );
+      throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
     }
   }
 
@@ -161,7 +160,7 @@ namespace ChimeraTK {
 
     std::string mapFileName = parameters.front();
     if(mapFileName == "") {
-      throw ChimeraTK::DeviceException("No map file name given.", ChimeraTK::DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("No map file name given.");
     }
 
     // when the factory is used to create the dummy device, mapfile path in the

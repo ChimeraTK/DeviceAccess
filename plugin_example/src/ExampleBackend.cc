@@ -39,5 +39,5 @@ void ExampleBackend::close(){
 template<typename UserType>
 boost::shared_ptr< NDRegisterAccessor<UserType> > ExampleBackend::getRegisterAccessor_impl(
     const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, mtca4u::AccessModeFlags /*flags*/) {
-  throw mtca4u::DeviceException("Not implemented.", mtca4u::DeviceException::NOT_IMPLEMENTED);
+  throw ChimeraTK::logic_error("Not implemented.");
 }

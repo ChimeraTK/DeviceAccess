@@ -19,7 +19,7 @@
 #include "SubdeviceBackend.h"
 #include "SharedDummyBackend.h"
 #include "DMapFileParser.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "DeviceAccessVersion.h"
 #include <dlfcn.h>
 #include <boost/bind.hpp>
@@ -95,8 +95,7 @@ namespace ChimeraTK {
 
     // it's not a URI. Try finding the alias in the dmap file.
     if (_dMapFile.empty()) {
-      throw DeviceException("DMap file not set.",
-                            DeviceException::NO_DMAP_FILE);
+      throw ChimeraTK::logic_error("DMap file not set.");
     }
     auto deviceInfo = Utilities::aliasLookUp(aliasOrUri, _dMapFile);
     return createBackendInternal(deviceInfo);
@@ -119,7 +118,7 @@ namespace ChimeraTK {
     try {
       sdm = Utilities::parseSdm(deviceInfo.uri);
     }
-    catch(SdmUriParseException &e){
+    catch(ChimeraTK::logic_error &e){
       //fixme: the programme flow should not use exceptions here. It is a supported
       // condition that the old device syntax is used.
 
@@ -156,8 +155,7 @@ namespace ChimeraTK {
         //return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
     }
 
-    throw BackendFactoryException("Unregistered device: Interface = "+sdm._Interface+" Protocol = "+sdm._Protocol,
-                                  BackendFactoryException::UNREGISTERED_DEVICE);
+    throw ChimeraTK::logic_error("Unregistered device: Interface = "+sdm._Interface+" Protocol = "+sdm._Protocol);
       return boost::shared_ptr<DeviceBackend>(); //won't execute
   }
 
@@ -172,7 +170,7 @@ namespace ChimeraTK {
     // FIXME: Only works for functions, not for variables = registerer :-(
     void *hndl = dlopen(soFile.c_str() , RTLD_LAZY );
     if(hndl == NULL){
-      throw DeviceException( dlerror(), DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error(dlerror());
     }
 
     // try to find the symbol for the version function.
@@ -187,7 +185,7 @@ namespace ChimeraTK {
       dlclose(hndl);
       std::stringstream errorMessage;
       errorMessage << "Symbol 'deviceAccessVersionUsedToCompile' not found in " <<soFile;
-      throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error(errorMessage.str());
     }
 
     if (std::string(versionFunction()) != CHIMERATK_DEVICEACCESS_VERSION){
@@ -199,7 +197,7 @@ namespace ChimeraTK {
       // This is better than just printing a warning because the exception which is thrown here is caught
       // if the library is loaded via dmap file (to keep dmap files working if broken backends are not used).
       dlclose(hndl);
-      throw DeviceException( errorMessage.str(), DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error(errorMessage.str());
     }
 
     // it is a correct plugin, load all the symbols now
@@ -216,7 +214,7 @@ namespace ChimeraTK {
     for ( auto lib : dmap->getPluginLibraries() ){
       try{
         loadPluginLibrary(lib);
-      }catch(DeviceException &e){
+      }catch(ChimeraTK::logic_error &e){
         //Ignore library loading errors when doing this automatically for all plugins in the dmap file
         //to keep dmap files usable if the broken backends are not used.
         //Print a warning that the loading failed.
@@ -229,6 +227,6 @@ namespace ChimeraTK {
 
    boost::shared_ptr<DeviceBackend> BackendFactory::failedRegistrationThrowerFunction(
      std::string /*host*/, std::string /*instance*/, std::list<std::string> /*parameters*/, std::string /*mapFileName*/, std::string exception_what){
-     throw BackendFactoryException(exception_what, BackendFactoryException::UNREGISTERED_DEVICE);
+     throw ChimeraTK::logic_error(exception_what);
    }
 } // namespace ChimeraTK

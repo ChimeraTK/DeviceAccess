@@ -16,7 +16,7 @@
 #include <boost/fusion/algorithm.hpp>
 
 #include "SupportedUserTypes.h"
-#include "NotImplementedException.h"
+#include "Exception.h"
 
 namespace ChimeraTK{
 

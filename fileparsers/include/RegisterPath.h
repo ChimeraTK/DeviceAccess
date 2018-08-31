@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "DeviceException.h"
+#include "Exception.h"
 
 namespace ChimeraTK {
 
@@ -218,8 +218,8 @@ namespace ChimeraTK {
           }
           else {
             if(sepalt != otherPath.separator_alt) {
-              throw DeviceException("RegisterPath objects do not compare when both have different alternative "
-                  "separators set.",DeviceException::WRONG_PARAMETER);
+              throw ChimeraTK::logic_error("RegisterPath objects do not compare when both have different alternative "
+                  "separators set.");
             }
           }
         }

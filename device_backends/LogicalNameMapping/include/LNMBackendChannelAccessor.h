@@ -34,7 +34,7 @@ namespace ChimeraTK {
           flags.checkForUnknownFlags({AccessMode::raw});
           // check for illegal parameter combinations
           if(flags.has(AccessMode::raw)) {
-            throw DeviceException("LNMBackendChannelAccessor: raw access not yet supported!", DeviceException::NOT_IMPLEMENTED);
+            throw ChimeraTK::logic_error("LNMBackendChannelAccessor: raw access not yet supported!");
           }
           _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
           // copy the register info and create the internal accessors, if needed
@@ -42,8 +42,7 @@ namespace ChimeraTK {
               _dev->getRegisterCatalogue().getRegister(_registerPathName)) );
           // check for incorrect usage of this accessor
           if( _info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL ) {
-            throw DeviceException("LNMBackendChannelAccessor used for wrong register type.",
-                DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+            throw ChimeraTK::logic_error("LNMBackendChannelAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
           }
           // get target device and accessor
           std::string devName = _info.deviceName;
@@ -72,8 +71,7 @@ namespace ChimeraTK {
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
-        throw DeviceException("Writing to channel-type registers of logical name mapping devices is not supported.",
-            DeviceException::REGISTER_IS_READ_ONLY);
+        throw ChimeraTK::logic_error("Writing to channel-type registers of logical name mapping devices is not supported.");
       }
 
       bool doReadTransferNonBlocking() override {
@@ -116,8 +114,7 @@ namespace ChimeraTK {
       }
 
       FixedPointConverter getFixedPointConverter() const override {
-        throw DeviceException("FixedPointConverterse are not available in Logical Name Mapping",
-                              DeviceException::NOT_AVAILABLE);
+        throw ChimeraTK::logic_error("FixedPointConverterse are not available in Logical Name Mapping");
       }
 
       AccessModeFlags getAccessModeFlags() const override {

@@ -8,7 +8,7 @@
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "NumericAddress.h"
 #include "MapFileParser.h"
 
@@ -36,7 +36,7 @@ namespace ChimeraTK {
     else {
       auto components = registerPathName.getComponents();
       if(components.size() != 3) {
-        throw DeviceException("Illegal numeric address: '"+(registerPathName)+"'", DeviceException::REGISTER_DOES_NOT_EXIST);
+        throw ChimeraTK::logic_error("Illegal numeric address: '"+(registerPathName)+"'");
       }
       auto bar = std::stoi(components[1]);
       size_t pos = components[2].find_first_of("*");
@@ -50,7 +50,7 @@ namespace ChimeraTK {
       }
       auto nElements = nBytes/sizeof(int32_t);
       if(nBytes == 0 || nBytes % sizeof(int32_t) != 0) {
-        throw DeviceException("Illegal numeric address: '"+(registerPathName)+"'", DeviceException::REGISTER_DOES_NOT_EXIST);
+        throw ChimeraTK::logic_error("Illegal numeric address: '"+(registerPathName)+"'");
       }
       return boost::make_shared<RegisterInfoMap::RegisterInfo>(registerPathName, nElements, address, nBytes, bar);
     }
@@ -105,14 +105,14 @@ namespace ChimeraTK {
     RegisterInfoMap::RegisterInfo registerInfo;
     _registerMap->getRegisterInfo(regName, registerInfo, regModule);
     if (addRegOffset % 4) {
-      throw DeviceException("Register offset must be divisible by 4", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Register offset must be divisible by 4");
     }
     if (dataSize) {
       if (dataSize % 4) {
-        throw DeviceException("Data size must be divisible by 4", DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("Data size must be divisible by 4");
       }
       if (dataSize > registerInfo.nBytes - addRegOffset) {
-        throw DeviceException("Data size exceed register size", DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("Data size exceed register size");
       }
       retDataSize = dataSize;
     } else {

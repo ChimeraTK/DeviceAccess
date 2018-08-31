@@ -7,9 +7,8 @@
 
 #include "BackendFactory.h"
 #include "DummyBackend.h"
-#include "NotImplementedException.h"
 #include "parserUtilities.h"
-#include "MapException.h"
+#include "Exception.h"
 
 using namespace boost::unit_test_framework;
 namespace mtca4u{
@@ -174,11 +173,11 @@ void DummyBackendTest::testCheckSizeIsMultipleOfWordSize() {
   // just some arbitrary numbers to test %4 = 0, 1, 2, 3
   BOOST_CHECK_NO_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(24));
 
-  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(25), DummyBackendException);
+  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(25), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(26), DummyBackendException);
+  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(26), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(27), DummyBackendException);
+  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(27), ChimeraTK::logic_error);
 }
 
 void DummyBackendTest::testReadWriteSingleWordRegister() {
@@ -201,9 +200,9 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
 
   // the size as index is invalid, allowed range is 0..size-1 included.
   BOOST_CHECK_THROW(dummyBackend->read(bar, dummyBackend->_barContents[bar].size()*sizeof(int32_t), &dataContent, 4),
-      DummyBackendException);
+      ChimeraTK::logic_error);
   BOOST_CHECK_THROW(dummyBackend->write(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &dataContent, 4),
-      DummyBackendException);
+      ChimeraTK::logic_error);
 }
 
 void DummyBackendTest::testReadWriteMultiWordRegister() {
@@ -243,22 +242,22 @@ void DummyBackendTest::testReadWriteMultiWordRegister() {
   // 1. base address too large
   BOOST_CHECK_THROW(
       dummyBackend->read(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &(dataContent[0]), sizeInBytes),
-      DummyBackendException);
+      ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
       dummyBackend->write(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &(dataContent[0]), sizeInBytes),
-      DummyBackendException);
+      ChimeraTK::logic_error);
   // 2. size too large (works because the target register is not at offfset 0)
   // resize the data vector for this test
   dataContent.resize(dummyBackend->_barContents[bar].size());
   BOOST_CHECK_THROW(
       dummyBackend->read(bar, offset, &(dataContent[0]), dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
-      DummyBackendException);
+      ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
       dummyBackend->write(bar, offset, &(dataContent[0]), dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
-      DummyBackendException);
+      ChimeraTK::logic_error);
   // 3. size not multiple of 4
-  BOOST_CHECK_THROW( dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes - 1), DummyBackendException);
-  BOOST_CHECK_THROW( dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1), DummyBackendException);
+  BOOST_CHECK_THROW( dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW( dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
 }
 
 TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
@@ -531,11 +530,11 @@ void DummyBackendTest::testOpenClose() {
   // if it points to NULL
   BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());
-  BOOST_CHECK_THROW(dummyBackend->open(), DummyBackendException);
+  BOOST_CHECK_THROW(dummyBackend->open(), ChimeraTK::logic_error);
 
   dummyBackend->close();
   BOOST_CHECK(dummyBackend->isOpen() == false);
-  BOOST_CHECK_THROW(dummyBackend->close(), DummyBackendException);
+  BOOST_CHECK_THROW(dummyBackend->close(), ChimeraTK::logic_error);
 }
 
 void DummyBackendTest::testClose() {
@@ -556,9 +555,9 @@ void DummyBackendTest::testOpen() {
 void DummyBackendTest::testCreateBackend() {
   /** Only for testing purpose */
   std::list <std::string> pararmeters;
-  BOOST_CHECK_THROW(DummyBackend::createInstance("","",pararmeters,""),DummyBackendException);
+  BOOST_CHECK_THROW(DummyBackend::createInstance("","",pararmeters,""),ChimeraTK::logic_error);
   /** Try creating a non existing backend */
-  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), LibMapException);
+  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
   /** Try creating an existing backend */
   _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
   BOOST_CHECK(_backendInstance);

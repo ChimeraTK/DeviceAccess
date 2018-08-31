@@ -3,7 +3,7 @@
 using namespace boost::unit_test_framework;
 
 #include "helperFunctions.h"
-#include "MapException.h"
+#include "Exception.h"
 namespace mtca4u{
   using namespace ChimeraTK;
 }
@@ -182,25 +182,13 @@ void MapFileTest::testGetRegisterInfo () {
 
   BOOST_CHECK_THROW(
       dummyMapFile.getRegisterInfo("some_name", retrievedDeviceInfo),
-      mtca4u::MapFileException);
-  try{
-    dummyMapFile.getRegisterInfo("some_name", retrievedDeviceInfo);
-  } catch(mtca4u::MapFileException& mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
-  }
+      ChimeraTK::logic_error);
 
   dummyMapFile.getRegisterInfo(0, retrievedDeviceInfo);
   BOOST_CHECK(compareRegisterInfoents(RegisterInfoent1, retrievedDeviceInfo) == true);
   BOOST_CHECK_THROW(
       dummyMapFile.getRegisterInfo(3, retrievedDeviceInfo),
-      mtca4u::MapFileException);
-  try{
-    dummyMapFile.getRegisterInfo(3, retrievedDeviceInfo);
-  } catch(mtca4u::MapFileException& mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
-  }
+      ChimeraTK::logic_error);
 
 }
 
@@ -219,13 +207,7 @@ void MapFileTest::testGetMetaData () {
   metaDataNameToRetrive = "some_name";
   BOOST_CHECK_THROW(
       dummyMapFile.getMetaData(metaDataNameToRetrive, retrivedValue),
-      mtca4u::MapFileException);
-  try{
-    dummyMapFile.getMetaData(metaDataNameToRetrive, retrivedValue);
-  } catch (mtca4u::MapFileException& mapFileException){
-    BOOST_CHECK(mapFileException.getID() ==
-        mtca4u::LibMapException::EX_NO_METADATA_IN_MAP_FILE);
-  }
+      ChimeraTK::logic_error);
 }
 
 void MapFileTest::testCheckRegistersOfSameName(){

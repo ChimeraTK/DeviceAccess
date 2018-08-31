@@ -121,8 +121,7 @@ namespace ChimeraTK {
         RegisterInfoMap::RegisterInfo info;
         auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend);
         if(!castedBackend) {
-          throw DeviceException("RegisterAccessor::getRegisterInfo() called for a non-NumericAddressedBackend.",
-              DeviceException::NOT_IMPLEMENTED);
+          throw ChimeraTK::logic_error("RegisterAccessor::getRegisterInfo() called for a non-NumericAddressedBackend.");
         }
         castedBackend->getRegisterMap()->getRegisterInfo(_registerPathName, info);
         return info;
@@ -153,8 +152,8 @@ namespace ChimeraTK {
         if(dataSize == 0) dataSize = getNumberOfElements() * sizeof(int32_t);
         // check word alignment
         if(dataSize % 4 != 0 || addRegOffset % 4 != 0) {
-          throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
-              "dividable by 4)",DeviceException::WRONG_PARAMETER);
+          throw ChimeraTK::logic_error("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
+              "dividable by 4)");
         }
         size_t nWords = dataSize/sizeof(int32_t);
         size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);
@@ -177,8 +176,8 @@ namespace ChimeraTK {
         if(dataSize == 0) dataSize = getNumberOfElements() * sizeof(int32_t);
         // check word alignment
         if(dataSize % 4 != 0 || addRegOffset % 4 != 0) {
-          throw DeviceException("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
-              "dividable by 4)",DeviceException::WRONG_PARAMETER);
+          throw ChimeraTK::logic_error("RegisterAccessor::writeRaw with incorrect word alignment (size and offset must be "
+              "dividable by 4)");
         }
         size_t nWords = dataSize/sizeof(int32_t);
         size_t wordOffsetInRegister = addRegOffset/sizeof(int32_t);

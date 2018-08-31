@@ -19,7 +19,6 @@
 #include "Exception.h"
 #include "RegisterInfoMap.h"
 #include "NumericAddressedBackend.h"
-#include "SharedDummyBackendException.h"
 #include "ProcessManagement.h"
 
 

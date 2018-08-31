@@ -3,7 +3,7 @@
 #include <boost/lambda/lambda.hpp>
 
 #include "DummyBackend.h"
-#include "NotImplementedException.h"
+#include "Exception.h"
 #include "MapFileParser.h"
 #include "parserUtilities.h"
 #include "BackendFactory.h"
@@ -17,7 +17,7 @@
       errorMessage << "Invalid address offset " << address \
       << " in bar " << static_cast<int>(bar) << "."	\
       << "Caught out_of_range exception: " << outOfRangeException.what();\
-      throw DummyBackendException(errorMessage.str(), DummyBackendException::INVALID_ADDRESS);\
+      throw ChimeraTK::logic_error(errorMessage.str());\
     }
 
 
@@ -46,7 +46,7 @@ namespace ChimeraTK {
   {
     std::lock_guard<std::mutex> lock(mutex);
     if (_opened){
-      throw DummyBackendException("Device is already open.", DummyBackendException::ALREADY_OPEN);
+      throw ChimeraTK::logic_error("Device is already open.");
     }
     _opened=true;
   }
@@ -81,7 +81,7 @@ namespace ChimeraTK {
   void DummyBackend::close(){
     std::lock_guard<std::mutex> lock(mutex);
     if (!_opened){
-      throw DummyBackendException("Device is already closed.", DummyBackendException::ALREADY_CLOSED);
+      throw ChimeraTK::logic_error("Device is already closed.");
     }
 
     _readOnlyAddresses.clear();
@@ -97,7 +97,7 @@ namespace ChimeraTK {
   void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
     std::lock_guard<std::mutex> lock(mutex);
     if (!_opened){
-      throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
+      throw ChimeraTK::logic_error("Device is closed.");
     }
     checkSizeIsMultipleOfWordSize( sizeInBytes );
     unsigned int wordBaseIndex = address/sizeof(int32_t);
@@ -110,7 +110,7 @@ namespace ChimeraTK {
     {
       std::lock_guard<std::mutex> lock(mutex);
       if (!_opened){
-        throw DummyBackendException("Device is closed.", DeviceException::NOT_OPENED);
+        throw ChimeraTK::logic_error("Device is closed.");
       }
       checkSizeIsMultipleOfWordSize( sizeInBytes );
       unsigned int wordBaseIndex = address/sizeof(int32_t);
@@ -140,7 +140,7 @@ namespace ChimeraTK {
 
   void DummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
     if (sizeInBytes % sizeof(int32_t) ){
-      throw( DummyBackendException("Read/write size has to be a multiple of 4", DummyBackendException::WRONG_SIZE) );
+      throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
     }
   }
 
@@ -228,8 +228,7 @@ namespace ChimeraTK {
 
     if(mapFileName == "" && parameters.size() > 0) mapFileName = parameters.front(); // compatibility
     if(mapFileName == "") {
-      throw ChimeraTK::DummyBackendException("No map file name given in the dmap file.",
-                                  ChimeraTK::DummyBackendException::INVALID_PARAMETER);
+      throw ChimeraTK::logic_error("No map file name given in the dmap file.");
     }
 
     // when the factory is used to create the dummy device, mapfile path in the

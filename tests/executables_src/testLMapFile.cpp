@@ -3,7 +3,7 @@
 
 #include "LogicalNameMapParser.h"
 #include "LNMBackendRegisterInfo.h"
-#include "DeviceException.h"
+#include "Exception.h"
 
 using namespace boost::unit_test_framework;
 namespace mtca4u{
@@ -37,13 +37,7 @@ bool init_unit_test(){
 }
 
 void testErrorInDmapFileSingle(std::string fileName) {
-  BOOST_CHECK_THROW( LogicalNameMapParser lmap(fileName), DeviceException );
-  try {
-    LogicalNameMapParser lmap(fileName);
-  }
-  catch(DeviceException &ex) {
-    BOOST_CHECK(ex.getID() == DeviceException::CANNOT_OPEN_MAP_FILE);
-  }
+  BOOST_CHECK_THROW( LogicalNameMapParser lmap(fileName), ChimeraTK::logic_error );
 }
 
 void LMapFileTest::testFileNotFound() {

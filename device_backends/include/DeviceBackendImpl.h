@@ -4,7 +4,7 @@
 #include <list>
 
 #include "DeviceBackend.h"
-#include "DeviceException.h"
+#include "Exception.h"
 
 namespace ChimeraTK {
 
@@ -29,28 +29,28 @@ namespace ChimeraTK {
       }
 
       virtual void read(uint8_t /*bar*/, uint32_t /*address*/, int32_t* /*data*/,  size_t /*sizeInBytes*/) {
-        throw DeviceException("The depcrecated DeviceBackend::read() function is not implemented by this backend. "
-            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("The depcrecated DeviceBackend::read() function is not implemented by this backend. "
+            "Use the Device frontend instead!");
       }
 
       virtual void write(uint8_t /*bar*/, uint32_t /*address*/, int32_t const* /*data*/,  size_t /*sizeInBytes*/) {
-        throw DeviceException("The depcrecated DeviceBackend::write() function is not implemented by this backend. "
-            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("The depcrecated DeviceBackend::write() function is not implemented by this backend. "
+            "Use the Device frontend instead!");
       }
 
       virtual void read(const std::string &, const std::string &, int32_t *, size_t = 0, uint32_t = 0) {
-        throw DeviceException("The depcrecated DeviceBackend::read() function is not implemented by this backend. "
-            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("The depcrecated DeviceBackend::read() function is not implemented by this backend. "
+            "Use the Device frontend instead!");
       }
 
       virtual void write(const std::string &, const std::string &, int32_t const *, size_t = 0, uint32_t = 0) {
-        throw DeviceException("The depcrecated DeviceBackend::write() function is not implemented by this backend. "
-            "Use the Device frontend instead!",DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("The depcrecated DeviceBackend::write() function is not implemented by this backend. "
+            "Use the Device frontend instead!");
       }
 
       virtual boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const  {
         // implementing this read function is not mandatory, so we throw a not-implemented exception by default
-        throw DeviceException("Obtaining a register map is not supported by this backend.",DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("Obtaining a register map is not supported by this backend.");
       }
 
   protected:

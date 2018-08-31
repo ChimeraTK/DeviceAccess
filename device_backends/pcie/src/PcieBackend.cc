@@ -15,7 +15,6 @@
 #include "pcieuni_io_compat.h"
 #include "llrfdrv_io_compat.h"
 #include "PcieBackend.h"
-#include "PcieBackendException.h"
 
 namespace ChimeraTK {
 
@@ -38,13 +37,11 @@ namespace ChimeraTK {
     std::cout << "open pcie dev" << std::endl;
 #endif
     if (_opened) {
-      throw PcieBackendException("Device already has been _Opened",
-          PcieBackendException::EX_DEVICE_OPENED);
+      throw ChimeraTK::logic_error("Device already has been opened");
     }
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
     if (_deviceID < 0) {
-      throw PcieBackendException(createErrorStringWithErrnoText("Cannot open device: "),
-          PcieBackendException::EX_CANNOT_OPEN_DEVICE);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot open device: "));
     }
 
     determineDriverAndConfigureIoctl();
@@ -104,8 +101,7 @@ namespace ChimeraTK {
     std::cerr << "Unsupported driver. "
         << createErrorStringWithErrnoText("Error is ") << std::endl;
     ::close(_deviceID);
-    throw PcieBackendException("Unsupported driver in device" + _deviceNodeName,
-        PcieBackendException::EX_UNSUPPORTED_DRIVER);
+    throw ChimeraTK::runtime_error("Unsupported driver in device" + _deviceNodeName);
   }
 
   void PcieBackend::close() {
@@ -118,7 +114,7 @@ namespace ChimeraTK {
   void PcieBackend::readInternal(uint8_t bar, uint32_t address, int32_t* data) {
     device_rw l_RW;
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
     l_RW.barx_rw = bar;
     l_RW.mode_rw = RW_D32;
@@ -129,36 +125,32 @@ namespace ChimeraTK {
     l_RW.rsrvd_rw = 0;
 
     if (::read(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
-      throw PcieBackendException(
-          createErrorStringWithErrnoText("Cannot read data from device: "),
-          PcieBackendException::EX_READ_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device: "));
     }
     *data = l_RW.data_rw;
   }
 
   void PcieBackend::directRead(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) {
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
     if (bar > 5) {
       std::stringstream errorMessage;
       errorMessage << "Invalid bar number: " << bar << std::endl;
-      throw PcieBackendException(errorMessage.str(), PcieBackendException::EX_READ_ERROR);
+      throw ChimeraTK::logic_error(errorMessage.str());
     }
     loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + address;
 
     if (pread(_deviceID, data, sizeInBytes, virtualOffset) !=
         static_cast<int>(sizeInBytes)) {
-      throw PcieBackendException(
-          createErrorStringWithErrnoText("Cannot read data from device: "),
-          PcieBackendException::EX_READ_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device: "));
     }
   }
 
   void PcieBackend::writeInternal(uint8_t bar, uint32_t address, int32_t const* data) {
     device_rw l_RW;
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
     l_RW.barx_rw = bar;
     l_RW.mode_rw = RW_D32;
@@ -168,36 +160,31 @@ namespace ChimeraTK {
     l_RW.size_rw = 0;
 
     if (::write(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
-      throw PcieBackendException(
-          createErrorStringWithErrnoText("Cannot write data to device: "),
-          PcieBackendException::EX_WRITE_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot write data to device: "));
     }
   }
 
   // direct write allows to read areas directly, without a loop in user space
   void PcieBackend::directWrite(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
     if (bar > 5) {
       std::stringstream errorMessage;
       errorMessage << "Invalid bar number: " << bar << std::endl;
-      throw PcieBackendException(errorMessage.str(), PcieBackendException::EX_WRITE_ERROR);
+      throw ChimeraTK::logic_error(errorMessage.str());
     }
     loff_t virtualOffset = PCIEUNI_BAR_OFFSETS[bar] + address;
 
     if (pwrite(_deviceID, data, sizeInBytes, virtualOffset) !=
         static_cast<int>(sizeInBytes)) {
-      throw PcieBackendException(
-          createErrorStringWithErrnoText("Cannot write data to device: "),
-          PcieBackendException::EX_WRITE_ERROR);
+      throw ChimeraTK::runtime_error( createErrorStringWithErrnoText("Cannot write data to device: "));
     }
   }
 
   void PcieBackend::readWithStruct(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) {
     if (sizeInBytes % 4) {
-      throw PcieBackendException("Wrong data size - must be dividable by 4",
-          PcieBackendException::EX_READ_ERROR);
+      throw ChimeraTK::logic_error("Wrong data size - must be dividable by 4");
     }
 
     for (uint32_t i = 0; i < sizeInBytes / 4; i++) {
@@ -217,11 +204,10 @@ namespace ChimeraTK {
 
   void PcieBackend::writeWithStruct(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) {
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
     if (sizeInBytes % 4) {
-      throw PcieBackendException("Wrong data size - must be dividable by 4",
-          PcieBackendException::EX_WRITE_ERROR);
+      throw ChimeraTK::logic_error("Wrong data size - must be dividable by 4");
     }
     for (uint32_t i = 0; i < sizeInBytes / 4; i++) {
       writeInternal(bar, address + i * 4, (data + i));
@@ -238,7 +224,7 @@ namespace ChimeraTK {
     device_rw* pl_RW;
 
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
     if (sizeInBytes < sizeof(device_rw)) {
       pl_RW = &l_RW;
@@ -255,9 +241,7 @@ namespace ChimeraTK {
 
     ret = ::read(_deviceID, pl_RW, sizeof(device_rw));
     if (ret != (ssize_t)sizeInBytes) {
-      throw PcieBackendException(
-          createErrorStringWithErrnoText("Cannot read data from device: "),
-          PcieBackendException::EX_DMA_READ_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device: "));
     }
     if (sizeInBytes < sizeof(device_rw)) {
       memcpy(data, pl_RW, sizeInBytes);
@@ -266,7 +250,7 @@ namespace ChimeraTK {
 
   void PcieBackend::readDMAViaIoctl(uint8_t /*bar*/, uint32_t address, int32_t* data,  size_t sizeInBytes) {
     if (_opened == false) {
-      throw PcieBackendException("Device closed", PcieBackendException::EX_DEVICE_CLOSED);
+      throw ChimeraTK::logic_error("Device closed");
     }
 
     // safety check: the requested dma size (size of the data buffer) has to be at
@@ -274,8 +258,7 @@ namespace ChimeraTK {
     // the size of the dma struct, because the latter has to be copied into the
     // data buffer.
     if (sizeInBytes < sizeof(device_ioctrl_dma)) {
-      throw PcieBackendException("Reqested dma size is too small",
-          PcieBackendException::EX_DMA_READ_ERROR);
+      throw ChimeraTK::logic_error("Reqested dma size is too small");
     }
 
     // prepare the struct
@@ -292,9 +275,7 @@ namespace ChimeraTK {
     memcpy((void*)data, &DMA_RW, sizeof(device_ioctrl_dma));
     int ret = ioctl(_deviceID, _ioctlDMA, (void*)data);
     if (ret) {
-      throw PcieBackendException(
-          createErrorStringWithErrnoText("Cannot read data from device "),
-          PcieBackendException::EX_DMA_READ_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read data from device "));
     }
   }
 
@@ -302,13 +283,11 @@ namespace ChimeraTK {
     std::ostringstream os;
     device_ioctrl_data ioctlData = { 0, 0, 0, 0 };
     if (ioctl(_deviceID, _ioctlPhysicalSlot, &ioctlData) < 0) {
-      throw PcieBackendException(createErrorStringWithErrnoText("Cannot read device info: "),
-          PcieBackendException::EX_INFO_READ_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read device info: "));
     }
     os << "SLOT: " << ioctlData.data;
     if (ioctl(_deviceID, _ioctlDriverVersion, &ioctlData) < 0) {
-      throw PcieBackendException(createErrorStringWithErrnoText("Cannot read device info: "),
-          PcieBackendException::EX_INFO_READ_ERROR);
+      throw ChimeraTK::runtime_error(createErrorStringWithErrnoText("Cannot read device info: "));
     }
     os << " DRV VER: " << (float)(ioctlData.offset / 10.0) +
         (float)ioctlData.data;

@@ -65,45 +65,15 @@ void LMapBackendTest::testExceptions() {
   BOOST_CHECK(device.isOpened() == true);
   int data = 0;
 
-  BOOST_CHECK_THROW(device.getRegisterMap(), mtca4u::DeviceException);
-  try {
-    device.getRegisterMap();
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
+  BOOST_CHECK_THROW(device.getRegisterMap(), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.writeReg("Channel3", &data), mtca4u::DeviceException);
-  try {
-    device.writeReg("Channel3", &data);
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
+  BOOST_CHECK_THROW(device.writeReg("Channel3", &data), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.readReg("Channel3", &data), mtca4u::DeviceException);
-  try {
-    device.readReg("Channel3", &data);
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
+  BOOST_CHECK_THROW(device.readReg("Channel3", &data), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.getRegistersInModule("MODULE"), mtca4u::DeviceException);
-  try {
-    device.getRegistersInModule("MODULE");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
+  BOOST_CHECK_THROW(device.getRegistersInModule("MODULE"), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.getRegisterAccessorsInModule("MODULE"), mtca4u::DeviceException);
-  try {
-    device.getRegisterAccessorsInModule("MODULE");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK( e.getID() == mtca4u::DeviceException::NOT_IMPLEMENTED);
-  }
+  BOOST_CHECK_THROW(device.getRegisterAccessorsInModule("MODULE"), ChimeraTK::logic_error);
   BOOST_CHECK(device.isOpened() == true);
   device.close();
   BOOST_CHECK(device.isOpened() == false);
@@ -178,7 +148,7 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( res == 42 );
 
     res = 0;
-    BOOST_CHECK_THROW( device.writeReg("Constant",&res), mtca4u::DeviceException );
+    BOOST_CHECK_THROW( device.writeReg("Constant",&res), ChimeraTK::logic_error );
 
     device.readReg("Constant",&res, 4);
     BOOST_CHECK( res == 42 );
@@ -189,13 +159,7 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( acc[0] == 42 );
     acc.read();
     BOOST_CHECK( acc[0] == 42 );
-    BOOST_CHECK_THROW( acc.write(), DeviceException );
-    try {
-      acc.write();
-    }
-    catch(DeviceException &e) {
-      BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
-    }
+    BOOST_CHECK_THROW( acc.write(), ChimeraTK::logic_error );
 
     mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
     mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
@@ -221,13 +185,7 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK_EQUAL( arrayConstant[2], 3333 );
     BOOST_CHECK_EQUAL( arrayConstant[3], 4444 );
     BOOST_CHECK_EQUAL( arrayConstant[4], 5555 );
-    BOOST_CHECK_THROW( acc.write(), DeviceException );
-    try {
-      acc.write();
-    }
-    catch(DeviceException &e) {
-      BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
-    }
+    BOOST_CHECK_THROW( acc.write(), ChimeraTK::logic_error );
 
     device.close();
 
@@ -646,20 +604,8 @@ void LMapBackendTest::testRegisterAccessorForChannel() {
   BOOST_CHECK( acc4.isReadable() );
   BOOST_CHECK( acc4.isWriteable() == false);
 
-  BOOST_CHECK_THROW( acc3.write(), DeviceException );
-  try {
-    acc3.write();
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
-  }
-  BOOST_CHECK_THROW( acc4.write(), DeviceException );
-  try {
-    acc4.write();
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::REGISTER_IS_READ_ONLY);
-  }
+  BOOST_CHECK_THROW( acc3.write(), ChimeraTK::logic_error );
+  BOOST_CHECK_THROW( acc4.write(), ChimeraTK::logic_error );
 
   device.close();
 

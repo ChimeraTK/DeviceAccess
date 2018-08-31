@@ -35,17 +35,6 @@ namespace ChimeraTK {
       static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance,
           std::list<std::string> parameters, std::string mapFileName);
 
-      virtual void read(const std::string &, const std::string &,
-          int32_t *, size_t  = 0, uint32_t  = 0) {
-        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
-      }
-
-      virtual void write(const std::string &,
-          const std::string &, int32_t const *,
-          size_t  = 0, uint32_t  = 0)  {
-        throw DeviceException("Not implemented", DeviceException::NOT_IMPLEMENTED);
-      }
-
     protected:
 
       template<typename UserType>

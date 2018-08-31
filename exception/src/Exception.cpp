@@ -3,26 +3,22 @@
 #include <string>
 #include <iostream>
 
-namespace ChimeraTK{
+namespace ChimeraTK {
 
-Exception::Exception(const std::string &_exMessage, unsigned int _exID)
-: exMessage(_exMessage), exID(_exID)
-{
-}
+  runtime_error::runtime_error(const std::string &message) noexcept
+  : _message(message)
+  {}
 
-Exception::~Exception() throw() 
-{
+  const char* runtime_error::what() const noexcept {
+    return _message.c_str();
+  }
 
-}
+  logic_error::logic_error(const std::string &message) noexcept
+  : _message(message)
+  {}
 
-const char* Exception::what() const throw()
-{
-	return exMessage.c_str();
-}
-
-unsigned int Exception::getID() const
-{
-	return exID;
-}
+  const char* logic_error::what() const noexcept {
+    return _message.c_str();
+  }
 
 }//namespace ChimeraTK

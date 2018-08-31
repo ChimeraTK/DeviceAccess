@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "MapFileParser.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "NumericAddressedBackendMuxedRegisterAccessor.h"        // for the MULTIPLEXED_SEQUENCE_PREFIX constant
 
 namespace ChimeraTK {
@@ -17,7 +17,7 @@ namespace ChimeraTK {
 
     file.open(file_name.c_str());
     if (!file){
-      throw MapFileException("Cannot open file \"" + file_name + "\"", LibMapException::EX_CANNOT_OPEN_MAP_FILE);
+      throw ChimeraTK::logic_error("Cannot open file \"" + file_name + "\"");
     }
     RegisterInfoMapPointer pmap(new RegisterInfoMap(file_name));
     std::string name; /**< Name of register */
@@ -50,7 +50,7 @@ namespace ChimeraTK {
         is.str(line);
         is >> md.name;
         if (!is){
-          throw MapFileParserException(file_name, line_nr, org_line);
+          throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr));
         }
         line.erase(line.begin(), line.begin() + md.name.length());
         line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
@@ -68,12 +68,13 @@ namespace ChimeraTK {
       module = moduleAndNamePair.first;
       name = moduleAndNamePair.second;
       if ( name.empty() ){
-        throw MapFileParserException(file_name, line_nr, line, "empty register name");
+        throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr)+": "
+                                     "empty register name");
       }
 
       is >> std::setbase(0) >> nElements >> std::setbase(0) >> address >> std::setbase(0) >> nBytes;
       if (!is){
-        throw MapFileParserException(file_name, line_nr, line);
+        throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr));
       }
       // first, set default values for 'optional' fields
       bar = 0x0;
@@ -91,7 +92,8 @@ namespace ChimeraTK {
           failed = true;
         } else {
           if (width > 32) {
-            throw MapFileParserException(file_name, line_nr, line, "register width too big");
+            throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr)+": "
+                                         "register width too big");
           }
         }
       }
@@ -101,7 +103,8 @@ namespace ChimeraTK {
           failed = true;
         } else {
           if (nFractionalBits > 1023 || nFractionalBits < -1024) {
-            throw MapFileParserException(file_name, line_nr, line, "too many fractional bits");
+            throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr)+": "
+                                         "too many fractional bits");
           }
         }
       }
@@ -120,13 +123,14 @@ namespace ChimeraTK {
               failed = true;
           } else {
               if (accessString == "RO")
-                  registerAccess = RegisterInfoMap::RegisterInfo::Access::READ;
+                registerAccess = RegisterInfoMap::RegisterInfo::Access::READ;
               else if (accessString == "RW")
-                  registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
+                registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
               else if (accessString == "WO")
-                  registerAccess = RegisterInfoMap::RegisterInfo::Access::WRITE;
+                registerAccess = RegisterInfoMap::RegisterInfo::Access::WRITE;
               else
-                  throw MapFileParserException(file_name, line_nr, line, "invalid data access");
+                throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr)+": "
+                                             "invalid data access");
           }
       }
       is.clear();

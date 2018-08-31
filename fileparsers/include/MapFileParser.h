@@ -3,7 +3,7 @@
 
 
 #include "RegisterInfoMap.h"
-#include "MapException.h"
+#include "Exception.h"
 #include <iomanip>
 #include <stdint.h>
 #include <string>

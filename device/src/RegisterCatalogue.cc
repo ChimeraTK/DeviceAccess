@@ -7,8 +7,7 @@ namespace ChimeraTK {
     auto it = std::find_if(catalogue.begin(),catalogue.end(),
         [registerPathName](boost::shared_ptr<RegisterInfo> info) { return info->getRegisterName() == registerPathName; });
     if(it == catalogue.end()) {
-      throw DeviceException("Register '"+(registerPathName)+"' was not found in the catalogue.",
-          DeviceException::REGISTER_DOES_NOT_EXIST);
+      throw ChimeraTK::logic_error("Register '"+(registerPathName)+"' was not found in the catalogue.");
     }
     return *it;
   }
@@ -37,8 +36,7 @@ namespace ChimeraTK {
       return metadata.at(key);
     }
     catch(std::out_of_range &e) {
-      throw DeviceException("Metadata '"+(key)+"' was not found in the catalogue ("+e.what()+").",
-          DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Metadata '"+(key)+"' was not found in the catalogue ("+e.what()+").");
     }
   }
 

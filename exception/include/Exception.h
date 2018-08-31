@@ -18,15 +18,13 @@ namespace ChimeraTK {
       /**
        *  Constructor. The passed message is returned by a call to what() and should describe what exactly went wront.
        */
-      runtime_error(const std::string &message) noexcept
-      : _message(message)
-      {}
+      runtime_error(const std::string &message) noexcept;
 
       /**
        *  Return the message describing what exactly went wrong. The returned message is only descriptive and only meant
        *  for display. Program logic must never be based on the content of this string.
        */
-      const char* what() const noexcept override { return _message.c_str(); }
+      const char* what() const noexcept override;
 
     private:
 
@@ -50,15 +48,13 @@ namespace ChimeraTK {
       /**
        *  Constructor. The passed message is returned by a call to what() and should describe what exactly went wront.
        */
-      logic_error(const std::string &message) noexcept
-      : _message(message)
-      {}
+      logic_error(const std::string &message) noexcept;
 
       /**
        *  Return the message describing what exactly went wrong. The returned message is only descriptive and only meant
        *  for display. Program logic must never be based on the content of this string.
        */
-      const char* what() const noexcept override { return _message.c_str(); }
+      const char* what() const noexcept override;
 
     private:
 
@@ -67,42 +63,9 @@ namespace ChimeraTK {
   };
 
   /**
-   *      @brief  Provides base class for exception handling .
-   *
-   *      Stores exception ID and exception description in the form of text string.
-   *
+   *  Compatibility typedefs for the old Exception classe
    */
-  class Exception : public std::exception {
-    protected:
-      std::string         exMessage;      /**< exception description*/
-      unsigned int        exID;           /**< exception ID*/
-    public:
-      /**
-       * @brief Class constructor
-       *
-       * @param _exMessage exception description string
-       * @param _exID exception ID
-       */
-      Exception(const std::string &_exMessage, unsigned int _exID);
-      /**
-       * @brief Accessor. Returns exception description string
-       *
-       * @return exception description string
-       */
-      virtual const char* what() const throw();
-      /**
-       * @brief Accessor. Returns exception ID
-       *
-       * @return exception ID
-       */
-      virtual unsigned int getID() const;
-      /**
-       * Class destructor
-       */
-      virtual ~Exception() throw();
-    private:
-
-  };
+  typedef ChimeraTK::runtime_error Exception;
 
 }//namespace ChimeraTK
 

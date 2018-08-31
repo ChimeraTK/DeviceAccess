@@ -10,10 +10,9 @@
 #include <boost/any.hpp>
 
 #include "ForwardDeclarations.h"
-#include "DeviceBackendException.h"
 #include "RegisterInfoMap.h"
 #include "RegisterCatalogue.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "VirtualFunctionTemplate.h"
 #include "AccessMode.h"
 

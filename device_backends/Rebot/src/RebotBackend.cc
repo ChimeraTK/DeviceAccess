@@ -52,7 +52,7 @@ void RebotBackend::open() {
     _tcpCommunicator->closeConnection();
     std::stringstream errorMessage;
     errorMessage << "Server protocol version " << serverVersion << " not supported!";
-    throw RebotBackendException(errorMessage.str(), RebotBackendException::EX_CONNECTION_FAILED);
+    throw ChimeraTK::runtime_error(errorMessage.str());
   }
     
   _opened = true;
@@ -64,8 +64,7 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
   std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);                          
                           
   if (!isOpen()) {
-    throw RebotBackendException("Device is closed",
-                                RebotBackendException::EX_DEVICE_CLOSED);
+    throw ChimeraTK::logic_error("Device is closed");
   }
 
   _lastSendTime=testable_rebot_sleep::now();
@@ -78,8 +77,7 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
   std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
   
   if (!isOpen()) {
-    throw RebotBackendException("Device is closed",
-                                RebotBackendException::EX_DEVICE_CLOSED);
+    throw ChimeraTK::logic_error("Device is closed");
   }
 
   _lastSendTime=testable_rebot_sleep::now();
@@ -100,9 +98,7 @@ boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
     std::list<std::string> parameters, std::string mapFileName) {
 
   if (parameters.size() < 2) { // expecting tmcb ip and port
-    throw RebotBackendException(
-        "Tmcb ip address and port not found in the parameter list",
-        RebotBackendException::EX_INVALID_PARAMETERS);
+    throw ChimeraTK::logic_error("TMCB IP address and port number not found in the parameter list");
   }
 
   std::list<std::string>::iterator it = parameters.begin();
@@ -198,7 +194,8 @@ uint32_t RebotBackend::parseRxServerHello(
         }
         // sleep without holding the lock. Sleep for half of the connection timeout (plus 1 ms)
         testable_rebot_sleep::sleep_until( _lastSendTime + boost::chrono::milliseconds(_connectionTimeout/2 +1 ) );
-      }catch(RebotBackendException &e){
+      }
+      catch(ChimeraTK::runtime_error &e){
         std::cerr << "RebotBackend: Sending heartbeat failed. Caught exception: " << e.what() <<std::endl;
         std::cerr << "Closing connection." << std::endl;
         close();

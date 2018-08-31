@@ -21,7 +21,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
 
-#include "DeviceException.h"
+#include "Exception.h"
 #include "TimeStamp.h"
 #include "TransferFuture.h"
 #include "VersionNumber.h"
@@ -89,8 +89,8 @@ namespace ChimeraTK {
        *  data has arrived. Otherwise it still might block for a short time until the data transfer was complete. */
       void read() {
         if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
+          throw ChimeraTK::logic_error("Calling read() or write() on an accessor which is part of a TransferGroup "
+                                       "is not allowed.");
         }
         if(hasActiveFuture) {
           activeFuture.wait();
@@ -188,8 +188,8 @@ namespace ChimeraTK {
         // this function was non-virtual in TransferElement, but NDRegisterAccessorBridge has to use a different
         // implementation.
         if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed.",
-              DeviceException::NOT_IMPLEMENTED);
+          throw ChimeraTK::logic_error("Calling read() or write() on an accessor which is part of a TransferGroup "
+                                       "is not allowed.");
         }
         this->writeTransactionInProgress = false;
         preWrite();
@@ -367,7 +367,7 @@ namespace ChimeraTK {
        *  Typically, this is the time when the value was updated.
        */
       virtual TimeStamp getTimeStamp() const{
-        throw DeviceException("getTimeStamp is not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("getTimeStamp is not implemented in DeviceAccess.");
       }
 
       /** @brief Deprecated, do not use
@@ -375,7 +375,7 @@ namespace ChimeraTK {
        *  This feature will be removed soon, maybe even before the next tag. DO NOT USE IT!!
        */
       virtual bool isArray() const{
-        throw DeviceException("isArray is deprecated and intentionally not implemented in DeviceAccess.", DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("isArray is deprecated and intentionally not implemented in DeviceAccess.");
       }
 
       /**

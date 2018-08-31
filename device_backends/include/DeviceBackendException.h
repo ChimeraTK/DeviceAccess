@@ -9,19 +9,14 @@
 #define CHIMERA_TK_DEVICE_BACKEND_EXCEPTION_H
 
 #include "Exception.h"
+#warning You are using a depcrecated header file. Please switch to Exception.h and use the ChimeraTK::runtime_error instead of the old Exception names.
 
 namespace ChimeraTK {
 
-  /** Exception class for all device backends to inherit.
+  /**
+   *  Compatibility typedefs for the old exception classes
    */
-  class DeviceBackendException : public Exception {
-    public:
-      enum { EX_WRONG_PARAMETER
-      };
-
-      DeviceBackendException(const std::string &message, unsigned int exceptionID)
-    : Exception( message, exceptionID ){};
-  };
+  typedef ChimeraTK::runtime_error DeviceBackendException;
 
 }
 

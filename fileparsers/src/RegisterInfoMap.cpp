@@ -2,10 +2,9 @@
 #include <stdexcept>
 #include <cmath>
 
-#include "DeviceException.h"
 #include "RegisterInfoMap.h"
 #include "predicates.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "MapFileParser.h"
 
 namespace ChimeraTK {
@@ -35,15 +34,9 @@ namespace ChimeraTK {
 
   void RegisterInfoMap::getRegisterInfo(const std::string& reg_name, RegisterInfoMap::RegisterInfo &value,
       const std::string& reg_module) const {
-    try {
-      auto info = _catalogue.getRegister(RegisterPath(reg_module)/reg_name);
-      auto infoCast = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
-      value = *infoCast;
-    }
-    catch(DeviceException &ex) {
-      if(ex.getID() != DeviceException::REGISTER_DOES_NOT_EXIST) throw;
-      throw MapFileException(ex.what(), LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
-    }
+    auto info = _catalogue.getRegister(RegisterPath(reg_module)/reg_name);
+    auto infoCast = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+    value = *infoCast;
   }
 
   void RegisterInfoMap::getRegisterInfo(int reg_nr, RegisterInfo &value) const {
@@ -56,17 +49,11 @@ namespace ChimeraTK {
       }
       count++;
     }
-    throw MapFileException("Cannot find register in map file", LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
+    throw ChimeraTK::logic_error("Cannot find register in map file");
   }
 
   void RegisterInfoMap::getMetaData(const std::string &metaDataName, std::string& metaDataValue) const{
-    try {
-      metaDataValue = _catalogue.getMetadata(metaDataName);
-    }
-    catch(DeviceException &ex) {
-      if(ex.getID() != DeviceException::WRONG_PARAMETER) throw;
-      throw MapFileException(ex.what(), LibMapException::EX_NO_METADATA_IN_MAP_FILE);
-    }
+    metaDataValue = _catalogue.getMetadata(metaDataName);
   }
 
   namespace {

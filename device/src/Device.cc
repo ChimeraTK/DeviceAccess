@@ -31,8 +31,8 @@ namespace ChimeraTK {
     checkPointersAreNotNull();
     auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_deviceBackendPointer);
     if(!castedBackend) {
-      throw DeviceException("Device::getRegisterMap() called for a non-NumericAddressedBackend. Use "
-          "Device::getRegisterCatalogue() instead!",DeviceException::NOT_IMPLEMENTED);
+      throw ChimeraTK::logic_error("Device::getRegisterMap() called for a non-NumericAddressedBackend. Use "
+          "Device::getRegisterCatalogue() instead!");
     }
     return castedBackend->getRegisterMap();
   }
@@ -51,8 +51,8 @@ namespace ChimeraTK {
     checkPointersAreNotNull();
     auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(_deviceBackendPointer);
     if(!castedBackend) {
-      throw DeviceException("Device::getRegistersInModule() called for a non-NumericAddressedBackend. Use "
-          "Device::getRegisterCatalogue() instead!",DeviceException::NOT_IMPLEMENTED);
+      throw ChimeraTK::logic_error("Device::getRegistersInModule() called for a non-NumericAddressedBackend. Use "
+          "Device::getRegisterCatalogue() instead!");
     }
     return castedBackend->getRegistersInModule(moduleName);
   }
@@ -83,21 +83,13 @@ namespace ChimeraTK {
       const std::string &regModule, int32_t *data,
       size_t dataSize, uint32_t addRegOffset) const {
     if(dataSize % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong data size - must be dividable by 4", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Wrong data size - must be dividable by 4");
     }
     if(addRegOffset % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Wrong additional register offset - must be dividable by 4");
     }
-    try {
-      auto vec = read<int32_t>(RegisterPath(regModule)/regName, dataSize/sizeof(int32_t), addRegOffset/sizeof(int32_t), true);
-      memcpy(data,vec.data(),vec.size()*sizeof(int32_t));
-    }
-    catch(DeviceException &e) { // translate exception for compatibility
-      if(e.getID() == DeviceException::REGISTER_DOES_NOT_EXIST) {
-        throw ChimeraTK::MapFileException(e.what(), ChimeraTK::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
-      }
-      throw;
-    }
+    auto vec = read<int32_t>(RegisterPath(regModule)/regName, dataSize/sizeof(int32_t), addRegOffset/sizeof(int32_t), true);
+    memcpy(data,vec.data(),vec.size()*sizeof(int32_t));
   }
 
   /********************************************************************************************************************/
@@ -113,10 +105,10 @@ namespace ChimeraTK {
       size_t dataSize, uint32_t addRegOffset) {
     if(dataSize == 0) dataSize = sizeof(int32_t);
     if(dataSize % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong data size: - must be dividable by 4", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Wrong data size: - must be dividable by 4");
     }
     if(addRegOffset % sizeof(int32_t) != 0) {
-      throw DeviceException("Wrong additional register offset - must be dividable by 4", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Wrong additional register offset - must be dividable by 4");
     }
     std::vector<int32_t> vec(dataSize/sizeof(int32_t));
     memcpy(vec.data(),data,dataSize);
@@ -219,7 +211,7 @@ namespace ChimeraTK {
 
   void Device::checkPointersAreNotNull() const {
     if (static_cast<bool>(_deviceBackendPointer) == false) {
-      throw DeviceException("Device has not been opened correctly", DeviceException::NOT_OPENED);
+      throw ChimeraTK::logic_error("Device has not been opened correctly");
     }
   }
 
@@ -271,8 +263,8 @@ namespace ChimeraTK {
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(deviceBackend);
     if(!castedBackend) {
-      throw DeviceException("Device::open() with a RegisterInfoMap called for a non-NumericAddressedBackend. Use "
-          "open() by alias name instead!",DeviceException::NOT_IMPLEMENTED);
+      throw ChimeraTK::logic_error("Device::open() with a RegisterInfoMap called for a non-NumericAddressedBackend. Use "
+          "open() by alias name instead!");
     }
     castedBackend->setRegisterMap(registerMap);// LCOV_EXCL_LINE
     open(deviceBackend);// LCOV_EXCL_LINE

@@ -33,7 +33,7 @@ using namespace boost::unit_test_framework;
     checkToFixedPoint( converter, -5.75, -6 );
 
 #include <sstream>
-#include "DeviceException.h"
+#include "Exception.h"
 
 #include "FixedPointConverter.h"
 namespace mtca4u{
@@ -138,11 +138,11 @@ BOOST_AUTO_TEST_CASE( testConstructor ){
   BOOST_CHECK_NO_THROW( FixedPointConverter("UnknownVariable", 16, 42, false) );
 
   // number of significant bits
-  BOOST_CHECK_THROW( FixedPointConverter("UnknownVariable", 33), DeviceException);
+  BOOST_CHECK_THROW( FixedPointConverter("UnknownVariable", 33), ChimeraTK::logic_error);
 
   // dynamic range of sufficient for bit shift
-  BOOST_CHECK_THROW( FixedPointConverter("UnknownVariable", 2, 1021-1) , DeviceException);
-  BOOST_CHECK_THROW( FixedPointConverter("UnknownVariable", 2, -1024+1) , DeviceException);
+  BOOST_CHECK_THROW( FixedPointConverter("UnknownVariable", 2, 1021-1) , ChimeraTK::logic_error);
+  BOOST_CHECK_THROW( FixedPointConverter("UnknownVariable", 2, -1024+1) , ChimeraTK::logic_error);
   BOOST_CHECK_NO_THROW( FixedPointConverter("UnknownVariable", 2, 1021-2) );
   BOOST_CHECK_NO_THROW( FixedPointConverter("UnknownVariable", 2, -1024+2) );
 }

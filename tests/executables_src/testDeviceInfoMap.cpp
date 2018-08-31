@@ -2,7 +2,7 @@
 #include "boost_dynamic_init_test.h"
 
 #include "DeviceInfoMap.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "helperFunctions.h"
 
 using namespace boost::unit_test_framework;
@@ -122,14 +122,7 @@ void DeviceInfoMapTest::testGetDeviceInfo() {
   BOOST_CHECK((compareDeviceInfos(retrievedElement2, deviceInfo2)) == true);
   BOOST_CHECK_THROW(
       RegisterInfoMap.getDeviceInfo("invalid_card_name", retrievedElement3),
-      mtca4u::DMapFileException);
-  try {
-    RegisterInfoMap.getDeviceInfo("invalid_card_name", retrievedElement3);
-  }
-  catch (mtca4u::DMapFileException& dMapException) {
-    BOOST_CHECK(dMapException.getID() ==
-        mtca4u::LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
-  }
+      ChimeraTK::logic_error);
 }
 
 void DeviceInfoMapTest::testCheckForDuplicateElements() {

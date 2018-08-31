@@ -58,7 +58,7 @@ namespace ChimeraTK {
       }
 
       FixedPointConverter getFixedPointConverter() const override {
-        throw DeviceException("Deprecated and not implemented.", DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("Deprecated and not implemented.");
       }
 
       void doReadTransfer() override {
@@ -89,7 +89,7 @@ namespace ChimeraTK {
       }
 
       ChimeraTK::TransferFuture doReadTransferAsync() override {
-        throw DeviceException("Deprecated MultiplexedDataAccessor does not implement doReadTransferAsync().", DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("Deprecated MultiplexedDataAccessor does not implement doReadTransferAsync().");
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {

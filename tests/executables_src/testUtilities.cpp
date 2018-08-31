@@ -5,7 +5,7 @@ using namespace boost::unit_test_framework;
 #include "Utilities.h"
 #include "BackendFactory.h"
 #include "DeviceInfoMap.h"
-#include "MapException.h"
+#include "Exception.h"
 
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
@@ -70,13 +70,13 @@ void UtilitiesTest::testParseSdm() {
   BOOST_CHECK(sdm._Interface == "dummy");
   BOOST_CHECK(sdm._Parameters.size() == 1);
   BOOST_CHECK(sdm._Parameters.front() == "goodMapFile.map");
-  BOOST_CHECK_THROW(Utilities::parseSdm(""),SdmUriParseException); //Empty string
-  BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"),SdmUriParseException); //shorter than sdm:// signature
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM),SdmUriParseException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_2),SdmUriParseException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_3),SdmUriParseException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_4),SdmUriParseException);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5),SdmUriParseException);
+  BOOST_CHECK_THROW(Utilities::parseSdm(""),ChimeraTK::logic_error); //Empty string
+  BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"),ChimeraTK::logic_error); //shorter than sdm:// signature
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_2),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_3),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_4),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5),ChimeraTK::logic_error);
 }
 
 void UtilitiesTest::testParseDeviceString() {
@@ -109,7 +109,7 @@ void UtilitiesTest::testIsSdm() {
 
 void UtilitiesTest::testAliasLookUp() {
   std::string testFilePath = TEST_DMAP_FILE_PATH;
-  BOOST_CHECK_THROW(Utilities::aliasLookUp("test",testFilePath), LibMapException);
+  BOOST_CHECK_THROW(Utilities::aliasLookUp("test",testFilePath), ChimeraTK::logic_error);
   auto deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
   BOOST_CHECK(deviceInfo.deviceName =="DUMMYD0");
 }
@@ -118,7 +118,7 @@ void UtilitiesTest::testgetAliasList() {
   auto initialDmapFile = mtca4u::getDMapFilePath();
 
   mtca4u::setDMapFilePath("");
-  BOOST_CHECK_THROW(Utilities::getAliasList(), DeviceException);
+  BOOST_CHECK_THROW(Utilities::getAliasList(), ChimeraTK::logic_error);
 
   // entries in dummies.dmap when this was written
   std::vector<std::string> expectedListOfAliases{

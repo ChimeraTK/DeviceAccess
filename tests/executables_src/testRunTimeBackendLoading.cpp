@@ -7,7 +7,7 @@ using namespace boost::unit_test_framework;
 //#include <boost/make_shared.hpp>
 
 #include "BackendFactory.h"
-#include "DeviceBackendException.h"
+#include "Exception.h"
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_SUITE(BackendLoadingTestSuite)
@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE( testBackendLoading ){
   // linkes the so file we want to load
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./dummy=goodMapFile.map") );
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map"),
-		     BackendFactoryException);
+                     ChimeraTK::logic_error);
 
   BackendFactory::getInstance().setDMapFilePath("runtimeLoading/wrongVersionPlugin.dmap");
   // although a plugin with a wrong version was in the dmap file, the other backends can
@@ -29,13 +29,7 @@ BOOST_AUTO_TEST_CASE( testBackendLoading ){
 
   // Only when we access the one where loading failed we get an error
   // (not using boost throw to print excaption.what())
-  try{
-    BackendFactory::getInstance().createBackend("WRONG_VERSION");
-    // we should not reach this point if the test succeed. The line above should throw.
-    BOOST_ERROR("createBackend did not throw as expected.");
-  }catch( BackendFactoryException &e ){
-    std::cout << "exptected exception: " << e.what() << std::endl;
-  }
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("WRONG_VERSION"), ChimeraTK::logic_error);
 
   // Now try loading valid plugins
   BackendFactory::getInstance().setDMapFilePath("runtimeLoading/runtimeLoading.dmap");

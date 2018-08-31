@@ -9,8 +9,6 @@
 #include "FixedPointConverter.h"
 #include "NumericAddressedBackend.h"
 #include "Exception.h"
-#include "MapException.h"
-#include "NotImplementedException.h"
 #include "MapFileParser.h"
 
 namespace ChimeraTK {
@@ -77,8 +75,8 @@ namespace ChimeraTK {
       }
 
       FixedPointConverter getFixedPointConverter() const override {
-        throw DeviceException("getFixedPointConverter is not implemented for 2D registers (and deprecated for all "
-            "registers).", DeviceException::NOT_IMPLEMENTED);
+        throw ChimeraTK::logic_error("getFixedPointConverter is not implemented for 2D registers (and deprecated for all "
+            "registers).");
       }
 
       AccessModeFlags getAccessModeFlags() const override {
@@ -166,15 +164,14 @@ namespace ChimeraTK {
         try {
           registerMapping->getRegisterInfo(sequenceNameStream.str(), sequenceInfo, _moduleName);
         }
-        catch(MapFileException &) {
+        catch(ChimeraTK::logic_error&) {
           // no sequence found: we are done
           break;
         }
 
         // check consistency
         if(sequenceInfo.nElements != 1) {
-          throw MultiplexedDataAccessorException( "Sequence words must have exactly one element",
-              MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
+          throw ChimeraTK::logic_error("Sequence words must have exactly one element");
         }
 
         // store sequence info and fixed point converter
@@ -184,8 +181,7 @@ namespace ChimeraTK {
 
       // check if no sequences were found
       if(_converters.empty()){
-        throw MultiplexedDataAccessorException( "No sequences found for name \""+_registerName+"\".",
-            MultiplexedDataAccessorException::EMPTY_AREA );
+        throw ChimeraTK::logic_error( "No sequences found for name \""+_registerName+"\".");
       }
 
       // compute size of one block in bytes (one sample for all channels)
@@ -194,8 +190,7 @@ namespace ChimeraTK {
         uint32_t nbt = _sequenceInfos[i].nBytes;
         bytesPerBlock += nbt;
         if(nbt != 1 && nbt != 2 && nbt != 4) {
-          throw MultiplexedDataAccessorException( "Sequence word size must correspond to a primitive type",
-              MultiplexedDataAccessorException::INVALID_WORD_SIZE );
+          throw ChimeraTK::logic_error( "Sequence word size must correspond to a primitive type");
         }
       }
 
@@ -204,15 +199,13 @@ namespace ChimeraTK {
 
       // check number of words
       if(_elementsOffset >= _nBlocks) {
-        throw DeviceException("Requested element offset exceeds the size of the register!",
-            DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("Requested element offset exceeds the size of the register!");
       }
       if(_numberOfElements == 0) {
         _numberOfElements = _nBlocks - _elementsOffset;
       }
       if(_numberOfElements + _elementsOffset > _nBlocks) {
-        throw DeviceException("Requested number of elements exceeds the size of the register!",
-            DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register!");
       }
 
       // compute the address taking into account the selected area of interest
@@ -221,8 +214,8 @@ namespace ChimeraTK {
       _nBytes = bytesPerBlock * _numberOfElements;
       if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
       if(_nBytes > areaInfo.nBytes) {
-        throw DeviceException("Requested number of elements exceeds the size of the register (late, redundant safety check)!",
-            DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register (late, redundant "
+                                     "safety check)!");
       }
       _nBlocks = _numberOfElements;
 

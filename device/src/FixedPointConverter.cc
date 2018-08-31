@@ -1,5 +1,5 @@
 #include "FixedPointConverter.h"
-#include "DeviceException.h"
+#include "Exception.h"
 
 namespace ChimeraTK {
 
@@ -24,7 +24,7 @@ namespace ChimeraTK {
     if (nBits > 32){
       std::stringstream errorMessage;
       errorMessage << "The number of bits must be <= 32, but is " << nBits;
-      throw DeviceException(errorMessage.str(), DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error(errorMessage.str());
     }
 
     // For floating-point types: check if number of fractional bits are complying with the dynamic range
@@ -34,7 +34,7 @@ namespace ChimeraTK {
       std::stringstream errorMessage;
       errorMessage << "The number of fractional bits exceeds the dynamic"
           << " range of a double.";
-      throw DeviceException(errorMessage.str(), DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error(errorMessage.str());
     }
 
     // compute mask for the signed bit

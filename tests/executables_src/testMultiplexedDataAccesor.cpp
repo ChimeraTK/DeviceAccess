@@ -44,41 +44,10 @@ BOOST_AUTO_TEST_CASE( testConstructor ) {
     device.close();
     device.open(DEVICE_INVALID_SEQUENCES_ALIAS);
 
-    try {
-      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"NO_WORDS");
-      // in a sucessful test (which is required for the code coverage report)
-      // the following line is not executed. Exclude it from the lcov report
-      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for NO_WORDS" ); //LCOV_EXCL_LINE
-    }
-    catch(MultiplexedDataAccessorException &e) {
-      BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::EMPTY_AREA );
-    }
-
-    try {
-      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_SIZE");
-      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for WRONG_SIZE" ); //LCOV_EXCL_LINE
-    }
-    catch(MultiplexedDataAccessorException &e) {
-      BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_WORD_SIZE );
-    }
-
-    try {
-      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_NELEMENTS");
-      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for WRONG_NELEMENTS" ); //LCOV_EXCL_LINE
-    }
-    catch(MultiplexedDataAccessorException &e) {
-      BOOST_CHECK( e.getID() == MultiplexedDataAccessorException::INVALID_N_ELEMENTS );
-    }
-
-    try {
-      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"DOES_NOT_EXIST");
-      BOOST_ERROR( "getTwoDRegisterAccessor did not throw for DOES_NOT_EXIST" ); //LCOV_EXCL_LINE
-    }
-    catch(DeviceException &e) {
-      BOOST_CHECK( e.getID() == DeviceException::REGISTER_DOES_NOT_EXIST );
-    }
-
-
+    BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"NO_WORDS"), ChimeraTK::logic_error);
+    BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_SIZE"), ChimeraTK::logic_error);
+    BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"WRONG_NELEMENTS"), ChimeraTK::logic_error);
+    BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH/"DOES_NOT_EXIST"), ChimeraTK::logic_error);
 }
 
 // test the de-multiplexing itself, with 'identity' fixed point conversion
@@ -351,7 +320,7 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
   boost::shared_ptr< mtca4u::MultiplexedDataAccessor<unsigned int> > acc =
       device.getCustomAccessor< mtca4u::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
 
-  BOOST_CHECK_THROW( acc->getFixedPointConverter(), DeviceException );
+  BOOST_CHECK_THROW( acc->getFixedPointConverter(), ChimeraTK::logic_error );
 
   BOOST_CHECK(acc->getNumberOfDataSequences() == 16);
   BOOST_CHECK((*acc)[0].size() == 4);

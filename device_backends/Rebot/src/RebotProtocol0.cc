@@ -1,8 +1,8 @@
 #include "RebotProtocol0.h"
 #include "TcpCtrl.h"
 #include "RebotProtocolDefinitions.h"
-#include "RebotBackendException.h"
 #include <iostream>
+#include "Exception.h"
 
 namespace ChimeraTK{
   using namespace rebot;
@@ -13,14 +13,11 @@ namespace ChimeraTK{
 
   RebotProtocol0::RegisterInfo::RegisterInfo(uint32_t addressInBytes, uint32_t sizeInBytes){
     if (sizeInBytes % 4 != 0) {
-      throw RebotBackendException("\"size\" argument must be a multiplicity of 4",
-                                  RebotBackendException::EX_SIZE_INVALID);
+      throw ChimeraTK::logic_error("\"size\" argument must be a multiplicity of 4");
     }
     // address == byte address; This should be converted into word address
     if (addressInBytes % 4 != 0) {
-      throw RebotBackendException(
-                                  "Register address is not valid",
-                                  RebotBackendException::EX_INVALID_REGISTER_ADDRESS);
+      throw ChimeraTK::logic_error("Register address is not valid");
     }
 
     addressInWords = addressInBytes/4;
@@ -87,10 +84,8 @@ void RebotProtocol0::fetchFromRebotServer(uint32_t wordAddress,
   //one word in the response.
   std::vector<int32_t> responseCode = _tcpCommunicator->receiveData(1);  
   if (responseCode[0] != rebot::READ_ACK){
-    std::cout << "response code is " << responseCode[0] << std::endl;
     // FIXME: can we do somwthing more clever here?
-    throw RebotBackendException("Reading via ReboT failed",
-                                RebotBackendException::EX_SOCKET_READ_FAILED);
+    throw ChimeraTK::runtime_error("Reading via ReboT failed. Response code: "+std::to_string(responseCode[0]));
   }
 
   // now that we know that the command worked on the server side we can read the rest of the data

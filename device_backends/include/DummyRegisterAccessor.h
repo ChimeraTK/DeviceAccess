@@ -13,14 +13,6 @@
 
 namespace ChimeraTK {
 
-  /// Exception class
-  class DummyRegisterException : public Exception {
-    public:
-      enum {EMPTY_AREA};
-      DummyRegisterException(const std::string &message, unsigned int exceptionID)
-      : Exception( message, exceptionID ){}
-  };
-
   /// We are using temporary proxy classes to realise element access with fixed point conversion. These classes
   /// are put into a separate name space, as they should never be instantiated by the user.
   namespace proxies {
@@ -258,7 +250,7 @@ namespace ChimeraTK {
           try{
             _dev->_registerMapping->getRegisterInfo( sequenceNameStream.str(), elem, module );
           }
-          catch(MapFileException &) {
+          catch(ChimeraTK::logic_error &) {
             break;
           }
           // create fixed point converter for sequence
@@ -271,7 +263,7 @@ namespace ChimeraTK {
         }
 
         if(fpc.empty()) {
-          throw DummyRegisterException("No sequenes found for name \""+name+"\".",DummyRegisterException::EMPTY_AREA);
+          throw ChimeraTK::logic_error("No sequenes found for name \""+name+"\".");
         }
 
         // compute number of elements per sequence

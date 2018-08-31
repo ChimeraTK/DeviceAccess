@@ -2,7 +2,7 @@
 #include "boost_dynamic_init_test.h"
 
 #include "DMapFileParser.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "helperFunctions.h"
 #include "parserUtilities.h"
 #include "Utilities.h"
@@ -54,33 +54,18 @@ void DMapFileParserTest::testFileNotFound() {
   std::string file_path = "../dummypath.dmap";
   mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(file_path), mtca4u::LibMapException);
-  try {
-    fileParser.parse(file_path);
-  }
-  catch (mtca4u::LibMapException& dMapFileParserException) {
-    BOOST_CHECK(dMapFileParserException.getID() ==
-        mtca4u::LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
-  }
+  BOOST_CHECK_THROW(fileParser.parse(file_path), ChimeraTK::logic_error);
 }
 
 void DMapFileParserTest::testErrorInDmapFile() {
   std::string incorrect_dmap_file = "invalid.dmap";
   mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), mtca4u::LibMapException);
-  try {
-    fileParser.parse(incorrect_dmap_file);
-  }
-  catch (mtca4u::LibMapException& dMapFileParserException) {
-    std::cout << dMapFileParserException;
-    BOOST_CHECK(dMapFileParserException.getID() ==
-        mtca4u::LibMapException::EX_DMAP_FILE_PARSE_ERROR);
-  }
+  BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), ChimeraTK::logic_error);
   
-  BOOST_CHECK_THROW(fileParser.parse("badLoadlib.dmap"), mtca4u::LibMapException);
-  BOOST_CHECK_THROW(fileParser.parse("badLoadlib2.dmap"), mtca4u::LibMapException);
-  BOOST_CHECK_THROW(fileParser.parse("unkownKey.dmap"), mtca4u::LibMapException);
+  BOOST_CHECK_THROW(fileParser.parse("badLoadlib.dmap"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileParser.parse("badLoadlib2.dmap"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(fileParser.parse("unkownKey.dmap"), ChimeraTK::logic_error);
 
 }
 
@@ -88,15 +73,7 @@ void DMapFileParserTest::testNoDataInDmapFile() {
   std::string empty_dmap_file = "empty.dmap";
   mtca4u::DMapFileParser fileParser;
 
-  BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), mtca4u::LibMapException);
-  try {
-    fileParser.parse(empty_dmap_file);
-  }
-  catch (mtca4u::LibMapException& dMapFileParserException) {
-    std::cout << dMapFileParserException;
-    BOOST_CHECK(dMapFileParserException.getID() ==
-        mtca4u::LibMapException::EX_NO_DMAP_DATA);
-  }
+  BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), ChimeraTK::logic_error);
 }
 
 void DMapFileParserTest::testParseFile() {

@@ -7,7 +7,7 @@
 
 #include "TransferGroup.h"
 #include "TransferElementAbstractor.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "NDRegisterAccessorAbstractor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "CopyRegisterDecorator.h"
@@ -35,8 +35,7 @@ namespace ChimeraTK {
 
   void TransferGroup::write() {
     if(isReadOnly()) {
-      throw DeviceException("TransferGroup::write() called, but the TransferGroup is read-only.",
-          DeviceException::REGISTER_IS_READ_ONLY);
+      throw ChimeraTK::logic_error("TransferGroup::write() called, but the TransferGroup is read-only.");
     }
     for(auto &elem : highLevelElements) {
       elem->preWrite();
@@ -61,8 +60,7 @@ namespace ChimeraTK {
 
     // check if accessor is already in a transfer group
     if(accessor.getHighLevelImplElement()->isInTransferGroup) {
-      throw DeviceException("The given accessor is already in a TransferGroup and cannot be added to another.",
-          DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("The given accessor is already in a TransferGroup and cannot be added to another.");
     }
 
     // set flag on the accessors that it is now in a transfer group

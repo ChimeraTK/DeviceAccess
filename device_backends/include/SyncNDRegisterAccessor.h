@@ -13,7 +13,6 @@
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
 #include "FixedPointConverter.h"
-#include "DeviceException.h"
 #include "NDRegisterAccessor.h"
 
 namespace ChimeraTK {

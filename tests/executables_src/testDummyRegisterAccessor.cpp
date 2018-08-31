@@ -99,16 +99,7 @@ bool init_unit_test(){
 void DummyRegisterTest::testExceptions() {
   std::cout << "testExceptions" << std::endl;
 
-  try {
-    boost::shared_ptr<InvalidDummyBackend> invalid_device =
-        boost::shared_ptr<InvalidDummyBackend>( new InvalidDummyBackend(INVALID_MAPPING_FILE) );
-    // in a sucessful test (which is required for the code coverage report)
-    // the following line is not executed. Exclude it from the lcov report
-    BOOST_ERROR( "opening the invalid device did not throw." ); //LCOV_EXCL_LINE
-  }
-  catch(DummyRegisterException &e) {
-    BOOST_CHECK( e.getID() == DummyRegisterException::EMPTY_AREA );
-  }
+  BOOST_CHECK_THROW(new InvalidDummyBackend(INVALID_MAPPING_FILE), ChimeraTK::logic_error);
 
 }
 

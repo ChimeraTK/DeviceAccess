@@ -37,8 +37,8 @@ namespace ChimeraTK {
           // check device backend
           _dev = boost::dynamic_pointer_cast<NumericAddressedBackend>(dev);
           if(!_dev) {
-            throw DeviceException("NumericAddressedBackendRegisterAccessor is used with a backend which is not "
-                "a NumericAddressedBackend.", DeviceException::WRONG_PARAMETER);
+            throw ChimeraTK::logic_error("NumericAddressedBackendRegisterAccessor is used with a backend which is not "
+                "a NumericAddressedBackend.");
           }
 
           // obtain register information
@@ -52,12 +52,10 @@ namespace ChimeraTK {
             _numberOfWords = _registerInfo->getNumberOfElements() - wordOffsetInRegister;
           }
           if(_numberOfWords + wordOffsetInRegister > _registerInfo->getNumberOfElements()) {
-            throw DeviceException("Requested number of words exceeds the size of the register '"+_registerPathName+"'!",
-                DeviceException::WRONG_PARAMETER);
+            throw ChimeraTK::logic_error("Requested number of words exceeds the size of the register '"+_registerPathName+"'!");
           }
           if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
-            throw DeviceException("Requested offset exceeds the size of the register'"+_registerPathName+"'!",
-                DeviceException::WRONG_PARAMETER);
+            throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'"+_registerPathName+"'!");
           }
 
           // create low-level transfer element handling the actual data transfer to the hardware with raw data
@@ -77,8 +75,8 @@ namespace ChimeraTK {
                                                      _registerInfo->signedFlag);
           if(flags.has(AccessMode::raw)) {
             if(typeid(UserType) != typeid(int32_t)) {
-              throw DeviceException("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
-                  "match the expected type. Use an int32_t instead! (Register name: "+_registerPathName+"')", DeviceException::WRONG_PARAMETER);
+              throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
+                  "match the expected type. Use an int32_t instead! (Register name: "+_registerPathName+"')");
             }
             isRaw = true;
           }
@@ -112,8 +110,8 @@ namespace ChimeraTK {
 
       bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         if(TransferElement::isInTransferGroup) {
-          throw DeviceException("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed "
-                                "(Register name: "+_registerPathName+"')", DeviceException::NOT_IMPLEMENTED);
+          throw ChimeraTK::logic_error("Calling read() or write() on an accessor which is part of a TransferGroup is not allowed "
+                                "(Register name: "+_registerPathName+"')");
         }
         _rawAccessor->write();
         return false;
@@ -243,14 +241,14 @@ namespace ChimeraTK {
   COOCKED_TYPE NumericAddressedBackendRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
     // This is a coocked accessor. For the only possible raw type (int32_t) we have a
     // template specialisation (instead of a throwing one for strings).
-    throw DeviceException("Getting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+    throw ChimeraTK::logic_error("Getting as coocked is only available for raw accessors!");
   }
   template<> template<typename COOCKED_TYPE>
   COOCKED_TYPE NumericAddressedBackendRegisterAccessor<int32_t>::getAsCoocked_impl(unsigned int channel, unsigned int sample){
     if(isRaw){
       return _fixedPointConverter.toCooked<COOCKED_TYPE>(NDRegisterAccessor<int32_t>::buffer_2D[channel][sample]);
     }else{
-      throw DeviceException("Getting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+      throw ChimeraTK::logic_error("Getting as coocked is only available for raw accessors!");
     }
   }
 
@@ -260,14 +258,14 @@ namespace ChimeraTK {
   void NumericAddressedBackendRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
     // This is a coocked accessor. For the only possible raw type (int32_t) we have a
     // template specialisation (instead of a throwing one for strings).
-    throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+    throw ChimeraTK::logic_error("Setting as coocked is only available for raw accessors!");
   }
   template<> template<typename COOCKED_TYPE>
     void NumericAddressedBackendRegisterAccessor<int32_t>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
     if(isRaw){
       NDRegisterAccessor<int32_t>::buffer_2D[channel][sample] = _fixedPointConverter.toRaw(value);
     }else{
-      throw DeviceException("Setting as coocked is only available for raw accessors!", DeviceException::NOT_AVAILABLE);
+      throw ChimeraTK::logic_error("Setting as coocked is only available for raw accessors!");
     }
   }
 

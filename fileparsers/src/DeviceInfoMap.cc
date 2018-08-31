@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "predicates.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "DeviceInfoMap.h"
 
 namespace ChimeraTK {
@@ -34,9 +34,7 @@ namespace ChimeraTK {
     std::vector<DeviceInfo>::iterator iter;
     iter = find_if(_deviceInfoElements.begin(), _deviceInfoElements.end(), findDevByName_pred(deviceName));
     if (iter == _deviceInfoElements.end()) {
-      throw DMapFileException("Cannot find device \"" + deviceName +
-                                  "\" in DMAP file:" + _dmapFileName,
-                              LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot find device \"" + deviceName + "\" in DMAP file:" + _dmapFileName);
     }
     value = *iter;
   }

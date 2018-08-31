@@ -36,13 +36,13 @@ namespace ChimeraTK {
           flags.checkForUnknownFlags({AccessMode::raw});
           // check for illegal parameter combinations
           if(wordOffsetInRegister != 0 || numberOfWords > 1) {
-            throw DeviceException("LNMBackendBufferingVariableAccessor: offset and number of words not "
-                "supported!", DeviceException::NOT_IMPLEMENTED); // LCOV_EXCL_LINE (impossible to test...)
+            throw ChimeraTK::logic_error("LNMBackendBufferingVariableAccessor: offset and number of words not "
+                "supported!"); // LCOV_EXCL_LINE (impossible to test...)
           }
           if(flags.has(AccessMode::raw)) {
             if(typeid(UserType) != typeid(int32_t)) {
-              throw DeviceException("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
-                  " does not match the expected type. Use an int32_t instead!", DeviceException::WRONG_PARAMETER);
+              throw ChimeraTK::logic_error("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
+                  " does not match the expected type. Use an int32_t instead!");
             }
           }
           _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
@@ -52,8 +52,7 @@ namespace ChimeraTK {
           // check for incorrect usage of this accessor
           if( _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT &&
               _info->targetType != LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
-            throw DeviceException("LNMBackendBufferingVariableAccessor used for wrong register type.",
-                DeviceException::WRONG_PARAMETER); // LCOV_EXCL_LINE (impossible to test...)
+            throw ChimeraTK::logic_error("LNMBackendBufferingVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
           }
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(_info->length);
@@ -84,8 +83,7 @@ namespace ChimeraTK {
 
       bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         if(isReadOnly()) {
-          throw DeviceException("Writing to constant-type registers of logical name mapping devices is not possible.",
-              DeviceException::REGISTER_IS_READ_ONLY);
+          throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices is not possible.");
         }
         _info->value_int[0] = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][0]);
         return false;

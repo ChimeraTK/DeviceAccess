@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include "DeviceInfoMap.h"
+#include "Exception.h"
 
 namespace ChimeraTK {
 
@@ -41,6 +42,15 @@ namespace ChimeraTK {
       std::string absPathOfDMapContent(std::string dmapContent, std::string dmapFileName);
 
   };
+
+  namespace detail {
+
+    /** This special exception is required only internally by the DMapFilesParser to distinguish the special case of an
+     *  empty DMAP file (in which case not the entire parser should fail). */
+    struct EmptyDMapFileException : ChimeraTK::logic_error {
+      using ChimeraTK::logic_error::logic_error;
+    };
+  }
 
 }//namespace ChimeraTK
 

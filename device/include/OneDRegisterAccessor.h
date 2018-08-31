@@ -9,7 +9,6 @@
 #define CHIMERA_TK_ONE_D_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessorAbstractor.h"
-#include "DeviceException.h"
 
 namespace ChimeraTK {
 
@@ -31,8 +30,7 @@ namespace ChimeraTK {
       : NDRegisterAccessorAbstractor<UserType>(impl)
       {
         if(get()->getNumberOfChannels() != 1) {
-          throw DeviceException("The OneDRegisterAccessor has a too low dimension to access this register.",
-              DeviceException::WRONG_ACCESSOR);
+          throw ChimeraTK::logic_error("The OneDRegisterAccessor has a too low dimension to access this register.");
         }
       }
 
@@ -75,8 +73,7 @@ namespace ChimeraTK {
       /* Swap content of (cooked) buffer with std::vector */
       void swap(std::vector<UserType> &x) {
         if(x.size() != get()->accessChannel(0).size()) {
-          throw DeviceException("Swapping with a buffer of a different size is not allowed.",
-              DeviceException::WRONG_PARAMETER);
+          throw ChimeraTK::logic_error("Swapping with a buffer of a different size is not allowed.");
         }
         get()->accessChannel(0).swap(x);
       }
@@ -84,8 +81,7 @@ namespace ChimeraTK {
       /* Copy content of (cooked) buffer from std::vector */
       OneDRegisterAccessor<UserType>& operator=(const std::vector<UserType> &x) {
         if(x.size() != get()->accessChannel(0).size()) {
-          throw DeviceException("Copying in a buffer of a different size is not allowed.",
-              DeviceException::WRONG_PARAMETER);
+          throw ChimeraTK::logic_error("Copying in a buffer of a different size is not allowed.");
         }
         get()->accessChannel(0) = x;
         return *this;

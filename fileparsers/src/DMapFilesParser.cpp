@@ -11,7 +11,7 @@
 #include "DMapFilesParser.h"
 #include "predicates.h"
 #include "RegisterInfoMap.h"
-#include "MapException.h"
+#include "Exception.h"
 
 
 namespace utilities = ChimeraTK::parserUtilities;
@@ -52,17 +52,6 @@ namespace ChimeraTK {
       }
       _dmapElements.push_back(std::make_pair(*dmap_elem_iter, map));
     }
-#ifdef __LIBMAP_WITH_ERROR_CHECKING__
-    DeviceInfoMap::errorList dmapErr;
-    RegisterInfoMap::errorList mapErr;
-    std::ostringstream os;
-    if (!check(DeviceInfoMap::errorList::errorElem::ERROR,
-        RegisterInfoMap::errorList::errorElem::ERROR, dmapErr, mapErr)) {
-      os << dmapErr;
-      os << mapErr;
-      throw dmapFileParserEx(libmap_ex::EX_FILES_CHECK_ERROR, os.str());
-    }
-#endif  //__LIBMAP_WITH_ERROR_CHECKING__
   }
 
   void DMapFilesParser::parse_one_directory(const std::string &dir) {
@@ -79,7 +68,7 @@ namespace ChimeraTK {
       dir_new += "/";
 
     if ((dp = opendir(dir.c_str())) == NULL) {
-      throw DMapFileParserException("Cannot open directory: \"" + dir + "\"", LibMapException::EX_CANNOT_OPEN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot open directory: \"" + dir + "\"");
     }
 
     while ((dirp = readdir(dp)) != NULL) {
@@ -94,10 +83,12 @@ namespace ChimeraTK {
       if (file_name.substr(found) == ".dmap") {
         try {
           dmap = _dmapFileParser.parse(dir_new + file_name);
-        } catch (LibMapException &e) {
-          if (e.getID() == LibMapException::EX_NO_DMAP_DATA) {
-            continue;
-          }
+        } catch (ChimeraTK::detail::EmptyDMapFileException&) {
+          continue;
+        } catch (ChimeraTK::logic_error&) {
+          closedir(dp);
+          throw;
+        } catch (ChimeraTK::runtime_error&) {
           closedir(dp);
           throw;
         }
@@ -111,7 +102,10 @@ namespace ChimeraTK {
               } else {
                 map = _mapFileParser.parse((*dmap_elem_iter).mapFileName);
               }
-            } catch (LibMapException &e) {
+            } catch (ChimeraTK::logic_error e) {
+              closedir(dp);
+              throw;
+            } catch (ChimeraTK::runtime_error e) {
               closedir(dp);
               throw;
             }
@@ -126,19 +120,8 @@ namespace ChimeraTK {
     closedir(dp);
     if (_dmapElements.empty()) {
       //TODO: change message? No dmap files in dir
-      throw DMapFileParserException("DMAP file is empty or does not exist", LibMapException::EX_NO_DMAP_DATA);
+      throw ChimeraTK::logic_error("DMAP file is empty or does not exist");
     }
-
-#ifdef __LIBMAP_WITH_ERROR_CHECKING__       
-    DeviceInfoMap::errorList dmapErr;
-    RegisterInfoMap::errorList mapErr;
-    std::ostringstream os;
-    if (!check(DeviceInfoMap::errorList::errorElem::ERROR, RegisterInfoMap::errorList::errorElem::ERROR, dmapErr, mapErr)) {
-      os << dmapErr;
-      os << mapErr;
-      throw dmapFileParserEx(libmap_ex::EX_FILES_CHECK_ERROR, os.str());
-    }
-#endif //__LIBMAP_WITH_ERROR_CHECKING__
   }
 
   //FIXME: Why is dlevel not used?
@@ -190,7 +173,7 @@ namespace ChimeraTK {
     std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> >::iterator dmap_iter;
     dmap_iter = std::find_if(_dmapElements.begin(), _dmapElements.end(), findDevInPairByName_pred(dev_name));
     if (dmap_iter == _dmapElements.end()) {
-      throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot find device " + dev_name);
     }
     return (*dmap_iter).second;
   }
@@ -203,7 +186,7 @@ namespace ChimeraTK {
     std::vector<std::pair<DeviceInfoMap::DeviceInfo, RegisterInfoMapPointer> >::iterator dmap_iter;
     dmap_iter = std::find_if(_dmapElements.begin(), _dmapElements.end(), findDevInPairByName_pred(devName));
     if (dmap_iter == _dmapElements.end()) {
-      throw DMapFileParserException("Cannot find device " + devName, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot find device " + devName);
     }
     return (*dmap_iter).first;
   }
@@ -212,7 +195,7 @@ namespace ChimeraTK {
     try {
       dMapFileElem = _dmapElements.at(elem_nr).first;
     } catch (std::out_of_range &) {
-      throw DMapFileParserException("Cannot find device", LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot find device");
     }
   }
 
@@ -225,7 +208,7 @@ namespace ChimeraTK {
     }
     dmap_iter = std::find_if(_dmapElements.begin(), _dmapElements.end(), findDevInPairByName_pred(dev_name));
     if (dmap_iter == _dmapElements.end()) {
-      throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot find device " + dev_name);
     }
     (*dmap_iter).second->getRegisterInfo(reg_name, elem);
     reg_offset = elem.address;
@@ -243,7 +226,7 @@ namespace ChimeraTK {
     }
     dmap_iter = std::find_if(_dmapElements.begin(), _dmapElements.end(), findDevInPairByName_pred(dev_name));
     if (dmap_iter == _dmapElements.end()) {
-      throw DMapFileParserException("Cannot find device " + dev_name, LibMapException::EX_NO_DEVICE_IN_DMAP_FILE);
+      throw ChimeraTK::logic_error("Cannot find device " + dev_name);
     }
     (*dmap_iter).second->getRegisterInfo(reg_name, elem);
     dev_file = (*dmap_iter).first.uri;

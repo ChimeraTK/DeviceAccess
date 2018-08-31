@@ -29,14 +29,12 @@ namespace ChimeraTK {
       : ChimeraTK::NDRegisterAccessorDecorator<T>(target)
       {
         if(!target->isReadable()) {
-          throw ChimeraTK::DeviceException("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.",
-              ChimeraTK::DeviceException::WRONG_PARAMETER);
+          throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.");
         }
       }
 
       void doPreWrite() override {
-        throw ChimeraTK::DeviceException("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.",
-            ChimeraTK::DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
       }
 
       void doPostRead() override {

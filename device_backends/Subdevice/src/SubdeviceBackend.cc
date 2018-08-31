@@ -4,7 +4,7 @@
 #include "SubdeviceBackend.h"
 
 #include "BackendFactory.h"
-#include "DeviceException.h"
+#include "Exception.h"
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 
@@ -46,13 +46,12 @@ namespace ChimeraTK {
 
     // check if type is specified
     if(tokens.size() < 1) {
-      throw DeviceException("SubdeviceBackend: Type must be specified in sdm URI.", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: Type must be specified in sdm URI.");
     }
 
     // check if target alias name is specified and open the target device
     if(tokens.size() < 2) {
-      throw DeviceException("SubdeviceBackend: Target device name must be specified in sdm URI.",
-                            DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: Target device name must be specified in sdm URI.");
     }
     targetAlias = tokens[1];
 
@@ -62,27 +61,25 @@ namespace ChimeraTK {
 
       // check if target register name is specified
       if(tokens.size() < 3) {
-        throw DeviceException("SubdeviceBackend: Target register name must be specified in sdm URI for type 'area'.",
-                              DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("SubdeviceBackend: Target register name must be specified in sdm URI for type 'area'.");
       }
 
       targetArea = tokens[2];
 
       // check for extra arguments
       if(tokens.size() > 3) {
-        throw DeviceException("SubdeviceBackend: Too many tokens in instance specified in sdm URI for type 'area'.",
-                              DeviceException::WRONG_PARAMETER);
+        throw ChimeraTK::logic_error("SubdeviceBackend: Too many tokens in instance specified in sdm URI for type 'area'.");
       }
 
     }
     // unknown type
     else {
-      throw DeviceException("SubdeviceBackend: Unknown type '+"+tokens[0]+"' specified.", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: Unknown type '+"+tokens[0]+"' specified.");
     }
 
     // parse map file
     if(mapFileName == "") {
-      throw DeviceException("SubdeviceBackend: Map file must be specified.", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: Map file must be specified.");
     }
     MapFileParser parser;
     _registerMap = parser.parse(mapFileName);
@@ -221,21 +218,19 @@ namespace ChimeraTK {
 
     // check that the bar is 0
     if(info->bar != 0) {
-      throw DeviceException("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
-                            "' is in BAR "+std::to_string(info->bar)+".", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
+                            "' is in BAR "+std::to_string(info->bar)+".");
     }
 
     // check that the register is not a 2D multiplexed register, which is not yet supported
     if(info->is2DMultiplexed) {
-      throw DeviceException("SubdeviceBackend: 2D multiplexed registers are not yet supported.",
-                            DeviceException::NOT_IMPLEMENTED);
+      throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
     }
 
     // compute full offset (from map file and function arguments)
     size_t byteOffset = info->address + sizeof(int32_t)*wordOffsetInRegister;
     if(byteOffset % 4 != 0) {
-      throw DeviceException("SubdeviceBackend: Only addresses which are a multiple of 4 are supported.",
-                            DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: Only addresses which are a multiple of 4 are supported.");
     }
     size_t wordOffset = byteOffset / 4;
 
@@ -244,9 +239,9 @@ namespace ChimeraTK {
       numberOfWords = info->nElements;
     }
     else if(numberOfWords > info->nElements) {
-      throw DeviceException("SubdeviceBackend: Requested "+std::to_string(numberOfWords)+" elements from register '"+
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested "+std::to_string(numberOfWords)+" elements from register '"+
                             registerPathName+"', which only has a length of "+std::to_string(info->nElements)+
-                            " elements.", DeviceException::WRONG_PARAMETER);
+                            " elements.");
     }
 
     // check if raw transfer?
@@ -264,8 +259,8 @@ namespace ChimeraTK {
     }
     else {
       // this is handled by the template specialisation for int32_t
-      throw DeviceException("Given UserType when obtaining the SubdeviceBackend in raw mode does not "
-          "match the expected type. Use an int32_t instead! (Register name: "+registerPathName+"')", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("Given UserType when obtaining the SubdeviceBackend in raw mode does not "
+          "match the expected type. Use an int32_t instead! (Register name: "+registerPathName+"')");
     }
   }
 
@@ -281,21 +276,19 @@ namespace ChimeraTK {
 
     // check that the bar is 0
     if(info->bar != 0) {
-      throw DeviceException("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
-                            "' is in BAR "+std::to_string(info->bar)+".", DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
+                            "' is in BAR "+std::to_string(info->bar)+".");
     }
 
     // check that the register is not a 2D multiplexed register, which is not yet supported
     if(info->is2DMultiplexed) {
-      throw DeviceException("SubdeviceBackend: 2D multiplexed registers are not yet supported.",
-                            DeviceException::NOT_IMPLEMENTED);
+      throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
     }
 
     // compute full offset (from map file and function arguments)
     size_t byteOffset = info->address + sizeof(int32_t)*wordOffsetInRegister;
     if(byteOffset % 4 != 0) {
-      throw DeviceException("SubdeviceBackend: Only addresses which are a multiple of 4 are supported.",
-                            DeviceException::WRONG_PARAMETER);
+      throw ChimeraTK::logic_error("SubdeviceBackend: Only addresses which are a multiple of 4 are supported.");
     }
     size_t wordOffset = byteOffset / 4;
 
@@ -304,9 +297,9 @@ namespace ChimeraTK {
       numberOfWords = info->nElements;
     }
     else if(numberOfWords > info->nElements) {
-      throw DeviceException("SubdeviceBackend: Requested "+std::to_string(numberOfWords)+" elements from register '"+
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested "+std::to_string(numberOfWords)+" elements from register '"+
                             registerPathName+"', which only has a length of "+std::to_string(info->nElements)+
-                            " elements.", DeviceException::WRONG_PARAMETER);
+                            " elements.");
     }
 
     // check if raw transfer?

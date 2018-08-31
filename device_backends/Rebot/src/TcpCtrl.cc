@@ -1,4 +1,5 @@
 #include "TcpCtrl.h"
+#include "Exception.h"
 
 namespace ChimeraTK{
 
@@ -30,13 +31,11 @@ namespace ChimeraTK{
       // TODO: let boost asio throw instead of handling error through 'ec'.
       ec = connectToResolvedEndPoints(endPointIterator);
       if (ec) {
-        throw RebotBackendException("Could not connect to server",
-                                    RebotBackendException::EX_CONNECTION_FAILED);
+        throw ChimeraTK::runtime_error("Could not connect to server");
       }
     }
     catch (std::exception &exception) {
-      throw RebotBackendException(exception.what(),
-                                  RebotBackendException::EX_CONNECTION_FAILED);
+      throw ChimeraTK::runtime_error(exception.what());
     }
   }
   
@@ -44,8 +43,7 @@ namespace ChimeraTK{
     boost::system::error_code ec;
     _socket->close(ec);
     if (ec) {
-      throw RebotBackendException("Error closing socket",
-                                  RebotBackendException::EX_CLOSE_SOCKET_FAILED);
+      throw ChimeraTK::runtime_error("Error closing socket");
     }
   }
   
@@ -58,8 +56,7 @@ namespace ChimeraTK{
     catch (...) {
       // TODO: find out how to extract info from the boost excception and wrap it
       // inside RebotBackendException
-      throw RebotBackendException("Error reading from socket",
-                                  RebotBackendException::EX_SOCKET_READ_FAILED);
+      throw ChimeraTK::runtime_error("Error reading from socket");
     }
   }
   
@@ -70,8 +67,7 @@ namespace ChimeraTK{
     catch (...) {
       // TODO: find out how to extract info from the boost excception and wrap it
       // inside RebotBackendException
-      throw RebotBackendException("Error writing to socket",
-                                  RebotBackendException::EX_SOCKET_WRITE_FAILED);
+      throw ChimeraTK::runtime_error("Error writing to socket");
     }
   }
   
@@ -82,8 +78,7 @@ namespace ChimeraTK{
     catch (...) {
       // TODO: find out how to extract info from the boost excception and wrap it
       // inside RebotBackendException
-      throw RebotBackendException("Error writing to socket",
-                                  RebotBackendException::EX_SOCKET_WRITE_FAILED);
+      throw ChimeraTK::runtime_error("Error writing to socket");
     }
   }
   
@@ -91,8 +86,7 @@ namespace ChimeraTK{
   
   void TcpCtrl::setAddress(std::string ipaddr) {
     if (_socket->is_open()) {
-      throw RebotBackendException("Error setting IP. The socket is open",
-                                  RebotBackendException::EX_SET_IP_FAILED);
+      throw ChimeraTK::logic_error("Error setting IP. The socket is open");
     }
     _serverAddress = ipaddr;
   }
@@ -101,8 +95,7 @@ namespace ChimeraTK{
   
   void TcpCtrl::setPort(int port) {
     if (_socket->is_open()) {
-      throw RebotBackendException("Error setting port. The socket is open",
-                                  RebotBackendException::EX_SET_PORT_FAILED);
+      throw ChimeraTK::logic_error("Error setting port. The socket is open");
     }
     _port = port;
   }
@@ -132,8 +125,7 @@ namespace ChimeraTK{
     catch (...) {
       // TODO: find out how to extract info from the boost excception and wrap it
       // inside RebotBackendException
-      throw RebotBackendException("Error reading from socket",
-                                  RebotBackendException::EX_SOCKET_READ_FAILED);
+      throw ChimeraTK::runtime_error("Error reading from socket");
     }
   }
 

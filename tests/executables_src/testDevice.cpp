@@ -5,12 +5,10 @@
 
 #include "Device.h"
 #include "PcieBackend.h"
-#include "DeviceException.h"
-#include "PcieBackendException.h"
 #include "DeviceBackend.h"
 #include "BackendFactory.h"
 #include "MapFileParser.h"
-#include "MapException.h"
+#include "Exception.h"
 #include "DummyRegisterAccessor.h"
 
 namespace mtca4u{
@@ -129,22 +127,8 @@ void DeviceTest::testDeviceReadRegisterByName() {
   BOOST_CHECK(dataVector.size() == 1);
   BOOST_CHECK(dataVector[0] == -33333);
 
-  try {
-    device.read<int32_t>("APP0/DOESNT_EXIST");
-    BOOST_ERROR("Exception expected");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
-  }
-
-  try {
-    device.read<int32_t>("DOESNT_EXIST/AT_ALL",1,0);
-    BOOST_ERROR("Exception expected");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
-  }
-
+  BOOST_CHECK_THROW(device.read<int32_t>("APP0/DOESNT_EXIST"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device.read<int32_t>("DOESNT_EXIST/AT_ALL",1,0), ChimeraTK::logic_error);
 
 }
 
@@ -186,13 +170,7 @@ void DeviceTest::testCompatDeviceReadRegisterByName() {
   device->readReg("ADC.WORD_CLK_DUMMY", &data);
   BOOST_CHECK(data == 0x444d4d59);
 
-  BOOST_CHECK_THROW( device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data), mtca4u::MapFileException );
-  try {
-    device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data);
-  }
-  catch(mtca4u::MapFileException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::LibMapException::EX_NO_REGISTER_IN_MAP_FILE);
-  }
+  BOOST_CHECK_THROW( device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data), ChimeraTK::logic_error );
 
   data = 1;
   sizeInBytes = 4 * 4;
@@ -278,32 +256,14 @@ void DeviceTest::testDeviceCheckRegister() {
   size_t dataSize = 4;
   uint32_t addRegOffset = 3;
   int32_t data = 1;
-  BOOST_CHECK_THROW( device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), mtca4u::DeviceException );
-  try {
-    device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW( device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error );
 
   dataSize = 3;
   addRegOffset = 4;
-  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), mtca4u::DeviceException);
-  try {
-    device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error);
 
   dataSize = 4;
-  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), mtca4u::DeviceException);
-  try {
-    device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error);
 }
 
 void DeviceTest::testRegAccsorReadDMA() {
@@ -340,32 +300,14 @@ void DeviceTest::testRegAccsorCheckRegister() {
   int32_t data = 1;
   boost::shared_ptr<mtca4u::Device::RegisterAccessor>
   word_adc_ena = device->getRegisterAccessor("WORD_ADC_ENA");
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), mtca4u::DeviceException);
-  try {
-    word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
 
   dataSize = 3;
   addRegOffset = 4;
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), mtca4u::DeviceException);
-  try {
-    word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
 
   dataSize = 4;
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), mtca4u::DeviceException);
-  try {
-    word_adc_ena->writeRaw(&data, dataSize, addRegOffset);
-  }
-  catch (mtca4u::DeviceException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
 }
 
 void DeviceTest::testRegAccsorReadReg() {
@@ -441,14 +383,7 @@ void DeviceTest::testReadBadReg() {
   device->open(testBackend);
 
   int32_t data = 0;
-  BOOST_CHECK_THROW(device->readReg("NON_EXISTENT_REGISTER", &data),
-      mtca4u::PcieBackendException);
-  try {
-    device->readReg("NON_EXISTENT_REGISTER", &data);
-  }
-  catch (mtca4u::PcieBackendException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::PcieBackendException::EX_READ_ERROR);
-  }
+  BOOST_CHECK_THROW(device->readReg("NON_EXISTENT_REGISTER", &data), ChimeraTK::logic_error);
 }
 
 void DeviceTest::testWriteBadReg() {
@@ -457,14 +392,7 @@ void DeviceTest::testWriteBadReg() {
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   int32_t data = 0;
-  BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data),
-      mtca4u::PcieBackendException);
-  try {
-    device->writeReg("BROKEN_WRITE", &data);
-  }
-  catch (mtca4u::PcieBackendException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::PcieBackendException::EX_WRITE_ERROR);
-  }
+  BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data), ChimeraTK::logic_error);
 }
 
 void DeviceTest::testDMAReadSizeTooSmall() {
@@ -477,13 +405,7 @@ void DeviceTest::testDMAReadSizeTooSmall() {
 
   BOOST_CHECK_THROW(
       device->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
-      mtca4u::PcieBackendException);
-  try {
-    device->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes);
-  }
-  catch (mtca4u::PcieBackendException& exception) {
-    BOOST_CHECK(exception.getID() == mtca4u::PcieBackendException::EX_DMA_READ_ERROR);
-  }
+      ChimeraTK::logic_error);
 }
 
 void DeviceTest::testDMAReadViaStruct() {
@@ -592,14 +514,9 @@ void DeviceTest::testDeviceCreation() {
   // check if opening without alias name fails
   TestableDevice device5;
   BOOST_CHECK( device5.isOpened() == false );
-  BOOST_CHECK_THROW( device5.open(), mtca4u::DeviceException );
+  BOOST_CHECK_THROW( device5.open(), ChimeraTK::logic_error );
   BOOST_CHECK( device5.isOpened() == false );
-  try {
-    device5.open();
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::DeviceException::NOT_OPENED);
-  }
+  BOOST_CHECK_THROW(device5.open(), ChimeraTK::logic_error);
   BOOST_CHECK( device5.isOpened() == false );
 
   // check if opening device with different backend keeps old backend open.

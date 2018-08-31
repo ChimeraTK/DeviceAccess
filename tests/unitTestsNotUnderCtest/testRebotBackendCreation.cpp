@@ -48,14 +48,10 @@ BOOST_AUTO_TEST_CASE( testFactoryForRebotDeviceCreation ){
 
   // 2. Creating without map file in the dmap only works by putting an sdm on creation because we have to bypass the
   // dmap file parser which at the time of writing this requires a map file as third column
-  try{
-    mtca4u::Device secondDevice;
-    secondDevice.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
-    BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
-    secondDevice.close();
-  }catch(mtca4u::DeviceException &e){
-    BOOST_ERROR("Just an error, don't fail on exception during developnment");
-  }
+  mtca4u::Device secondDevice;
+  secondDevice.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+  BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
+  secondDevice.close();
 
   // 3. We don't have a map file, so we have to use numerical addressing
   mtca4u::Device thirdDevice;

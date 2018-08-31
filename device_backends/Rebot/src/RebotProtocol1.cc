@@ -2,7 +2,6 @@
 
 #include "TcpCtrl.h"
 #include "RebotProtocolDefinitions.h"
-#include "RebotBackendException.h"
 
 namespace ChimeraTK{
   using namespace rebot;

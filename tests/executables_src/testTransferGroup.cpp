@@ -112,43 +112,13 @@ void TransferGroupTest::testAdding() {
 
   // check if adding an accessor to another group throws an exception
   TransferGroup group2;
-  try {
-    group2.addAccessor(a1);
-    BOOST_ERROR("Exception expected!");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::WRONG_PARAMETER);
-  }
+  BOOST_CHECK_THROW(group2.addAccessor(a1), ChimeraTK::logic_error);
 
   // check that reading and writing the accessors which are part of the group throws
-  try {
-    a1.read();
-    BOOST_ERROR("Exception expected!");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
-  }
-  try {
-    a1.write();
-    BOOST_ERROR("Exception expected!");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
-  }
-  try {
-    a3.read();
-    BOOST_ERROR("Exception expected!");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
-  }
-  try {
-    a4.write();
-    BOOST_ERROR("Exception expected!");
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK(e.getID() == DeviceException::NOT_IMPLEMENTED);
-  }
+  BOOST_CHECK_THROW(a1.read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(a1.write(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(a3.read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(a4.write(), ChimeraTK::logic_error);
 
   // during the replace operation, user buffers will be reset, if a replacement
   BOOST_CHECK(a1[0] == 42);
@@ -283,14 +253,7 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   }
 
   // check that writing to the group fails (has read-only elements)
-  BOOST_CHECK_THROW( group.write(), DeviceException );
-  try {
-    group.write();
-  }
-  catch(DeviceException &e) {
-    BOOST_CHECK( e.getID() == DeviceException::REGISTER_IS_READ_ONLY );
-  }
-
+  BOOST_CHECK_THROW( group.write(), ChimeraTK::logic_error );
 }
 
 void TransferGroupTest::testMergeNumericRegisters() {
@@ -739,13 +702,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
   mux0_2 = 24;
   mux2 = 30;
   mux3 = 33;
-  try {
-    group.write();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_IS_READ_ONLY);
-  }
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
 }
 
 void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
@@ -872,12 +829,6 @@ void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
   mux0_2 = 24;
   mux2 = 30;
   mux3 = 33;
-  try {
-    group.write();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(mtca4u::DeviceException &e) {
-    BOOST_CHECK(e.getID() == mtca4u::DeviceException::REGISTER_IS_READ_ONLY);
-  }
+  BOOST_CHECK_THROW(group.write(), ChimeraTK::logic_error);
 
 }

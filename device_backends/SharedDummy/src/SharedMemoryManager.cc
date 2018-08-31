@@ -55,8 +55,7 @@ namespace ChimeraTK{
     // overflow of pidSet in shared memory.
     if(pidSet->size() >= SHARED_MEMORY_N_MAX_MEMBER){
       std::string errMsg{"Maximum number of accessing members reached."};
-      throw SharedDummyBackendException(errMsg,
-      SharedDummyBackendException::EX_MAX_NUMBER_OF_MEMBERS_REACHED);
+      throw ChimeraTK::runtime_error(errMsg);
     }
 
     pidSet->emplace_back(static_cast<int32_t>(getOwnPID()));

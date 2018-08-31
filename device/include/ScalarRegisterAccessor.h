@@ -9,7 +9,6 @@
 #define CHIMERA_TK_SCALAR_REGISTER_ACCESSOR_H
 
 #include "NDRegisterAccessorAbstractor.h"
-#include "DeviceException.h"
 
 namespace ChimeraTK {
 

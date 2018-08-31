@@ -11,7 +11,7 @@
 #include <set>
 #include <map>
 
-#include "DeviceException.h"
+#include "Exception.h"
 
 namespace ChimeraTK {
 
@@ -68,8 +68,7 @@ namespace ChimeraTK {
       void checkForUnknownFlags(const std::set<AccessMode> &knownFlags) const {
         for(auto flag : _flags) {
           if(knownFlags.count(flag) == 0) {
-            throw DeviceException("Access mode flag '"+getString(flag)+"' is not known by this backend.",
-                DeviceException::NOT_IMPLEMENTED);
+            throw ChimeraTK::logic_error("Access mode flag '"+getString(flag)+"' is not known by this backend.");
           }
         }
       }

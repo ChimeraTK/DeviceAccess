@@ -7,7 +7,6 @@
 
 #include "ForwardDeclarations.h"
 #include "DeviceInfoMap.h"
-#include "DeviceException.h"
 #include <map>
 #include <mutex>
 #include <boost/function.hpp>
@@ -19,17 +18,7 @@
 #define TEST_DMAP_FILE_PATH  "./dummies.dmap"   // FIXME remove
 #define ENV_VAR_DMAP_FILE "DMAP_PATH_ENV"   // FIXME remove
 
-namespace ChimeraTK{
-  
-  /** A class to provide exception for BackendFactory.
-   *
-   */
-  class BackendFactoryException : public DeviceException {
-   public:
-    enum {UNKNOWN_ALIAS,UNREGISTERED_DEVICE,AMBIGUOUS_MAP_FILE_ENTRY};
-    BackendFactoryException(const std::string &message, unsigned int exceptionID)
-      : DeviceException( message, exceptionID ){}
-  };
+namespace ChimeraTK {
 
   /** BackendFactory is a the factory class to create devices.
    * It is implemented as a Meyers' singleton.
