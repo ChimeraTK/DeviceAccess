@@ -231,6 +231,16 @@ namespace ChimeraTK {
         info->nDimensions = 1;
         info->nChannels = 1;
       }
+      else if(type == "redirectedBit") {
+        info->targetType = LNMBackendRegisterInfo::TargetType::BIT;
+        info->deviceName = getValueFromXmlSubnode<std::string>(element, "targetDevice");
+        info->registerName = getValueFromXmlSubnode<std::string>(element, "targetRegister");
+        info->bit = getValueFromXmlSubnode<unsigned int>(element, "targetBit");
+        info->firstIndex = 0;
+        info->length = 0;
+        info->nDimensions = 1;
+        info->nChannels = 1;
+      }
       else if(type == "constant") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
         if(constantType != "integer") {

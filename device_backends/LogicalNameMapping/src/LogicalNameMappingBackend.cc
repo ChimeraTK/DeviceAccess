@@ -6,6 +6,7 @@
  */
 
 #include "LNMBackendChannelAccessor.h"
+#include "LNMBackendBitAccessor.h"
 #include "LNMBackendVariableAccessor.h"
 #include "LogicalNameMappingBackend.h"
 #include "LogicalNameMapParser.h"
@@ -127,6 +128,10 @@ namespace ChimeraTK {
     }
     else if( info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
       ptr = boost::shared_ptr< NDRegisterAccessor<UserType> >(new LNMBackendChannelAccessor<UserType>(shared_from_this(),
+          registerPathName, numberOfWords, wordOffsetInRegister, flags));
+    }
+    else if( info->targetType == LNMBackendRegisterInfo::TargetType::BIT) {
+      ptr = boost::shared_ptr< NDRegisterAccessor<UserType> >(new LNMBackendBitAccessor<UserType>(shared_from_this(),
           registerPathName, numberOfWords, wordOffsetInRegister, flags));
     }
     else if( info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT ||

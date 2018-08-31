@@ -123,4 +123,28 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->value_int[2] == 3333);
   BOOST_CHECK( info->value_int[3] == 4444);
   BOOST_CHECK( info->value_int[4] == 5555);
+
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit0ofVar"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::BIT );
+  BOOST_CHECK( info->deviceName == "this");
+  BOOST_CHECK( info->registerName == "/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK( info->bit == 0);
+
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit1ofVar"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::BIT );
+  BOOST_CHECK( info->deviceName == "this");
+  BOOST_CHECK( info->registerName == "/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK( info->bit == 1);
+
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit2ofVar"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::BIT );
+  BOOST_CHECK( info->deviceName == "this");
+  BOOST_CHECK( info->registerName == "/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK( info->bit == 2);
+
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit3ofVar"));
+  BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::BIT );
+  BOOST_CHECK( info->deviceName == "this");
+  BOOST_CHECK( info->registerName == "/MyModule/SomeSubmodule/Variable");
+  BOOST_CHECK( info->bit == 3);
 }

@@ -18,7 +18,7 @@ namespace ChimeraTK {
     public:
 
       /** Potential target types */
-      enum TargetType { INVALID, REGISTER, CHANNEL, INT_CONSTANT, INT_VARIABLE };
+      enum TargetType { INVALID, REGISTER, CHANNEL, BIT, INT_CONSTANT, INT_VARIABLE };
 
       /** constuctor: initialise values */
       LNMBackendRegisterInfo()
@@ -63,8 +63,11 @@ namespace ChimeraTK {
       /** The length of the range (i.e. number of indices) */
       unsigned int length;
 
-      /** The channel of the target 2D register */
+      /** The channel of the target 2D register (if TargetType::CHANNEL) */
       unsigned int channel;
+
+      /** The bit of the target register (if TargetType::BIT) */
+      unsigned int bit;
 
       /** The number of dimensions of the logical register */
       unsigned int nDimensions;
