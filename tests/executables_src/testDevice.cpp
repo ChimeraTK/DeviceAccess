@@ -383,7 +383,7 @@ void DeviceTest::testReadBadReg() {
   device->open(testBackend);
 
   int32_t data = 0;
-  BOOST_CHECK_THROW(device->readReg("NON_EXISTENT_REGISTER", &data), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device->readReg("NON_EXISTENT_REGISTER", &data), ChimeraTK::runtime_error);
 }
 
 void DeviceTest::testWriteBadReg() {
@@ -392,7 +392,7 @@ void DeviceTest::testWriteBadReg() {
   boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   int32_t data = 0;
-  BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data), ChimeraTK::runtime_error);
 }
 
 void DeviceTest::testDMAReadSizeTooSmall() {
@@ -441,7 +441,7 @@ void DeviceTest::testGetRegistersInModule() {
   ++registerInfo;
   BOOST_CHECK(registerInfo->name == "WORD_STATUS");
   BOOST_CHECK(registerInfo->module == "APP0");
- 
+
 }
 
 void DeviceTest::testGetRegisterAccessorsInModule() {
@@ -451,7 +451,7 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
   //std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
-  
+
   std::list< boost::shared_ptr<mtca4u::Device::RegisterAccessor> > accessorList = device->getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
 
@@ -494,7 +494,7 @@ void DeviceTest::testDeviceCreation() {
   device1b.open("PCIE2");
   // check that device1 has not been closed by device 1b being reassigned
   BOOST_CHECK( device1.isOpened() == true );
-   
+
   mtca4u::Device device2;
   BOOST_CHECK( device2.isOpened() == false );
   device2.open("PCIE1");
