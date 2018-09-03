@@ -280,6 +280,7 @@ namespace ChimeraTK {
   }
 
   std::string PcieBackend::readDeviceInfo() {
+    if(!_opened) throw ChimeraTK::logic_error("Device not opened.");
     std::ostringstream os;
     device_ioctrl_data ioctlData = { 0, 0, 0, 0 };
     if (ioctl(_deviceID, _ioctlPhysicalSlot, &ioctlData) < 0) {
