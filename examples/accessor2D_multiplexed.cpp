@@ -1,16 +1,16 @@
-#include <mtca4u/Device.h>
-#include <mtca4u/Utilities.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/Utilities.h>
 #include <iostream>
 
 int main() {
-  mtca4u::setDMapFilePath("example.dmap");
-  mtca4u::Device myDevice;
+  ChimeraTK::setDMapFilePath("example.dmap");
+  ChimeraTK::Device myDevice;
   myDevice.open("MY_DEVICE");
 
   /* We populate the memory region with multiple multiplexed sequences
    * so that we can use this for demonstrating the demultiplexing of the
    * TwoDRegisterAccessor (for some implementations depeding on the backend).
-   * 
+   *
    * In this example we only have 4 sequences with 4 samples each.
    * We write numbers 0 to 15 as multiplexed data and expect the following result:
    * sequence 0:  0   4   8   12
@@ -20,18 +20,18 @@ int main() {
    *
    * We use a register named AREA_DATA_RAW which provides plain access to the data region.
    */
-  auto dataRegion 
+  auto dataRegion
     = myDevice.getBufferingRegisterAccessor<double>("ADC/AREA_DATA_RAW");
   int counter = 0;
   for (auto & dataWord : dataRegion){
     dataWord=counter++;
   }
   dataRegion.write();
-  
+
   /* Now check how it looks using the TwoDRegisterAccessor. We just copy it from
    * the accessor2D.cpp example.
    */
-  mtca4u::TwoDRegisterAccessor<double> twoDAccessor =
+  ChimeraTK::TwoDRegisterAccessor<double> twoDAccessor =
     myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
   twoDAccessor.read();
 

@@ -1,22 +1,22 @@
-#include <mtca4u/Device.h>
-#include <mtca4u/Utilities.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/Utilities.h>
 #include <iostream>
 
 int main() {
-  mtca4u::setDMapFilePath("example.dmap");
-  mtca4u::Device myDevice;
+  ChimeraTK::setDMapFilePath("example.dmap");
+  ChimeraTK::Device myDevice;
   myDevice.open("MY_DEVICE");
 
   /* In this example there is a data region called "DATA" in
    * a module called "ADC".
    */
-  mtca4u::TwoDRegisterAccessor<double> twoDAccessor =
+  ChimeraTK::TwoDRegisterAccessor<double> twoDAccessor =
     myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
 
   /* Read data for all channels from the hardware
    */
   twoDAccessor.read();
-  
+
   /* You can access each sequence/channel individually. They are std::vectors.
    * You get a reference to the vector inside the accessor. No data copying.
    */

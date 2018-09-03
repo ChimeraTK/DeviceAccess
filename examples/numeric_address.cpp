@@ -1,5 +1,5 @@
-#include <mtca4u/Device.h>
-#include <mtca4u/NumericAddress.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/NumericAddress.h>
 #include <iostream>
 
 /* When you are doing numerical addressing you usually don't have a map file yet.
@@ -13,7 +13,7 @@
  */
 
 int main(){
-  mtca4u::Device myDevice;
+  ChimeraTK::Device myDevice;
   /* If you have the mtcadummy driver installed you can also use a pci device:
    * myDevice.open("sdm://./pci:pcieunidummys6");
    */
@@ -28,8 +28,8 @@ int main(){
    *
    * When using numeric addresses directly, no fixed point conversion is performed.
    */
-    mtca4u::ScalarRegisterAccessor<int> temperatureSetPoint
-    = myDevice.getScalarRegisterAccessor<int>(mtca4u::numeric_address::BAR/0/32*4);
+    ChimeraTK::ScalarRegisterAccessor<int> temperatureSetPoint
+    = myDevice.getScalarRegisterAccessor<int>(ChimeraTK::numeric_address::BAR/0/32*4);
 
   temperatureSetPoint.read();
   std::cout << "Current temperature set point is " << temperatureSetPoint << std::endl;

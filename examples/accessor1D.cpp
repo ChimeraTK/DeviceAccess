@@ -1,23 +1,23 @@
-#include <mtca4u/Device.h>
-#include <mtca4u/Utilities.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/Utilities.h>
 #include <iostream>
 
 int main() {
-  mtca4u::setDMapFilePath("example.dmap");
-  mtca4u::Device myDevice;
+  ChimeraTK::setDMapFilePath("example.dmap");
+  ChimeraTK::Device myDevice;
   myDevice.open("MY_DEVICE");
 
   /* The device contains a register called CLOCKS in the BOARD section.
    * It contains 4 values for 4 different clocks.
    */
-  mtca4u::OneDRegisterAccessor<double> clocks =
+  ChimeraTK::OneDRegisterAccessor<double> clocks =
     myDevice.getOneDRegisterAccessor<double>("BOARD/CLOCKS");
   std::cout << "The clocks register has " << clocks.getNElements() << " elements." <<std::endl;
 
   /* Read data for the whole register from the hardware
    */
   clocks.read();
-  
+
   /* The OneDRegisterAccessor behaves like a std::vector, incl. [] operator
    * and iterators.
    */
