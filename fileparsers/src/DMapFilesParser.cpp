@@ -102,10 +102,10 @@ namespace ChimeraTK {
               } else {
                 map = _mapFileParser.parse((*dmap_elem_iter).mapFileName);
               }
-            } catch (ChimeraTK::logic_error e) {
+            } catch (ChimeraTK::logic_error &) {
               closedir(dp);
               throw;
-            } catch (ChimeraTK::runtime_error e) {
+            } catch (ChimeraTK::runtime_error &) {
               closedir(dp);
               throw;
             }
