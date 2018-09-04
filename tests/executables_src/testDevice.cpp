@@ -18,7 +18,7 @@ using namespace boost::unit_test_framework;
 
 class TestableDevice : public ChimeraTK::Device {
   public:
-    boost::shared_ptr<ChimeraTK::DeviceBackend> getBackend() { return _deviceBackendPointer; };
+    boost::shared_ptr<ChimeraTK::DeviceBackend> getBackend() { return _deviceBackendPointer; }
 };
 
 class DeviceTest {
