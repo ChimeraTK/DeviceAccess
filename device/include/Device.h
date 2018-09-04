@@ -176,6 +176,7 @@ namespace ChimeraTK {
        *
        *  @todo Add printed runtime warning. Deprecated since version 0.12 */
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       UserType read(const RegisterPath &registerPathName, bool enforceRawAccess) const;
 
       /** \brief <b>DEPRECATED</b>
@@ -187,6 +188,7 @@ namespace ChimeraTK {
        *
        *  @todo Add printed runtime warning. Deprecated since version 0.12 */
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       std::vector<UserType> read(const RegisterPath &registerPathName, size_t numberOfWords,
           size_t wordOffsetInRegister, bool enforceRawAccess) const;
 
@@ -199,6 +201,7 @@ namespace ChimeraTK {
        *
        *  @todo Add printed runtime warning. Deprecated since version 0.12 */
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       void write(const RegisterPath &registerPathName, UserType value, bool enforceRawAccess);
 
       /** \brief <b>DEPRECATED</b>
@@ -210,6 +213,7 @@ namespace ChimeraTK {
        *
        *  @todo Add printed runtime warning. Deprecated since version 0.12 */
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       void write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
           bool enforceRawAccess);
 
@@ -223,6 +227,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning. Deprecated since version 0.12 */
 
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(const RegisterPath &registerPathName,
           size_t wordOffsetInRegister, bool enforceRawAccess) const;
 
@@ -235,6 +240,7 @@ namespace ChimeraTK {
        *
        *  @todo Add printed runtime warning. Deprecated since version 0.12 */
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       OneDRegisterAccessor<UserType> getOneDRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) const;
 
@@ -245,6 +251,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       template<typename UserType>
+      [[deprecated("Use getScalarRegisterAccessor or getOneDRegisterAccessor instead!")]]
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(const RegisterPath &registerPathName,
           size_t numberOfWords=0, size_t wordOffsetInRegister=0, bool enforceRawAccess=false) const;
 
@@ -254,6 +261,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use read() instead!")]]
       virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) const;
 
       /** \brief <b>DEPRECATED</b>
@@ -262,6 +270,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar);
 
       /** \brief <b>DEPRECATED</b>
@@ -270,6 +279,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.8
        */
+      [[deprecated("Use read() instead!")]]
       virtual void readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) const;
 
       /** \brief <b>DEPRECATED</b>
@@ -278,6 +288,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar);
 
       /** \brief <b>DEPRECATED</b>
@@ -295,6 +306,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use read() instead!")]]
       virtual void readReg(const std::string &regName, const std::string &regModule,
           int32_t *data, size_t dataSize = 0,
           uint32_t addRegOffset = 0) const;
@@ -305,6 +317,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeReg(const std::string &regName, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
 
@@ -314,6 +327,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeReg(const std::string &regName,
           const std::string &regModule, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
@@ -324,6 +338,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use the getBufferingRegisterAccessor instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use getScalarRegisterAccessor() or getOneDRegisterAccessor() instead!")]]
       boost::shared_ptr<ChimeraTK::RegisterAccessor> getRegisterAccessor(const std::string &registerName,
           const std::string &module = std::string()) const;
 
@@ -333,6 +348,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use the RegisterCatalogue (see getRegisterCatalogue()) instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use getRegisterCatalogue() instead!")]]
       std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> getRegistersInModule(
           const std::string &moduleName) const;
 
@@ -343,6 +359,7 @@ namespace ChimeraTK {
        *  registers and create accessors using getBufferingRegisterAccessor instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use getRegisterCatalogue() instead and create accessors with get*RegisterAccessor() functions!")]]
       std::list<  boost::shared_ptr<ChimeraTK::RegisterAccessor> > getRegisterAccessorsInModule(
           const std::string &moduleName) const;
 
@@ -352,6 +369,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use getRegisterCatalogue() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use getRegisterCatalogue() instead!")]]
       boost::shared_ptr<const RegisterInfoMap> getRegisterMap() const;
 
       /** \brief <b>DEPRECATED</b>
@@ -360,6 +378,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Open by alias name instead.
        *  @todo Change warning into runtime error after release of version 0.9
        */
+      [[deprecated("Open by alias or device identifier string instead!")]]
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<ChimeraTK::RegisterInfoMap> &registerMap);
 
       /** \brief <b>DEPRECATED</b>
@@ -368,6 +387,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Open by alias name instead.
        *  @todo Change warning into runtime error after release of version 0.9
        */
+      [[deprecated("Open by alias or device identifier string instead!")]]
       virtual void open(boost::shared_ptr<DeviceBackend> deviceBackend);
 
       /** \brief <b>DEPRECATED</b>
@@ -377,6 +397,7 @@ namespace ChimeraTK {
        *  @todo Change warning into runtime error after release of version 0.9
        */
       template<typename customClass>
+      [[deprecated("Use getTwoDRegisterAccessor() instead!")]]
       boost::shared_ptr<customClass> getCustomAccessor(
           const std::string &dataRegionName,
           const std::string &module = std::string()) const;
@@ -389,6 +410,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       template<typename UserType>
+      [[deprecated("Use getOneDRegisterAccessor() instead!")]]
       BufferingRegisterAccessor<UserType> getBufferingRegisterAccessor(
           const std::string &module, const std::string &registerName) const;
 
@@ -399,6 +421,7 @@ namespace ChimeraTK {
        *  @todo Add printed runtime warning after release of version 0.9
        */
       template<typename UserType>
+      [[deprecated("Use new signature instead!")]]
       TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
           const std::string &module, const std::string &registerName) const;
 
@@ -408,6 +431,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use readArea() instead!
        *  @todo Change warning into runtime error after release of version 0.9
        */
+      [[deprecated("Use read() instead!")]]
       virtual void readDMA(uint32_t regOffset, int32_t *data, size_t size,
           uint8_t bar) const;
 
@@ -417,6 +441,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use writeArea() instead!
        *  @todo Change warning into runtime error after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeDMA(uint32_t regOffset, int32_t const *data, size_t size,
           uint8_t bar);
 
@@ -426,6 +451,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use readArea() instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use read() instead!")]]
       virtual void readDMA(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
@@ -435,6 +461,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use readArea() instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use read() instead!")]]
       virtual void readDMA(const std::string &regName, const std::string &regModule,
           int32_t *data, size_t dataSize = 0,
           uint32_t addRegOffset = 0) const;
@@ -445,6 +472,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use writeArea() instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeDMA(const std::string &regName, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);
 
@@ -454,6 +482,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use writeArea() instead!
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void writeDMA(const std::string &regName,
           const std::string &regModule, int32_t const *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0);

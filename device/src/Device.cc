@@ -57,6 +57,9 @@ namespace ChimeraTK {
     return castedBackend->getRegistersInModule(moduleName);
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
   /********************************************************************************************************************/
 
   std::list< boost::shared_ptr<ChimeraTK::RegisterAccessor> >
@@ -199,6 +202,7 @@ namespace ChimeraTK {
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     writeArea(regOffset, data, size, bar);   // LCOV_EXCL_LINE
   }                                                             // LCOV_EXCL_LINE
+#pragma GCC diagnostic pop
 
   /********************************************************************************************************************/
 
