@@ -15,10 +15,10 @@ using namespace boost::unit_test_framework;
 #include "MultiplexedDataAccessor.h"
 #include "Device.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 static const std::string DMAP_FILE_NAME("dummies.dmap");
 static const std::string DEVICE_ALIAS("SEQUENCES");
@@ -313,12 +313,12 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
   Device device;
   device.open("PCIE3");
 
-  boost::shared_ptr< mtca4u::MultiplexedDataAccessor<unsigned int> > acc =
-      device.getCustomAccessor< mtca4u::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
+  boost::shared_ptr< ChimeraTK::MultiplexedDataAccessor<unsigned int> > acc =
+      device.getCustomAccessor< ChimeraTK::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
 
   BOOST_CHECK_THROW( acc->getFixedPointConverter(), ChimeraTK::logic_error );
 

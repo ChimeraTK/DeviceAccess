@@ -11,11 +11,11 @@ using namespace boost::unit_test_framework;
 #include "DMapFileParser.h"
 #include "NumericAddress.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
-void checkWriteReadFromRegister(mtca4u::Device& rebotDevice);
+void checkWriteReadFromRegister(ChimeraTK::Device& rebotDevice);
 
 BOOST_AUTO_TEST_SUITE(RebotDeviceTestSuite)
 
@@ -23,8 +23,8 @@ BOOST_AUTO_TEST_SUITE(RebotDeviceTestSuite)
 BOOST_AUTO_TEST_CASE( testFactoryForRebotDeviceCreation ){
 
   // set dmap file path
-  auto dmapPathBackup = mtca4u::getDMapFilePath();
-  mtca4u::setDMapFilePath("./dummies.dmap");
+  auto dmapPathBackup = ChimeraTK::getDMapFilePath();
+  ChimeraTK::setDMapFilePath("./dummies.dmap");
 
 
   // There are four situations where the map-file information is coming from
@@ -34,11 +34,11 @@ BOOST_AUTO_TEST_CASE( testFactoryForRebotDeviceCreation ){
   // 4. Both dmap file and URI contain the information (prints a warning and takes the one from the dmap file)
 
   // 1. The original way with map file as third column in the dmap file
-  mtca4u::Device rebotDevice;
+  ChimeraTK::Device rebotDevice;
   rebotDevice.open("mskrebot");
   checkWriteReadFromRegister(rebotDevice);
   
-  mtca4u::Device rebotDevice2;
+  ChimeraTK::Device rebotDevice2;
   // create another mskrebot
   rebotDevice2.open("mskrebot");
   checkWriteReadFromRegister(rebotDevice2);
@@ -48,30 +48,30 @@ BOOST_AUTO_TEST_CASE( testFactoryForRebotDeviceCreation ){
 
   // 2. Creating without map file in the dmap only works by putting an sdm on creation because we have to bypass the
   // dmap file parser which at the time of writing this requires a map file as third column
-  mtca4u::Device secondDevice;
+  ChimeraTK::Device secondDevice;
   secondDevice.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
   BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
   secondDevice.close();
 
   // 3. We don't have a map file, so we have to use numerical addressing
-  mtca4u::Device thirdDevice;
+  ChimeraTK::Device thirdDevice;
   thirdDevice.open("sdm://./rebot=localhost,5001");
-  BOOST_CHECK( thirdDevice.read<int32_t>(mtca4u::numeric_address::BAR/0/0xC)== 48<<3 ); // The user register is on bar 0, address 0xC.
+  BOOST_CHECK( thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR/0/0xC)== 48<<3 ); // The user register is on bar 0, address 0xC.
                                                                // We have no fixed point data conversion but 3 fractional bits.
   thirdDevice.close();
 
   // 4. This should print a warning. We can't check that, so we just check that it does work like the other two options.
-  mtca4u::Device fourthDevice;
+  ChimeraTK::Device fourthDevice;
   fourthDevice.open("REBOT_DOUBLEMAP");
   BOOST_CHECK( fourthDevice.read<double>("BOARD/WORD_USER")== 48 );
 
   // reset dmap path to what was at the start  of these tests
-  mtca4u::setDMapFilePath(dmapPathBackup);
+  ChimeraTK::setDMapFilePath(dmapPathBackup);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
-void checkWriteReadFromRegister(mtca4u::Device& rebotDevice) {
+void checkWriteReadFromRegister(ChimeraTK::Device& rebotDevice) {
   int32_t dataToWrite[4] = {2, 3, 100, 20};
   int32_t readInData[4];
 

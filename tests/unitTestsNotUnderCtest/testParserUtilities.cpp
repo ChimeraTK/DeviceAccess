@@ -3,11 +3,11 @@
 
 #include <iostream>
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 using namespace boost::unit_test_framework;
-namespace parsutils = mtca4u::parserUtilities;
+namespace parsutils = ChimeraTK::parserUtilities;
 
 // The test cases require the current working directory. This is provided
 // to the test suite through the shell script:

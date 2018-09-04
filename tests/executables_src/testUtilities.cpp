@@ -21,10 +21,10 @@ using namespace boost::unit_test_framework;
 #define INVALID_DEVICE_STRING_2 "/dev"
 #define INVALID_DEVICE_STRING_3 "testfile.mappp"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 class UtilitiesTest
 {
@@ -115,9 +115,9 @@ void UtilitiesTest::testAliasLookUp() {
 }
 
 void UtilitiesTest::testgetAliasList() {
-  auto initialDmapFile = mtca4u::getDMapFilePath();
+  auto initialDmapFile = ChimeraTK::getDMapFilePath();
 
-  mtca4u::setDMapFilePath("");
+  ChimeraTK::setDMapFilePath("");
   BOOST_CHECK_THROW(Utilities::getAliasList(), ChimeraTK::logic_error);
 
   // entries in dummies.dmap when this was written
@@ -129,9 +129,9 @@ void UtilitiesTest::testgetAliasList() {
     "REBOT_DOUBLEMAP"
   };
 
-  mtca4u::setDMapFilePath("./dummies.dmap");
+  ChimeraTK::setDMapFilePath("./dummies.dmap");
   auto returnedListOfAliases = Utilities::getAliasList();
-  mtca4u::setDMapFilePath(initialDmapFile);
+  ChimeraTK::setDMapFilePath(initialDmapFile);
 
   int index = 0;
   BOOST_CHECK(returnedListOfAliases.size() == expectedListOfAliases.size());

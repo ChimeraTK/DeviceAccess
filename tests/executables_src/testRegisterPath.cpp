@@ -3,13 +3,13 @@
 
 #include "RegisterPath.h"
 #include "NumericAddress.h"
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
 using namespace boost::unit_test_framework;
-using namespace mtca4u;
-using mtca4u::numeric_address::BAR;
+using namespace ChimeraTK;
+using ChimeraTK::numeric_address::BAR;
 
 class RegisterPathTest {
   public:

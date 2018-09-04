@@ -7,10 +7,10 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "TransferGroup.h"
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 // Create a test suite which holds all your tests.
 BOOST_AUTO_TEST_SUITE( NumericAddressedBackendRegisterAccessorTestSuite )

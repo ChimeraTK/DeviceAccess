@@ -6,7 +6,7 @@
 #include "helperFunctions.h"
 
 using namespace boost::unit_test_framework;
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
@@ -69,11 +69,11 @@ bool init_unit_test(){
 
 void DeviceInfoMapTest::testInsertElement() {
   std::string dMapFileName = "dummy.map";
-  mtca4u::DeviceInfoMap deviceInfoMap(dMapFileName);
+  ChimeraTK::DeviceInfoMap deviceInfoMap(dMapFileName);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo3;
 
   populateDummyDeviceInfo(deviceInfo1, dMapFileName);
   populateDummyDeviceInfo(deviceInfo2, dMapFileName);
@@ -83,13 +83,13 @@ void DeviceInfoMapTest::testInsertElement() {
   deviceInfoMap.insert(deviceInfo2);
   deviceInfoMap.insert(deviceInfo3);
 
-  mtca4u::DeviceInfoMap::DeviceInfo* ptrList[3];
+  ChimeraTK::DeviceInfoMap::DeviceInfo* ptrList[3];
   ptrList[0] = &deviceInfo1;
   ptrList[1] = &deviceInfo2;
   ptrList[2] = &deviceInfo3;
   int index;
 
-  mtca4u::DeviceInfoMap::iterator it;
+  ChimeraTK::DeviceInfoMap::iterator it;
   for (it = deviceInfoMap.begin(), index = 0;
       (it != deviceInfoMap.end())  && (index < 3);
       ++it, ++index) {
@@ -100,10 +100,10 @@ void DeviceInfoMapTest::testInsertElement() {
 
 void DeviceInfoMapTest::testGetDeviceInfo() {
   std::string dMapFileName = "dummy.map";
-  mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
+  ChimeraTK::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
 
   populateDummyDeviceInfo(deviceInfo1, dMapFileName);
   populateDummyDeviceInfo(deviceInfo2, dMapFileName);
@@ -111,9 +111,9 @@ void DeviceInfoMapTest::testGetDeviceInfo() {
   RegisterInfoMap.insert(deviceInfo1);
   RegisterInfoMap.insert(deviceInfo2);
 
-  mtca4u::DeviceInfoMap::DeviceInfo retrievedElement1;
-  mtca4u::DeviceInfoMap::DeviceInfo retrievedElement2;
-  mtca4u::DeviceInfoMap::DeviceInfo retrievedElement3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo retrievedElement1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo retrievedElement2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo retrievedElement3;
 
   RegisterInfoMap.getDeviceInfo(deviceInfo1.deviceName, retrievedElement1);
   RegisterInfoMap.getDeviceInfo(deviceInfo2.deviceName, retrievedElement2);
@@ -128,12 +128,12 @@ void DeviceInfoMapTest::testGetDeviceInfo() {
 void DeviceInfoMapTest::testCheckForDuplicateElements() {
   std::string dMapFileName = "dummy.map";
   std::string commonCardName = "common_card";
-  mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
+  ChimeraTK::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo4;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo4;
 
   populateDummyDeviceInfo(deviceInfo1, dMapFileName);
   populateDummyDeviceInfo(deviceInfo2, dMapFileName);
@@ -144,10 +144,10 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
   deviceInfo2.deviceName = commonCardName;
   deviceInfo3.deviceName = commonCardName;
 
-  mtca4u::DeviceInfoMap::ErrorList elementDuplications;
+  ChimeraTK::DeviceInfoMap::ErrorList elementDuplications;
   RegisterInfoMap.insert(deviceInfo1);
   BOOST_CHECK(RegisterInfoMap.check(elementDuplications,
-      mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR) ==
+      ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR) ==
           true);
 
   RegisterInfoMap.insert(deviceInfo2);
@@ -155,12 +155,12 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
   RegisterInfoMap.insert(deviceInfo4);
 
   RegisterInfoMap.check(elementDuplications,
-      mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR);
+      ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR);
 
   int numberOfIncorrectLinesInFile = elementDuplications._errors.size();
   BOOST_CHECK(numberOfIncorrectLinesInFile == 2);
 
-  std::list<mtca4u::DeviceInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
+  std::list<ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
   for (errorIterator = elementDuplications._errors.begin();
       errorIterator != elementDuplications._errors.end(); ++errorIterator) {
     bool doesDetectedElementsHaveSameName =
@@ -172,7 +172,7 @@ void DeviceInfoMapTest::testCheckForDuplicateElements() {
 
 void DeviceInfoMapTest::testGetDeviceFileAndMapFileName() {
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
   deviceInfo1.uri = "/dev/test";
   deviceInfo1.mapFileName = "test_mapfile";
 
@@ -185,20 +185,20 @@ void DeviceInfoMapTest::testGetDeviceFileAndMapFileName() {
 
 void DeviceInfoMapTest::testErrorElemErrTypeStreamOperator() {
   std::stringstream file_stream1;
-  file_stream1 << mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR;
+  file_stream1 << ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR;
   BOOST_CHECK(file_stream1.str() == "ERROR");
 
   std::stringstream file_stream2;
-  file_stream2 << mtca4u::DeviceInfoMap::ErrorList::ErrorElem::WARNING;
+  file_stream2 << ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::WARNING;
   BOOST_CHECK(file_stream2.str() == "WARNING");
 
   std::stringstream file_stream3;
-  file_stream3 << (mtca4u::DeviceInfoMap::ErrorList::ErrorElem::TYPE)4;
+  file_stream3 << (ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::TYPE)4;
   BOOST_CHECK(file_stream3.str() == "UNKNOWN");
 }
 
 void DeviceInfoMapTest::testDeviceInfoStreamOperator() {
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
   deviceInfo1.uri = "/dev/dev1";
   deviceInfo1.deviceName = "card1";
   deviceInfo1.dmapFileLineNumber = 1;
@@ -223,9 +223,9 @@ void DeviceInfoMapTest::testDeviceInfoStreamOperator() {
 
 void DeviceInfoMapTest::testDeviceInfoMapStreamOperator() {
   std::string dMapFileName = "dummy.dmap";
-  mtca4u::DeviceInfoMap deviceInfoMap(dMapFileName);
+  ChimeraTK::DeviceInfoMap deviceInfoMap(dMapFileName);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
   populateDummyDeviceInfo(deviceInfo1, dMapFileName, "card1", "/dev/dev1",
       "map_file");
   deviceInfoMap.insert(deviceInfo1);
@@ -257,10 +257,10 @@ void DeviceInfoMapTest::testDeviceInfoMapStreamOperator() {
 void DeviceInfoMapTest::testErrorElemStreamOperator() {
   std::string dMapFileName = "dummy.map";
   //std::string commonCardName = "common_card";
-  mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
+  ChimeraTK::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
 
   populateDummyDeviceInfo(deviceInfo1, "dummy.dmap", "card1", "/dev/dev1",
       "map_file");
@@ -270,13 +270,13 @@ void DeviceInfoMapTest::testErrorElemStreamOperator() {
   deviceInfo1.dmapFileLineNumber = 1;
   deviceInfo2.dmapFileLineNumber = 2;
 
-  mtca4u::DeviceInfoMap::ErrorList::ErrorElem error_element(
-      mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR,
-      mtca4u::DeviceInfoMap::ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME,
+  ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem error_element(
+      ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR,
+      ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::NONUNIQUE_DEVICE_NAME,
       deviceInfo1, deviceInfo2);
   std::stringstream expected_file_stream;
   expected_file_stream
-  << mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR
+  << ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR
   << ": Found two devices with the same name but different properties: \""
   << "card1"
   << "\" in file \""
@@ -294,10 +294,10 @@ void DeviceInfoMapTest::testErrorElemStreamOperator() {
 void DeviceInfoMapTest::testErrorListStreamOperator() {
   std::string dMapFileName = "dummy.dmap";
   std::string commonCardName = "card1";
-  mtca4u::DeviceInfoMap RegisterInfoMap(dMapFileName);
+  ChimeraTK::DeviceInfoMap RegisterInfoMap(dMapFileName);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
 
   populateDummyDeviceInfo(deviceInfo1, dMapFileName);
   populateDummyDeviceInfo(deviceInfo2, dMapFileName);
@@ -308,15 +308,15 @@ void DeviceInfoMapTest::testErrorListStreamOperator() {
   deviceInfo1.dmapFileLineNumber = 1;
   deviceInfo2.dmapFileLineNumber = 2;
 
-  mtca4u::DeviceInfoMap::ErrorList elementDuplications;
+  ChimeraTK::DeviceInfoMap::ErrorList elementDuplications;
   RegisterInfoMap.insert(deviceInfo1);
   RegisterInfoMap.insert(deviceInfo2);
 
   RegisterInfoMap.check(elementDuplications,
-      mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR);
+      ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR);
   std::stringstream expected_file_stream;
   expected_file_stream
-  << mtca4u::DeviceInfoMap::ErrorList::ErrorElem::ERROR
+  << ChimeraTK::DeviceInfoMap::ErrorList::ErrorElem::ERROR
   << ": Found two devices with the same name but different properties: \""
   << "card1"
   << "\" in file \""

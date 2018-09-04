@@ -16,7 +16,7 @@ using namespace boost::unit_test_framework;
 #include "testableRebotSleep_testingImpl.h"
 
 using namespace boost::unit_test_framework;
-using namespace mtca4u;
+using namespace ChimeraTK;
 using namespace ChimeraTK;
 
 // Create a test suite which holds all your tests.

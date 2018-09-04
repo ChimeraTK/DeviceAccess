@@ -6,10 +6,10 @@
 #include "Exception.h"
 
 using namespace boost::unit_test_framework;
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 class LMapFileTest {
   public:

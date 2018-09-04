@@ -5,17 +5,17 @@
 using namespace boost::unit_test_framework;
 
 #include "predicates.h"
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
 BOOST_AUTO_TEST_SUITE(  PredicatesTestSuite )
 
 BOOST_AUTO_TEST_CASE( test_ompareModuleName_pred){
-  mtca4u::compareModuleName_pred myModulePredicate("MyModule");
-  mtca4u::compareModuleName_pred theirModulePredicate("TheirModule");
+  ChimeraTK::compareModuleName_pred myModulePredicate("MyModule");
+  ChimeraTK::compareModuleName_pred theirModulePredicate("TheirModule");
 
-  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfoent("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MyModule");
+  ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfoent("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MyModule");
   BOOST_CHECK( myModulePredicate( myRegisterInfoent ) == true );
   BOOST_CHECK( theirModulePredicate( myRegisterInfoent ) == false );
 }

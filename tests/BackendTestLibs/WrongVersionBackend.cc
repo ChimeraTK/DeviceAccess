@@ -2,10 +2,10 @@
 #include "BackendFactory.h"
 #include "DeviceAccessVersion.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 #define WRONG_VERSION "00.18"
 
 // LCOV_EXCL_START these lines cannot be reached because the backend cannot be registered, thus it is never instantiated
@@ -19,7 +19,7 @@ struct WrongVersionBackend : public DummyBackend{
 
   struct BackendRegisterer{
     BackendRegisterer(){
-      mtca4u::BackendFactory::getInstance().registerBackendType("wrongVersionBackend","",&WrongVersionBackend::createInstance, WRONG_VERSION);
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("wrongVersionBackend","",&WrongVersionBackend::createInstance, WRONG_VERSION);
     }
   };
 

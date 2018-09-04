@@ -10,23 +10,23 @@
 #include "accessPrivateData.h"
 
 using namespace boost::unit_test_framework;
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 // we need to access some private data of the low level transfer element
 struct NumericAddressedLowLevelTransferElement_startAddress {
     typedef size_t (NumericAddressedLowLevelTransferElement::*type);
 };
 template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
-        &mtca4u::NumericAddressedLowLevelTransferElement::_startAddress>;
+        &ChimeraTK::NumericAddressedLowLevelTransferElement::_startAddress>;
 
 struct NumericAddressedLowLevelTransferElement_numberOfBytes {
     typedef size_t (NumericAddressedLowLevelTransferElement::*type);
 };
 template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
-        &mtca4u::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
+        &ChimeraTK::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
 
 
 class TransferGroupTest {
@@ -63,7 +63,7 @@ bool init_unit_test(){
 void TransferGroupTest::testAdding() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
 
   device.open("DUMMYD3");
 
@@ -155,7 +155,7 @@ void TransferGroupTest::testAdding() {
 void TransferGroupTest::testLogicalNameMappedRegister() {
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1, target2;
+  ChimeraTK::Device device, target1, target2;
 
   device.open("LMAP0");
   BufferingRegisterAccessor<int> a[6];
@@ -259,7 +259,7 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
 void TransferGroupTest::testMergeNumericRegisters() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
 
   device.open("DUMMYD3");
 
@@ -375,7 +375,7 @@ void TransferGroupTest::testMergeNumericRegisters() {
 void TransferGroupTest::testMergeNumericRegistersDifferentTypes() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
 
   device.open("DUMMYD3");
 
@@ -478,7 +478,7 @@ template<typename T>
 struct CountingDecorator : NDRegisterAccessorDecorator<T> {
 
     // if fakeLowLevel is set to true, the decorator will pretend to be the low-level TransferElement.
-    CountingDecorator( const boost::shared_ptr<mtca4u::TransferElement> &target,
+    CountingDecorator( const boost::shared_ptr<ChimeraTK::TransferElement> &target,
                        bool _fakeLowLevel = false )
     : NDRegisterAccessorDecorator<T>(boost::dynamic_pointer_cast<NDRegisterAccessor<T>>(target)),
       fakeLowLevel(_fakeLowLevel)
@@ -527,7 +527,7 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
       return NDRegisterAccessorDecorator<T>::doWriteTransfer(versionNumber);
     }
 
-    std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
+    std::vector< boost::shared_ptr<ChimeraTK::TransferElement> > getHardwareAccessingElements() override {
       if(fakeLowLevel) {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
       }
@@ -591,7 +591,7 @@ struct CountingDecorator : NDRegisterAccessorDecorator<T> {
 void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
 
   device.open("DUMMYD3");
 
@@ -708,7 +708,7 @@ void TransferGroupTest::testCallsToPrePostFunctionsInDecorator() {
 void TransferGroupTest::testCallsToPrePostFunctionsInLowLevel() {
 
   BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
 
   device.open("DUMMYD3");
 

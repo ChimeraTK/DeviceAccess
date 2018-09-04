@@ -9,11 +9,11 @@
 
 namespace ip = boost::asio::ip;
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 namespace ChimeraTK {
-  using namespace mtca4u;
+  using namespace ChimeraTK;
   
 extern bool volatile stop_rebot_server;
 

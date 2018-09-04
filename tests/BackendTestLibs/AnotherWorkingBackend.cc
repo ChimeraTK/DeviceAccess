@@ -2,10 +2,10 @@
 #include "BackendFactory.h"
 #include "DeviceAccessVersion.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 struct AnotherWorkingBackend : public DummyBackend{
   using DummyBackend::DummyBackend;
@@ -16,7 +16,7 @@ struct AnotherWorkingBackend : public DummyBackend{
 
   struct BackendRegisterer{
     BackendRegisterer(){
-      mtca4u::BackendFactory::getInstance().registerBackendType("another","",&AnotherWorkingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("another","",&AnotherWorkingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     }
   };
 

@@ -4,7 +4,7 @@ using namespace boost::unit_test_framework;
 
 #include "helperFunctions.h"
 #include "Exception.h"
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
@@ -95,12 +95,12 @@ bool init_unit_test(){
 }
 
 void MapFileTest::testInsertElement(){
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 4);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 1, 32, 0, true, 1, "Module1");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 1, 32, 0, true, 2, "Module2");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 4);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 1, 32, 0, true, 1, "Module1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 1, 32, 0, true, 2, "Module2");
 
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoent2);
@@ -108,9 +108,9 @@ void MapFileTest::testInsertElement(){
   dummyMapFile.insert(RegisterInfoentModule1);
   dummyMapFile.insert(RegisterInfoentModule2);
 
-  mtca4u::RegisterInfoMap const & constDummyMapFile = dummyMapFile;
+  ChimeraTK::RegisterInfoMap const & constDummyMapFile = dummyMapFile;
 
-  mtca4u::RegisterInfoMap::RegisterInfo* ptrList[5];
+  ChimeraTK::RegisterInfoMap::RegisterInfo* ptrList[5];
   ptrList[0] = &RegisterInfoent1;
   ptrList[1] = &RegisterInfoent2;
   ptrList[2] = &RegisterInfoent3;
@@ -118,8 +118,8 @@ void MapFileTest::testInsertElement(){
   ptrList[4] = &RegisterInfoentModule2;
 
   int index;
-  mtca4u::RegisterInfoMap::iterator it;
-  mtca4u::RegisterInfoMap::const_iterator const_it;
+  ChimeraTK::RegisterInfoMap::iterator it;
+  ChimeraTK::RegisterInfoMap::const_iterator const_it;
   for( it = dummyMapFile.begin(), index = 0;
       (it != dummyMapFile.end()) && (index < 3);
       ++it, ++index){
@@ -134,11 +134,11 @@ void MapFileTest::testInsertElement(){
 }
 
 void MapFileTest::testInsertMetadata(){
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
 
-  mtca4u::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
-  mtca4u::RegisterInfoMap::MetaData metaData2("FW_VERSION", "2.5");
-  mtca4u::RegisterInfoMap::MetaData metaData3("TEST", "Some additional information");
+  ChimeraTK::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
+  ChimeraTK::RegisterInfoMap::MetaData metaData2("FW_VERSION", "2.5");
+  ChimeraTK::RegisterInfoMap::MetaData metaData3("TEST", "Some additional information");
 
   dummyMapFile.insert(metaData1);
   dummyMapFile.insert(metaData2);
@@ -161,11 +161,11 @@ void MapFileTest::testInsertMetadata(){
 }
 
 void MapFileTest::testGetRegisterInfo () {
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2, 0, 8);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 0, 32, 0, true, 1, "Module1");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 0, 32, 0, true, 2, "Module2");
-  mtca4u::RegisterInfoMap::RegisterInfo retrievedDeviceInfo;
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 2, 0, 8);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 0, 32, 0, true, 1, "Module1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 0, 32, 0, true, 2, "Module2");
+  ChimeraTK::RegisterInfoMap::RegisterInfo retrievedDeviceInfo;
 
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoentModule1);
@@ -193,8 +193,8 @@ void MapFileTest::testGetRegisterInfo () {
 }
 
 void MapFileTest::testGetMetaData () {
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
-  mtca4u::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
   dummyMapFile.insert(metaData1);
 
   std::string metaDataNameToRetrive;
@@ -211,61 +211,61 @@ void MapFileTest::testGetMetaData () {
 }
 
 void MapFileTest::testCheckRegistersOfSameName(){
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
 
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 8, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_2", 1, 8, 4, 2);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 3, 32, 0, true, 1, "Module1");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 3, 32, 0, true, 2, "Module2");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 8, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_2", 1, 8, 4, 2);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoentModule1("COMMON_REGISTER_NAME", 2, 8, 8, 3, 32, 0, true, 1, "Module1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoentModule2("COMMON_REGISTER_NAME", 2, 16, 8, 3, 32, 0, true, 2, "Module2");
 
-  mtca4u::RegisterInfoMap::ErrorList errorList;
+  ChimeraTK::RegisterInfoMap::ErrorList errorList;
   dummyMapFile.insert(RegisterInfoent1);
   // check after the first element to cover the specific branch (special case)
-  dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+  dummyMapFile.check(errorList, ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
   BOOST_CHECK(errorList.errors.empty());
 
   dummyMapFile.insert(RegisterInfoentModule1);
   dummyMapFile.insert(RegisterInfoentModule2);
-  dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+  dummyMapFile.check(errorList, ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
   BOOST_CHECK(errorList.errors.empty());
 
   dummyMapFile.insert(RegisterInfoent2);
   dummyMapFile.insert(RegisterInfoent3);
   dummyMapFile.insert(RegisterInfoent4);
-  dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+  dummyMapFile.check(errorList, ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
   BOOST_CHECK(errorList.errors.size() == 2);
 
-  std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
+  std::list<ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
   for(errorIterator = errorList.errors.begin();
       errorIterator != errorList.errors.end();
       ++errorIterator){
 
     BOOST_CHECK(errorIterator->_errorType ==
-        mtca4u::RegisterInfoMap::ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME);
+        ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME);
     BOOST_CHECK(errorIterator->_type ==
-        mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
+        ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
   }
 
   // duplicate identical entries is an error
   dummyMapFile.insert(RegisterInfoent4);
   // only get the errors. There also is an overlap warning now.
-  dummyMapFile.check(errorList, mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
+  dummyMapFile.check(errorList, ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
   BOOST_CHECK(errorList.errors.size() == 3);
 }
 
 void MapFileTest::testCheckRegisterAddressOverlap(){
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
 
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 11, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 1, 10, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 11, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 1, 10, 4, 0);
   // 4 overlaps with 1, but is not next to it in the list
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_4", 1, 3, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent5("THE_WHOLE_MODULE", 2, 16, 8, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent6("REGISTER_1", 1, 16, 4, 0, 32, 0, true, 0, "THE_MODULE" );
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent7("REGISTER_2", 1, 20, 4, 0, 32, 0, true, 0, "THE_MODULE" );
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_4", 1, 3, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent5("THE_WHOLE_MODULE", 2, 16, 8, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent6("REGISTER_1", 1, 16, 4, 0, 32, 0, true, 0, "THE_MODULE" );
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent7("REGISTER_2", 1, 20, 4, 0, 32, 0, true, 0, "THE_MODULE" );
 
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoent2);
@@ -275,34 +275,34 @@ void MapFileTest::testCheckRegisterAddressOverlap(){
   dummyMapFile.insert(RegisterInfoent6);
   dummyMapFile.insert(RegisterInfoent7);
 
-  mtca4u::RegisterInfoMap::ErrorList errorList;
+  ChimeraTK::RegisterInfoMap::ErrorList errorList;
   dummyMapFile.check(errorList,
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::ERROR);
   BOOST_CHECK(errorList.errors.empty());
   dummyMapFile.check(errorList,
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
   BOOST_CHECK(errorList.errors.size() == 2);
-  std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
+  std::list<ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
 
   errorIterator = errorList.errors.begin();
   BOOST_CHECK(errorIterator->_errorRegister1.name == "TEST_REGISTER_NAME_3");
   BOOST_CHECK(errorIterator->_errorRegister2.name == "TEST_REGISTER_NAME_2");
   BOOST_CHECK(errorIterator->_errorType ==
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
   BOOST_CHECK(errorIterator->_type ==
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 
   ++errorIterator;
   BOOST_CHECK(errorIterator->_errorRegister1.name == "TEST_REGISTER_NAME_4");
   BOOST_CHECK(errorIterator->_errorRegister2.name == "TEST_REGISTER_NAME_1");
   BOOST_CHECK(errorIterator->_errorType ==
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES);
   BOOST_CHECK(errorIterator->_type ==
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 }
 
 void MapFileTest::testMetadataCoutStreamOperator(){
-  mtca4u::RegisterInfoMap::MetaData meta_data("metadata_name", "metadata_value");
+  ChimeraTK::RegisterInfoMap::MetaData meta_data("metadata_name", "metadata_value");
   std::stringstream expected_stream;
   expected_stream << "METADATA-> NAME: \"" <<
       "metadata_name" << "\" VALUE: " << "metadata_value" << std::endl;
@@ -314,8 +314,8 @@ void MapFileTest::testMetadataCoutStreamOperator(){
 }
 
 void MapFileTest::testRegisterInfoCoutStreamOperator(){
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("Some_Register");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1,
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("Some_Register");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1,
       18, 3, false, 0, "SomeModule");
 
   std::stringstream expected_stream;
@@ -334,59 +334,59 @@ void MapFileTest::testRegisterInfoCoutStreamOperator(){
 
 void MapFileTest::testErrElemTypeCoutStreamOperator(){
   std::stringstream stream1;
-  stream1 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR;
+  stream1 << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::ERROR;
   BOOST_CHECK(stream1.str() == "ERROR");
 
   std::stringstream stream2;
-  stream2 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING;
+  stream2 << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING;
   BOOST_CHECK(stream2.str() == "WARNING");
 
   std::stringstream stream3;
-  stream3 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::TYPE(4);
+  stream3 << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::TYPE(4);
   BOOST_CHECK(stream3.str() == "UNKNOWN");
 }
 
 void MapFileTest::testErrorElemCoutStreamOperator(){
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
 
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 3, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 3, 4, 0);
 
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoent2);
 
-  mtca4u::RegisterInfoMap::ErrorList errorList;
+  ChimeraTK::RegisterInfoMap::ErrorList errorList;
   dummyMapFile.check(errorList,
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
   std::stringstream expected_stream;
-  expected_stream << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING <<
+  expected_stream << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING <<
       ": Found two registers with overlapping addresses: \"" <<
       "TEST_REGISTER_NAME_2" << "\" and \"" << "TEST_REGISTER_NAME_1" <<
       "\" in file " << "dummy.map" << " in lines "
       << 0 << " and " << 0;
-  std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
+  std::list<ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator;
   errorIterator = errorList.errors.begin();
 
   std::stringstream actual_stream;
   actual_stream << *errorIterator;
   BOOST_CHECK(expected_stream.str() == actual_stream.str());
 
-  mtca4u::RegisterInfoMap dummyMapFile1("dummy.map");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
+  ChimeraTK::RegisterInfoMap dummyMapFile1("dummy.map");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_1", 1, 4, 4, 1);
   dummyMapFile1.insert(RegisterInfoent3);
   dummyMapFile1.insert(RegisterInfoent4);
-  mtca4u::RegisterInfoMap::ErrorList errorList1;
+  ChimeraTK::RegisterInfoMap::ErrorList errorList1;
 
   dummyMapFile1.check(errorList1,
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
-  std::list<mtca4u::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator1;
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+  std::list<ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem>::iterator errorIterator1;
   errorIterator1 = errorList1.errors.begin();
   std::stringstream actual_stream1;
   actual_stream1 << *errorIterator1;
 
   std::stringstream expected_stream1;
-  expected_stream1 << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR <<
+  expected_stream1 << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::ERROR <<
       ": Found two registers with the same name: \"" <<
       "TEST_REGISTER_NAME_1" <<
       "\" in file " << "dummy.map" <<\
@@ -397,29 +397,29 @@ void MapFileTest::testErrorElemCoutStreamOperator(){
 
 inline void
 MapFileTest::testErrorListCoutStreamOperator () {
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
 
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 4, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 10, 4, 0);
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_3", 1, 12, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1", 1, 0, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 1, 4, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_1", 1, 10, 4, 0);
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent4("TEST_REGISTER_NAME_3", 1, 12, 4, 0);
 
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoent2);
   dummyMapFile.insert(RegisterInfoent3);
   dummyMapFile.insert(RegisterInfoent4);
 
-  mtca4u::RegisterInfoMap::ErrorList errorList;
+  ChimeraTK::RegisterInfoMap::ErrorList errorList;
   dummyMapFile.check(errorList,
-      mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
+      ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING);
 
   std::stringstream expected_stream;
-  expected_stream << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::ERROR <<
+  expected_stream << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::ERROR <<
       ": Found two registers with the same name: \"" <<
       "TEST_REGISTER_NAME_1" <<
       "\" in file " << "dummy.map" <<\
       " in lines " << 0 << " and " << 0 <<std::endl;
-  expected_stream << mtca4u::RegisterInfoMap::ErrorList::ErrorElem::WARNING <<
+  expected_stream << ChimeraTK::RegisterInfoMap::ErrorList::ErrorElem::WARNING <<
       ": Found two registers with overlapping addresses: \"" <<
       "TEST_REGISTER_NAME_3" << "\" and \"" << "TEST_REGISTER_NAME_1" <<
       "\" in file " << "dummy.map" << " in lines "
@@ -432,11 +432,11 @@ MapFileTest::testErrorListCoutStreamOperator () {
 }
 
 void MapFileTest::testMapFileCoutStreamOperator(){
-  mtca4u::RegisterInfoMap dummyMapFile("dummy.map");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1");
-  mtca4u::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1,
+  ChimeraTK::RegisterInfoMap dummyMapFile("dummy.map");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1,
       18, 3, false, 0, "TEST_MODULE");
-  mtca4u::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
+  ChimeraTK::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
 
   dummyMapFile.insert(metaData1);
   dummyMapFile.insert(RegisterInfoent1);
@@ -465,7 +465,7 @@ void MapFileTest::testMapFileCoutStreamOperator(){
 
 void MapFileTest::testRegisterInfo(){
   // just test the constructor. Default and all arguments
-  mtca4u::RegisterInfoMap::RegisterInfo defaultRegisterInfo;
+  ChimeraTK::RegisterInfoMap::RegisterInfo defaultRegisterInfo;
   BOOST_CHECK( defaultRegisterInfo.name.empty() );
   BOOST_CHECK( defaultRegisterInfo.nElements == 0 );
   BOOST_CHECK( defaultRegisterInfo.address == 0 );
@@ -478,7 +478,7 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( defaultRegisterInfo.module.empty() );
 
   // Set values which are all different from the default
-  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo( "MY_NAME",
+  ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfo( "MY_NAME",
       4, // nElements
       0x42, //address
       16, // size
@@ -499,14 +499,14 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo.lineNumber == 123 );
   BOOST_CHECK( myRegisterInfo.module == "MY_MODULE" );
   
-  BOOST_CHECK( myRegisterInfo.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( myRegisterInfo.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::numeric );
   BOOST_CHECK( myRegisterInfo.getDataDescriptor().isIntegral() == false );
   BOOST_CHECK( myRegisterInfo.getDataDescriptor().isSigned() == false );
   BOOST_CHECK( myRegisterInfo.getDataDescriptor().nFractionalDigits() == 2 );   // 2^5 = 32 -> 2 digits
   BOOST_CHECK( myRegisterInfo.getDataDescriptor().nDigits() == 7 );             // 2^(18-5) = 8192 -> 4 digits + 1 for the dot + 2 fractional
 
   // test a signed integer
-  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo2( "ANOTHER_NAME",
+  ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfo2( "ANOTHER_NAME",
       1, // nElements
       0xDEADBEEF, //address
       4, // size
@@ -527,13 +527,13 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo2.lineNumber == 234 );
   BOOST_CHECK( myRegisterInfo2.module == "XYZ" );
   
-  BOOST_CHECK( myRegisterInfo2.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( myRegisterInfo2.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::numeric );
   BOOST_CHECK( myRegisterInfo2.getDataDescriptor().isIntegral() == true );
   BOOST_CHECK( myRegisterInfo2.getDataDescriptor().isSigned() == true );
   BOOST_CHECK( myRegisterInfo2.getDataDescriptor().nDigits() == 8 );             // 2^23 = 8388608 -> 7 digits + 1 for the sign
 
   // ... and an unsigned integer (otherwise identical)
-  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo3( "ANOTHER_NAME",
+  ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfo3( "ANOTHER_NAME",
       1, // nElements
       0xDEADBEEF, //address
       4, // size
@@ -554,13 +554,13 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo3.lineNumber == 234 );
   BOOST_CHECK( myRegisterInfo3.module == "XYZ" );
   
-  BOOST_CHECK( myRegisterInfo3.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( myRegisterInfo3.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::numeric );
   BOOST_CHECK( myRegisterInfo3.getDataDescriptor().isIntegral() == true );
   BOOST_CHECK( myRegisterInfo3.getDataDescriptor().isSigned() == false );
   BOOST_CHECK( myRegisterInfo3.getDataDescriptor().nDigits() == 7 );             // 2^23 = 8388608 -> 7 digits
 
   // a boolean
-  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo4( "SOME_BOOLEAN",
+  ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfo4( "SOME_BOOLEAN",
       1, // nElements
       0x46, //address
       4, // size
@@ -581,10 +581,10 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo4.lineNumber == 235 );
   BOOST_CHECK( myRegisterInfo4.module == "TEST" );
   
-  BOOST_CHECK( myRegisterInfo4.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::boolean );
+  BOOST_CHECK( myRegisterInfo4.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::boolean );
 
   // a boolean
-  mtca4u::RegisterInfoMap::RegisterInfo myRegisterInfo5( "SOME_VOID",
+  ChimeraTK::RegisterInfoMap::RegisterInfo myRegisterInfo5( "SOME_VOID",
       1, // nElements
       0x46, //address
       4, // size
@@ -605,20 +605,20 @@ void MapFileTest::testRegisterInfo(){
   BOOST_CHECK( myRegisterInfo5.lineNumber == 236 );
   BOOST_CHECK( myRegisterInfo5.module == "TEST" );
   
-  BOOST_CHECK( myRegisterInfo5.getDataDescriptor().fundamentalType() == mtca4u::RegisterInfo::FundamentalType::nodata );
+  BOOST_CHECK( myRegisterInfo5.getDataDescriptor().fundamentalType() == ChimeraTK::RegisterInfo::FundamentalType::nodata );
   
 }
 
 void MapFileTest::testGetRegistersInModule(){
-  mtca4u::RegisterInfoMap someMapFile("some.map");
-  mtca4u::RegisterInfoMap::RegisterInfo module0_register1("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::RegisterInfoMap::RegisterInfo module1_register1("REGISTER_1", 1, 0x0, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
-  mtca4u::RegisterInfoMap::RegisterInfo module0_aregister2("A_REGISTER_2", 1, 0x4, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::RegisterInfoMap::RegisterInfo module1_aregister2("A_REGISTER_2", 1, 0x4, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
-  mtca4u::RegisterInfoMap::RegisterInfo module0_register3("REGISTER_3", 1, 0x8, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::RegisterInfoMap::RegisterInfo module1_register3("REGISTER_3", 1, 0x8, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
-  mtca4u::RegisterInfoMap::RegisterInfo module0_register4("REGISTER_4", 1, 0xC, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
-  mtca4u::RegisterInfoMap::RegisterInfo module1_register4("REGISTER_4", 1, 0xC, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  ChimeraTK::RegisterInfoMap someMapFile("some.map");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module0_register1("REGISTER_1", 1, 0x0, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module1_register1("REGISTER_1", 1, 0x0, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module0_aregister2("A_REGISTER_2", 1, 0x4, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module1_aregister2("A_REGISTER_2", 1, 0x4, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module0_register3("REGISTER_3", 1, 0x8, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module1_register3("REGISTER_3", 1, 0x8, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module0_register4("REGISTER_4", 1, 0xC, 4, 0, 32, 0, true, 0, "MODULE_BAR0");
+  ChimeraTK::RegisterInfoMap::RegisterInfo module1_register4("REGISTER_4", 1, 0xC, 4, 1, 32, 0, true, 0, "MODULE_BAR1");
 
   // add stuff from two different modules, interleaved. We need all registers back in
   // alphabetical order.
@@ -631,18 +631,18 @@ void MapFileTest::testGetRegistersInModule(){
   someMapFile.insert( module0_register4 );
   someMapFile.insert( module1_register4 );
 
-  std::list< mtca4u::RegisterInfoMap::RegisterInfo > resultList = someMapFile.getRegistersInModule( "MODULE_BAR1" );
+  std::list< ChimeraTK::RegisterInfoMap::RegisterInfo > resultList = someMapFile.getRegistersInModule( "MODULE_BAR1" );
   BOOST_CHECK( resultList.size() == 4 );
 
   // create a reference list to iterate
-  std::list< mtca4u::RegisterInfoMap::RegisterInfo > referenceList;
+  std::list< ChimeraTK::RegisterInfoMap::RegisterInfo > referenceList;
   referenceList.push_back(  module1_aregister2 );
   referenceList.push_back(  module1_register1 );
   referenceList.push_back(  module1_register3 );
   referenceList.push_back(  module1_register4 );
 
-  std::list< mtca4u::RegisterInfoMap::RegisterInfo >::const_iterator resultIter;
-  std::list< mtca4u::RegisterInfoMap::RegisterInfo >::const_iterator referenceIter;
+  std::list< ChimeraTK::RegisterInfoMap::RegisterInfo >::const_iterator resultIter;
+  std::list< ChimeraTK::RegisterInfoMap::RegisterInfo >::const_iterator referenceIter;
   for (resultIter = resultList.begin(), referenceIter = referenceList.begin();
       (resultIter != resultList.end()) && (referenceIter != referenceList.end());
       ++resultIter, ++referenceIter){
@@ -652,6 +652,6 @@ void MapFileTest::testGetRegistersInModule(){
     BOOST_CHECK( compareRegisterInfoents( *resultIter, *referenceIter ) == true );
   }
 
-  std::list< mtca4u::RegisterInfoMap::RegisterInfo > shouldBeEmptyList = someMapFile.getRegistersInModule( "MODULE_BAR5" );
+  std::list< ChimeraTK::RegisterInfoMap::RegisterInfo > shouldBeEmptyList = someMapFile.getRegistersInModule( "MODULE_BAR5" );
   BOOST_CHECK( shouldBeEmptyList.empty() );
 }

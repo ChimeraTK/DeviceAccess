@@ -2,10 +2,10 @@
 #include "BackendFactory.h"
 #include "DeviceAccessVersion.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 /// This backend does not have the deviceAccessVersionUsedToCompile symbol, needed to load at runtime.
 /// It has, however, a working backend registerer.
@@ -18,7 +18,7 @@ struct NoSymbolBackend : public DummyBackend{
 
   struct BackendRegisterer{
     BackendRegisterer(){
-      mtca4u::BackendFactory::getInstance().registerBackendType("noSymbol","",&NoSymbolBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("noSymbol","",&NoSymbolBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     }
   };
 

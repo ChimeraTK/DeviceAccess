@@ -14,12 +14,12 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "ReadAnyGroup.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
 using namespace boost::unit_test_framework;
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 static std::set<std::string> sdmList = { "sdm://./AsyncTestDummy" };
 

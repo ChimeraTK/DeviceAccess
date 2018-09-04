@@ -7,7 +7,7 @@
 #include "parserUtilities.h"
 #include "Utilities.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 using namespace boost::unit_test_framework;
@@ -52,14 +52,14 @@ bool init_unit_test(){
 
 void DMapFileParserTest::testFileNotFound() {
   std::string file_path = "../dummypath.dmap";
-  mtca4u::DMapFileParser fileParser;
+  ChimeraTK::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(file_path), ChimeraTK::logic_error);
 }
 
 void DMapFileParserTest::testErrorInDmapFile() {
   std::string incorrect_dmap_file = "invalid.dmap";
-  mtca4u::DMapFileParser fileParser;
+  ChimeraTK::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), ChimeraTK::logic_error);
   
@@ -71,29 +71,29 @@ void DMapFileParserTest::testErrorInDmapFile() {
 
 void DMapFileParserTest::testNoDataInDmapFile() {
   std::string empty_dmap_file = "empty.dmap";
-  mtca4u::DMapFileParser fileParser;
+  ChimeraTK::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(empty_dmap_file), ChimeraTK::logic_error);
 }
 
 void DMapFileParserTest::testParseFile() {
   std::string file_path = "valid.dmap";
-  mtca4u::DMapFileParser fileParser;
-  boost::shared_ptr<mtca4u::DeviceInfoMap> mapFilePtr = fileParser.parse(file_path);
+  ChimeraTK::DMapFileParser fileParser;
+  boost::shared_ptr<ChimeraTK::DeviceInfoMap> mapFilePtr = fileParser.parse(file_path);
 
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo1;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo2;
-  mtca4u::DeviceInfoMap::DeviceInfo deviceInfo3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo3;
 
-  std::string absPathToDmap = mtca4u::parserUtilities::convertToAbsolutePath("valid.dmap");
-  std::string absPathToDmapDir = mtca4u::parserUtilities::getCurrentWorkingDirectory();
+  std::string absPathToDmap = ChimeraTK::parserUtilities::convertToAbsolutePath("valid.dmap");
+  std::string absPathToDmapDir = ChimeraTK::parserUtilities::getCurrentWorkingDirectory();
 
   populateDummyDeviceInfo(deviceInfo1, absPathToDmap, "card1", "/dev/dev1",
-      mtca4u::parserUtilities::concatenatePaths(absPathToDmapDir, "goodMapFile_withoutModules.map"));
+      ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir, "goodMapFile_withoutModules.map"));
   populateDummyDeviceInfo(deviceInfo2, absPathToDmap, "card2", "/dev/dev2",
-      mtca4u::parserUtilities::concatenatePaths(absPathToDmapDir, "./goodMapFile_withoutModules.map"));
+      ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir, "./goodMapFile_withoutModules.map"));
   populateDummyDeviceInfo(deviceInfo3, absPathToDmap, "card3", "/dev/dev3",
-      mtca4u::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
+      ChimeraTK::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
 
   deviceInfo1.dmapFileLineNumber = 6;
   deviceInfo2.dmapFileLineNumber = 7;
@@ -102,7 +102,7 @@ void DMapFileParserTest::testParseFile() {
   // we use require here so it is safe to increase and dereference the iterator below
   BOOST_REQUIRE( mapFilePtr->getSize() == 3);
 
-  mtca4u::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
+  ChimeraTK::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
 
   BOOST_CHECK( compareDeviceInfos(deviceInfo1, *(it++)) == true);
   BOOST_CHECK( compareDeviceInfos(deviceInfo2, *(it++)) == true);

@@ -13,12 +13,12 @@
 #include "BufferingRegisterAccessor.h"
 #include "BackendFactory.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 
 using namespace boost::unit_test_framework;
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
 class BufferingRegisterTest {

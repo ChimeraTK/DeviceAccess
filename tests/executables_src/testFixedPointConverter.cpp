@@ -36,10 +36,10 @@ using namespace boost::unit_test_framework;
 #include "Exception.h"
 
 #include "FixedPointConverter.h"
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 
 // get name of a type for better readible error messages

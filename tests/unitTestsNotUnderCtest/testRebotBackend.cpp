@@ -11,13 +11,13 @@
 #include "DMapFileParser.h"
 #include "NumericAddress.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 using namespace boost::unit_test_framework;
-using mtca4u::numeric_address::BAR;
+using ChimeraTK::numeric_address::BAR;
 
-typedef mtca4u::DeviceInfoMap::DeviceInfo DeviceInfo;
+typedef ChimeraTK::DeviceInfoMap::DeviceInfo DeviceInfo;
 
 /******************************************************************************/
 struct RebotServerDetails {
@@ -49,7 +49,7 @@ class RebotTestClass {
     DeviceInfo getDeviceDetailsFromDMap(const std::string& cardAlias);
     RebotServerDetails extractServerDetailsFromUri(std::string &uri);
 
-    void checkWriteReadFromRegister(mtca4u::Device &rebotDevice);
+    void checkWriteReadFromRegister(ChimeraTK::Device &rebotDevice);
 };
 
 /******************************************************************************/
@@ -73,7 +73,7 @@ bool init_unit_test(){
   // take dmap file location if given, else search for cardAlias in the
   // factory default dmap file
   if (framework::master_test_suite().argc > 2) {// there is a second argument
-    mtca4u::BackendFactory::getInstance().setDMapFilePath(framework::master_test_suite().argv[2]);
+    ChimeraTK::BackendFactory::getInstance().setDMapFilePath(framework::master_test_suite().argv[2]);
   }
 
   framework::master_test_suite().p_name.value = "Rebot backend test suite";
@@ -97,17 +97,17 @@ RebotServerDetails RebotTestClass::getServerDetails(
 DeviceInfo RebotTestClass::getDeviceDetailsFromDMap(
     const std::string& cardAlias) {
   std::string dmapFileLocation =
-      mtca4u::BackendFactory::getInstance().getDMapFilePath();
-  mtca4u::DMapFileParser dMapParser;
-  boost::shared_ptr<mtca4u::DeviceInfoMap> listOfDevicesInDMapFile;
+      ChimeraTK::BackendFactory::getInstance().getDMapFilePath();
+  ChimeraTK::DMapFileParser dMapParser;
+  boost::shared_ptr<ChimeraTK::DeviceInfoMap> listOfDevicesInDMapFile;
   listOfDevicesInDMapFile = dMapParser.parse(dmapFileLocation);
-  mtca4u::DeviceInfoMap::DeviceInfo deviceDetails;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceDetails;
   listOfDevicesInDMapFile->getDeviceInfo(cardAlias, deviceDetails);
   return deviceDetails;
 }
 
 RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri) {
-  mtca4u::Sdm parsedSDM = mtca4u::Utilities::parseSdm(uri);
+  ChimeraTK::Sdm parsedSDM = ChimeraTK::Utilities::parseSdm(uri);
   std::list<std::string> &serverParameters = parsedSDM._Parameters;
   std::list<std::string>::iterator it = serverParameters.begin();
   std::string ip = *it;
@@ -118,8 +118,8 @@ RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri)
 void RebotTestClass::testConnection() { // BAckend test
 
   // create connection with good ip and port see that there are no exceptions
-  mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
-  mtca4u::RebotBackend secondConnectionToServer(_rebotServer.ip, _rebotServer.port);
+  ChimeraTK::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
+  ChimeraTK::RebotBackend secondConnectionToServer(_rebotServer.ip, _rebotServer.port);
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 
@@ -127,7 +127,7 @@ void RebotTestClass::testConnection() { // BAckend test
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), true);
 
-  //BOOST_CHECK_THROW(secondConnectionToServer.open(), mtca4u::RebotBackendException);
+  //BOOST_CHECK_THROW(secondConnectionToServer.open(), ChimeraTK::RebotBackendException);
 
   BOOST_CHECK_NO_THROW(rebotBackend.close());
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
@@ -135,7 +135,7 @@ void RebotTestClass::testConnection() { // BAckend test
 }
 
 void RebotTestClass::testReadWriteAPIOfRebotBackend() {
-  mtca4u::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
+  ChimeraTK::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
   rebotBackend.open();
 
   /*****************

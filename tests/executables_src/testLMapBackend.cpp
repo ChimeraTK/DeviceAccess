@@ -5,10 +5,10 @@
 #include "BufferingRegisterAccessor.h"
 
 using namespace boost::unit_test_framework;
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 
 class LMapBackendTest {
@@ -59,7 +59,7 @@ bool init_unit_test(){
 void LMapBackendTest::testExceptions() {
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
   BOOST_CHECK(device.isOpened() == false);
   device.open("LMAP0");
   BOOST_CHECK(device.isOpened() == true);
@@ -85,7 +85,7 @@ void LMapBackendTest::testExceptions() {
   void LMapBackendTest::testCatalogue() {
 
     BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-    mtca4u::Device device;
+    ChimeraTK::Device device;
 
     device.open("LMAP0");
 
@@ -109,9 +109,9 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( info->getNumberOfChannels() == 1 );
     BOOST_CHECK( info->getNumberOfDimensions() == 1 );
 
-    mtca4u::Device target1;
+    ChimeraTK::Device target1;
     target1.open("PCIE3");
-    mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
+    ChimeraTK::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
     unsigned int nSamples = accTarget[3].size();
 
     info = catalogue.getRegister("Channel3");
@@ -140,7 +140,7 @@ void LMapBackendTest::testExceptions() {
   void LMapBackendTest::testReadWriteConstant() {
 
     BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-    mtca4u::Device device;
+    ChimeraTK::Device device;
 
     device.open("LMAP0");
     int res = 0;
@@ -154,15 +154,15 @@ void LMapBackendTest::testExceptions() {
     BOOST_CHECK( res == 42 );
 
     // test with buffering register accessor
-    mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Constant");
+    ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Constant");
     BOOST_CHECK( acc.getNumberOfElements() == 1 );
     BOOST_CHECK( acc[0] == 42 );
     acc.read();
     BOOST_CHECK( acc[0] == 42 );
     BOOST_CHECK_THROW( acc.write(), ChimeraTK::logic_error );
 
-    mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
-    mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
+    ChimeraTK::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
+    ChimeraTK::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
 
     boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2, impl3;
     impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
@@ -196,13 +196,13 @@ void LMapBackendTest::testExceptions() {
     void LMapBackendTest::testReadWriteVariable() {
 
     BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-    mtca4u::Device device;
+    ChimeraTK::Device device;
 
     device.open("LMAP0");
 
     // test with buffering register accessor
-    mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
-    mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
+    ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
+    ChimeraTK::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
     BOOST_CHECK( acc.getNumberOfElements() == 1 );
     BOOST_CHECK( acc[0] == 2 );
     BOOST_CHECK( acc2[0] == 2 );
@@ -228,7 +228,7 @@ void LMapBackendTest::testReadWriteRegister() {
   std::vector<int> area(1024);
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1;
+  ChimeraTK::Device device, target1;
 
   target1.open("PCIE2");
   device.open("LMAP0");
@@ -292,7 +292,7 @@ void LMapBackendTest::testReadWriteRange() {
   std::vector<int> area(1024);
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1;
+  ChimeraTK::Device device, target1;
 
   device.open("LMAP0");
   target1.open("PCIE2");
@@ -338,18 +338,18 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   int index;
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1;
+  ChimeraTK::Device device, target1;
 
   device.open("LMAP0");
   target1.open("PCIE2");
 
 
-  mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
+  ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
   BOOST_CHECK( !acc.isReadOnly() );
   BOOST_CHECK( acc.isReadable() );
   BOOST_CHECK( acc.isWriteable () );
 
-  mtca4u::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+  ChimeraTK::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
 
   boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2;
   impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
@@ -360,7 +360,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
   BOOST_CHECK( impl2->mayReplaceOther( impl ) == false );
   BOOST_CHECK( impl->mayReplaceOther( impl2 ) == false );
 
-  const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
+  const ChimeraTK::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
   // reading via [] operator
   for(int i=0; i<1024; i++) area[i] = 12345+3*i;
@@ -388,7 +388,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   // reading via iterator
   index = 0;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
     BOOST_CHECK( *it == -876543210+42*index );
     ++index;
   }
@@ -396,7 +396,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   // reading via const_iterator
   index = 0;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
     BOOST_CHECK( *it == -876543210+42*index );
     ++index;
   }
@@ -404,7 +404,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   // reading via reverse_iterator
   index = 1024;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
     --index;
     BOOST_CHECK( *it == -876543210+42*index );
   }
@@ -412,7 +412,7 @@ void LMapBackendTest::testRegisterAccessorForRegister() {
 
   // reading via const_reverse_iterator
   index = 1024;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
     --index;
     BOOST_CHECK( *it == -876543210+42*index );
   }
@@ -436,18 +436,18 @@ void LMapBackendTest::testRegisterAccessorForRange() {
   int index;
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1;
+  ChimeraTK::Device device, target1;
 
   device.open("LMAP0");
   target1.open("PCIE2");
 
 
-  mtca4u::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+  ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
   BOOST_CHECK( acc.isReadOnly() == false );
   BOOST_CHECK( acc.isReadable() );
   BOOST_CHECK( acc.isWriteable() );
 
-  const mtca4u::BufferingRegisterAccessor<int32_t> acc_const = acc;
+  const ChimeraTK::BufferingRegisterAccessor<int32_t> acc_const = acc;
 
   for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
   target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
@@ -461,7 +461,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // reading via iterator
   index = 0;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
     BOOST_CHECK( *it == -876543210+42*index );
     ++index;
   }
@@ -469,7 +469,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // reading via const_iterator
   index = 0;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
     BOOST_CHECK( *it == -876543210+42*index );
     ++index;
   }
@@ -477,7 +477,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // reading via reverse_iterator
   index = 20;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
     --index;
     BOOST_CHECK( *it == -876543210+42*index );
   }
@@ -485,7 +485,7 @@ void LMapBackendTest::testRegisterAccessorForRange() {
 
   // reading via const_reverse_iterator
   index = 20;
-  for(mtca4u::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
+  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
     --index;
     BOOST_CHECK( *it == -876543210+42*index );
   }
@@ -507,15 +507,15 @@ void LMapBackendTest::testRegisterAccessorForChannel() {
   std::vector<int> area(1024);
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1;
+  ChimeraTK::Device device, target1;
 
   device.open("LMAP0");
   target1.open("PCIE3");
 
-  mtca4u::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
-  mtca4u::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
+  ChimeraTK::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
+  ChimeraTK::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
 
-  mtca4u::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
+  ChimeraTK::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
 
   boost::shared_ptr< NDRegisterAccessor<int32_t> > impl3,impl4,impl3_2;
   impl3 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3.getHighLevelImplElement());
@@ -524,7 +524,7 @@ void LMapBackendTest::testRegisterAccessorForChannel() {
   BOOST_CHECK( impl3->mayReplaceOther( impl3_2 ) == true );
   BOOST_CHECK( impl3->mayReplaceOther( impl4 ) == false );
 
-  mtca4u::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
+  ChimeraTK::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
   unsigned int nSamples = accTarget[3].size();
   BOOST_CHECK( accTarget[4].size() == nSamples );
   BOOST_CHECK( acc3.getNumberOfElements() == nSamples );
@@ -564,7 +564,7 @@ void LMapBackendTest::testRegisterAccessorForChannel() {
   BOOST_CHECK(idx == nSamples);
 
   // read via const iterators
-  const mtca4u::BufferingRegisterAccessor<int32_t> &acc3_const = acc3;
+  const ChimeraTK::BufferingRegisterAccessor<int32_t> &acc3_const = acc3;
   idx=0;
   for(BufferingRegisterAccessor<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
     BOOST_CHECK( *it == (signed) (3000+idx) );
@@ -615,7 +615,7 @@ void LMapBackendTest::testRegisterAccessorForChannel() {
 
 void LMapBackendTest::testRegisterAccessorForBit() {
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
 
   device.open("LMAP0");
 
@@ -775,13 +775,13 @@ void LMapBackendTest::testNonBufferingAccessor() {
   std::vector<int> area(1024);
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device, target1;
+  ChimeraTK::Device device, target1;
 
   device.open("LMAP0");
   target1.open("PCIE2");
 
 
-  boost::shared_ptr<mtca4u::RegisterAccessor> acc;
+  boost::shared_ptr<ChimeraTK::RegisterAccessor> acc;
 
   // full area (pass-through a standard BackendBufferingRegisterAccessor)
   acc = device.getRegisterAccessor("FullArea");
@@ -834,7 +834,7 @@ void LMapBackendTest::testNonBufferingAccessor() {
 void LMapBackendTest::testOther() {
 
   BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  mtca4u::Device device;
+  ChimeraTK::Device device;
   device.open("LMAP0");
 
   BOOST_CHECK( device.readDeviceInfo().find("Logical name mapping file:") == 0 );

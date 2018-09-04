@@ -11,10 +11,10 @@
 #include "Exception.h"
 
 using namespace boost::unit_test_framework;
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 #define TEST_MAPPING_FILE "mtcadummy_withoutModules.map"
 #define FIRMWARE_REGISTER_STRING "WORD_FIRMWARE"
@@ -88,7 +88,7 @@ class DummyBackendTest {
     void increaseA() { ++a; }
     void increaseB() { ++b; }
     void increaseC() { ++c; }
-    boost::shared_ptr<mtca4u::DeviceBackend> _backendInstance;
+    boost::shared_ptr<ChimeraTK::DeviceBackend> _backendInstance;
 };
 
 class DummyBackendTestSuite : public test_suite {
@@ -280,7 +280,7 @@ void DummyBackendTest::testReadDeviceInfo() {
 
   // DummyDevice instances created using the factory now deals with absolute
   // paths to the dmap file. We frame an absolute path for comaprison
-  std::string absolutePathToMapfile = mtca4u::parserUtilities::getCurrentWorkingDirectory() + "./" + TEST_MAPPING_FILE;
+  std::string absolutePathToMapfile = ChimeraTK::parserUtilities::getCurrentWorkingDirectory() + "./" + TEST_MAPPING_FILE;
 
   BOOST_CHECK(deviceInfo == (std::string("DummyBackend with mapping file ") + absolutePathToMapfile));
 }

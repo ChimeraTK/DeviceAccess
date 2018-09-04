@@ -11,10 +11,10 @@ using namespace boost::unit_test_framework;
 #include "Exception.h"
 
 #include "DeviceAccessVersion.h"
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
+using namespace ChimeraTK;
 
 //#undef TEST_DMAP_FILE_PATH
 //#define TEST_DMAP_FILE_PATH "/testDummies.dmap"
@@ -62,25 +62,25 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
   // Throws with the wrong version (00.18 did not have the feature yet, so its safe to use it)
   // It however is only happening when the backend is tried to be instantiated because otherwise we would
   // end up in uncatchable exceptions while loading a dmap file with a broken backend.
-  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18") );
+  BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18") );
 
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"), ChimeraTK::logic_error);
   
-  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION) );
+  BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION) );
 
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
 
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("notExisting.so"),
+  BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("notExisting.so"),
                      ChimeraTK::logic_error );
 
-  BOOST_CHECK_NO_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("../lib/libWorkingBackend.so")  );
+  BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("../lib/libWorkingBackend.so")  );
   //check that the backend really is registered
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map") );
 
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"), ChimeraTK::logic_error );
+  BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"), ChimeraTK::logic_error );
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./noSymbol=goodMapFile.map"), ChimeraTK::logic_error );
   
-  BOOST_CHECK_THROW( mtca4u::BackendFactory::getInstance().loadPluginLibrary("libWrongVersionBackend.so"),
+  BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libWrongVersionBackend.so"),
                      ChimeraTK::logic_error );
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./wrongVersionBackend=goodMapFile.map"), ChimeraTK::logic_error );
 }

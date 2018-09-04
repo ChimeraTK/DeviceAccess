@@ -12,11 +12,11 @@ using namespace boost::unit_test_framework;
 #include "Exception.h"
 #include "NumericAddress.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
-using namespace mtca4u;
-using mtca4u::numeric_address::BAR;
+using namespace ChimeraTK;
+using ChimeraTK::numeric_address::BAR;
 
 //constants for the registers and their contents. We keep the hard coded
 //values at one place and only use the constants in the code below.

@@ -11,14 +11,14 @@
 #include "Exception.h"
 #include "DummyRegisterAccessor.h"
 
-namespace mtca4u{
+namespace ChimeraTK{
   using namespace ChimeraTK;
 }
 using namespace boost::unit_test_framework;
 
-class TestableDevice : public mtca4u::Device {
+class TestableDevice : public ChimeraTK::Device {
   public:
-    boost::shared_ptr<mtca4u::DeviceBackend> getBackend() { return _deviceBackendPointer; };
+    boost::shared_ptr<ChimeraTK::DeviceBackend> getBackend() { return _deviceBackendPointer; };
 };
 
 class DeviceTest {
@@ -51,7 +51,7 @@ class DeviceTest {
 class DeviceTestSuite : public test_suite {
   public:
     DeviceTestSuite() : test_suite("Device class test suite") {
-      mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
+      ChimeraTK::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
       boost::shared_ptr<DeviceTest> DeviceTestPtr(new DeviceTest());
 
       add( BOOST_CLASS_TEST_CASE(&DeviceTest::testDeviceReadRegisterByName, DeviceTestPtr) );
@@ -85,14 +85,14 @@ bool init_unit_test(){
 }
 
 void DeviceTest::testDeviceReadRegisterByName() {
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  mtca4u::Device device;
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
+  ChimeraTK::Device device;
   device.open("DUMMYD2");
-  boost::shared_ptr< mtca4u::DummyBackend > backend = boost::dynamic_pointer_cast<mtca4u::DummyBackend>(
-      mtca4u::BackendFactory::getInstance().createBackend("DUMMYD2") );
+  boost::shared_ptr< ChimeraTK::DummyBackend > backend = boost::dynamic_pointer_cast<ChimeraTK::DummyBackend>(
+      ChimeraTK::BackendFactory::getInstance().createBackend("DUMMYD2") );
 
-  mtca4u::DummyRegisterAccessor<int32_t> wordStatus(backend.get(),"APP0","WORD_STATUS");
-  mtca4u::DummyRegisterAccessor<int32_t> module0(backend.get(),"APP0","MODULE0");
+  ChimeraTK::DummyRegisterAccessor<int32_t> wordStatus(backend.get(),"APP0","WORD_STATUS");
+  ChimeraTK::DummyRegisterAccessor<int32_t> module0(backend.get(),"APP0","MODULE0");
 
   int32_t data;
   std::vector<int32_t> dataVector;
@@ -133,9 +133,9 @@ void DeviceTest::testDeviceReadRegisterByName() {
 }
 
 void DeviceTest::testCompatDeviceReadRegisterByName() {
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
 
@@ -156,9 +156,9 @@ void DeviceTest::testCompatDeviceReadRegisterByName() {
   BOOST_CHECK(adcData[3] == 16);
 
   // same with modules
-  device = boost::shared_ptr<mtca4u::Device>( new mtca4u::Device());
+  device = boost::shared_ptr<ChimeraTK::Device>( new ChimeraTK::Device());
   std::string validMappingFileWithModules = "mtcadummy.map";
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackendWithModules( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFileWithModules));
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackendWithModules( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFileWithModules));
   device->open(testBackendWithModules);
 
 
@@ -187,8 +187,8 @@ void DeviceTest::testCompatDeviceReadRegisterByName() {
 
 void DeviceTest::testDeviceReadArea() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
   int32_t data = 1;
@@ -207,8 +207,8 @@ void DeviceTest::testDeviceReadArea() {
 
 void DeviceTest::testDeviceReadDMA() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
   int32_t data = 1;
@@ -226,8 +226,8 @@ void DeviceTest::testDeviceReadDMA() {
 
 void DeviceTest::testDeviceWriteRegisterByName() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   int32_t input_data = 16;
   int32_t read_data;
@@ -249,8 +249,8 @@ void DeviceTest::testDeviceWriteRegisterByName() {
 
 void DeviceTest::testDeviceCheckRegister() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
   size_t dataSize = 4;
@@ -268,18 +268,18 @@ void DeviceTest::testDeviceCheckRegister() {
 
 void DeviceTest::testRegAccsorReadDMA() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
   int32_t data = 1;
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor> non_dma_accesible_reg = device->getRegisterAccessor("AREA_DMAABLE");
-  //BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), mtca4u::DeviceException); // there is no distinction any more...
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> non_dma_accesible_reg = device->getRegisterAccessor("AREA_DMAABLE");
+  //BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), ChimeraTK::DeviceException); // there is no distinction any more...
 
   device->writeReg("WORD_ADC_ENA", &data);
   int32_t retreived_data[6];
   uint32_t size = 6 * 4;
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor> area_dma = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> area_dma = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
   area_dma->readDMA(retreived_data, size);
   BOOST_CHECK(retreived_data[0] == 0);
   BOOST_CHECK(retreived_data[1] == 1);
@@ -291,14 +291,14 @@ void DeviceTest::testRegAccsorReadDMA() {
 
 void DeviceTest::testRegAccsorCheckRegister() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
   size_t dataSize = 4;
   uint32_t addRegOffset = 3;
   int32_t data = 1;
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor>
   word_adc_ena = device->getRegisterAccessor("WORD_ADC_ENA");
   BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
 
@@ -312,10 +312,10 @@ void DeviceTest::testRegAccsorCheckRegister() {
 
 void DeviceTest::testRegAccsorReadReg() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor>
   word_clk_dummy = device->getRegisterAccessor("WORD_CLK_DUMMY");
   int32_t data = 0;
   word_clk_dummy->readRaw(&data);
@@ -324,10 +324,10 @@ void DeviceTest::testRegAccsorReadReg() {
 
 void DeviceTest::testRegAccsorWriteReg() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
-  boost::shared_ptr<mtca4u::Device::RegisterAccessor>
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor>
   word_clk_rst = device->getRegisterAccessor("WORD_CLK_RST");
   int32_t input_data = 16;
   int32_t read_data;
@@ -338,8 +338,8 @@ void DeviceTest::testRegAccsorWriteReg() {
 
 void DeviceTest::testDeviceReadRegister() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   uint32_t offset_word_clk_dummy = 0x0000003C;
   int32_t data = 0;
@@ -350,8 +350,8 @@ void DeviceTest::testDeviceReadRegister() {
 
 void DeviceTest::testDeviceWriteRegister() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   int32_t input_data = 16;
   int32_t read_data;
@@ -365,8 +365,8 @@ void DeviceTest::testDeviceWriteRegister() {
 void DeviceTest::testDeviceInfo() {
   int slot, majorVersion, minorVersion;
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   std::string deviceInfo;
   deviceInfo = device->readDeviceInfo();
@@ -378,8 +378,8 @@ void DeviceTest::testDeviceInfo() {
 
 void DeviceTest::testReadBadReg() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
 
   int32_t data = 0;
@@ -388,8 +388,8 @@ void DeviceTest::testReadBadReg() {
 
 void DeviceTest::testWriteBadReg() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   int32_t data = 0;
   BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data), ChimeraTK::runtime_error);
@@ -397,8 +397,8 @@ void DeviceTest::testWriteBadReg() {
 
 void DeviceTest::testDMAReadSizeTooSmall() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/mtcadummys0",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/mtcadummys0",validMappingFile));
   device->open(testBackend);
   int32_t adcdata[2];
   size_t dataSizeInBytes = 2 * 4;
@@ -410,8 +410,8 @@ void DeviceTest::testDMAReadSizeTooSmall() {
 
 void DeviceTest::testDMAReadViaStruct() {
   std::string validMappingFile = "mtcadummy_withoutModules.map";
-  boost::shared_ptr<mtca4u::Device> device ( new mtca4u::Device());
-  boost::shared_ptr<mtca4u::DeviceBackend> testBackend ( new mtca4u::PcieBackend("/dev/llrfdummys4",validMappingFile));
+  boost::shared_ptr<ChimeraTK::Device> device ( new ChimeraTK::Device());
+  boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend ( new ChimeraTK::PcieBackend("/dev/llrfdummys4",validMappingFile));
   device->open(testBackend);
   int32_t data = 1;
   int32_t adcdata[2];
@@ -424,12 +424,12 @@ void DeviceTest::testDMAReadViaStruct() {
 
 void DeviceTest::testGetRegistersInModule() {
 
-  boost::shared_ptr<mtca4u::Device> device( new mtca4u::Device());
+  boost::shared_ptr<ChimeraTK::Device> device( new ChimeraTK::Device());
   device->open("DUMMYD1");
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo> registerInfoList = device->getRegistersInModule("APP0");
+  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> registerInfoList = device->getRegistersInModule("APP0");
 
   BOOST_CHECK(registerInfoList.size() == 4);
-  std::list<mtca4u::RegisterInfoMap::RegisterInfo>::iterator registerInfo = registerInfoList.begin();
+  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo>::iterator registerInfo = registerInfoList.begin();
   BOOST_CHECK(registerInfo->name == "MODULE0");
   BOOST_CHECK(registerInfo->module == "APP0");
   ++registerInfo;
@@ -445,14 +445,14 @@ void DeviceTest::testGetRegistersInModule() {
 }
 
 void DeviceTest::testGetRegisterAccessorsInModule() {
-  boost::shared_ptr<mtca4u::Device> device( new mtca4u::Device());
+  boost::shared_ptr<ChimeraTK::Device> device( new ChimeraTK::Device());
   device->open("DUMMYD1");
   // this test only makes sense for mapp files
   //std::string mapFileName = "goodMapFile.map";
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
 
-  std::list< boost::shared_ptr<mtca4u::Device::RegisterAccessor> > accessorList = device->getRegisterAccessorsInModule("APP0");
+  std::list< boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> > accessorList = device->getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
 
   auto accessor = accessorList.begin();
@@ -470,16 +470,16 @@ void DeviceTest::testGetRegisterAccessorsInModule() {
 }
 
 void DeviceTest::testDeviceCreation() {
-  std::string initialDmapFilePath = mtca4u::BackendFactory::getInstance().getDMapFilePath();
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("dMapDir/testRelativePaths.dmap");
+  std::string initialDmapFilePath = ChimeraTK::BackendFactory::getInstance().getDMapFilePath();
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dMapDir/testRelativePaths.dmap");
 
-  mtca4u::Device device1;
+  ChimeraTK::Device device1;
   BOOST_CHECK( device1.isOpened() == false );
   device1.open("PCIE0");
   BOOST_CHECK( device1.isOpened() == true );
   BOOST_CHECK_NO_THROW(device1.open("PCIE0"));
   {// scope to have a device which goes out of scope
-      mtca4u::Device device1a;
+      ChimeraTK::Device device1a;
       // open the same backend than device1
       device1a.open("PCIE0");
       BOOST_CHECK( device1a.isOpened() == true );
@@ -487,7 +487,7 @@ void DeviceTest::testDeviceCreation() {
   // check that device1 has not been closed by device 1a going out of scope
   BOOST_CHECK( device1.isOpened() == true );
 
-  mtca4u::Device device1b;
+  ChimeraTK::Device device1b;
   // open the same backend than device1
   device1b.open("PCIE0");
   // open another backend with the same device //ugly, might be deprecated soon
@@ -495,18 +495,18 @@ void DeviceTest::testDeviceCreation() {
   // check that device1 has not been closed by device 1b being reassigned
   BOOST_CHECK( device1.isOpened() == true );
 
-  mtca4u::Device device2;
+  ChimeraTK::Device device2;
   BOOST_CHECK( device2.isOpened() == false );
   device2.open("PCIE1");
   BOOST_CHECK( device2.isOpened() == true );
   BOOST_CHECK_NO_THROW(device2.open("PCIE1"));
   BOOST_CHECK( device2.isOpened() == true );
 
-  mtca4u::Device device3;
+  ChimeraTK::Device device3;
   BOOST_CHECK( device3.isOpened() == false );
   BOOST_CHECK_NO_THROW(device3.open("DUMMYD0"));
   BOOST_CHECK( device3.isOpened() == true );
-  mtca4u::Device device4;
+  ChimeraTK::Device device4;
   BOOST_CHECK( device4.isOpened() == false );
   BOOST_CHECK_NO_THROW(device4.open("DUMMYD1"));
   BOOST_CHECK( device4.isOpened() == true );
@@ -540,19 +540,19 @@ void DeviceTest::testDeviceCreation() {
 
   //Now that we are done with the tests, move the factory to the state it was in
   //before we started
-  mtca4u::BackendFactory::getInstance().setDMapFilePath(initialDmapFilePath);
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath(initialDmapFilePath);
 
 }
 
 #ifdef _0
 void DeviceTest::testAccessorForMuxedData() {
   // create dummy device without using the factory
-  boost::shared_ptr<mtca4u::RegisterInfoMap> registerMap =
-      mtca4u::mapFileParser().parse("sequences.map");
-  boost::shared_ptr<mtca4u::DeviceBackend> backend(new mtca4u::DummyBackend);
+  boost::shared_ptr<ChimeraTK::RegisterInfoMap> registerMap =
+      ChimeraTK::mapFileParser().parse("sequences.map");
+  boost::shared_ptr<ChimeraTK::DeviceBackend> backend(new ChimeraTK::DummyBackend);
   backend->open("sequences.map");
 
-  mtca4u::RegisterInfoMap::RegisterInfo sequenceInfo;
+  ChimeraTK::RegisterInfoMap::RegisterInfo sequenceInfo;
   registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DMA", sequenceInfo,
       "TEST");
 
@@ -568,11 +568,11 @@ void DeviceTest::testAccessorForMuxedData() {
       sequenceInfo.reg_size, sequenceInfo.reg_bar);
 
   // mor create the device itself
-  mtca4u::Device device;
+  ChimeraTK::Device device;
   device.open(backend, registerMap);
 
-  boost::shared_ptr<mtca4u::MultiplexedDataAccessor<double> > deMultiplexer =
-      device.getCustomAccessor<mtca4u::MultiplexedDataAccessor<double> >(
+  boost::shared_ptr<ChimeraTK::MultiplexedDataAccessor<double> > deMultiplexer =
+      device.getCustomAccessor<ChimeraTK::MultiplexedDataAccessor<double> >(
           "DMA", "TEST");
 
   deMultiplexer->read();
@@ -584,6 +584,6 @@ void DeviceTest::testAccessorForMuxedData() {
     }
   }
 
-  BOOST_CHECK_THROW(deMultiplexer->write(), mtca4u::NotImplementedException)
+  BOOST_CHECK_THROW(deMultiplexer->write(), ChimeraTK::NotImplementedException)
 }
 #endif
