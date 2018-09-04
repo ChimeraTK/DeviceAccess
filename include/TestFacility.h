@@ -62,8 +62,7 @@ namespace ChimeraTK {
         // obtain accessor from ControlSystemPVManager
         auto pv = pvManager->getProcessArray<T>(name);
         if(pv == nullptr) {
-          throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
-                                        mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
+          throw ChimeraTK::logic_error("Process variable '"+name+"' does not exist.");
         }
 
         // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
@@ -97,8 +96,7 @@ namespace ChimeraTK {
         // obtain accessor from ControlSystemPVManager
         auto pv = pvManager->getProcessArray<T>(name);
         if(pv == nullptr) {
-          throw mtca4u::DeviceException("Process variable '"+name+"' does not exist.",
-                                        mtca4u::DeviceException::REGISTER_DOES_NOT_EXIST);
+          throw ChimeraTK::logic_error("Process variable '"+name+"' does not exist.");
         }
 
         // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
