@@ -72,63 +72,6 @@ namespace ChimeraTK {
        *
        *  \deprecated {
        *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Add runtine warning after release of version 0.9
-       *  }
-       */
-      virtual void read(const std::string &regModule, const std::string &regName,
-          int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
-
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Add runtine warning after release of version 0.9
-       *  }
-       */
-      virtual void write(const std::string &regName,
-          const std::string &regModule, int32_t const *data,
-          size_t dataSize = 0, uint32_t addRegOffset = 0) = 0;
-
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Add runtime warning after release of version 0.9
-       *  }
-       */
-      virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes) = 0;
-
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Add runtime warning after release of version 0.9
-       *  }
-       */
-      virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes) = 0;
-
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Remove after release of version 0.9
-       *  }
-       */
-      void readDMA(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
-
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
-       *  @todo Remove after release of version 0.9
-       *  }
-       */
-      void writeDMA(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
-
-      /** DEPRECATED
-       *
-       *  \deprecated {
-       *  This function is deprecated. Do not use the backend directly, always use a Device.
        *  @todo Add runtime warning after release of version 0.9
        *  }
        */

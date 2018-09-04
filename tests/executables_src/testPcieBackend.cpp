@@ -91,7 +91,7 @@ class PcieBackendTest
     std::string _deviceFileName;
     unsigned int _slot;
 
-    boost::shared_ptr<DeviceBackend>_pcieBackendInstance;
+    boost::shared_ptr<PcieBackend>_pcieBackendInstance;
 
     // Internal function for better code readablility.
     // Returns an error message. If the message is empty the test succeeded.
@@ -441,8 +441,8 @@ void PcieBackendTest::testCreateBackend(){
   /** Try creating a non existing backend */
   BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
   /** Try creating an existing backend */
-  _pcieBackendInstance = factoryInstance.createBackend(_deviceFileName);
-  BOOST_CHECK(_pcieBackendInstance != 0);
+  _pcieBackendInstance = boost::dynamic_pointer_cast<PcieBackend>(factoryInstance.createBackend(_deviceFileName));
+  BOOST_CHECK(_pcieBackendInstance != nullptr);
   /** Backend should be in connect state now */
   BOOST_CHECK(_pcieBackendInstance->isConnected() == true );
   /** Backend should not be in open state */
@@ -469,9 +469,9 @@ void PcieBackendTest::testCreateBackend(){
   Device secondDevice;
   secondDevice.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
   BOOST_CHECK( secondDevice.read<double>("BOARD/WORD_USER")== 48 );
-  
+
   Device secondDevice2;
-  //try opening same device again. 
+  //try opening same device again.
   secondDevice2.open("sdm://./pci:pcieunidummys6=mtcadummy.map");
   BOOST_CHECK( secondDevice2.read<double>("BOARD/WORD_USER")== 48 );
 

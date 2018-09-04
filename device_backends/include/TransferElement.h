@@ -358,26 +358,6 @@ namespace ChimeraTK {
         return false;
       }
 
-      /** @brief Deprecated, do not use
-       *  @deprecated The time stamp will be replaced with a unique counter.
-       *  Only used for backward compatibility with the control system adapter. All implementations
-       *  in DeviceAccess will throw an exception with DeviceException::NOT_IMPLEMENTED.
-       *
-       *  Returns the time stamp associated with the current value of the transfer element.
-       *  Typically, this is the time when the value was updated.
-       */
-      virtual TimeStamp getTimeStamp() const{
-        throw ChimeraTK::logic_error("getTimeStamp is not implemented in DeviceAccess.");
-      }
-
-      /** @brief Deprecated, do not use
-       *  @deprecated Only used for backward compatibility with the control system adapter.
-       *  This feature will be removed soon, maybe even before the next tag. DO NOT USE IT!!
-       */
-      virtual bool isArray() const{
-        throw ChimeraTK::logic_error("isArray is deprecated and intentionally not implemented in DeviceAccess.");
-      }
-
       /**
        *  Obtain the underlying TransferElements with actual hardware access. If this transfer element
        *  is directly reading from / writing to the hardware, it will return a list just containing

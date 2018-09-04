@@ -49,12 +49,6 @@ namespace ChimeraTK {
 
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> getRegisterInfo(const RegisterPath &registerPathName);
 
-      void setRegisterMap(boost::shared_ptr<RegisterInfoMap> registerMap) // LCOV_EXCL_LINE only for compatibility!
-      { // LCOV_EXCL_LINE only for compatibility!
-        _registerMap = registerMap; // LCOV_EXCL_LINE only for compatibility!
-        _catalogue = _registerMap->getRegisterCatalogue(); // LCOV_EXCL_LINE only for compatibility!
-      } // LCOV_EXCL_LINE only for compatibility!
-
     protected:
 
       /// resolve register name to address with error checks

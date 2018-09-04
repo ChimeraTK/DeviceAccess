@@ -227,7 +227,7 @@ namespace ChimeraTK {
     std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
     _deviceBackendPointer = deviceBackend;
-    if(!_deviceBackendPointer->isOpen()) { 
+    if(!_deviceBackendPointer->isOpen()) {
       _deviceBackendPointer->open();
     }
   }
@@ -236,7 +236,7 @@ namespace ChimeraTK {
 
   void Device::open() {
     checkPointersAreNotNull();
-    if(!_deviceBackendPointer->isOpen()) { 
+    if(!_deviceBackendPointer->isOpen()) {
       _deviceBackendPointer->open();
     }
   }
@@ -253,21 +253,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void Device::open(boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<ChimeraTK::RegisterInfoMap> &registerMap) {// LCOV_EXCL_LINE
+  void Device::open(boost::shared_ptr<DeviceBackend>, boost::shared_ptr<ChimeraTK::RegisterInfoMap> &) {// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-    std::cerr << "** Usage of deprecated function detected.                                                      **" << std::endl;// LCOV_EXCL_LINE
+    std::cerr << "** Usage of removed function detected.                                                         **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Signature:                                                                                  **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Device::open(boost::shared_ptr<DeviceBackend>, boost::shared_ptr<ChimeraTK::RegisterInfoMap>&) **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "**                                                                                             **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "** Use open() by alias name instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
     std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-    auto castedBackend = boost::dynamic_pointer_cast<NumericAddressedBackend>(deviceBackend);
-    if(!castedBackend) {
-      throw ChimeraTK::logic_error("Device::open() with a RegisterInfoMap called for a non-NumericAddressedBackend. Use "
-          "open() by alias name instead!");
-    }
-    castedBackend->setRegisterMap(registerMap);// LCOV_EXCL_LINE
-    open(deviceBackend);// LCOV_EXCL_LINE
+    std::terminate();
   }// LCOV_EXCL_LINE
 
   /********************************************************************************************************************/
