@@ -12,21 +12,21 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 
-#include <mtca4u/DeviceBackendImpl.h>
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/DeviceAccessVersion.h>
+#include <ChimeraTK/DeviceBackendImpl.h>
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/DeviceAccessVersion.h>
 
 /** An Example to show how to write a backend device class and add it to the factory.
  *
  */
 // LCOV_EXCL_START dont include this in the coverage report
-class ExampleBackend : public mtca4u::DeviceBackendImpl {
+class ExampleBackend : public ChimeraTK::DeviceBackendImpl {
   public:
     ExampleBackend();
     virtual ~ExampleBackend();
     virtual void open();
     virtual void close();
-    static boost::shared_ptr<mtca4u::DeviceBackend> createInstance(std::string host, std::string instance,
+    static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string host, std::string instance,
         std::list<std::string> parameters, std::string mapFileName);
 
     virtual std::string readDeviceInfo() {return std::string("Example_Device");}
@@ -35,8 +35,8 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
 
     /** Implement the virtual function template to obtain the buffering register accessor */
     template<typename UserType>
-    boost::shared_ptr< mtca4u::NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
-        const mtca4u::RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, mtca4u::AccessModeFlags flags);
+    boost::shared_ptr< ChimeraTK::NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
+        const ChimeraTK::RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, ChimeraTK::AccessModeFlags flags);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( ExampleBackend, getRegisterAccessor_impl, 4 );
 
   public:
@@ -49,7 +49,7 @@ class ExampleBackend : public mtca4u::DeviceBackendImpl {
     class BackendRegisterer{
     public:
       BackendRegisterer(){
-        mtca4u::BackendFactory::getInstance().registerBackendType("exx","",&ExampleBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+        ChimeraTK::BackendFactory::getInstance().registerBackendType("exx","",&ExampleBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
       }
     };
     /** The one static instance of the registerer. Currently we keep it public so there is an object which

@@ -8,9 +8,9 @@
 #include "ExampleBackend.h"
 
 #include <iostream>
-using namespace mtca4u;
+using namespace ChimeraTK;
 
-// The only instance of the backend registerer. It is instantiated when the library is loaded, which 
+// The only instance of the backend registerer. It is instantiated when the library is loaded, which
 // registers the signature of the backend to the factory.
 ExampleBackend::BackendRegisterer ExampleBackend::backendRegisterer;
 
@@ -22,9 +22,9 @@ ExampleBackend::~ExampleBackend(){
   close();
 }
 
-boost::shared_ptr<mtca4u::DeviceBackend> ExampleBackend::createInstance(
+boost::shared_ptr<ChimeraTK::DeviceBackend> ExampleBackend::createInstance(
   std::string /*host*/, std::string /*instance*/, std::list<std::string> /*parameters*/, std::string /*mapFileName*/) {
-  return boost::shared_ptr<mtca4u::DeviceBackend> ( new ExampleBackend );
+  return boost::shared_ptr<ChimeraTK::DeviceBackend> ( new ExampleBackend );
 }
 
 void ExampleBackend::open(){
@@ -38,6 +38,6 @@ void ExampleBackend::close(){
 // We do not have a suitable buffering register accessor, so we throw an exception.
 template<typename UserType>
 boost::shared_ptr< NDRegisterAccessor<UserType> > ExampleBackend::getRegisterAccessor_impl(
-    const mtca4u::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, mtca4u::AccessModeFlags /*flags*/) {
+    const ChimeraTK::RegisterPath &/*registerPathName*/, size_t /*wordOffsetInRegister*/, size_t /*numberOfWords*/, ChimeraTK::AccessModeFlags /*flags*/) {
   throw ChimeraTK::logic_error("Not implemented.");
 }

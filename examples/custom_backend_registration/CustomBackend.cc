@@ -1,6 +1,6 @@
-#include <mtca4u/DummyBackend.h> // Would probably be DeviceBackendImpl or NumericAddressedBackend in a real application
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/DeviceAccessVersion.h>
+#include <ChimeraTK/DummyBackend.h> // Would probably be DeviceBackendImpl or NumericAddressedBackend in a real application
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/DeviceAccessVersion.h>
 #include <boost/make_shared.hpp>
 
 /* A custom backend which is registered to the factory.
@@ -11,15 +11,15 @@
  *
  *  Custom backends are always created as a shared library which can be loaded at run time.
  */
-class CustomBackend : public mtca4u::DummyBackend{
+class CustomBackend : public ChimeraTK::DummyBackend{
 public:
   // C++11 shorthand syntax that we want a constructor with the same parameters as the parent class.
-  using mtca4u::DummyBackend::DummyBackend;
-  
+  using ChimeraTK::DummyBackend::DummyBackend;
+
   /* You have to implement a static function createInstance() with this exact signature.
    *  This function is later given to the BackendFactory to create this type of backend when it is requested.
    */
-  static boost::shared_ptr<mtca4u::DeviceBackend> createInstance(std::string /*host*/, std::string /*instance*/, std::list<std::string> parameters, std::string /*mapFileName*/){
+  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string /*host*/, std::string /*instance*/, std::list<std::string> parameters, std::string /*mapFileName*/){
     /* Inside createInstance the parameters are interpreted and passed on to the
      * constructor. Like this the backend constructor can have arbitrary parameters
      * while the factory can always call a function with the same signature.
@@ -58,7 +58,7 @@ public:
        * The this parameter allways has to be the CHIMERATK_DEVICEACCESS_VERSION
        * macro. It ensures that only compatible backends can be registered.
        */
-      mtca4u::BackendFactory::getInstance().registerBackendType("CUSTOM","",&CustomBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("CUSTOM","",&CustomBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     }
   };
 
