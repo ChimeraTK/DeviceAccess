@@ -19,10 +19,10 @@ namespace ChimeraTK {
       : NDRegisterAccessor<UserType>(_accessor->getName(), _accessor->getUnit(), _accessor->getDescription()), accessor(_accessor)
       {
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-        std::cerr << "** Usage of deprecated class MultiplexedDataAccessor detected.                                 **" << std::endl;// LCOV_EXCL_LINE
+        std::cerr << "** Class MultiplexedDataAccessor has been removed after deprecation.                           **" << std::endl;// LCOV_EXCL_LINE
         std::cerr << "** Use TwoDRegisterAccessor instead!                                                           **" << std::endl;// LCOV_EXCL_LINE
         std::cerr << "*************************************************************************************************" << std::endl;// LCOV_EXCL_LINE
-        MultiplexedDataAccessor<UserType>::buffer_2D = accessor->buffer_2D;
+        std::terminate();
       }
 
       /** \deprecated

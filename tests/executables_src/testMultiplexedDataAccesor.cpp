@@ -12,7 +12,6 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "MapFileParser.h"
 #include "BackendFactory.h"
-#include "MultiplexedDataAccessor.h"
 #include "Device.h"
 
 namespace ChimeraTK{
@@ -310,45 +309,6 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
 }
 
 
-
-BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  Device device;
-  device.open("PCIE3");
-
-  boost::shared_ptr< ChimeraTK::MultiplexedDataAccessor<unsigned int> > acc =
-      device.getCustomAccessor< ChimeraTK::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
-
-  BOOST_CHECK_THROW( acc->getFixedPointConverter(), ChimeraTK::logic_error );
-
-  BOOST_CHECK(acc->getNumberOfDataSequences() == 16);
-  BOOST_CHECK((*acc)[0].size() == 4);
-
-  acc->read();
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      (*acc)[i][k] = i+3*k;
-    }
-  }
-
-  acc->write();
-
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      (*acc)[i][k] = 0;
-    }
-  }
-
-  acc->read();
-
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      BOOST_CHECK( (*acc)[i][k] == i+3*k );
-    }
-  }
-
-}
 
 
 BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
