@@ -21,7 +21,7 @@ using namespace ChimeraTK;
 
 struct NewBackend : public DummyBackend{
   using DummyBackend::DummyBackend;
-  
+
   static boost::shared_ptr<DeviceBackend> createInstance(std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/){
     return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
   }
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
   BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, "00.18") );
 
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"), ChimeraTK::logic_error);
-  
+
   BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().registerBackendType("newBackend","",&NewBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION) );
 
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./newBackend=goodMapFile.map"));
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 
   BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"), ChimeraTK::logic_error );
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./noSymbol=goodMapFile.map"), ChimeraTK::logic_error );
-  
+
   BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libWrongVersionBackend.so"),
                      ChimeraTK::logic_error );
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./wrongVersionBackend=goodMapFile.map"), ChimeraTK::logic_error );
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 BOOST_AUTO_TEST_CASE( testCreateFromUri ){
   // this has to work without dmap file
   BackendFactory::getInstance().setDMapFilePath("");
-  
+
   boost::shared_ptr<DeviceBackend> testPtr;
   testPtr = BackendFactory::getInstance().createBackend("sdm://./dummy=mtcadummy.map"); //get some dummy
   // just check that something has been created. That it's the correct thing is another test.
