@@ -48,7 +48,7 @@ namespace ChimeraTK {
         dump("", msg);
         msg << "The node you were trying to add:" << std::endl;
         a.dump(msg);
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+        throw ChimeraTK::logic_error(msg.str());
       }
       // force value type, engineering unit and description of the network if set in this feeding node
       if(a.getValueType() != typeid(AnyType)) valueType = &(a.getValueType());
@@ -119,7 +119,7 @@ namespace ChimeraTK {
           msg << "The illegal network:" << std::endl;
           dump("", msg);
         }
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+        throw ChimeraTK::logic_error(msg.str());
       }
       return TriggerType::external;
     }
@@ -139,7 +139,7 @@ namespace ChimeraTK {
         msg << "The illegal network:" << std::endl;
         dump("", msg);
       }
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      throw ChimeraTK::logic_error(msg.str());
     }
     return TriggerType::pollingConsumer;
   }
@@ -153,7 +153,7 @@ namespace ChimeraTK {
       msg << "No consuming nodes connected to this network!" << std::endl;
       msg << "The illegal network:" << std::endl;
       dump("", msg);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      throw ChimeraTK::logic_error(msg.str());
     }
 
     // must have a feeding node
@@ -162,7 +162,7 @@ namespace ChimeraTK {
       msg << "No feeding node connected to this network!" << std::endl;
       msg << "The illegal network:" << std::endl;
       dump("", msg);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      throw ChimeraTK::logic_error(msg.str());
     }
 
     // the network's value type must be correctly set
@@ -171,7 +171,7 @@ namespace ChimeraTK {
       msg << "No data type specified for any of the nodes in this network!" << std::endl;
       msg << "The illegal network:" << std::endl;
       dump("", msg);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      throw ChimeraTK::logic_error(msg.str());
     }
 
     // the feeder node must have a non-zero length
@@ -181,7 +181,7 @@ namespace ChimeraTK {
       msg << "The feeding node has zero (or undefined) length!" << std::endl;
       msg << "The illegal network:" << std::endl;
       dump("", msg);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      throw ChimeraTK::logic_error(msg.str());
     }
 
     // all consumers must have the same length as the feeder or a zero length for trigger receivers
@@ -192,7 +192,7 @@ namespace ChimeraTK {
           msg << "The network contains a node with a different length than the feeding node!" << std::endl;
           msg << "The illegal network:" << std::endl;
           dump("", msg);
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+          throw ChimeraTK::logic_error(msg.str());
         }
       }
       else {
@@ -201,7 +201,7 @@ namespace ChimeraTK {
           msg << "The network contains a trigger receiver node with a non-zero length!" << std::endl;
           msg << "The illegal network:" << std::endl;
           dump("", msg);
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+          throw ChimeraTK::logic_error(msg.str());
         }
       }
     }
@@ -215,7 +215,7 @@ namespace ChimeraTK {
         msg << "The network contains variables of different value types, which is not supported!" << std::endl;
         msg << "The illegal network:" << std::endl;
         dump("", msg);
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+        throw ChimeraTK::logic_error(msg.str());
       }
     }
 
@@ -240,7 +240,7 @@ namespace ChimeraTK {
       msg << "No feeding node in this network!" << std::endl;
       msg << "The illegal network:" << std::endl;
       if(!hasFeedingNode()) dump("", msg);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(msg.str());
+      throw ChimeraTK::logic_error(msg.str());
     }
     return *iter;
   }

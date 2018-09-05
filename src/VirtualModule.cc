@@ -47,7 +47,7 @@ namespace ChimeraTK {
     for(auto variable : getAccessorList()) {
       if(variable.getName() == variableName) return VariableNetworkNode(variable);
     }
-    throw std::logic_error("Variable '"+variableName+"' is not part of the variable group '"+_name+"'.");
+    throw ChimeraTK::logic_error("Variable '"+variableName+"' is not part of the variable group '"+_name+"'.");
   }
 
 /*********************************************************************************************************************/
@@ -56,7 +56,7 @@ namespace ChimeraTK {
     for(auto submodule : getSubmoduleList()) {
       if(submodule->getName() == moduleName) return *submodule;
     }
-    throw std::logic_error("Sub-module '"+moduleName+"' is not part of the variable group '"+_name+"'.");
+    throw ChimeraTK::logic_error("Sub-module '"+moduleName+"' is not part of the variable group '"+_name+"'.");
   }
 
 /*********************************************************************************************************************/

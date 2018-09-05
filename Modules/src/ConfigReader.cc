@@ -173,7 +173,7 @@ namespace ChimeraTK {
       parser.parse_file(fileName);
     }
     catch(xmlpp::exception &e) { /// @todo change exception!
-      throw std::runtime_error("ConfigReader: Error opening the config file '"+fileName+"': "+e.what());
+      throw ChimeraTK::logic_error("ConfigReader: Error opening the config file '"+fileName+"': "+e.what());
     }
 
     // get root element
@@ -253,7 +253,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void ConfigReader::parsingError(const std::string &message) {
-    throw std::runtime_error("ConfigReader: Error parsing the config file '"+_fileName+"': "+message);
+    throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '"+_fileName+"': "+message);
   }
 
   /*********************************************************************************************************************/

@@ -134,7 +134,7 @@ namespace ChimeraTK {
       return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
     }
     catch(std::out_of_range &e) {
-      throw(std::out_of_range("ConfigReader: Cannot find a scalar configuration variable of the name '"+
+      throw(ChimeraTK::logic_error("ConfigReader: Cannot find a scalar configuration variable of the name '"+
                               variableName+"' in the config file '"+_fileName+"'."));
     }
   }
@@ -148,7 +148,7 @@ namespace ChimeraTK {
       return boost::fusion::at_key<T>(arrayMap.table).at(variableName)._value;
     }
     catch(std::out_of_range &e) {
-      throw(std::out_of_range("ConfigReader: Cannot find an array configuration variable of the name '"+
+      throw(ChimeraTK::logic_error("ConfigReader: Cannot find an array configuration variable of the name '"+
                               variableName+"' in the config file '"+_fileName+"'."));
     }
   }

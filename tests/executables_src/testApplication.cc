@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
       TestApp app("");
       BOOST_FAIL("Exception expected.");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
 
     // names with spaces and special characters are forbidden
@@ -67,13 +67,13 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
       TestApp app("With space");
       BOOST_FAIL("Exception expected.");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
     try {
       TestApp app("WithExclamationMark!");
       BOOST_FAIL("Exception expected.");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
 
     // all allowed characters in the name

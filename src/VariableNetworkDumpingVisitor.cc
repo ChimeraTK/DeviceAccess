@@ -1,4 +1,3 @@
-#include "ApplicationException.h"
 #include "VariableNetwork.h"
 #include "VariableNetworkDumpingVisitor.h"
 
@@ -22,7 +21,7 @@ void VariableNetworkDumpingVisitor::dispatch(const VariableNetwork& t) {
       if(tt == VariableNetwork::TriggerType::none) stream() << "none";
       stream() << std::endl;
     }
-    catch(ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork> &e) {
+    catch(ChimeraTK::logic_error &e) {
       stream() << "**error**" << std::endl;
     }
     stream() << _prefix << "  feeder";

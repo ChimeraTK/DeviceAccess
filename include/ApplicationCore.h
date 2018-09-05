@@ -19,4 +19,3 @@
 #include "VariableGroup.h"
 #include "ModuleGroup.h"
 #include "VirtualModule.h"
-#include "ApplicationException.h"

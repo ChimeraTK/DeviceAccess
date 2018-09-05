@@ -10,8 +10,6 @@
 
 #include <ChimeraTK/NDRegisterAccessor.h>
 
-#include "ApplicationException.h"
-
 namespace ChimeraTK {
 
   /** Base class for several implementations which distribute values from one feeder to multiple consumers */
@@ -29,8 +27,7 @@ namespace ChimeraTK {
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
       virtual void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) {
         if(!slave->isWriteable()) {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-              "FanOut::addSlave() has been called with a receiving implementation!");
+          throw ChimeraTK::logic_error("FanOut::addSlave() has been called with a receiving implementation!");
         }
         // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
         if( slave->getNumberOfSamples() != 0 &&
@@ -40,7 +37,7 @@ namespace ChimeraTK {
           what += slave->getName();
           what += "' with incompatible array shape! Name of master: ";
           what += impl->getName();
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(what.c_str());
+          throw ChimeraTK::logic_error(what.c_str());
         }
         slaves.push_back(slave);
       }

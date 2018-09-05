@@ -179,7 +179,7 @@ namespace ChimeraTK {
     for(auto submodule : getSubmoduleList()) {
       if(submodule->getName() == name) return submodule;
     }
-    throw; /// @todo make proper exception
+    throw ChimeraTK::logic_error("Submodule '"+name+"' not found in module '"+getName()+"'!");
   }
 
 /*********************************************************************************************************************/

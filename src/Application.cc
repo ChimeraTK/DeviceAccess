@@ -43,16 +43,14 @@ Application::Application(const std::string& name)
   // check if the application name has been set
   if(applicationName == "") {
     shutdown();
-    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-      "Error: An instance of Application must have its applicationName set.");
+    throw ChimeraTK::logic_error("Error: An instance of Application must have its applicationName set.");
   }
   // check if application name contains illegal characters
   std::string legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
   bool nameContainsIllegalChars = name.find_first_not_of(legalChars) != std::string::npos;
   if(nameContainsIllegalChars) {
     shutdown();
-    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-      "Error: The application name may only contain alphanumeric characters and underscores.");
+    throw ChimeraTK::logic_error("Error: The application name may only contain alphanumeric characters and underscores.");
   }
 }
 
@@ -133,8 +131,8 @@ void Application::checkConnections() {
   for(auto &module : getSubmoduleListRecursive()) {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
-        throw std::invalid_argument("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+    // LCOV_EXCL_LINE
-                                    "' was not connected!");                                                      // LCOV_EXCL_LINE
+        throw ChimeraTK::logic_error("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+    // LCOV_EXCL_LINE
+                                     "' was not connected!");                                                      // LCOV_EXCL_LINE
       }
     }
   }
@@ -235,8 +233,7 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
     b.setNumberOfElements(a.getNumberOfElements());
   }
   if(a.getNumberOfElements() != b.getNumberOfElements()) {
-    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-          "Error: Cannot connect array variables with difference number of elements!");
+    throw ChimeraTK::logic_error("Error: Cannot connect array variables with difference number of elements!");
   }
 
   // if both nodes already have an owner, we are done
@@ -252,7 +249,7 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
       a.getOwner().dump("",what);
       what << "Owner of node B:" << std::endl;
       b.getOwner().dump("",what);
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(what.str());
+      throw ChimeraTK::logic_error(what.str());
     }
   }
   // add b to the existing network of a
@@ -594,7 +591,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       feedingImpl = createProcessVariable<UserType>(feeder);
     }
     else {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+      throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
     }
 
     // if we just have two nodes, directly connect them
@@ -626,7 +623,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+        throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
       }
     }
     else { /* !(nNodes == 2 && !useExternalTrigger) */
@@ -691,7 +688,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+          throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
         }
       }
       connectionMade = true;
@@ -701,7 +698,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   else if(!constantFeeder) {    /* !feeder.hasImplementation() */
     // we should be left with an application feeder node
     if(feeder.getType() != NodeType::Application) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+      throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
     }
     assert(!useExternalTrigger);
     // if we just have two nodes, directly connect them
@@ -736,7 +733,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+        throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
       }
     }
     else {
@@ -771,7 +768,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+          throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
         }
       }
       connectionMade = true;
@@ -806,10 +803,10 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         impl->write();
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Using constants as triggers is not supported!");
+        throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
       }
       else {
-        throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+        throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
       }
     }
     connectionMade = true;
@@ -817,7 +814,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
   }
 
   if(!connectionMade) {                                                                       // LCOV_EXCL_LINE (assert-like)
-    throw ApplicationExceptionWithID<ApplicationExceptionID::notYetImplemented>(              // LCOV_EXCL_LINE (assert-like)
+    throw ChimeraTK::logic_error(              // LCOV_EXCL_LINE (assert-like)
         "The variable network cannot be handled. Implementation missing!");                   // LCOV_EXCL_LINE (assert-like)
   }                                                                                           // LCOV_EXCL_LINE (assert-like)
 
@@ -841,7 +838,7 @@ Application& Application::getInstance() {
 void Application::stepApplication() {
   // testableMode_counter must be non-zero, otherwise there is no input for the application to process
   if(testableMode_counter == 0) {
-    throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
+    throw ChimeraTK::logic_error(
         "Application::stepApplication() called despite no input was provided to the application to process!");
   }
   // let the application run until it has processed all data (i.e. the semaphore counter is 0)
@@ -907,7 +904,7 @@ void Application::testableModeLock(const std::string& name) {
               std::cout << " (data loss)";
             }
           }
-          catch(std::logic_error &e) {
+          catch(std::logic_error&) {
             // if we receive a logic_error in readNonBlocking() it just means another thread is waiting on a
             // TransferFuture of this variable, and we actually were not allowed to read...
             std::cout << " (data loss)";

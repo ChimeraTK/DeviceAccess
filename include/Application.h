@@ -14,7 +14,6 @@
 #include <ChimeraTK/DeviceBackend.h>
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
 
-#include "ApplicationException.h"
 #include "VariableNetwork.h"
 #include "Flags.h"
 #include "InternalModule.h"

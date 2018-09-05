@@ -156,7 +156,7 @@ std::pair<ctk::VariableNetworkNode,ctk::VariableNetworkNode> LoggingModule::getA
       std::forward_as_tuple(ctk::ScalarPushInput<std::string>{this, sender + "Msg", "", ""}),
       std::forward_as_tuple(ctk::ScalarPushInput<uint>{this, sender + "MsgLevel", "", ""})));
   } else {
-    throw ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork>("Cannot add logging for module "+sender+
+    throw ChimeraTK::logic_error("Cannot add logging for module "+sender+
       " since logging was already added for this module.");
   }
   return msg_list[sender];
@@ -173,7 +173,7 @@ std::map<std::string, Message>::iterator LoggingModule::UpdatePair(const Chimera
       return it;
     }
   }
-  throw ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork>("Cannot find  element id"
+  throw ChimeraTK::logic_error("Cannot find  element id"
         "when updating logging variables.");
 }
 

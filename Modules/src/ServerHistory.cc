@@ -5,7 +5,7 @@ using namespace history;
 
 void ServerHistory::mainLoop(){
   if(inputs.size() == 0)
-    throw std::runtime_error("ServerHistory module has no inputs. Did you forget to add some in defineConnections()?");
+    throw ChimeraTK::logic_error("ServerHistory module has no inputs. Did you forget to add some in defineConnections()?");
 //  logger.sendMessage(std::string("Starting main loop " + inputs.back()),logging::DEBUG);
   auto group = readAnyGroup();
   while(true){
@@ -33,7 +33,7 @@ void ServerHistory::addHistory(ctk::ScalarOutput<float> *in, const std::string &
     inputs.push_back(module_name + "/" + par_name);
     logger.sendMessage(std::string("Added history for " + inputs.back()),logging::DEBUG);
   } else {
-    throw ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork>("Cannot add history for variable "+par_name+
+    throw ChimeraTK::logic_error("Cannot add history for variable "+par_name+
       " since history was already added for this variable.");
   }
 }

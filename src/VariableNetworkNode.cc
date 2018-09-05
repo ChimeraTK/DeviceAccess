@@ -196,8 +196,7 @@ namespace ChimeraTK {
 
     // check if node already has a trigger
     if(pdata->externalTrigger.getType() != NodeType::invalid) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalVariableNetwork>(
-          "Only one external trigger per variable network is allowed.");
+      throw ChimeraTK::logic_error("Only one external trigger per variable network is allowed.");
     }
 
     // force direction of the node we are operating on to be feeding
@@ -377,8 +376,7 @@ namespace ChimeraTK {
   void VariableNetworkNode::setMetaData(const std::string &name, const std::string &unit,
                                         const std::string &description) {
     if(getType() != NodeType::Application) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-          "Calling VariableNetworkNode::updateMetaData() is not allowed for non-application type nodes.");
+      throw ChimeraTK::logic_error("Calling VariableNetworkNode::updateMetaData() is not allowed for non-application type nodes.");
     }
     pdata->name = name;
     pdata->qualifiedName = pdata->owningModule->getQualifiedName()+"/"+name;

@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
     app.initialise();
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoFeeder, T, test_types ) {
     app.initialise();
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
     app.testModule.feedingPush >> app.testModule.feedingPush2;
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
     app.initialise();
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDifferentNrElements, T, test_types ) {
     app.testModule.feedingArray >> app.testModule.consumingPoll;
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergeNetworks, T, test_types ) {
     app.testModule.consumingPush >> app.testModule.consumingPush2;
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalVariableNetwork> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantTrigger, T, test_types ) {
     app.initialise();
     BOOST_ERROR("Exception expected.");
   }
-  catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter> &e) {
+  catch(ChimeraTK::logic_error &e) {
     BOOST_CHECK_NO_THROW( e.what(); );
   }
 

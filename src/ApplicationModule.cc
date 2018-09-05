@@ -16,8 +16,7 @@ namespace ChimeraTK {
   : ModuleImpl(owner,name,description,eliminateHierarchy,tags)
   {
     if(!dynamic_cast<ModuleGroup*>(owner) && !dynamic_cast<Application*>(owner)) {
-      throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-        "ApplicationModules must be owned either by ModuleGroups or the Application!");
+      throw ChimeraTK::logic_error("ApplicationModules must be owned either by ModuleGroups or the Application!");
     }
   }
 

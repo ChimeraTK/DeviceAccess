@@ -34,15 +34,14 @@ namespace ChimeraTK {
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
       void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) override {
         if(!slave->isWriteable()) {
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
-              "FeedingFanOut::addSlave() has been called with a receiving implementation!");
+          throw ChimeraTK::logic_error("FeedingFanOut::addSlave() has been called with a receiving implementation!");
         }
         // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
         if( slave->getNumberOfSamples() != 0 &&
             ( slave->getNumberOfChannels() != 1 || slave->getNumberOfSamples() != this->getNumberOfSamples() ) ) {
           std::string what = "FeedingFanOut::addSlave(): Trying to add a slave '" + slave->getName();
           what += "' with incompatible array shape! Name of fan out: '" + this->getName() + "'";
-          throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(what.c_str());
+          throw ChimeraTK::logic_error(what.c_str());
         }
         FanOut<UserType>::slaves.push_back(slave);
       }
@@ -60,27 +59,27 @@ namespace ChimeraTK {
       }
 
       void doReadTransfer() override {
-        throw std::logic_error("Read operation called on write-only variable.");
+        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       }
 
       bool doReadTransferNonBlocking() override {
-        throw std::logic_error("Read operation called on write-only variable.");
+        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       }
 
       bool doReadTransferLatest() override {
-        throw std::logic_error("Read operation called on write-only variable.");
+        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       }
 
       void doPreRead() override {
-        throw std::logic_error("Read operation called on write-only variable.");
+        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       }
 
       void doPostRead() override {
-        throw std::logic_error("Read operation called on write-only variable.");
+        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       }
 
       ChimeraTK::TransferFuture doReadTransferAsync() override {
-        throw std::logic_error("Read operation called on write-only variable.");
+        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
       }
 
       void doPreWrite() override {

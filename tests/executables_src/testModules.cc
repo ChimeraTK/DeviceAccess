@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       TestModule willFail(&(app.testModule), "willFail", "");
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       TestModule willFail(&(app.testModule.someGroup), "willFail", "");
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       TestModule willFail(nullptr, "willFail", "");
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       SomeGroup willFail(&(app), "willFail", "");
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       SomeGroup willFail(&(app.vectorOfVectorModuleGroup[0]), "willFail", "");
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       SomeGroup willFail(nullptr, "willFail", "");
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       VectorModuleGroup willFail(&(app.testModule), "willFail", "", 1);
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -315,7 +315,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       VectorModuleGroup willFail(&(app.testModule.someGroup), "willFail", "", 1);
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE( test_badHierarchies ) {
       VectorModuleGroup willFail(nullptr, "willFail", "", 1);
       BOOST_FAIL("Exception expected");
     }
-    catch(ctk::ApplicationExceptionWithID<ctk::ApplicationExceptionID::illegalParameter>&) {
+    catch(ChimeraTK::logic_error&) {
     }
   }
 
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleFnCallOp ) {
     app.testModule("notExisting");
     BOOST_FAIL("Exception expected");
   }
-  catch(std::logic_error&){
+  catch(ChimeraTK::logic_error&){
   }
 
 }
@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleSubscriptOp ) {
     app.testModule["notExisting"];
     BOOST_FAIL("Exception expected");
   }
-  catch(std::logic_error&){
+  catch(ChimeraTK::logic_error&){
   }
 
 }
