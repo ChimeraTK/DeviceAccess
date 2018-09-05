@@ -285,6 +285,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void readReg(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
