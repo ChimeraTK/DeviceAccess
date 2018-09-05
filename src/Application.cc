@@ -8,6 +8,7 @@
 #include <string>
 #include <thread>
 #include <exception>
+#include <fstream>
 
 #include <boost/fusion/container/map.hpp>
 
@@ -380,7 +381,7 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
             boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
   pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
-                                                      {}, 3, false, {}, {}, flags);
+                                                      {}, 3, false, {}, flags);
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
 

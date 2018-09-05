@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <ostream>
+#include <fstream>
 #include <vector>
 
 #include "boost/date_time/posix_time/posix_time.hpp"

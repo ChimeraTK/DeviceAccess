@@ -8,6 +8,7 @@
 #include <cassert>
 #include <regex>
 #include <iostream>
+#include <fstream>
 
 #include "EntityOwner.h"
 #include "Module.h"
