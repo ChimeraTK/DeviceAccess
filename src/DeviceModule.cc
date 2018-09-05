@@ -5,7 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
-#include <mtca4u/DeviceBackend.h>
+#include <ChimeraTK/DeviceBackend.h>
 
 #include "Application.h"
 #include "DeviceModule.h"

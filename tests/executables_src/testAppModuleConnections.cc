@@ -13,7 +13,7 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include <mtca4u/BackendFactory.h>
+#include <ChimeraTK/BackendFactory.h>
 
 #include "Application.h"
 #include "ScalarAccessor.h"

@@ -11,7 +11,7 @@
 #include <mutex>
 #include <atomic>
 
-#include <mtca4u/DeviceBackend.h>
+#include <ChimeraTK/DeviceBackend.h>
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
 
 #include "ApplicationException.h"
@@ -222,19 +222,19 @@ namespace ChimeraTK {
 
       /** Perform the actual connection of an accessor to a device register */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createDeviceVariable(const std::string &deviceAlias,
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(const std::string &deviceAlias,
           const std::string &registerName, VariableDirection direction, UpdateMode mode, size_t nElements);
 
       /** Create a process variable with the PVManager, which is exported to the control system adapter. nElements will
           be the array size of the created variable. */
       template<typename UserType>
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> createProcessVariable(VariableNetworkNode const &node);
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createProcessVariable(VariableNetworkNode const &node);
 
       /** Create a local process variable which is not exported. The first element in the returned pair will be the
        *  sender, the second the receiver. If two nodes are passed, the first node should be the sender and the second
        *  the receiver. */
       template<typename UserType>
-      std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
+      std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> >
             createApplicationVariable(VariableNetworkNode const &node, VariableNetworkNode const &consumer={});
 
       /** List of InternalModules */
@@ -257,7 +257,7 @@ namespace ChimeraTK {
       VariableNetwork invalidNetwork;
 
       /** Map of DeviceBackends used by this application. The map key is the alias name from the DMAP file */
-      std::map<std::string, boost::shared_ptr<mtca4u::DeviceBackend>> deviceMap;
+      std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> deviceMap;
 
       /** Flag if connections should be made in testable mode (i.e. the TestDecoratorRegisterAccessor is put around all
        *  push-type input accessors etc.). */
@@ -284,7 +284,7 @@ namespace ChimeraTK {
 
       /** Map from accessor ID to the variable ID used in the other maps here, e.g. for the testable mode. This allows
        *  associating sender and receiver pairs of the same ProcessArray. */
-      std::map<mtca4u::TransferElementID, size_t> idMap;
+      std::map<ChimeraTK::TransferElementID, size_t> idMap;
 
       /** Map from ProcessArray uniqueId to the variable ID for control system variables. This is required for the
        *  TestFacility. */

@@ -8,7 +8,7 @@
 #ifndef CHIMERATK_THREADED_FAN_OUT_H
 #define CHIMERATK_THREADED_FAN_OUT_H
 
-#include <mtca4u/NDRegisterAccessor.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include "Application.h"
 #include "FanOut.h"
@@ -23,7 +23,7 @@ namespace ChimeraTK {
 
     public:
 
-      ThreadedFanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
+      ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl)
       : FanOut<UserType>(feedingImpl)
       {}
 

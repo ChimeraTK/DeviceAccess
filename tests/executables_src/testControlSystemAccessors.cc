@@ -13,8 +13,8 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/Device.h>
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/Device.h>
 #include <ChimeraTK/ControlSystemAdapter/PVManager.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/ControlSystemAdapter/DevicePVManager.h>
@@ -64,7 +64,7 @@ struct TestModule : public ctk::ApplicationModule {
 template<typename T>
 struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {
-      mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+      ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
     }
     ~TestApplication() { shutdown(); }
 
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDev, T, test_types ) {
   app.initialise();
   app.run();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDevFanOut, T, test_types ) {
   app.initialise();
   app.run();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
 
   BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);

@@ -176,7 +176,7 @@ private:
    * the messageLevel.
    * Here the element not updated by readSAny is also read, since both are PushInput variables.
    */
-  std::map<std::string, Message>::iterator UpdatePair(const mtca4u::TransferElementID &id);
+  std::map<std::string, Message>::iterator UpdatePair(const ChimeraTK::TransferElementID &id);
 
   /** Number of messages stored in the tail */
   size_t messageCounter;

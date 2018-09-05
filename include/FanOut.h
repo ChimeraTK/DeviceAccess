@@ -8,7 +8,7 @@
 #ifndef CHIMERATK_FAN_OUT_H
 #define CHIMERATK_FAN_OUT_H
 
-#include <mtca4u/NDRegisterAccessor.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include "ApplicationException.h"
 
@@ -20,14 +20,14 @@ namespace ChimeraTK {
 
     public:
 
-      FanOut(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl)
+      FanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl)
       : impl(feedingImpl)
       {}
 
       virtual ~FanOut() {}
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
-      virtual void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) {
+      virtual void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) {
         if(!slave->isWriteable()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "FanOut::addSlave() has been called with a receiving implementation!");
@@ -47,9 +47,9 @@ namespace ChimeraTK {
 
     protected:
 
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> impl;
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl;
 
-      std::list<boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>> slaves;
+      std::list<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> slaves;
 
   };
 

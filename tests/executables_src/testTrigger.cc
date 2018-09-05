@@ -14,10 +14,10 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/DummyBackend.h>
-#include <mtca4u/Device.h>
-#include <mtca4u/DeviceAccessVersion.h>
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/DummyBackend.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/DeviceAccessVersion.h>
 
 #include <ChimeraTK/ControlSystemAdapter/PVManager.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
@@ -53,7 +53,7 @@ typedef boost::mpl::list<int8_t,uint8_t,
 
 /**********************************************************************************************************************/
 
-class TestTransferGroupDummy : public mtca4u::DummyBackend {
+class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
   public:
     TestTransferGroupDummy(std::string mapFileName) : DummyBackend(mapFileName) {}
 
@@ -102,7 +102,7 @@ struct TestModule : public ctk::ApplicationModule {
 template<typename T>
 struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {
-      mtca4u::BackendFactory::getInstance().registerBackendType("TestTransferGroupDummy", "",
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("TestTransferGroupDummy", "",
         &TestTransferGroupDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     }
     ~TestApplication() { shutdown(); }
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToApp, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerDevToApp<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerDevToCS, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerDevToCS<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerByCS, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerByCS<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -266,13 +266,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTriggerTransferGroup, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
   std::cout << "==> testTriggerTransferGroup<" << typeid(T).name() << ">" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open(dummySdm);
-  auto backend = boost::dynamic_pointer_cast<TestTransferGroupDummy>(mtca4u::BackendFactory::getInstance().createBackend(dummySdm));
+  auto backend = boost::dynamic_pointer_cast<TestTransferGroupDummy>(ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm));
   BOOST_CHECK( backend != NULL );
 
   app.dev2("/REG1") [ app.testModule.theTrigger ] >> app.testModule.consumingPush;

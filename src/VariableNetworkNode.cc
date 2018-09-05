@@ -30,7 +30,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(EntityOwner *owner, mtca4u::TransferElementAbstractor *accessorBridge,
+  VariableNetworkNode::VariableNetworkNode(EntityOwner *owner, ChimeraTK::TransferElementAbstractor *accessorBridge,
                                   const std::string &name,
                                   VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
                                   const std::string &description, const std::type_info* valueType,
@@ -368,7 +368,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  mtca4u::TransferElementAbstractor& VariableNetworkNode::getAppAccessorNoType() {
+  ChimeraTK::TransferElementAbstractor& VariableNetworkNode::getAppAccessorNoType() {
     return *(pdata->appNode);
   }
 
@@ -408,7 +408,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setAppAccessorPointer(mtca4u::TransferElementAbstractor *accessor) {
+  void VariableNetworkNode::setAppAccessorPointer(ChimeraTK::TransferElementAbstractor *accessor) {
     assert(getType() == NodeType::Application);
     pdata->appNode = accessor;
   }

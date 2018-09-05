@@ -8,7 +8,7 @@
 #ifndef CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 #define CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 
-#include <mtca4u/NDRegisterAccessorDecorator.h>
+#include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 #include "Application.h"
 
@@ -16,10 +16,10 @@ namespace ChimeraTK {
 
   /** Decorator of the NDRegisterAccessor which facilitates tests of the application */
   template<typename UserType>
-  class TestDecoratorRegisterAccessor : public mtca4u::NDRegisterAccessorDecorator<UserType> {
+  class TestDecoratorRegisterAccessor : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
     public:
-      TestDecoratorRegisterAccessor(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> accessor)
-      : mtca4u::NDRegisterAccessorDecorator<UserType>(accessor)
+      TestDecoratorRegisterAccessor(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor)
+      : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor)
       {
 
         // obtain variableId of target accessor
@@ -121,13 +121,13 @@ namespace ChimeraTK {
 
       void doPostRead() override {
         obtainLockAndDecrementCounter();
-        mtca4u::NDRegisterAccessorDecorator<UserType>::doPostRead();
+        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
       }
 
     protected:
 
-      using mtca4u::NDRegisterAccessor<UserType>::buffer_2D;
-      using mtca4u::NDRegisterAccessorDecorator<UserType>::_target;
+      using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
+      using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
       size_t variableId;
   };

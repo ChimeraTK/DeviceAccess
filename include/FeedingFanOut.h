@@ -8,7 +8,7 @@
 #ifndef CHIMERATK_FEEDING_FAN_OUT_H
 #define CHIMERATK_FEEDING_FAN_OUT_H
 
-#include <mtca4u/NDRegisterAccessor.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include "FanOut.h"
 
@@ -18,21 +18,21 @@ namespace ChimeraTK {
    * NDRegisterAccessor implementation which distributes values written to this accessor out to any number of slaves.
    */
   template<typename UserType>
-  class FeedingFanOut : public FanOut<UserType>, public mtca4u::NDRegisterAccessor<UserType> {
+  class FeedingFanOut : public FanOut<UserType>, public ChimeraTK::NDRegisterAccessor<UserType> {
 
     public:
 
       FeedingFanOut(std::string const &name, std::string const &unit, std::string const &description,
                     size_t numberOfElements)
-      : FanOut<UserType>(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>()),
-        mtca4u::NDRegisterAccessor<UserType>(name, unit, description)
+      : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
+        ChimeraTK::NDRegisterAccessor<UserType>(name, unit, description)
       {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
+        ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+        ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
       }
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
-      void addSlave(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> slave) override {
+      void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) override {
         if(!slave->isWriteable()) {
           throw ApplicationExceptionWithID<ApplicationExceptionID::illegalParameter>(
               "FeedingFanOut::addSlave() has been called with a receiving implementation!");
@@ -87,7 +87,7 @@ namespace ChimeraTK {
         for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
           if(slave->getNumberOfSamples() != 0) {          // do not send copy if no data is expected (e.g. trigger)
             if(slave == FanOut<UserType>::slaves.front()) {     // in case of first slave, swap instead of copy
-              slave->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
+              slave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
             }
             else {                                // not the first slave: copy the data from the first slave
               slave->accessChannel(0) = FanOut<UserType>::slaves.front()->accessChannel(0);
@@ -114,22 +114,22 @@ namespace ChimeraTK {
         for(auto &slave : FanOut<UserType>::slaves) {
           slave->postWrite();
         }
-        FanOut<UserType>::slaves.front()->accessChannel(0).swap(mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0]);
+        FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
       }
 
-      bool mayReplaceOther(const boost::shared_ptr<const mtca4u::TransferElement>&) const override {
+      bool mayReplaceOther(const boost::shared_ptr<const ChimeraTK::TransferElement>&) const override {
         return false;   /// @todo implement properly?
       }
 
-      std::list<boost::shared_ptr<mtca4u::TransferElement> > getInternalElements() override {
+      std::list<boost::shared_ptr<ChimeraTK::TransferElement> > getInternalElements() override {
         return {};    /// @todo implement properly?
       }
 
-      std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {
-        return { boost::enable_shared_from_this<mtca4u::TransferElement>::shared_from_this() }; /// @todo implement properly?
+      std::vector<boost::shared_ptr<ChimeraTK::TransferElement> > getHardwareAccessingElements() override {
+        return { boost::enable_shared_from_this<ChimeraTK::TransferElement>::shared_from_this() }; /// @todo implement properly?
       }
 
-      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {
+      void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement>) override {
         // You can't replace anything here. Just do nothing.
         /// @todo implement properly?
       }

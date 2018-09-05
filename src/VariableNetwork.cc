@@ -52,13 +52,13 @@ namespace ChimeraTK {
       }
       // force value type, engineering unit and description of the network if set in this feeding node
       if(a.getValueType() != typeid(AnyType)) valueType = &(a.getValueType());
-      if(a.getUnit() != mtca4u::TransferElement::unitNotSet) engineeringUnit = a.getUnit();
+      if(a.getUnit() != ChimeraTK::TransferElement::unitNotSet) engineeringUnit = a.getUnit();
       if(a.getDescription() != "") description = a.getDescription();
     }
     else {
       // update value type and engineering unit, if not yet set
       if(valueType == &typeid(AnyType)) valueType = &(a.getValueType());
-      if(engineeringUnit == mtca4u::TransferElement::unitNotSet) engineeringUnit = a.getUnit();
+      if(engineeringUnit == ChimeraTK::TransferElement::unitNotSet) engineeringUnit = a.getUnit();
       if(description == "") description = a.getDescription();
     }
     // add node to node list

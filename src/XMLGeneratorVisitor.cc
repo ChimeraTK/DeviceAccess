@@ -3,7 +3,7 @@
 
 #include "XMLGeneratorVisitor.h"
 
-#include <mtca4u/RegisterPath.h>
+#include <ChimeraTK/RegisterPath.h>
 #include <libxml++/libxml++.h>
 
 #include <cassert>
@@ -43,7 +43,7 @@ void XMLGeneratorVisitor::dispatch(const VariableNetworkNode &node) {
     // representing the directory.
 
     // strip the variable name from the path
-    mtca4u::RegisterPath directory(node.getPublicName());
+    ChimeraTK::RegisterPath directory(node.getPublicName());
     directory--;
 
     // the namespace map is needed to properly refer to elements with an xpath expression in xmlpp::Element::find()
@@ -70,7 +70,7 @@ void XMLGeneratorVisitor::dispatch(const VariableNetworkNode &node) {
 
     // now add the variable to the directory
     xmlpp::Element *variable = current->add_child("variable");
-    mtca4u::RegisterPath pathName(node.getPublicName());
+    ChimeraTK::RegisterPath pathName(node.getPublicName());
     auto pathComponents = pathName.getComponents();
 
     // set the name attribute

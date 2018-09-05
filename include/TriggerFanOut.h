@@ -8,9 +8,9 @@
 #ifndef CHIMERATK_TRIGGER_FAN_OUT_H
 #define CHIMERATK_TRIGGER_FAN_OUT_H
 
-#include <mtca4u/NDRegisterAccessor.h>
-#include <mtca4u/SupportedUserTypes.h>
-#include <mtca4u/TransferGroup.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/SupportedUserTypes.h>
+#include <ChimeraTK/TransferGroup.h>
 
 #include "Application.h"
 #include "FeedingFanOut.h"
@@ -25,7 +25,7 @@ namespace ChimeraTK {
 
     public:
 
-      TriggerFanOut(const boost::shared_ptr<mtca4u::TransferElement>& externalTriggerImpl)
+      TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl)
       : externalTrigger(externalTriggerImpl)
       {}
 
@@ -50,7 +50,7 @@ namespace ChimeraTK {
       /** Add a new network the TriggerFanOut. The network is defined by its feeding node. This function will return
        *  the corresponding FeedingFanOut, to which all slaves have to be added. */
       template<typename UserType>
-      boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingNode) {
+      boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode) {
         transferGroup.addAccessor(feedingNode);
         auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>( feedingNode->getName(), feedingNode->getUnit(),
             feedingNode->getDescription(), feedingNode->getNumberOfSamples() );
@@ -99,15 +99,15 @@ namespace ChimeraTK {
       };
 
       /** TransferElement acting as our trigger */
-      boost::shared_ptr<mtca4u::TransferElement> externalTrigger;
+      boost::shared_ptr<ChimeraTK::TransferElement> externalTrigger;
 
       /** Map of the feeding NDRegisterAccessor to the corresponding FeedingFanOut for each UserType */
       template<typename UserType>
-      using FanOutMap = std::map<boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<FeedingFanOut<UserType>>>;
+      using FanOutMap = std::map<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::shared_ptr<FeedingFanOut<UserType>>>;
       TemplateUserTypeMap<FanOutMap> fanOutMap;
 
       /** TransferGroup containing all feeders NDRegisterAccessors */
-      mtca4u::TransferGroup transferGroup;
+      ChimeraTK::TransferGroup transferGroup;
 
       /** Thread handling the synchronisation, if needed */
       boost::thread _thread;

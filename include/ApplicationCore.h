@@ -8,7 +8,7 @@
  *  for writing an application.
  */
 
-#include <mtca4u/Utilities.h>   // for mtca4u::setDMapFilePath(), which is used by all applications
+#include <ChimeraTK/Utilities.h>   // for ChimeraTK::setDMapFilePath(), which is used by all applications
 
 #include "Application.h"
 #include "ScalarAccessor.h"

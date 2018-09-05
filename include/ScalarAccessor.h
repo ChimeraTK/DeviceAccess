@@ -13,7 +13,7 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include <mtca4u/ScalarRegisterAccessor.h>
+#include <ChimeraTK/ScalarRegisterAccessor.h>
 
 #include "InversionOfControlAccessor.h"
 #include "Profiler.h"
@@ -24,16 +24,16 @@ namespace ChimeraTK {
   /** Accessor for scalar variables (i.e. single values). Note for users: Use the convenience classes
   *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
   template< typename UserType >
-  class ScalarAccessor : public mtca4u::ScalarRegisterAccessor<UserType>,
+  class ScalarAccessor : public ChimeraTK::ScalarRegisterAccessor<UserType>,
                          public InversionOfControlAccessor<ScalarAccessor<UserType>> {
     public:
 
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::operator VariableNetworkNode;
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::operator>>;
-      void replace(const mtca4u::NDRegisterAccessorAbstractor<UserType> &newAccessor) = delete;
+      void replace(const ChimeraTK::NDRegisterAccessorAbstractor<UserType> &newAccessor) = delete;
       using InversionOfControlAccessor<ScalarAccessor<UserType>>::replace;
       ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType> &other) = delete;
-      using mtca4u::ScalarRegisterAccessor<UserType>::operator=;
+      using ChimeraTK::ScalarRegisterAccessor<UserType>::operator=;
 
       /** Move constructor */
       ScalarAccessor(ScalarAccessor<UserType> &&other) {
@@ -49,7 +49,7 @@ namespace ChimeraTK {
       }
 
       bool write(ChimeraTK::VersionNumber versionNumber={}) {
-        bool dataLoss = mtca4u::ScalarRegisterAccessor<UserType>::write(versionNumber);
+        bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::write(versionNumber);
         if(dataLoss) Application::incrementDataLossCounter();
         return dataLoss;
       }

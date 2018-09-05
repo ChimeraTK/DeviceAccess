@@ -15,7 +15,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <mtca4u/NDRegisterAccessorAbstractor.h>
+#include <ChimeraTK/NDRegisterAccessorAbstractor.h>
 
 #include "Flags.h"
 #include "ConstantAccessor.h"
@@ -43,7 +43,7 @@ namespace ChimeraTK {
       VariableNetworkNode& operator=(const VariableNetworkNode &rightHandSide);
 
       /** Constructor for an Application node */
-      VariableNetworkNode(EntityOwner *owner, mtca4u::TransferElementAbstractor *accessorBridge, const std::string &name,
+      VariableNetworkNode(EntityOwner *owner, ChimeraTK::TransferElementAbstractor *accessorBridge, const std::string &name,
           VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
           const std::string &description, const std::type_info* valueType,
           const std::unordered_set<std::string> &tags={});
@@ -133,20 +133,20 @@ namespace ChimeraTK {
       const std::unordered_set<std::string>& getTags() const;
       void setNumberOfElements(size_t nElements);
       size_t getNumberOfElements() const;
-      mtca4u::TransferElementAbstractor& getAppAccessorNoType();
+      ChimeraTK::TransferElementAbstractor& getAppAccessorNoType();
 
       template<typename UserType>
-      mtca4u::NDRegisterAccessorAbstractor<UserType>& getAppAccessor() const;
+      ChimeraTK::NDRegisterAccessorAbstractor<UserType>& getAppAccessor() const;
 
 
       template<typename UserType>
-      boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> getConstAccessor() const;
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getConstAccessor() const;
 
       /** Return the unique ID of this node (will change every time the application is started). */
       const void* getUniqueId() const { return pdata.get(); }
 
       /** Change pointer to the accessor. May only be used for application nodes. */
-      void setAppAccessorPointer(mtca4u::TransferElementAbstractor *accessor);
+      void setAppAccessorPointer(ChimeraTK::TransferElementAbstractor *accessor);
 
       EntityOwner* getOwningModule() const;
 
@@ -180,8 +180,8 @@ namespace ChimeraTK {
       *  the connections. */
     const std::type_info* valueType{&typeid(AnyType)};
 
-    /** Engineering unit. If equal to mtca4u::TransferElement::unitNotSet, no unit has been defined (and any unit is allowed). */
-    std::string unit{mtca4u::TransferElement::unitNotSet};
+    /** Engineering unit. If equal to ChimeraTK::TransferElement::unitNotSet, no unit has been defined (and any unit is allowed). */
+    std::string unit{ChimeraTK::TransferElement::unitNotSet};
 
     /** Description */
     std::string description{""};
@@ -190,10 +190,10 @@ namespace ChimeraTK {
     VariableNetwork *network{nullptr};
 
     /** Pointer to implementation if type == Constant */
-    boost::shared_ptr<mtca4u::TransferElement> constNode;
+    boost::shared_ptr<ChimeraTK::TransferElement> constNode;
 
     /** Pointer to implementation if type == Application */
-    mtca4u::TransferElementAbstractor *appNode{nullptr};
+    ChimeraTK::TransferElementAbstractor *appNode{nullptr};
 
     /** Pointer to network which should be triggered by this node */
     VariableNetworkNode nodeToTrigger{nullptr};
@@ -255,10 +255,10 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  mtca4u::NDRegisterAccessorAbstractor<UserType>& VariableNetworkNode::getAppAccessor() const {
+  ChimeraTK::NDRegisterAccessorAbstractor<UserType>& VariableNetworkNode::getAppAccessor() const {
     assert(typeid(UserType) == getValueType());
     assert(pdata->type == NodeType::Application);
-    auto accessor = static_cast<mtca4u::NDRegisterAccessorAbstractor<UserType>*>(pdata->appNode);
+    auto accessor = static_cast<ChimeraTK::NDRegisterAccessorAbstractor<UserType>*>(pdata->appNode);
     assert(accessor != nullptr);
     return *accessor;
   }
@@ -266,8 +266,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> VariableNetworkNode::getConstAccessor() const {
-    return boost::dynamic_pointer_cast<mtca4u::NDRegisterAccessor<UserType>>(pdata->constNode);
+  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> VariableNetworkNode::getConstAccessor() const {
+    return boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<UserType>>(pdata->constNode);
   }
 
 } /* namespace ChimeraTK */

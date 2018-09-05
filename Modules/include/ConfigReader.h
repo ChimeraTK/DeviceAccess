@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include <mtca4u/SupportedUserTypes.h>
+#include <ChimeraTK/SupportedUserTypes.h>
 
 #include "ApplicationCore.h"
 
@@ -90,17 +90,17 @@ namespace ChimeraTK {
       using MapOfVar = std::map<std::string, Var<T>>;
 
       /** Type-depending map of vectors of variables */
-      mtca4u::TemplateUserTypeMap<MapOfVar> variableMap;
+      ChimeraTK::TemplateUserTypeMap<MapOfVar> variableMap;
 
       /** Define type for map of std::string to Array, so we can put it into the TemplateUserTypeMap */
       template<typename T>
       using MapOfArray = std::map<std::string, Array<T>>;
 
       /** Type-depending map of vectors of arrays */
-      mtca4u::TemplateUserTypeMap<MapOfArray> arrayMap;
+      ChimeraTK::TemplateUserTypeMap<MapOfArray> arrayMap;
 
       /** Map assigning string type identifyers to C++ types */
-      mtca4u::SingleTypeUserTypeMap<const char*> typeMap{"int8","uint8","int16","uint16","int32","uint32",
+      ChimeraTK::SingleTypeUserTypeMap<const char*> typeMap{"int8","uint8","int16","uint16","int32","uint32",
                                                          "int64","uint64","float","double","string"};
 
       /** Implementation of get() which can be overloaded for scalars and vectors. The second argument is a dummy

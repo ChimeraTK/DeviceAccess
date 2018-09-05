@@ -13,7 +13,7 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include <mtca4u/OneDRegisterAccessor.h>
+#include <ChimeraTK/OneDRegisterAccessor.h>
 
 #include "InversionOfControlAccessor.h"
 #include "Profiler.h"
@@ -24,16 +24,16 @@ namespace ChimeraTK {
   /** Accessor for array variables (i.e. vectors). Note for users: Use the convenience classes
   *  ArrayPollInput, ArrayPushInput, ArrayOutput instead of this class directly. */
   template< typename UserType >
-  class ArrayAccessor :  public mtca4u::OneDRegisterAccessor<UserType>,
+  class ArrayAccessor :  public ChimeraTK::OneDRegisterAccessor<UserType>,
                          public InversionOfControlAccessor<ArrayAccessor<UserType>> {
     public:
 
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::operator VariableNetworkNode;
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::operator>>;
-      void replace(const mtca4u::NDRegisterAccessorAbstractor<UserType> &newAccessor) = delete;
+      void replace(const ChimeraTK::NDRegisterAccessorAbstractor<UserType> &newAccessor) = delete;
       using InversionOfControlAccessor<ArrayAccessor<UserType>>::replace;
       ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType> &other) = delete;
-      using mtca4u::OneDRegisterAccessor<UserType>::operator=;
+      using ChimeraTK::OneDRegisterAccessor<UserType>::operator=;
 
       /** Move constructor */
       ArrayAccessor(ArrayAccessor<UserType> &&other) {
@@ -49,7 +49,7 @@ namespace ChimeraTK {
       }
 
       bool write(ChimeraTK::VersionNumber versionNumber={}) {
-        bool dataLoss = mtca4u::OneDRegisterAccessor<UserType>::write(versionNumber);
+        bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::write(versionNumber);
         if(dataLoss) Application::incrementDataLossCounter();
         return dataLoss;
       }

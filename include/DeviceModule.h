@@ -8,8 +8,8 @@
 #ifndef CHIMERATK_DEVICE_MODULE_H
 #define CHIMERATK_DEVICE_MODULE_H
 
-#include <mtca4u/ForwardDeclarations.h>
-#include <mtca4u/RegisterPath.h>
+#include <ChimeraTK/ForwardDeclarations.h>
+#include <ChimeraTK/RegisterPath.h>
 
 #include "VariableNetworkNode.h"
 #include "Module.h"
@@ -65,7 +65,7 @@ namespace ChimeraTK {
     protected:
 
       std::string deviceAliasOrURI;
-      mtca4u::RegisterPath registerNamePrefix;
+      ChimeraTK::RegisterPath registerNamePrefix;
 
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module

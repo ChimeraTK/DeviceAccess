@@ -6,7 +6,7 @@
 #define CHIMERATK_APPLICATION_CORE_MICRO_DAQ_H
 
 #include "ApplicationCore.h"
-#include <mtca4u/SupportedUserTypes.h>
+#include <ChimeraTK/SupportedUserTypes.h>
 
 namespace ChimeraTK {
 

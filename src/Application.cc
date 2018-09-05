@@ -12,7 +12,7 @@
 
 #include <boost/fusion/container/map.hpp>
 
-#include <mtca4u/BackendFactory.h>
+#include <ChimeraTK/BackendFactory.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
@@ -110,7 +110,7 @@ void Application::processUnconnectedNodes() {
         bool makeFeeder = !(networkList.back().hasFeedingNode());
         size_t length = accessor.getNumberOfElements();
         auto callable = CreateConstantForUnconnectedVar(accessor.getValueType(), makeFeeder, length);
-        boost::fusion::for_each(mtca4u::userTypeMap(), callable);
+        boost::fusion::for_each(ChimeraTK::userTypeMap(), callable);
         assert(callable.done);
         constantList.emplace_back(callable.theNode);
         networkList.back().addNode(constantList.back());
@@ -276,17 +276,17 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDeviceVariable(const std::string &deviceAlias,
+boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(const std::string &deviceAlias,
     const std::string &registerName, VariableDirection direction, UpdateMode mode, size_t nElements) {
 
   // open device if needed
   if(deviceMap.count(deviceAlias) == 0) {
-    deviceMap[deviceAlias] = mtca4u::BackendFactory::getInstance().createBackend(deviceAlias);
+    deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
     if(!deviceMap[deviceAlias]->isOpen()) deviceMap[deviceAlias]->open();
   }
 
   // use wait_for_new_data mode if push update mode was requested
-  mtca4u::AccessModeFlags flags{};
+  ChimeraTK::AccessModeFlags flags{};
   if(mode == UpdateMode::push && direction == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
   // obatin the register accessor from the device
@@ -302,7 +302,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createDevic
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProcessVariable(VariableNetworkNode const &node) {
+boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createProcessVariable(VariableNetworkNode const &node) {
 
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
@@ -362,7 +362,7 @@ boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> Application::createProce
 /*********************************************************************************************************************/
 
 template<typename UserType>
-std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> >
+std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> >
   Application::createApplicationVariable(VariableNetworkNode const &node, VariableNetworkNode const &consumer) {
 
   // obtain the meta data
@@ -378,8 +378,8 @@ std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>, boost::share
   }
 
   // create the ProcessArray for the proper UserType
-  std::pair< boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>>,
-            boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> > pvarPair;
+  std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
+            boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> > pvarPair;
   pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
                                                       {}, 3, false, {}, flags);
   assert(pvarPair.first->getName() != "");
@@ -557,7 +557,7 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
 
   // defer actual network creation to templated function
   auto callable = TypedMakeConnectionCaller(*this, network);
-  boost::fusion::for_each(mtca4u::userTypeMap(), callable);
+  boost::fusion::for_each(ChimeraTK::userTypeMap(), callable);
   assert(callable.done);
 
   // mark the network as created
@@ -585,7 +585,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     // implementations (sender and receiver), but in this case the feeder already has a fixed implementation pair.
     // So our feedingImpl will contain the consumer-end of the implementation pair. This is the reason why the
     // functions createProcessScalar() and createDeviceAccessor() get the VariableDirection::consuming.
-    boost::shared_ptr<mtca4u::NDRegisterAccessor<UserType>> feedingImpl;
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
     if(feeder.getType() == NodeType::Device) {
       feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
           VariableDirection::consuming, feeder.getMode(), feeder.getNumberOfElements());

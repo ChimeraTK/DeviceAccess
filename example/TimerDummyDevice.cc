@@ -1,12 +1,12 @@
-#include <mtca4u/DeviceBackendImpl.h>
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/DeviceAccessVersion.h>
-#include <mtca4u/SyncNDRegisterAccessor.h>
+#include <ChimeraTK/DeviceBackendImpl.h>
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/DeviceAccessVersion.h>
+#include <ChimeraTK/SyncNDRegisterAccessor.h>
 
 template<typename UserType>
 class TimerDummyRegisterAccessor;
 
-class TimerDummy : public mtca4u::DeviceBackendImpl {
+class TimerDummy : public ChimeraTK::DeviceBackendImpl {
   public:
     TimerDummy() : DeviceBackendImpl() {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
@@ -17,8 +17,8 @@ class TimerDummy : public mtca4u::DeviceBackendImpl {
     }
 
     template<typename UserType>
-    boost::shared_ptr< mtca4u::NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
-        const mtca4u::RegisterPath &registerPathName, size_t , size_t , mtca4u::AccessModeFlags flags);
+    boost::shared_ptr< ChimeraTK::NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
+        const ChimeraTK::RegisterPath &registerPathName, size_t , size_t , ChimeraTK::AccessModeFlags flags);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( TimerDummy, getRegisterAccessor_impl, 4);
 
     void open() override {}
@@ -42,18 +42,18 @@ TimerDummy::BackendRegisterer TimerDummy::backendRegisterer;
 
 TimerDummy::BackendRegisterer::BackendRegisterer() {
     std::cout << "TimerDummy::BackendRegisterer: registering backend type TimerDummy" << std::endl;
-    mtca4u::BackendFactory::getInstance().registerBackendType("TimerDummy","",&TimerDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    ChimeraTK::BackendFactory::getInstance().registerBackendType("TimerDummy","",&TimerDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
 }
 
 template<typename UserType>
-class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserType> {
+class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<UserType> {
   public:
-    TimerDummyRegisterAccessor(const mtca4u::RegisterPath &registerPathName)
-    : mtca4u::SyncNDRegisterAccessor<UserType>(registerPathName)
+    TimerDummyRegisterAccessor(const ChimeraTK::RegisterPath &registerPathName)
+    : ChimeraTK::SyncNDRegisterAccessor<UserType>(registerPathName)
     {
-      mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-      mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-      mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0] = UserType();
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0] = UserType();
     }
 
     ~TimerDummyRegisterAccessor() { this->shutdown(); }
@@ -63,7 +63,7 @@ class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserTyp
     }
 
     void doPostRead() override {
-      mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
+      ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override { return false; }
@@ -75,15 +75,15 @@ class TimerDummyRegisterAccessor : public mtca4u::SyncNDRegisterAccessor<UserTyp
     bool isReadable() const override { return true; }
     bool isWriteable() const override { return false; }
 
-    mtca4u::AccessModeFlags getAccessModeFlags() const override { return {mtca4u::AccessMode::wait_for_new_data}; }
+    ChimeraTK::AccessModeFlags getAccessModeFlags() const override { return {ChimeraTK::AccessMode::wait_for_new_data}; }
 
-    bool mayReplaceOther(const boost::shared_ptr<mtca4u::TransferElement const> &) const override { return false; }
+    bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const> &) const override { return false; }
 
-    std::vector<boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override { return { this->shared_from_this() }; }
+    std::vector<boost::shared_ptr<ChimeraTK::TransferElement> > getHardwareAccessingElements() override { return { this->shared_from_this() }; }
 
-    void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {}
+    void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement>) override {}
 
-    std::list<boost::shared_ptr<mtca4u::TransferElement> > getInternalElements() override { return {}; }
+    std::list<boost::shared_ptr<ChimeraTK::TransferElement> > getInternalElements() override { return {}; }
 
 };
 
@@ -93,10 +93,10 @@ void TimerDummyRegisterAccessor<std::string>::doPostRead() {
 
 
 template<typename UserType>
-boost::shared_ptr< mtca4u::NDRegisterAccessor<UserType> > TimerDummy::getRegisterAccessor_impl(
-                    const mtca4u::RegisterPath &registerPathName, size_t , size_t , mtca4u::AccessModeFlags flags) {
+boost::shared_ptr< ChimeraTK::NDRegisterAccessor<UserType> > TimerDummy::getRegisterAccessor_impl(
+                    const ChimeraTK::RegisterPath &registerPathName, size_t , size_t , ChimeraTK::AccessModeFlags flags) {
     assert(registerPathName == "/macropulseNr");
-    assert(flags.has(mtca4u::AccessMode::wait_for_new_data));
-    flags.checkForUnknownFlags({mtca4u::AccessMode::wait_for_new_data});
-    return boost::shared_ptr< mtca4u::NDRegisterAccessor<UserType> >(new TimerDummyRegisterAccessor<UserType>(registerPathName));
+    assert(flags.has(ChimeraTK::AccessMode::wait_for_new_data));
+    flags.checkForUnknownFlags({ChimeraTK::AccessMode::wait_for_new_data});
+    return boost::shared_ptr< ChimeraTK::NDRegisterAccessor<UserType> >(new TimerDummyRegisterAccessor<UserType>(registerPathName));
 }

@@ -162,7 +162,7 @@ std::pair<ctk::VariableNetworkNode,ctk::VariableNetworkNode> LoggingModule::getA
   return msg_list[sender];
 }
 
-std::map<std::string, Message>::iterator LoggingModule::UpdatePair(const mtca4u::TransferElementID &id){
+std::map<std::string, Message>::iterator LoggingModule::UpdatePair(const ChimeraTK::TransferElementID &id){
   for(auto it = msg_list.begin(), iend = msg_list.end(); it != iend; it++){
     if(it->second.first.getId() == id){
       it->second.second.read();

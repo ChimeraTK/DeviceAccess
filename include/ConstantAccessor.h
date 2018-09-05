@@ -8,22 +8,22 @@
 #ifndef CHIMERATK_CONSTANT_ACCESSOR_H
 #define CHIMERATK_CONSTANT_ACCESSOR_H
 
-#include <mtca4u/SyncNDRegisterAccessor.h>
+#include <ChimeraTK/SyncNDRegisterAccessor.h>
 
 namespace ChimeraTK {
 
   /** Implementation of the NDRegisterAccessor which delivers always the same value and ignors any write operations */
   template<typename UserType>
-  class ConstantAccessor : public mtca4u::SyncNDRegisterAccessor<UserType> {
+  class ConstantAccessor : public ChimeraTK::SyncNDRegisterAccessor<UserType> {
 
     public:
 
       ConstantAccessor(UserType value=0, size_t length=1)
-        : mtca4u::SyncNDRegisterAccessor<UserType>("UnnamedConstantAccessor"), _value(length, value)
+        : ChimeraTK::SyncNDRegisterAccessor<UserType>("UnnamedConstantAccessor"), _value(length, value)
       {
         try {
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-          mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+          ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
+          ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
         }
         catch(...) {
           this->shutdown();
@@ -60,14 +60,14 @@ namespace ChimeraTK {
       }
 
       void doPostRead() override {
-        mtca4u::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
+        ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0] = _value;
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
         return true;
       }
 
-      bool mayReplaceOther(const boost::shared_ptr<mtca4u::TransferElement const>&) const override {
+      bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>&) const override {
         return false;   /// @todo implement properly?
       }
 
@@ -77,11 +77,11 @@ namespace ChimeraTK {
 
       bool isWriteable() const override {return true;}
 
-      std::vector< boost::shared_ptr<mtca4u::TransferElement> > getHardwareAccessingElements() override {return{};}
+      std::vector< boost::shared_ptr<ChimeraTK::TransferElement> > getHardwareAccessingElements() override {return{};}
 
-      void replaceTransferElement(boost::shared_ptr<mtca4u::TransferElement>) override {}
+      void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement>) override {}
 
-      std::list<boost::shared_ptr<mtca4u::TransferElement> > getInternalElements() override {return {};}
+      std::list<boost::shared_ptr<ChimeraTK::TransferElement> > getInternalElements() override {return {};}
 
       AccessModeFlags getAccessModeFlags() const override { return {}; }
 

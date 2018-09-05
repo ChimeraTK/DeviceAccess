@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include <mtca4u/SupportedUserTypes.h>
+#include <ChimeraTK/SupportedUserTypes.h>
 
 #include "ApplicationCore.h"
 

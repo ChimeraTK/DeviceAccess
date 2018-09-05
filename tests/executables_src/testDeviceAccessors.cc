@@ -13,9 +13,9 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include <mtca4u/Device.h>
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/NDRegisterAccessor.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include "Application.h"
 #include "ScalarAccessor.h"
@@ -85,14 +85,14 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
   std::cout << "testFeedToDevice" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.devMymodule("actuator");
   app.initialise();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDevice, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDeviceFanOut, T, test_types ) {
   std::cout << "testFeedToDeviceFanOut" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDeviceFanOut, T, test_types ) {
                                  >> app.devMymodule("readBack");
   app.initialise();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regac = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
   auto regrb = dev.getScalarRegisterAccessor<int>("/MyModule/readBack");
@@ -156,14 +156,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testFeedToDeviceFanOut, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
   std::cout << "testConsumeFromDevice" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   app.initialise();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumeFromDevice, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumingFanOut, T, test_types ) {
   std::cout << "testConsumingFanOut" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumingFanOut, T, test_types ) {
                                 >> app.testModule.consumingPush2;
   app.initialise();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConsumingFanOut, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
   std::cout << "testMergedNetworks" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
   // run the application to see if everything still behaves as expected
   app.run();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergedNetworks, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDevice, T, test_types ) {
   std::cout << "testConstantToDevice" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDevice, T, test_types ) {
   app.initialise();
   app.run();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
 
   CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 18, 3000 );
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDevice, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDeviceFanOut, T, test_types ) {
   std::cout << "testConstantToDeviceFanOut" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDeviceFanOut, T, test_types ) {
   app.initialise();
   app.run();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
 
   CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 20, 3000 );
@@ -390,14 +390,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantToDeviceFanOut, T, test_types ) {
 BOOST_AUTO_TEST_CASE_TEMPLATE( testDeviceModuleSubscriptOp, T, test_types ) {
   std::cout << "testDeviceModuleSubscriptOp" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
   app.initialise();
 
-  mtca4u::Device dev;
+  ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDeviceModuleSubscriptOp, T, test_types ) {
 BOOST_AUTO_TEST_CASE( testDeviceModuleVirtuallise ) {
   std::cout << "testDeviceModuleVirtuallise" << std::endl;
 
-  mtca4u::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<int> app;
 

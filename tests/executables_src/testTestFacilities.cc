@@ -14,7 +14,7 @@
 #include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
 
-#include <mtca4u/Device.h>
+#include <ChimeraTK/Device.h>
 
 #include "Application.h"
 #include "ScalarAccessor.h"

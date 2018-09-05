@@ -85,7 +85,7 @@ ExampleApp theExampleApp;
 
 
 void ExampleApp::defineConnections() {
-    mtca4u::setDMapFilePath("dummy.dmap");
+    ChimeraTK::setDMapFilePath("dummy.dmap");
 
     cs("setpoint") >> automation.opSP;
     automation.curSP >> tableGeneration.tableParameters.setpoint >> cs("currentSetpoint");

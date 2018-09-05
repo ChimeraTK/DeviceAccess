@@ -140,7 +140,7 @@ namespace ChimeraTK {
       const std::type_info* valueType{&typeid(AnyType)};
 
       /** Engineering unit */
-      std::string engineeringUnit{mtca4u::TransferElement::unitNotSet};
+      std::string engineeringUnit{ChimeraTK::TransferElement::unitNotSet};
 
       /** User-provided description */
       std::string description;

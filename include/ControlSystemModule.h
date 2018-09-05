@@ -10,7 +10,7 @@
 
 #include <list>
 
-#include <mtca4u/RegisterPath.h>
+#include <ChimeraTK/RegisterPath.h>
 
 #include "VariableNetworkNode.h"
 #include "Module.h"
@@ -57,7 +57,7 @@ namespace ChimeraTK {
 
     protected:
 
-      mtca4u::RegisterPath variableNamePrefix;
+      ChimeraTK::RegisterPath variableNamePrefix;
 
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
