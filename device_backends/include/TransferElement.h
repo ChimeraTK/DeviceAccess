@@ -22,7 +22,6 @@
 #include <boost/thread/future.hpp>
 
 #include "Exception.h"
-#include "TimeStamp.h"
 #include "TransferFuture.h"
 #include "VersionNumber.h"
 #include "TransferElementID.h"
@@ -200,9 +199,11 @@ namespace ChimeraTK {
 
       /**
       * Returns the version number that is associated with the last transfer (i.e. last read or write). See
-      * ChimeraTK::VersionNumber for details.
+      * ChimeraTK::VersionNumber for details. The VersionNumber object also allows to determine the time stamp.
       */
       virtual ChimeraTK::VersionNumber getVersionNumber() const {
+        /// @todo FIXME Default implementation is wrong! There should be no default implementation, since the version
+        /// number must be obtained in the last transfer!
         return ChimeraTK::VersionNumber();
       }
 

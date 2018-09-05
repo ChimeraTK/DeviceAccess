@@ -24,7 +24,6 @@
 #include <ChimeraTK/cppext/future_queue.hpp>
 
 #include "VersionNumber.h"
-#include "TimeStamp.h"
 #include "TransferElementID.h"
 
 namespace ChimeraTK {
