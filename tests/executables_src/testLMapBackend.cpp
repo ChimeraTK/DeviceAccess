@@ -1,88 +1,37 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE LMapBackendTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "BufferingRegisterAccessor.h"
 
-using namespace boost::unit_test_framework;
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
-
-class LMapBackendTest {
-  public:
-    void testExceptions();
-    void testCatalogue();
-    void testReadWriteConstant();
-    void testReadWriteVariable();
-    void testReadWriteRegister();
-    void testReadWriteRange();
-    void testRegisterAccessorForRegister();
-    void testRegisterAccessorForRange();
-    void testRegisterAccessorForChannel();
-    void testRegisterAccessorForBit();
-    void testNonBufferingAccessor();
-    void testOther();
-};
-
-class LMapBackendTestSuite : public test_suite {
-  public:
-    LMapBackendTestSuite() : test_suite("LogicalNameMappingBackend test suite") {
-      boost::shared_ptr<LMapBackendTest> lMapBackendTest(new LMapBackendTest);
-
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testExceptions, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testCatalogue, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteConstant, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteVariable, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRegister, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testReadWriteRange, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRegister, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForRange, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForChannel, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testRegisterAccessorForBit, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testNonBufferingAccessor, lMapBackendTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapBackendTest::testOther, lMapBackendTest) );
-    }
-};
-
-bool init_unit_test(){
-  framework::master_test_suite().p_name.value = "LogicalNameMappingBackend test suite";
-  framework::master_test_suite().add(new LMapBackendTestSuite());
-
-  return true;
-}
+BOOST_AUTO_TEST_SUITE(LMapBackendTestSuite)
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testExceptions() {
+BOOST_AUTO_TEST_CASE( testExceptions ) {
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device;
-  BOOST_CHECK(device.isOpened() == false);
-  device.open("LMAP0");
-  BOOST_CHECK(device.isOpened() == true);
-  int data = 0;
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device;
+    BOOST_CHECK(device.isOpened() == false);
+    device.open("LMAP0");
+    BOOST_CHECK(device.isOpened() == true);
+    int data = 0;
 
-  BOOST_CHECK_THROW(device.getRegisterMap(), ChimeraTK::logic_error);
+    BOOST_CHECK_THROW(device.write("Channel3", data), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(device.writeReg("Channel3", &data), ChimeraTK::logic_error);
-
-  BOOST_CHECK_THROW(device.readReg("Channel3", &data), ChimeraTK::logic_error);
-
-  BOOST_CHECK_THROW(device.getRegistersInModule("MODULE"), ChimeraTK::logic_error);
-
-  BOOST_CHECK_THROW(device.getRegisterAccessorsInModule("MODULE"), ChimeraTK::logic_error);
-  BOOST_CHECK(device.isOpened() == true);
-  device.close();
-  BOOST_CHECK(device.isOpened() == false);
+    BOOST_CHECK(device.isOpened() == true);
+    device.close();
+    BOOST_CHECK(device.isOpened() == false);
 
 }
 
 /********************************************************************************************************************/
 
-  void LMapBackendTest::testCatalogue() {
+BOOST_AUTO_TEST_CASE( testCatalogue ) {
 
     BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
     ChimeraTK::Device device;
@@ -111,7 +60,7 @@ void LMapBackendTest::testExceptions() {
 
     ChimeraTK::Device target1;
     target1.open("PCIE3");
-    ChimeraTK::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
+    ChimeraTK::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST/NODMA");
     unsigned int nSamples = accTarget[3].size();
 
     info = catalogue.getRegister("Channel3");
@@ -137,32 +86,28 @@ void LMapBackendTest::testExceptions() {
 
 /********************************************************************************************************************/
 
-  void LMapBackendTest::testReadWriteConstant() {
+BOOST_AUTO_TEST_CASE( testReadWriteConstant ) {
 
     BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
     ChimeraTK::Device device;
 
     device.open("LMAP0");
-    int res = 0;
-    device.readReg("Constant",&res, 4);
-    BOOST_CHECK( res == 42 );
+    BOOST_CHECK( device.read<int>("Constant") == 42 );
 
-    res = 0;
-    BOOST_CHECK_THROW( device.writeReg("Constant",&res), ChimeraTK::logic_error );
+    BOOST_CHECK_THROW( device.write("Constant",0), ChimeraTK::logic_error );
 
-    device.readReg("Constant",&res, 4);
-    BOOST_CHECK( res == 42 );
+    BOOST_CHECK( device.read<int>("Constant") == 42 );
 
     // test with buffering register accessor
-    ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","Constant");
-    BOOST_CHECK( acc.getNumberOfElements() == 1 );
+    auto acc = device.getOneDRegisterAccessor<int32_t>("Constant");
+    BOOST_CHECK( acc.getNElements() == 1 );
     BOOST_CHECK( acc[0] == 42 );
     acc.read();
     BOOST_CHECK( acc[0] == 42 );
     BOOST_CHECK_THROW( acc.write(), ChimeraTK::logic_error );
 
-    ChimeraTK::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","Constant");
-    ChimeraTK::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Constant2");
+    auto acc2 = device.getOneDRegisterAccessor<int32_t>("Constant");
+    auto acc3 = device.getOneDRegisterAccessor<int32_t>("Constant2");
 
     boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2, impl3;
     impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
@@ -193,7 +138,7 @@ void LMapBackendTest::testExceptions() {
 
   /********************************************************************************************************************/
 
-    void LMapBackendTest::testReadWriteVariable() {
+BOOST_AUTO_TEST_CASE( testReadWriteVariable ) {
 
     BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
     ChimeraTK::Device device;
@@ -201,9 +146,9 @@ void LMapBackendTest::testExceptions() {
     device.open("LMAP0");
 
     // test with buffering register accessor
-    ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
-    ChimeraTK::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","/MyModule/SomeSubmodule/Variable");
-    BOOST_CHECK( acc.getNumberOfElements() == 1 );
+    auto acc = device.getOneDRegisterAccessor<int32_t>("/MyModule/SomeSubmodule/Variable");
+    auto acc2 = device.getOneDRegisterAccessor<int32_t>("/MyModule/SomeSubmodule/Variable");
+    BOOST_CHECK( acc.getNElements() == 1 );
     BOOST_CHECK( acc[0] == 2 );
     BOOST_CHECK( acc2[0] == 2 );
     acc.read();
@@ -218,625 +163,534 @@ void LMapBackendTest::testExceptions() {
 
     device.close();
 
-  }
+}
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testReadWriteRegister() {
+BOOST_AUTO_TEST_CASE( testReadWriteRegister ) {
 
-  int res;
-  std::vector<int> area(1024);
+    std::vector<int> area(1024);
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target1;
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device, target1;
 
-  target1.open("PCIE2");
-  device.open("LMAP0");
-  // single word
-  res = 120;
-  target1.writeReg("BOARD.WORD_USER", &res, 4);
-  res = 0;
-  device.readReg("SingleWord",&res, 4);
-  BOOST_CHECK( res == 120 );
+    target1.open("PCIE2");
+    device.open("LMAP0");
+    // single word
+    target1.write("BOARD.WORD_USER", 120);
+    BOOST_CHECK( device.read<int>("SingleWord") == 120 );
 
-  res = 66;
-  target1.writeReg("BOARD.WORD_USER", &res, 4);
-  res = 0;
-  device.readReg("SingleWord",&res, 4);
-  BOOST_CHECK( res == 66 );
+    target1.write("BOARD.WORD_USER", 66);
+    BOOST_CHECK( device.read<int>("SingleWord") == 66 );
 
-  res = 42;
-  device.writeReg("SingleWord",&res, 4);
-  res = 0;
-  target1.readReg("BOARD.WORD_USER", &res, 4);
-  BOOST_CHECK( res == 42 );
+    device.write("SingleWord",42);
+    BOOST_CHECK( target1.read<int>("BOARD.WORD_USER") == 42 );
 
-  res = 12;
-  device.writeReg("SingleWord",&res, 4);
-  res = 0;
-  target1.readReg("BOARD.WORD_USER", &res, 4);
-  BOOST_CHECK( res == 12 );
+    device.write("SingleWord",12);
+    BOOST_CHECK( target1.read<int>("BOARD.WORD_USER") == 12 );
 
-  // area
-  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  device.readReg("FullArea",area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+    // area
+    for(int i=0; i<1024; i++) area[i] = 12345+3*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    area = device.read<int>("FullArea", 1024);
+    for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
 
-  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  device.readReg("FullArea",area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+    for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    area = device.read<int>("FullArea", 1024);
+    for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
-  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
-  device.writeReg("FullArea",area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+    for(int i=0; i<1024; i++) area[i] = 12345+3*i;
+    device.write("FullArea",area);
+    area = target1.read<int>("ADC.AREA_DMAABLE", 1024);
+    for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
 
-  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
-  device.writeReg("FullArea",area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+    for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
+    device.write("FullArea",area);
+    area = target1.read<int>("ADC.AREA_DMAABLE", 1024);
+    for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
-  device.close();
+    device.close();
 
 }
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testReadWriteRange() {
-  std::vector<int> area(1024);
+BOOST_AUTO_TEST_CASE( testReadWriteRange ) {
+    std::vector<int> area(1024);
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target1;
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device, target1;
 
-  device.open("LMAP0");
-  target1.open("PCIE2");
+    device.open("LMAP0");
+    target1.open("PCIE2");
 
 
-  for(int i=0; i<1024; i++) area[i] = 0;
-  for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  device.readReg("PartOfArea",area.data(), 4*20);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i] == 12345+3*i );
+    for(int i=0; i<1024; i++) area[i] = 0;
+    for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    area = device.read<int>("PartOfArea", 20);
+    for(int i=0; i<20; i++) BOOST_CHECK( area[i] == 12345+3*i );
 
-  for(int i=0; i<1024; i++) area[i] = 0;
-  for(int i=0; i<20; i++) area[i+10] = -876543210+42*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  device.readReg("PartOfArea",area.data(), 4*20);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+    area.resize(1024);
+    for(int i=0; i<1024; i++) area[i] = 0;
+    for(int i=0; i<20; i++) area[i+10] = -876543210+42*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    for(int i=0; i<1024; i++) area[i] = 0;
+    area = device.read<int>("PartOfArea", 20);
+    for(int i=0; i<20; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
-/*  for(int i=0; i<1024; i++) area[i] = 0;
-  for(int i=0; i<20; i++) area[i] = 12345+3*i;
-  device.writeReg("PartOfArea",area.data(), 4*20);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == 12345+3*i );
-
-  for(int i=0; i<1024; i++) area[i] = 0;
-  for(int i=0; i<20; i++) area[i] = -876543210+42*i;
-  device.writeReg("PartOfArea",area.data(), 4*20);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] == -876543210+42*i ); */
-
-  device.close();
+    device.close();
 
 }
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testRegisterAccessorForRegister() {
+BOOST_AUTO_TEST_CASE( testRegisterAccessorForRegister ) {
 
-  std::vector<int> area(1024);
-  int index;
+    std::vector<int> area(1024);
+    int index;
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target1;
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device, target1;
 
-  device.open("LMAP0");
-  target1.open("PCIE2");
+    device.open("LMAP0");
+    target1.open("PCIE2");
 
 
-  ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","FullArea");
-  BOOST_CHECK( !acc.isReadOnly() );
-  BOOST_CHECK( acc.isReadable() );
-  BOOST_CHECK( acc.isWriteable () );
+    auto acc = device.getOneDRegisterAccessor<int32_t>("FullArea");
+    BOOST_CHECK( !acc.isReadOnly() );
+    BOOST_CHECK( acc.isReadable() );
+    BOOST_CHECK( acc.isWriteable () );
 
-  ChimeraTK::BufferingRegisterAccessor<int32_t> acc2 = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
+    auto acc2 = device.getOneDRegisterAccessor<int32_t>("PartOfArea");
 
-  boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2;
-  impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
-  impl2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc2.getHighLevelImplElement());
+    boost::shared_ptr< NDRegisterAccessor<int32_t> > impl,impl2;
+    impl = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc.getHighLevelImplElement());
+    impl2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc2.getHighLevelImplElement());
 
-  BOOST_CHECK( impl != impl2 );
-  BOOST_CHECK( impl->mayReplaceOther( impl ) == true );
-  BOOST_CHECK( impl2->mayReplaceOther( impl ) == false );
-  BOOST_CHECK( impl->mayReplaceOther( impl2 ) == false );
+    BOOST_CHECK( impl != impl2 );
+    BOOST_CHECK( impl->mayReplaceOther( impl ) == true );
+    BOOST_CHECK( impl2->mayReplaceOther( impl ) == false );
+    BOOST_CHECK( impl->mayReplaceOther( impl2 ) == false );
 
-  const ChimeraTK::BufferingRegisterAccessor<int32_t> acc_const = acc;
+    const ChimeraTK::OneDRegisterAccessor<int32_t> acc_const = acc;
 
-  // reading via [] operator
-  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  acc.read();
-  for(int i=0; i<1024; i++) BOOST_CHECK( acc[i] == 12345+3*i );
+    // reading via [] operator
+    for(int i=0; i<1024; i++) area[i] = 12345+3*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    acc.read();
+    for(int i=0; i<1024; i++) BOOST_CHECK( acc[i] == 12345+3*i );
 
-  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  acc.read();
-  for(int i=0; i<1024; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
+    for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    acc.read();
+    for(int i=0; i<1024; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
 
-  // writing via [] operator
-  for(int i=0; i<1024; i++) acc[i] = 12345+3*i;
-  acc.write();
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+    // writing via [] operator
+    for(int i=0; i<1024; i++) acc[i] = 12345+3*i;
+    acc.write();
+    area = target1.read<int>("ADC.AREA_DMAABLE", 1024);
+    for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
 
-  for(int i=0; i<1024; i++) acc[i] = -876543210+42*i;
-  acc.write();
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+    for(int i=0; i<1024; i++) acc[i] = -876543210+42*i;
+    acc.write();
+    area = target1.read<int>("ADC.AREA_DMAABLE", 1024);
+    for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
 
-  // reading via iterator
-  index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
-    BOOST_CHECK( *it == -876543210+42*index );
-    ++index;
-  }
-  BOOST_CHECK( index == 1024 );
+    // reading via iterator
+    index = 0;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+      BOOST_CHECK( *it == -876543210+42*index );
+      ++index;
+    }
+    BOOST_CHECK( index == 1024 );
 
-  // reading via const_iterator
-  index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
-    BOOST_CHECK( *it == -876543210+42*index );
-    ++index;
-  }
-  BOOST_CHECK( index == 1024 );
+    // reading via const_iterator
+    index = 0;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
+      BOOST_CHECK( *it == -876543210+42*index );
+      ++index;
+    }
+    BOOST_CHECK( index == 1024 );
 
-  // reading via reverse_iterator
-  index = 1024;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
-    --index;
-    BOOST_CHECK( *it == -876543210+42*index );
-  }
-  BOOST_CHECK( index == 0 );
+    // reading via reverse_iterator
+    index = 1024;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+      --index;
+      BOOST_CHECK( *it == -876543210+42*index );
+    }
+    BOOST_CHECK( index == 0 );
 
-  // reading via const_reverse_iterator
-  index = 1024;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
-    --index;
-    BOOST_CHECK( *it == -876543210+42*index );
-  }
-  BOOST_CHECK( index == 0 );
+    // reading via const_reverse_iterator
+    index = 1024;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
+      --index;
+      BOOST_CHECK( *it == -876543210+42*index );
+    }
+    BOOST_CHECK( index == 0 );
 
-  // swap with std::vector
-  std::vector<int32_t> vec(1024);
-  acc.swap(vec);
-  for(unsigned int i=0; i<vec.size(); i++) {
-    BOOST_CHECK( vec[i] == -876543210+42*(signed)i );
-  }
+    // swap with std::vector
+    std::vector<int32_t> vec(1024);
+    acc.swap(vec);
+    for(unsigned int i=0; i<vec.size(); i++) {
+      BOOST_CHECK( vec[i] == -876543210+42*static_cast<signed>(i) );
+    }
 
-  device.close();
+    device.close();
 
 }
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testRegisterAccessorForRange() {
-  std::vector<int> area(1024);
-  int index;
+BOOST_AUTO_TEST_CASE( testRegisterAccessorForRange ) {
+    std::vector<int> area(1024);
+    int index;
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target1;
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device, target1;
 
-  device.open("LMAP0");
-  target1.open("PCIE2");
+    device.open("LMAP0");
+    target1.open("PCIE2");
 
 
-  ChimeraTK::BufferingRegisterAccessor<int32_t> acc = device.getBufferingRegisterAccessor<int32_t>("","PartOfArea");
-  BOOST_CHECK( acc.isReadOnly() == false );
-  BOOST_CHECK( acc.isReadable() );
-  BOOST_CHECK( acc.isWriteable() );
+    auto acc = device.getOneDRegisterAccessor<int32_t>("PartOfArea");
+    BOOST_CHECK( acc.isReadOnly() == false );
+    BOOST_CHECK( acc.isReadable() );
+    BOOST_CHECK( acc.isWriteable() );
 
-  const ChimeraTK::BufferingRegisterAccessor<int32_t> acc_const = acc;
+    const ChimeraTK::OneDRegisterAccessor<int32_t> acc_const = acc;
 
-  for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  acc.read();
-  for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == 12345+3*i );
+    for(int i=0; i<20; i++) area[i+10] = 12345+3*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    acc.read();
+    for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == 12345+3*i );
 
-  for(int i=0; i<20; i++) area[i+10] = -876543210+42*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  acc.read();
-  for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
+    for(int i=0; i<20; i++) area[i+10] = -876543210+42*i;
+    target1.write("ADC.AREA_DMAABLE", area);
+    acc.read();
+    for(int i=0; i<20; i++) BOOST_CHECK( acc[i] == -876543210+42*i );
 
-  // reading via iterator
-  index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
-    BOOST_CHECK( *it == -876543210+42*index );
-    ++index;
-  }
-  BOOST_CHECK( index == 20 );
+    // reading via iterator
+    index = 0;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::iterator it = acc.begin(); it != acc.end(); ++it) {
+      BOOST_CHECK( *it == -876543210+42*index );
+      ++index;
+    }
+    BOOST_CHECK( index == 20 );
 
-  // reading via const_iterator
-  index = 0;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
-    BOOST_CHECK( *it == -876543210+42*index );
-    ++index;
-  }
-  BOOST_CHECK( index == 20 );
+    // reading via const_iterator
+    index = 0;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_iterator it = acc_const.begin(); it != acc_const.end(); ++it) {
+      BOOST_CHECK( *it == -876543210+42*index );
+      ++index;
+    }
+    BOOST_CHECK( index == 20 );
 
-  // reading via reverse_iterator
-  index = 20;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
-    --index;
-    BOOST_CHECK( *it == -876543210+42*index );
-  }
-  BOOST_CHECK( index == 0 );
+    // reading via reverse_iterator
+    index = 20;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::reverse_iterator it = acc.rbegin(); it != acc.rend(); ++it) {
+      --index;
+      BOOST_CHECK( *it == -876543210+42*index );
+    }
+    BOOST_CHECK( index == 0 );
 
-  // reading via const_reverse_iterator
-  index = 20;
-  for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
-    --index;
-    BOOST_CHECK( *it == -876543210+42*index );
-  }
-  BOOST_CHECK( index == 0 );
+    // reading via const_reverse_iterator
+    index = 20;
+    for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin(); it != acc_const.rend(); ++it) {
+      --index;
+      BOOST_CHECK( *it == -876543210+42*index );
+    }
+    BOOST_CHECK( index == 0 );
 
-  // writing
-  for(int i=0; i<20; i++) acc[i] = 24507+33*i;
-  acc.write();
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] ==  24507+33*i );
+    // writing
+    for(int i=0; i<20; i++) acc[i] = 24507+33*i;
+    acc.write();
+    area = target1.read<int>("ADC.AREA_DMAABLE", 1024);
+    for(int i=0; i<20; i++) BOOST_CHECK( area[i+10] ==  24507+33*i );
 
-  device.close();
-
-}
-
-/********************************************************************************************************************/
-
-void LMapBackendTest::testRegisterAccessorForChannel() {
-  std::vector<int> area(1024);
-
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target1;
-
-  device.open("LMAP0");
-  target1.open("PCIE3");
-
-  ChimeraTK::BufferingRegisterAccessor<int32_t> acc3 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
-  ChimeraTK::BufferingRegisterAccessor<int32_t> acc4 = device.getBufferingRegisterAccessor<int32_t>("","Channel4");
-
-  ChimeraTK::BufferingRegisterAccessor<int32_t> acc3_2 = device.getBufferingRegisterAccessor<int32_t>("","Channel3");
-
-  boost::shared_ptr< NDRegisterAccessor<int32_t> > impl3,impl4,impl3_2;
-  impl3 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3.getHighLevelImplElement());
-  impl4 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc4.getHighLevelImplElement());
-  impl3_2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3_2.getHighLevelImplElement());
-  BOOST_CHECK( impl3->mayReplaceOther( impl3_2 ) == true );
-  BOOST_CHECK( impl3->mayReplaceOther( impl4 ) == false );
-
-  ChimeraTK::TwoDRegisterAccessor<int32_t> accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST","NODMA");
-  unsigned int nSamples = accTarget[3].size();
-  BOOST_CHECK( accTarget[4].size() == nSamples );
-  BOOST_CHECK( acc3.getNumberOfElements() == nSamples );
-  BOOST_CHECK( acc4.getNumberOfElements() == nSamples );
-
-  // fill target register
-  for(unsigned int i=0; i<nSamples; i++) {
-    accTarget[3][i] = 3000+i;
-    accTarget[4][i] = 4000-i;
-  }
-  accTarget.write();
-
-  // clear channel accessor buffers
-  for(unsigned int i=0; i<nSamples; i++) {
-    acc3[i] = 0;
-    acc4[i] = 0;
-  }
-
-  // read channel accessors
-  acc3.read();
-  for(unsigned int i=0; i<nSamples; i++) {
-    BOOST_CHECK( acc3[i] == (signed) (3000+i) );
-    BOOST_CHECK( acc4[i] == 0 );
-  }
-  acc4.read();
-  for(unsigned int i=0; i<nSamples; i++) {
-    BOOST_CHECK( acc3[i] == (signed) (3000+i) );
-    BOOST_CHECK( acc4[i] == (signed) (4000-i) );
-  }
-
-  // read via iterators
-  unsigned int idx=0;
-  for(BufferingRegisterAccessor<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
-    BOOST_CHECK( *it == (signed) (3000+idx) );
-    ++idx;
-  }
-  BOOST_CHECK(idx == nSamples);
-
-  // read via const iterators
-  const ChimeraTK::BufferingRegisterAccessor<int32_t> &acc3_const = acc3;
-  idx=0;
-  for(BufferingRegisterAccessor<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
-    BOOST_CHECK( *it == (signed) (3000+idx) );
-    ++idx;
-  }
-  BOOST_CHECK(idx == nSamples);
-
-  // read via reverse iterators
-  idx=nSamples;
-  for(BufferingRegisterAccessor<int>::reverse_iterator it = acc3.rbegin(); it != acc3.rend(); ++it) {
-    --idx;
-    BOOST_CHECK( *it == (signed) (3000+idx) );
-  }
-  BOOST_CHECK(idx == 0);
-
-  // read via reverse const iterators
-  idx=nSamples;
-  for(BufferingRegisterAccessor<int>::const_reverse_iterator it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
-    --idx;
-    BOOST_CHECK( *it == (signed) (3000+idx) );
-  }
-  BOOST_CHECK(idx == 0);
-
-  // swap into other vector
-  std::vector<int> someVector(nSamples);
-  acc3.swap(someVector);
-  for(unsigned int i=0; i<nSamples; i++) {
-    BOOST_CHECK( someVector[i] == (signed) (3000+i) );
-  }
-
-  // write channel registers fails
-  BOOST_CHECK( acc3.isReadOnly() );
-  BOOST_CHECK( acc3.isReadable() );
-  BOOST_CHECK( acc3.isWriteable() == false);
-
-  BOOST_CHECK( acc4.isReadOnly() );
-  BOOST_CHECK( acc4.isReadable() );
-  BOOST_CHECK( acc4.isWriteable() == false);
-
-  BOOST_CHECK_THROW( acc3.write(), ChimeraTK::logic_error );
-  BOOST_CHECK_THROW( acc4.write(), ChimeraTK::logic_error );
-
-  device.close();
+    device.close();
 
 }
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testRegisterAccessorForBit() {
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device;
+BOOST_AUTO_TEST_CASE( testRegisterAccessorForChannel ) {
+    std::vector<int> area(1024);
 
-  device.open("LMAP0");
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device, target1;
 
-  auto bitField = device.getScalarRegisterAccessor<int>("/MyModule/SomeSubmodule/Variable");
-  auto bit0 = device.getScalarRegisterAccessor<uint8_t>("/Bit0ofVar");
-  auto bit1 = device.getScalarRegisterAccessor<uint16_t>("/Bit1ofVar");
-  auto bit2 = device.getScalarRegisterAccessor<int32_t>("/Bit2ofVar");
-  auto bit3 = device.getScalarRegisterAccessor<std::string>("/Bit3ofVar");
+    device.open("LMAP0");
+    target1.open("PCIE3");
 
-  bitField = 0;
-  bitField.write();
+    auto acc3 = device.getOneDRegisterAccessor<int32_t>("Channel3");
+    auto acc4 = device.getOneDRegisterAccessor<int32_t>("Channel4");
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+    auto acc3_2 = device.getOneDRegisterAccessor<int32_t>("Channel3");
 
-  bitField = 1;
-  bitField.write();
+    boost::shared_ptr< NDRegisterAccessor<int32_t> > impl3,impl4,impl3_2;
+    impl3 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3.getHighLevelImplElement());
+    impl4 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc4.getHighLevelImplElement());
+    impl3_2 = boost::dynamic_pointer_cast<NDRegisterAccessor<int32_t>>(acc3_2.getHighLevelImplElement());
+    BOOST_CHECK( impl3->mayReplaceOther( impl3_2 ) == true );
+    BOOST_CHECK( impl3->mayReplaceOther( impl4 ) == false );
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+    auto accTarget = target1.getTwoDRegisterAccessor<int32_t>("TEST/NODMA");
+    unsigned int nSamples = accTarget[3].size();
+    BOOST_CHECK( accTarget[4].size() == nSamples );
+    BOOST_CHECK( acc3.getNElements() == nSamples );
+    BOOST_CHECK( acc4.getNElements() == nSamples );
 
-  bitField = 2;
-  bitField.write();
+    // fill target register
+    for(unsigned int i=0; i<nSamples; i++) {
+      accTarget[3][i] = 3000+i;
+      accTarget[4][i] = 4000-i;
+    }
+    accTarget.write();
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+    // clear channel accessor buffers
+    for(unsigned int i=0; i<nSamples; i++) {
+      acc3[i] = 0;
+      acc4[i] = 0;
+    }
 
-  bitField = 3;
-  bitField.write();
+    // read channel accessors
+    acc3.read();
+    for(unsigned int i=0; i<nSamples; i++) {
+      BOOST_CHECK( acc3[i] == (signed) (3000+i) );
+      BOOST_CHECK( acc4[i] == 0 );
+    }
+    acc4.read();
+    for(unsigned int i=0; i<nSamples; i++) {
+      BOOST_CHECK( acc3[i] == (signed) (3000+i) );
+      BOOST_CHECK( acc4[i] == (signed) (4000-i) );
+    }
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+    // read via iterators
+    unsigned int idx=0;
+    for(BufferingRegisterAccessor<int>::iterator it = acc3.begin(); it != acc3.end(); ++it) {
+      BOOST_CHECK( *it == (signed) (3000+idx) );
+      ++idx;
+    }
+    BOOST_CHECK(idx == nSamples);
 
-  bitField = 4;
-  bitField.write();
+    // read via const iterators
+    const ChimeraTK::OneDRegisterAccessor<int32_t> &acc3_const = acc3;
+    idx=0;
+    for(BufferingRegisterAccessor<int>::const_iterator it = acc3_const.begin(); it != acc3_const.end(); ++it) {
+      BOOST_CHECK( *it == (signed) (3000+idx) );
+      ++idx;
+    }
+    BOOST_CHECK(idx == nSamples);
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 1 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+    // read via reverse iterators
+    idx=nSamples;
+    for(BufferingRegisterAccessor<int>::reverse_iterator it = acc3.rbegin(); it != acc3.rend(); ++it) {
+      --idx;
+      BOOST_CHECK( *it == (signed) (3000+idx) );
+    }
+    BOOST_CHECK(idx == 0);
 
-  bitField = 8;
-  bitField.write();
+    // read via reverse const iterators
+    idx=nSamples;
+    for(BufferingRegisterAccessor<int>::const_reverse_iterator it = acc3_const.rbegin(); it != acc3_const.rend(); ++it) {
+      --idx;
+      BOOST_CHECK( *it == (signed) (3000+idx) );
+    }
+    BOOST_CHECK(idx == 0);
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "1" );
+    // swap into other vector
+    std::vector<int> someVector(nSamples);
+    acc3.swap(someVector);
+    for(unsigned int i=0; i<nSamples; i++) {
+      BOOST_CHECK( someVector[i] == (signed) (3000+i) );
+    }
 
-  bitField = 15;
-  bitField.write();
+    // write channel registers fails
+    BOOST_CHECK( acc3.isReadOnly() );
+    BOOST_CHECK( acc3.isReadable() );
+    BOOST_CHECK( acc3.isWriteable() == false);
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 1 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "1" );
+    BOOST_CHECK( acc4.isReadOnly() );
+    BOOST_CHECK( acc4.isReadable() );
+    BOOST_CHECK( acc4.isWriteable() == false);
 
-  bitField = 16;
-  bitField.write();
+    BOOST_CHECK_THROW( acc3.write(), ChimeraTK::logic_error );
+    BOOST_CHECK_THROW( acc4.write(), ChimeraTK::logic_error );
 
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
-
-  bitField = 17;
-  bitField.write();
-
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
-
-  bitField = 1;
-  bitField.write();
-
-  bit0.read();
-  BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
-  bit1.read();
-  BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
-  bit2.read();
-  BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
-  bit3.read();
-  BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
-
-  bit2 = 1;
-  bit2.write();
-  bitField.read();
-  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 5 );
-
-  bit1 = 1;
-  bit1.write();
-  bitField.read();
-  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 7 );
-
-  bit0 = 0;
-  bit0.write();
-  bitField.read();
-  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 6 );
-
-  bit3 = "1";
-  bit3.write();
-  bitField.read();
-  BOOST_CHECK_EQUAL( static_cast<int>(bitField), 14 );
-
-  device.close();
+    device.close();
 
 }
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testNonBufferingAccessor() {
-  std::vector<int> area(1024);
+BOOST_AUTO_TEST_CASE( testRegisterAccessorForBit ) {
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device;
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device, target1;
+    device.open("LMAP0");
 
-  device.open("LMAP0");
-  target1.open("PCIE2");
+    auto bitField = device.getScalarRegisterAccessor<int>("/MyModule/SomeSubmodule/Variable");
+    auto bit0 = device.getScalarRegisterAccessor<uint8_t>("/Bit0ofVar");
+    auto bit1 = device.getScalarRegisterAccessor<uint16_t>("/Bit1ofVar");
+    auto bit2 = device.getScalarRegisterAccessor<int32_t>("/Bit2ofVar");
+    auto bit3 = device.getScalarRegisterAccessor<std::string>("/Bit3ofVar");
 
+    bitField = 0;
+    bitField.write();
 
-  boost::shared_ptr<ChimeraTK::RegisterAccessor> acc;
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
 
-  // full area (pass-through a standard BackendBufferingRegisterAccessor)
-  acc = device.getRegisterAccessor("FullArea");
+    bitField = 1;
+    bitField.write();
 
-  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  acc->read(area.data(), 1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
 
-  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  acc->read(area.data(), 1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+    bitField = 2;
+    bitField.write();
 
-  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
-  acc->write(area.data(), 1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == 12345+3*i );
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
 
-  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
-  acc->write(area.data(), 1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  target1.readReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) BOOST_CHECK( area[i] == -876543210+42*i );
+    bitField = 3;
+    bitField.write();
 
-  // range (special LNMBackendRegisterAccessor)
-  acc = device.getRegisterAccessor("PartOfArea");
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
 
-  for(int i=0; i<1024; i++) area[i] = 12345+3*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  acc->read(area.data(), 20);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i] == 12345+3*(i+10) );
+    bitField = 4;
+    bitField.write();
 
-  for(int i=0; i<1024; i++) area[i] = -876543210+42*i;
-  target1.writeReg("ADC.AREA_DMAABLE", area.data(), 4*1024);
-  for(int i=0; i<1024; i++) area[i] = 0;
-  acc->read(area.data(), 20);
-  for(int i=0; i<20; i++) BOOST_CHECK( area[i] == -876543210+42*(i+10) );
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 1 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
 
-  device.close();
+    bitField = 8;
+    bitField.write();
+
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "1" );
+
+    bitField = 15;
+    bitField.write();
+
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 1 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 1 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "1" );
+
+    bitField = 16;
+    bitField.write();
+
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 0 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+    bitField = 17;
+    bitField.write();
+
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+    bitField = 1;
+    bitField.write();
+
+    bit0.read();
+    BOOST_CHECK_EQUAL( static_cast<uint8_t>(bit0), 1 );
+    bit1.read();
+    BOOST_CHECK_EQUAL( static_cast<uint16_t>(bit1), 0 );
+    bit2.read();
+    BOOST_CHECK_EQUAL( static_cast<int32_t>(bit2), 0 );
+    bit3.read();
+    BOOST_CHECK_EQUAL( static_cast<std::string>(bit3), "0" );
+
+    bit2 = 1;
+    bit2.write();
+    bitField.read();
+    BOOST_CHECK_EQUAL( static_cast<int>(bitField), 5 );
+
+    bit1 = 1;
+    bit1.write();
+    bitField.read();
+    BOOST_CHECK_EQUAL( static_cast<int>(bitField), 7 );
+
+    bit0 = 0;
+    bit0.write();
+    bitField.read();
+    BOOST_CHECK_EQUAL( static_cast<int>(bitField), 6 );
+
+    bit3 = "1";
+    bit3.write();
+    bitField.read();
+    BOOST_CHECK_EQUAL( static_cast<int>(bitField), 14 );
+
+    device.close();
 
 }
 
 /********************************************************************************************************************/
 
-void LMapBackendTest::testOther() {
+BOOST_AUTO_TEST_CASE( testOther ) {
 
-  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
-  ChimeraTK::Device device;
-  device.open("LMAP0");
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device;
+    device.open("LMAP0");
 
-  BOOST_CHECK( device.readDeviceInfo().find("Logical name mapping file:") == 0 );
-  device.close();
+    BOOST_CHECK( device.readDeviceInfo().find("Logical name mapping file:") == 0 );
+    device.close();
 }
+
+BOOST_AUTO_TEST_SUITE_END()
