@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE( testApplicationExceptions ) {
       TestApp app2("SecondInstance");
       BOOST_FAIL("Exception expected.");
     }
-    catch(std::runtime_error&) {
+    catch(ChimeraTK::logic_error&) {
     }
 
 }
