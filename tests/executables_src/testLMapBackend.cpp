@@ -170,6 +170,74 @@ BOOST_AUTO_TEST_CASE( testReadWriteVariable ) {
     BOOST_CHECK( acc[0] == 3 );
     BOOST_CHECK( acc2[0] == 3 );
 
+    // test array access
+    auto arrayVariable = device.getOneDRegisterAccessor<int>("/ArrayVariable");
+    BOOST_CHECK_EQUAL( arrayVariable.getNElements(), 6 );
+    BOOST_CHECK_EQUAL( arrayVariable[0], 11 );
+    BOOST_CHECK_EQUAL( arrayVariable[1], 22 );
+    BOOST_CHECK_EQUAL( arrayVariable[2], 33 );
+    BOOST_CHECK_EQUAL( arrayVariable[3], 44 );
+    BOOST_CHECK_EQUAL( arrayVariable[4], 55 );
+    BOOST_CHECK_EQUAL( arrayVariable[5], 66 );
+    arrayVariable.read();
+    BOOST_CHECK_EQUAL( arrayVariable[0], 11 );
+    BOOST_CHECK_EQUAL( arrayVariable[1], 22 );
+    BOOST_CHECK_EQUAL( arrayVariable[2], 33 );
+    BOOST_CHECK_EQUAL( arrayVariable[3], 44 );
+    BOOST_CHECK_EQUAL( arrayVariable[4], 55 );
+    BOOST_CHECK_EQUAL( arrayVariable[5], 66 );
+    arrayVariable = std::vector<int>({6,5,4,3,2,1});
+    arrayVariable.write();
+    BOOST_CHECK_EQUAL( arrayVariable[0], 6 );
+    BOOST_CHECK_EQUAL( arrayVariable[1], 5 );
+    BOOST_CHECK_EQUAL( arrayVariable[2], 4 );
+    BOOST_CHECK_EQUAL( arrayVariable[3], 3 );
+    BOOST_CHECK_EQUAL( arrayVariable[4], 2 );
+    BOOST_CHECK_EQUAL( arrayVariable[5], 1 );
+    arrayVariable = std::vector<int>({0,0,0,0,0,0});
+    arrayVariable.read();
+    BOOST_CHECK_EQUAL( arrayVariable[0], 6 );
+    BOOST_CHECK_EQUAL( arrayVariable[1], 5 );
+    BOOST_CHECK_EQUAL( arrayVariable[2], 4 );
+    BOOST_CHECK_EQUAL( arrayVariable[3], 3 );
+    BOOST_CHECK_EQUAL( arrayVariable[4], 2 );
+    BOOST_CHECK_EQUAL( arrayVariable[5], 1 );
+
+    auto partOfArrayVariable = device.getOneDRegisterAccessor<int>("/ArrayVariable",3,2);
+    BOOST_CHECK_EQUAL( partOfArrayVariable.getNElements(), 3 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[0], 4 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[1], 3 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[2], 2 );
+    partOfArrayVariable.read();
+    BOOST_CHECK_EQUAL( partOfArrayVariable[0], 4 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[1], 3 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[2], 2 );
+    partOfArrayVariable = std::vector<int>({42,120,31415});
+    partOfArrayVariable.write();
+    BOOST_CHECK_EQUAL( partOfArrayVariable[0], 42 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[1], 120 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[2], 31415 );
+    partOfArrayVariable = std::vector<int>({0,0,0});
+    partOfArrayVariable.read();
+    BOOST_CHECK_EQUAL( partOfArrayVariable[0], 42 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[1], 120 );
+    BOOST_CHECK_EQUAL( partOfArrayVariable[2], 31415 );
+
+    BOOST_CHECK_EQUAL( arrayVariable[0], 6 );
+    BOOST_CHECK_EQUAL( arrayVariable[1], 5 );
+    BOOST_CHECK_EQUAL( arrayVariable[2], 4 );
+    BOOST_CHECK_EQUAL( arrayVariable[3], 3 );
+    BOOST_CHECK_EQUAL( arrayVariable[4], 2 );
+    BOOST_CHECK_EQUAL( arrayVariable[5], 1 );
+    arrayVariable.read();
+    BOOST_CHECK_EQUAL( arrayVariable[0], 6 );
+    BOOST_CHECK_EQUAL( arrayVariable[1], 5 );
+    BOOST_CHECK_EQUAL( arrayVariable[2], 42 );
+    BOOST_CHECK_EQUAL( arrayVariable[3], 120 );
+    BOOST_CHECK_EQUAL( arrayVariable[4], 31415 );
+    BOOST_CHECK_EQUAL( arrayVariable[5], 1 );
+
+
     device.close();
 
 }
