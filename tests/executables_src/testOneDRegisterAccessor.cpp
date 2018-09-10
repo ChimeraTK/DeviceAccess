@@ -66,17 +66,11 @@ void OneDRegisterTest::testRegisterAccessor() {
   BOOST_CHECK( intRegister.isReadable() );
   BOOST_CHECK( intRegister.isWriteable() );
 
-  // variable to read to for comparison
-  int compare;
-
   // check number of elements getter
   BOOST_CHECK( intRegister.getNElements() == 2 );
 
   // test operator[] on r.h.s.
-  compare = 5;
-  device->writeReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  compare = -77;
-  device->writeReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
+  device->write<int>("APP0/MODULE0", std::vector<int>({5, -77}));
   intRegister.read();
   BOOST_CHECK( intRegister[0] == 5 );
   BOOST_CHECK( intRegister[1] == -77 );
@@ -85,10 +79,7 @@ void OneDRegisterTest::testRegisterAccessor() {
   intRegister[0] = -666;
   intRegister[1] = 999;
   intRegister.write();
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == -666 );
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
-  BOOST_CHECK( compare == 999 );
+  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({-666,999}));
 
   // test data() function
   int *ptr = intRegister.data();
@@ -106,10 +97,7 @@ void OneDRegisterTest::testRegisterAccessor() {
     ic++;
   }
   intRegister.write();
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == 1000 );
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
-  BOOST_CHECK( compare == 2000 );
+  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({1000,2000}));
 
   // test iterators with rbegin and rend
   ic = 0;
@@ -118,16 +106,10 @@ void OneDRegisterTest::testRegisterAccessor() {
     ic++;
   }
   intRegister.write();
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == 666 );
-  device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
-  BOOST_CHECK( compare == 333 );
+  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({666,333}));
 
   // test const iterators in both directions
-  compare = 1234;
-  device->writeReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  compare = 2468;
-  device->writeReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
+  device->write("APP0/MODULE0", std::vector<int>({1234, 2468}));
   intRegister.read();
   const OneDRegisterAccessor<int> const_intRegister = intRegister;
   ic = 0;
@@ -155,14 +137,12 @@ void OneDRegisterTest::testRegisterAccessor() {
   OneDRegisterAccessor<double> floatRegister = device->getOneDRegisterAccessor<double>("MODULE0/WORD_USER1");
 
   // test operator[] on r.h.s.
-  compare = -120;
-  device->writeReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
+  device->write("APP0/MODULE0", std::vector<int>({-120, 2468}));
   floatRegister.read();
   BOOST_CHECK( floatRegister[0] == -120./8. );
 
   // test operator[] on l.h.s.
   floatRegister[0] = 42. / 8.;
   floatRegister.write();
-  device->readReg("WORD_USER1","MODULE0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == 42 );
+  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({42,2468}));
 }

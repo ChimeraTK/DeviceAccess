@@ -61,6 +61,16 @@
         <value index="2">3333</value>
         <numberOfElements>5</numberOfElements>
     </constant>
+    <variable name="ArrayVariable">
+        <type>integer</type>
+        <value index="0">11</value>
+        <value index="1">22</value>
+        <value index="2">33</value>
+        <value index="3">44</value>
+        <value index="4">55</value>
+        <value index="5">66</value>
+        <numberOfElements>6</numberOfElements>
+    </variable>
     <redirectedBit name="Bit0ofVar">
       <targetDevice>this</targetDevice>
       <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>

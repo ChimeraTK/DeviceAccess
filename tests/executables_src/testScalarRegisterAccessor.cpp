@@ -238,7 +238,7 @@ void ScalarRegisterTest::testWordOffset(){
   dummy=3.5;
 
   // obtain register accessor with integral type. We use and offset of 1 (second word in module1), and raw  mode to check that argument passing works
-  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, true);
+  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, {AccessMode::raw});
   accessor.read();
   BOOST_CHECK(accessor==static_cast<int>(3.5 * (1<<5)) ); // 5 fractional bits, float value 3.5
 
@@ -258,8 +258,8 @@ void ScalarRegisterTest::testUniqueID() {
   device.open("DUMMYD2");
 
   // get register accessors
-  ScalarRegisterAccessor<int> accessor1  = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, true);
-  ScalarRegisterAccessor<int> accessor2  = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, true);
+  ScalarRegisterAccessor<int> accessor1  = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, {AccessMode::raw});
+  ScalarRegisterAccessor<int> accessor2  = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, {AccessMode::raw});
 
   // self consistency check
   BOOST_CHECK(   accessor1.getId() == accessor1.getId()  );
@@ -282,7 +282,7 @@ void ScalarRegisterTest::testUniqueID() {
   BOOST_CHECK( accessor2Copied.getId() != accessor1.getId() );
 
   // compare with accessor for same register but created another time
-  ScalarRegisterAccessor<int> accessor1a = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, true);
+  ScalarRegisterAccessor<int> accessor1a = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, {AccessMode::raw});
   BOOST_CHECK( accessor1a.getId() == accessor1a.getId() );
   BOOST_CHECK( accessor1.getId() != accessor1a.getId() );
   BOOST_CHECK( accessor2.getId() != accessor1a.getId() );

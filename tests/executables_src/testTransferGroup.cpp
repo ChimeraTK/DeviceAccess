@@ -17,13 +17,13 @@ using namespace ChimeraTK;
 
 // we need to access some private data of the low level transfer element
 struct NumericAddressedLowLevelTransferElement_startAddress {
-    typedef size_t (NumericAddressedLowLevelTransferElement::*type);
+    typedef size_t NumericAddressedLowLevelTransferElement::*type;
 };
 template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_startAddress,
         &ChimeraTK::NumericAddressedLowLevelTransferElement::_startAddress>;
 
 struct NumericAddressedLowLevelTransferElement_numberOfBytes {
-    typedef size_t (NumericAddressedLowLevelTransferElement::*type);
+    typedef size_t NumericAddressedLowLevelTransferElement::*type;
 };
 template struct accessPrivateData::stow_private<NumericAddressedLowLevelTransferElement_numberOfBytes,
         &ChimeraTK::NumericAddressedLowLevelTransferElement::_numberOfBytes>;
@@ -67,10 +67,10 @@ void TransferGroupTest::testAdding() {
 
   device.open("DUMMYD3");
 
-  BufferingRegisterAccessor<int> a1 = device.getBufferingRegisterAccessor<int>("ADC","AREA_DMAABLE");
-  BufferingRegisterAccessor<int> a2 = device.getBufferingRegisterAccessor<int>("ADC","AREA_DMAABLE");
-  BufferingRegisterAccessor<int> a3 = device.getBufferingRegisterAccessor<int>("BOARD","WORD_STATUS");
-  BufferingRegisterAccessor<unsigned int> a4 = device.getBufferingRegisterAccessor<unsigned int>("ADC","AREA_DMAABLE");
+  auto a1 = device.getOneDRegisterAccessor<int>("ADC/AREA_DMAABLE");
+  auto a2 = device.getOneDRegisterAccessor<int>("ADC/AREA_DMAABLE");
+  auto a3 = device.getOneDRegisterAccessor<int>("BOARD/WORD_STATUS");
+  auto a4 = device.getOneDRegisterAccessor<unsigned int>("ADC/AREA_DMAABLE");
 
   // slightly redundant to do this test here, this is just a control test still independent of the TransferGroup
   a1[0] = 42;
@@ -158,13 +158,13 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   ChimeraTK::Device device, target1, target2;
 
   device.open("LMAP0");
-  BufferingRegisterAccessor<int> a[6];
-  a[0].replace(device.getBufferingRegisterAccessor<int>("","SingleWord"));
-  a[1].replace(device.getBufferingRegisterAccessor<int>("","FullArea"));
-  a[2].replace(device.getBufferingRegisterAccessor<int>("","PartOfArea"));
-  a[3].replace(device.getBufferingRegisterAccessor<int>("","Channel3"));
-  a[4].replace(device.getBufferingRegisterAccessor<int>("","Channel4"));
-  a[5].replace(device.getBufferingRegisterAccessor<int>("","Constant"));
+  OneDRegisterAccessor<int> a[6];
+  a[0].replace(device.getOneDRegisterAccessor<int>("SingleWord"));
+  a[1].replace(device.getOneDRegisterAccessor<int>("FullArea"));
+  a[2].replace(device.getOneDRegisterAccessor<int>("PartOfArea"));
+  a[3].replace(device.getOneDRegisterAccessor<int>("Channel3"));
+  a[4].replace(device.getOneDRegisterAccessor<int>("Channel4"));
+  a[5].replace(device.getOneDRegisterAccessor<int>("Constant"));
 
   // obtain the private pointers to the implementation of the accessor
   boost::shared_ptr< NDRegisterAccessor<int> > impl[6];
@@ -203,13 +203,13 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   //       therefore cannot test those register at the same time!
   target1.open("PCIE2");
   target2.open("PCIE3");
-  BufferingRegisterAccessor<int> t1 = target1.getBufferingRegisterAccessor<int>("","BOARD.WORD_USER");
-  BufferingRegisterAccessor<int> t2 = target1.getBufferingRegisterAccessor<int>("","ADC.AREA_DMAABLE");
-  TwoDRegisterAccessor<int> t3 = target2.getTwoDRegisterAccessor<int>("TEST","NODMA");
+  auto t1 = target1.getOneDRegisterAccessor<int>("BOARD.WORD_USER");
+  auto t2 = target1.getOneDRegisterAccessor<int>("ADC.AREA_DMAABLE");
+  auto t3 = target2.getTwoDRegisterAccessor<int>("TEST/NODMA");
 
-  t1 = 120;
+  t1[0] = 120;
   t1.write();
-  for(unsigned int i=0; i<t2.getNumberOfElements(); i++) {
+  for(unsigned int i=0; i<t2.getNElements(); i++) {
     t2[i] = 67890 + 66*(signed)i;
   }
   t2.write();
@@ -217,22 +217,22 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   // read it back via the transfer group
   group.read();
 
-  BOOST_CHECK( a[0] == 120 );
+  BOOST_CHECK( a[0][0] == 120 );
 
-  BOOST_CHECK( t2.getNumberOfElements() == a[1].getNumberOfElements() );
-  for(unsigned int i=0; i<t2.getNumberOfElements(); i++) {
+  BOOST_CHECK( t2.getNElements() == a[1].getNElements() );
+  for(unsigned int i=0; i<t2.getNElements(); i++) {
     BOOST_CHECK( a[1][i] == 67890 + 66*(signed)i );
   }
 
-  BOOST_CHECK( a[2].getNumberOfElements() == 20 );
-  for(unsigned int i=0; i<a[2].getNumberOfElements(); i++) {
+  BOOST_CHECK( a[2].getNElements() == 20 );
+  for(unsigned int i=0; i<a[2].getNElements(); i++) {
     BOOST_CHECK( a[2][i] == 67890 + 66*(signed)(i+10) );
   }
 
-  BOOST_CHECK( a[5] == 42 );
+  BOOST_CHECK( a[5][0] == 42 );
 
   // write something to the multiplexed 2d register
-  for(unsigned int i=0; i<t3.getNumberOfDataSequences(); i++) {
+  for(unsigned int i=0; i<t3.getNChannels(); i++) {
     for(unsigned int k=0; k<t3[i].size(); k++) {
       t3[i][k] = (signed)( i*10 + k );
     }
@@ -242,13 +242,13 @@ void TransferGroupTest::testLogicalNameMappedRegister() {
   // read it back via transfer group
   group.read();
 
-  BOOST_CHECK( a[3].getNumberOfElements() == t3[3].size() );
-  for(unsigned int i=0; i<a[3].getNumberOfElements(); i++) {
+  BOOST_CHECK( a[3].getNElements() == t3[3].size() );
+  for(unsigned int i=0; i<a[3].getNElements(); i++) {
     BOOST_CHECK( a[3][i] == 3*10 + (signed)i );
   }
 
-  BOOST_CHECK( a[4].getNumberOfElements() == t3[4].size() );
-  for(unsigned int i=0; i<a[4].getNumberOfElements(); i++) {
+  BOOST_CHECK( a[4].getNElements() == t3[4].size() );
+  for(unsigned int i=0; i<a[4].getNElements(); i++) {
     BOOST_CHECK( a[4][i] == 4*10 + (signed)i );
   }
 

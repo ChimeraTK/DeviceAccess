@@ -20,8 +20,7 @@ int main() {
    *
    * We use a register named AREA_DATA_RAW which provides plain access to the data region.
    */
-  auto dataRegion
-    = myDevice.getBufferingRegisterAccessor<double>("ADC/AREA_DATA_RAW");
+  auto dataRegion = myDevice.getOneDRegisterAccessor<double>("ADC/AREA_DATA_RAW");
   int counter = 0;
   for (auto & dataWord : dataRegion){
     dataWord=counter++;

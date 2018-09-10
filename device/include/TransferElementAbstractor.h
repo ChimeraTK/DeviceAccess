@@ -22,7 +22,6 @@
 #include <boost/thread/future.hpp>
 
 #include "Exception.h"
-#include "TimeStamp.h"
 #include "TransferFuture.h"
 #include "VersionNumber.h"
 #include "TransferElement.h"

@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
+#include <chrono>
 
 namespace ChimeraTK {
 
@@ -14,42 +15,57 @@ namespace ChimeraTK {
    * it they can help in breaking an infinite update loop that might occur when two process variables are related and
    * update each other.
    *
-   * They are also used to determine the order of updates made to different process variables, e.g. to make sure that
-   * TransferElement::readAny() always returns the oldest change first.
+   * They are also used to determine the order of updates made to different process variables.
    */
   class VersionNumber {
 
     public:
 
-      /** Default constructor: Generate new unique version number */
-      VersionNumber() : _value(nextVersionNumber()) {}
+      /** Default constructor: Generate new unique version number with current time as time stamp */
+      VersionNumber()
+      : _value(nextVersionNumber()), _time(std::chrono::system_clock::now())
+      {}
 
       /** Copy constructor */
-      VersionNumber(const VersionNumber &other) : _value(other._value) {}
+      VersionNumber(const VersionNumber &other)
+      : _value(other._value), _time(other._time)
+      {}
 
       /** Copy the full state of another VersionNumber object. */
       VersionNumber& operator=(const VersionNumber &other) {
         _value = other._value;
+        _time = other._time;
         return *this;
       }
 
-      /** Comparison operators */
-      bool operator==(const VersionNumber &other) {
+      /** Return the time stamp associated with this version number */
+      std::chrono::time_point<std::chrono::system_clock> getTime() const {
+        return _time;
+      }
+
+      /**
+       *  Comparison operators.
+       *
+       *  Compare version number only, since they are ordered in time and atomically generated, so the result is
+       *  logically as expected. The time stamp is not precise and not atomically generated, so comparing it would
+       *  not be precise.
+       */
+      bool operator==(const VersionNumber &other) const {
         return _value == other._value;
       }
-      bool operator!=(const VersionNumber &other) {
+      bool operator!=(const VersionNumber &other) const {
         return _value != other._value;
       }
-      bool operator>(const VersionNumber &other) {
+      bool operator>(const VersionNumber &other) const {
         return _value > other._value;
       }
-      bool operator<(const VersionNumber &other) {
+      bool operator<(const VersionNumber &other) const {
         return _value < other._value;
       }
-      bool operator>=(const VersionNumber &other) {
+      bool operator>=(const VersionNumber &other) const {
         return _value >= other._value;
       }
-      bool operator<=(const VersionNumber &other) {
+      bool operator<=(const VersionNumber &other) const {
         return _value <= other._value;
       }
 
@@ -65,6 +81,11 @@ namespace ChimeraTK {
        * The version number held by this instance
        */
       std::uint64_t  _value;
+
+      /**
+       * The time stamp held by this instance
+       */
+      std::chrono::time_point<std::chrono::system_clock> _time;
 
       /**
       * Returns the next version number. The next version number is determined in an atomic way, so that it is

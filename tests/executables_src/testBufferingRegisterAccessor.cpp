@@ -1,4 +1,5 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "boost_dynamic_init_test.h"
 
 #include <algorithm>

@@ -164,20 +164,8 @@ namespace ChimeraTK {
        *  The function only works for 1D registers. For 2D registers, see Device::getTwoDRegisterAccessor. The optional
        *  argument wordOffsetInRegister allows to skip the first wordOffsetInRegister elements of the register. */
       template<typename UserType>
-      void write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister=0,
+      void write(const RegisterPath &registerPathName, const std::vector<UserType> &vector, size_t wordOffsetInRegister=0,
           const AccessModeFlags &flags=AccessModeFlags({}));
-
-      /** \brief <b>DEPRECATED</b>
-       *
-       *  \deprecated
-       *  <b>Inefficient convenience function</b> to read a single-word register without obtaining an accessor.
-       *  This version accepts a boolean flag to enable raw access instead of the AccessModeFlags list. It is
-       *  deprecated and should not be used in new code. Use the new version with the AccessModeFlags instead.
-       *
-       *  @todo Add printed runtime warning. Deprecated since version 0.12 */
-      template<typename UserType>
-      [[deprecated("Use new signature instead!")]]
-      UserType read(const RegisterPath &registerPathName, bool enforceRawAccess) const;
 
       /** \brief <b>DEPRECATED</b>
        *
@@ -297,6 +285,7 @@ namespace ChimeraTK {
        *  This function is deprecated. Use Device::write() instead.
        *  @todo Add printed runtime warning after release of version 0.9
        */
+      [[deprecated("Use write() instead!")]]
       virtual void readReg(const std::string &regName, int32_t *data,
           size_t dataSize = 0, uint32_t addRegOffset = 0) const;
 
@@ -608,20 +597,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void Device::write(const RegisterPath &registerPathName, std::vector<UserType> &vector, size_t wordOffsetInRegister,
+  void Device::write(const RegisterPath &registerPathName, const std::vector<UserType> &vector, size_t wordOffsetInRegister,
       const AccessModeFlags &flags) {
      auto acc = getOneDRegisterAccessor<UserType>(registerPathName, vector.size(), wordOffsetInRegister, flags);
-     acc.swap(vector);
+     // the vector stays constant, but we have to work around so we can swap it and later swap it back...
+     std::vector<UserType> &mutable_vector = const_cast<std::vector<UserType>&>(vector);
+     acc.swap(mutable_vector);
      acc.write();
-     acc.swap(vector);
+     acc.swap(mutable_vector);
    }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  UserType Device::read(const RegisterPath &registerPathName, bool enforceRawAccess) const {
-    return read<UserType>(registerPathName, ( enforceRawAccess ? AccessModeFlags({AccessMode::raw}) : AccessModeFlags({}) ) );
-  }
 
   /********************************************************************************************************************/
 

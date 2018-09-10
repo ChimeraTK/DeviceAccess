@@ -12,7 +12,6 @@ using namespace boost::unit_test_framework;
 #include "DummyBackend.h"
 #include "MapFileParser.h"
 #include "BackendFactory.h"
-#include "MultiplexedDataAccessor.h"
 #include "Device.h"
 
 namespace ChimeraTK{
@@ -59,12 +58,9 @@ void testDeMultiplexing(std::string areaName) {
     Device device;
     device.open(DEVICE_ALIAS);
 
-    //get the sequence info from the map file
-    boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
-    RegisterInfoMap::RegisterInfo sequenceInfo;
-    registerMap->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_"+areaName, sequenceInfo, TEST_MODULE_NAME);
-
-    std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/sizeof(SequenceWordType) );
+    std::vector<SequenceWordType> ioBuffer(15);
+    auto area = device.getOneDRegisterAccessor<int32_t>(TEST_MODULE_NAME+"/AREA_MULTIPLEXED_SEQUENCE_"+areaName);
+    size_t nBytes = std::min(area.getNElements() * sizeof(int32_t), 15 * sizeof(SequenceWordType));
     ioBuffer[0] = 'A';
     ioBuffer[1] = 'a';
     ioBuffer[2] = '0';
@@ -80,8 +76,8 @@ void testDeMultiplexing(std::string areaName) {
     ioBuffer[12] = 'E';
     ioBuffer[13] = 'e';
     ioBuffer[14] = '4';
-
-    device.writeArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
+    memcpy(&(area[0]), ioBuffer.data(), nBytes);
+    area.write();
 
     TwoDRegisterAccessor<SequenceWordType> deMultiplexer = device.getTwoDRegisterAccessor<SequenceWordType>(TEST_MODULE_PATH/areaName);
 
@@ -114,7 +110,8 @@ void testDeMultiplexing(std::string areaName) {
     }
 
     deMultiplexer.write();
-    device.readArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
+    area.read();
+    memcpy(ioBuffer.data(), &(area[0]), nBytes);
 
     BOOST_CHECK( ioBuffer[0] == 'F' );
     BOOST_CHECK( ioBuffer[1] == 'f' );
@@ -153,18 +150,15 @@ void testWithConversion(std::string multiplexedSequenceName) {
     Device device;
     device.open(DEVICE_ALIAS);
 
-    //get the sequence info from the map file
-    boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
-    RegisterInfoMap::RegisterInfo sequenceInfo;
-    registerMap->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName, sequenceInfo, TEST_MODULE_NAME);
-
-    std::vector< SequenceWordType > ioBuffer( sequenceInfo.nBytes/sizeof(SequenceWordType) );
+    std::vector<SequenceWordType> ioBuffer(15);
+    auto area = device.getOneDRegisterAccessor<int32_t>(TEST_MODULE_PATH / MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName);
+    size_t nBytes = std::min(area.getNElements() * sizeof(int32_t), 15 * sizeof(SequenceWordType));
 
     for (size_t i=0; i < ioBuffer.size(); ++i) {
       ioBuffer[i] = i;
     }
-
-    device.writeArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
+    memcpy(&(area[0]), ioBuffer.data(), nBytes);
+    area.write();
 
     TwoDRegisterAccessor<float> accessor = device.getTwoDRegisterAccessor<float>(TEST_MODULE_PATH/multiplexedSequenceName);
     accessor.read();
@@ -192,7 +186,9 @@ void testWithConversion(std::string multiplexedSequenceName) {
     }
 
     accessor.write();
-    device.readArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
+
+    area.read();
+    memcpy(ioBuffer.data(), &(area[0]), nBytes);
 
     for(size_t i=0; i < 15; ++i) {
       // with i%3+1 fractional bits the added floating point value of 1
@@ -214,37 +210,6 @@ BOOST_AUTO_TEST_CASE(testWithConversion8) {
   testWithConversion<int8_t>("FRAC_CHAR");
 }
 
-BOOST_AUTO_TEST_CASE(testReadWriteToDMARegion) {
-  boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
-  // open a dummy device with the sequence map file
-  BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
-  Device device;
-  device.open(DEVICE_ALIAS);
-
-  RegisterInfoMap::RegisterInfo sequenceInfo;
-  registerMap->getRegisterInfo( MULTIPLEXED_SEQUENCE_PREFIX + "DMA", sequenceInfo, TEST_MODULE_NAME);
-
-
-  std::vector<int16_t> ioBuffer( sequenceInfo.nBytes / sizeof(int16_t) );
-
-  for(size_t i = 0; i < ioBuffer.size(); ++i) {
-    ioBuffer[i]=i;
-  }
-
-  device.writeArea(sequenceInfo.address, reinterpret_cast<int32_t*>( &(ioBuffer[0]) ), sequenceInfo.nBytes, sequenceInfo.bar);
-
-  TwoDRegisterAccessor<double> deMultiplexer = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"DMA");
-  deMultiplexer.read();
-
-  int j=0;
-  for(size_t i=0; i< 4; ++i) {
-    for(size_t sequenceIndex=0; sequenceIndex<16; ++sequenceIndex) {
-      BOOST_CHECK( deMultiplexer[sequenceIndex][i] == 4 * j++ );
-    }
-  }
-
-}
-
 BOOST_AUTO_TEST_CASE(testMixed) {
 
   // open a dummy device with the sequence map file
@@ -253,7 +218,7 @@ BOOST_AUTO_TEST_CASE(testMixed) {
   device.open(DEVICE_MIXED_ALIAS);
 
   TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM");
-  BufferingRegisterAccessor<int32_t> myRawData = device.getBufferingRegisterAccessor<int32_t>("APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,true);
+  auto myRawData = device.getOneDRegisterAccessor<int32_t>("APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,{AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
   BOOST_CHECK(myMixedData.getNumberOfSamples() == 372);
@@ -311,45 +276,6 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
 
 
 
-BOOST_AUTO_TEST_CASE(testCompatibilityLayer) {
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-  Device device;
-  device.open("PCIE3");
-
-  boost::shared_ptr< ChimeraTK::MultiplexedDataAccessor<unsigned int> > acc =
-      device.getCustomAccessor< ChimeraTK::MultiplexedDataAccessor<unsigned int> >("NODMA","TEST");
-
-  BOOST_CHECK_THROW( acc->getFixedPointConverter(), ChimeraTK::logic_error );
-
-  BOOST_CHECK(acc->getNumberOfDataSequences() == 16);
-  BOOST_CHECK((*acc)[0].size() == 4);
-
-  acc->read();
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      (*acc)[i][k] = i+3*k;
-    }
-  }
-
-  acc->write();
-
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      (*acc)[i][k] = 0;
-    }
-  }
-
-  acc->read();
-
-  for(unsigned int i=0; i<acc->getNumberOfDataSequences(); i++) {
-    for(unsigned int k=0; k<(*acc)[i].size(); k++) {
-      BOOST_CHECK( (*acc)[i][k] == i+3*k );
-    }
-  }
-
-}
-
 
 BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
 
@@ -361,8 +287,8 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
   const size_t nWordsPerBlock = 44/sizeof(int32_t);
 
   TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 0, 42);
-  BufferingRegisterAccessor<int32_t> myRawData = device.getBufferingRegisterAccessor<int32_t>(
-      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,42*nWordsPerBlock,true);
+  auto myRawData = device.getOneDRegisterAccessor<int32_t>(
+                     "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,42*nWordsPerBlock,{AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
   BOOST_CHECK(myMixedData.getNumberOfSamples() == 372-42);
@@ -454,8 +380,8 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestLength) {
   const size_t nWordsPerBlock = 44/sizeof(int32_t);
 
   TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 120);
-  BufferingRegisterAccessor<int32_t> myRawData = device.getBufferingRegisterAccessor<int32_t>(
-      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,true);
+  auto myRawData = device.getOneDRegisterAccessor<int32_t>(
+      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,{AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
   BOOST_CHECK(myMixedData.getNumberOfSamples() == 120);
