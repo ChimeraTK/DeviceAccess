@@ -32,34 +32,43 @@ namespace ChimeraTK {
         _fixedPointConverter(registerPathName, 32, 0, 1)
       {
         try {
+          // cast device
+          _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
           // check for unknown flags
           flags.checkForUnknownFlags({AccessMode::raw});
-          // check for illegal parameter combinations
-          if(wordOffsetInRegister != 0 || numberOfWords > 1) {
-            throw ChimeraTK::logic_error("LNMBackendBufferingVariableAccessor: offset and number of words not "
-                "supported!"); // LCOV_EXCL_LINE (impossible to test...)
-          }
-          if(flags.has(AccessMode::raw)) {
-            if(typeid(UserType) != typeid(int32_t)) {
-              throw ChimeraTK::logic_error("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in raw mode"
-                  " does not match the expected type. Use an int32_t instead!");
-            }
-          }
-          _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
           // obtain the register info
           _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
               _dev->getRegisterCatalogue().getRegister(_registerPathName));
+          // check for illegal parameter combinations
+          if(wordOffsetInRegister+numberOfWords > _info->length) {
+            throw ChimeraTK::logic_error("Requested number of words and/or offset exceeds length of register '"
+                                         +registerPathName+"'.");
+          }
+          if(flags.has(AccessMode::raw)) {
+            if(typeid(UserType) != typeid(int32_t)) {
+              throw ChimeraTK::logic_error("Given UserType when obtaining the LNMBackendBufferingVariableAccessor in"
+                  " raw mode does not match the expected type. Use an int32_t instead!");
+            }
+            std::cout << "WARNING: You are using AccessMode::raw on a variable/constant-type register in a logical "
+                         "name mapping device. This is DEPRECATED and support for it will be removed soon!" << std::endl;
+          }
           // check for incorrect usage of this accessor
           if( _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT &&
               _info->targetType != LNMBackendRegisterInfo::TargetType::INT_VARIABLE    ) {
-            throw ChimeraTK::logic_error("LNMBackendBufferingVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
+            throw ChimeraTK::logic_error("LNMBackendVariableAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
           }
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
-          NDRegisterAccessor<UserType>::buffer_2D[0].resize(_info->length);
-          size_t m = _info->length;
-          if(_info->value_int.size() < m) _info->value_int.size();
+          if(numberOfWords == 0) {
+            NDRegisterAccessor<UserType>::buffer_2D[0].resize(_info->length);
+          }
+          else {
+            NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfWords);
+          }
+          size_t m = NDRegisterAccessor<UserType>::buffer_2D[0].size();
+          if(_info->value_int.size() < m+wordOffsetInRegister) m = _info->value_int.size()-wordOffsetInRegister;
           for(size_t i=0; i < m; ++i) {
-            NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(_info->value_int[i]);
+            auto &v = _info->value_int[i+wordOffsetInRegister];
+            NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(v);
           }
         }
         catch(...) {
