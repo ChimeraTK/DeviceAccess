@@ -30,15 +30,6 @@ BOOST_AUTO_TEST_CASE( testOpenClose ) {
 
     Device dev;
     BOOST_CHECK(!dev.isOpened());
-
-
-    std::cerr << "*************************************************************************************" << std::endl;
-    std::cerr << "*************************************************************************************" << std::endl;
-    std::cerr << "*** WARNING: Tests for SharedDummyBackend have been disabled! ***********************" << std::endl;
-    std::cerr << "*************************************************************************************" << std::endl;
-    std::cerr << "*************************************************************************************" << std::endl;
-
-
     dev.open("SHDMEMDEV");
     BOOST_CHECK(dev.isOpened());
     dev.close();
