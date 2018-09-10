@@ -21,6 +21,7 @@ class VersionNumberTest {
     void testAssign();
     void testThreadedCreation();
     void testStringConvert();
+    void testTimeStamp();
 
     VersionNumber v1;
     VersionNumber v2;
@@ -45,6 +46,7 @@ class VersionNumberTestSuite : public test_suite {
       add(BOOST_CLASS_TEST_CASE(&VersionNumberTest::testAssign, test));
       add(BOOST_CLASS_TEST_CASE(&VersionNumberTest::testThreadedCreation, test));
       add(BOOST_CLASS_TEST_CASE(&VersionNumberTest::testStringConvert, test));
+      add(BOOST_CLASS_TEST_CASE(&VersionNumberTest::testTimeStamp, test));
     }
 };
 
@@ -331,4 +333,18 @@ void VersionNumberTest::testStringConvert() {
   BOOST_CHECK_EQUAL(s2, s2c);
   BOOST_CHECK_EQUAL(s3, s3c);
   BOOST_CHECK_EQUAL(s4, s4c);
+}
+
+void VersionNumberTest::testTimeStamp() {
+  auto t0 = std::chrono::system_clock::now();
+  VersionNumber vv0;
+  BOOST_CHECK( vv0.getTime() >= t0 );
+  VersionNumber vv1;
+  BOOST_CHECK( vv1.getTime() >= vv0.getTime() );
+  sleep(1);
+  VersionNumber vv2;
+  BOOST_CHECK( vv2.getTime() > vv1.getTime() );
+  sleep(1);
+  auto t1 = std::chrono::system_clock::now();
+  BOOST_CHECK( vv2.getTime() < t1 );
 }
