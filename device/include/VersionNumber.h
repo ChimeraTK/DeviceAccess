@@ -23,7 +23,7 @@ namespace ChimeraTK {
 
       /** Default constructor: Generate new unique version number with current time as time stamp */
       VersionNumber()
-      : _value(nextVersionNumber()), _time(std::chrono::steady_clock::now())
+      : _value(nextVersionNumber()), _time(std::chrono::system_clock::now())
       {}
 
       /** Copy constructor */
@@ -39,7 +39,7 @@ namespace ChimeraTK {
       }
 
       /** Return the time stamp associated with this version number */
-      std::chrono::time_point<std::chrono::steady_clock> getTime() const {
+      std::chrono::time_point<std::chrono::system_clock> getTime() const {
         return _time;
       }
 
@@ -85,7 +85,7 @@ namespace ChimeraTK {
       /**
        * The time stamp held by this instance
        */
-      std::chrono::time_point<std::chrono::steady_clock> _time;
+      std::chrono::time_point<std::chrono::system_clock> _time;
 
       /**
       * Returns the next version number. The next version number is determined in an atomic way, so that it is
