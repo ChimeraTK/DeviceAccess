@@ -130,7 +130,16 @@ BOOST_AUTO_TEST_CASE( testReadWriteConstant ) {
     BOOST_CHECK_EQUAL( arrayConstant[2], 3333 );
     BOOST_CHECK_EQUAL( arrayConstant[3], 4444 );
     BOOST_CHECK_EQUAL( arrayConstant[4], 5555 );
-    BOOST_CHECK_THROW( acc.write(), ChimeraTK::logic_error );
+    BOOST_CHECK_THROW( arrayConstant.write(), ChimeraTK::logic_error );
+
+    auto partOfArrayConstant = device.getOneDRegisterAccessor<int>("/ArrayConstant",2,1);
+    BOOST_CHECK_EQUAL( partOfArrayConstant.getNElements(), 2 );
+    BOOST_CHECK_EQUAL( partOfArrayConstant[0], 2222 );
+    BOOST_CHECK_EQUAL( partOfArrayConstant[1], 3333 );
+    partOfArrayConstant.read();
+    BOOST_CHECK_EQUAL( partOfArrayConstant[0], 2222 );
+    BOOST_CHECK_EQUAL( partOfArrayConstant[1], 3333 );
+    BOOST_CHECK_THROW( partOfArrayConstant.write(), ChimeraTK::logic_error );
 
     device.close();
 
