@@ -27,9 +27,20 @@
 #
 #######################################################################################################################
 
+message("")
+message("****************************************************************************************************")
+message("*    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!     *")
+message("*                                                                                                  *")
+message("*        You are searching for ChimeraTK-DeviceAccess by its old name mtca4u-deviceaccess!         *")
+message("*          Please update your CMakeLists.txt, support for the old name will go away soon!          *")
+message("*                                                                                                  *")
+message("*    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!     *")
+message("****************************************************************************************************")
+message("")
+
 # The library itself must be "searched" using the FIND_LIBRARY command in the known install directory, to set
 # the variable properly
-FIND_LIBRARY(mtca4u-deviceaccess_LIBRARY ChimeraTK-deviceaccess
+FIND_LIBRARY(mtca4u-deviceaccess_LIBRARY ChimeraTK-DeviceAccess
   @CMAKE_INSTALL_PREFIX@/lib
   NO_DEFAULT_PATH
 )
