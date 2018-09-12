@@ -47,7 +47,7 @@ FIND_LIBRARY(mtca4u-deviceaccess_LIBRARY ChimeraTK-DeviceAccess
 
 # Since this file is already part of the installation to be found, the configuration can be hard-coded at
 # installation time
-set(mtca4u-deviceaccess_VERSION "@ChimeraTK-DeviceAccess@")
+set(mtca4u-deviceaccess_VERSION "@ChimeraTK-DeviceAccess_VERSION@")
 set(mtca4u-deviceaccess_INCLUDE_DIRS @ChimeraTK-DeviceAccess_INCLUDE_DIRS@)
 set(mtca4u-deviceaccess_LIBRARY_DIRS @ChimeraTK-DeviceAccess_LIBRARY_DIRS@)
 set(mtca4u-deviceaccess_LIBRARIES ${mtca4u-deviceaccess_LIBRARY} @ChimeraTK-DeviceAccess_LIBRARIES@)
