@@ -47,13 +47,13 @@ FIND_LIBRARY(mtca4u-deviceaccess_LIBRARY ChimeraTK-DeviceAccess
 
 # Since this file is already part of the installation to be found, the configuration can be hard-coded at
 # installation time
-set(mtca4u-deviceaccess_VERSION "@ChimeraTK-deviceaccess_SOVERSION@")
-set(mtca4u-deviceaccess_INCLUDE_DIRS @ChimeraTK-deviceaccess_INCLUDE_DIRS@)
-set(mtca4u-deviceaccess_LIBRARY_DIRS @ChimeraTK-deviceaccess_LIBRARY_DIRS@)
-set(mtca4u-deviceaccess_LIBRARIES ${mtca4u-deviceaccess_LIBRARY} @ChimeraTK-deviceaccess_LIBRARIES@)
-set(mtca4u-deviceaccess_CXX_FLAGS "@ChimeraTK-deviceaccess_CXX_FLAGS@")
-set(mtca4u-deviceaccess_LINKER_FLAGS "@ChimeraTK-deviceaccess_LINKER_FLAGS@ @ChimeraTK-deviceaccess_LINK_FLAGS@")
-set(mtca4u-deviceaccess_LINK_FLAGS "@ChimeraTK-deviceaccess_LINKER_FLAGS@ @ChimeraTK-deviceaccess_LINK_FLAGS@")
+set(mtca4u-deviceaccess_VERSION "@ChimeraTK-DeviceAccess@")
+set(mtca4u-deviceaccess_INCLUDE_DIRS @ChimeraTK-DeviceAccess_INCLUDE_DIRS@)
+set(mtca4u-deviceaccess_LIBRARY_DIRS @ChimeraTK-DeviceAccess_LIBRARY_DIRS@)
+set(mtca4u-deviceaccess_LIBRARIES ${mtca4u-deviceaccess_LIBRARY} @ChimeraTK-DeviceAccess_LIBRARIES@)
+set(mtca4u-deviceaccess_CXX_FLAGS "@ChimeraTK-DeviceAccess_CXX_FLAGS@")
+set(mtca4u-deviceaccess_LINKER_FLAGS "@ChimeraTK-DeviceAccess_LINKER_FLAGS@ @ChimeraTK-DeviceAccess_LINK_FLAGS@")
+set(mtca4u-deviceaccess_LINK_FLAGS "@ChimeraTK-DeviceAccess_LINKER_FLAGS@ @ChimeraTK-DeviceAccess_LINK_FLAGS@")
 set(mtca4u-deviceaccess_PREFIX "@CMAKE_INSTALL_PREFIX@")
 
 # Use a macro provided by CMake to check if all the listed arguments are valid and set mtca4u-deviceaccess_FOUND accordingly.
