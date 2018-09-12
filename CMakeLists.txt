@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.0.2)
-Project(mtca4u-deviceaccess)
+Project(ChimeraTK-deviceaccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 00)
@@ -175,8 +175,7 @@ endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
-# debian packaging
-include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
+# Doxygen documentation
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
@@ -198,3 +197,9 @@ enable_testing()
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tests")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/examples")
 
+
+# compatibility with the old project name mtca4u-deviceaccess
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Findmtca4u-deviceaccess.cmake.in "${PROJECT_BINARY_DIR}/Findmtca4u-deviceaccess.cmake" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/Findmtca4u-deviceaccess.cmake"
+        DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules
+        COMPONENT dev)

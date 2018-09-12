@@ -1,0 +1,54 @@
+#######################################################################################################################
+#
+# cmake module for finding mtca4u-deviceaccess
+#
+# returns:
+#   mtca4u-deviceaccess_FOUND        : true or false, depending on whether the package was found
+#   mtca4u-deviceaccess_VERSION      : the package version
+#   mtca4u-deviceaccess_INCLUDE_DIRS : path to the include directory
+#   mtca4u-deviceaccess_LIBRARY_DIRS : path to the library directory
+#   mtca4u-deviceaccess_LIBRARIES    : libraries the depending project needs to link against
+#   mtca4u-deviceaccess_CXX_FLAGS    : additional C++ compiler flags
+#   mtca4u-deviceaccess_LINKER_FLAGS : additional linker flags
+#
+# @author Martin Killenberg, DESY
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
+# The library itself must be "searched" using the FIND_LIBRARY command in the known install directory, to set
+# the variable properly
+FIND_LIBRARY(mtca4u-deviceaccess_LIBRARY ChimeraTK-deviceaccess
+  @CMAKE_INSTALL_PREFIX@/lib
+  NO_DEFAULT_PATH
+)
+
+# Since this file is already part of the installation to be found, the configuration can be hard-coded at
+# installation time
+set(mtca4u-deviceaccess_VERSION "@ChimeraTK-deviceaccess_SOVERSION@")
+set(mtca4u-deviceaccess_INCLUDE_DIRS @ChimeraTK-deviceaccess_INCLUDE_DIRS@)
+set(mtca4u-deviceaccess_LIBRARY_DIRS @ChimeraTK-deviceaccess_LIBRARY_DIRS@)
+set(mtca4u-deviceaccess_LIBRARIES ${mtca4u-deviceaccess_LIBRARY} @ChimeraTK-deviceaccess_LIBRARIES@)
+set(mtca4u-deviceaccess_CXX_FLAGS "@ChimeraTK-deviceaccess_CXX_FLAGS@")
+set(mtca4u-deviceaccess_LINKER_FLAGS "@ChimeraTK-deviceaccess_LINKER_FLAGS@ @ChimeraTK-deviceaccess_LINK_FLAGS@")
+set(mtca4u-deviceaccess_LINK_FLAGS "@ChimeraTK-deviceaccess_LINKER_FLAGS@ @ChimeraTK-deviceaccess_LINK_FLAGS@")
+set(mtca4u-deviceaccess_PREFIX "@CMAKE_INSTALL_PREFIX@")
+
+# Use a macro provided by CMake to check if all the listed arguments are valid and set mtca4u-deviceaccess_FOUND accordingly.
+# This is mainly important to check the version.
+set(mtca4u-deviceaccess_FOUND 0)
+include(FindPackageHandleStandardArgs)
+
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(mtca4u-deviceaccess REQUIRED_VARS mtca4u-deviceaccess_PREFIX VERSION_VAR mtca4u-deviceaccess_VERSION FOUND_VAR mtca4u-deviceaccess_FOUND)
+
