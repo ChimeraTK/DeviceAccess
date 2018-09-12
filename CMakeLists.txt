@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.0.2)
-Project(ChimeraTK-deviceaccess)
+Project(ChimeraTK-DeviceAccess)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 00)
