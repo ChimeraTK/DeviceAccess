@@ -20,7 +20,7 @@ namespace ChimeraTK {
     std::string absPathToDMapFile = utilities::convertToAbsolutePath(file_name);
 
     file.open(absPathToDMapFile.c_str());
-    if (!file) {        
+    if (!file) {
       throw ChimeraTK::logic_error("Cannot open dmap file: \"" + absPathToDMapFile + "\"");
     }
 
@@ -35,8 +35,8 @@ namespace ChimeraTK {
         continue;
       }
       if (line[0] == '@'){
-	parseForLoadLib(file_name, line, line_nr, dmap);
-	continue;
+        parseForLoadLib(file_name, line, line_nr, dmap);
+        continue;
       }
       parseRegularLine(file_name, line, line_nr, dmap);
     }
@@ -49,7 +49,7 @@ namespace ChimeraTK {
   }
 
   void DMapFileParser::parseForLoadLib(std::string file_name, std::string line,
-				       uint32_t line_nr, DeviceInfoMapPointer dmap){
+                                       uint32_t line_nr, DeviceInfoMapPointer dmap){
     // we expect at leat two tokens: the key and the value
     std::istringstream s;
     std::string key, value;
@@ -63,10 +63,10 @@ namespace ChimeraTK {
   }
 
   void DMapFileParser::parseRegularLine(std::string file_name, std::string line,
-					uint32_t line_nr, DeviceInfoMapPointer dmap){
+                                        uint32_t line_nr, DeviceInfoMapPointer dmap){
     std::istringstream inStream;
     DeviceInfoMap::DeviceInfo deviceInfo;
-	
+
     inStream.str(line);
     inStream >> deviceInfo.deviceName >> deviceInfo.uri >> deviceInfo.mapFileName;
 
@@ -78,13 +78,25 @@ namespace ChimeraTK {
       deviceInfo.dmapFileLineNumber = line_nr;
       dmap->insert(deviceInfo);
     } else {
-      raiseException(file_name, line, line_nr);
+      std::istringstream inStream2;
+      inStream2.str(line);
+      inStream2 >> deviceInfo.deviceName >> deviceInfo.uri;
+
+      if (inStream2) {
+        std::string absPathToDMapFile = utilities::convertToAbsolutePath(file_name);
+        deviceInfo.mapFileName = "";
+        deviceInfo.dmapFileName = absPathToDMapFile;
+        deviceInfo.dmapFileLineNumber = line_nr;
+        dmap->insert(deviceInfo);
+      } else {
+        raiseException(file_name, line, line_nr);
+      }
     }
   }
 
   std::string DMapFileParser::absPathOfDMapContent(std::string dmapContent, std::string dmapFileName){
     // first determine the absolute path to the dmap file
-    std::string absPathToDMapFile = utilities::convertToAbsolutePath(dmapFileName);    
+    std::string absPathToDMapFile = utilities::convertToAbsolutePath(dmapFileName);
     // then extract the directory
     std::string absPathToDmapDirectory = utilities::extractDirectory(absPathToDMapFile);
     // now concatenate the dmap diretory to the entry in the dmap file (if the latter
@@ -95,9 +107,9 @@ namespace ChimeraTK {
   void DMapFileParser::raiseException(std::string file_name, std::string line, uint32_t line_nr){
     std::stringstream errorMessage;
     errorMessage << "Error in dmap file: \"" << file_name << "\" in line (" << line_nr
-		 << ") \"" << line << "\"";
+                 << ") \"" << line << "\"";
     throw ChimeraTK::logic_error(errorMessage.str());
   }
 
-  
+
 }//namespace ChimeraTK

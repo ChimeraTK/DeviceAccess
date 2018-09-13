@@ -62,7 +62,7 @@ void DMapFileParserTest::testErrorInDmapFile() {
   ChimeraTK::DMapFileParser fileParser;
 
   BOOST_CHECK_THROW(fileParser.parse(incorrect_dmap_file), ChimeraTK::logic_error);
-  
+
   BOOST_CHECK_THROW(fileParser.parse("badLoadlib.dmap"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(fileParser.parse("badLoadlib2.dmap"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(fileParser.parse("unkownKey.dmap"), ChimeraTK::logic_error);
@@ -84,6 +84,7 @@ void DMapFileParserTest::testParseFile() {
   ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
   ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
   ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo4;
 
   std::string absPathToDmap = ChimeraTK::parserUtilities::convertToAbsolutePath("valid.dmap");
   std::string absPathToDmapDir = ChimeraTK::parserUtilities::getCurrentWorkingDirectory();
@@ -94,22 +95,25 @@ void DMapFileParserTest::testParseFile() {
       ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir, "./goodMapFile_withoutModules.map"));
   populateDummyDeviceInfo(deviceInfo3, absPathToDmap, "card3", "/dev/dev3",
       ChimeraTK::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
+  populateDummyDeviceInfo(deviceInfo4, absPathToDmap, "card4", "(pci:mtcadummys0?map=goodMapFile_withoutModules.map)", "");
 
   deviceInfo1.dmapFileLineNumber = 6;
   deviceInfo2.dmapFileLineNumber = 7;
   deviceInfo3.dmapFileLineNumber = 8;
+  deviceInfo4.dmapFileLineNumber = 9;
 
   // we use require here so it is safe to increase and dereference the iterator below
-  BOOST_REQUIRE( mapFilePtr->getSize() == 3);
+  BOOST_REQUIRE( mapFilePtr->getSize() == 4);
 
   ChimeraTK::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
 
   BOOST_CHECK( compareDeviceInfos(deviceInfo1, *(it++)) == true);
   BOOST_CHECK( compareDeviceInfos(deviceInfo2, *(it++)) == true);
   BOOST_CHECK( compareDeviceInfos(deviceInfo3, *(it++)) == true);
+  BOOST_CHECK( compareDeviceInfos(deviceInfo4, *(it++)) == true);
 
   auto pluginLibraries = mapFilePtr->getPluginLibraries();
-  
+
   BOOST_CHECK( pluginLibraries.size() == 2 );
   BOOST_CHECK( pluginLibraries[0]  == absPathToDmapDir+"libMyLib.so" );
   BOOST_CHECK( pluginLibraries[1] == "/system/libAnotherLib.so" );
