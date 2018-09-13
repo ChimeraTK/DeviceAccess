@@ -18,28 +18,152 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   size_t Utilities::countOccurence(std::string theString, char delimiter)
   {
     size_t  count = std::count(theString.begin(), theString.end(), delimiter);
     return count;
   }
 
-  bool Utilities::isSdm(std::string sdmString) {
-    try
-    {
-      parseSdm(sdmString);
-    }
-    catch(ChimeraTK::logic_error &ue)
-    {
-      return false;
-    }
+  /********************************************************************************************************************/
+
+  bool Utilities::isSdm(std::string theString) {
+    size_t signatureLen = 6;
+    if(theString.length() < signatureLen) return false;
+    if(theString.substr(0,6) != "sdm://") return false;
     return true;
   }
+
+  /********************************************************************************************************************/
+
+  bool Utilities::isDeviceDescriptor(std::string theString) {
+    boost::trim(theString);
+    if(theString.length() < 3) return false;
+    if(theString.substr(0,1) != "(") return false;
+    if(theString.substr(theString.length()-1,1) != ")") return false;
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
+  DeviceDescriptor Utilities::parseDeviceDesciptor(std::string cddString) {
+    DeviceDescriptor result;
+
+    // first trim the string to remove whitspaces before and after the outer parentheses
+    boost::trim(cddString);
+
+    // simple initial checks
+    if(cddString.length() < 3) {
+      throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (too short): "+cddString);
+    }
+    if(cddString.substr(0,1) != "(") {
+      throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (missing opening parenthesis): "+cddString);
+    }
+    if(cddString.substr(cddString.length()-1,1) != ")") {
+      throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (missing opening parenthesis): "+cddString);
+    }
+
+    // walk through string
+    size_t parenthesesLevel = 0;
+    enum class tokenType { backendType, address, parameters };
+    tokenType currentTokenType = tokenType::backendType;
+    bool escapeNext = false;
+    std::string token;
+    size_t positionPlusOne = 0;
+    for(auto &c : cddString) {
+      ++positionPlusOne;
+      // are we indide the outer main parenthesis but not within a deeper level?
+      if(parenthesesLevel == 1) {
+        // should the current character be escaped?
+        if(escapeNext) {
+          token += c;
+          escapeNext = false;
+          continue; // no further parsing of this character!
+        }
+        // current character should be parsed normally
+        if(c == '\\') {
+          // escape next character
+          escapeNext = true;
+        }
+        else if(currentTokenType == tokenType::backendType && ( c == ':' || c == '?' || c == ')' ) ) {
+          // backendType token complete
+          boost::trim(token);
+          if(token.length() == 0) {
+            throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (backend type must be non-empty): "+cddString);
+          }
+          if(!boost::all(token, boost::is_alnum())) {
+            throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (backend type must be alphanumeric): "+cddString);
+          }
+          result.backendType = token;
+          token = "";
+          // determine next token type by checking the delimiter (')' will be processed below)
+          if(c == ':') {
+            currentTokenType = tokenType::address;
+          }
+          else if(c == '?') {
+            currentTokenType = tokenType::parameters;
+          }
+        }
+        else if(currentTokenType == tokenType::address && ( c == '?' || c == ')' ) ) {
+          // address token complete
+          boost::trim(token);
+          result.address = token;
+          token = "";
+          currentTokenType = tokenType::parameters;   //  ')' will be processed below
+        }
+        else if(currentTokenType == tokenType::parameters && ( c == '&' || c == ')' ) ) {
+          // parameter token complete (for one key-value pair)
+          boost::trim(token);
+          if(token.length() > 0) {    // ignore empty parameter
+            auto equalSign = token.find_first_of("=");
+            if(equalSign == std::string::npos) {
+              throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (parameters must be specified as key=value pairs): "+cddString);
+            }
+            auto key = token.substr(0,equalSign);
+            auto value = token.substr(equalSign+1);
+            boost::trim(key);
+            if(key.length() == 0) {
+              throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (parameter key names must not be empty): "+cddString);
+            }
+            if(!boost::all(key, boost::is_alnum())) {
+              throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (parameter key names must contain only alphanumeric characters): "+cddString);
+            }
+            boost::trim(value);
+            if(result.parameters.find(key) != result.parameters.end()) {
+              throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (parameter '"+key+"' specified multiple times): "+cddString);
+            }
+            result.parameters[key] = value;
+            token = "";
+          }
+        }
+        else {
+          token += c;
+        }
+      }
+      else if(parenthesesLevel > 1) {
+        // deeper level: add all characters to current token
+        token += c;
+      }
+      if(c == '(') {
+        ++parenthesesLevel;
+      }
+      else if(c == ')') {
+        --parenthesesLevel;
+        if(parenthesesLevel == 0 && positionPlusOne != cddString.length()) {
+          // main parenthesis closed but not yet end of the string
+          throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (additional characters after last closing parenthesis): "+cddString);
+        }
+      }
+    }
+    return result;
+  }
+
+  /********************************************************************************************************************/
 
   Sdm Utilities::parseSdm(std::string sdmString) {
     Sdm sdmInfo;
     size_t signatureLen = 6;
-    if(sdmString.empty()) throw ChimeraTK::logic_error("Invalid sdm.");
     if(sdmString.length() < signatureLen) throw ChimeraTK::logic_error("Invalid sdm.");
     if(sdmString.substr(0,6) !="sdm://") throw ChimeraTK::logic_error("Invalid sdm.");
     int pos = 6;
@@ -113,6 +237,8 @@ namespace ChimeraTK {
 
   }
 
+  /********************************************************************************************************************/
+
   Sdm Utilities::parseDeviceString(std::string deviceString) {
 
     Sdm sdmInfo;
@@ -140,6 +266,7 @@ namespace ChimeraTK {
     return sdmInfo;
   }
 
+  /********************************************************************************************************************/
 
   DeviceInfoMap::DeviceInfo Utilities::aliasLookUp(std::string aliasName, std::string dmapFilePath)
   {
@@ -149,6 +276,8 @@ namespace ChimeraTK {
     deviceInfoPointer->getDeviceInfo(aliasName, deviceInfo);
     return deviceInfo;
   }
+
+  /********************************************************************************************************************/
 
   std::vector<std::string> Utilities::getAliasList() {
 
@@ -177,13 +306,19 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   std::string getDMapFilePath() {
     return (BackendFactory::getInstance().getDMapFilePath());
   }
 
+  /********************************************************************************************************************/
+
   void setDMapFilePath(std::string dmapFilePath) {
     BackendFactory::getInstance().setDMapFilePath(dmapFilePath);
   }
+
+  /********************************************************************************************************************/
 
   void Utilities::printStackTrace() {
 
@@ -200,7 +335,7 @@ namespace ChimeraTK {
       size_t b = msg.find_first_of("+");
       std::string functionName = msg.substr(a+1,b-a-1);
       int status;
-      char *demangledName = abi::__cxa_demangle(functionName.c_str(), nullptr, 0, &status);
+      char *demangledName = abi::__cxa_demangle(functionName.c_str(), nullptr, nullptr, &status);
       if(status == 0) {
         std::cout << "[bt] #" << i << " " << demangledName << std::endl;
         free(demangledName);
@@ -210,5 +345,7 @@ namespace ChimeraTK {
       }
     }
   }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

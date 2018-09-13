@@ -1,5 +1,6 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE DeviceTest
+#include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
 #include "Utilities.h"
@@ -21,43 +22,105 @@ using namespace boost::unit_test_framework;
 #define INVALID_DEVICE_STRING_2 "/dev"
 #define INVALID_DEVICE_STRING_3 "testfile.mappp"
 
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
-class UtilitiesTest
-{
-public:
-  static void testParseSdm();
-  static void testParseDeviceString();
-  static void testcountOccurence();
-  static void testIsSdm();
-  static void testAliasLookUp();
-  static void testgetAliasList();
-};
+/**********************************************************************************************************************/
 
-class UtilitiesTestSuite : public test_suite {
-  public:
-    UtilitiesTestSuite() : test_suite("Utilities test suite") {
-      BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
-      boost::shared_ptr<UtilitiesTest> utilitiesTest(new UtilitiesTest);
-      add(BOOST_TEST_CASE(UtilitiesTest::testParseSdm));
-      add(BOOST_TEST_CASE(UtilitiesTest::testParseDeviceString));
-      add(BOOST_TEST_CASE(UtilitiesTest::testcountOccurence));
-      add(BOOST_TEST_CASE(UtilitiesTest::testIsSdm));
-      add(BOOST_TEST_CASE(UtilitiesTest::testAliasLookUp));
-      add(BOOST_TEST_CASE(UtilitiesTest::testgetAliasList));
-    }
-};
-
-bool init_unit_test(){
-  framework::master_test_suite().p_name.value = "Utilities test suite";
-  framework::master_test_suite().add(new UtilitiesTestSuite);
-  return true;
+BOOST_AUTO_TEST_CASE( testParseCDD ) {
+  {
+    // check standard case
+    auto r = Utilities::parseDeviceDesciptor("(myBackendType:some/weired*address 234?par1=someValue with spaces&map=file)");
+    BOOST_CHECK_EQUAL(r.backendType, "myBackendType");
+    BOOST_CHECK_EQUAL(r.address, "some/weired*address 234");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 2);
+    BOOST_CHECK_EQUAL(r.parameters["par1"], "someValue with spaces");
+    BOOST_CHECK_EQUAL(r.parameters["map"], "file");
+  }
+  {
+    // check proper trimming
+    auto r = Utilities::parseDeviceDesciptor(" ( myBackendType    :     some/weired*address 234 ?   par1 = someValue with spaces & map  =   file  )   ");
+    BOOST_CHECK_EQUAL(r.backendType, "myBackendType");
+    BOOST_CHECK_EQUAL(r.address, "some/weired*address 234");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 2);
+    BOOST_CHECK_EQUAL(r.parameters["par1"], "someValue with spaces");
+    BOOST_CHECK_EQUAL(r.parameters["map"], "file");
+  }
+  {
+    // check only backend type
+    auto r = Utilities::parseDeviceDesciptor("(someStrangeBackendType)");
+    BOOST_CHECK_EQUAL(r.backendType, "someStrangeBackendType");
+    BOOST_CHECK_EQUAL(r.address, "");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 0);
+  }
+  {
+    // check only backend type with address
+    auto r = Utilities::parseDeviceDesciptor("(pci:pcieunis6)");
+    BOOST_CHECK_EQUAL(r.backendType, "pci");
+    BOOST_CHECK_EQUAL(r.address, "pcieunis6");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 0);
+  }
+  {
+    // check explicitly empty parameter list
+    auto r = Utilities::parseDeviceDesciptor("(pci:pcieunis6?)");
+    BOOST_CHECK_EQUAL(r.backendType, "pci");
+    BOOST_CHECK_EQUAL(r.address, "pcieunis6");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 0);
+  }
+  {
+    // check explicitly empty parameter list with more empty parameters
+    auto r = Utilities::parseDeviceDesciptor("(pci:pcieunis6?&&)");
+    BOOST_CHECK_EQUAL(r.backendType, "pci");
+    BOOST_CHECK_EQUAL(r.address, "pcieunis6");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 0);
+  }
+  {
+    // check only backend type with parameters
+    auto r = Utilities::parseDeviceDesciptor("(logicalNameMapper?map=myMapFile.xlmap)");
+    BOOST_CHECK_EQUAL(r.backendType, "logicalNameMapper");
+    BOOST_CHECK_EQUAL(r.address, "");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 1);
+    BOOST_CHECK_EQUAL(r.parameters["map"], "myMapFile.xlmap");
+  }
+  {
+    // check explicitly empty address
+    auto r = Utilities::parseDeviceDesciptor("(logicalNameMapper:?map=myMapFile.xlmap)");
+    BOOST_CHECK_EQUAL(r.backendType, "logicalNameMapper");
+    BOOST_CHECK_EQUAL(r.address, "");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 1);
+    BOOST_CHECK_EQUAL(r.parameters["map"], "myMapFile.xlmap");
+  }
+  {
+    // check explicitly empty parameters
+    auto r = Utilities::parseDeviceDesciptor("(logicalNameMapper?&map=myMapFile.xlmap& &a=b&)");
+    BOOST_CHECK_EQUAL(r.backendType, "logicalNameMapper");
+    BOOST_CHECK_EQUAL(r.address, "");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 2);
+    BOOST_CHECK_EQUAL(r.parameters["map"], "myMapFile.xlmap");
+    BOOST_CHECK_EQUAL(r.parameters["a"], "b");
+  }
+  {
+    // check parameter value with equal sign
+    auto r = Utilities::parseDeviceDesciptor("(x?a=b=c)");
+    BOOST_CHECK_EQUAL(r.backendType, "x");
+    BOOST_CHECK_EQUAL(r.address, "");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 1);
+    BOOST_CHECK_EQUAL(r.parameters["a"], "b=c");
+  }
+  // check exceptions
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor(""), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("noParantheses"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(  )"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(backend)ExtraChars"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(:address)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(bad_backend_name)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?keyNoValue)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?=valueNoKey)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?bad*key=value)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?key=value&key=duplicateKey)"), ChimeraTK::logic_error);
 }
+/**********************************************************************************************************************/
 
-void UtilitiesTest::testParseSdm() {
+BOOST_AUTO_TEST_CASE( testParseSdm ) {
   Sdm sdm = Utilities::parseSdm(VALID_SDM);
   BOOST_CHECK(sdm._Host == ".");
   BOOST_CHECK(sdm._Interface == "pci");
@@ -79,7 +142,9 @@ void UtilitiesTest::testParseSdm() {
   BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5),ChimeraTK::logic_error);
 }
 
-void UtilitiesTest::testParseDeviceString() {
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testParseDeviceString ) {
   Sdm sdm = Utilities::parseDeviceString(VALID_PCI_STRING);
   BOOST_CHECK(sdm._Interface == "pci");
   sdm = Utilities::parseDeviceString(VALID_DUMMY_STRING);
@@ -95,26 +160,34 @@ void UtilitiesTest::testParseDeviceString() {
 
 }
 
-void UtilitiesTest::testcountOccurence() {
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testcountOccurence ) {
   BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string",',')==2); //2 commas
   BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string",';')==1); //1 semi-colon
   BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string",':')==1); //1 colon
 }
 
-void UtilitiesTest::testIsSdm() {
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testIsSdm ) {
   BOOST_CHECK(Utilities::isSdm(VALID_SDM) == true);
   BOOST_CHECK(Utilities::isSdm(INVALID_SDM) == false);
   BOOST_CHECK(Utilities::isSdm(VALID_PCI_STRING) == false);
 }
 
-void UtilitiesTest::testAliasLookUp() {
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testAliasLookUp ) {
   std::string testFilePath = TEST_DMAP_FILE_PATH;
   BOOST_CHECK_THROW(Utilities::aliasLookUp("test",testFilePath), ChimeraTK::logic_error);
   auto deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
   BOOST_CHECK(deviceInfo.deviceName =="DUMMYD0");
 }
 
-void UtilitiesTest::testgetAliasList() {
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testgetAliasList ) {
   auto initialDmapFile = ChimeraTK::getDMapFilePath();
 
   ChimeraTK::setDMapFilePath("");
@@ -139,3 +212,5 @@ void UtilitiesTest::testgetAliasList() {
     BOOST_CHECK(alias == returnedListOfAliases.at(index++));
   }
 }
+
+/**********************************************************************************************************************/
