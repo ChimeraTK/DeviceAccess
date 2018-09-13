@@ -22,7 +22,7 @@ RebotBackend::RebotBackend(std::string boardAddr, int port,
 }
 
 RebotBackend::~RebotBackend() {
-  
+
   { //extra scope for the lock guard
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
@@ -36,33 +36,33 @@ RebotBackend::~RebotBackend() {
   _heartbeatThread.interrupt();
   _heartbeatThread.join();
 }
-  
+
 
 void RebotBackend::open() {
-   
+
    std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-   
+
   _tcpCommunicator->openConnection();
   auto serverVersion = getServerProtocolVersion();
   if (serverVersion == 0){
     _protocolImplementor.reset(new RebotProtocol0(_tcpCommunicator));
   }else if (serverVersion == 1){
-    _protocolImplementor.reset(new RebotProtocol1(_tcpCommunicator));    
+    _protocolImplementor.reset(new RebotProtocol1(_tcpCommunicator));
   }else{
     _tcpCommunicator->closeConnection();
     std::stringstream errorMessage;
     errorMessage << "Server protocol version " << serverVersion << " not supported!";
     throw ChimeraTK::runtime_error(errorMessage.str());
   }
-    
+
   _opened = true;
 }
 
 void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
                         size_t sizeInBytes) {
-  
-  std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);                          
-                          
+
+  std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+
   if (!isOpen()) {
     throw ChimeraTK::logic_error("Device is closed");
   }
@@ -73,9 +73,9 @@ void RebotBackend::read(uint8_t /*bar*/, uint32_t addressInBytes, int32_t* data,
 
 void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const* data,
                          size_t sizeInBytes) {
-  
+
   std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-  
+
   if (!isOpen()) {
     throw ChimeraTK::logic_error("Device is closed");
   }
@@ -85,49 +85,28 @@ void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const
 }
 
 void RebotBackend::close() {
-  
+
   std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
-  
+
   _opened = false;
   _tcpCommunicator->closeConnection();
   _protocolImplementor.reset(0);
 }
 
 boost::shared_ptr<DeviceBackend> RebotBackend::createInstance(
-    std::string /*host*/, std::string /*instance*/,
-    std::list<std::string> parameters, std::string mapFileName) {
+    std::string /*address*/,
+    std::map<std::string,std::string> parameters) {
 
-  if (parameters.size() < 2) { // expecting tmcb ip and port
-    throw ChimeraTK::logic_error("TMCB IP address and port number not found in the parameter list");
+  if(parameters["ip"].size() == 0) {
+    throw ChimeraTK::logic_error("TMCB IP address not found in the parameter list");
+  }
+  if(parameters["port"].size() == 0) {
+    throw ChimeraTK::logic_error("TMCB port number not found in the parameter list");
   }
 
-  std::list<std::string>::iterator it = parameters.begin();
-
-  std::string tmcbIP = *it;
-  int portNumber = std::stoi(*(++it));
-
-  if (++it != parameters.end()) {
-    // there is a third parameter, it is the map file
-    if (mapFileName.empty()) {
-      // we use the parameter from the URI
-      // \todo FIXME This can be a relative path. In case the URI is coming from
-      // a dmap file,
-      // and no map file has been defined in the third column, this path is not
-      // interpreted relative to the dmap file.
-      // Note: you cannot always interpret it relative to the dmap file because
-      // the URI can directly come from the Devic::open() function,
-      // although a dmap file path has been set. We don't know this here.
-      mapFileName = *it;
-    } else {
-      // We take the entry from the dmap file because it contains the correct
-      // path relative to the dmap file
-      // (this is case we print a warning)
-      std::cout << "Warning: map file name specified in the sdm URI and the "
-                   "third column of the dmap file. "
-                << "Taking the name from the dmap file ('" << mapFileName
-                << "')" << std::endl;
-    }
-  }
+  std::string tmcbIP = parameters["ip"];
+  int portNumber = std::stoi(parameters["port"]);
+  std::string mapFileName = parameters["map"];
 
   return boost::shared_ptr<RebotBackend>(
       new RebotBackend(tmcbIP, portNumber, mapFileName));
@@ -202,5 +181,5 @@ uint32_t RebotBackend::parseRxServerHello(
       }
     }//while true
   }
-  
+
 } // namespace ChimeraTK

@@ -59,13 +59,22 @@ namespace ChimeraTK {
     }
     creatorMap[backendType] = creatorFunction;
     creatorMap_compat[make_pair(backendType,"")] =
-      [creatorFunction,sdmParameterNames](std::string, std::string instance, std::list<std::string> parameters, std::string) {
+      [creatorFunction,sdmParameterNames](std::string, std::string instance, std::list<std::string> parameters, std::string mapFileName) {
         std::map<std::string,std::string> pars;
         size_t i=0;
         for(auto &p : parameters) {
           if(i >= sdmParameterNames.size()) break;
           pars[sdmParameterNames[i]] = p;
           ++i;
+        }
+        if(!mapFileName.empty()) {
+          if(pars["map"].empty()) {
+            pars["map"] = mapFileName;
+          }
+          else {
+            std::cout << "WARNING: You have specified the map file name twice, in the parameter list and in the 3rd column of the DMAP file." << std::endl;
+            std::cout << "Please only specify the map file name in the parameter list!" << std::endl;
+          }
         }
         return creatorFunction(instance, pars);
       };
@@ -124,14 +133,13 @@ namespace ChimeraTK {
 
   BackendFactory::BackendFactory(){
 #ifdef CHIMERATK_HAVE_PCIE_BACKEND
-    registerBackendType("pci","",&PcieBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
-    registerBackendType("pci","pcie",&PcieBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("pci",&PcieBackend::createInstance, {"map"});
 #endif
-    registerBackendType("dummy","",&DummyBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
-    registerBackendType("rebot","",&RebotBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
-    registerBackendType("logicalNameMap","",&LogicalNameMappingBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
-    registerBackendType("subdevice","",&SubdeviceBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
-    registerBackendType("sharedMemoryDummy", "", &SharedDummyBackend::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+    registerBackendType("dummy",&DummyBackend::createInstance, {"map"});
+    registerBackendType("rebot",&RebotBackend::createInstance, {"ip","port","map"});
+    registerBackendType("logicalNameMap",&LogicalNameMappingBackend::createInstance, {"map"});
+    registerBackendType("subdevice",&SubdeviceBackend::createInstance, {"map"});
+    registerBackendType("sharedMemoryDummy", &SharedDummyBackend::createInstance, {"map"});
   }
   /********************************************************************************************************************/
 
@@ -222,7 +230,7 @@ namespace ChimeraTK {
 #ifdef _DEBUG
       std::cout<<"Pair:"<<iter->first.first<<"+"<<iter->first.second<<std::endl;
 #endif
-      if ( (iter->first.first == sdm._Interface) && (iter->first.second == sdm._Protocol) )
+      if ( (iter->first.first == sdm._Interface) )
       {
         auto backend = (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
         boost::weak_ptr<DeviceBackend>  weakBackend = backend;

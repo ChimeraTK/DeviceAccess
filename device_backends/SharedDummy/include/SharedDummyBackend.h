@@ -49,11 +49,10 @@ namespace ChimeraTK {
       virtual void read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes);
       virtual void write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes);
       virtual std::string readDeviceInfo();
-      
+
       int32_t& getRegisterContent(uint8_t bar, uint32_t address);
 
-      static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance,
-                                                            std::list<std::string> parameters, std::string mapFileName);
+      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
 
     private:
 
@@ -61,21 +60,21 @@ namespace ChimeraTK {
       std::string _mapFile;
 
       RegisterInfoMapPointer _registerMapping;
-      
+
       // Bar contents with shared-memory compatible vector type. Plain pointers are used here since this is what we
       // get from the shared memory allocation.
       std::map<uint8_t, SharedMemoryVector*> _barContents;
-      
+
       // Bar sizes
       std::map<uint8_t, size_t> _barSizesInBytes;
-      
+
       // Naming of bars as shared memory elements
       const char* SHARED_MEMORY_BAR_PREFIX = "BAR_";
 
       // Helper class to manage the shared memory: automatically construct if necessary,
       // automatically destroy if last using process closes.
       class SharedMemoryManager {
-        
+
       friend class SharedDummyBackend;
 
       public:
@@ -141,11 +140,11 @@ namespace ChimeraTK {
         boost::interprocess::named_mutex interprocessMutex;
 
       };  /* class SharedMemoryManager */
-      
+
 
       // Managed shared memory object
       SharedMemoryManager sharedMemoryManager;
-      
+
       void setupBarContents();
       std::map< uint8_t, size_t > getBarSizesInBytesFromRegisterMapping() const;
 

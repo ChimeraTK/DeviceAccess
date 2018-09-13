@@ -221,22 +221,18 @@ namespace ChimeraTK {
     return false;
   }
 
-  boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string /*host*/,
-      std::string instance,
-      std::list<std::string> parameters,
-      std::string mapFileName) {
+  boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string address,
+      std::map<std::string,std::string> parameters) {
 
-    if(mapFileName == "" && parameters.size() > 0) mapFileName = parameters.front(); // compatibility
-    if(mapFileName == "") {
-      throw ChimeraTK::logic_error("No map file name given in the dmap file.");
+    if(parameters["map"].empty()) {
+      throw ChimeraTK::logic_error("No map file name given.");
     }
 
     // when the factory is used to create the dummy device, mapfile path in the
     // dmap file is relative to the dmap file location. Converting the relative
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
-    return returnInstance<DummyBackend>(
-        instance, convertPathRelativeToDmapToAbs(mapFileName));
+    return returnInstance<DummyBackend>(address, convertPathRelativeToDmapToAbs(parameters["map"]));
   }
 
   std::string DummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {

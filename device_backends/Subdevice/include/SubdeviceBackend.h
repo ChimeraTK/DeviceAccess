@@ -44,8 +44,7 @@ namespace ChimeraTK {
         return std::string("Subdevice");  /// @todo extend information
       }
 
-      static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance,
-          std::list<std::string> parameters, std::string mapFileName);
+      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
 
     protected:
 

@@ -304,29 +304,14 @@ namespace ChimeraTK {
         strerror_r(errno, errorBuffer, sizeof(errorBuffer));
   }
 
-  boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string /*host*/,
-      std::string instance,
-      std::list<std::string> parameters, std::string mapFileName){
+  boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string address,
+      std::map<std::string,std::string> parameters) {
 
-    // there is only one possible parameter, a map file. It is optional
-    if (parameters.size() == 1){
-      // in case the map file is coming from the URI the mapFileName string from the third dmap file column should be empty
-      if (mapFileName.empty()){
-        // we use the parameter from the URI
-        // \todo FIXME This can be a relative path. In case the URI is coming from a dmap file,
-        // and no map file has been defined in the third column, this path is not interpreted relative to the dmap file.
-        // Note: you cannot always interpret it relative to the dmap file because the URI can directly come from the Devic::open() function,
-        // although a dmap file path has been set. We don't know this here.
-        mapFileName =  *(parameters.begin());
-      }else{
-        // We take the entry from the dmap file because it contains the correct path relative to the dmap file
-        // (this is case we print a warning)
-        std::cout << "Warning: map file name specified in the sdm URI and the third column of the dmap file. "
-                    << "Taking the name from the dmap file ('" << mapFileName << "')" << std::endl;
-      }
+    if(address.size() == 0) {
+      throw ChimeraTK::logic_error("Device address not specified.");
     }
 
-    return boost::shared_ptr<DeviceBackend> (new PcieBackend("/dev/"+instance, mapFileName));
+    return boost::shared_ptr<DeviceBackend> (new PcieBackend("/dev/"+address, parameters["map"]));
   }
 
 } // namespace ChimeraTK

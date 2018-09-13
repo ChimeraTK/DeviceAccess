@@ -135,10 +135,12 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
   ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo2;
   ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo3;
   ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo4;
+  ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo5;
 
   ChimeraTK::DeviceInfoMap::DeviceInfo expectedDeviceInfo1;
   ChimeraTK::DeviceInfoMap::DeviceInfo expectedDeviceInfo2;
   ChimeraTK::DeviceInfoMap::DeviceInfo expectedDeviceInfo3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo expectedDeviceInfo4;
 
   std::string absolutePathToDMapFile = ChimeraTK::parserUtilities::convertToAbsolutePath(path_to_dmap_file);
   std::string currentWorkingDir = ChimeraTK::parserUtilities::getCurrentWorkingDirectory();
@@ -150,10 +152,12 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
       "/dev/dev2", ChimeraTK::parserUtilities::concatenatePaths(absolutePathToDMapDir, path_to_map_file2));
   populateDummyDeviceInfo(expectedDeviceInfo3, absolutePathToDMapFile, "card3",
       "/dev/dev3", ChimeraTK::parserUtilities::concatenatePaths(absolutePathToDMapDir, path_to_map_file3));
+  populateDummyDeviceInfo(expectedDeviceInfo4, absolutePathToDMapFile, "card4", "(pci:mtcadummys0?map=goodMapFile_withoutModules.map)", "");
 
   expectedDeviceInfo1.dmapFileLineNumber = 6;
   expectedDeviceInfo2.dmapFileLineNumber = 7;
   expectedDeviceInfo3.dmapFileLineNumber = 8;
+  expectedDeviceInfo4.dmapFileLineNumber = 9;
 
   filesParser.getdMapFileElem(0, reterievedDeviceInfo1);
   BOOST_CHECK(compareDeviceInfos(expectedDeviceInfo1,
@@ -164,26 +168,29 @@ void DMapFilesParserTest::testParseFile(std::string pathToDmapFile) {
       reterievedDeviceInfo2) == true);
 
   filesParser.getdMapFileElem(2, reterievedDeviceInfo3);
-
   BOOST_CHECK(compareDeviceInfos(expectedDeviceInfo3,
       reterievedDeviceInfo3) == true);
 
-  BOOST_CHECK_THROW(filesParser.getdMapFileElem(3, reterievedDeviceInfo4),
+  filesParser.getdMapFileElem(3, reterievedDeviceInfo4);
+  BOOST_CHECK(compareDeviceInfos(expectedDeviceInfo4,
+      reterievedDeviceInfo4) == true);
+
+  BOOST_CHECK_THROW(filesParser.getdMapFileElem(4, reterievedDeviceInfo5),
       ChimeraTK::logic_error);
 
-  ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo5 =
+  ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo6 =
       filesParser.getdMapFileElem("card2");
 
   BOOST_CHECK(compareDeviceInfos(expectedDeviceInfo2,
-      reterievedDeviceInfo5) == true);
+      reterievedDeviceInfo6) == true);
 
   BOOST_CHECK_THROW(filesParser.getdMapFileElem("card_not_present"),
       ChimeraTK::logic_error);
 
-  ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo6;
-  filesParser.getdMapFileElem("card2", reterievedDeviceInfo6);
+  ChimeraTK::DeviceInfoMap::DeviceInfo reterievedDeviceInfo7;
+  filesParser.getdMapFileElem("card2", reterievedDeviceInfo7);
   BOOST_CHECK(compareDeviceInfos(expectedDeviceInfo2,
-      reterievedDeviceInfo6) == true);
+      reterievedDeviceInfo7) == true);
 }
 
 void DMapFilesParserTest::testParseEmptyDmapFile() {
@@ -341,7 +348,7 @@ void DMapFilesParserTest::testGetDMapFileSize() {
   std::string path_to_dmap_file = "dMapDir/valid.dmap";
   filesParser.parse_file(path_to_dmap_file);
 
-  BOOST_CHECK(filesParser.getdMapFileSize() == 3);
+  BOOST_CHECK(filesParser.getdMapFileSize() == 4);
 }
 
 void DMapFilesParserTest::testCheckParsedInInfo() {
@@ -396,6 +403,7 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
   ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo1;
   ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo2;
   ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo3;
+  ChimeraTK::DeviceInfoMap::DeviceInfo deviceInfo4;
 
   populateDummyDeviceInfo(deviceInfo1, absPathToDMapFile, "card1",
       "/dev/dev1", ChimeraTK::parserUtilities::concatenatePaths(absPathToDMapDir, "goodMapFile_withoutModules.map"));
@@ -403,15 +411,18 @@ void DMapFilesParserTest::testOverloadedStreamOperator() {
       "/dev/dev2", ChimeraTK::parserUtilities::concatenatePaths(absPathToDMapDir, "./goodMapFile_withoutModules.map"));
   populateDummyDeviceInfo(deviceInfo3, absPathToDMapFile, "card3",
       "/dev/dev3", ChimeraTK::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
+  populateDummyDeviceInfo(deviceInfo4, absPathToDMapFile, "card4", "(pci:mtcadummys0?map=goodMapFile_withoutModules.map)", "");
 
   deviceInfo1.dmapFileLineNumber = 6;
   deviceInfo2.dmapFileLineNumber = 7;
   deviceInfo3.dmapFileLineNumber = 8;
+  deviceInfo3.dmapFileLineNumber = 9;
 
   std::stringstream expected_file_stream;
   expected_file_stream << deviceInfo1 << std::endl;
   expected_file_stream << deviceInfo2 << std::endl;
   expected_file_stream << deviceInfo3 << std::endl;
+  expected_file_stream << deviceInfo4 << std::endl;
 
   std::stringstream actual_file_stream;
   actual_file_stream << filesParser;

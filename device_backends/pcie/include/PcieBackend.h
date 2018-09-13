@@ -65,7 +65,7 @@ namespace ChimeraTK {
       virtual std::string readDeviceInfo();
 
       /*Host or parameters (at least for now) are just place holders as pcidevice does not use them*/
-      static boost::shared_ptr<DeviceBackend> createInstance(std::string host, std::string instance, std::list<std::string> parameters, std::string mapFileName);
+      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
   };
 
 }//namespace ChimeraTK

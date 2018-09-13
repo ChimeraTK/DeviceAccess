@@ -153,12 +153,10 @@ namespace ChimeraTK {
     }
   }
 
-  boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string /*host*/,
-      std::string instance,
-      std::list<std::string> parameters,
-      std::string /*mapFileName*/) {
+  boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string address,
+      std::map<std::string,std::string> parameters) {
 
-    std::string mapFileName = parameters.front();
+    std::string mapFileName = parameters["map"];
     if(mapFileName == "") {
       throw ChimeraTK::logic_error("No map file name given.");
     }
@@ -167,7 +165,7 @@ namespace ChimeraTK {
     // dmap file is relative to the dmap file location. Converting the relative
     // mapFile path to an absolute path avoids issues when the dmap file is not
     // in the working directory of the application.
-    return returnInstance<SharedDummyBackend>(instance, instance, convertPathRelativeToDmapToAbs(mapFileName));
+    return returnInstance<SharedDummyBackend>(address, address, convertPathRelativeToDmapToAbs(mapFileName));
   }
 
   std::string SharedDummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {

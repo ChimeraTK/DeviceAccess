@@ -51,7 +51,7 @@ namespace ChimeraTK {
       /// The time when the last command (read/write/heartbeat) was send
       boost::chrono::steady_clock::time_point _lastSendTime;
       unsigned int _connectionTimeout;
-                           
+
     public:
       RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
       ~RebotBackend();
@@ -61,9 +61,8 @@ namespace ChimeraTK {
       void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
       void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
       std::string readDeviceInfo() override { return std::string("RebotDevice"); }
-      static boost::shared_ptr<DeviceBackend> createInstance(
-          std::string host, std::string instance,
-          std::list<std::string> parameters, std::string mapFileName);
+
+      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
 
    protected:
       // This is not in the protocol implementor. Only the result of the hello tells us

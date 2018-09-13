@@ -90,9 +90,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(std::string /*host*/,
-      std::string /*instance*/, std::list<std::string> /*parameters*/, std::string mapFileName) {
-    return boost::shared_ptr<DeviceBackend>(new LogicalNameMappingBackend(mapFileName));
+  boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(
+      std::string /*address*/, std::map<std::string,std::string> parameters) {
+    if(parameters["map"].empty()) {
+      throw ChimeraTK::logic_error("Map file name not speficied.");
+    }
+    return boost::shared_ptr<DeviceBackend>(new LogicalNameMappingBackend(parameters["map"]));
   }
 
   /********************************************************************************************************************/

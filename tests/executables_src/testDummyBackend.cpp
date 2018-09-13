@@ -554,8 +554,8 @@ void DummyBackendTest::testOpen() {
 
 void DummyBackendTest::testCreateBackend() {
   /** Only for testing purpose */
-  std::list <std::string> pararmeters;
-  BOOST_CHECK_THROW(DummyBackend::createInstance("","",pararmeters,""),ChimeraTK::logic_error);
+  std::map<std::string,std::string> pararmeters;
+  BOOST_CHECK_THROW(DummyBackend::createInstance("",pararmeters),ChimeraTK::logic_error);
   /** Try creating a non existing backend */
   BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
   /** Try creating an existing backend */
@@ -567,11 +567,12 @@ void DummyBackendTest::testCreateBackend() {
   BOOST_CHECK(_backendInstance->isOpen() == false);
 
   /** check if instance name is working properly */
-  auto inst1 = DummyBackend::createInstance("","",pararmeters,TEST_MAPPING_FILE);
-  auto inst2 = DummyBackend::createInstance("","",pararmeters,TEST_MAPPING_FILE);
-  auto inst3 = DummyBackend::createInstance("","FOO",pararmeters,TEST_MAPPING_FILE);
-  auto inst4 = DummyBackend::createInstance("","FOO",pararmeters,TEST_MAPPING_FILE);
-  auto inst5 = DummyBackend::createInstance("","BAR",pararmeters,TEST_MAPPING_FILE);
+  pararmeters["map"] = TEST_MAPPING_FILE;
+  auto inst1 = DummyBackend::createInstance("",pararmeters);
+  auto inst2 = DummyBackend::createInstance("",pararmeters);
+  auto inst3 = DummyBackend::createInstance("FOO",pararmeters);
+  auto inst4 = DummyBackend::createInstance("FOO",pararmeters);
+  auto inst5 = DummyBackend::createInstance("BAR",pararmeters);
   BOOST_CHECK( inst1.get() != inst2.get() );
   BOOST_CHECK( inst1.get() != inst3.get() );
   BOOST_CHECK( inst1.get() != inst4.get() );
