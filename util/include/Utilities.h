@@ -25,12 +25,12 @@ std::string getDMapFilePath();
 /// @brief Set the location of the dmap file. The library will parse this dmap
 /// file for the device(alias) lookup.
 /// @param dmapFilePath Relative or absolute path of the dmap file (directory and file name).
-///                     
+///
 ///
 void setDMapFilePath(std::string dmapFilePath);
 
-  /**This structure holds the information of an SDM.
-   *
+  /**
+   *  This structure holds the information of an SDM.
    */
   struct Sdm
   {
@@ -43,8 +43,8 @@ void setDMapFilePath(std::string dmapFilePath);
       Sdm():_SdmVersion(0.1){}
   };
 
-  /** A class to provide generic useful function accross the library."
-   *
+  /**
+   *  A class to provide generic useful function accross the library."
    */
   class Utilities {
 
@@ -62,7 +62,7 @@ void setDMapFilePath(std::string dmapFilePath);
       /// Returns the list of device aliases from the DMap file set using
       /// @ref BackendFactory::setDMapFilePath
       static std::vector<std::string> getAliasList();
-      
+
       /// Print a call stack trace (but continue executing the process normally). Can be used for debugging. C++
       /// names will be demangled, if possible.
       static void printStackTrace();
