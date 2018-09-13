@@ -75,6 +75,7 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
 
   BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("../lib/libWorkingBackend.so")  );
   //check that the backend really is registered
+  BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("(working?map=goodMapFile.map)") );
   BOOST_CHECK_NO_THROW( BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map") );
 
   BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libNoSymbolBackend.so"), ChimeraTK::logic_error );

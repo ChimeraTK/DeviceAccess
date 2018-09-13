@@ -5,6 +5,7 @@
 #include <iostream>
 #endif
 
+#include "DeviceAccessVersion.h"
 #include "ForwardDeclarations.h"
 #include "DeviceInfoMap.h"
 #include <map>
@@ -35,15 +36,22 @@ namespace ChimeraTK {
       /** Returns the _DMapFilePath */
       std::string getDMapFilePath();
 
-      /** This functions add new device using uri as a key. If a key already exist
-       * it replaces it @todo FIXME don't replace. Check that if it is different (double
-       * registration of of the same creator function should be possibe) and throw if not the same.
-       * The version string has to match CHIMERATK_DEVICEACCESS_VERSION from DeviceAccessVersion.h,
-       * otherwise a DeviceException is thrown. This prevents incompatible plugins to be loaded. */
+      /**
+       *  Register a backend by the name backendType with the given creatorFunction. If a backend by the given name is
+       *  already registered, a ChimeraTK::logic_error is thrown.
+       *
+       *  The optional parameter sdmParameterNames specifies a list of key names, which is used when a device is created
+       *  using a SDM URI. The parameters from the (unkeyed) parameter list of the SDM are put into in order the
+       *  parameter map by the keys specified in sdmParameterNames. If sdmParameterNames is left empty, the device
+       *  cannot be created through a SDM URI when parameters need to be specified.
+       *
+       *  The last argument deviceAccessVersion must always be set to CHIMERATK_DEVICEACCESS_VERSION as defined in
+       *  DeviceAccessVersion.h. This is automatically the case if the argument is omitted, so it should never be
+       *  specified.
+       */
       void registerBackendType(std::string backendType,
-        boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance,
-                                                            std::map<std::string,std::string> parameters),
-        std::string version);
+        boost::shared_ptr<DeviceBackend>(*creatorFunction)(std::string address, std::map<std::string,std::string> parameters),
+        std::vector<std::string> sdmParameterNames={}, std::string deviceAccessVersion=CHIMERATK_DEVICEACCESS_VERSION);
 
       /** Old signature of BackendFactory::registerBackendType(), for compatibility only. Please use only the new form
        *  which allows to pass key-equal-value pairs for the parameters. DO NOT call this function in addition to the
@@ -70,10 +78,15 @@ namespace ChimeraTK {
       std::string _dMapFile; ///< The dmap file set at run time
 
       /** Holds device type and function pointer to the createInstance function of plugin */
-      std::map< std::string, boost::function< boost::shared_ptr<DeviceBackend> (std::string host, std::string instance, std::map<std::string,std::string> parameters) > > creatorMap;
+      std::map< std::string,
+                boost::function<boost::shared_ptr<DeviceBackend>(std::string address, std::map<std::string,std::string> parameters)>
+              > creatorMap;
 
       /** Compatibility creatorMap for old-style backends which just take a plain list of parameters */
-      std::map< std::pair<std::string, std::string>, boost::function< boost::shared_ptr<DeviceBackend> (std::string host, std::string instance, std::list<std::string>parameters, std::string mapFileName) > > creatorMap_compat;
+      std::map< std::pair<std::string, std::string>,
+                boost::function<boost::shared_ptr<DeviceBackend> (std::string host, std::string instance,
+                                                                  std::list<std::string>parameters, std::string mapFileName)>
+              > creatorMap_compat;
 
       /** Look for the alias and if found return a uri */
       std::string aliasLookUp(std::string aliasName, std::string dmapFilePath);

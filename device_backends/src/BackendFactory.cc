@@ -30,14 +30,17 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void BackendFactory::registerBackendType(std::string backendType,
-     boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance,
-                                                         std::map<std::string, std::string> parameters),
-     std::string version)
+     boost::shared_ptr<DeviceBackend>(*creatorFunction)(std::string address, std::map<std::string, std::string> parameters),
+     std::vector<std::string> sdmParameterNames, std::string version)
   {
 #ifdef _DEBUG
     std::cout << "adding:" << backendType << std::endl << std::flush;
 #endif
-    if (version != CHIMERATK_DEVICEACCESS_VERSION){
+    if(creatorMap.find(backendType) != creatorMap.end()) {
+      throw ChimeraTK::logic_error("A backend with the type name '"+backendType+"' has already been registered.");
+    }
+
+    if (version != CHIMERATK_DEVICEACCESS_VERSION) {
       // Register a function that throws an exception with the message when trying to create a backend.
       // We do not throw here because this would throw an uncatchable exception inside the static instance
       // of a backend registerer, which would violate the policy that a dmap file with broken backends
@@ -49,21 +52,22 @@ namespace ChimeraTK {
         boost::bind(BackendFactory::failedRegistrationThrowerFunction,_1,_2,_3,_4,errorMessage.str());
       std::string errorMessageString = errorMessage.str();
       creatorMap[backendType] =
-        [errorMessageString](std::string, std::string, std::map<std::string,std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
+        [errorMessageString](std::string, std::map<std::string,std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
           throw ChimeraTK::logic_error(errorMessageString);
         };
       return;
     }
     creatorMap[backendType] = creatorFunction;
     creatorMap_compat[make_pair(backendType,"")] =
-      [creatorFunction](std::string host, std::string instance, std::list<std::string> parameters, std::string) {
+      [creatorFunction,sdmParameterNames](std::string, std::string instance, std::list<std::string> parameters, std::string) {
         std::map<std::string,std::string> pars;
         size_t i=0;
         for(auto &p : parameters) {
-          pars[std::to_string(i)] = p;
+          if(i >= sdmParameterNames.size()) break;
+          pars[sdmParameterNames[i]] = p;
           ++i;
         }
-        return creatorFunction(host, instance, pars);
+        return creatorFunction(instance, pars);
       };
   }
 
@@ -89,14 +93,14 @@ namespace ChimeraTK {
         boost::bind(BackendFactory::failedRegistrationThrowerFunction,_1,_2,_3,_4,errorMessage.str());
       std::string errorMessageString = errorMessage.str();
       creatorMap[interface] =
-        [errorMessageString](std::string, std::string, std::map<std::string,std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
+        [errorMessageString](std::string, std::map<std::string,std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
           throw ChimeraTK::logic_error(errorMessageString);
         };
       return;
     }
     creatorMap_compat[make_pair(interface,protocol)] = creatorFunction;
     creatorMap[interface] =
-      [interface](std::string, std::string, std::map<std::string,std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
+      [interface](std::string, std::map<std::string,std::string>) -> boost::shared_ptr<ChimeraTK::DeviceBackend> {
         throw ChimeraTK::logic_error("The backend type '"+interface+"' does not yet support ChimeraTK device "
                                      "descriptors! Please update the backend!");
       };
@@ -145,7 +149,7 @@ namespace ChimeraTK {
 
     loadAllPluginsFromDMapFile();
 
-    if(Utilities::isSdm(aliasOrUri)) {
+    if(Utilities::isDeviceDescriptor(aliasOrUri) || Utilities::isSdm(aliasOrUri)) {
       // it is a URI, directly create a deviceinfo and call the internal creator function
       DeviceInfoMap::DeviceInfo deviceInfo;
       deviceInfo.uri = aliasOrUri;
@@ -167,19 +171,31 @@ namespace ChimeraTK {
     std::cout << "uri to parse" << deviceInfo.uri << std::endl;
     std::cout << "Entries" << creatorMap.size() << std::endl << std::flush;
 #endif
+
+    // Check if backend already exists
     auto iterator = _existingBackends.find(deviceInfo.uri);
-    if (iterator != _existingBackends.end())
-    {
+    if(iterator != _existingBackends.end()) {
       auto strongPtr = iterator->second.lock();
-      if (strongPtr) {
+      if(strongPtr) {
         return strongPtr;
       }
     }
+
+    // Check if descriptor string is a ChimeraTK device descriptor
+    if(Utilities::isDeviceDescriptor(deviceInfo.uri)) {
+      auto cdd = Utilities::parseDeviceDesciptor(deviceInfo.uri);
+      auto backend = (creatorMap[cdd.backendType])(cdd.address, cdd.parameters);
+      _existingBackends[deviceInfo.uri] = backend;
+      return backend;
+    }
+
+
+    // Check if descriptor string is a SDM
     Sdm sdm;
-    try {
+    if(Utilities::isSdm(deviceInfo.uri)) {
       sdm = Utilities::parseSdm(deviceInfo.uri);
     }
-    catch(ChimeraTK::logic_error&){
+    else {
       //fixme: the programme flow should not use exceptions here. It is a supported
       // condition that the old device syntax is used.
 
@@ -212,7 +228,6 @@ namespace ChimeraTK {
         // return the shared pointer, not the weak pointer
         return backend;
       }
-        //return (iter->second)(sdm._Host, sdm._Instance, sdm._Parameters, deviceInfo.mapFileName);
     }
 
     throw ChimeraTK::logic_error("Unregistered device: Interface = "+sdm._Interface+" Protocol = "+sdm._Protocol);
