@@ -179,7 +179,7 @@ namespace ChimeraTK {
     try {
       sdm = Utilities::parseSdm(deviceInfo.uri);
     }
-    catch(ChimeraTK::logic_error &e){
+    catch(ChimeraTK::logic_error&){
       //fixme: the programme flow should not use exceptions here. It is a supported
       // condition that the old device syntax is used.
 
@@ -231,7 +231,7 @@ namespace ChimeraTK {
     // first do an open which does not load the symbols yet
     // FIXME: Only works for functions, not for variables = registerer :-(
     void *hndl = dlopen(soFile.c_str() , RTLD_LAZY );
-    if(hndl == NULL){
+    if(hndl == nullptr){
       throw ChimeraTK::logic_error(dlerror());
     }
 
@@ -242,7 +242,7 @@ namespace ChimeraTK {
     // pedantic C++ cannot be casted directly to a function pointer.
     *reinterpret_cast<void**>(&versionFunction) = dlsym(hndl, "deviceAccessVersionUsedToCompile");
 
-    if (versionFunction == NULL){
+    if (versionFunction == nullptr){
       creatorMap = originalCreatorMap;
       dlclose(hndl);
       std::stringstream errorMessage;
