@@ -106,6 +106,24 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
     BOOST_CHECK_EQUAL(r.parameters.size(), 1);
     BOOST_CHECK_EQUAL(r.parameters["a"], "b=c");
   }
+  {
+    // check escaping special characters
+    auto r = Utilities::parseDeviceDesciptor("(x:address\\?withQuestionmark?para=value\\&with\\&ampersand\\&&x=y\\\\&y=\\))");
+    BOOST_CHECK_EQUAL(r.backendType, "x");
+    BOOST_CHECK_EQUAL(r.address, "address?withQuestionmark");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 3);
+    BOOST_CHECK_EQUAL(r.parameters["para"], "value&with&ampersand&");
+    BOOST_CHECK_EQUAL(r.parameters["x"], "y\\");
+    BOOST_CHECK_EQUAL(r.parameters["y"], ")");
+  }
+  {
+    // check nesting CDDs
+    auto r = Utilities::parseDeviceDesciptor("(nested:(pci:pcieunis6?map=dummy.map)?anotherCdd=with(dummycdd)otherText)");
+    BOOST_CHECK_EQUAL(r.backendType, "nested");
+    BOOST_CHECK_EQUAL(r.address, "(pci:pcieunis6?map=dummy.map)");
+    BOOST_CHECK_EQUAL(r.parameters.size(), 1);
+    BOOST_CHECK_EQUAL(r.parameters["anotherCdd"], "with(dummycdd)otherText");
+  }
   // check exceptions
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor(""), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("noParantheses"), ChimeraTK::logic_error);
@@ -117,6 +135,9 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?=valueNoKey)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?bad*key=value)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?key=value&key=duplicateKey)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(unmatchedParentheses"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in(aValue)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in)aValue)"), ChimeraTK::logic_error);
 }
 /**********************************************************************************************************************/
 

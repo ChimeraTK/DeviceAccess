@@ -156,6 +156,13 @@ namespace ChimeraTK {
         }
       }
     }
+
+    // check if final parenthesis found
+    if(parenthesesLevel != 0) {
+      throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (unmatched parenthesis): "+cddString);
+    }
+
+    // return the result
     return result;
   }
 
