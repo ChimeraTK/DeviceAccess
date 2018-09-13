@@ -220,8 +220,8 @@ BOOST_AUTO_TEST_CASE(testMixed) {
   TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM");
   auto myRawData = device.getOneDRegisterAccessor<int32_t>("APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,{AccessMode::raw});
 
-  BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
-  BOOST_CHECK(myMixedData.getNumberOfSamples() == 372);
+  BOOST_CHECK(myMixedData.getNChannels() == 17);
+  BOOST_CHECK(myMixedData.getNElementsPerChannel() == 372);
   BOOST_CHECK(myMixedData[0].size() == 372);
 
   myMixedData[0][0] = -24673; //1001 1111 1001 1111
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
 
   TwoDRegisterAccessor<double> deMuxedData = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH/"FRAC_INT");
 
-  BOOST_CHECK(deMuxedData.getNumberOfDataSequences() == 3);
+  BOOST_CHECK(deMuxedData.getNChannels() == 3);
 
 }
 
@@ -290,11 +290,11 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
   auto myRawData = device.getOneDRegisterAccessor<int32_t>(
                      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,42*nWordsPerBlock,{AccessMode::raw});
 
-  BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
-  BOOST_CHECK(myMixedData.getNumberOfSamples() == 372-42);
+  BOOST_CHECK(myMixedData.getNChannels() == 17);
+  BOOST_CHECK(myMixedData.getNElementsPerChannel() == 372-42);
   BOOST_CHECK(myMixedData[0].size() == 372-42);
 
-  for(unsigned int i=0; i<myMixedData.getNumberOfSamples(); ++i) {
+  for(unsigned int i=0; i<myMixedData.getNElementsPerChannel(); ++i) {
     myMixedData[0][i] = -24673; //1001 1111 1001 1111
     myMixedData[1][i] = -13724; //1100 1010 0110 0100
     myMixedData[2][i] =  130495;
@@ -383,11 +383,11 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestLength) {
   auto myRawData = device.getOneDRegisterAccessor<int32_t>(
       "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM",0,0,{AccessMode::raw});
 
-  BOOST_CHECK(myMixedData.getNumberOfDataSequences() == 17);
-  BOOST_CHECK(myMixedData.getNumberOfSamples() == 120);
+  BOOST_CHECK(myMixedData.getNChannels() == 17);
+  BOOST_CHECK(myMixedData.getNElementsPerChannel() == 120);
   BOOST_CHECK(myMixedData[0].size() == 120);
 
-  for(unsigned int i=0; i<myMixedData.getNumberOfSamples(); ++i) {
+  for(unsigned int i=0; i<myMixedData.getNElementsPerChannel(); ++i) {
     myMixedData[0][i] = -24673; //1001 1111 1001 1111
     myMixedData[1][i] = -13724; //1100 1010 0110 0100
     myMixedData[2][i] =  130495;
