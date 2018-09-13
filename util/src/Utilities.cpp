@@ -129,8 +129,8 @@ namespace ChimeraTK {
       sdmInfo._Interface = "dummy";
       sdmInfo._Instance = deviceString;
       /*another change in interface requires now instance
-		to be ignored and old expect old Instance parameter
-		as firt item of the Parameters list*/
+                to be ignored and old expect old Instance parameter
+                as firt item of the Parameters list*/
       sdmInfo._Parameters.push_back(sdmInfo._Instance);
     }
     else
