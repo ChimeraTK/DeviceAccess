@@ -109,6 +109,10 @@ namespace ChimeraTK {
        */
       void loadAllPluginsFromDMapFile();
 
+      /** Flag whether the function registerBackendType() was called. This is used to determine if a loaded plugin
+       *  registered any backends. */
+      bool called_registerBackendType{false};
+
     private:
       // These functions are not to be inherited. As also the constructor is private, you cannot
       // derrive from this class.

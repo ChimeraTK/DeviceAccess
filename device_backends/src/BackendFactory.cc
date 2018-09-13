@@ -69,6 +69,7 @@ namespace ChimeraTK {
         }
         return creatorFunction(instance, pars);
       };
+    called_registerBackendType = true;
   }
 
   /********************************************************************************************************************/
@@ -104,6 +105,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("The backend type '"+interface+"' does not yet support ChimeraTK device "
                                      "descriptors! Please update the backend!");
       };
+    called_registerBackendType = true;
   }
 
   /********************************************************************************************************************/
@@ -236,49 +238,23 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void BackendFactory::loadPluginLibrary(std::string soFile){
-    // Create a copy of the original creator map. If we unload the library because the signature is not
-    // recognised we have to restore the original map because it could be an old backed that has a working
-    // registerer (or the programmer forgot the signature function). In this case we would leave the
-    // factory with a dangling function pointer which causes a segfault if the backend is opened.
-    auto originalCreatorMap = creatorMap;
+  void BackendFactory::loadPluginLibrary(std::string soFile) {
 
-    // first do an open which does not load the symbols yet
-    // FIXME: Only works for functions, not for variables = registerer :-(
-    void *hndl = dlopen(soFile.c_str() , RTLD_LAZY );
+    // reset flag to check if the registerBackedType() function was called
+    called_registerBackendType = false;
+
+    // open the plugin library. RTLD_LAZY is enough since all symbols are loaded when needed
+    void *hndl = dlopen(soFile.c_str(), RTLD_LAZY);
     if(hndl == nullptr){
       throw ChimeraTK::logic_error(dlerror());
     }
 
-    // try to find the symbol for the version function.
-    const char * (*versionFunction)();
-    // We have to use an instance of the function pointer with the right signature
-    // and reinterpred cast it because dlsym is giving out a void pointer which in
-    // pedantic C++ cannot be casted directly to a function pointer.
-    *reinterpret_cast<void**>(&versionFunction) = dlsym(hndl, "deviceAccessVersionUsedToCompile");
-
-    if (versionFunction == nullptr){
-      creatorMap = originalCreatorMap;
+    // if no backend was registered, close the library and throw an exception
+    if(!called_registerBackendType) {
       dlclose(hndl);
-      std::stringstream errorMessage;
-      errorMessage << "Symbol 'deviceAccessVersionUsedToCompile' not found in " <<soFile;
-      throw ChimeraTK::logic_error(errorMessage.str());
+      throw ChimeraTK::logic_error("'"+soFile+"' is not a valid DeviceAccess plugin, it does not register any backends!");
     }
 
-    if (std::string(versionFunction()) != CHIMERATK_DEVICEACCESS_VERSION){
-      std::stringstream errorMessage;
-      errorMessage << soFile << " was compiled with the wrong DeviceAccess version " << versionFunction()
-                   << ". Recompile with DeviceAccess version " << CHIMERATK_DEVICEACCESS_VERSION;
-      // Do not restore the original creator map. If the registerer worked there is a function which throws an
-      // exception that tells the user that the backend has been compiled against the wrong version.
-      // This is better than just printing a warning because the exception which is thrown here is caught
-      // if the library is loaded via dmap file (to keep dmap files working if broken backends are not used).
-      dlclose(hndl);
-      throw ChimeraTK::logic_error(errorMessage.str());
-    }
-
-    // it is a correct plugin, load all the symbols now
-    dlopen(soFile.c_str() , RTLD_NOW);
   }
 
   /********************************************************************************************************************/
