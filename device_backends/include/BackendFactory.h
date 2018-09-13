@@ -58,7 +58,7 @@ namespace ChimeraTK {
        *  new signature! */
       void registerBackendType(std::string interface, std::string protocol,
         boost::shared_ptr<DeviceBackend> (*creatorFunction)(std::string host, std::string instance,
-                                                            std::list<std::string> parameters, std::string),
+                                                            std::list<std::string> parameters, std::string mapFileName),
         std::string version);
 
       /** Create a new backend and return the instance as a shared pointer.
