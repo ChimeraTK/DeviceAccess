@@ -77,7 +77,12 @@ namespace ChimeraTK {
       if(parenthesesLevel == 1) {
         // should the current character be escaped?
         if(escapeNext) {
-          token += c;
+          if(c == ' ' || c == '?' || c == '&' || c == '(' || c == ')' || c == '\\') {
+            token += c;
+          }
+          else {
+            throw ChimeraTK::logic_error("Invalid ChimeraTK device descriptor (bad escape character): "+cddString);
+          }
           escapeNext = false;
           continue; // no further parsing of this character!
         }
