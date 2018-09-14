@@ -7,7 +7,8 @@ int main() {
   ChimeraTK::Device myDevice;
   myDevice.open("MY_DEVICE");
 
-  /* We populate the memory region with multiple multiplexed sequences
+  /*
+   * We populate the memory region with multiple multiplexed sequences
    * so that we can use this for demonstrating the demultiplexing of the
    * TwoDRegisterAccessor (for some implementations depeding on the backend).
    *
@@ -22,19 +23,19 @@ int main() {
    */
   auto dataRegion = myDevice.getOneDRegisterAccessor<double>("ADC/AREA_DATA_RAW");
   int counter = 0;
-  for (auto & dataWord : dataRegion){
+  for(auto & dataWord : dataRegion) {
     dataWord=counter++;
   }
   dataRegion.write();
 
-  /* Now check how it looks using the TwoDRegisterAccessor. We just copy it from
+  /*
+   * Now check how it looks using the TwoDRegisterAccessor. We just copy it from
    * the accessor2D.cpp example.
    */
-  ChimeraTK::TwoDRegisterAccessor<double> twoDAccessor =
-    myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
+  ChimeraTK::TwoDRegisterAccessor<double> twoDAccessor = myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
   twoDAccessor.read();
 
-  for (size_t i = 0; i < twoDAccessor.getNumberOfDataSequences(); ++i){
+  for(size_t i = 0; i < twoDAccessor.getNChannels(); ++i) {
     std::cout << "Channel " << i << ":";
     std::vector<double> & channel = twoDAccessor[i];
     for (double sample : channel){

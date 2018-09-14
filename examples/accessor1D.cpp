@@ -7,30 +7,33 @@ int main() {
   ChimeraTK::Device myDevice;
   myDevice.open("MY_DEVICE");
 
-  /* The device contains a register called CLOCKS in the BOARD section.
+  /*
+   * The device contains a register called CLOCKS in the BOARD section.
    * It contains 4 values for 4 different clocks.
    */
-  ChimeraTK::OneDRegisterAccessor<double> clocks =
-    myDevice.getOneDRegisterAccessor<double>("BOARD/CLOCKS");
+  ChimeraTK::OneDRegisterAccessor<double> clocks = myDevice.getOneDRegisterAccessor<double>("BOARD/CLOCKS");
   std::cout << "The clocks register has " << clocks.getNElements() << " elements." <<std::endl;
 
-  /* Read data for the whole register from the hardware
+  /*
+   * Read data for the whole register from the hardware
    */
   clocks.read();
 
-  /* The OneDRegisterAccessor behaves like a std::vector, incl. [] operator
+  /*
+   * The OneDRegisterAccessor behaves like a std::vector, incl. [] operator
    * and iterators.
    */
   for (size_t i = 0; i < clocks.getNElements(); ++i){
       clocks[i] = 42+i;
   }
   std::cout << "Clocks are";
-  for (auto clockValue : clocks){
+  for(auto clockValue : clocks) {
       std::cout << " " << clockValue;
   }
   std::cout << std::endl;
 
-  /* Write all values of the CLOCKS register to the hardware.
+  /*
+   * Write all values of the CLOCKS register to the hardware.
    */
   clocks.write();
 
