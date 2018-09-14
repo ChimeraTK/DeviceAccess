@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(unmatchedParentheses"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in(aValue)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in)aValue)"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(badEscaping:a\bc)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(badEscaping:a\\bc)"), ChimeraTK::logic_error);
 }
 /**********************************************************************************************************************/
 
