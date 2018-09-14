@@ -1,7 +1,7 @@
 /**
-\mainpage mtca4u-deviceaccess
+\mainpage ChimeraTK-DeviceAccess
 
-mtca4u-deviceaccess is a device access library which provides an interface for 
+ChimeraTK-DeviceAccess is a device access library which provides an interface for 
 for register based devices. Registers are identified by a name and usually accessed though an \c accessor object.
 
 All read and write functions are synchronous, so the functions
@@ -18,17 +18,15 @@ are complete and fully functional.
 \li \ref numeric_addresses
 \li Logical name mapping
 \li Transfer groups
-\li Firmware debugging without map/dmap file
 \li Automatic data conversion and raw data access
 \li \ref custom_backends
 \li \ref dmap
-\li \ref mapping 
 
 \li \ref q_and_a
 
 \page basic_example Basic Example
 
-To use the mtca4u::Device class you need a so called "device map" file (dmap file).
+To use the ChimeraTK::Device class you need a so called "device map" file (dmap file).
 It is created manually and contains information which devices are used in your
 application. More information can be found on the page about \ref dmap.
 
@@ -61,7 +59,7 @@ If you want to initialise an accessor which is already created, use \c
 replace(). You need this for instance if the accessor is a class member and
 has already been instantiated before you call devcie.getXXXAccessor() in the constructor.
 \code
-    mtca4u::ScalarRegisterAccessor<float> temperatureSetPoint;
+    ChimeraTK::ScalarRegisterAccessor<float> temperatureSetPoint;
     temperatureSetPoint.replace(myDevice.getScalarRegisterAccessor<float>("TEMPERATURE_CONTROLLER/SET_POINT"));
 \endcode
 

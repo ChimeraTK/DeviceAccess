@@ -3,7 +3,7 @@
 
 \section writing_dummies Writing Dummies: Extending the DummyBackend
 
-Is this a good idea, or would one rather extend the VirtualLabBackend?
+Extending the DummyBackend might be usefull for writing simple automated tests. For more complicated tests, in particular those needing to simulate physical behaviour, it is recommended to use the VirtualLab library.
 
 \section plugin_mechanism The Plugin Mechanism
 
@@ -18,7 +18,7 @@ Custom backends should be loaded in the dmap file using the \c \@LOADLIB keyword
 \verbatim
 @LOAD_LIB /path/to/your/build_directory/lib/libCustomBackend.so
 
-MY_CUSTOM_DEVICE sdm://./CUSTOM=my_device.map my_device.map
+MY_CUSTOM_DEVICE (CUSTOM?map=my_device.map)
 \endverbatim
 
 Example dmap file from the custom backend registration example (see examples/custom_backend_registration in your build directory).

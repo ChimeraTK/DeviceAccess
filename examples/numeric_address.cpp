@@ -17,7 +17,9 @@ int main(){
   ChimeraTK::Device myDevice;
   /*
    * If you have the mtcadummy driver installed you can also use a pci device:
-   * myDevice.open("sdm://./pci:pcieunidummys6");
+   * myDevice.open("(pci:pcieunidummys6");
+   *
+   * Note: The dummy always needs a map file to know the size of the address space to emulate.
    */
   myDevice.open("(dummy?map=my_device.map)");
 

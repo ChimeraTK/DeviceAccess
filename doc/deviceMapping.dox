@@ -1,42 +1,62 @@
 /**
 \page dmap Device Mapping
 
-\todo FIXME: This information is outdated. adapt it to the URI scheme
-
-A device map file (dmap file) gives an alias for each device file and defines which
-map file to use with it. Like this it is sort of a crate population file, showing
-which board is in which slot.
-
-Each row corresponds to one device and each line 
-has three entries
+A device map file (dmap file) allows to give alias names for ChimeraTK device descriptors. This provides an additional
+layer of abstraction so that device addresses and types do not need to be hardcoded into the application. A dmap file is
+a simple text file with one entry per line. Each line corresponds to one device and each line has two space-separated
+columns:
 \li Alias name
-\li Device file
-\li Map file
+\li ChimeraTK device descriptor
 
 Example:
-\li A dummy device in the pseudo-slot 0
-\li A board from the machine protection system in slot 5
-\li A board with a motor driver in slot 6
+\li A PCI express device (device node /dev/pciedevs5) with the map file "mps_v00.07.map" get the alias name "MPS"
+\li A pure software dummy device with the map file "DFMC_MD22_v3.0.map" gets the alias name "DUMMY"
+\li A DOOCS control system server with the address "XFEL.RF/TIMER/LLA6M/*" gets the alias name "TIMER"
 
 \verbatim
-DUMMY /dev/mtcadumms0 mtcadummy_v00.08.map
-MPS /dev/pciedevs5 mps_v00.07.map
-MOTOR_DRIVER /dev/pciedevs6 DFMC_MD22_v3.0.map
+MPS (pci:pciedevs5?map=mps_v00.07.map)
+DUMMY (dummy?map=DFMC_MD22_v3.0.map)
+TIMER (doocs:XFEL.RF/TIMER/LLA6M)
 \endverbatim
 
-The alias names can be chosen freely by the system integrator. Note that 
-the MPS board and the motor driver use the same driver. The device mapping
-allows to use convenient alias names in the high level software picking the
-right board by function and not which slot was used in this particular crate.
+The alias names can be chosen freely by the developer.
 
-\section Using the device mapping
+Please note that for compatibility reasons an old format with three columns is still supported. The third column was
+specifying the map file in combination with either specifying directly the path to the device node for PCI express or 
+with a "standard device model" URI. Since both approaches do not really fit the structure of the DeviceAccess library
+any more, they have been superseeded by the ChimeraTK device descriptor. If you encounter a dmap file containing the 
+old format, consider updating it to the new format. Support for the old formats will eventually be deprecated and
+removed.
 
-The dmapFilesParser allows to conveniently read all dmap files in a given directory.
-It allows to get the device information (called dmapElem) for a specific alias.
+\section The CimeraTK device descriptor
+The CimeraTK device descriptor (CDD) specifies the type of the device, the address of the device and additional parameters
+needed. The basic form of a CDD looks like this:
+\verbatim
+(backend_type:address?key1=value1&key2=value2)
+\endverbatim
 
-FIXME: Here was an example which has been removed.
+\li backend_type - This is the name of the backend like it registered itself with the backend factory, e.g. "pci", "dummy" etc.
+\li address - This is the address of the device. The exact interpretation depends on the backend. For some backends (e.g. the dummy) no address must be specified.
+\li keyX=valueX - Any number of key-value pairs can be passed to the backend. The interpretation depends on the backend. Some backends require no parameters at all, others have optional or certain mandatory paramters.
 
-\note This multi-step approach will change, probably using a device factory.
-\note The correlation to the map file will be automated in future.
-\note The whole dmap mechanism might change in favour of the PICMG standard device model approach, or become part of it.
+CDDs can be nested, i.e. a CDD can be passed as e.g. an address or as a parameter value of another CDD, without any escaping.
+
+The formal parsing rules are as following:
+
+- CDD must be surrounded by parentheses.
+- Within the outer parentheses of the CDD, any matching parentheses (with potentially even nested parentheses inside) is interpreted as one token resp. as being part of the current token. The following tokenising rules are not applied within those parentheses.
+- The first token is terminated by either ":" or "?". It is called "type" and denominates the backend type. It must consist of alphanumeric characters only and must have a non-zero length.
+- If the first separator character was ":", the second token is terminated by "?" and is called address. It can contain any character and may also have zero length.
+- If the first separator character was "?", the address is set to zero length.
+- The remainder of the string following the "?" separator is a list of key=value pairs each separated by "&":
+  - The first "=" character of each list member will separate the key from the value.
+  - There must be at least one "=" character, additional "=" characters will just be part of the value.
+  - The key must consist of alphanumeric characters only and must have a non-zero length.
+  - The value can contain any character and may have a zero length.
+  - Any empty part of the key=value list will be ignored, i.e. "&&" will be interpreted as the normal separator "&" and any trailing or leading separator is ignored.
+- The list of key=value pairs is optional, in which case the "?" separator can be omitted. The previous token is then terminated by the end of the CDD (i.e. the closing parentheses).
+- All parts of the CDD are case sensitive.
+- Any number of white space characters directly adjacent to any separator character (including the "=" of the key=value pairs) or the outer parentheses are ignored.
+- Escaping rules: The following characters can be escaped by prepending a backslash: "&", "(", ")", " " (blank), "?" and "\". "\t" will be unescaped into a tab character. Inside matching parentheses, escaped characters are not unescaped.
+
 */
