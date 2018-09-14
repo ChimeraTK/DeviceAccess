@@ -8,7 +8,7 @@
 
 using namespace ChimeraTK;
 
-/**
+/*
  *
  * Usage: ( cd tests ; ../bin/testAccessorPerformance [<NumberOfIterations>] )
  *
