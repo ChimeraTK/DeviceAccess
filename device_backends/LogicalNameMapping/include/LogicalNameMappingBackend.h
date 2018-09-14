@@ -22,17 +22,19 @@ namespace ChimeraTK {
 
       LogicalNameMappingBackend(std::string lmapFileName="");
 
-      virtual ~LogicalNameMappingBackend(){}
+      ~LogicalNameMappingBackend() override {}
 
-      virtual void open();
+      void open() override;
 
-      virtual void close();
+      void close() override;
 
-      virtual std::string readDeviceInfo() {
+      std::string readDeviceInfo() override {
         return std::string("Logical name mapping file: ") + _lmapFileName;
       }
 
       static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
+
+      const RegisterCatalogue& getRegisterCatalogue() const override;
 
     protected:
 
@@ -52,6 +54,12 @@ namespace ChimeraTK {
 
       /// map of target devices
       std::map< std::string, boost::shared_ptr<DeviceBackend> > _devices;
+
+      /** We need to make the catalogue mutable, since we fill it within getRegisterCatalogue() */
+      mutable RegisterCatalogue _catalogue_mutable;
+
+      /** Flag whether the catalogue has already been filled with extra information from the target backends */
+      mutable bool catalogueCompleted{false};
 
       template<typename T>
       friend class LNMBackendRegisterAccessor;
