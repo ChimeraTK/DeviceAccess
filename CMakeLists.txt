@@ -5,18 +5,13 @@ include(cmake/add_dependency.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
-set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 15)
+set(${PROJECT_NAME}_MAJOR_VERSION 01)
+set(${PROJECT_NAME}_MINOR_VERSION 00)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
-# Find the DeviceAccess library
-# put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(mtca4u-deviceaccess 00.33 REQUIRED)
-
 # Find the ControlSystemAdapter
-# put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
-add_dependency(ChimeraTK-ControlSystemAdapter 00.14 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 01.00 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
