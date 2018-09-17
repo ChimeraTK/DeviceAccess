@@ -128,7 +128,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tests")
 
 # Install the tools
 foreach( toolScripts chimeratk-lmap-editor )
-  install(PROGRAMS "${toolScripts}" DESTINATION bin)
+  install(PROGRAMS "tools/${toolScripts}" DESTINATION bin)
 endforeach( toolScripts )
 
 # Install the compatibility header files
