@@ -85,9 +85,6 @@ include_directories("${PROJECT_SOURCE_DIR}/device/include")
 configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
 include_directories("${PROJECT_BINARY_DIR}/generated_include")
 
-# Only these include directories should be copied for examples.
-get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-
 # Now add other includes; headers added after this point will  not be copied as
 # part of the installation
 include_directories(${Boost_INCLUDE_DIRS} ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
@@ -105,7 +102,10 @@ add_subdirectory ("${PROJECT_SOURCE_DIR}/device_backends")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/device")
 add_subdirectory ("${PROJECT_SOURCE_DIR}/tools")
 
+message(INCLUDE_DIRS=${INCLUDE_DIRS})
+
 include_directories(${INCLUDE_DIRS})
+
 
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
@@ -129,7 +129,7 @@ target_link_libraries( ${PROJECT_NAME}  ${LibXML++_LDFLAGS} -Wl,$<$<PLATFORM_ID:
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/mtca4u)
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/ChimeraTK)
 
-foreach(dir ${inc_dirs} )
+foreach(dir ${INCLUDE_DIRS} )
     file(GLOB headerFiles  "${dir}/*.h")
     foreach(headerFile ${headerFiles} )
         execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${headerFile} ${PROJECT_BINARY_DIR}/include/ChimeraTK)

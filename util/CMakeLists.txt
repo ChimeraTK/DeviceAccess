@@ -6,6 +6,4 @@ set(libutil ${PROJECT_NAME}_util "PARENT_SCOPE")
 add_library(${PROJECT_NAME}_util ${utilSources})
 target_link_libraries( ${libutil} ${libexception} ) 
 
-
-
-
+set(INCLUDE_DIRS ${INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
