@@ -1,6 +1,6 @@
 
 
-foreach( toolScripts mtca4u_lmap_editor.py )
+foreach( toolScripts chimeratk-lmap-editor )
 
     install(PROGRAMS "${toolScripts}" DESTINATION bin)
 

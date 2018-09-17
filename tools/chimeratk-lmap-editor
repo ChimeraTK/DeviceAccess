@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.widget);
 
         # set window title and size
-        self.setWindowTitle("mtca4u Logical Name Mapping editor")
+        self.setWindowTitle("ChimeraTK Logical Name Mapping editor")
         self.resize(1200, 800)
 
 #######################################################################################################################
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
             
         # store file name and change window title
         self.fileName = os.path.abspath(fileName)
-        self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - mtca4u Logical Name Mapping editor")
+        self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - ChimeraTK Logical Name Mapping editor")
         self._fileSaveAgainAction.setEnabled(True)
 
 #######################################################################################################################
@@ -390,7 +390,7 @@ class MainWindow(QMainWindow):
         
         # store file name and change window title
         self.fileName = os.path.abspath(fileName)
-        self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - mtca4u Logical Name Mapping editor")
+        self.setWindowTitle(os.path.basename(self.fileName)+" ("+os.path.dirname(self.fileName)+") - ChimeraTK Logical Name Mapping editor")
         self._fileSaveAgainAction.setEnabled(True)
 
 #########################################################################################
@@ -483,7 +483,7 @@ class MainWindow(QMainWindow):
 # close the editor
     def exit(self):
         msg = "Are you sure you want to close the editor?"
-        reply = QMessageBox.question(self, 'mtca4u Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
+        reply = QMessageBox.question(self, 'ChimeraTK Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
         if reply != QMessageBox.Yes:
           return
         self.close()
@@ -492,7 +492,7 @@ class MainWindow(QMainWindow):
 # close the editor
     def closeEvent(self, event):
         msg = "Are you sure you want to close the editor?"
-        reply = QMessageBox.question(self, 'mtca4u Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
+        reply = QMessageBox.question(self, 'ChimeraTK Logical Name Mapping editor', msg, QMessageBox.Yes, QMessageBox.No)
         if reply != QMessageBox.Yes:
           event.ignore()
         else:
