@@ -1,9 +1,0 @@
-Document: libmtca4u-deviceaccess-doc
-Title: MTCA4U deviceaccess Doxyen Documentation
-Author: Martin Killenberg (martin.killenber@desy.de)
-Abstract: Doxygen API documentation and user guide of the MTCA4U deviceaccess library.
-Section: Programming/C++
-
-Format: HTML
-Index: /usr/share/doc/libmtca4u-deviceaccesss@mtca4u-deviceaccess_DEBVERSION@/html/index.html
-Files: /usr/share/doc/libmtca4u-deviceaccesss@mtca4u-deviceaccess_DEBVERSION@/html/*
