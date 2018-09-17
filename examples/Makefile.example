@@ -1,8 +1,8 @@
-#Make sure the mtca4u-deviceaccess-config executable is in your path.
+#Make sure the ChimeraTK-DeviceAccess-config executable is in your path.
 #For standard installations from debian packages this is the case.
 #For custom installations you might have to adapt you PATH variable.
-CPPFLAGS += $(shell mtca4u-deviceaccess-config --cppflags)
-LDFLAGS +=  $(shell mtca4u-deviceaccess-config --ldflags)
+CPPFLAGS += $(shell ChimeraTK-DeviceAccess-config --cppflags)
+LDFLAGS +=  $(shell ChimeraTK-DeviceAccess-config --ldflags)
 
 SOURCES = $(shell ls *.cpp)
 TARGETS = $(basename $(SOURCES))

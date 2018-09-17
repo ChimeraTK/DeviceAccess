@@ -16,9 +16,9 @@
  */
 #if FUSION_MAX_MAP_SIZE!=30  || FUSION_MAX_VECTOR_SIZE!=30
  #error The sizes for boost::fusion are not set correctly as compiler flags.
- #error Include the compiler flags provided by mtca4u-deviceaccess:
- #error * In cmake: set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${mtca4u-deviceaccess_CXX_FLAGS}")
- #error * in standard Makefiles: CPPFLAGS += $(shell mtca4u-deviceaccess-config --cppflags)
+ #error Include the compiler flags provided by chimeratk-deviceaccess:
+ #error * In cmake: set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-DeviceAccess_CXX_FLAGS}")
+ #error * in standard Makefiles: CPPFLAGS += $(shell ChimeraTK-DeviceAccess-config --cppflags)
 #endif
 
 #include <boost/fusion/include/at_key.hpp>
