@@ -56,6 +56,7 @@ endif()
 # Generate DeviceAccessVersion.h
 configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
 include_directories(${PROJECT_BINARY_DIR}/generated_include)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/generated_include/ DESTINATION include/ChimeraTK)
 
 # Add source files and include directories
 set(subdirs exception util fileparsers device_backends device device_backends/LogicalNameMapping device_backends/Subdevice device_backends/SharedDummy device_backends/Rebot)
