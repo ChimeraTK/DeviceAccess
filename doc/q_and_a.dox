@@ -74,5 +74,14 @@ the initialisation of the variable would behave unintuitively:
 Hence, we decided that there is no intuitive implementation for the assigment
 operator and explicitly deactivated it. The last example assigning to \c d will
 already fail at compile time.
+
+\section use_sequences Why can I not read SEQUENCE registers?
+
+The entries SEQUENCE_DMA_0 etc. in the map file are a crutch to implement multiplexed 2D registers, together with the according AREA_MULTIPLEXED_SEQUENCE register.
+You cannot directly read them. The entry in the register catalogue only exists for historical implementation reasons.
+However, QtHardMon in versions 0.x used this entry to display the according channel of the 2D register, so it gave the impression you could directly read the sequence.
+
+The registers SEQUENCE_DMA_xx and AREA_MULTIPLEXED_SEQUENCE_DMA together describe the register "DMA" (register name can vary). To get the accoding sequence use a 2D accessor
+of "DMA" and get the channel you want (see \ref accessor2d example). In QtHardMon 1.x and newer, use the register DMA and also select the correct channel.
 */
 }// end of namespace
