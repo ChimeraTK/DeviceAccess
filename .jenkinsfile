@@ -1,3 +1,2 @@
 @Library('ChimeraTK') _
-addDependency('testPipeline')
-buildTestDeploy()
+buildTestDeploy(['testPipeline'])
