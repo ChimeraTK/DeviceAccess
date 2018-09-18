@@ -132,6 +132,9 @@ foreach( toolScripts chimeratk-lmap-editor )
   install(PROGRAMS "tools/${toolScripts}" DESTINATION bin)
 endforeach( toolScripts )
 
+# Install the example source code.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc)
+
 # Install the compatibility header files
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/mtca4u_compatibility_headers/ DESTINATION include/mtca4u)
 
