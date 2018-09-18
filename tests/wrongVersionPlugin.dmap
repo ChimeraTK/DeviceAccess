@@ -3,7 +3,7 @@
 # Test two different scenarios:
 # .so file name relative to dmap file, while dmap file is not in the working directory.
 # Absolute .so file name
-@LOAD_LIB ../../lib/libWrongVersionBackend.so
+@LOAD_LIB ../libWrongVersionBackend.so
 
 MY_DUMMY sdm://./dummy=goodMapFile.map goodMapFile.map
 WRONG_VERSION sdm://./wrongVersionBackend=goodMapFile.map goodMapFile.map

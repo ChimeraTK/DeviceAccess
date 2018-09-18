@@ -16,7 +16,7 @@ cleanup() {
         kill -9 $pid
     done
     # Call this test again, so leaked memory should be cleaned. 
-    ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
+    ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
 }
 trap "cleanup" SIGINT SIGTERM EXIT
 
@@ -46,7 +46,7 @@ printf "\n##### Test capturing of starting supernumerous processes #####\n"
 # Start the supported number of processes in parallel
 while [ $CNT -lt $N_SUPPORTED_PROCESSES ]; do 
 
-    ../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
+    ./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
     PID[$CNT]=$!
     BGPIDS+=("$!")
 
@@ -70,7 +70,7 @@ done
 # Attempt to start another process, this should fail
 #FIXME Boost 1.60 introduces a change in the command line interface, this call
 #      will issue an warning.
-../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
+./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING & >/dev/null
 PID_SURPLUS=$!
 BGPIDS+=("$!")
 
@@ -111,14 +111,14 @@ sleep .5
 printf "\n#####Test removal of dead processes from the PID list on construction.\n"
 
 # Start process writing some values, kill it
-../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
+./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
 PID_MAKEMESS=$!
 sleep 1
 kill -9 $PID_MAKEMESS
 check_process_termination $PID_MAKEMESS 5
 
 # Test, if memory has been cleaned up. This should happen, when this test constructs the SharedMemoryManager
-../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
+./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyCleanup
 CLEANUP_RESULT=$?
 
 if [[ $CLEANUP_RESULT -ne 0 ]]; then
@@ -133,11 +133,11 @@ sleep .5
 printf "\n#####Test removal of dead processes from the PID list on deconstruction.\n"
 
 #FIXME Interface change in Boost 1.60, see above
-../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
+./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite KEEP_RUNNING &
 PID_STILL_RUNNING_PROCESS=$!
 BGPIDS+=("$!")
 
-../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
+./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testMakeMess &
 sleep .2
 PID_MAKEMESS=$!
 kill -9 $PID_MAKEMESS
@@ -148,7 +148,7 @@ kill -s SIGINT $PID_STILL_RUNNING_PROCESS
 check_process_termination $PID_STILL_RUNNING_PROCESS 5
 
 # Test if memory has been deleted.
-../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyMemoryDeleted
+./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testVerifyMemoryDeleted
 CLEANUP_RESULT=$?
 
 if [[ $CLEANUP_RESULT -ne 0  ]]; then

@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
     processVarsWrite21.write();
 
     //start second accessing application
-    BOOST_CHECK(!std::system("../bin/testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite"));
+    BOOST_CHECK(!std::system("./testSharedDummyBackendExt --run_test=SharedDummyBackendTestSuite/testReadWrite"));
 
     // Check if values have been written back by the other application
     ChimeraTK::OneDRegisterAccessor<int> processVarsRead
