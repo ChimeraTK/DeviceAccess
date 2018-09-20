@@ -1,3 +1,7 @@
+#This is an example how to include the required compiler and linker flags
+#in a standard Makefile. However, we recomment to use cmake as a build
+#system. An example CMakeLists.txt is also included in the example.
+
 #Make sure the ChimeraTK-DeviceAccess-config executable is in your path.
 #For standard installations from debian packages this is the case.
 #For custom installations you might have to adapt you PATH variable.
