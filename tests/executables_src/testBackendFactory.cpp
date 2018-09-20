@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE( testCreateBackend ){
   std::string testFilePath = TEST_DMAP_FILE_PATH;
   std::string oldtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "Old";
   std::string invalidtestFilePath = std::string(TEST_DMAP_FILE_PATH) + "disabled";
-  BackendFactory::getInstance().setDMapFilePath(invalidtestFilePath);
+  BOOST_CHECK_THROW(BackendFactory::getInstance().setDMapFilePath(invalidtestFilePath), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"), ChimeraTK::logic_error);//dmap file not found exception .
   BackendFactory::getInstance().setDMapFilePath(oldtestFilePath);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("test"), ChimeraTK::logic_error); //file found but not an existing alias.

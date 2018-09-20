@@ -123,6 +123,7 @@ namespace ChimeraTK {
   void BackendFactory::setDMapFilePath(std::string dMapFilePath)
   {
     _dMapFile = dMapFilePath;
+    loadAllPluginsFromDMapFile();
   }
   /********************************************************************************************************************/
 
@@ -157,8 +158,6 @@ namespace ChimeraTK {
   boost::shared_ptr<DeviceBackend> BackendFactory::createBackend(std::string aliasOrUri) {
 
     std::lock_guard<std::mutex> lock(_mutex);
-
-    loadAllPluginsFromDMapFile();
 
     if(Utilities::isDeviceDescriptor(aliasOrUri) || Utilities::isSdm(aliasOrUri)) {
       // it is a URI, directly create a deviceinfo and call the internal creator function
