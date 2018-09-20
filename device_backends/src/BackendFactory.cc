@@ -36,6 +36,8 @@ namespace ChimeraTK {
 #ifdef _DEBUG
     std::cout << "adding:" << backendType << std::endl << std::flush;
 #endif
+    called_registerBackendType = true;
+
     if(creatorMap.find(backendType) != creatorMap.end()) {
       throw ChimeraTK::logic_error("A backend with the type name '"+backendType+"' has already been registered.");
     }
@@ -78,7 +80,6 @@ namespace ChimeraTK {
         }
         return creatorFunction(instance, pars);
       };
-    called_registerBackendType = true;
   }
 
   /********************************************************************************************************************/
@@ -91,6 +92,7 @@ namespace ChimeraTK {
 #ifdef _DEBUG
     std::cout << "adding:" << interface << std::endl << std::flush;
 #endif
+    called_registerBackendType = true;
     if (version != CHIMERATK_DEVICEACCESS_VERSION){
       // Register a function that throws an exception with the message when trying to create a backend.
       // We do not throw here because this would throw an uncatchable exception inside the static instance
@@ -114,7 +116,6 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("The backend type '"+interface+"' does not yet support ChimeraTK device "
                                      "descriptors! Please update the backend!");
       };
-    called_registerBackendType = true;
   }
 
   /********************************************************************************************************************/
