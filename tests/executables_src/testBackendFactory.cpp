@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE( testPluginMechanism ){
   BOOST_CHECK_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("libNotRegisteringPlugin.so"), ChimeraTK::logic_error );
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./notRegisteringPlugin=goodMapFile.map"), ChimeraTK::logic_error );
 
-  BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackend.so"))
+  BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackend.so"));
   BOOST_CHECK_THROW( BackendFactory::getInstance().createBackend("sdm://./wrongVersionBackend=goodMapFile.map"), ChimeraTK::logic_error );
 
   BOOST_CHECK_NO_THROW( ChimeraTK::BackendFactory::getInstance().loadPluginLibrary("./libWrongVersionBackendCompat.so"))
