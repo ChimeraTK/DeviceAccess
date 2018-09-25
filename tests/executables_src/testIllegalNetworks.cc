@@ -72,7 +72,7 @@ struct TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoScalarPollPushAccessors, T, test_types ) {
 
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   TestApplication<T> app;
 
   app.dev("/MyModule/Variable") >> app.testModule.consumingPush;
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTwoFeeders, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
 
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testTooManyPollingConsumers, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testDifferentNrElements, T, test_types ) {
 
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
 
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDifferentNrElements, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testMergeNetworks, T, test_types ) {
 
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
   app.testModule.feedingPush >> app.testModule.consumingPush;
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testMergeNetworks, T, test_types ) {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testConstantTrigger, T, test_types ) {
 
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dummy.dmap");
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
   app.dev("/MyModule/Variable") [ ctk::VariableNetworkNode::makeConstant<int>(true) ] >> app.testModule.consumingPush;
