@@ -33,6 +33,7 @@ namespace ChimeraTK {
         while(true) {
           timeout.read();
           t += static_cast<uint32_t>(timeout) * std::chrono::milliseconds();
+          boost::this_thread::interruption_point();
           std::this_thread::sleep_until(t);
 
           tick++;
