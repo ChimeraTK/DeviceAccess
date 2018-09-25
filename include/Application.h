@@ -168,6 +168,12 @@ namespace ChimeraTK {
         return counter;
       }
 
+      /** Convenience function for creating constants. See VariableNetworkNode::makeConstant() for details. */
+      template<typename UserType>
+      static VariableNetworkNode makeConstant(UserType value, size_t length=1, bool makeFeeder=true) {
+        return VariableNetworkNode::makeConstant(makeFeeder, value, length);
+      }
+
     protected:
 
       friend class Module;
