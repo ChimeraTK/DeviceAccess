@@ -26,13 +26,16 @@ namespace ChimeraTK {
 
       void mainLoop() {
         tick = 0;
-        if(timeout = 0) timeout = defaultTimeout_;
-
+        
         std::chrono::time_point<std::chrono::steady_clock> t = std::chrono::steady_clock::now();
 
         while(true) {
           timeout.read();
-          t += static_cast<uint32_t>(timeout) * std::chrono::milliseconds();
+          if(timeout == 0){
+            // set receiving end of timeout. Will only be overwritten if there is new data.
+            timeout = defaultTimeout_;
+          }
+          t += std::chrono::milliseconds(static_cast<uint32_t>(timeout));
           boost::this_thread::interruption_point();
           std::this_thread::sleep_until(t);
 
