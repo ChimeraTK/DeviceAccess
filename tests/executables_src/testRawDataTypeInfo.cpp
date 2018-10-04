@@ -10,7 +10,7 @@ BOOST_AUTO_TEST_CASE( testRawAccessor ){
   setDMapFilePath("dummies.dmap");
 
   Device d;
-  d.open("PCIE1");
+  d.open("DUMMYD3");
 
   auto registerCatalogue = d.getRegisterCatalogue();
   auto registerInfo = registerCatalogue.getRegister("BOARD/WORD_USER");

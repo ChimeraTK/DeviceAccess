@@ -4,14 +4,13 @@
 using namespace boost::unit_test_framework;
 
 #include <Device.h>
-//#include <AccessMode.h>
 using namespace ChimeraTK;
 
 BOOST_AUTO_TEST_CASE( testRawAccessor ){
   setDMapFilePath("dummies.dmap");
 
   Device d;
-  d.open("PCIE1");
+  d.open("DUMMYD3");
 
   auto scalarRawAccessor=d.getScalarRegisterAccessor<int32_t>("BOARD/WORD_USER", 0, {AccessMode::raw});
   scalarRawAccessor=25;

@@ -78,13 +78,13 @@ BOOST_AUTO_TEST_CASE( testDeviceCreation ) {
 
   ChimeraTK::Device device1;
   BOOST_CHECK( device1.isOpened() == false );
-  device1.open("PCIE0");
+  device1.open("DUMMYD0");
   BOOST_CHECK( device1.isOpened() == true );
-  BOOST_CHECK_NO_THROW(device1.open("PCIE0"));
+  BOOST_CHECK_NO_THROW(device1.open("DUMMYD0"));
   {// scope to have a device which goes out of scope
       ChimeraTK::Device device1a;
       // open the same backend than device1
-      device1a.open("PCIE0");
+      device1a.open("DUMMYD0");
       BOOST_CHECK( device1a.isOpened() == true );
   }
   // check that device1 has not been closed by device 1a going out of scope
@@ -92,17 +92,17 @@ BOOST_AUTO_TEST_CASE( testDeviceCreation ) {
 
   ChimeraTK::Device device1b;
   // open the same backend than device1
-  device1b.open("PCIE0");
+  device1b.open("DUMMYD0");
   // open another backend with the same device //ugly, might be deprecated soon
-  device1b.open("PCIE2");
+  device1b.open("DUMMYD0");
   // check that device1 has not been closed by device 1b being reassigned
   BOOST_CHECK( device1.isOpened() == true );
 
   ChimeraTK::Device device2;
   BOOST_CHECK( device2.isOpened() == false );
-  device2.open("PCIE1");
+  device2.open("DUMMYD1");
   BOOST_CHECK( device2.isOpened() == true );
-  BOOST_CHECK_NO_THROW(device2.open("PCIE1"));
+  BOOST_CHECK_NO_THROW(device2.open("DUMMYD1"));
   BOOST_CHECK( device2.isOpened() == true );
 
   ChimeraTK::Device device3;
@@ -148,13 +148,11 @@ BOOST_AUTO_TEST_CASE( testDeviceCreation ) {
 }
 
 BOOST_AUTO_TEST_CASE( testDeviceInfo ) {
-  int slot, majorVersion, minorVersion;
   ChimeraTK::Device device;
-  device.open("PCIE2");
-  std::string deviceInfo;
-  deviceInfo = device.readDeviceInfo();
-  int nParametersConverted = sscanf(deviceInfo.c_str(), "SLOT: %d DRV VER: %d.%d", &slot, &majorVersion, &minorVersion);
-  BOOST_CHECK(nParametersConverted == 3);
+  device.open("DUMMYD3");
+  std::string deviceInfo = device.readDeviceInfo();
+  std::cout << deviceInfo << std::endl;
+  BOOST_CHECK(deviceInfo.substr(0,31) == "DummyBackend with mapping file ");
 }
 
 #pragma GCC diagnostic push
