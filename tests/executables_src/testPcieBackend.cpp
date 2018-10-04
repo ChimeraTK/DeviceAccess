@@ -6,6 +6,10 @@ using namespace boost::unit_test_framework;
 #define LLRFDRV_TEST_SLOT 4
 #define PCIEUNI_TEST_SLOT 6
 
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include "PcieBackend.h"
 #include "BackendFactory.h"
 #include "Device.h"
@@ -33,6 +37,46 @@ using ChimeraTK::numeric_address::BAR;
 //#define PCIE_UNI_DEVICE "PCIEUNI11"
 #define PCIE_UNI_DEVICE "PCIE0"
 #define NON_EXISTING_DEVICE "DUMMY9"
+
+
+// Use a file lock on /var/run/lock/mtcadummy/<devicenode> for all device nodes we are using in this test, to ensure we
+// are not running concurrent tests in parallel using the same kernel dummy drivers.
+//
+// Note: The lock is automatically released when the process terminates!
+struct TestLocker {
+    std::vector<std::string> usedNodes{"mtcadummys0", "llrfdummys4", "noioctldummys5", "pcieunidummys6"};
+
+    TestLocker() {
+      mkdir("/var/run/lock/mtcadummy", 0777);   // ignore errors intentionally, as directory might already exist
+      for(auto &node : usedNodes) {
+        std::string lockfile = "/var/run/lock/mtcadummy/"+node;
+
+        // open dmap file for locking
+        int fd = open(lockfile.c_str(), O_WRONLY | O_CREAT );
+        if(fd == -1) {
+          std::cout << "Cannot open file '" << lockfile << "' for locking." << std::endl;
+          exit(1);
+        }
+
+        // obtain lock
+        int res = flock(fd, LOCK_EX);
+        if(res == -1) {
+          std::cout << "Cannot acquire lock on file 'shareddummyTest.dmap'." << std::endl;
+          exit(1);
+        }
+      }
+    }
+
+    ~TestLocker() {
+      for(auto &node : usedNodes) {
+        std::string lockfile = "/var/run/lock/mtcadummy/"+node;
+        unlink(lockfile.c_str());
+      }
+      rmdir("/var/run/lock/mtcadummy");
+    }
+
+};
+static TestLocker testLocker;
 
 
 /** The unit tests for the PcieBackend class, based on the
