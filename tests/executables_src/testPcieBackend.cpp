@@ -52,7 +52,7 @@ struct TestLocker {
         std::string lockfile = "/var/run/lock/mtcadummy/"+node;
 
         // open dmap file for locking
-        int fd = open(lockfile.c_str(), O_WRONLY | O_CREAT );
+        int fd = open(lockfile.c_str(), O_WRONLY | O_CREAT, 0777);
         if(fd == -1) {
           std::cout << "Cannot open file '" << lockfile << "' for locking." << std::endl;
           exit(1);
