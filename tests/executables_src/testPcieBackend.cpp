@@ -72,7 +72,6 @@ struct TestLocker {
         std::string lockfile = "/var/run/lock/mtcadummy/"+node;
         unlink(lockfile.c_str());
       }
-      rmdir("/var/run/lock/mtcadummy");
     }
 
 };
