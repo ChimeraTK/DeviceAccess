@@ -1,0 +1,30 @@
+#######################################################################################################################
+#
+# cmake module for finding @PROJECT_NAME@
+#
+# returns:
+#  PACKAGE_VERSION            = full provided version string
+#  PACKAGE_VERSION_EXACT      = true if version is exact match
+#  PACKAGE_VERSION_COMPATIBLE = true if version is compatible
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
+set(PACKAGE_VERSION @@PROJECT_NAME@_SOVERSION@)
+if(@@PROJECT_NAME@_SOVERSION@ VERSION_EQUAL "${PACKAGE_FIND_VERSION}")
+  set(PACKAGE_VERSION_COMPATIBLE 1)
+  set(PACKAGE_VERSION_EXACT 1)
+elseif(@@PROJECT_NAME@_SOVERSION@ VERSION_GREATER "${PACKAGE_FIND_VERSION}")
+  set(PACKAGE_VERSION_COMPATIBLE 1)
+endif()
