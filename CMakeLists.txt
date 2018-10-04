@@ -6,6 +6,8 @@ set(${PROJECT_NAME}_MINOR_VERSION 00)
 set(${PROJECT_NAME}_PATCH_VERSION 05)
 include(cmake/set_version_numbers.cmake)
 
+include(GNUInstallDirs)
+
 # Set the build type to Release if none is specified
 # Force it into Release if "None" is specified (needed to overrule dkpg_buildpackage)
 if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
@@ -56,7 +58,7 @@ endif()
 # Generate DeviceAccessVersion.h
 configure_file(cmake/DeviceAccessVersion.h.in ${PROJECT_BINARY_DIR}/generated_include/DeviceAccessVersion.h)
 include_directories(${PROJECT_BINARY_DIR}/generated_include)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/generated_include/ DESTINATION include/ChimeraTK)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/generated_include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ChimeraTK)
 
 # Add source files and include directories
 set(subdirs exception util fileparsers device_backends device device_backends/LogicalNameMapping device_backends/Subdevice device_backends/SharedDummy device_backends/Rebot)
@@ -67,7 +69,7 @@ foreach(subdir ${subdirs})
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/src sources)
   set(SOURCE ${SOURCE} ${sources})
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include)
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/ DESTINATION include/ChimeraTK)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ChimeraTK)
 endforeach()
 
 # add the library
@@ -89,21 +91,21 @@ ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Install the library and the executables
 install( TARGETS ${PROJECT_NAME}
-         RUNTIME DESTINATION bin
-         LIBRARY DESTINATION lib
-         ARCHIVE DESTINATION lib )
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} )
 
 # Generate configuration files for dependencies
-set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR} ${Boost_INCLUDE_DIRS}")
 set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES}")
-set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
+set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} ${Boost_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+  set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 else()
-  set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
+  set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR},--enable-new-dtags")
 endif()
-set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
+set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR} -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
 # Doxygen documentation
@@ -129,14 +131,14 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tests")
 
 # Install the tools
 foreach( toolScripts chimeratk-lmap-editor )
-  install(PROGRAMS "tools/${toolScripts}" DESTINATION bin)
+  install(PROGRAMS "tools/${toolScripts}" DESTINATION ${CMAKE_INSTALL_BINDIR})
 endforeach( toolScripts )
 
 # Install the example source code.
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/examples DESTINATION ${CMAKE_INSTALL_DOCDIR}-${${PROJECT_NAME}_SOVERSION} COMPONENT doc)
 
 # Install the compatibility header files
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mtca4u_compatibility_headers/ DESTINATION include/mtca4u)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/mtca4u_compatibility_headers/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mtca4u)
 
 # Compatibility with the old project name mtca4u-deviceaccess
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Findmtca4u-deviceaccess.cmake.in "${PROJECT_BINARY_DIR}/Findmtca4u-deviceaccess.cmake" @ONLY)
