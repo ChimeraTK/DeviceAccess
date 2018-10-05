@@ -66,7 +66,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -Wuninitialized ")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
 
 # linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${mtca4u-deviceaccess_LINK_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/Modules/include/)
@@ -91,8 +91,8 @@ if(TESTING_IS_ENABLED)
     get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${testExecutableSrcFile})
     # do not link against the boost unit test library, the tests are not written for it!
-    target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                                           ${mtca4u-deviceaccess_LBRARIES} ${HDF5_LIBRARIES})
+    target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
+    set_target_properties(${executableName} PROPERTIES LINK_FLAGS ${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS})
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
 
@@ -112,11 +112,10 @@ endif(TESTING_IS_ENABLED)
 if(DEMO_IS_ENABLED)
 
   add_executable(demoApp example/demoApp.cc example/TimerDummyDevice.cc example/DemoDummyDevice.cc)
-  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
   target_link_libraries(demoApp ${PROJECT_NAME}
                                 ${Boost_LIBRARIES}
-                                ${mtca4u-deviceaccess_LIBRARIES}
                                 ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
                                 ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
                                 ${LibXML++_LIBRARIES}
@@ -124,9 +123,9 @@ if(DEMO_IS_ENABLED)
                                 ${HDF5_LIBRARIES})
 
   add_executable(demoApp-xmlGenerator example/demoApp.cc)
-  set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} -DGENERATE_XML")
+  set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS} -DGENERATE_XML")
+  set_target_properties(demoApp-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
   target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME}
-                                             ${mtca4u-deviceaccess_LIBRARIES}
                                              ${Boost_LIBRARIES}
                                              ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
                                              ${LibXML++_LIBRARIES}
@@ -145,11 +144,10 @@ if(DEMO_IS_ENABLED)
 
   # second example
   add_executable(demoApp2 example2/demoApp2.cc)
-  set_target_properties(demoApp2 PROPERTIES COMPILE_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoApp2 PROPERTIES LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  set_target_properties(demoApp2 PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+  set_target_properties(demoApp2 PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
   target_link_libraries(demoApp2 ${PROJECT_NAME}
                                 ${Boost_LIBRARIES}
-                                ${mtca4u-deviceaccess_LIBRARIES}
                                 ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
                                 ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
                                 ${LibXML++_LIBRARIES}
@@ -168,8 +166,8 @@ endif(DEMO_IS_ENABLED)
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                  SOVERSION ${${PROJECT_NAME}_SOVERSION})
-target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES}
-                                      ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
+target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
                                       ${Boost_LIBRARIES}
                                       pthread
                                       ${LibXML++_LIBRARIES}
@@ -195,9 +193,9 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/
                                                   EXCLUDE PATTERN "${PROJECT_NAME}" EXCLUDE)
 
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
-set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${mtca4u-deviceaccess_LBRARIES} ${HDF5_LIBRARIES}")
+set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
-set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-set(${PROJECT_NAME}_LINK_FLAGS "${mtca4u-deviceaccess_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
