@@ -9,6 +9,7 @@
 #define CHIMERA_TK_REGISTER_CATALOGUE_H
 
 #include <map>
+#include <boost/shared_ptr.hpp>
 
 #include "RegisterInfo.h"
 #include "RegisterPath.h"
