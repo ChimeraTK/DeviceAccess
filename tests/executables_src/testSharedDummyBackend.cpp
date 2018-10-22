@@ -1,7 +1,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE SharedDummyBackendTest
 #include <boost/test/unit_test.hpp>
-using namespace boost::unit_test_framework;
 
 #include <sys/file.h>
 
@@ -20,7 +19,10 @@ using namespace boost::unit_test_framework;
 #include <algorithm>
 #include <utility>
 
+namespace {
+
 using namespace ChimeraTK;
+using namespace boost::unit_test_framework;
 
 // Use a file lock on shareddummyTest.dmap to ensure we are not running concurrent tests in parallel using the same
 // shared dummies.
@@ -115,6 +117,8 @@ BOOST_AUTO_TEST_CASE( testReadWrite ) {
     BOOST_CHECK((std::vector<int>)processVarsWrite21 == (std::vector<int>)processVarsRead);
     dev.close();
 }
+
+} // anonymous namespace
 
 /*********************************************************************************************************************/
 BOOST_AUTO_TEST_SUITE_END()

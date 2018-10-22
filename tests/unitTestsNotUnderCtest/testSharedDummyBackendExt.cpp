@@ -1,7 +1,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE SharedDummyBackendTest
 #include <boost/test/unit_test.hpp>
-using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "Utilities.h"
@@ -19,7 +18,10 @@ using namespace boost::unit_test_framework;
 #include <chrono>
 #include <utility>
 
+namespace {
+
 using namespace ChimeraTK;
+using namespace boost::unit_test_framework;
 
 // Static function prototypes
 static void interrupt_handler(int);
@@ -281,3 +283,4 @@ static bool shm_exists(std::string shmName){
   return result;
 }
 
+} // anonymous namespace
