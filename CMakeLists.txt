@@ -77,7 +77,7 @@ link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
 target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
 if(UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME} rt)
+    target_link_libraries(${PROJECT_NAME} rt pthread)
 endif()
 
 # The make coverage command is only available in debug mode
