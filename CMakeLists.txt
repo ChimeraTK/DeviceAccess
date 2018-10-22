@@ -75,7 +75,10 @@ add_library( ${PROJECT_NAME} SHARED ${SOURCE} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} pthread dl rt)
+target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
+if(UNIX AND NOT APPLE)
+    target_link_libraries(${PROJECT_NAME} rt)
+endif()
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
