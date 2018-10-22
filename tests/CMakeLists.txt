@@ -25,7 +25,10 @@ foreach( testExecutableSrcFile ${testExecutables})
     add_executable(${executableName} ${testExecutableSrcFile})
     # ATTENTION: Do not link against the boost_unit_test_library! Doing so would require #defining BOOST_TEST_DYN_LINK and some
     # other quirks. If not done, strange crashes occur on newer boost/gcc versions!
-    target_link_libraries(${executableName} ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY rt)
+    target_link_libraries(${executableName} ${Boost_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_TEST_LIBRARY)
+    if(UNIX AND NOT APPLE)
+      target_link_libraries(${executableName} rt)
+    endif()
     add_test(${executableName} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${executableName})
   endif()
 endforeach(testExecutableSrcFile)
