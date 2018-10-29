@@ -88,12 +88,12 @@ if(TESTING_IS_ENABLED)
   aux_source_directory(${CMAKE_SOURCE_DIR}/tests/executables_src testExecutables)
   foreach( testExecutableSrcFile ${testExecutables})
     #NAME_WE means the base name without path and (longest) extension
-    get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
-    add_executable(${excutableName} ${testExecutableSrcFile})
+    get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
+    add_executable(${executableName} ${testExecutableSrcFile})
     # do not link against the boost unit test library, the tests are not written for it!
-    target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
+    target_link_libraries(${executableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
     set_target_properties(${executableName} PROPERTIES LINK_FLAGS "${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
-    add_test(${excutableName} ${excutableName})
+    add_test(${executableName} ${executableName})
   endforeach( testExecutableSrcFile )
 
   # enable code coverate report
