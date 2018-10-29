@@ -108,7 +108,7 @@ void Application::processUnconnectedNodes() {
         bool makeFeeder = !(networkList.back().hasFeedingNode());
         size_t length = accessor.getNumberOfElements();
         auto callable = CreateConstantForUnconnectedVar(accessor.getValueType(), makeFeeder, length);
-        boost::fusion::for_each(ChimeraTK::userTypeMap(), callable);
+        boost::fusion::for_each(ChimeraTK::userTypeMap(), std::ref(callable));
         assert(callable.done);
         constantList.emplace_back(callable.theNode);
         networkList.back().addNode(constantList.back());
@@ -554,7 +554,7 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
 
   // defer actual network creation to templated function
   auto callable = TypedMakeConnectionCaller(*this, network);
-  boost::fusion::for_each(ChimeraTK::userTypeMap(), callable);
+  boost::fusion::for_each(ChimeraTK::userTypeMap(), std::ref(callable));
   assert(callable.done);
 
   // mark the network as created
