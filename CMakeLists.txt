@@ -92,7 +92,7 @@ if(TESTING_IS_ENABLED)
     add_executable(${excutableName} ${testExecutableSrcFile})
     # do not link against the boost unit test library, the tests are not written for it!
     target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
-    set_target_properties(${executableName} PROPERTIES LINK_FLAGS ${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS})
+    set_target_properties(${executableName} PROPERTIES LINK_FLAGS "${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
 
