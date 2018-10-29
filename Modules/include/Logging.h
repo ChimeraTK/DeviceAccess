@@ -87,6 +87,8 @@
 #undef GENERATE_XML
 #include "ApplicationCore.h"
 #include <queue>
+#include <map>
+#include <fstream>
 
 namespace ctk = ChimeraTK;
 
