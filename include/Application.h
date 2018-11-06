@@ -91,6 +91,12 @@ namespace ChimeraTK {
         testableModeLock("enableTestableMode");
       }
 
+      /**
+       * Returns true if application is in testable mode else returns
+       * false.
+       **/
+      bool isTestableModeEnabled() { return testableMode; }
+
       /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
        *  the testable mode was enabled. */
       void stepApplication();
