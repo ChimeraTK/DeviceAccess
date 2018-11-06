@@ -30,10 +30,8 @@ namespace ChimeraTK {
       }
 
       void mainLoop() {
-        if (auto application = dynamic_cast<Application *>(getOwner())) {
-          if (application->isTestableModeEnabled()) {
-            return;
-          }
+        if (Application::getInstance().isTestableModeEnabled()) {
+          return;
         }
         tick = 0;
         std::chrono::time_point<std::chrono::steady_clock> t = std::chrono::steady_clock::now();
