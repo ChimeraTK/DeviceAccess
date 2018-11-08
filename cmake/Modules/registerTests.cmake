@@ -7,9 +7,9 @@ include(CMakeParseArguments)
 #                  ${concatenated_string_of_source_files}
 #                NAMESPACE
 #                  "test_namespace"
-#                DEPENDS
+#                LINK_LIBRARIES
 #                  ${list_of_targets}
-#                INCLUDES
+#                INCLUDE_DIRECTORIES
 #                  ${list_of_include_directories}
 #                COMPILE_OPTIONS
 #                  ${list_of_compile_options})
@@ -19,8 +19,8 @@ include(CMakeParseArguments)
 # the name
 #   test_namespace.source_name
 # 
-# Provided list of dependent targets and include directories are used
-# for test executables as PRIVATE dependencies during compilation.
+# Provided list of dependent link targets and include directories are
+# used as PRIVATE dependencies during compilation of test executable.
 # 
 # Function implicitly adds a dependency on the boost unit test framework
 # to each generated test executable.
@@ -29,8 +29,8 @@ function(register_tests)
 
   list(APPEND single_parmeter_keywords NAMESPACE)
   list(APPEND multi_parmeter_keywords SOURCES 
-                                      DEPENDS
-                                      INCLUDES 
+                                      LINK_LIBRARIES
+                                      INCLUDE_DIRECTORIES 
                                       COMPILE_OPTIONS)
   cmake_parse_arguments("arg" "" "${single_parmeter_keywords}"
                         "${multi_parmeter_keywords}" "${ARGN}")
@@ -42,12 +42,12 @@ function(register_tests)
   get_test_targets(list_of_targets "${arg_SOURCES}")
   
   add_target_includes_private(TARGETS "${list_of_targets}" 
-                              DEPENDS "${arg_INCLUDES}" 
+                              LINK_LIBRARIES "${arg_INCLUDE_DIRECTORIES}" 
                               "${Boost_INCLUDE_DIR}")
 
   add_target_link_libraries_private(TARGETS "${list_of_targets}" 
-                                    DEPENDS "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}"
-                                            "${arg_DEPENDS}")
+                                    LINK_LIBRARIES "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}"
+                                            "${arg_LINK_LIBRARIES}")
 
   add_target_compile_options_private(TARGETS "${list_of_targets}"
                                      COMPILE_OPTIONS "${arg_COMPILE_OPTIONS}")
@@ -70,23 +70,23 @@ endfunction()
 
 function(add_target_includes_private)
 
-  list(APPEND multi_value_keywords TARGETS DEPENDS)
+  list(APPEND multi_value_keywords TARGETS LINK_LIBRARIES)
   cmake_parse_arguments("arg" "" "" "${multi_value_keywords}" "${ARGN}")
   foreach(target_name IN LISTS arg_TARGETS)
     target_include_directories("${target_name}"
                                PRIVATE
-                               "${arg_DEPENDS}")
+                               "${arg_LINK_LIBRARIES}")
   endforeach()
 endfunction()
 
 ######################################
 function(add_target_link_libraries_private)
-  list(APPEND multi_value_keywords TARGETS DEPENDS)
+  list(APPEND multi_value_keywords TARGETS LINK_LIBRARIES)
   cmake_parse_arguments("arg" "" "" "${multi_value_keywords}" "${ARGN}")
   foreach(target_name IN LISTS arg_TARGETS)
     target_link_libraries("${target_name}"
                                PRIVATE
-                               "${arg_DEPENDS}")
+                               "${arg_LINK_LIBRARIES}")
   endforeach()
 endfunction()
 
