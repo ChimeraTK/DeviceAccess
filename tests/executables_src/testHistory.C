@@ -22,7 +22,7 @@ template<typename UserType>
 struct Dummy: public ChimeraTK::ApplicationModule{
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPushInput<UserType> in {this, "in", "", "Dummy input"};
-  ChimeraTK::ScalarOutput<UserType> out {this, "out", "", "Dummy output"};
+  ChimeraTK::ScalarOutput<UserType> out {this, "out", "", "Dummy output", {"history"}};
 
   void mainLoop() override{
     while(true){
@@ -37,7 +37,7 @@ template<typename UserType>
 struct DummyArray: public ChimeraTK::ApplicationModule{
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ArrayPushInput<UserType> in {this, "in", "", 3, "Dummy input"};
-  ChimeraTK::ArrayOutput<UserType> out {this, "out", "", 3, "Dummy output"};
+  ChimeraTK::ArrayOutput<UserType> out {this, "out", "", 3, "Dummy output", {"history"}};
 
   void mainLoop() override{
     while(true){
@@ -60,18 +60,15 @@ struct testApp : public ChimeraTK::Application {
   }
 
   Dummy<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::history::ScalarServerHistory<UserType> hist { this, "ServerHistory", "History of selected process variables." };
+  ChimeraTK::history::ServerHistory hist { this, "ServerHistory", "History of selected process variables." , 20};
 
-  logging::LoggingModule log { this, "LoggingModule",
-      "LoggingModule test" };
   ChimeraTK::ControlSystemModule cs;
 
   void defineConnections() override{
-    hist.addHistory(&dummy.out, dummy.getName(), "out", 20);
-    hist.findTag("CS").connectTo(cs["history"]);
+    hist.addSource(dummy.findTag("history"), "history/" + dummy.getName());
+    hist.findTag("CS").connectTo(cs);
     dummy.in >> cs("out");
     cs("in") >> dummy.in;
-    log.addSource(&hist.logger);
    }
 };
 
@@ -86,44 +83,15 @@ struct testAppArray : public ChimeraTK::Application {
   }
 
   DummyArray<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::history::ArrayServerHistory<UserType> hist { this, "ServerHistory", "History of selected process variables." };
+  ChimeraTK::history::ServerHistory hist { this, "ServerHistory", "History of selected process variables." ,20 };
 
-  logging::LoggingModule log { this, "LoggingModule",
-      "LoggingModule array test" };
   ChimeraTK::ControlSystemModule cs;
 
   void defineConnections() override{
-    hist.addHistory(&dummy.out, 3, dummy.getName(), "out", 20);
-    hist.findTag("CS").connectTo(cs["history"]);
+    hist.addSource(dummy.findTag("history"), "history/" + dummy.getName());
+    hist.findTag("CS").connectTo(cs);
     dummy.in >> cs("out");
     cs("in") >> dummy.in;
-    log.addSource(&hist.logger);
-   }
-};
-
-/**
- * Define a test app to test the array History Module.
- */
-template<typename UserType>
-struct testServerHistoryApp : public ChimeraTK::Application {
-  testServerHistoryApp() : Application("test"){ }
-  ~testServerHistoryApp() {
-    shutdown();
-  }
-
-  Dummy<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::history::ServerHistory hist { this, "ServerHistory", "History of selected process variables." };
-
-  logging::LoggingModule log { this, "LoggingModule",
-      "LoggingModule array test" };
-  ChimeraTK::ControlSystemModule cs;
-
-  void defineConnections() override{
-    hist.addHistory<UserType>(&dummy.out, dummy.getName(), "out", 20);
-    hist.v_float.findTag("CS").connectTo(cs["history"]);
-    dummy.in >> cs("out");
-    cs("in") >> dummy.in;
-    log.addSource(&hist.v_float.logger);
    }
 };
 
@@ -138,14 +106,14 @@ BOOST_AUTO_TEST_CASE( testHistory_float) {
   BOOST_CHECK_EQUAL(tf.readScalar<float>("out"), 42.0);
   std::vector<float> v_ref(20);
   v_ref.back() = 42.0;
-  auto v = tf.readArray<float>("history/Dummy/out_hist");
+  auto v = tf.readArray<float>("history/Dummy/out");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
   i = 42.0;
   i.write();
   tf.stepApplication();
   *(v_ref.end()-2) = 42.0;
-  v = tf.readArray<float>("history/Dummy/out_hist");
+  v = tf.readArray<float>("history/Dummy/out");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
 
@@ -162,14 +130,14 @@ BOOST_AUTO_TEST_CASE( testHistory_double) {
   BOOST_CHECK_EQUAL(tf.readScalar<double>("out"), 42.0);
   std::vector<double> v_ref(20);
   v_ref.back() = 42.0;
-  auto v = tf.readArray<double>("history/Dummy/out_hist");
+  auto v = tf.readArray<double>("history/Dummy/out");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
   i = 42.0;
   i.write();
   tf.stepApplication();
   *(v_ref.end()-2) = 42.0;
-  v = tf.readArray<double>("history/Dummy/out_hist");
+  v = tf.readArray<double>("history/Dummy/out");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
 
@@ -191,7 +159,7 @@ BOOST_AUTO_TEST_CASE( testHistory_floatArray) {
   std::vector<float> v_ref(20);
   for(size_t i = 0; i < 3; i++){
     v_ref.back() = 42.0 + i;
-    auto v = tf.readArray<float>("history/Dummy/out_" + std::to_string(i) + "_hist");
+    auto v = tf.readArray<float>("history/Dummy/out_" + std::to_string(i));
     BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
   }
@@ -204,7 +172,7 @@ BOOST_AUTO_TEST_CASE( testHistory_floatArray) {
   for(size_t i = 0; i < 3; i++){
     *(v_ref.end()-2) = 42.0 + i;
     *(v_ref.end()-1) = 1.0 + i;
-    auto v = tf.readArray<float>("history/Dummy/out_" + std::to_string(i) + "_hist");
+    auto v = tf.readArray<float>("history/Dummy/out_" + std::to_string(i));
     BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
 
@@ -228,7 +196,7 @@ BOOST_AUTO_TEST_CASE( testHistory_doubleArray) {
   std::vector<double> v_ref(20);
   for(size_t i = 0; i < 3; i++){
     v_ref.back() = 42.0 + i;
-    auto v = tf.readArray<double>("history/Dummy/out_" + std::to_string(i) + "_hist");
+    auto v = tf.readArray<double>("history/Dummy/out_" + std::to_string(i));
     BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
   }
@@ -241,32 +209,8 @@ BOOST_AUTO_TEST_CASE( testHistory_doubleArray) {
   for(size_t i = 0; i < 3; i++){
     *(v_ref.end()-2) = 42.0 + i;
     *(v_ref.end()-1) = 1.0 + i;
-    auto v = tf.readArray<double>("history/Dummy/out_" + std::to_string(i) + "_hist");
+    auto v = tf.readArray<double>("history/Dummy/out_" + std::to_string(i));
     BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
       v_ref.begin(), v_ref.end());
   }
-}
-
-BOOST_AUTO_TEST_CASE( testServerHistory) {
-  testServerHistoryApp<float> app;
-  ChimeraTK::TestFacility tf;
-  auto i = tf.getScalar<float>("in");
-  tf.runApplication();
-  i = 42.;
-  i.write();
-  tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<float>("out"), 42.0);
-  std::vector<float> v_ref(20);
-  v_ref.back() = 42.0;
-  auto v = tf.readArray<float>("history/Dummy/out_hist");
-  BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
-      v_ref.begin(), v_ref.end());
-  i = 42.0;
-  i.write();
-  tf.stepApplication();
-  *(v_ref.end()-2) = 42.0;
-  v = tf.readArray<float>("history/Dummy/out_hist");
-  BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(),
-      v_ref.begin(), v_ref.end());
-
 }
