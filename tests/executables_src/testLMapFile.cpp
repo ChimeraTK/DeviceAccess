@@ -1,50 +1,29 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE LMapBackendTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
 
 #include "LogicalNameMapParser.h"
 #include "LNMBackendRegisterInfo.h"
-#include "Exception.h"
 
-using namespace boost::unit_test_framework;
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
-class LMapFileTest {
-  public:
-    void testFileNotFound();
-    void testErrorInDmapFile();
-    void testParseFile();
-};
-
-class LMapFileTestSuite : public test_suite {
-  public:
-    LMapFileTestSuite() : test_suite("LogicalNameMap class test suite") {
-      boost::shared_ptr<LMapFileTest> lMapFileTest(new LMapFileTest);
-
-      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testFileNotFound, lMapFileTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testErrorInDmapFile, lMapFileTest) );
-      add( BOOST_CLASS_TEST_CASE(&LMapFileTest::testParseFile, lMapFileTest) );
-    }
-};
-
-bool init_unit_test(){
-  framework::master_test_suite().p_name.value = "LogicalNameMap class test suite";
-  framework::master_test_suite().add(new LMapFileTestSuite());
-
-  return true;
-}
+/********************************************************************************************************************/
 
 void testErrorInDmapFileSingle(std::string fileName) {
-  BOOST_CHECK_THROW( LogicalNameMapParser lmap(fileName), ChimeraTK::logic_error );
+  BOOST_CHECK_THROW( LogicalNameMapParser lmap(fileName, {}), ChimeraTK::logic_error );
 }
 
-void LMapFileTest::testFileNotFound() {
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testFileNotFound ) {
   testErrorInDmapFileSingle("notExisting.xlmap");
 }
 
-void LMapFileTest::testErrorInDmapFile() {
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testErrorInDmapFile ) {
   testErrorInDmapFileSingle("invalid1.xlmap");
   testErrorInDmapFileSingle("invalid2.xlmap");
   testErrorInDmapFileSingle("invalid3.xlmap");
@@ -55,10 +34,12 @@ void LMapFileTest::testErrorInDmapFile() {
   testErrorInDmapFileSingle("invalid8.xlmap");
 }
 
-void LMapFileTest::testParseFile() {
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testParseFile ) {
   boost::shared_ptr<LNMBackendRegisterInfo> info;
 
-  LogicalNameMapParser lmap("valid.xlmap");
+  LogicalNameMapParser lmap("valid.xlmap", {});
   RegisterCatalogue catalogue = lmap.getCatalogue();
 
   info =  boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWord"));
@@ -141,4 +122,39 @@ void LMapFileTest::testParseFile() {
   BOOST_CHECK( info->deviceName == "this");
   BOOST_CHECK( info->registerName == "/MyModule/SomeSubmodule/Variable");
   BOOST_CHECK( info->bit == 3);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testParameters ) {
+  boost::shared_ptr<LNMBackendRegisterInfo> info;
+
+  {
+    std::map<std::string,std::string> params;
+    params["ParamA"] = "ValueA";
+    params["ParamB"] = "ValueB";
+
+    LogicalNameMapParser lmap("withParams.xlmap", params);
+    RegisterCatalogue catalogue = lmap.getCatalogue();
+
+    info =  boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWordWithParams"));
+    BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
+    BOOST_CHECK( info->deviceName == "ValueA");
+    BOOST_CHECK( info->registerName == "ValueB");
+  }
+
+  {
+    std::map<std::string,std::string> params;
+    params["ParamA"] = "OtherValues";
+    params["ParamB"] = "ThisTime";
+
+    LogicalNameMapParser lmap("withParams.xlmap", params);
+    RegisterCatalogue catalogue = lmap.getCatalogue();
+
+    info =  boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWordWithParams"));
+    BOOST_CHECK( info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER );
+    BOOST_CHECK( info->deviceName == "OtherValues");
+    BOOST_CHECK( info->registerName == "ThisTime");
+  }
+
 }

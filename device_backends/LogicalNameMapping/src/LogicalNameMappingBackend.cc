@@ -27,7 +27,7 @@ namespace ChimeraTK {
     if(hasParsed) return;
 
     // parse the map fle
-    LogicalNameMapParser parser = LogicalNameMapParser(_lmapFileName);
+    LogicalNameMapParser parser = LogicalNameMapParser(_lmapFileName, _parameters);
     _catalogue_mutable = parser.getCatalogue();
 
     // create all devices referenced in the map
@@ -71,7 +71,10 @@ namespace ChimeraTK {
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("Map file name not speficied.");
     }
-    return boost::shared_ptr<DeviceBackend>(new LogicalNameMappingBackend(parameters["map"]));
+    auto ptr = boost::make_shared<LogicalNameMappingBackend>(parameters["map"]);
+    parameters.erase(parameters.find("map"));
+    ptr->_parameters = parameters;
+    return ptr;
   }
 
   /********************************************************************************************************************/

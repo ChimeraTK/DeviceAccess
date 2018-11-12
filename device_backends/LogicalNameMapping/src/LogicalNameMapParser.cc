@@ -68,6 +68,27 @@ namespace ChimeraTK {
       }
     }
 
+    // check for parameter
+    if(childList.front()->get_name() == "par") {
+      auto childChildList = childList.front()->get_children();
+      const xmlpp::TextNode *parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+      if(parNameNode && childChildList.size() == 1) {
+        std::string parName = parNameNode->get_content();
+        if(_parameters.find(parName) == _parameters.end()) {
+          parsingError("Parameter '"+parName+"' could not be resolved.");
+        }
+        // convert via string
+        std::stringstream buf;
+        buf << _parameters[parName];
+        T value;
+        buf >> value;
+        return value;
+      }
+      else {
+        parsingError("The <par> node must contain only text.");
+      }
+    }
+
     // neither found: throw error
     parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead child '"+
                  childList.front()->get_name()+"' was found.");

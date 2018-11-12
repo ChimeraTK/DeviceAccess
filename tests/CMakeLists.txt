@@ -68,7 +68,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/testVirtualFunctionTemplateCo
   ${PROJECT_BINARY_DIR}/scripts/testVirtualFunctionTemplateCompilerFlags.sh)
 #
 # Add the scripts as ctests.
-FILE(GLOB location_of_script_files 
+FILE(GLOB location_of_script_files
     "${PROJECT_BINARY_DIR}/scripts/*.sh")
 ADD_SCRIPTS_AS_TESTS( "${location_of_script_files}" )
 
@@ -77,13 +77,13 @@ COPY_CONTENT_TO_BUILD_DIR("${CMAKE_CURRENT_SOURCE_DIR}/manualTests")
 
 MACRO( COPY_MAPPING_FILES )
   # run_performance_test.sh is not a map file but should be copied also into the tests directory
-  FILE( COPY mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map 
+  FILE( COPY mtcadummy_withoutModules.map mtcadummy.map mtcadummy_bad.map mtcadummy_bad_fxpoint1.map
     mtcadummy_bad_fxpoint2.map mtcadummy_bad_fxpoint3.map invalid_metadata.map bam_fmc25_r1225.mapp
     MandatoryRegisterfIeldMissing.map IncorrectRegisterWidth.map IncorrectFracBits1.map
     IncorrectFracBits2.map goodMapFile_withoutModules.map goodMapFile.map mixedMapFile.map badMapFile.map
     dummies.dmap dummies.dmapOld invalid.dmap empty.dmap sequences.map invalidSequences.map muxedDataAcessor.map
     testDummyRegisterAccessors.map mtcadummy_rebot.map valid.xlmap invalid1.xlmap invalid2.xlmap invalid3.xlmap
-    invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap logicalnamemap.dmap 
+    invalid4.xlmap invalid5.xlmap invalid6.xlmap invalid7.xlmap invalid8.xlmap withParams.xlmap logicalnamemap.dmap
     performanceTest.map run_performance_test.sh
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     subdeviceTest.dmap Subdevice.map SubdeviceTarget.map
@@ -94,21 +94,21 @@ MACRO( COPY_MAPPING_FILES )
   # They cannot just be copied.
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/valid.dmap)
   configure_file( valid.dmap.in ${PROJECT_BINARY_DIR}/tests/dMapDir/valid.dmap)
-  
+
   configure_file( runtimeLoading.dmap.in ${PROJECT_BINARY_DIR}/tests/runtimeLoading/runtimeLoading.dmap)
   FILE( COPY goodMapFile.map wrongVersionPlugin.dmap DESTINATION ${PROJECT_BINARY_DIR}/tests/runtimeLoading)
-  
+
 ENDMACRO( COPY_MAPPING_FILES )
 
 MACRO( COPY_SELECTED_DIRECTORIES )
   foreach( DIRECTORY  dMapDir )
     file( COPY ${DIRECTORY} DESTINATION ${PROJECT_BINARY_DIR}/tests )
   endforeach( DIRECTORY )
-  
+
   foreach( DIRECTORY  GoodDmapDir )
     file( COPY ${DIRECTORY} DESTINATION ${PROJECT_BINARY_DIR}/tests )
   endforeach( DIRECTORY )
-  
+
   foreach( DIRECTORY  emptyMapFile )
     file( COPY ${DIRECTORY} DESTINATION ${PROJECT_BINARY_DIR}/tests )
   endforeach( DIRECTORY )
@@ -118,14 +118,14 @@ MACRO( COPY_SELECTED_DIRECTORIES )
   endforeach( DIRECTORY )
 
   file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/tests/EmptyDir)
-	
+
 ENDMACRO( COPY_SELECTED_DIRECTORIES )
 
 COPY_MAPPING_FILES()
 COPY_SELECTED_DIRECTORIES()
 
 ADD_CUSTOM_TARGET(COPY_FAKE_DEVICE_REF_FILE ALL
-       COMMAND ${CMAKE_COMMAND} -E 
+       COMMAND ${CMAKE_COMMAND} -E
       copy  ${CMAKE_SOURCE_DIR}/tests/._Reference_Device ${PROJECT_BINARY_DIR}/tests/._Reference_Device
       VERBATIM
   )

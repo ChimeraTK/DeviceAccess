@@ -1,0 +1,6 @@
+<logicalNameMap>
+    <redirectedRegister name="SingleWordWithParams">
+        <targetDevice><par>ParamA</par></targetDevice>
+        <targetRegister><par>ParamB</par></targetRegister>
+    </redirectedRegister>
+</logicalNameMap>

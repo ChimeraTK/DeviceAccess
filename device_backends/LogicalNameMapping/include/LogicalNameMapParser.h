@@ -30,7 +30,9 @@ namespace ChimeraTK {
     public:
 
       /** Constructor: parse map from XML file */
-      LogicalNameMapParser(const std::string &fileName) {
+      LogicalNameMapParser(const std::string &fileName, const std::map<std::string,std::string> &parameters)
+      : _parameters(parameters)
+      {
         parseFile(fileName);
       }
 
@@ -72,6 +74,9 @@ namespace ChimeraTK {
 
       /** actual register info map (register name to target information) */
       RegisterCatalogue _catalogue;
+
+      /** parameter map */
+      std::map<std::string,std::string> _parameters;
 
   };
 

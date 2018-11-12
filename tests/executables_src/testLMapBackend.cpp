@@ -770,4 +770,17 @@ BOOST_AUTO_TEST_CASE( testOther ) {
     device.close();
 }
 
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( testParameters ) {
+
+    BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+    ChimeraTK::Device device;
+
+    device.open("PARAMS0");
+
+    BOOST_CHECK_EQUAL( device.read<int>("SingleWordWithParams"), 42 );
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
