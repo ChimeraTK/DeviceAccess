@@ -12,13 +12,18 @@ include(CMakeParseArguments)
 #                INCLUDE_DIRECTORIES
 #                  ${list_of_include_directories}
 #                COMPILE_OPTIONS
-#                  ${list_of_compile_options})
+#                  ${list_of_compile_options}
+#                WORKING_DIRECTORY
+#                  ${ctest_working_directory})
 # 
 # Function registers tests defined as a list of souce files.  Test
 # defined by file source_name.cc in the SOURCES list is registered under
 # the name
 #   test_namespace.source_name
-# 
+#
+# If provided, test executables will use ${ctest_working_directory}
+# as the working directory
+#
 # Provided list of dependent link targets and include directories are
 # used as PRIVATE dependencies during compilation of test executable.
 # 
@@ -27,7 +32,7 @@ include(CMakeParseArguments)
 function(register_tests)
   find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
-  list(APPEND single_parmeter_keywords NAMESPACE)
+  list(APPEND single_parmeter_keywords NAMESPACE WORKING_DIRECTORY)
   list(APPEND multi_parmeter_keywords SOURCES 
                                       LINK_LIBRARIES
                                       INCLUDE_DIRECTORIES 
@@ -37,7 +42,8 @@ function(register_tests)
 
 
   register_exe(SOURCES "${arg_SOURCES}" 
-               NAMESPACE "${arg_NAMESPACE}")
+               NAMESPACE "${arg_NAMESPACE}"
+               WORKING_DIRECTORY "${arg_WORKING_DIRECTORY}")
 
   get_test_targets(list_of_targets "${arg_SOURCES}")
   
@@ -92,7 +98,7 @@ endfunction()
 
 ######################################
 function(register_exe)
-  list(APPEND single_value_keywords NAMESPACE)
+  list(APPEND single_value_keywords NAMESPACE WORKING_DIRECTORY)
   list(APPEND multi_value_keywords SOURCES)
   
   cmake_parse_arguments("arg" "" "${single_value_keywords}" 
@@ -105,9 +111,12 @@ function(register_exe)
     #        COMMAND ${target_name} 
     #        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests)
     #        
-    add_test(${arg_NAMESPACE}.${target_name} 
-             ${target_name} 
-             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests)
+    add_test(NAME
+               ${arg_NAMESPACE}.${target_name}
+             COMMAND
+               ${target_name}
+             WORKING_DIRECTORY
+               ${arg_WORKING_DIRECTORY})
   endforeach()
 endfunction()
 
