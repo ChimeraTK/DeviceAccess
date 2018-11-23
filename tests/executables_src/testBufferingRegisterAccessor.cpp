@@ -36,7 +36,7 @@ class BufferingRegisterTest {
     boost::shared_ptr<Device> device;
     friend class BufferingRegisterTestSuite;
 
-
+  
 };
 
 /**********************************************************************************************************************/
@@ -70,7 +70,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
   int compare;
 
   // check number of elements getter
-  BOOST_CHECK( intRegister.getNumberOfElements() == 2 );
+  BOOST_CHECK( intRegister.getNumberOfElements() == 3 );
 
   // test operator[] on r.h.s.
   compare = 5;
@@ -110,15 +110,18 @@ void BufferingRegisterTest::testRegisterAccessor() {
   }
   intRegister.write();
   device->readReg("MODULE0","APP0", &compare, sizeof(int), 0);
-  BOOST_CHECK( compare == 666 );
+  BOOST_CHECK( compare == 999 );
   device->readReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
-  BOOST_CHECK( compare == 333 );
+  BOOST_CHECK( compare == 666 );
 
   // test const iterators in both directions
   compare = 1234;
   device->writeReg("MODULE0","APP0", &compare, sizeof(int), 0);
   compare = 2468;
   device->writeReg("MODULE0","APP0", &compare, sizeof(int), sizeof(int));
+  compare = 3*1234;
+  device->writeReg("MODULE0","APP0", &compare, sizeof(int), 2*sizeof(int));
+  
   intRegister.read();
   const BufferingRegisterAccessor<int> const_intRegister = intRegister;
   ic = 0;
@@ -128,19 +131,22 @@ void BufferingRegisterTest::testRegisterAccessor() {
   }
   ic = 0;
   for(BufferingRegisterAccessor<int>::const_reverse_iterator it = const_intRegister.rbegin(); it != const_intRegister.rend(); ++it) {
-    BOOST_CHECK( *it == 1234*(2-ic) );
+    BOOST_CHECK( *it == 1234*(3-ic) );
     ic++;
   }
 
   // test swap with std::vector
-  std::vector<int> x(2);
+  std::vector<int> x(3);
   x[0] = 11;
   x[1] = 22;
+  x[2] = 33;
   intRegister.swap(x);
   BOOST_CHECK( x[0] == 1234 );
   BOOST_CHECK( x[1] == 2468 );
+  BOOST_CHECK( x[2] == 3*1234 );
   BOOST_CHECK( intRegister[0] == 11 );
   BOOST_CHECK( intRegister[1] == 22 );
+  BOOST_CHECK( intRegister[2] == 33 );
 
   // obtain register accessor with fractional type, to check if fixed-point conversion is working (3 fractional bits)
   BufferingRegisterAccessor<double> floatRegister = device->getBufferingRegisterAccessor<double>("MODULE0","WORD_USER1");

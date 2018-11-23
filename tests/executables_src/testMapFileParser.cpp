@@ -161,7 +161,7 @@ void MapFileParserTest::testGoodMappFileParse () {
   ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector< ChimeraTK::RegisterInfoMap::RegisterInfo > RegisterInfoents(11);
+  std::vector< ChimeraTK::RegisterInfoMap::RegisterInfo > RegisterInfoents(13);
 
   RegisterInfoents[0] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0,
       32, 0, true, 5, "BOARD");
@@ -171,20 +171,24 @@ void MapFileParserTest::testGoodMappFileParse () {
       32, 0, true, 7, "APP0");
   RegisterInfoents[3] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_SCRATCH", 0x01, 0x08, 0x04, 0x01,
       16, 0, true, 8, "APP0");
-  RegisterInfoents[4] = ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE0", 0x02, 0x10, 0x08, 0x01,
+  RegisterInfoents[4] = ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE0", 0x03, 0x10, 0x0C, 0x01,
       32, 0, true, 9, "APP0");
-  RegisterInfoents[5] = ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE1", 0x02, 0x20, 0x08, 0x01,
+  RegisterInfoents[5] = ChimeraTK::RegisterInfoMap::RegisterInfo("MODULE1", 0x03, 0x20, 0x0C, 0x01,
       32, 0, true, 10, "APP0");
   RegisterInfoents[6] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER1", 0x01, 0x10, 0x04, 0x01,
       16, 3, true, 14, "MODULE0");
   RegisterInfoents[7] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER2", 0x01, 0x14, 0x04, 0x01,
       18, 5, false, 15, "MODULE0");
-  RegisterInfoents[8] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER1", 0x01, 0x20, 0x04, 0x01,
-      16, 3, true, 16, "MODULE1");
-  RegisterInfoents[9] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01,
-      18, 5, false, 17, "MODULE1");
-  RegisterInfoents[10] = ChimeraTK::RegisterInfoMap::RegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02,
-      32, 0, true, 20, "MODULE.NAME.WITH.DOTS");
+  RegisterInfoents[8] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER3", 0x01, 0x18, 0x04, 0x01,
+      18, 5, false, 16, "MODULE0");
+  RegisterInfoents[9] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER1", 0x01, 0x20, 0x04, 0x01,
+      16, 3, true, 17, "MODULE1");
+  RegisterInfoents[10] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01,
+      18, 5, false, 18, "MODULE1");
+  RegisterInfoents[11] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER3", 0x01, 0x28, 0x04, 0x01,
+      18, 5, false, 19, "MODULE1");
+  RegisterInfoents[12] = ChimeraTK::RegisterInfoMap::RegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02,
+      32, 0, true, 22, "MODULE.NAME.WITH.DOTS");
 
   ChimeraTK::RegisterInfoMap::const_iterator mapIter;
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;

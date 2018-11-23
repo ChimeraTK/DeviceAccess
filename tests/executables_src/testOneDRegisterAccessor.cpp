@@ -67,9 +67,10 @@ void OneDRegisterTest::testRegisterAccessor() {
   BOOST_CHECK( intRegister.isWriteable() );
 
   // check number of elements getter
-  BOOST_CHECK( intRegister.getNElements() == 2 );
+  BOOST_CHECK( intRegister.getNElements() == 3 );
 
   // test operator[] on r.h.s.
+  // Note: These checks are only partial reads/writes. The register is 3 elements, we only test two. I left this intentionally like that when extending from 2 to 3 elements.
   device->write<int>("APP0/MODULE0", std::vector<int>({5, -77}));
   intRegister.read();
   BOOST_CHECK( intRegister[0] == 5 );
@@ -97,7 +98,7 @@ void OneDRegisterTest::testRegisterAccessor() {
     ic++;
   }
   intRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({1000,2000}));
+  BOOST_CHECK(device->read<int>("APP0/MODULE0", 3) == std::vector<int>({1000,2000,3000}));
 
   // test iterators with rbegin and rend
   ic = 0;
@@ -106,10 +107,10 @@ void OneDRegisterTest::testRegisterAccessor() {
     ic++;
   }
   intRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({666,333}));
+  BOOST_CHECK(device->read<int>("APP0/MODULE0", 3) == std::vector<int>({999,666,333}));
 
   // test const iterators in both directions
-  device->write("APP0/MODULE0", std::vector<int>({1234, 2468}));
+  device->write("APP0/MODULE0", std::vector<int>({1234, 2468, 3702}));
   intRegister.read();
   const OneDRegisterAccessor<int> const_intRegister = intRegister;
   ic = 0;
@@ -119,19 +120,22 @@ void OneDRegisterTest::testRegisterAccessor() {
   }
   ic = 0;
   for(OneDRegisterAccessor<int>::const_reverse_iterator it = const_intRegister.rbegin(); it != const_intRegister.rend(); ++it) {
-    BOOST_CHECK( *it == 1234*(2-ic) );
+    BOOST_CHECK( *it == 1234*(3-ic) );
     ic++;
   }
 
   // test swap with std::vector
-  std::vector<int> x(2);
+  std::vector<int> x(3);
   x[0] = 11;
   x[1] = 22;
+  x[2] = 33;
   intRegister.swap(x);
   BOOST_CHECK( x[0] == 1234 );
   BOOST_CHECK( x[1] == 2468 );
+  BOOST_CHECK( x[2] == 3702 );
   BOOST_CHECK( intRegister[0] == 11 );
   BOOST_CHECK( intRegister[1] == 22 );
+  BOOST_CHECK( intRegister[2] == 33 );
 
   // obtain register accessor with fractional type, to check if fixed-point conversion is working (3 fractional bits)
   OneDRegisterAccessor<double> floatRegister = device->getOneDRegisterAccessor<double>("MODULE0/WORD_USER1");
