@@ -60,14 +60,13 @@ static ExampleApp theExampleApp;
 void ExampleApp::defineConnections() {
     ChimeraTK::setDMapFilePath("example2.dmap");
 
-    config.connectTo(cs);
+    config.connectTo(cs["Configuration"]);
     if(config.get<int>("enableAutomation")) {
       automation = Automation(this, "Automation", "Slow setpoint ramping algorithm");
       automation.findTag("Controller").connectTo(controller);
-      automation.findTag("CS").connectTo(cs);
       timer.tick >> automation.trigger;
     }
 
     controller.findTag("DEV").connectTo(heater, timer.tick);
-    controller.findTag("CS").connectTo(cs);
+    findTag("CS").connectTo(cs);
 }
