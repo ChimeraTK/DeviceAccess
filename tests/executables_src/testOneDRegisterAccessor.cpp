@@ -70,26 +70,30 @@ void OneDRegisterTest::testRegisterAccessor() {
   BOOST_CHECK( intRegister.getNElements() == 3 );
 
   // test operator[] on r.h.s.
-  // Note: These checks are only partial reads/writes. The register is 3 elements, we only test two. I left this intentionally like that when extending from 2 to 3 elements.
-  device->write<int>("APP0/MODULE0", std::vector<int>({5, -77}));
+  device->write<int>("APP0/MODULE0", std::vector<int>({5, -77, 99}));
   intRegister.read();
   BOOST_CHECK( intRegister[0] == 5 );
   BOOST_CHECK( intRegister[1] == -77 );
+  BOOST_CHECK( intRegister[2] == 99 );
 
   // test operator[] on l.h.s.
   intRegister[0] = -666;
   intRegister[1] = 999;
+  intRegister[2] = 222;
   intRegister.write();
-  BOOST_CHECK(device->read<int>("APP0/MODULE0", 2) == std::vector<int>({-666,999}));
+  BOOST_CHECK(device->read<int>("APP0/MODULE0",3) == std::vector<int>({-666,999,222}));
 
   // test data() function
   int *ptr = intRegister.data();
   BOOST_CHECK( ptr[0] = -666 );
   BOOST_CHECK( ptr[1] = 999 );
+  BOOST_CHECK( ptr[2] = 222 );
   ptr[0] = 123;
   ptr[1] = 456;
+  ptr[2] = 789;
   BOOST_CHECK( intRegister[0] = 123 );
   BOOST_CHECK( intRegister[1] = 456 );
+  BOOST_CHECK( intRegister[2] = 789 );
 
   // test iterators with begin and end
   int ic = 0;
