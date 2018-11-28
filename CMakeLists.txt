@@ -173,6 +173,7 @@ if(DEMO_IS_ENABLED)
 
   # copy config files for 2nd example with automation
   FILE( COPY ${CMAKE_SOURCE_DIR}/example2a/demoApp2a.conf DESTINATION ${PROJECT_BINARY_DIR})
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example2a/demoApp2a.xml DESTINATION ${PROJECT_BINARY_DIR})
 
 endif(DEMO_IS_ENABLED)
 

@@ -5,9 +5,9 @@ namespace ctk = ChimeraTK;
 
 struct Controller : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
-    ctk::ScalarPollInput<double> sp{this, "sp", "degC", "Description", {"CS"}};
-    ctk::ScalarPushInput<double> rb{this, "rb", "degC", "...", {"DEV", "CS"}};
-    ctk::ScalarOutput<double> cur{this, "cur", "mA", "...", {"DEV"}};
+    ctk::ScalarPollInput<double> sp{this, "temperatureSetpoint", "degC", "Description", {"CS"}};
+    ctk::ScalarPushInput<double> rb{this, "temperatureReadback", "degC", "...", {"DEV", "CS"}};
+    ctk::ScalarOutput<double> cur{this, "heatingCurrent", "mA", "...", {"DEV"}};
 
     void mainLoop() {
       const double gain = 100.0;
