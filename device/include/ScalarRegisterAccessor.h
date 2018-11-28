@@ -36,9 +36,13 @@ namespace ChimeraTK {
        *  will throw an exception (by the boost::shared_ptr)! */
       ScalarRegisterAccessor() {}
 
-      /** Implicit type conversion to user type T to access the first element (often the only element).
-       *  This covers already a lot of operations like arithmetics and comparison */
+      /** Implicit type conversion to user type T to access the value as a reference. */
       operator UserType&() {
+        return get()->accessData(0,0);
+      }
+
+      /** Implicit type conversion to user type T to access the const value. */
+      operator const UserType&() const {
         return get()->accessData(0,0);
       }
 

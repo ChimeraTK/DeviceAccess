@@ -43,11 +43,17 @@ namespace ChimeraTK {
       UserType& accessData(unsigned int sample) {
         return buffer_2D[0][sample];
       }
+      const UserType& accessData(unsigned int sample) const {
+        return buffer_2D[0][sample];
+      }
 
       /** Get or set register accessor's buffer content (2D version).
        *  @attention No bounds checking is performed, use getNumberOfChannels() and getNumberOfSamples() to obtain the
        *   number of channels and samples in the register. */
       UserType& accessData(unsigned int channel, unsigned int sample) {
+        return buffer_2D[channel][sample];
+      }
+      const UserType& accessData(unsigned int channel, unsigned int sample) const {
         return buffer_2D[channel][sample];
       }
 
