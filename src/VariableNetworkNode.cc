@@ -293,7 +293,7 @@ namespace ChimeraTK {
       return pdata->publicName;
     }
     else if(pdata->type == NodeType::Device) {
-      return pdata->deviceAlias+":"+pdata->registerName;
+      return pdata->registerName;
     }
     else {
       return pdata->name;

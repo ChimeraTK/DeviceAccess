@@ -13,6 +13,7 @@
 
 #include "VariableNetworkNode.h"
 #include "Module.h"
+#include "VirtualModule.h"
 
 namespace ChimeraTK {
 
@@ -56,13 +57,16 @@ namespace ChimeraTK {
 
       const Module& virtualise() const override;
 
-      void connectTo(const Module &, VariableNetworkNode ={}) const override {
-        throw;   /// @todo make proper exception
-      }
+      void connectTo(const Module &target, VariableNetworkNode trigger={}) const override;
 
       ModuleType getModuleType() const override { return ModuleType::Device; }
 
     protected:
+
+      // populate virtualisedModuleFromCatalog based on the information in the device's catalogue
+      VirtualModule& virtualiseFromCatalog() const;
+      mutable VirtualModule virtualisedModuleFromCatalog{"INVALID", "", ModuleType::Invalid};
+      mutable bool virtualisedModuleFromCatalog_isValid{false};
 
       std::string deviceAliasOrURI;
       ChimeraTK::RegisterPath registerNamePrefix;

@@ -102,6 +102,7 @@ if(TESTING_IS_ENABLED)
   # copy config files
   FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test.map DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test2.map DESTINATION ${PROJECT_BINARY_DIR})
+  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test3.map DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test.dmap DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/tests/validConfig.xml DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/xmlschema/application.xsd DESTINATION ${PROJECT_BINARY_DIR})
@@ -132,9 +133,9 @@ if(DEMO_IS_ENABLED)
                                              ${glib_LIBRARIES}
                                              ${HDF5_LIBRARIES})
 
-  add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator
-                                    COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+#  add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator
+#                                    COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator
+#                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
   # copy config files
   FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
