@@ -19,6 +19,12 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
+// list of user types the accessors are tested with
+typedef boost::mpl::list<int8_t,uint8_t,
+                         int16_t,uint16_t,
+                         int32_t,uint32_t,
+                         float,double>        test_types;
+
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                   \
     {                                                                                                               \
       std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                  \
@@ -31,11 +37,43 @@ namespace ctk = ChimeraTK;
     }
 
 /*********************************************************************************************************************/
+/* the ApplicationModule for the test is a template of the user type */
+
+template<typename T>
+struct TestModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
+    ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
+
+    void mainLoop() {}
+};
+
+/*********************************************************************************************************************/
 /* dummy application */
 
-struct TestApplication : ctk::Application {
-    TestApplication() : Application("testSuite") {}
+template<typename T>
+struct TestApplication : public ctk::Application {
+    TestApplication() : Application("testSuite") {
+      ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+    }
     ~TestApplication() { shutdown(); }
+
+    using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
+    void defineConnections() {}             // the setup is done in the tests
+
+    TestModule<T> testModule{this, "TestModule", "The test module"};
+    ctk::ControlSystemModule cs;
+
+    ctk::DeviceModule dev{"Dummy0"};
+};
+
+/*********************************************************************************************************************/
+/* dummy application for connectTo() test */
+
+struct TestApplicationConnectTo : ctk::Application {
+    TestApplicationConnectTo() : Application("testSuite") {}
+    ~TestApplicationConnectTo() { shutdown(); }
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {
@@ -97,6 +135,71 @@ void testDirectRegister(ctk::TestFacility &test, ChimeraTK::ScalarRegisterAccess
 }
 
 /*********************************************************************************************************************/
+/* test direct control system to device connections */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDev, T, test_types ) {
+
+  TestApplication<T> app;
+
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
+
+  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator");
+  app.initialise();
+  app.run();
+
+  ChimeraTK::Device dev;
+  dev.open("Dummy0");
+
+  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
+  auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
+  BOOST_CHECK( myFeeder->getName() == "/myFeeder" );
+
+  myFeeder->accessData(0) = 18;
+  myFeeder->write();
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 18, 3000);
+
+  myFeeder->accessData(0) = 20;
+  myFeeder->write();
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 20, 3000);
+
+}
+
+/*********************************************************************************************************************/
+/* test direct control system to device connections with fan out */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDevFanOut, T, test_types ) {
+
+  TestApplication<T> app;
+
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
+
+  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator")
+                                   >> app.dev("/MyModule/readBack");
+  app.initialise();
+  app.run();
+
+  ChimeraTK::Device dev;
+  dev.open("Dummy0");
+
+  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
+  auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
+  BOOST_CHECK( myFeeder->getName() == "/myFeeder" );
+
+  myFeeder->accessData(0) = 18;
+  myFeeder->write();
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 18, 3000);
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/readBack") == 18, 3000);
+
+  myFeeder->accessData(0) = 20;
+  myFeeder->write();
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/actuator") == 20, 3000);
+  CHECK_TIMEOUT( dev.read<T>("/MyModule/readBack") == 20, 3000);
+
+}
+
+/*********************************************************************************************************************/
 /* test connectTo */
 
 BOOST_AUTO_TEST_CASE( testConnectTo ) {
@@ -105,7 +208,7 @@ BOOST_AUTO_TEST_CASE( testConnectTo ) {
   ctk::Device dev;
   dev.open("(dummy?map=test3.map)");
 
-  TestApplication app;
+  TestApplicationConnectTo app;
 
   ctk::TestFacility test;
   auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
