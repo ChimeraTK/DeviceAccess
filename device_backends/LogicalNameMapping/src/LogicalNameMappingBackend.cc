@@ -34,6 +34,7 @@ namespace ChimeraTK {
     for(auto &devName : parser.getTargetDevices()) {
       _devices[devName] = BackendFactory::getInstance().createBackend(devName);
     }
+
   }
 
   /********************************************************************************************************************/
@@ -139,7 +140,8 @@ namespace ChimeraTK {
       LNMBackendRegisterInfo &info_cast = static_cast<LNMBackendRegisterInfo&>(info);
       auto targetType = info_cast.targetType;
       if(targetType != LNMBackendRegisterInfo::TargetType::REGISTER &&
-         targetType != LNMBackendRegisterInfo::TargetType::CHANNEL     ) continue;
+         targetType != LNMBackendRegisterInfo::TargetType::CHANNEL  &&
+         targetType != LNMBackendRegisterInfo::TargetType::BIT         ) continue;
 
       std::string devName = info_cast.deviceName;
       boost::shared_ptr<RegisterInfo> target_info;
@@ -147,10 +149,15 @@ namespace ChimeraTK {
         target_info = _devices.at(devName)->getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
       }
       else {
-        target_info = getRegisterCatalogue().getRegister(std::string(info_cast.registerName));
+        target_info = _catalogue_mutable.getRegister(std::string(info_cast.registerName));
       }
 
-      info_cast._dataDescriptor = target_info->getDataDescriptor();
+      if(targetType != LNMBackendRegisterInfo::TargetType::BIT) {
+        info_cast._dataDescriptor = target_info->getDataDescriptor();
+      }
+      info_cast.readable = target_info->isReadable();
+      info_cast.writeable = target_info->isWriteable();
+      info_cast.supportedFlags = target_info->getSupportedAccessModes();
 
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
         info_cast.nDimensions = target_info->getNumberOfDimensions();

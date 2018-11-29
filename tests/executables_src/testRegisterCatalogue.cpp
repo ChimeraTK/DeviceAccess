@@ -30,22 +30,31 @@ bool init_unit_test(){
 class myRegisterInfo : public RegisterInfo {
   public:
     myRegisterInfo(std::string path, unsigned int nbOfElements, unsigned int nbOfChannels, unsigned int nbOfDimensions,
-                   DataDescriptor dataDescriptor)
+                   DataDescriptor dataDescriptor, bool readable, bool writeable, AccessModeFlags supportedFlags)
     : _path(path),
       _nbOfElements(nbOfElements),
       _nbOfChannels(nbOfChannels),
       _nbOfDimensions(nbOfDimensions),
-      _dataDescriptor(dataDescriptor)
+      _dataDescriptor(dataDescriptor),
+      _readable(readable),
+      _writeable(writeable),
+      _supportedFlags(supportedFlags)
     {}
     RegisterPath getRegisterName() const override { return _path; }
     unsigned int getNumberOfElements() const override { return _nbOfElements; }
     unsigned int getNumberOfChannels() const override { return _nbOfChannels; }
     unsigned int getNumberOfDimensions() const override { return _nbOfDimensions; }
     const DataDescriptor& getDataDescriptor() const override { return _dataDescriptor; }
+    bool isReadable() const override { return _readable; }
+    bool isWriteable() const override { return _writeable; }
+    AccessModeFlags getSupportedAccessModes() const override { return _supportedFlags; }
+
   protected:
     RegisterPath _path;
     unsigned int _nbOfElements, _nbOfChannels, _nbOfDimensions;
     DataDescriptor _dataDescriptor;
+    bool _readable, _writeable;
+    AccessModeFlags _supportedFlags;
 };
 
 void RegisterCatalogueTest::testRegisterCatalogue() {
@@ -54,7 +63,7 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   boost::shared_ptr<RegisterInfo> info;
 
   RegisterInfo::DataDescriptor dataDescriptor(RegisterInfo::FundamentalType::numeric, false, false, 8, 3, DataType::int32);
-  catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/some/register/name",42, 3, 2, dataDescriptor)) );
+  catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/some/register/name",42, 3, 2, dataDescriptor, true, false, {AccessMode::raw})) );
   info = catalogue.getRegister("/some/register/name");
   BOOST_CHECK( info->getRegisterName() == "/some/register/name" );
   BOOST_CHECK( info->getNumberOfElements() == 42 );
@@ -69,9 +78,13 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() );
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isIntegral() );
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() );
+  BOOST_CHECK( info->isReadable() == true );
+  BOOST_CHECK( info->isWriteable() == false );
+  BOOST_CHECK( info->getSupportedAccessModes().has(AccessMode::raw) == true );
+  BOOST_CHECK( info->getSupportedAccessModes().has(AccessMode::wait_for_new_data) == false );
 
   RegisterInfo::DataDescriptor dataDescriptor2(RegisterInfo::FundamentalType::numeric, true, false, 12);
-  catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/some/other/name",1, 1, 0, dataDescriptor2)) );
+  catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/some/other/name",1, 1, 0, dataDescriptor2, true, true, {AccessMode::raw, AccessMode::wait_for_new_data})) );
   info = catalogue.getRegister("/some/other/name");
   BOOST_CHECK( info->getRegisterName() == "/some/other/name" );
   BOOST_CHECK( info->getNumberOfElements() == 1 );
@@ -85,9 +98,13 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() == false);
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isIntegral() == false);
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() == false);
+  BOOST_CHECK( info->isReadable() == true );
+  BOOST_CHECK( info->isWriteable() == true );
+  BOOST_CHECK( info->getSupportedAccessModes().has(AccessMode::raw) == true );
+  BOOST_CHECK( info->getSupportedAccessModes().has(AccessMode::wait_for_new_data) == true );
 
   RegisterInfo::DataDescriptor dataDescriptor3(RegisterInfo::FundamentalType::string);
-  catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/justAName",1, 1, 0, dataDescriptor3)) );
+  catalogue.addRegister( boost::shared_ptr<RegisterInfo>(new myRegisterInfo("/justAName",1, 1, 0, dataDescriptor3, false, false, {})) );
   info = catalogue.getRegister("/justAName");
   BOOST_CHECK( info->getRegisterName() == "/justAName" );
   BOOST_CHECK( info->getNumberOfElements() == 1 );
@@ -98,5 +115,9 @@ void RegisterCatalogueTest::testRegisterCatalogue() {
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isNumeric() == false);
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isIntegral() == false);
   BOOST_CHECK( info->getDataDescriptor().rawDataType().isSigned() == false);
-  
+  BOOST_CHECK( info->isReadable() == false );
+  BOOST_CHECK( info->isWriteable() == false );
+  BOOST_CHECK( info->getSupportedAccessModes().has(AccessMode::raw) == false );
+  BOOST_CHECK( info->getSupportedAccessModes().has(AccessMode::wait_for_new_data) == false );
+
 }

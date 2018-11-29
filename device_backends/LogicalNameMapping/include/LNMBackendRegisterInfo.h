@@ -22,7 +22,7 @@ namespace ChimeraTK {
 
       /** constuctor: initialise values */
       LNMBackendRegisterInfo()
-      : targetType(TargetType::INVALID)
+        : targetType(TargetType::INVALID), supportedFlags({})
       {}
 
       RegisterPath getRegisterName() const override {
@@ -43,6 +43,18 @@ namespace ChimeraTK {
 
       const DataDescriptor& getDataDescriptor() const override {
         return _dataDescriptor;
+      }
+
+      bool isReadable() const override {
+        return readable;
+      }
+
+      bool isWriteable() const override {
+        return writeable;
+      }
+
+      AccessModeFlags getSupportedAccessModes() const override {
+        return supportedFlags;
       }
 
       /** Name of the registrer */
@@ -77,6 +89,15 @@ namespace ChimeraTK {
 
       /** The integer value of a INT_CONSTANT or INT_VARIABLE */
       std::vector<int> value_int;
+
+      /** Flag if the register is readable. Might be derived from the target register */
+      bool readable;
+
+      /** Flag if the register is writeable. Might be derived from the target register */
+      bool writeable;
+
+      /** Supported AccessMode flags. Might be derived from the target register */
+      AccessModeFlags supportedFlags;
 
     protected:
 

@@ -81,6 +81,18 @@ namespace ChimeraTK {
             return dataDescriptor;
           }
 
+          bool isReadable() const override {
+            return (registerAccess & Access::READ) != 0;
+          }
+
+          bool isWriteable() const override {
+            return (registerAccess & Access::WRITE) != 0;
+          }
+
+          AccessModeFlags getSupportedAccessModes() const override {
+            return {AccessMode::raw};
+          }
+
           const std::string name; /**< Name of register */
           const uint32_t nElements; /**< Number of elements in register */
           const uint32_t nChannels; /**< Number of channels/sequences */

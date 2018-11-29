@@ -14,6 +14,7 @@
 #include "RegisterPath.h"
 #include "ForwardDeclarations.h"
 #include "SupportedUserTypes.h"
+#include "AccessMode.h"
 
 namespace ChimeraTK {
 
@@ -147,6 +148,15 @@ namespace ChimeraTK {
       /** Return desciption of the actual payload data for this register. See the description of DataDescriptor for
        *  more information. */
       virtual const DataDescriptor& getDataDescriptor() const = 0;
+
+      /** Return whether the register is readable. */
+      virtual bool isReadable() const = 0;
+
+      /** Return whether the register is writeable. */
+      virtual bool isWriteable() const = 0;
+
+      /** Return all supported AccessModes for this register */
+      virtual AccessModeFlags getSupportedAccessModes() const = 0;
 
   };
 
