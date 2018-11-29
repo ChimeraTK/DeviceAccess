@@ -8,6 +8,7 @@
 #define BOOST_TEST_MODULE testDirectDeviceToCS
 
 #include <boost/test/included/unit_test.hpp>
+#include <boost/mpl/list.hpp>
 
 #include <ChimeraTK/Device.h>
 #include "Application.h"
