@@ -150,6 +150,8 @@ void MapFileParserTest::testGoodMappFileParse () {
   boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile =
       map_file_parser.parse("goodMapFile.map");
 
+  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 14);
+  
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
 
@@ -161,7 +163,7 @@ void MapFileParserTest::testGoodMappFileParse () {
   ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector< ChimeraTK::RegisterInfoMap::RegisterInfo > RegisterInfoents(13);
+  std::vector< ChimeraTK::RegisterInfoMap::RegisterInfo > RegisterInfoents(14);
 
   RegisterInfoents[0] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0,
       32, 0, true, 5, "BOARD");
@@ -189,12 +191,15 @@ void MapFileParserTest::testGoodMappFileParse () {
       18, 5, false, 19, "MODULE1");
   RegisterInfoents[12] = ChimeraTK::RegisterInfoMap::RegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02,
       32, 0, true, 22, "MODULE.NAME.WITH.DOTS");
+  RegisterInfoents[13] = ChimeraTK::RegisterInfoMap::RegisterInfo("TEST_AREA", 0x0A, 0x025, 0x028, 0x01,
+      32, 0, false, 24, "MODULE1");
 
   ChimeraTK::RegisterInfoMap::const_iterator mapIter;
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;
   for( mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
       mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end();
       ++mapIter, ++elementsIter){
+    std::cout << "checking " << (*elementsIter).name << std::endl;
     std::stringstream message;
     message << "Failed comparison on Register '" << (*elementsIter).name
         << "', module '" << (elementsIter->module) << "'";
@@ -237,7 +242,9 @@ void MapFileParserTest::testMixedMapFileParse () {
   mapIter = ptrmapFile->begin();
   elementsIter = RegisterInfoents.begin();
   ++elementsIter;
+  std::cout << "## The following error message is expected. It is not a failing test: " << std::endl;
   BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter,*elementsIter) == false, message.str());
+  std::cout << "## End of expected error message." << std::endl;  
 }
 
 void MapFileParserTest::testSplitStringAtLastDot(){
