@@ -150,7 +150,7 @@ void MapFileParserTest::testGoodMappFileParse () {
   boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile =
       map_file_parser.parse("goodMapFile.map");
 
-  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 14);
+  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 16);
   
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
