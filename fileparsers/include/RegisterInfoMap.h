@@ -110,7 +110,6 @@ namespace ChimeraTK {
           const uint32_t width; /**< Number of significant bits in the register */
           const int32_t  nFractionalBits; /**< Number of fractional bits */
           const bool     signedFlag; /**< Signed/Unsigned flag */
-          const uint32_t lineNumber; /**< Number of line with description of register in MAP file */
           const std::string module; /**< Name of the module this register is in*/
           const Access registerAccess; /**< Data access direction: Read, write or read and write */
           const Type dataType; /**< Data type (fixpoint, floating point)*/
@@ -127,7 +126,6 @@ namespace ChimeraTK {
               uint32_t width_ = 32,
               int32_t  nFractionalBits_ = 0,
               bool     signedFlag_ = true,
-              uint32_t lineNumber_ = 0,
               std::string const & module_ = std::string(),
               uint32_t nChannels_ = 1,
               bool is2DMultiplexed_ = false,

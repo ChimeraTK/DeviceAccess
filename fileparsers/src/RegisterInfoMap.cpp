@@ -174,10 +174,10 @@ namespace ChimeraTK {
   std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::ErrorList::ErrorElem& me) {
     switch (me._errorType) {
       case RegisterInfoMap::ErrorList::ErrorElem::NONUNIQUE_REGISTER_NAME:
-        os << me._type << ": Found two registers with the same name: \"" << me._errorRegister1.name << "\" in file " << me._errorFileName << " in lines " << me._errorRegister1.lineNumber << " and " << me._errorRegister2.lineNumber;
+        os << me._type << ": Found two registers with the same name: \"" << me._errorRegister1.name << "\" in file " << me._errorFileName;
         break;
       case RegisterInfoMap::ErrorList::ErrorElem::WRONG_REGISTER_ADDRESSES:
-        os << me._type << ": Found two registers with overlapping addresses: \"" << me._errorRegister1.name << "\" and \"" << me._errorRegister2.name << "\" in file " << me._errorFileName << " in lines " << me._errorRegister1.lineNumber << " and " << me._errorRegister2.lineNumber;
+        os << me._type << ": Found two registers with overlapping addresses: \"" << me._errorRegister1.name << "\" and \"" << me._errorRegister2.name << "\" in file " << me._errorFileName;
         break;
     }
     return os;
@@ -274,7 +274,6 @@ namespace ChimeraTK {
       uint32_t width_,
       int32_t  nFractionalBits_,
       bool     signedFlag_,
-      uint32_t lineNumber_,
       std::string const & module_,
       uint32_t nChannels_,
       bool is2DMultiplexed_,
@@ -282,7 +281,7 @@ namespace ChimeraTK {
       Type dataType_)
   : name( name_ ),  nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_),
     address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
-    signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_), registerAccess(dataAccess_),
+    signedFlag(signedFlag_), module(module_), registerAccess(dataAccess_),
     dataType(dataType_)
   {
     if (dataType == IEEE754){

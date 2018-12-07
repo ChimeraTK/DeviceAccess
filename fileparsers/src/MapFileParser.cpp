@@ -28,7 +28,6 @@ namespace ChimeraTK {
     uint32_t width; /**< Number of significant bits in the register */
     int32_t  nFractionalBits; /**< Number of fractional bits */
     bool     signedFlag; /**< Signed/Unsigned flag */
-    uint32_t lineNumber; /**< Number of line with description of register in MAP file */
     RegisterInfoMap::RegisterInfo::Access registerAccess;
 
     std::string module; /**< Name of the module this register is in*/
@@ -134,10 +133,9 @@ namespace ChimeraTK {
           }
       }
       is.clear();
-      lineNumber = line_nr;
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-                                                 signedFlag, lineNumber, module, 1, false, registerAccess);
+                                                 signedFlag, module, 1, false, registerAccess);
       pmap->insert(registerInfo);
     }
 
@@ -173,7 +171,7 @@ namespace ChimeraTK {
       if(nChannels > 0) nElements = info.nBytes / nBytesPerEntry;
       // add it to the map
       RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, info.nBytes, info.bar, maxWidth, (isInteger?0:9999) /*fractional bits*/,
-                                             isSigned, info.lineNumber, info.module, nChannels, true);
+                                             isSigned, info.module, nChannels, true);
       newInfos.push_back(newEntry);
     }
     // insert the new entries to the catalogue

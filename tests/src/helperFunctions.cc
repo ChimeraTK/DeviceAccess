@@ -39,8 +39,7 @@ bool compareDeviceInfos(const ChimeraTK::DeviceInfoMap::DeviceInfo& deviceInfo1,
 
 bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& element1,
                         const ChimeraTK::RegisterInfoMap::RegisterInfo& element2) {
-  bool result = (element1.lineNumber == element2.lineNumber) &&
-                (element1.address == element2.address) &&
+  bool result = (element1.address == element2.address) &&
                 (element1.bar == element2.bar) &&
                 (element1.nElements == element2.nElements) &&
                 (element1.nFractionalBits == element2.nFractionalBits) &&

@@ -222,19 +222,19 @@ void DMapFilesParserTest::testGetMapFile() {
   // Card 1 elements
   ChimeraTK::RegisterInfoMap::RegisterInfo card1_RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
       0x00000000, 0x00000004, 0x0,
-      32, 0, true, 5);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card1_RegisterInfoent2("WORD_COMPILATION", 0x00000001,
       0x00000004, 0x00000004, 0x00000000,
-      32, 0, true, 6);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card1_RegisterInfoent3("WORD_STATUS", 0x00000001,
       0x00000008, 0x00000004, 0x00000000,
-      32, 0, true, 7);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card1_RegisterInfoent4("WORD_USER1", 0x00000001,
       0x0000000C, 0x00000004, 0x00000000,
-      32, 0, true, 8);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card1_RegisterInfoent5("WORD_USER2", 0x00000001,
       0x00000010, 0x00000004, 0x00000000,
-      32, 0, 0, 9);
+      32, 0, false);
 
   ChimeraTK::RegisterInfoMap::RegisterInfo* ptrList[5];
   ptrList[0] = &card1_RegisterInfoent1;
@@ -252,19 +252,19 @@ void DMapFilesParserTest::testGetMapFile() {
   // Card 3 elements
   ChimeraTK::RegisterInfoMap::RegisterInfo card3_RegisterInfoent1("WORD_FIRMWARE", 0x00000001,
       0x00000000, 0x00000004, 0x0,
-      32, 0, true, 5);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card3_RegisterInfoent2("WORD_COMPILATION", 0x00000001,
       0x00000004, 0x00000004, 0x00000000,
-      32, 0, true, 6);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card3_RegisterInfoent3("WORD_STATUS", 0x00000001,
       0x00000008, 0x00000004, 0x00000000,
-      32, 0, true, 7);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card3_RegisterInfoent4("WORD_USER1", 0x00000001,
       0x0000000C, 0x00000004, 0x00000000,
-      32, 0, true, 8);
+      32, 0, true);
   ChimeraTK::RegisterInfoMap::RegisterInfo card3_RegisterInfoent5("WORD_USER2", 0x00000001,
       0x00000010, 0x00000004, 0x00000000,
-      32, 0, 0, 9);
+      32, 0, false);
 
   ptrList[0] = &card3_RegisterInfoent1;
   ptrList[1] = &card3_RegisterInfoent2;
@@ -288,7 +288,7 @@ void DMapFilesParserTest::testGetRegisterInfo() {
   std::string retrivedDeviceFileName;
   ChimeraTK::RegisterInfoMap::RegisterInfo retrivedRegisterInfo;
   ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("WORD_STATUS", 0x00000001, 0x00000008,
-      0x00000004, 0x00000000, 32, 0, true, 7);
+      0x00000004, 0x00000000, 32, 0, true);
   filesParser.getRegisterInfo("card1", "WORD_STATUS", retrivedDeviceFileName,
       retrivedRegisterInfo);
   BOOST_CHECK(retrivedDeviceFileName == "/dev/dev1");
