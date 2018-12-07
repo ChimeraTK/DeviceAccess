@@ -278,46 +278,76 @@ namespace ChimeraTK {
       std::string const & module_,
       uint32_t nChannels_,
       bool is2DMultiplexed_,
-      Access dataAccess_)
+      Access dataAccess_,
+      Type dataType_)
   : name( name_ ),  nElements(nElements_), nChannels(nChannels_), is2DMultiplexed(is2DMultiplexed_),
     address(address_), nBytes(nBytes_), bar(bar_), width(width_), nFractionalBits(nFractionalBits_),
-    signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_), registerAccess(dataAccess_)
+    signedFlag(signedFlag_), lineNumber(lineNumber_), module(module_), registerAccess(dataAccess_),
+    dataType(dataType_)
   {
-    if(width > 1) {    // numeric type
-      DataType rawDataInfo = (is2DMultiplexed_ ? DataType::none :  DataType::int32);
-
-      if(nFractionalBits_ > 0) {
-        size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
-                          ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
-        size_t nFractionalDigits = std::ceil(std::log10(std::pow(2, nFractionalBits_)));
-
+    if (dataType == IEEE754){
+      if (width==32){ 
+        // Largest possible number +- 3e38, smallest possible number 1e-45
+        // However, the actual precision is only 23+1 bit, which is < 1e9 relevant digits.
+        // Hence, we don't have to add the 3e38 and the 1e45, but just add the leading 0. comma and
+        // sign to the largest 45 digits
         dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
                                         false,                                    // isIntegral
-                                        signedFlag_,                              // isSigned
-                                        nDigits,
-                                        nFractionalDigits,
-                                        rawDataInfo);
-      }
-      else {
-        size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
-                          ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
-
+                                        true,                                     // isSigned
+                                        3+45,                                     // nDigits
+                                        45,                                       // nFractionalDigits
+                                        DataType::float32);
+        
+      }else if (width==64){
+        // smallest possible 5e-324, largest 2e308
         dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
-                                        true,                                     // isIntegral
-                                        signedFlag_,                              // isSigned
-                                        nDigits,
-                                        0,
-                                        rawDataInfo);
+                                        false,                                    // isIntegral
+                                        true,                                     // isSigned
+                                        3+325,                                    // nDigits
+                                        325,                                      // nFractionalDigits
+                                        DataType::float64);        
+      }else{
+        throw logic_error("Wrong data width for data type IEEE754. Check your map file!");
       }
-    }
-    else if(width == 1) {    // boolean
-      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean);
-    }
-    else {                // width == 0 -> nodata
-      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata);
+    }else if (dataType == FIXED_POINT){
+    
+      if(width > 1) {    // numeric type
+        DataType rawDataInfo = (is2DMultiplexed_ ? DataType::none :  DataType::int32);
+
+        if(nFractionalBits_ > 0) {
+          size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
+            ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
+          size_t nFractionalDigits = std::ceil(std::log10(std::pow(2, nFractionalBits_)));
+
+          dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
+                                          false,                                    // isIntegral
+                                          signedFlag_,                              // isSigned
+                                          nDigits,
+                                          nFractionalDigits,
+                                          rawDataInfo);
+        }
+        else {
+          size_t nDigits = std::ceil(std::log10(std::pow(2, width_))) +
+            ( signedFlag_ ? 1 : 0 ) + (  nFractionalBits_ != 0 ? 1 : 0 );
+          
+          dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::numeric,   // fundamentalType
+                                          true,                                     // isIntegral
+                                          signedFlag_,                              // isSigned
+                                          nDigits,
+                                          0,
+                                          rawDataInfo);
+        }
+      }
+      else if(width == 1) {    // boolean
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::boolean);
+      }
+      else {                // width == 0 -> nodata
+        dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::nodata);
+      }
+    }else if (dataType == ASCII){
+      dataDescriptor = DataDescriptor(RegisterInfo::FundamentalType::string);
     }
   }
-
   const RegisterCatalogue& RegisterInfoMap::getRegisterCatalogue() {
     return _catalogue;
   }

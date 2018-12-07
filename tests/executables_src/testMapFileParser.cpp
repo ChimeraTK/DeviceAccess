@@ -199,7 +199,6 @@ void MapFileParserTest::testGoodMappFileParse () {
   for( mapIter = ptrmapFile->begin(), elementsIter = RegisterInfoents.begin();
       mapIter != ptrmapFile->end() && elementsIter != RegisterInfoents.end();
       ++mapIter, ++elementsIter){
-    std::cout << "checking " << (*elementsIter).name << std::endl;
     std::stringstream message;
     message << "Failed comparison on Register '" << (*elementsIter).name
         << "', module '" << (elementsIter->module) << "'";
@@ -242,9 +241,9 @@ void MapFileParserTest::testMixedMapFileParse () {
   mapIter = ptrmapFile->begin();
   elementsIter = RegisterInfoents.begin();
   ++elementsIter;
-  std::cout << "## The following error message is expected. It is not a failing test: " << std::endl;
+  std::cout << "\n## The following error message is expected. It is not a failing test: " << std::endl;
   BOOST_CHECK_MESSAGE(compareRegisterInfoents(*mapIter,*elementsIter) == false, message.str());
-  std::cout << "## End of expected error message." << std::endl;  
+  std::cout << "## End of expected error message.\n" << std::endl;  
 }
 
 void MapFileParserTest::testSplitStringAtLastDot(){

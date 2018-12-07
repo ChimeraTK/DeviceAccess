@@ -55,6 +55,13 @@ namespace ChimeraTK {
         public:
 
           enum Access { READ = 1 << 0, WRITE = 1 << 1, READWRITE = READ | WRITE };
+          /** Enum descibing the data interpretation:
+           *  \li Fixed point (includes integer = 0 fractional bits)
+           *  \li IEEE754 floating point
+           *  \li ASCII ascii characters
+           *  \li VOID no data content, just trigger events (push type)
+           */
+          enum Type {FIXED_POINT, IEEE754, ASCII};
 
           RegisterPath getRegisterName() const override {
             RegisterPath path = RegisterPath(module)/name;
@@ -106,7 +113,8 @@ namespace ChimeraTK {
           const uint32_t lineNumber; /**< Number of line with description of register in MAP file */
           const std::string module; /**< Name of the module this register is in*/
           const Access registerAccess; /**< Data access direction: Read, write or read and write */
-
+          const Type dataType; /**< Data type (fixpoint, floating point)*/
+          
           friend std::ostream& operator<<(std::ostream &os, const RegisterInfo& registerInfo);
 
           /// Constructor to set all data members. They all have default values, so this
@@ -123,7 +131,8 @@ namespace ChimeraTK {
               std::string const & module_ = std::string(),
               uint32_t nChannels_ = 1,
               bool is2DMultiplexed_ = false,
-              Access dataAccess_ = Access::READWRITE);
+              Access dataAccess_ = Access::READWRITE,
+              Type dataType_ =  Type::FIXED_POINT);
 
           // Copy assignment
           RegisterInfo& operator=(const RegisterInfo &other) {
