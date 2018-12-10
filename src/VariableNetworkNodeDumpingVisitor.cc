@@ -32,9 +32,9 @@ void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
     stream() << "tags: [";
     bool first = true;
     for(auto &tag : t.getTags()) {
-        stream() << tag;
-        if (!first) stream() << ",";
-        first = false;
+      if (!first) stream() << ",";
+      stream() << tag;
+      first = false;
     }
     stream() << "]";
     stream() << _separator;
