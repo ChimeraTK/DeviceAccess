@@ -176,6 +176,21 @@ if(DEMO_IS_ENABLED)
   FILE( COPY ${CMAKE_SOURCE_DIR}/example2a/demoApp2a.conf DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/example2a/demoApp2a.xml DESTINATION ${PROJECT_BINARY_DIR})
 
+  # 3rd example with automation etc.
+  add_executable(demoApp3 example3/demoApp3.cc)
+  set_target_properties(demoApp3 PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+  set_target_properties(demoApp3 PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  target_link_libraries(demoApp3 ${PROJECT_NAME}
+                                ${Boost_LIBRARIES}
+                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
+                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
+                                ${LibXML++_LIBRARIES}
+                                ${glib_LIBRARIES}
+                                ${HDF5_LIBRARIES})
+
+  # copy config files for 2nd example with automation
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example3/demoApp3.conf DESTINATION ${PROJECT_BINARY_DIR})
+
 endif(DEMO_IS_ENABLED)
 
 # C++ library
