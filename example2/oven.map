@@ -1,4 +1,4 @@
-# name                            nr of elements       address          size           bar    width   fracbits    signed   
-heater.temperatureReadback        1                    0                4              0      32      16          0
-heater.heatingCurrent             1                    4                4              0      32      16          0
+# name                            nr of elements       address          size           bar    width   fracbits    signed    R/W
+heater.temperatureReadback        1                    0                4              0      32      16          0         RO
+heater.heatingCurrent             1                    4                4              0      32      16          0         RW
 
