@@ -1,2 +1,3 @@
-TARGET1   sdm://./dummy SubdeviceTarget.map
-SUBDEV1   sdm://./subdevice:area,TARGET1,APP.0.THE_AREA Subdevice.map
+TARGET1   (dummy?map=SubdeviceTarget.map)
+SUBDEV1   (subdevice?type=area&device=TARGET1&area=APP.0.THE_AREA&map=Subdevice.map)
+SUBDEV2   (subdevice?type=3regs&device=TARGET1&address=APP.1.ADDRESS&data=APP.1.DATA&status=APP.1.STATUS&map=Subdevice.map)

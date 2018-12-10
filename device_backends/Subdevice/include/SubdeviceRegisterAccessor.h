@@ -1,0 +1,87 @@
+/*
+ * SubdeviceRegisterAccessor.h
+ *
+ *  Created on: Dec 10, 2018
+ *      Author: Martin Hierholzer
+ */
+
+#ifndef CHIMERA_TK_SUBDEVICE_REGISTER_ACCESSOR_H
+#define CHIMERA_TK_SUBDEVICE_REGISTER_ACCESSOR_H
+
+#include <algorithm>
+
+#include "SyncNDRegisterAccessor.h"
+#include "SubdeviceBackend.h"
+#include "Device.h"
+
+namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
+
+  class SubdeviceRegisterAccessor : public SyncNDRegisterAccessor<int32_t> {
+    public:
+
+      SubdeviceRegisterAccessor(const std::string &registerPathName,
+                                boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
+                                boost::shared_ptr<NDRegisterAccessor<int32_t>> accData,
+                                boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
+                                size_t byteOffset, size_t numberOfWords,
+                                bool isReadable, bool isWriteable);
+
+      ~SubdeviceRegisterAccessor() override;
+
+      void doReadTransfer() override;
+
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override;
+
+      bool doReadTransferNonBlocking() override;
+
+      bool doReadTransferLatest() override;
+
+      void doPreRead() override;
+
+      void doPostRead() override;
+
+      void doPreWrite() override;
+
+      void doPostWrite() override;
+
+      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &) const override;
+
+      bool isReadOnly() const override;
+
+      bool isReadable() const override;
+
+      bool isWriteable() const override;
+
+      FixedPointConverter getFixedPointConverter() const override;
+
+      AccessModeFlags getAccessModeFlags() const override;
+
+    protected:
+
+      /// Pointers to the three accessors
+      boost::shared_ptr<NDRegisterAccessor<int32_t>> _accAddress;
+      boost::shared_ptr<NDRegisterAccessor<int32_t>> _accData;
+      boost::shared_ptr<NDRegisterAccessor<int32_t>> _accStatus;
+
+      /// start address and length
+      size_t _byteOffset, _numberOfWords;
+
+      /// flags of allowed access
+      bool _isReadable, _isWriteable;
+
+      /// internal buffer
+      std::vector<int32_t> _buffer;
+
+      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override;
+
+      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override;
+
+      void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override;
+
+  };
+
+}    // namespace ChimeraTK
+
+#endif /* CHIMERA_TK_SUBDEVICE_REGISTER_ACCESSOR_H */
