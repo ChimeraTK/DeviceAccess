@@ -233,7 +233,13 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
     b.setNumberOfElements(a.getNumberOfElements());
   }
   if(a.getNumberOfElements() != b.getNumberOfElements()) {
-    throw ChimeraTK::logic_error("Error: Cannot connect array variables with difference number of elements!");
+    std::stringstream what;
+    what << "*** ERROR: Cannot connect array variables with difference number of elements!" << std::endl;
+    what << "Node A:" << std::endl;
+    a.dump(what);
+    what << "Node B:" << std::endl;
+    b.dump(what);
+    throw ChimeraTK::logic_error(what.str());
   }
 
   // if both nodes already have an owner, we are done
