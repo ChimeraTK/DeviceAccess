@@ -691,4 +691,63 @@ BOOST_AUTO_TEST_CASE( test3regsArrayWrite ) {
 
 /*********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE( test3regsByteOffset1 ) {
+
+    setDMapFilePath("subdeviceTest.dmap");
+
+    Device dev;
+    dev.open("SUBDEV2");
+    Device target;
+    target.open("TARGET1");
+
+    auto acc  = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER_AT_BYTE_1");
+    auto accA = target.getScalarRegisterAccessor<int32_t>("APP.1.ADDRESS");
+    auto accD = target.getScalarRegisterAccessor<int32_t>("APP.1.DATA");
+    auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");
+    std::atomic<bool> done;
+    std::thread t;
+
+    accS = 1;
+    accS.write();
+    done = false;
+    t = std::thread([&]{
+      acc.read();
+      done = true;
+    });
+    usleep(10000);
+    BOOST_CHECK(done == false);
+    accD = 123;
+    accD.write();
+    accS = 0;
+    accS.write();
+    CHECK_TIMEOUT( accA.read(); , (accA == 1) , 5000 );
+    t.join();
+    BOOST_CHECK_CLOSE(static_cast<double>(acc), 123., 0.001);
+
+    accA = 0;
+    accA.write();
+
+    accS = 1;
+    accS.write();
+    done = false;
+    t = std::thread([&]{
+      acc.read();
+      done = true;
+    });
+    usleep(10000);
+    BOOST_CHECK(done == false);
+    accD = 4000;
+    accD.write();
+    accS = 0;
+    accS.write();
+    CHECK_TIMEOUT( accA.read(); , (accA == 1) , 5000 );
+    t.join();
+    BOOST_CHECK_CLOSE(static_cast<double>(acc), 4000., 0.001);
+
+    dev.close();
+
+}
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_SUITE_END()
