@@ -452,4 +452,71 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
+  template<>
+  boost::shared_ptr< NDRegisterAccessor<int32_t> > SubdeviceBackend::getRegisterAccessor_3regs<int32_t>(
+      const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    assert(type == Type::threeRegisters || type == Type::twoRegisters);
+    flags.checkForUnknownFlags({AccessMode::raw});
+
+    // obtain register info
+    auto info = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(_catalogue.getRegister(registerPathName));
+
+    // check that the bar is 0
+    if(info->bar != 0) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '"+registerPathName+
+                            "' is in BAR "+std::to_string(info->bar)+".");
+    }
+
+    // check that the register is not a 2D multiplexed register, which is not yet supported
+    if(info->is2DMultiplexed) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: 2D multiplexed registers are not yet supported.");
+    }
+
+    // compute full offset (from map file and function arguments)
+    size_t byteOffset = info->address + sizeof(int32_t)*wordOffsetInRegister;
+
+    // compute effective length
+    if(numberOfWords == 0) {
+      numberOfWords = info->nElements;
+    }
+    else if(numberOfWords > info->nElements) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Requested "+std::to_string(numberOfWords)+" elements from register '"+
+                            registerPathName+"', which only has a length of "+std::to_string(info->nElements)+
+                            " elements.");
+    }
+
+    // check if register access properly specified in map file
+    if(!info->isWriteable()) {
+      throw ChimeraTK::logic_error("SubdeviceBackend: Subdevices of type 3reg or 2reg must have writeable registers only!");
+    }
+
+    // check if raw transfer?
+    bool isRaw = flags.has(AccessMode::raw);
+
+    // obtain target accessor in raw mode
+    auto accAddress = targetDevice->getRegisterAccessor<int32_t>(targetAddress, 1, 0, {AccessMode::raw});
+    auto accData = targetDevice->getRegisterAccessor<int32_t>(targetData, 1, 0, {AccessMode::raw});
+    boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus;
+    if(type == Type::threeRegisters) {
+      accStatus = targetDevice->getRegisterAccessor<int32_t>(targetControl, 1, 0, {AccessMode::raw});
+    }
+    auto sharedThis = boost::enable_shared_from_this<DeviceBackend>::shared_from_this();
+    auto rawAcc = boost::make_shared<SubdeviceRegisterAccessor>(boost::dynamic_pointer_cast<SubdeviceBackend>(sharedThis),
+                                                                registerPathName, accAddress, accData, accStatus,
+                                                                byteOffset, numberOfWords);
+
+    // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
+    // implement getAsCoocked()/setAsCooked().
+    if(!isRaw) {
+      return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>( rawAcc,
+                    FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
+    }
+    else {
+      return boost::make_shared<FixedPointConvertingRawDecorator<int32_t>>( rawAcc,
+                    FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
+    }
+  }
+
 } // namespace ChimeraTK
