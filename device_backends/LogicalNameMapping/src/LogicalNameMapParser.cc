@@ -18,80 +18,81 @@ namespace ChimeraTK {
   template<typename T>
   T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node *node,
       const std::string &subnodeName, bool hasDefault, T defaultValue) {
+
     auto list = node->find(subnodeName);
     if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {
       parsingError("Expected exactly one subnode of the type '"+subnodeName+"' below node '"+node->get_name()+"'.");
     }
     auto childList = list[0]->get_children();
-    if(childList.size() != 1) {
-      parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead multiple childs "
-                                        "were found.");
-    }
 
-    // check for plain text
-    const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(childList.front());
-    if(textNode) {
-      std::stringstream buf(textNode->get_content());
-      T value;
-      buf >> value;
-      return value;
-    }
+    std::stringstream buf;
+    for(auto &child : childList) {
 
-    // check for reference
-    if(childList.front()->get_name() == "ref") {
-      auto childChildList = childList.front()->get_children();
-      const xmlpp::TextNode *refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
-      if(refNameNode && childChildList.size() == 1) {
-        std::string regName = refNameNode->get_content();
-        if(!_catalogue.hasRegister(regName)) {
-          parsingError("Reference to constant '"+regName+"' could not be resolved.");
-        }
-        auto reg = _catalogue.getRegister(regName);
-        auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
-        assert(reg_casted != nullptr);    // this is our own catalogue
-        // fetch the value of the target constant
-        if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
-          // convert via string
-          std::stringstream buf;
-          buf << reg_casted->value_int[0];
-          T value;
-          buf >> value;
-          return value;
+      // check for plain text
+      const xmlpp::TextNode *textNode = dynamic_cast<xmlpp::TextNode*>(child);
+      if(textNode) {
+        // put to stream buffer
+        buf << textNode->get_content();
+        continue;
+      }
+
+      // check for reference
+      if(child->get_name() == "ref") {
+        auto childChildList = child->get_children();
+        const xmlpp::TextNode *refNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        if(refNameNode && childChildList.size() == 1) {
+          std::string regName = refNameNode->get_content();
+          if(!_catalogue.hasRegister(regName)) {
+            parsingError("Reference to constant '"+regName+"' could not be resolved.");
+          }
+          auto reg = _catalogue.getRegister(regName);
+          auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
+          assert(reg_casted != nullptr);    // this is our own catalogue
+          // fetch the value of the target constant
+          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
+            // put to stream buffer
+            buf << reg_casted->value_int[0];
+            continue;
+          }
+          else {
+            parsingError("Reference to '"+regName+"' does not refer to a constant.");
+          }
         }
         else {
-          parsingError("Reference to '"+regName+"' does not refer to a constant.");
+          parsingError("The <ref> node must contain only text.");
         }
       }
-      else {
-        parsingError("The <ref> node must contain only text.");
-      }
-    }
 
-    // check for parameter
-    if(childList.front()->get_name() == "par") {
-      auto childChildList = childList.front()->get_children();
-      const xmlpp::TextNode *parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
-      if(parNameNode && childChildList.size() == 1) {
-        std::string parName = parNameNode->get_content();
-        if(_parameters.find(parName) == _parameters.end()) {
-          parsingError("Parameter '"+parName+"' could not be resolved.");
+      // check for parameter
+      if(child->get_name() == "par") {
+        auto childChildList = child->get_children();
+        const xmlpp::TextNode *parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        if(parNameNode && childChildList.size() == 1) {
+          std::string parName = parNameNode->get_content();
+          if(_parameters.find(parName) == _parameters.end()) {
+            parsingError("Parameter '"+parName+"' could not be resolved.");
+          }
+          // put to stream buffer
+          buf << _parameters[parName];
+          continue;
         }
-        // convert via string
-        std::stringstream buf;
-        buf << _parameters[parName];
-        T value;
-        buf >> value;
-        return value;
+        else {
+          parsingError("The <par> node must contain only text.");
+        }
       }
-      else {
-        parsingError("The <par> node must contain only text.");
-      }
+
+      // neither found: throw error
+      parsingError("Node '"+subnodeName+"' should contain only text, references or parameters. Instead child '"+
+                   child->get_name()+"' was found.");
+
     }
 
-    // neither found: throw error
-    parsingError("Node '"+subnodeName+"' should contain only text or exactly one reference, instead child '"+
-                 childList.front()->get_name()+"' was found.");
+    // interpret stream as value of type T and return it
+    T value;
+    buf >> value;
+    return value;
+
 
   }
 
