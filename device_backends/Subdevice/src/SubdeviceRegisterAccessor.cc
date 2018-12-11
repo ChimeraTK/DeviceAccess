@@ -38,10 +38,15 @@ namespace ChimeraTK {
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     size_t idx = 0;
     for(size_t adr=_byteOffset; adr<_byteOffset+4*_numberOfWords; adr+=4) {
-      while(true) {
-        _accStatus->read();
-        if(_accStatus->accessData(0) == 0) break;
-        usleep(1000);             /// @todo make configurable!
+      if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
+        while(true) {
+          _accStatus->read();
+          if(_accStatus->accessData(0) == 0) break;
+          usleep(_backend->sleepTime);
+        }
+      }
+      else {
+        usleep(_backend->sleepTime);
       }
       _accAddress->accessData(0) = adr;
       _accAddress->write();
