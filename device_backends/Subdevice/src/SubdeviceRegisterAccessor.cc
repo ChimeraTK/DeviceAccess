@@ -4,20 +4,19 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
-  SubdeviceRegisterAccessor::SubdeviceRegisterAccessor(const std::string &registerPathName,
+  SubdeviceRegisterAccessor::SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend,
+                            const std::string &registerPathName,
                             boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
                             boost::shared_ptr<NDRegisterAccessor<int32_t>> accData,
                             boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
-                            size_t byteOffset, size_t numberOfWords,
-                            bool isReadable, bool isWriteable)
+                            size_t byteOffset, size_t numberOfWords)
   : SyncNDRegisterAccessor<int32_t>(registerPathName),
+    _backend(backend),
     _accAddress(accAddress),
     _accData(accData),
     _accStatus(accStatus),
     _byteOffset(byteOffset),
-    _numberOfWords(numberOfWords),
-    _isReadable(isReadable),
-    _isWriteable(isWriteable)
+    _numberOfWords(numberOfWords)
   {
     NDRegisterAccessor<int32_t>::buffer_2D.resize(1);
     NDRegisterAccessor<int32_t>::buffer_2D[0].resize(numberOfWords);
@@ -31,19 +30,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doReadTransfer() {
-    size_t idx = 0;
-    for(size_t adr=_byteOffset; adr<_byteOffset+4*_numberOfWords; adr+=4) {
-      while(true) {
-        _accStatus->read();
-        if(_accStatus->accessData(0) == 0) break;
-        usleep(1000);             /// @todo make configurable!
-      }
-      _accAddress->accessData(0) = adr;
-      _accAddress->write();
-      _accData->read();
-      _buffer[idx] = _accData->accessData(0);
-      ++idx;
-    }
+    throw ChimeraTK::logic_error("Reading this register is not supported.");
   }
 
   /*********************************************************************************************************************/
@@ -113,19 +100,19 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::isReadOnly() const {
-    return _isReadable && !_isWriteable;
+    return false;
   }
 
   /*********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::isReadable() const {
-    return _isReadable;
+    return false;
   }
 
   /*********************************************************************************************************************/
 
   bool SubdeviceRegisterAccessor::isWriteable() const {
-    return _isWriteable;
+    return true;
   }
 
   /*********************************************************************************************************************/

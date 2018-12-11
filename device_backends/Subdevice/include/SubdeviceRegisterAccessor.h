@@ -21,12 +21,12 @@ namespace ChimeraTK {
   class SubdeviceRegisterAccessor : public SyncNDRegisterAccessor<int32_t> {
     public:
 
-      SubdeviceRegisterAccessor(const std::string &registerPathName,
+      SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend,
+                                const std::string &registerPathName,
                                 boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
                                 boost::shared_ptr<NDRegisterAccessor<int32_t>> accData,
                                 boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
-                                size_t byteOffset, size_t numberOfWords,
-                                bool isReadable, bool isWriteable);
+                                size_t byteOffset, size_t numberOfWords);
 
       ~SubdeviceRegisterAccessor() override;
 
@@ -60,6 +60,9 @@ namespace ChimeraTK {
 
     protected:
 
+      /// Pointer to the backend
+      boost::shared_ptr<SubdeviceBackend> _backend;
+
       /// Pointers to the three accessors
       boost::shared_ptr<NDRegisterAccessor<int32_t>> _accAddress;
       boost::shared_ptr<NDRegisterAccessor<int32_t>> _accData;
@@ -67,9 +70,6 @@ namespace ChimeraTK {
 
       /// start address and length
       size_t _byteOffset, _numberOfWords;
-
-      /// flags of allowed access
-      bool _isReadable, _isWriteable;
 
       /// internal buffer
       std::vector<int32_t> _buffer;

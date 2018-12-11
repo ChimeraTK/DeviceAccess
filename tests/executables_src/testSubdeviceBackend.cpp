@@ -474,7 +474,7 @@ BOOST_AUTO_TEST_CASE( testReadArrayCooked ) {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( test3regsScalarRead ) {
+BOOST_AUTO_TEST_CASE( test3regsScalar ) {
 
     setDMapFilePath("subdeviceTest.dmap");
 
@@ -491,91 +491,8 @@ BOOST_AUTO_TEST_CASE( test3regsScalarRead ) {
     std::atomic<bool> done;
     std::thread t;
 
-    accS = 1;
-    accS.write();
-    done = false;
-    t = std::thread([&]{
-      acc2.read();
-      done = true;
-    });
-    usleep(10000);
-    BOOST_CHECK(done == false);
-    accD = 123;
-    accD.write();
-    accS = 0;
-    accS.write();
-    CHECK_TIMEOUT( accA.read(); , (accA == 4) , 5000 );
-    t.join();
-    BOOST_CHECK_CLOSE(static_cast<double>(acc2), 123./4., 0.001);
-
-    accA = 0;
-    accA.write();
-
-    accS = 1;
-    accS.write();
-    done = false;
-    t = std::thread([&]{
-      acc2.read();
-      done = true;
-    });
-    usleep(10000);
-    BOOST_CHECK(done == false);
-    accD = 4000;
-    accD.write();
-    accS = 0;
-    accS.write();
-    CHECK_TIMEOUT( accA.read(); , (accA == 4) , 5000 );
-    t.join();
-    BOOST_CHECK_CLOSE(static_cast<double>(acc2), 4000./4., 0.001);
-
-    accS = 1;
-    accS.write();
-    done = false;
-    t = std::thread([&]{
-      acc1.read();
-      done = true;
-    });
-    usleep(10000);
-    BOOST_CHECK(done == false);
-    accD = 5432;
-    accD.write();
-    accS = 0;
-    accS.write();
-    CHECK_TIMEOUT( accA.read(); , (accA == 0) , 5000 );
-    t.join();
-    BOOST_CHECK_CLOSE(static_cast<double>(acc1), 5432., 0.001);
-
-    accA = 222;
-    accA.write();
-    accD = 1897;
-    accD.write();
-    acc1.read();
-    accA.read();
-    BOOST_CHECK(accA == 0);
-    BOOST_CHECK_CLOSE(static_cast<double>(acc1), 1897., 0.001);
-
-    dev.close();
-
-}
-
-/*********************************************************************************************************************/
-
-BOOST_AUTO_TEST_CASE( test3regsScalarWrite ) {
-
-    setDMapFilePath("subdeviceTest.dmap");
-
-    Device dev;
-    dev.open("SUBDEV2");
-    Device target;
-    target.open("TARGET1");
-
-    auto acc1  = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER1");
-    auto acc2  = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER2");
-    auto accA = target.getScalarRegisterAccessor<int32_t>("APP.1.ADDRESS");
-    auto accD = target.getScalarRegisterAccessor<int32_t>("APP.1.DATA");
-    auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");
-    std::atomic<bool> done;
-    std::thread t;
+    BOOST_CHECK_THROW( acc1.read(), ChimeraTK::logic_error );
+    BOOST_CHECK_THROW( acc2.read(), ChimeraTK::logic_error );
 
     accS = 1;
     accS.write();
@@ -607,49 +524,7 @@ BOOST_AUTO_TEST_CASE( test3regsScalarWrite ) {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( test3regsArrayRead ) {
-
-    setDMapFilePath("subdeviceTest.dmap");
-
-    Device dev;
-    dev.open("SUBDEV2");
-    Device target;
-    target.open("TARGET1");
-
-    auto accArea  = dev.getOneDRegisterAccessor<double>("APP.0.MY_AREA2");
-    auto accA = target.getScalarRegisterAccessor<int32_t>("APP.1.ADDRESS");
-    auto accD = target.getScalarRegisterAccessor<int32_t>("APP.1.DATA");
-    auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");
-    std::atomic<bool> done;
-    std::thread t;
-
-    accS = 1;
-    accS.write();
-    done = false;
-    t = std::thread([&]{
-      accArea.read();
-      done = true;
-    });
-    usleep(10000);
-    BOOST_CHECK(done == false);
-    accD = 123;
-    accD.write();
-    accS = 0;
-    accS.write();
-    CHECK_TIMEOUT( accA.read(); , (accA == 36) , 5000 );
-    t.join();
-    BOOST_CHECK_CLOSE(accArea[0], 123., 0.001);
-    BOOST_CHECK_CLOSE(accArea[1], 123., 0.001);
-
-    /// @todo Make a proper test with a custom backend, to make sure all elements of the array are properly read
-
-    dev.close();
-
-}
-
-/*********************************************************************************************************************/
-
-BOOST_AUTO_TEST_CASE( test3regsArrayWrite ) {
+BOOST_AUTO_TEST_CASE( test3regsArray ) {
 
     setDMapFilePath("subdeviceTest.dmap");
 
@@ -711,38 +586,19 @@ BOOST_AUTO_TEST_CASE( test3regsByteOffset1 ) {
     accS.write();
     done = false;
     t = std::thread([&]{
-      acc.read();
+      acc = 1897;
+      acc.write();
       done = true;
     });
     usleep(10000);
     BOOST_CHECK(done == false);
-    accD = 123;
-    accD.write();
     accS = 0;
     accS.write();
-    CHECK_TIMEOUT( accA.read(); , (accA == 1) , 5000 );
     t.join();
-    BOOST_CHECK_CLOSE(static_cast<double>(acc), 123., 0.001);
-
-    accA = 0;
-    accA.write();
-
-    accS = 1;
-    accS.write();
-    done = false;
-    t = std::thread([&]{
-      acc.read();
-      done = true;
-    });
-    usleep(10000);
-    BOOST_CHECK(done == false);
-    accD = 4000;
-    accD.write();
-    accS = 0;
-    accS.write();
-    CHECK_TIMEOUT( accA.read(); , (accA == 1) , 5000 );
-    t.join();
-    BOOST_CHECK_CLOSE(static_cast<double>(acc), 4000., 0.001);
+    accA.read();
+    BOOST_CHECK(accA == 1);
+    accD.read();
+    BOOST_CHECK(accD == 1897);
 
     dev.close();
 
