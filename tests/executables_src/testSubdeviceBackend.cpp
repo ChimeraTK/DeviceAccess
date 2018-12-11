@@ -582,6 +582,8 @@ BOOST_AUTO_TEST_CASE( test3regsByteOffset1 ) {
     std::atomic<bool> done;
     std::thread t;
 
+    BOOST_CHECK_THROW( acc.read(), ChimeraTK::logic_error );
+
     accS = 1;
     accS.write();
     done = false;
@@ -599,6 +601,41 @@ BOOST_AUTO_TEST_CASE( test3regsByteOffset1 ) {
     BOOST_CHECK(accA == 1);
     accD.read();
     BOOST_CHECK(accD == 1897);
+
+    dev.close();
+
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE( test2regsScalar ) {
+
+    setDMapFilePath("subdeviceTest.dmap");
+
+    Device dev;
+    dev.open("SUBDEV3");
+    Device target;
+    target.open("TARGET1");
+
+    auto acc2  = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER2");
+    auto accA = target.getScalarRegisterAccessor<int32_t>("APP.1.ADDRESS");
+    auto accD = target.getScalarRegisterAccessor<int32_t>("APP.1.DATA");
+
+    BOOST_CHECK_THROW( acc2.read(), ChimeraTK::logic_error );
+    accA = 42;
+    accA.write();
+
+    auto start = std::chrono::steady_clock::now();
+    acc2 = 666;
+    acc2.write();
+    auto stop = std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff = stop-start;
+    BOOST_CHECK( diff.count() >= 1.0 );               // sleep time is set to 1 second
+
+    accA.read();
+    BOOST_CHECK(accA == 4);
+    accD.read();
+    BOOST_CHECK_EQUAL(static_cast<int32_t>(accD), 666*4);
 
     dev.close();
 

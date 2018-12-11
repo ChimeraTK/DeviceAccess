@@ -1,3 +1,4 @@
 TARGET1   (dummy?map=SubdeviceTarget.map)
 SUBDEV1   (subdevice?type=area&device=TARGET1&area=APP.0.THE_AREA&map=Subdevice.map)
 SUBDEV2   (subdevice?type=3regs&device=TARGET1&address=APP.1.ADDRESS&data=APP.1.DATA&status=APP.1.STATUS&map=Subdevice.map)
+SUBDEV3   (subdevice?type=2regs&device=TARGET1&address=APP.1.ADDRESS&data=APP.1.DATA&sleep=1000000&map=Subdevice.map)
