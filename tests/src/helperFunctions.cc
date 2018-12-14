@@ -47,7 +47,10 @@ bool compareRegisterInfoents(const ChimeraTK::RegisterInfoMap::RegisterInfo& ele
                 (element1.signedFlag == element2.signedFlag) &&
                 (element1.nBytes == element2.nBytes) &&
                 (element1.width == element2.width) &&
-                (element1.module == element2.module);
+                (element1.module == element2.module) &&
+                (element1.registerAccess == element2.registerAccess) &&
+                (element1.dataType == element2.dataType) &&
+                (element1.getNumberOfDimensions() == element2.getNumberOfDimensions()); 
   if (!result){
     std::cout << "Error in comparison: " << element1 << " : "<< element2 << std::endl;
   }

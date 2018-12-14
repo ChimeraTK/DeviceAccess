@@ -4,9 +4,7 @@ using namespace boost::unit_test_framework;
 
 #include "helperFunctions.h"
 #include "Exception.h"
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
+using namespace ChimeraTK;
 
 class MapFileTest {
   public:
@@ -321,15 +319,15 @@ void MapFileTest::testRegisterInfoCoutStreamOperator(){
   std::stringstream expected_stream;
   expected_stream << "Some_Register" << " 0x"
       << std::hex << 0 << " 0x" << 0 << " 0x" << 0 << " 0x"<< 0 << std::dec
-      << " 32 0 true";
+      << " 32 0 true <noModule> RW FIXED_POINT";
   expected_stream << "TEST_REGISTER_NAME_2" << " 0x"
       << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
-      << " 18 3 false SomeModule";
+      << " 18 3 false SomeModule RW FIXED_POINT";
   std::stringstream actual_stream;
   actual_stream << RegisterInfoent1;
   actual_stream << RegisterInfoent2;
 
-  BOOST_CHECK(expected_stream.str() == actual_stream.str());
+  BOOST_CHECK_EQUAL(expected_stream.str(), actual_stream.str());
 }
 
 void MapFileTest::testErrElemTypeCoutStreamOperator(){
@@ -432,11 +430,15 @@ void MapFileTest::testMapFileCoutStreamOperator(){
   ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent1("TEST_REGISTER_NAME_1");
   ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent2("TEST_REGISTER_NAME_2", 2, 4, 8, 1,
       18, 3, false, "TEST_MODULE");
+  ChimeraTK::RegisterInfoMap::RegisterInfo RegisterInfoent3("TEST_REGISTER_NAME_3", 1, 12, 4, 1,
+      32 , 0, true, "TEST_MODULE", 1, false,
+      RegisterInfoMap::RegisterInfo::Access::READ, RegisterInfoMap::RegisterInfo::Type::IEEE754);
   ChimeraTK::RegisterInfoMap::MetaData metaData1("HW_VERSION", "1.6");
 
   dummyMapFile.insert(metaData1);
   dummyMapFile.insert(RegisterInfoent1);
   dummyMapFile.insert(RegisterInfoent2);
+  dummyMapFile.insert(RegisterInfoent3);
 
   std::stringstream expected_stream;
   expected_stream << "=======================================" << std::endl;
@@ -447,16 +449,19 @@ void MapFileTest::testMapFileCoutStreamOperator(){
   expected_stream << "---------------------------------------" << std::endl;
   expected_stream << "TEST_REGISTER_NAME_1" << " 0x"
       << std::hex << 0 << " 0x" << 0 << " 0x" << 0 << " 0x" << 0 << std::dec
-      << " 32 0 true" << std::endl;
+      << " 32 0 true <noModule> RW FIXED_POINT" << std::endl;
   expected_stream << "TEST_REGISTER_NAME_2" << " 0x"
       << std::hex << 2 << " 0x" << 4 << " 0x" << 8 << " 0x" << 1 << std::dec
-      << " 18 3 false TEST_MODULE" << std::endl;
+      << " 18 3 false TEST_MODULE RW FIXED_POINT" << std::endl;
+  expected_stream << "TEST_REGISTER_NAME_3" << " 0x"
+      << std::hex << 1 << " 0x" << 12 << " 0x" << 4 << " 0x" << 1 << std::dec
+      << " 32 0 true TEST_MODULE RO IEEE754" << std::endl;
   expected_stream << "=======================================";
 
   std::stringstream actual_stream;
   actual_stream << dummyMapFile;
 
-  BOOST_CHECK(actual_stream.str() == expected_stream.str());
+  BOOST_CHECK_EQUAL(actual_stream.str(), expected_stream.str());
 }
 
 void MapFileTest::testRegisterInfo(){

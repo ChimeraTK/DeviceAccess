@@ -38,6 +38,9 @@ namespace ChimeraTK {
        *  (the part up to the first dot is considered as prefix).
        */
       static std::pair<std::string, std::string> splitStringAtLastDot( std::string moduleDotName);
+
+  protected:
+      std::pair<RegisterInfoMap::RegisterInfo::Type, int> getTypeAndNFractionalBits(std::string bitInterpretation);
   };
 
 }//namespace ChimeraTK

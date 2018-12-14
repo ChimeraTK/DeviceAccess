@@ -59,7 +59,7 @@ namespace ChimeraTK {
            *  \li Fixed point (includes integer = 0 fractional bits)
            *  \li IEEE754 floating point
            *  \li ASCII ascii characters
-           *  \li VOID no data content, just trigger events (push type)
+           *  \li VOID no data content, just trigger events (push type) FIXME: Currently implicit by 0 bits width
            */
           enum Type {FIXED_POINT, IEEE754, ASCII};
 

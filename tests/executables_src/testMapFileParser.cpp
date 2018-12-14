@@ -6,10 +6,9 @@
 #include "MapFileParser.h"
 #include "Exception.h"
 #include "helperFunctions.h"
+#include "RegisterInfoMap.h"
 
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
+using namespace ChimeraTK;
 using namespace boost::unit_test_framework;
 
 class MapFileParserTest {
@@ -150,7 +149,7 @@ void MapFileParserTest::testGoodMappFileParse () {
   boost::shared_ptr<ChimeraTK::RegisterInfoMap> ptrmapFile =
       map_file_parser.parse("goodMapFile.map");
 
-  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 16);
+  BOOST_CHECK_EQUAL(ptrmapFile->getMapFileSize(), 18);
   
   std::string metaDataNameToRetrieve;
   std::string retrievedValue;
@@ -163,7 +162,7 @@ void MapFileParserTest::testGoodMappFileParse () {
   ptrmapFile->getMetaData(metaDataNameToRetrieve, retrievedValue);
   BOOST_CHECK(retrievedValue == "2.5");
 
-  std::vector< ChimeraTK::RegisterInfoMap::RegisterInfo > RegisterInfoents(14);
+  std::vector< ChimeraTK::RegisterInfoMap::RegisterInfo > RegisterInfoents(18);
 
   RegisterInfoents[0] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_FIRMWARE", 0x01, 0x0, 0x04, 0x0,
       32, 0, true, "BOARD");
@@ -188,11 +187,19 @@ void MapFileParserTest::testGoodMappFileParse () {
   RegisterInfoents[10] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER2", 0x01, 0x24, 0x04, 0x01,
       18, 5, false, "MODULE1");
   RegisterInfoents[11] = ChimeraTK::RegisterInfoMap::RegisterInfo("WORD_USER3", 0x01, 0x28, 0x04, 0x01,
-      18, 5, false, "MODULE1");
-  RegisterInfoents[12] = ChimeraTK::RegisterInfoMap::RegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02,
+      18, 5, false, "MODULE1", 1, false, RegisterInfoMap::RegisterInfo::Access::READ);
+  RegisterInfoents[12] = ChimeraTK::RegisterInfoMap::RegisterInfo("NO_OPTIONAL", 0x01, 0x2C, 0x04, 0x01,
+      32, 0, true, "MODULE2");
+  RegisterInfoents[13] = ChimeraTK::RegisterInfoMap::RegisterInfo("REGISTER", 0x01, 0x00, 0x04, 0x02,
       32, 0, true, "MODULE.NAME.WITH.DOTS");
-  RegisterInfoents[13] = ChimeraTK::RegisterInfoMap::RegisterInfo("TEST_AREA", 0x0A, 0x025, 0x028, 0x01,
+  RegisterInfoents[14] = ChimeraTK::RegisterInfoMap::RegisterInfo("TEST_AREA", 0x0A, 0x025, 0x028, 0x01,
       32, 0, false, "MODULE1");
+  RegisterInfoents[15] = ChimeraTK::RegisterInfoMap::RegisterInfo("SCALAR", 0x01, 0x060, 0x04, 0x01,
+                                                                  32, 0, true, "FLOAT_TEST", 1, false, RegisterInfoMap::RegisterInfo::Access::READWRITE, RegisterInfoMap::RegisterInfo::Type::IEEE754);
+  RegisterInfoents[16] = ChimeraTK::RegisterInfoMap::RegisterInfo("ARRAY", 0x04, 0x064, 0x010, 0x01,
+      32, 0, true, "FLOAT_TEST", 1, false, RegisterInfoMap::RegisterInfo::Access::READWRITE, RegisterInfoMap::RegisterInfo::Type::IEEE754);
+  RegisterInfoents[17] = ChimeraTK::RegisterInfoMap::RegisterInfo("NO_OPTIONAL", 0x01, 0x08, 0x04, 0x0,
+      32, 0, true, "BOARD");
 
   ChimeraTK::RegisterInfoMap::const_iterator mapIter;
   std::vector<ChimeraTK::RegisterInfoMap::RegisterInfo>::const_iterator elementsIter;

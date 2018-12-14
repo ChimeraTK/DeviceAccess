@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include <string>
 
 #include "MapFileParser.h"
 #include "Exception.h"
@@ -29,7 +30,8 @@ namespace ChimeraTK {
     int32_t  nFractionalBits; /**< Number of fractional bits */
     bool     signedFlag; /**< Signed/Unsigned flag */
     RegisterInfoMap::RegisterInfo::Access registerAccess;
-
+    RegisterInfoMap::RegisterInfo::Type type;    
+    
     std::string module; /**< Name of the module this register is in*/
 
     while (std::getline(file, line)) {
@@ -78,9 +80,11 @@ namespace ChimeraTK {
       // first, set default values for 'optional' fields
       bar = 0x0;
       width= 32;
-      nFractionalBits = 0;
+      nFractionalBits =0 ;
       signedFlag = true;
       registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
+      type =  RegisterInfoMap::RegisterInfo::Type::FIXED_POINT;
+      
       is >> std::setbase(0) >> bar;
       if (is.fail()){
         failed = true;
@@ -97,10 +101,16 @@ namespace ChimeraTK {
         }
       }
       if (!failed) {
-        is >> std::setbase(0) >> nFractionalBits;
+        std::string bitInterpretation;
+        is >> bitInterpretation;
         if (is.fail()){
           failed = true;
         } else {
+          // factored out because rather lengthy
+          auto type_and_nFractionBits = getTypeAndNFractionalBits(bitInterpretation);
+          type = type_and_nFractionBits.first;
+          nFractionalBits = type_and_nFractionBits.second;
+          
           if (nFractionalBits > 1023 || nFractionalBits < -1024) {
             throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr)+": "
                                          "too many fractional bits");
@@ -135,7 +145,7 @@ namespace ChimeraTK {
       is.clear();
 
       RegisterInfoMap::RegisterInfo registerInfo(name, nElements, address, nBytes, bar, width, nFractionalBits,
-                                                 signedFlag, module, 1, false, registerAccess);
+                                                 signedFlag, module, 1, false, registerAccess, type);
       pmap->insert(registerInfo);
     }
 
@@ -212,5 +222,22 @@ namespace ChimeraTK {
         moduleDotName.substr(lastDotPosition+1) );
   }
 
+  std::pair<RegisterInfoMap::RegisterInfo::Type, int> MapFileParser::getTypeAndNFractionalBits(std::string bitInterpretation){
+    if (bitInterpretation == "IEEE754"){
+      return {RegisterInfoMap::RegisterInfo::Type::IEEE754, 0};
+    }else if (bitInterpretation == "ASCII"){
+      return {RegisterInfoMap::RegisterInfo::Type::ASCII, 0};
+    }else{
+      // If it is a digit the implicit interpretation is FixedPoint
+      try{
+        int nBits = std::stoi(bitInterpretation, nullptr, 0); // base 0 = auto, hex or dec or oct
+        return  {RegisterInfoMap::RegisterInfo::Type::FIXED_POINT, nBits};
+      }catch(std::exception &e){
+        throw ChimeraTK::logic_error(std::string("Map file error in bitInterpretation: wrong argument '") + bitInterpretation
+               +"', caught exception: "+ e.what());
+      }
+    }
+  }
+  
 }//namespace ChimeraTK
 

@@ -139,12 +139,47 @@ namespace ChimeraTK {
     return os;
   }
 
+  std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo::Type& type) {
+    switch (type) {
+      case RegisterInfoMap::RegisterInfo::Type::FIXED_POINT:
+        os << "FIXED_POINT";
+        break;
+    case RegisterInfoMap::RegisterInfo::Type::IEEE754:
+        os << "IEEE754";
+        break;
+    case RegisterInfoMap::RegisterInfo::Type::ASCII:
+        os << "ASCII";
+        break;
+      default:
+        os << "UNKNOWN";
+    }
+    return os;
+  }
+
+  std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo::Access& access) {
+    switch (access) {
+      case RegisterInfoMap::RegisterInfo::Access::READ:
+        os << "RO";
+        break;
+    case RegisterInfoMap::RegisterInfo::Access::WRITE:
+        os << "WO";
+        break;
+    case RegisterInfoMap::RegisterInfo::Access::READWRITE:
+        os << "RW";
+        break;
+      default:
+        os << "UNKNOWN";
+    }
+    return os;
+  }
+
   std::ostream& operator<<(std::ostream &os, const RegisterInfoMap::RegisterInfo& registerInfo) {
     os << registerInfo.name << " 0x" << std::hex << registerInfo.nElements << " 0x" << registerInfo.address
-        << " 0x" << registerInfo.nBytes << " 0x" << registerInfo.bar << std::dec
-        << " " << registerInfo.width << " " << registerInfo.nFractionalBits << " "
-        << (registerInfo.signedFlag?"true":"false" )
-        << (!registerInfo.module.empty()?" "+registerInfo.module:"");
+       << " 0x" << registerInfo.nBytes << " 0x" << registerInfo.bar << std::dec
+       << " " << registerInfo.width << " " << registerInfo.nFractionalBits << " "
+       << (registerInfo.signedFlag?"true":"false" )
+       << (!registerInfo.module.empty()?" "+registerInfo.module:" <noModule>")
+       << " " << registerInfo.registerAccess << " " << registerInfo.dataType ;
     return os;
   }
 
