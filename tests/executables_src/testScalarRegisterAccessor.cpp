@@ -1,5 +1,7 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE ScalarRegisterAccessorTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
 
 #include <algorithm>
 #include <unordered_map>
@@ -18,56 +20,11 @@
 #include "accessPrivateData.h"
 
 using namespace boost::unit_test_framework;
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
 using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
-class ScalarRegisterTest {
-  public:
-
-    /// test creation of the accessor incl. exceptions
-    void testCreation();
-
-    /// test the register accessor with int type
-    void testIntRegisterAccessor();
-
-    /// test the register accessor with float type and fixed point conversion
-    void testFloatRegisterAccessor();
-
-    /// test the scalar accessor as one value in a larger register
-    void testWordOffset();
-
-    /// test the unique ID
-    void testUniqueID();
-
-};
-
-/**********************************************************************************************************************/
-class  ScalarRegisterTestSuite : public test_suite {
-  public:
-    ScalarRegisterTestSuite() : test_suite("ScalarRegisterAccessor test suite") {
-      BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-      boost::shared_ptr<ScalarRegisterTest> scalarRegisterTest( new ScalarRegisterTest );
-
-      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testCreation, scalarRegisterTest ) );
-      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testIntRegisterAccessor, scalarRegisterTest ) );
-      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testFloatRegisterAccessor, scalarRegisterTest ) );
-      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testWordOffset, scalarRegisterTest ) );
-      add( BOOST_CLASS_TEST_CASE( &ScalarRegisterTest::testUniqueID, scalarRegisterTest ) );
-    }};
-
-/**********************************************************************************************************************/
-bool init_unit_test(){
-  framework::master_test_suite().p_name.value = "ScalarRegisterAccessor test suite";
-  framework::master_test_suite().add(new ScalarRegisterTestSuite);
-
-  return true;
-}
-
-/**********************************************************************************************************************/
-void ScalarRegisterTest::testCreation() {
+BOOST_AUTO_TEST_CASE( testCreation ) {
+  setDMapFilePath("dummies.dmap");
   std::cout << "testCreation" << std::endl;
 
   Device device;
@@ -90,7 +47,8 @@ void ScalarRegisterTest::testCreation() {
 }
 
 /**********************************************************************************************************************/
-void ScalarRegisterTest::testIntRegisterAccessor() {
+BOOST_AUTO_TEST_CASE( testIntRegisterAccessor ) {
+  setDMapFilePath("dummies.dmap");
   std::cout << "testRegisterAccessor" << std::endl;
 
   Device device;
@@ -181,7 +139,8 @@ void ScalarRegisterTest::testIntRegisterAccessor() {
 }
 
 /**********************************************************************************************************************/
-void ScalarRegisterTest::testFloatRegisterAccessor() {
+BOOST_AUTO_TEST_CASE( testFloatRegisterAccessor ) {
+  setDMapFilePath("dummies.dmap");
   std::cout << "testFloatRegisterAccessor" << std::endl;
 
   Device device;
@@ -225,7 +184,8 @@ void ScalarRegisterTest::testFloatRegisterAccessor() {
 
 /**********************************************************************************************************************/
 /// test the scalar accessor as one value in a larger register
-void ScalarRegisterTest::testWordOffset(){
+BOOST_AUTO_TEST_CASE( testWordOffset ){
+  setDMapFilePath("dummies.dmap");
   std::cout << "testWordOffset" << std::endl;
 
   Device device;
@@ -251,7 +211,8 @@ void ScalarRegisterTest::testWordOffset(){
 }
 
 /**********************************************************************************************************************/
-void ScalarRegisterTest::testUniqueID() {
+BOOST_AUTO_TEST_CASE( testUniqueID ) {
+  setDMapFilePath("dummies.dmap");
   std::cout << "testUniqueID" << std::endl;
 
   Device device;
