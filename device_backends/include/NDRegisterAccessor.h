@@ -32,8 +32,8 @@ namespace ChimeraTK {
       : TransferElement(name, unit, description)
       {
         TransferElement::makeUniqueId();
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
       }
 
       /** Get or set register accessor's buffer content (1D version).
@@ -80,17 +80,17 @@ namespace ChimeraTK {
         return typeid(UserType);
       }
 
-      template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked(unsigned int channel, unsigned int sample) const;
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getAsCoocked_impl, T const (unsigned int, unsigned int) );
-      template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample) const;
+      template<typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked(unsigned int channel, unsigned int sample) const;
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( getAsCooked_impl, T const (unsigned int, unsigned int) );
+      template<typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) const;
 
-      template<typename COOCKED_TYPE>
-      void setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( setAsCoocked_impl, void (unsigned int, unsigned int, T) );
-      template<typename COOCKED_TYPE>
-      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
+      template<typename COOKED_TYPE>
+      void setAsCooked(unsigned int channel, unsigned int sample, COOKED_TYPE value);
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE( setAsCooked_impl, void (unsigned int, unsigned int, T) );
+      template<typename COOKED_TYPE>
+      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
 
       boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override;
 
@@ -108,29 +108,29 @@ namespace ChimeraTK {
       friend class MultiplexedDataAccessor<UserType>;
       friend class RegisterAccessor;
 
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NDRegisterAccessor<UserType>, getAsCoocked_impl, 2 );
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NDRegisterAccessor<UserType>, setAsCoocked_impl, 3 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NDRegisterAccessor<UserType>, getAsCooked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( NDRegisterAccessor<UserType>, setAsCooked_impl, 3 );
 
   };
 
-  template<typename UserType> template<typename COOCKED_TYPE>
-  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked(unsigned int channel, unsigned int sample) const {
-    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCoocked_impl, COOCKED_TYPE, channel, sample);
+  template<typename UserType> template<typename COOKED_TYPE>
+  COOKED_TYPE NDRegisterAccessor<UserType>::getAsCooked(unsigned int channel, unsigned int sample) const {
+    return CALL_VIRTUAL_FUNCTION_TEMPLATE(getAsCooked_impl, COOKED_TYPE, channel, sample);
   }
 
-  template<typename UserType> template<typename COOCKED_TYPE>
-  COOCKED_TYPE NDRegisterAccessor<UserType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/) const {
-    throw ChimeraTK::logic_error("Reading as coocked is not available for this accessor");
+  template<typename UserType> template<typename COOKED_TYPE>
+  COOKED_TYPE NDRegisterAccessor<UserType>::getAsCooked_impl(unsigned int /*channel*/, unsigned int /*sample*/) const {
+    throw ChimeraTK::logic_error("Reading as cooked is not available for this accessor");
   }
 
-  template<typename UserType> template<typename COOCKED_TYPE>
-  void NDRegisterAccessor<UserType>::setAsCoocked(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
-    CALL_VIRTUAL_FUNCTION_TEMPLATE(setAsCoocked_impl, COOCKED_TYPE, channel, sample, value);
+  template<typename UserType> template<typename COOKED_TYPE>
+  void NDRegisterAccessor<UserType>::setAsCooked(unsigned int channel, unsigned int sample, COOKED_TYPE value){
+    CALL_VIRTUAL_FUNCTION_TEMPLATE(setAsCooked_impl, COOKED_TYPE, channel, sample, value);
   }
 
-  template<typename UserType> template<typename COOCKED_TYPE>
-  void NDRegisterAccessor<UserType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
-    throw ChimeraTK::logic_error("Setting as coocked is not available for this accessor");
+  template<typename UserType> template<typename COOKED_TYPE>
+  void NDRegisterAccessor<UserType>::setAsCooked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOKED_TYPE /*value*/){
+    throw ChimeraTK::logic_error("Setting as cooked is not available for this accessor");
   }
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);

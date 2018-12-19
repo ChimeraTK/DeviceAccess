@@ -62,7 +62,7 @@ namespace ChimeraTK {
            *  Again beware that this number might be rather large (e.g. 300). */
           size_t nFractionalDigits() const;
 
-          /** Get the raw data type. This is the data conversion from 'coocked' to the raw
+          /** Get the raw data type. This is the data conversion from 'cooked' to the raw
            *  data type on the device. This conversion does not change the shape of the data but
            *  descibes the data type of a single data point.
            *  \li Example 1:<br>
@@ -75,7 +75,7 @@ namespace ChimeraTK {
            *  one data point.
 
            *  Most backends will have type none, i.e. no raw data conversion available. At the moment
-           *  only the NumericalAddressedBackend has int32_t raw transfer with raw/coocked conversion. Can be extended if needed,
+           *  only the NumericalAddressedBackend has int32_t raw transfer with raw/cooked conversion. Can be extended if needed,
            *  but this partily breaks abstraction because it exposes details of the (transport) layer below. It should be
            *  avoided if possible.
            */

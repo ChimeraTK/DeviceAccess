@@ -69,7 +69,7 @@ namespace ChimeraTK {
           // configure fixed point converter
           // We don't have to fill it in a special way if the accessor is raw
           // because we have an overloaded, more efficient implementation
-          // in this case. So we can use it in setAsCoocked() and getAsCoocked()
+          // in this case. So we can use it in setAsCooked() and getAsCooked()
           _dataConverter = DataConverterType(_registerPathName,
                                                      _registerInfo->width,
                                                      _registerInfo->nFractionalBits,
@@ -87,8 +87,8 @@ namespace ChimeraTK {
           throw;
         }
 
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
       }
 
       virtual ~NumericAddressedBackendRegisterAccessor() {
@@ -166,18 +166,18 @@ namespace ChimeraTK {
         return (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) != 0;
       }
 
-      template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample);
+      template<typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample);
 
-      template<typename COOCKED_TYPE>
-      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
+      template<typename COOKED_TYPE>
+      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
 
       // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does not get confused
       // by the comma which separates the two template parameters
       typedef NumericAddressedBackendRegisterAccessor<UserType, DataConverterType> THIS_TYPE;
       
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, getAsCoocked_impl, 2 );
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, setAsCoocked_impl, 3 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, getAsCooked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, setAsCooked_impl, 3 );
 
       AccessModeFlags getAccessModeFlags() const override {
         if(isRaw) return { AccessMode::raw };
@@ -260,7 +260,7 @@ namespace ChimeraTK {
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   template<typename UserType, typename DataConverterType> template<typename COOKED_TYPE>
-  COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCoocked_impl(unsigned int channel, unsigned int sample){
+  COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCooked_impl(unsigned int channel, unsigned int sample){
     if(isRaw){
       return dataConverterTemplateSpecialisationHelper<UserType,COOKED_TYPE>::toCooked(_dataConverter, NDRegisterAccessor<UserType>::buffer_2D[channel][sample]);
     }else{
@@ -271,7 +271,7 @@ namespace ChimeraTK {
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   template<typename UserType, typename DataConverterType> template<typename COOKED_TYPE>
-  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value){
+  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value){
     if(isRaw){
       NDRegisterAccessor<UserType>::buffer_2D[channel][sample] =
         dataConverterTemplateSpecialisationHelper<UserType,COOKED_TYPE>::toRaw(_dataConverter, value);

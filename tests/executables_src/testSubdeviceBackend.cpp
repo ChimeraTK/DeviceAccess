@@ -129,10 +129,10 @@ BOOST_AUTO_TEST_CASE( testWriteScalarRaw ) {
     acc2t.read();
     BOOST_CHECK_EQUAL( (int32_t)acc2t, -99999 );
 
-    acc2.setAsCoocked<float>(42.5);
+    acc2.setAsCooked<float>(42.5);
     BOOST_CHECK_EQUAL( (int32_t)acc2, 170 );    // 42.5*4, 2 fractional bits
     acc2 = 666*4;
-    BOOST_CHECK_CLOSE( acc2.getAsCoocked<float>(), 666, 0.01 );
+    BOOST_CHECK_CLOSE( acc2.getAsCooked<float>(), 666, 0.01 );
 
     dev.close();
 

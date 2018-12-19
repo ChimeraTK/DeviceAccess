@@ -58,7 +58,7 @@ namespace ChimeraTK {
     _minRawValue = _signBitMask; // if only the sign bit is on, it is the smallest possible value
     // (0 if unsigned)
 
-    // fill all user type depending values: min and max coocked values and fractional bit coefficients
+    // fill all user type depending values: min and max cooked values and fractional bit coefficients
     // note: we loop over one of the maps only, but initCoefficients() will fill all maps!
     boost::fusion::for_each(_minCookedValues, initCoefficients(this));
 
