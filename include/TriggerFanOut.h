@@ -51,6 +51,7 @@ namespace ChimeraTK {
        *  the corresponding FeedingFanOut, to which all slaves have to be added. */
       template<typename UserType>
       boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode) {
+        assert(feedingNode.get() != nullptr);
         transferGroup.addAccessor(feedingNode);
         auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>( feedingNode->getName(), feedingNode->getUnit(),
             feedingNode->getDescription(), feedingNode->getNumberOfSamples() );
