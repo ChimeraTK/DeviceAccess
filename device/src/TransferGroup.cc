@@ -11,6 +11,7 @@
 #include "NDRegisterAccessorAbstractor.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "CopyRegisterDecorator.h"
+#include <iostream>
 
 namespace ChimeraTK {
 
