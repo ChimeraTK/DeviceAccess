@@ -91,6 +91,36 @@ namespace ChimeraTK {
   template class TemplateClass<double>;  \
   template class TemplateClass<std::string>// the last semicolon is added by the user
 
+  /** Macro to declare a template class with multiple template parameters for all 
+   *  supported user types. The variadic arguments are the additional template parameters.
+   *  Only works for classes where the user type is the first template parameter.
+   */
+#define DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES( TemplateClass, ... ) \
+  extern template class TemplateClass<int8_t, __VA_ARGS__>;                         \
+  extern template class TemplateClass<uint8_t, __VA_ARGS__>;  \
+  extern template class TemplateClass<int16_t, __VA_ARGS__>; \
+  extern template class TemplateClass<uint16_t, __VA_ARGS__>; \
+  extern template class TemplateClass<int32_t, __VA_ARGS__>; \
+  extern template class TemplateClass<uint32_t, __VA_ARGS__>; \
+  extern template class TemplateClass<int64_t, __VA_ARGS__>; \
+  extern template class TemplateClass<uint64_t, __VA_ARGS__>; \
+  extern template class TemplateClass<float, __VA_ARGS__>;   \
+  extern template class TemplateClass<double, __VA_ARGS__>;  \
+  extern template class TemplateClass<std::string, __VA_ARGS__>// the last semicolon is added by the user
+
+#define INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES( TemplateClass, ... ) \
+  template class TemplateClass<int8_t, __VA_ARGS__>;  \
+  template class TemplateClass<uint8_t, __VA_ARGS__>;  \
+  template class TemplateClass<int16_t, __VA_ARGS__>; \
+  template class TemplateClass<uint16_t, __VA_ARGS__>; \
+  template class TemplateClass<int32_t, __VA_ARGS__>; \
+  template class TemplateClass<uint32_t, __VA_ARGS__>; \
+  template class TemplateClass<int64_t, __VA_ARGS__>; \
+  template class TemplateClass<uint64_t, __VA_ARGS__>; \
+  template class TemplateClass<float, __VA_ARGS__>;   \
+  template class TemplateClass<double, __VA_ARGS__>;  \
+  template class TemplateClass<std::string, __VA_ARGS__>// the last semicolon is added by the user
+
   /** A class to describe which of the supported data types is used.
    *  There is the additional type 'none' to indicate that the data type is not available in
    *  the current context. For instance if DataType is used to identify the raw data type

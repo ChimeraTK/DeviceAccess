@@ -133,7 +133,7 @@ namespace ChimeraTK {
     // 1D or scalar register
     if(info->getNumberOfDimensions() <= 1) {
       accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-          new NumericAddressedBackendRegisterAccessor<UserType>(shared_from_this(), registerPathName,
+          new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter>(shared_from_this(), registerPathName,
               numberOfWords, wordOffsetInRegister, flags) );
     }
     // 2D multiplexed register

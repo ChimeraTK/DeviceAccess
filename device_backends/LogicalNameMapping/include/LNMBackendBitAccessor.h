@@ -135,10 +135,6 @@ namespace ChimeraTK {
         return _accessor->isWriteable();
       }
 
-      FixedPointConverter getFixedPointConverter() const override {
-        throw ChimeraTK::logic_error("FixedPointConverterse are not available in Logical Name Mapping");
-      }
-
       AccessModeFlags getAccessModeFlags() const override {
         return _accessor->getAccessModeFlags();
       }

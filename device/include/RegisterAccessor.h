@@ -132,21 +132,6 @@ namespace ChimeraTK {
        *  This class is deprecated. Use BufferingRegisterAccessor instead!
        *  @todo Add printed runtime warning after release of version 0.8
        */
-      FixedPointConverter getFixedPointConverter() const {
-        // We use the double accessor, which is the most likely to exist
-        auto & accessorHandler = boost::fusion::at_key<double>(_convertingAccessorHandlers.table);
-        //In case we have to allocate, use the smallest possible accessor to be memory and transfer efficient.
-        //(about the offset we can just guess that 0 is fine.)
-        accessorHandler.checkAndResize(1, 0, false /*not raw*/, _backend, _registerPathName);
-
-        return accessorHandler.accessor->getFixedPointConverter();
-      }
-
-      /** \brief DEPRECATED! Use BufferingRegisterAccessor instead!
-       *  \deprecated
-       *  This class is deprecated. Use BufferingRegisterAccessor instead!
-       *  @todo Add printed runtime warning after release of version 0.8
-       */
       void readRaw(int32_t *data, size_t dataSize = 0, uint32_t addRegOffset = 0) const {
         // obtain bytes to copy
         if(dataSize == 0) dataSize = getNumberOfElements() * sizeof(int32_t);

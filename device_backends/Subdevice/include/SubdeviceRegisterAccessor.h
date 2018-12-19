@@ -54,8 +54,6 @@ namespace ChimeraTK {
 
       bool isWriteable() const override;
 
-      FixedPointConverter getFixedPointConverter() const override;
-
       AccessModeFlags getAccessModeFlags() const override;
 
     protected:

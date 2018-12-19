@@ -74,11 +74,6 @@ namespace ChimeraTK {
         return true;
       }
 
-      FixedPointConverter getFixedPointConverter() const override {
-        throw ChimeraTK::logic_error("getFixedPointConverter is not implemented for 2D registers (and deprecated for all "
-            "registers).");
-      }
-
       AccessModeFlags getAccessModeFlags() const override {
         return {};
       }

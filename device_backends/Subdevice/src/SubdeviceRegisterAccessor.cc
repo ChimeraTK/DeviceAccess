@@ -122,12 +122,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  FixedPointConverter SubdeviceRegisterAccessor::getFixedPointConverter() const {
-    throw ChimeraTK::logic_error("FixedPointConverterse are not available in Logical Name Mapping");
-  }
-
-  /*********************************************************************************************************************/
-
   AccessModeFlags SubdeviceRegisterAccessor::getAccessModeFlags() const {
     return {AccessMode::raw};
   }

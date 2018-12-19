@@ -12,7 +12,6 @@
 
 #include "ForwardDeclarations.h"
 #include "TransferElement.h"
-#include "FixedPointConverter.h"
 #include "Exception.h"
 #include "VirtualFunctionTemplate.h"
 
@@ -94,15 +93,6 @@ namespace ChimeraTK {
       void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
 
       boost::shared_ptr<TransferElement> makeCopyRegisterDecorator() override;
-
-      /** DO NOT USE. FOR BACKWARDS COMPATIBILITY ONLY.
-       *
-       *  \deprecated This function is for backwards compatibility with the deprecated RegisterAccessor only.
-       *  Return the fixed point converter used to convert the raw data from the device to the type T. If no conversion
-       *  by the fixed point converter is required, this function will throw an exception. */
-      virtual FixedPointConverter getFixedPointConverter() const  {
-        throw ChimeraTK::logic_error("Not implemented");
-      }
 
     protected:
 
