@@ -231,39 +231,52 @@ namespace ChimeraTK {
         }
       }
 
+      /** A helper class to implement template specialisation on certain functions.
+       *  We can do a partial specialisation on this class which we cannot/don't want to do
+       *  for the whole accessor.
+       */
+      template<typename RawT, typename CookedT>
+      struct dataConverterTemplateSpecialisationHelper{
+        static CookedT toCooked( DataConverterType &, RawT & ){
+          throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
+        }
+        static RawT toRaw( DataConverterType &, CookedT & ){
+          throw ChimeraTK::logic_error("Seting as cooked is only available for raw accessors!");
+        }
+      };
+      template<typename CookedT>
+      struct dataConverterTemplateSpecialisationHelper<int32_t, CookedT>{
+        static CookedT toCooked( DataConverterType & dataConverter, int32_t & rawValue){
+          return dataConverter.template toCooked<CookedT>(rawValue);
+        }
+        static int32_t toRaw( DataConverterType & dataConverter, CookedT & value){
+          return dataConverter.toRaw(value);
+        }
+      };
+
+      
   };
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<typename UserType, typename DataConverterType> template<typename COOCKED_TYPE>
-  COOCKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
-    // This is a coocked accessor. For the only possible raw type (int32_t) we have a
-    // template specialisation (instead of a throwing one for strings).
-    throw ChimeraTK::logic_error("Getting as coocked is only available for raw accessors!");
-  }
-  template<> template<typename COOCKED_TYPE>
-    COOCKED_TYPE NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::getAsCoocked_impl(unsigned int channel, unsigned int sample){
+  template<typename UserType, typename DataConverterType> template<typename COOKED_TYPE>
+  COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCoocked_impl(unsigned int channel, unsigned int sample){
     if(isRaw){
-      return _dataConverter.toCooked<COOCKED_TYPE>(NDRegisterAccessor<int32_t>::buffer_2D[channel][sample]);
+      return dataConverterTemplateSpecialisationHelper<UserType,COOKED_TYPE>::toCooked(_dataConverter, NDRegisterAccessor<UserType>::buffer_2D[channel][sample]);
     }else{
-      throw ChimeraTK::logic_error("Getting as coocked is only available for raw accessors!");
+      throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
     }
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<typename UserType, typename DataConverterType> template<typename COOCKED_TYPE>
-  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
-    // This is a coocked accessor. For the only possible raw type (int32_t) we have a
-    // template specialisation (instead of a throwing one for strings).
-    throw ChimeraTK::logic_error("Setting as coocked is only available for raw accessors!");
-  }
-  template<> template<typename COOCKED_TYPE>
-    void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
+  template<typename UserType, typename DataConverterType> template<typename COOKED_TYPE>
+  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value){
     if(isRaw){
-      NDRegisterAccessor<int32_t>::buffer_2D[channel][sample] = _dataConverter.toRaw(value);
+      NDRegisterAccessor<UserType>::buffer_2D[channel][sample] =
+        dataConverterTemplateSpecialisationHelper<UserType,COOKED_TYPE>::toRaw(_dataConverter, value);
     }else{
-      throw ChimeraTK::logic_error("Setting as coocked is only available for raw accessors!");
+      throw ChimeraTK::logic_error("Setting as cooked is only available for raw accessors!");
     }
   }
 
