@@ -8,6 +8,7 @@
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
+#include "FixedPointConverter.h"
 
 namespace ChimeraTK {
 

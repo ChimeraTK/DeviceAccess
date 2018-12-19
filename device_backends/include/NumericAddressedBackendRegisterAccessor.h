@@ -123,7 +123,7 @@ namespace ChimeraTK {
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
                ++itdst) {
-          *itdst = _dataConverter.toCooked<UserType>(*itsrc);
+          *itdst = _dataConverter.template toCooked<UserType>(*itsrc);
           ++itsrc;
         }
         SyncNDRegisterAccessor<UserType>::doPostRead();
@@ -134,7 +134,7 @@ namespace ChimeraTK {
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
                ++itdst) {
-          *itsrc = _dataConverter.toRaw<UserType>(*itdst);
+          *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
           ++itsrc;
         }
       }
@@ -189,8 +189,8 @@ namespace ChimeraTK {
       /** Address, size and fixed-point representation information of the register from the map file */
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> _registerInfo;
 
-      /** Fixed point converter to interpret the data */
-      FixedPointConverter _dataConverter;
+      /** Converter to interpret the data */
+      DataConverterType _dataConverter;
       bool isRaw;
 
       /** register and module name */

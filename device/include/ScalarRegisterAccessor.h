@@ -14,7 +14,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write scalar registers transparently by using the accessor object like a variable of
-   *  the type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
+   *  the type UserType. Conversion to and from the UserType will be handled by a data converter matching the
    *  register description in the map, if required. Obtain the accessor using the Device::getScalarRegisterAccessor()
    *  function.
    *

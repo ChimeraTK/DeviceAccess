@@ -10,7 +10,6 @@
 
 #include "TransferElement.h"
 #include "NumericAddressedBackend.h"
-#include "FixedPointConverter.h"
 
 namespace ChimeraTK {
 

@@ -14,8 +14,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a vector of the
-   *  type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
-   *  register description in the map. Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
+   *  type UserType. Conversion to and from the UserType will be handled by a data converter matching the
+   *  register description in the map (if applicable). Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
    *
    *  Note: Transfers between the device and the internal buffer need to be triggered using the read() and write()
    *  functions before reading from resp. after writing to the buffer using the operators.

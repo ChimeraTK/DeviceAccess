@@ -13,7 +13,6 @@
 #include "SyncNDRegisterAccessor.h"
 #include "LogicalNameMappingBackend.h"
 #include "TwoDRegisterAccessor.h"
-#include "FixedPointConverter.h"
 #include "Device.h"
 
 namespace ChimeraTK {
