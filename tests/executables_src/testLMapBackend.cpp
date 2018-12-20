@@ -23,6 +23,9 @@ BOOST_AUTO_TEST_CASE( testExceptions ) {
 
     BOOST_CHECK_THROW(device.write("Channel3", data), ChimeraTK::logic_error);
 
+    BOOST_CHECK_THROW(device.getOneDRegisterAccessor<int>("ExceedsNumberOfChannels"), ChimeraTK::logic_error);
+    BOOST_CHECK_NO_THROW(device.getOneDRegisterAccessor<int>("LastChannelInRegister"));
+
     BOOST_CHECK(device.isOpened() == true);
     device.close();
     BOOST_CHECK(device.isOpened() == false);
