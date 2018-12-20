@@ -14,8 +14,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
   /** Accessor class to read and write registers transparently by using the accessor object like a vector of the
-   *  type UserType. Conversion to and from the UserType will be handled by the FixedPointConverter matching the
-   *  register description in the map. Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
+   *  type UserType. Conversion to and from the UserType will be handled by a data converter matching the
+   *  register description in the map (if applicable). Obtain the accessor using the Device::getBufferingRegisterAccessor() function.
    *
    *  Note: Transfers between the device and the internal buffer need to be triggered using the read() and write()
    *  functions before reading from resp. after writing to the buffer using the operators.
@@ -101,20 +101,20 @@ namespace ChimeraTK {
         return get()->accessChannel(0).data();
       }
 
-      /** Get the coocked values in case the accessor is a raw accessor (which does not do data conversion).
+      /** Get the cooked values in case the accessor is a raw accessor (which does not do data conversion).
        *  This returns the converted data from the use buffer. It does not do any read or write transfer.
        */
-      template <typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked(unsigned int sample){
-        return get()->template getAsCoocked<COOCKED_TYPE>(0,sample);
+      template <typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked(unsigned int sample){
+        return get()->template getAsCooked<COOKED_TYPE>(0,sample);
       }
 
-      /** Set the coocked values in case the accessor is a raw accessor (which does not do data conversion).
+      /** Set the cooked values in case the accessor is a raw accessor (which does not do data conversion).
        *  This converts to raw and writes the data to the user buffer. It does not do any read or write transfer.
        */
-      template <typename COOCKED_TYPE>
-      void setAsCoocked(unsigned int sample, COOCKED_TYPE value){
-        return get()->template setAsCoocked<COOCKED_TYPE>(0,sample,value);
+      template <typename COOKED_TYPE>
+      void setAsCooked(unsigned int sample, COOKED_TYPE value){
+        return get()->template setAsCooked<COOKED_TYPE>(0,sample,value);
       }
 
       friend class TransferGroup;

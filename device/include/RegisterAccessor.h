@@ -6,7 +6,6 @@
 #define CHIMERA_TK_REGISTER_ACCESSOR_H
 
 #include "VirtualFunctionTemplate.h"
-#include "FixedPointConverter.h"
 #include "RegisterInfoMap.h"
 #include "NDRegisterAccessor.h"
 #include "DeviceBackend.h"

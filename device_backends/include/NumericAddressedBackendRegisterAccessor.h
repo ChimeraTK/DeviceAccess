@@ -69,7 +69,7 @@ namespace ChimeraTK {
           // configure fixed point converter
           // We don't have to fill it in a special way if the accessor is raw
           // because we have an overloaded, more efficient implementation
-          // in this case. So we can use it in setAsCoocked() and getAsCoocked()
+          // in this case. So we can use it in setAsCooked() and getAsCooked()
           _dataConverter = DataConverterType(_registerPathName,
                                                      _registerInfo->width,
                                                      _registerInfo->nFractionalBits,
@@ -87,8 +87,8 @@ namespace ChimeraTK {
           throw;
         }
 
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
       }
 
       virtual ~NumericAddressedBackendRegisterAccessor() {
@@ -123,7 +123,7 @@ namespace ChimeraTK {
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
                ++itdst) {
-          *itdst = _dataConverter.toCooked<UserType>(*itsrc);
+          *itdst = _dataConverter.template toCooked<UserType>(*itsrc);
           ++itsrc;
         }
         SyncNDRegisterAccessor<UserType>::doPostRead();
@@ -134,7 +134,7 @@ namespace ChimeraTK {
         for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
                  itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
                ++itdst) {
-          *itsrc = _dataConverter.toRaw<UserType>(*itdst);
+          *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
           ++itsrc;
         }
       }
@@ -166,18 +166,18 @@ namespace ChimeraTK {
         return (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) != 0;
       }
 
-      template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample);
+      template<typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample);
 
-      template<typename COOCKED_TYPE>
-      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value);
+      template<typename COOKED_TYPE>
+      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value);
 
       // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does not get confused
       // by the comma which separates the two template parameters
       typedef NumericAddressedBackendRegisterAccessor<UserType, DataConverterType> THIS_TYPE;
       
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, getAsCoocked_impl, 2 );
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, setAsCoocked_impl, 3 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, getAsCooked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, setAsCooked_impl, 3 );
 
       AccessModeFlags getAccessModeFlags() const override {
         if(isRaw) return { AccessMode::raw };
@@ -189,8 +189,8 @@ namespace ChimeraTK {
       /** Address, size and fixed-point representation information of the register from the map file */
       boost::shared_ptr<RegisterInfoMap::RegisterInfo> _registerInfo;
 
-      /** Fixed point converter to interpret the data */
-      FixedPointConverter _dataConverter;
+      /** Converter to interpret the data */
+      DataConverterType _dataConverter;
       bool isRaw;
 
       /** register and module name */
@@ -231,39 +231,52 @@ namespace ChimeraTK {
         }
       }
 
+      /** A helper class to implement template specialisation on certain functions.
+       *  We can do a partial specialisation on this class which we cannot/don't want to do
+       *  for the whole accessor.
+       */
+      template<typename RawT, typename CookedT>
+      struct dataConverterTemplateSpecialisationHelper{
+        static CookedT toCooked( DataConverterType &, RawT & ){
+          throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
+        }
+        static RawT toRaw( DataConverterType &, CookedT & ){
+          throw ChimeraTK::logic_error("Seting as cooked is only available for raw accessors!");
+        }
+      };
+      template<typename CookedT>
+      struct dataConverterTemplateSpecialisationHelper<int32_t, CookedT>{
+        static CookedT toCooked( DataConverterType & dataConverter, int32_t & rawValue){
+          return dataConverter.template toCooked<CookedT>(rawValue);
+        }
+        static int32_t toRaw( DataConverterType & dataConverter, CookedT & value){
+          return dataConverter.toRaw(value);
+        }
+      };
+
+      
   };
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<typename UserType, typename DataConverterType> template<typename COOCKED_TYPE>
-  COOCKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/){
-    // This is a coocked accessor. For the only possible raw type (int32_t) we have a
-    // template specialisation (instead of a throwing one for strings).
-    throw ChimeraTK::logic_error("Getting as coocked is only available for raw accessors!");
-  }
-  template<> template<typename COOCKED_TYPE>
-    COOCKED_TYPE NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::getAsCoocked_impl(unsigned int channel, unsigned int sample){
+  template<typename UserType, typename DataConverterType> template<typename COOKED_TYPE>
+  COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCooked_impl(unsigned int channel, unsigned int sample){
     if(isRaw){
-      return _dataConverter.toCooked<COOCKED_TYPE>(NDRegisterAccessor<int32_t>::buffer_2D[channel][sample]);
+      return dataConverterTemplateSpecialisationHelper<UserType,COOKED_TYPE>::toCooked(_dataConverter, NDRegisterAccessor<UserType>::buffer_2D[channel][sample]);
     }else{
-      throw ChimeraTK::logic_error("Getting as coocked is only available for raw accessors!");
+      throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
     }
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<typename UserType, typename DataConverterType> template<typename COOCKED_TYPE>
-  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCoocked_impl(unsigned int /*channel*/, unsigned int /*sample*/, COOCKED_TYPE /*value*/){
-    // This is a coocked accessor. For the only possible raw type (int32_t) we have a
-    // template specialisation (instead of a throwing one for strings).
-    throw ChimeraTK::logic_error("Setting as coocked is only available for raw accessors!");
-  }
-  template<> template<typename COOCKED_TYPE>
-    void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value){
+  template<typename UserType, typename DataConverterType> template<typename COOKED_TYPE>
+  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value){
     if(isRaw){
-      NDRegisterAccessor<int32_t>::buffer_2D[channel][sample] = _dataConverter.toRaw(value);
+      NDRegisterAccessor<UserType>::buffer_2D[channel][sample] =
+        dataConverterTemplateSpecialisationHelper<UserType,COOKED_TYPE>::toRaw(_dataConverter, value);
     }else{
-      throw ChimeraTK::logic_error("Setting as coocked is only available for raw accessors!");
+      throw ChimeraTK::logic_error("Setting as cooked is only available for raw accessors!");
     }
   }
 

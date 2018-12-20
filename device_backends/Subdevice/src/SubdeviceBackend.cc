@@ -8,6 +8,7 @@
 #include "MapFileParser.h"
 #include "NDRegisterAccessorDecorator.h"
 #include "SubdeviceRegisterAccessor.h"
+#include "FixedPointConverter.h"
 
 namespace ChimeraTK {
 
@@ -222,18 +223,18 @@ namespace ChimeraTK {
       : NDRegisterAccessorDecorator<TargetUserType>(target),
         _fixedPointConverter(fixedPointConverter)
       {
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCoocked_impl);
-        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCoocked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAsCooked_impl);
+        FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(setAsCooked_impl);
       }
 
-      template<typename COOCKED_TYPE>
-      COOCKED_TYPE getAsCoocked_impl(unsigned int channel, unsigned int sample) {
-        return _fixedPointConverter.toCooked<COOCKED_TYPE>(buffer_2D[channel][sample]);
+      template<typename COOKED_TYPE>
+      COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) {
+        return _fixedPointConverter.toCooked<COOKED_TYPE>(buffer_2D[channel][sample]);
       }
 
-      template<typename COOCKED_TYPE>
-      void setAsCoocked_impl(unsigned int channel, unsigned int sample, COOCKED_TYPE value) {
-        buffer_2D[channel][sample] = _fixedPointConverter.toRaw<COOCKED_TYPE>(value);
+      template<typename COOKED_TYPE>
+      void setAsCooked_impl(unsigned int channel, unsigned int sample, COOKED_TYPE value) {
+        buffer_2D[channel][sample] = _fixedPointConverter.toRaw<COOKED_TYPE>(value);
       }
 
       bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const> &other) const override {
@@ -247,8 +248,8 @@ namespace ChimeraTK {
 
       FixedPointConverter _fixedPointConverter;
 
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( FixedPointConvertingRawDecorator<TargetUserType>, getAsCoocked_impl, 2 );
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( FixedPointConvertingRawDecorator<TargetUserType>, setAsCoocked_impl, 3 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( FixedPointConvertingRawDecorator<TargetUserType>, getAsCooked_impl, 2 );
+      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( FixedPointConvertingRawDecorator<TargetUserType>, setAsCooked_impl, 3 );
 
       using NDRegisterAccessorDecorator<TargetUserType>::_target;
       using NDRegisterAccessor<TargetUserType>::buffer_2D;
@@ -315,7 +316,7 @@ namespace ChimeraTK {
     auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
-    // implement getAsCoocked()/setAsCooked().
+    // implement getAsCooked()/setAsCooked().
     if(!isRaw) {
       return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>( rawAcc,
                     FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
@@ -383,7 +384,7 @@ namespace ChimeraTK {
                                                                 byteOffset, numberOfWords);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
-    // implement getAsCoocked()/setAsCooked().
+    // implement getAsCooked()/setAsCooked().
     if(!isRaw) {
       return boost::make_shared<FixedPointConvertingDecorator<UserType, int32_t>>( rawAcc,
                     FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
@@ -441,7 +442,7 @@ namespace ChimeraTK {
     auto rawAcc = targetDevice->getRegisterAccessor<int32_t>(targetArea, numberOfWords, wordOffset, flags);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
-    // implement getAsCoocked()/setAsCooked().
+    // implement getAsCooked()/setAsCooked().
     if(!isRaw) {
       return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>( rawAcc,
                     FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );
@@ -508,7 +509,7 @@ namespace ChimeraTK {
                                                                 byteOffset, numberOfWords);
 
     // decorate with appropriate FixedPointConvertingDecorator. This is done even when in raw mode so we can properly
-    // implement getAsCoocked()/setAsCooked().
+    // implement getAsCooked()/setAsCooked().
     if(!isRaw) {
       return boost::make_shared<FixedPointConvertingDecorator<int32_t, int32_t>>( rawAcc,
                     FixedPointConverter(registerPathName, info->width, info->nFractionalBits, info->signedFlag) );

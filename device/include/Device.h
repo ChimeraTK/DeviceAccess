@@ -69,7 +69,7 @@ namespace ChimeraTK {
        *
        *  The ScalarRegisterObject allows to read and write registers transparently by using the accessor object
        *  like a variable of the type UserType. If needed, the conversion to and from the UserType will be handled by
-       *  the FixedPointConverter matching the register description in the map.
+       *  a data converter matching the register description in e.g. a map file.
        *
        *  The optional argument wordOffsetInRegister allows to access another but the first word of a larger register.
        *
@@ -84,7 +84,7 @@ namespace ChimeraTK {
        *
        *  The OneDRegisterAccessor allows to read and write registers transparently by using the accessor object
        *  like a vector of the type UserType. If needed, the conversion to and from the UserType will be handled by
-       *  the FixedPointConverter matching the register description in the map.
+       *  a data converter matching the register description in e.g. a map file.
        *
        *  The optional arguments numberOfWords and wordOffsetInRegister allow to limit the accessor to a part of the
        *  register.
@@ -670,4 +670,3 @@ namespace ChimeraTK {
 // This include must be at the end of this file as it uses the Device class.
 //
 #include "RegisterAccessor.h"
-#include "MultiplexedDataAccessor.h"
