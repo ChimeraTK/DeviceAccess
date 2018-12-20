@@ -23,6 +23,16 @@
         <targetRegister>TEST.NODMA</targetRegister>
         <targetChannel>4</targetChannel>
     </redirectedChannel>
+    <redirectedChannel name="LastChannelInRegister">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>15</targetChannel>
+    </redirectedChannel>
+    <redirectedChannel name="ExceedsNumberOfChannels">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>16</targetChannel>
+    </redirectedChannel>
     <constant name="Constant">
         <type>integer</type>
         <value>42</value>

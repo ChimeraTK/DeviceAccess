@@ -53,6 +53,12 @@ namespace ChimeraTK {
             targetDevice = dev;
           }
           _accessor = targetDevice->getRegisterAccessor<UserType>(RegisterPath(_info.registerName), numberOfWords,wordOffsetInRegister, false);
+          // verify channel number
+          if(_info.channel >= _accessor->getNumberOfChannels()) {
+            throw ChimeraTK::logic_error("LNMBackendChannelAccessor: Requested channel number "+
+                                         std::to_string(_info.channel)+" exceeds number of channels of target register,"
+                                         " in accesor for register '"+registerPathName+"'.");
+          }
           // allocate the buffer
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(_accessor->getNumberOfSamples());
