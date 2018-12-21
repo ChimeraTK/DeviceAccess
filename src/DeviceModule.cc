@@ -23,7 +23,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode DeviceModule::operator()(const std::string& registerName, UpdateMode mode,
       const std::type_info &valueType, size_t nElements) const {
-    return {deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType, nElements};
+    return {registerName, deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType, nElements};
   }
 
   /*********************************************************************************************************************/
@@ -130,8 +130,9 @@ namespace ChimeraTK {
         valTyp = &typeid(std::string);
       }
 
-      VariableNetworkNode node(deviceAliasOrURI, reg.getRegisterName(), updateMode, direction, *valTyp,
-                               reg.getNumberOfElements());
+      auto name = std::string(reg.getRegisterName()).substr(prefixLength);
+      VariableNetworkNode node(name, deviceAliasOrURI, reg.getRegisterName(), updateMode,
+                               direction, *valTyp, reg.getNumberOfElements());
       virtualisedModuleFromCatalog.getAccessorList().push_back(node);
 
     }

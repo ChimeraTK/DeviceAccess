@@ -53,10 +53,11 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(const std::string &devAlias, const std::string &regName, UpdateMode mode,
-      VariableDirection dir, const std::type_info &valTyp, size_t nElements)
+  VariableNetworkNode::VariableNetworkNode(const std::string &name, const std::string &devAlias,
+      const std::string &regName, UpdateMode mode, VariableDirection dir, const std::type_info &valTyp, size_t nElements)
   : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
+    pdata->name = name;
     pdata->type = NodeType::Device;
     pdata->mode = mode;
     pdata->direction = dir;
@@ -72,6 +73,7 @@ namespace ChimeraTK {
       size_t nElements)
   : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
+    pdata->name = pubName;
     pdata->type = NodeType::ControlSystem;
     pdata->mode = UpdateMode::push;
     pdata->direction = dir;
@@ -289,15 +291,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::string VariableNetworkNode::getName() const {
-    if(pdata->type == NodeType::ControlSystem) {
-      return pdata->publicName;
-    }
-    else if(pdata->type == NodeType::Device) {
-      return pdata->registerName;
-    }
-    else {
-      return pdata->name;
-    }
+    return pdata->name;
   }
 
   /*********************************************************************************************************************/
