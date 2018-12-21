@@ -507,8 +507,8 @@ BOOST_AUTO_TEST_CASE( test3regsScalar ) {
     accS = 0;
     accS.write();
     CHECK_TIMEOUT( accA.read(); , (accA == 4) , 5000 );
-    accD.read();
     t.join();
+    accD.read();
     BOOST_CHECK_EQUAL(static_cast<int32_t>(accD), 42*4);
 
     acc1 = 120;
