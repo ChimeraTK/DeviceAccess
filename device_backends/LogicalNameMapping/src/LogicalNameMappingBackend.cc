@@ -155,6 +155,10 @@ namespace ChimeraTK {
       if(targetType != LNMBackendRegisterInfo::TargetType::BIT) {
         info_cast._dataDescriptor = target_info->getDataDescriptor();
       }
+      else {
+        info_cast._dataDescriptor = RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::boolean,
+                                                                 true, false, 1, 0);
+      }
       info_cast.readable = target_info->isReadable();
       info_cast.writeable = target_info->isWriteable();
       info_cast.supportedFlags = target_info->getSupportedAccessModes();
