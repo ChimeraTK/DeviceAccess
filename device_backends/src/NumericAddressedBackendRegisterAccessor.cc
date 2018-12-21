@@ -65,6 +65,15 @@ namespace ChimeraTK {
     }
   }
 
+  namespace detail{
+    template<>
+    FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo){
+      return FixedPointConverter(registerInfo->name, registerInfo->width,
+                                 registerInfo->nFractionalBits, registerInfo->signedFlag);
+    }
+    
+  }// namespace detail
+
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor,
                                                       FixedPointConverter);
   
