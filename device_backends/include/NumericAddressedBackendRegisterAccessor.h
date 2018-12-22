@@ -24,6 +24,9 @@ namespace ChimeraTK {
     template<>
     FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
 
+    template<>
+    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+
   }
 
   
@@ -302,6 +305,7 @@ namespace ChimeraTK {
   void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPostWrite();
 
   DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter);
 
 
 }    // namespace ChimeraTK

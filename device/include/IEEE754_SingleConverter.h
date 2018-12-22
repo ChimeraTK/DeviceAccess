@@ -5,6 +5,7 @@
 #include "Exception.h"
 
 #include <float.h> // for float limits
+#include <iostream>
 
 
 namespace ChimeraTK{
@@ -37,10 +38,17 @@ namespace ChimeraTK{
     template<typename CookedType>
     uint32_t toRaw(CookedType cookedValue) const;
 
+    IEEE754_SingleConverter(std::string = ""){}
+
+    // all IEEE754_SingleConverters are the same
+    bool operator!=(const IEEE754_SingleConverter & /*other*/) const {
+      return false;
+    }
   };
 
   template<typename CookedType>
   CookedType IEEE754_SingleConverter::toCooked(uint32_t rawValue) const{
+    std::cout << std::hex << "raw value is " << rawValue << std::dec << std::endl;
     //Step 1: convert the raw data to the "generic" representation in the CPU: float
     void * warningAvoider = &rawValue;
     float genericRepresentation = *(reinterpret_cast<float *>(warningAvoider));
@@ -56,6 +64,7 @@ namespace ChimeraTK{
       throw ChimeraTK::logic_error("negative overflow"); //+_variableName);
     }
 
+    std::cout << "returning cooked: " << cooked << std::endl;
     return cooked;
   }
 
