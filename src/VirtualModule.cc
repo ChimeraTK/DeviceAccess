@@ -107,5 +107,34 @@ namespace ChimeraTK {
     return *this;
   }
 
+/*********************************************************************************************************************/
+
+  VirtualModule& VirtualModule::createAndGetSubmodule(const std::string& moduleName) {
+    for(auto &sm : submodules) {
+      if(sm.getName() == moduleName) return sm;
+    }
+    addSubModule(VirtualModule(moduleName, getDescription(), getModuleType()));
+    return submodules.back();
+  }
+
+/*********************************************************************************************************************/
+
+  VirtualModule& VirtualModule::createAndGetSubmoduleRecursive(const std::string& moduleName) {
+    auto slash = moduleName.find_first_of("/");
+    if(slash == std::string::npos) {
+      return createAndGetSubmodule(moduleName);
+    }
+    else {
+      auto firstSubmodule = moduleName.substr(0,slash);
+      auto remainingSubmodules = moduleName.substr(slash+1);
+      auto &sm = createAndGetSubmodule(firstSubmodule);
+      sm.createAndGetSubmoduleRecursive(remainingSubmodules);
+      return sm;
+    }
+  }
+
+/*********************************************************************************************************************/
+
+
 } /* namespace ChimeraTK */
 

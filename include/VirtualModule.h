@@ -44,6 +44,13 @@ namespace ChimeraTK {
       /** Add a virtual sub-module. The module instance will be added to an internal list. */
       void addSubModule(VirtualModule module);
 
+      /** Return the submodule with the given name. If it doesn't exist, create it first. */
+      VirtualModule& createAndGetSubmodule(const std::string& moduleName);
+
+      /** Like createAndGetSubmodule(), but recursively create a hierarchy of submodules separated by "/" in the
+       *  moduleName. */
+      VirtualModule& createAndGetSubmoduleRecursive(const std::string& moduleName);
+
       ModuleType getModuleType() const override { return _moduleType; }
 
       const Module& virtualise() const override;
