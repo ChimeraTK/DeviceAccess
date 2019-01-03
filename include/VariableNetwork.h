@@ -49,7 +49,7 @@ namespace ChimeraTK {
       void addNodeToTrigger(VariableNetworkNode& nodeToTrigger);
 
       /** Remove a node from the network. The node must be part of the given network. */
-      void removeNode(const VariableNetworkNode &a);
+      void removeNode(VariableNetworkNode &a);
 
       /** Remove a trigger receiver node from the network. The node must be part of the given network. */
       void removeNodeToTrigger(const VariableNetworkNode &nodeToNoLongerTrigger);
@@ -129,6 +129,10 @@ namespace ChimeraTK {
       boost::shared_ptr< ChimeraTK::ProcessVariable > getExternalTriggerImpl() const {
         return externalTriggerImpl;
       }
+
+      /** Merge with another VaraibleNetwork. The other network will become invalid and gets removed from the
+       *  application. If merging is not possible, false is returned and no change is made. */
+      bool merge(VariableNetwork &other);
 
     protected:
 

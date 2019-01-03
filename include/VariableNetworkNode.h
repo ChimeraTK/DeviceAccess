@@ -87,6 +87,10 @@ namespace ChimeraTK {
       /** Set the value type for this node. Only possible of the current value type is undecided (i.e. AnyType). */
       void setValueType(const std::type_info& newType) const;
 
+      /** Set the direction for this node. Only possible if current direction is VariableDirection::feeding and the
+       *  node type is NodeType::ControlSystem. */
+      void setDirection(VariableDirection newDirection) const;
+
       /** Function checking if the node requires a fixed implementation */
       bool hasImplementation() const;
 

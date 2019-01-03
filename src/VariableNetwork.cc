@@ -42,13 +42,20 @@ namespace ChimeraTK {
     if(a.getDirection() == VariableDirection::feeding) {
       // make sure we only have one feeding node per network
       if(hasFeedingNode()) {
-        std::stringstream msg;
-        msg << "Trying to add a feeding accessor to a network already having a feeding accessor." << std::endl;
-        msg << "The network you were trying to add the new accessor to:" << std::endl;
-        dump("", msg);
-        msg << "The node you were trying to add:" << std::endl;
-        a.dump(msg);
-        throw ChimeraTK::logic_error(msg.str());
+        // check if current feeding node is a control system variable: if yes, switch it to consuming
+        if(getFeedingNode().getType() == NodeType::ControlSystem) {
+          getFeedingNode().setDirection(VariableDirection::consuming);
+        }
+        // Current feeder cannot be switch to consumer: throw exception
+        else{
+          std::stringstream msg;
+          msg << "Trying to add a feeding accessor to a network already having a feeding accessor." << std::endl;
+          msg << "The network you were trying to add the new accessor to:" << std::endl;
+          dump("", msg);
+          msg << "The node you were trying to add:" << std::endl;
+          a.dump(msg);
+          throw ChimeraTK::logic_error(msg.str());
+        }
       }
       // force value type, engineering unit and description of the network if set in this feeding node
       if(a.getValueType() != typeid(AnyType)) valueType = &(a.getValueType());
@@ -67,9 +74,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetwork::removeNode(const VariableNetworkNode &a) {
+  void VariableNetwork::removeNode(VariableNetworkNode &a) {
     auto nNodes = nodeList.size();
     nodeList.remove(a);
+    a.clearOwner();
     (void)nNodes;
     assert(nodeList.size() != nNodes);
   }
@@ -262,4 +270,36 @@ namespace ChimeraTK {
     return false;
   }
 
+  /*********************************************************************************************************************/
+
+  bool VariableNetwork::merge(VariableNetwork &other) {
+
+    // check if merging is possible
+    if(hasFeedingNode() || !other.hasFeedingNode()) {
+      if(    (getFeedingNode().getType() == NodeType::ControlSystem &&
+              other.getFeedingNode().getType() == NodeType::ControlSystem)
+          || (getFeedingNode().getType() != NodeType::ControlSystem &&
+              other.getFeedingNode().getType() != NodeType::ControlSystem) ) {
+        return false;
+      }
+    }
+
+    // put all consuming nodes of B's owner into A's owner
+    for(auto node : other.getConsumingNodes()) {
+      other.removeNode(node);
+      addNode(node);
+    }
+
+    // feeding node: if control system type, convert into consumer. Otherwise just add it, addNode() will convert the
+    // other feeding node if necessary
+    if(other.hasFeedingNode()) {
+      VariableNetworkNode otherFeeder = other.getFeedingNode();
+      other.removeNode(otherFeeder);
+      if(otherFeeder.getType() == NodeType::ControlSystem) otherFeeder.setDirection(VariableDirection::consuming);
+      addNode(otherFeeder);
+    }
+
+    return true;
+
+  }
 }

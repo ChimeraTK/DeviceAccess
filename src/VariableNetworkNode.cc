@@ -239,6 +239,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void VariableNetworkNode::setDirection(VariableDirection newDirection) const {
+    assert(pdata->type == NodeType::ControlSystem);
+    assert(pdata->direction == VariableDirection::feeding);
+    pdata->direction = newDirection;
+  }
+
+  /*********************************************************************************************************************/
+
   bool VariableNetworkNode::hasExternalTrigger() const {
     return pdata->externalTrigger.getType() != NodeType::invalid;
   }

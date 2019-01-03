@@ -242,20 +242,31 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
     throw ChimeraTK::logic_error(what.str());
   }
 
-  // if both nodes already have an owner, we are done
+  // if both nodes already have an owner, we are either already done (same owners) or we need to try to merge the networks
   if(a.hasOwner() && b.hasOwner()) {
-    if(&(a.getOwner()) != &(b.getOwner())) {      /// @todo TODO merge networks?
-      std::stringstream what;
-      what << "*** ERROR: nodes to be connected should have the same owner!" << std::endl;
-      what << "Node A:" << std::endl;
-      a.dump(what);
-      what << "Node B:" << std::endl;
-      b.dump(what);
-      what << "Owner of node A:" << std::endl;
-      a.getOwner().dump("",what);
-      what << "Owner of node B:" << std::endl;
-      b.getOwner().dump("",what);
-      throw ChimeraTK::logic_error(what.str());
+    if(&(a.getOwner()) != &(b.getOwner())) {
+      auto &networkToMerge = b.getOwner();
+      bool success = a.getOwner().merge(networkToMerge);
+      if(!success) {
+        std::stringstream what;
+        what << "*** ERROR: Trying to connect two nodes which are already part of different networks, and merging these"
+                " networks is not possible (cannot have two non-control-system feeders)!" << std::endl;
+        what << "Node A:" << std::endl;
+        a.dump(what);
+        what << "Node B:" << std::endl;
+        b.dump(what);
+        what << "Owner of node A:" << std::endl;
+        a.getOwner().dump("",what);
+        what << "Owner of node B:" << std::endl;
+        b.getOwner().dump("",what);
+        throw ChimeraTK::logic_error(what.str());
+      }
+      for(auto n = networkList.begin(); n != networkList.end(); ++n) {
+        if(&*n == &networkToMerge) {
+          networkList.erase(n);
+          break;
+        }
+      }
     }
   }
   // add b to the existing network of a
