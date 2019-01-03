@@ -17,8 +17,8 @@ namespace ChimeraTK {
 
   bool VariableNetwork::hasFeedingNode() const {
     auto n = std::count_if( nodeList.begin(), nodeList.end(),
-        [](const VariableNetworkNode n) {
-          return n.getDirection() == VariableDirection::feeding;
+        [](const VariableNetworkNode node) {
+          return node.getDirection() == VariableDirection::feeding;
         } );
     assert(n < 2);
     return n == 1;
