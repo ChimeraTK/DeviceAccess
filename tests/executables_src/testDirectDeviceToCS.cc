@@ -209,6 +209,8 @@ BOOST_AUTO_TEST_CASE( testConnectTo ) {
   auto devint8 = dev.getScalarRegisterAccessor<int8_t>("/Integers/signed8");
   auto devuint8 = dev.getScalarRegisterAccessor<uint8_t>("/Integers/unsigned8");
   auto devfloat = dev.getScalarRegisterAccessor<double>("/FixedPoint/value");
+  auto devDeep1 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
+  auto devDeep2 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Another/test");
   auto csActuator = test.getScalar<int32_t>("/MyModule/actuator");
   auto csReadback = test.getScalar<int32_t>("/MyModule/readBack");
   auto csint32 = test.getScalar<int32_t>("/Integers/signed32");
@@ -218,6 +220,8 @@ BOOST_AUTO_TEST_CASE( testConnectTo ) {
   auto csint8 = test.getScalar<int8_t>("/Integers/signed8");
   auto csuint8 = test.getScalar<uint8_t>("/Integers/unsigned8");
   auto csfloat = test.getScalar<double>("/FixedPoint/value");
+  auto csDeep1 = test.getScalar<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
+  auto csDeep2 = test.getScalar<int32_t>("/Deep/Hierarchies/Need/Another/test");
   test.runApplication();
 
   testDirectRegister(test, csActuator, devActuator, []{});
@@ -229,5 +233,7 @@ BOOST_AUTO_TEST_CASE( testConnectTo ) {
   testDirectRegister(test, csint8, devint8, []{});
   testDirectRegister(test, csuint8, devuint8, []{});
   testDirectRegister(test, csfloat, devfloat, []{}, false);
+  testDirectRegister(test, csDeep1, devDeep1, []{});
+  testDirectRegister(test, csDeep2, devDeep2, []{});
 
 }

@@ -127,9 +127,7 @@ namespace ChimeraTK {
     else {
       auto firstSubmodule = moduleName.substr(0,slash);
       auto remainingSubmodules = moduleName.substr(slash+1);
-      auto &sm = createAndGetSubmodule(firstSubmodule);
-      sm.createAndGetSubmoduleRecursive(remainingSubmodules);
-      return sm;
+      return createAndGetSubmodule(firstSubmodule).createAndGetSubmoduleRecursive(remainingSubmodules);
     }
   }
 

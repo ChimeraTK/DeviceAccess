@@ -8,3 +8,5 @@
 /Integers/signed8                 1 24 4 1  8 0 1 RW
 /Integers/unsigned8               1 28 4 1  8 0 0 RW
 /FixedPoint/value                 1 32 4 1 32 8 1 RW
+/Deep/Hierarchies/Need/Tests/As/well  1 36 4 1 32 0 1 RW
+/Deep/Hierarchies/Need/Another/test   1 40 4 1 32 0 1 RW
