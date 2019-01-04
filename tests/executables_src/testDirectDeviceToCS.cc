@@ -38,19 +38,6 @@ typedef boost::mpl::list<int8_t,uint8_t,
     }
 
 /*********************************************************************************************************************/
-/* the ApplicationModule for the test is a template of the user type */
-
-template<typename T>
-struct TestModule : public ctk::ApplicationModule {
-    using ctk::ApplicationModule::ApplicationModule;
-
-    ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
-    ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
-
-    void mainLoop() {}
-};
-
-/*********************************************************************************************************************/
 /* dummy application */
 
 template<typename T>
@@ -63,7 +50,6 @@ struct TestApplication : public ctk::Application {
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {}             // the setup is done in the tests
 
-    TestModule<T> testModule{this, "TestModule", "The test module"};
     ctk::ControlSystemModule cs;
 
     ctk::DeviceModule dev{"Dummy0"};
@@ -139,6 +125,7 @@ void testDirectRegister(ctk::TestFacility &test, ChimeraTK::ScalarRegisterAccess
 /* test direct control system to device connections */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDev, T, test_types ) {
+  std::cout << "testDirectCStoDev" << std::endl;
 
   TestApplication<T> app;
 
@@ -170,6 +157,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDev, T, test_types ) {
 /* test direct control system to device connections with fan out */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testDirectCStoDevFanOut, T, test_types ) {
+  std::cout << "testDirectCStoDevFanOut" << std::endl;
 
   TestApplication<T> app;
 
