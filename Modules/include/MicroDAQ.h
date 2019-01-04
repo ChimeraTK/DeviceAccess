@@ -52,7 +52,7 @@ namespace ChimeraTK {
                 {"MicroDAQ.CONFIG"}};
 
       /** Add a Module as a source to this DAQ. */
-      void addSource(const Module &source, const std::string &namePrefix="");
+      void addSource(const Module &source, const RegisterPath &namePrefix="");
 
     protected:
 
@@ -60,6 +60,9 @@ namespace ChimeraTK {
 
       template<typename UserType>
       VariableNetworkNode getAccessor(const std::string &variableName);
+
+      /** Map of VariableGroups required to build the hierarchies. The key it the full path name. */
+      std::map<std::string, VariableGroup> groupMap;
 
       /** boost::fusion::map of UserTypes to std::lists containing the ArrayPollInput accessors. These accessors are
       *  dynamically created by the AccessorAttacher. */

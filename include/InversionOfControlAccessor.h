@@ -96,6 +96,10 @@ namespace ChimeraTK {
       {
         static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
                       "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
+        if(name.find_first_of("/") != std::string::npos) {
+          throw ChimeraTK::logic_error("Accessor names must not contain slashes: '"+name+"' in module '"
+                                       +owner->getQualifiedName()+"'.");
+        }
         owner->registerAccessor(node);
       }
 

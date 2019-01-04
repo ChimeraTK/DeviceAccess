@@ -18,6 +18,10 @@ namespace ChimeraTK {
     if(!dynamic_cast<ModuleGroup*>(owner) && !dynamic_cast<Application*>(owner)) {
       throw ChimeraTK::logic_error("ApplicationModules must be owned either by ModuleGroups or the Application!");
     }
+    if(name.find_first_of("/") != std::string::npos) {
+      throw ChimeraTK::logic_error("Module names must not contain slashes: '"+name+" owned by '"
+                                   +owner->getQualifiedName()+"'.");
+    }
   }
 
 /*********************************************************************************************************************/

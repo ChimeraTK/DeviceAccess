@@ -39,20 +39,40 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void MicroDAQ::addSource(const Module &source, const std::string &namePrefix) {
+  void MicroDAQ::addSource(const Module &source, const RegisterPath &namePrefix) {
 
     // for simplification, first create a VirtualModule containing the correct hierarchy structure (obeying eliminate
     // hierarchy etc.)
     auto dynamicModel = source.findTag(".*");     /// @todo use virtualise() instead
 
+    // create variable group map for namePrefix if needed
+    if(groupMap.find(namePrefix) == groupMap.end()) {
+      // search for existing parent (if any)
+      auto parentPrefix = namePrefix;
+      while(groupMap.find(parentPrefix) == groupMap.end()) {
+        if(parentPrefix == "/") break;  // no existing parent found
+        parentPrefix = std::string(parentPrefix).substr(0,std::string(parentPrefix).find_last_of("/"));
+      }
+      // create all not-yet-existing parents
+      while(parentPrefix != namePrefix) {
+        EntityOwner *owner = this;
+        if(parentPrefix != "/") owner = &groupMap[parentPrefix];
+        auto stop = std::string(namePrefix).find_first_of("/", parentPrefix.length()+1);
+        if(stop == std::string::npos) stop = namePrefix.length();
+        RegisterPath name = std::string(namePrefix).substr(parentPrefix.length(),stop-parentPrefix.length());
+        parentPrefix /= name;
+        groupMap[parentPrefix] = VariableGroup(owner, std::string(name).substr(1), "");
+      }
+    }
+
     // add all accessors on this hierarchy level
     for(auto &acc : dynamicModel.getAccessorList()) {
-      boost::fusion::for_each(accessorListMap.table, detail::AccessorAttacher(acc, this, namePrefix+"/"+acc.getName()));
+      boost::fusion::for_each(accessorListMap.table, detail::AccessorAttacher(acc, this, namePrefix/acc.getName()));
     }
 
     // recurse into submodules
     for(auto mod : dynamicModel.getSubmoduleList()) {
-      addSource(*mod, namePrefix+"/"+mod->getName());
+      addSource(*mod, namePrefix/mod->getName());
     }
 
   }
@@ -74,7 +94,9 @@ namespace ChimeraTK {
     // add accessor and name to lists
     auto &accessorList = boost::fusion::at_key<UserType>(accessorListMap.table);
     auto &nameList = boost::fusion::at_key<UserType>(nameListMap.table);
-    accessorList.emplace_back(this, variableName, "", 0, "");
+    auto dirName = variableName.substr(0,variableName.find_last_of("/"));
+    auto baseName = variableName.substr(variableName.find_last_of("/")+1);
+    accessorList.emplace_back(&groupMap[dirName], baseName, "", 0, "");
     nameList.push_back(variableName);
 
     // return the accessor

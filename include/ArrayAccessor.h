@@ -54,7 +54,7 @@ namespace ChimeraTK {
         return dataLoss;
       }
 
-  protected:
+    protected:
 
       friend class InversionOfControlAccessor<ArrayAccessor<UserType>>;
 

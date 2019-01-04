@@ -12,6 +12,7 @@
 
 #include <boost/thread.hpp>
 
+#include <ChimeraTK/RegisterPath.h>
 #include "Module.h"
 
 namespace ChimeraTK {
@@ -24,7 +25,11 @@ namespace ChimeraTK {
       /** Constructor */
       VirtualModule(const std::string &name, const std::string &description, ModuleType moduleType)
       : Module(nullptr, name, description), _moduleType(moduleType)
-      {}
+      {
+        if(name.find_first_of("/") != std::string::npos) {
+          throw ChimeraTK::logic_error("Module names must not contain slashes: '"+name+"'.");
+        }
+      }
 
       /** Copy constructor */
       VirtualModule(const VirtualModule &other);
@@ -45,11 +50,11 @@ namespace ChimeraTK {
       void addSubModule(VirtualModule module);
 
       /** Return the submodule with the given name. If it doesn't exist, create it first. */
-      VirtualModule& createAndGetSubmodule(const std::string& moduleName);
+      VirtualModule& createAndGetSubmodule(const RegisterPath& moduleName);
 
       /** Like createAndGetSubmodule(), but recursively create a hierarchy of submodules separated by "/" in the
        *  moduleName. */
-      VirtualModule& createAndGetSubmoduleRecursive(const std::string& moduleName);
+      VirtualModule& createAndGetSubmoduleRecursive(const RegisterPath& moduleName);
 
       ModuleType getModuleType() const override { return _moduleType; }
 

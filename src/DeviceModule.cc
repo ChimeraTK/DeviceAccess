@@ -14,7 +14,10 @@
 namespace ChimeraTK {
 
   DeviceModule::DeviceModule(const std::string& _deviceAliasOrURI, const std::string& _registerNamePrefix)
-  : Module(&(Application::getInstance()), "Device:"+_deviceAliasOrURI+":"+_registerNamePrefix, ""),
+  : Module(&(Application::getInstance()),
+           _registerNamePrefix.empty() ? "<Device:"+_deviceAliasOrURI+">"
+             : _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/")+1),
+           ""),
     deviceAliasOrURI(_deviceAliasOrURI),
     registerNamePrefix(_registerNamePrefix)
   {}
