@@ -39,6 +39,7 @@ namespace ChimeraTK {
        *  will be ??? TODO define precisely what happens on start up */
       void runApplication() const {
         Application::getInstance().run();
+        Application::registerThread("TestThread");
       }
 
       /** Perform a "step" of the application. This runs the application until all input provided to it has been
