@@ -137,6 +137,7 @@ namespace ChimeraTK {
       static void registerThread(const std::string &name) {
         threadName() = name;
         Profiler::registerThread(name);
+        pthread_setname_np(pthread_self(), name.c_str());
       }
 
       ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
