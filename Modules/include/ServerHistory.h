@@ -74,13 +74,16 @@ struct ServerHistory: public ApplicationModule{
   ServerHistory() : _historyLength(1200) {}
 
   /** Add a Module as a source to this History module. */
-  void addSource(const Module &source, const std::string &namePrefix);
+  void addSource(const Module &source, const RegisterPath &namePrefix);
 
 protected:
   void mainLoop() override;
 
   template<typename UserType>
   VariableNetworkNode getAccessor(const std::string &variableName, const size_t &nElements);
+
+  /** Map of VariableGroups required to build the hierarchies. The key it the full path name. */
+  std::map<std::string, VariableGroup> groupMap;
 
   /** boost::fusion::map of UserTypes to std::lists containing the ArrayPushInput and ArrayOutput accessors. These accessors are
   *  dynamically created by the AccessorAttacher. */

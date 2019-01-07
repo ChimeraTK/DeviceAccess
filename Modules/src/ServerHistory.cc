@@ -27,20 +27,40 @@ struct AccessorAttacher {
   const std::string &_name;
 };
 
-void ServerHistory::addSource(const Module &source, const std::string &namePrefix) {
+void ServerHistory::addSource(const Module &source, const RegisterPath &namePrefix) {
 
   // for simplification, first create a VirtualModule containing the correct hierarchy structure (obeying eliminate
   // hierarchy etc.)
   auto dynamicModel = source.findTag(".*");     /// @todo use virtualise() instead
 
+  // create variable group map for namePrefix if needed
+  if(groupMap.find(namePrefix) == groupMap.end()) {
+    // search for existing parent (if any)
+    auto parentPrefix = namePrefix;
+    while(groupMap.find(parentPrefix) == groupMap.end()) {
+      if(parentPrefix == "/") break;  // no existing parent found
+      parentPrefix = std::string(parentPrefix).substr(0,std::string(parentPrefix).find_last_of("/"));
+    }
+    // create all not-yet-existing parents
+    while(parentPrefix != namePrefix) {
+      EntityOwner *owner = this;
+      if(parentPrefix != "/") owner = &groupMap[parentPrefix];
+      auto stop = std::string(namePrefix).find_first_of("/", parentPrefix.length()+1);
+      if(stop == std::string::npos) stop = namePrefix.length();
+      RegisterPath name = std::string(namePrefix).substr(parentPrefix.length(),stop-parentPrefix.length());
+      parentPrefix /= name;
+      groupMap[parentPrefix] = VariableGroup(owner, std::string(name).substr(1), "");
+    }
+  }
+
   // add all accessors on this hierarchy level
   for(auto &acc : dynamicModel.getAccessorList()) {
-    boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix+"/"+acc.getName()));
+    boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix/acc.getName()));
   }
 
   // recurse into submodules
   for(auto mod : dynamicModel.getSubmoduleList()) {
-    addSource(*mod, namePrefix+"/"+mod->getName());
+    addSource(*mod, namePrefix/mod->getName());
   }
 
 }
@@ -60,17 +80,19 @@ VariableNetworkNode ServerHistory::getAccessor(const std::string &variableName, 
   // add accessor and name to lists
   auto &accessorList = boost::fusion::at_key<UserType>(_accessorListMap.table);
   auto &nameList = boost::fusion::at_key<UserType>(_nameListMap.table);
+  auto dirName = variableName.substr(0,variableName.find_last_of("/"));
+  auto baseName = variableName.substr(variableName.find_last_of("/")+1);
   accessorList.emplace_back(std::piecewise_construct,
-          std::forward_as_tuple(ArrayPushInput<UserType>{this, variableName + "_in", "", 0, "",}),
+          std::forward_as_tuple(ArrayPushInput<UserType>{&groupMap[dirName], baseName + "_in", "", 0, "",}),
           std::forward_as_tuple(std::vector<ArrayOutput<UserType> >{}));
   for(size_t i =0; i < nElements; i++){
     if(nElements == 1) {
       // in case of a scalar history only use the variableName
-      accessorList.back().second.emplace_back(ArrayOutput<UserType>{this, variableName, "", _historyLength, "",
+      accessorList.back().second.emplace_back(ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "",
         { "CS", getName() }});
     } else {
       // in case of an array history append the index to the variableName
-      accessorList.back().second.emplace_back(ArrayOutput<UserType>{this, variableName + "_" + std::to_string(i), "", _historyLength, "",
+      accessorList.back().second.emplace_back(ArrayOutput<UserType>{&groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "",
         { "CS", getName() }});
     }
   }
