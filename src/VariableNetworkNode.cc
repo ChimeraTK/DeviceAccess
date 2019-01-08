@@ -425,4 +425,11 @@ namespace ChimeraTK {
     pdata->owningModule = newOwner;
   }
 
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setPublicName(const std::string& name) const {
+    pdata->publicName = name;
+  }
+
+
 }

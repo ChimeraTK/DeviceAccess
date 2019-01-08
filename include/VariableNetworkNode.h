@@ -140,6 +140,8 @@ namespace ChimeraTK {
       size_t getNumberOfElements() const;
       ChimeraTK::TransferElementAbstractor& getAppAccessorNoType();
 
+      void setPublicName(const std::string& name) const;
+
       template<typename UserType>
       ChimeraTK::NDRegisterAccessorAbstractor<UserType>& getAppAccessor() const;
 
