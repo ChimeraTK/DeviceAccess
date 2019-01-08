@@ -99,8 +99,8 @@ void Application::processUnconnectedNodes() {
     for(auto &accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
         if(enableUnconnectedVariablesWarning) {
-          std::cerr << "*** Warning: Variable '" << accessor.getName() << "' is not connected. "    // LCOV_EXCL_LINE
-                       "Reading will always result in 0, writing will be ignored." << std::endl;    // LCOV_EXCL_LINE
+          std::cerr << "*** Warning: Variable '" << accessor.getQualifiedName() << "' is not connected. "    // LCOV_EXCL_LINE
+                       "Reading will always result in 0, writing will be ignored." << std::endl;             // LCOV_EXCL_LINE
         }
         networkList.emplace_back();
         networkList.back().addNode(accessor);
