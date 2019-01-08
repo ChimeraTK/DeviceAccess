@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE( test_getAccessorList ) {
   OneModuleApp app;
 
   {
-    std::list<ctk::VariableNetworkNode> &list = app.testModule.getAccessorList();
+    std::list<ctk::VariableNetworkNode> list = app.testModule.getAccessorList();
     BOOST_CHECK( list.size() == 2 );
     size_t foundSomeInput = 0;
     size_t foundSomeOutput = 0;
@@ -470,7 +470,7 @@ BOOST_AUTO_TEST_CASE( test_getAccessorList ) {
 
   {
     const SomeGroup &someGroup(app.testModule.someGroup);
-    const std::list<ctk::VariableNetworkNode> &list = someGroup.getAccessorList();
+    const std::list<ctk::VariableNetworkNode> list = someGroup.getAccessorList();
     BOOST_CHECK( list.size() == 2 );
     size_t foundInGroup = 0;
     size_t foundAlsoInGroup = 0;
@@ -613,7 +613,7 @@ BOOST_AUTO_TEST_CASE( testFindTags ) {
 
     // check direct variables
     {
-      std::list<ctk::VariableNetworkNode> &list = tagA.getAccessorList();
+      std::list<ctk::VariableNetworkNode> list = tagA.getAccessorList();
       BOOST_CHECK( list.size() == 2 );
       size_t foundSomeInput = 0;
       size_t foundSomeOutput = 0;
@@ -653,7 +653,7 @@ BOOST_AUTO_TEST_CASE( testFindTags ) {
 
     // check direct variables
     {
-      std::list<ctk::VariableNetworkNode> &list = tagD.getAccessorList();
+      std::list<ctk::VariableNetworkNode> list = tagD.getAccessorList();
       BOOST_CHECK( list.size() == 0 );
     }
 
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE( testFindTags ) {
 
     // check direct variables
     {
-      std::list<ctk::VariableNetworkNode> &list = tagDnotA.getAccessorList();
+      std::list<ctk::VariableNetworkNode> list = tagDnotA.getAccessorList();
       BOOST_CHECK( list.size() == 0 );
     }
 
@@ -736,7 +736,7 @@ BOOST_AUTO_TEST_CASE( testFlatten ) {
 
   // check direct variables
   {
-    std::list<ctk::VariableNetworkNode> &list = flattened.getAccessorList();
+    std::list<ctk::VariableNetworkNode> list = flattened.getAccessorList();
     BOOST_CHECK( list.size() == 5 );
     size_t foundSomeInput = 0;
     size_t foundSomeOutput = 0;

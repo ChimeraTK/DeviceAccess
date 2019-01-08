@@ -63,11 +63,10 @@ namespace ChimeraTK {
       virtual std::string getFullDescription() const = 0;
 
       /** Obtain the list of accessors/variables directly associated with this instance */
-      std::list<VariableNetworkNode>& getAccessorList() { return accessorList; }
-      const std::list<VariableNetworkNode>& getAccessorList() const { return accessorList; }
+      virtual std::list<VariableNetworkNode> getAccessorList() const { return accessorList; }
 
       /** Obtain the list of submodules associated with this instance */
-      const std::list<Module*>& getSubmoduleList() const { return moduleList; }
+      virtual std::list<Module*> getSubmoduleList() const { return moduleList; }
 
       /** Obtain the list of accessors/variables associated with this instance and any submodules */
       std::list<VariableNetworkNode> getAccessorListRecursive();

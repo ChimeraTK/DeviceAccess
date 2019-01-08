@@ -14,7 +14,7 @@
 namespace ChimeraTK {
 
   DeviceModule::DeviceModule(const std::string& _deviceAliasOrURI, const std::string& _registerNamePrefix)
-  : Module(&(Application::getInstance()),
+  : Module(nullptr,
            _registerNamePrefix.empty() ? "<Device:"+_deviceAliasOrURI+">"
              : _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/")+1),
            ""),
@@ -139,7 +139,7 @@ namespace ChimeraTK {
       auto basename = name.substr(lastSlash+1);
       VariableNetworkNode node(basename, deviceAliasOrURI, reg.getRegisterName(), updateMode,
                                direction, *valTyp, reg.getNumberOfElements());
-      virtualisedModuleFromCatalog.createAndGetSubmoduleRecursive(dirname).getAccessorList().push_back(node);
+      virtualisedModuleFromCatalog.createAndGetSubmoduleRecursive(dirname).addAccessor(node);
 
     }
 

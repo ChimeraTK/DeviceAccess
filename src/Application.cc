@@ -250,7 +250,7 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
       if(!success) {
         std::stringstream what;
         what << "*** ERROR: Trying to connect two nodes which are already part of different networks, and merging these"
-                " networks is not possible (cannot have two non-control-system feeders)!" << std::endl;
+                " networks is not possible (cannot have two non-control-system or two control-system feeders)!" << std::endl;
         what << "Node A:" << std::endl;
         a.dump(what);
         what << "Node B:" << std::endl;

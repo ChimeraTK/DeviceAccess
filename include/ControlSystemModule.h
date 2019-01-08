@@ -55,6 +55,10 @@ namespace ChimeraTK {
 
       const Module& virtualise() const override;
 
+      std::list<VariableNetworkNode> getAccessorList() const override;
+
+      std::list<Module*> getSubmoduleList() const override;
+
     protected:
 
       ChimeraTK::RegisterPath variableNamePrefix;

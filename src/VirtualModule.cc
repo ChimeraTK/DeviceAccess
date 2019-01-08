@@ -96,6 +96,12 @@ namespace ChimeraTK {
 
 /*********************************************************************************************************************/
 
+  void VirtualModule::addAccessor(VariableNetworkNode accessor) {
+    accessorList.push_back(accessor);
+  }
+
+/*********************************************************************************************************************/
+
   void VirtualModule::addSubModule(VirtualModule module) {
     submodules.push_back(module);
     registerModule(&(submodules.back()));

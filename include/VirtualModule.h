@@ -46,6 +46,9 @@ namespace ChimeraTK {
 
       void connectTo(const Module &target, VariableNetworkNode trigger={}) const override;
 
+      /** Add an accessor. The accessor instance will be added to an internal list. */
+      void addAccessor(VariableNetworkNode accessor);
+
       /** Add a virtual sub-module. The module instance will be added to an internal list. */
       void addSubModule(VirtualModule module);
 

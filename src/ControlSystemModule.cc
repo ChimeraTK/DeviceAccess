@@ -11,7 +11,7 @@
 namespace ChimeraTK {
 
   ControlSystemModule::ControlSystemModule(const std::string& _variableNamePrefix)
-    : Module(&(Application::getInstance()),
+    : Module(nullptr,
              _variableNamePrefix.empty() ? "<ControlSystem>"
                : _variableNamePrefix.substr(_variableNamePrefix.find_last_of("/")+1),
              ""),
@@ -44,5 +44,23 @@ namespace ChimeraTK {
   const Module& ControlSystemModule::virtualise() const {
     return *this;
   }
+
+  /*********************************************************************************************************************/
+
+  std::list<VariableNetworkNode> ControlSystemModule::getAccessorList() const {
+    std::list<VariableNetworkNode> list;
+    for(auto &v : variables) list.push_back(v.second);
+    return list;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<Module*> ControlSystemModule::getSubmoduleList() const {
+    std::list<Module*> list;
+    for(auto &m : subModules) list.push_back(&m.second);
+    return list;
+  }
+
+  /*********************************************************************************************************************/
 
 }
