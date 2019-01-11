@@ -54,14 +54,26 @@ namespace ChimeraTK {
   struct Multiplier : public ApplicationModule {
 
       using ApplicationModule::ApplicationModule;
+
+      Multiplier(EntityOwner *owner, const std::string &name, const std::string &factorName,
+                 const std::string &unitInput, const std::string &unitOutput,
+                 const std::string &description, const std::unordered_set<std::string> &tagsInput={},
+                 const std::unordered_set<std::string> &tagsOutput={},
+                 const std::unordered_set<std::string> &tagsFactor={})
+      : ApplicationModule(owner, name, "", true)
+      {
+        input.replace(ArrayPushInput<InputType>(this, name, unitInput, NELEMS, description, tagsInput));
+        output.replace(ArrayOutput<OutputType>(this, name, unitOutput, NELEMS, description, tagsOutput));
+        factor.replace(ScalarPushInput<double>(this, factorName, "("+unitOutput+")/("+unitInput+")", description, tagsFactor));
+      }
+
+      /** Note: This constructor is deprectated! */
       Multiplier(EntityOwner *owner, const std::string &name, const std::string &description)
-      : ApplicationModule(owner, name, ""),
+      : ApplicationModule(owner, name, "", true),
         input(this, "input", "", NELEMS, description),
         factor(this, "factor", "", "Factor to scale the input value with"),
         output(this, "output", "", NELEMS, description)
-      {
-        setEliminateHierarchy();
-      }
+      {}
 
       ArrayPushInput<InputType> input;
       ScalarPushInput<double> factor;
