@@ -10,10 +10,25 @@
 
 namespace ChimeraTK {
 
-  /** Enum to define directions of variables. The direction is always defined from the point-of-view of the
-   *  definer, i.e. the application module owning the instance of the accessor in this context. */
-  enum class VariableDirection {
-    consuming, feeding, invalid
+  /** Struct to define the direction of variables. The main direction is defined with an enum. In addition the presence
+   *  of a return channel is specified. */
+  struct VariableDirection {
+      /** Enum to define directions of variables. The direction is always defined from the point-of-view of the
+       *  owner, i.e. the application module owning the instance of the accessor in this context. */
+      enum {
+        consuming, feeding, invalid
+      } dir;
+
+      /** Presence of return channel */
+      bool withReturn;
+
+      /** Comparison */
+      bool operator==(const VariableDirection &other) const {
+        return dir == other.dir && withReturn == other.withReturn;
+      }
+      bool operator!=(const VariableDirection &other) const {
+        return !operator==(other);
+      }
   };
 
   /** Enum to define the update mode of variables. */

@@ -88,7 +88,7 @@ namespace ChimeraTK {
   : pdata(boost::make_shared<VariableNetworkNode_data>())
   {
     pdata->type = NodeType::TriggerReceiver;
-    pdata->direction = VariableDirection::consuming;
+    pdata->direction = {VariableDirection::consuming, false};
     pdata->nodeToTrigger = nodeToTrigger;
     pdata->name = "trigger:"+nodeToTrigger.getName();
   }
@@ -153,38 +153,38 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode VariableNetworkNode::operator>>(VariableNetworkNode other) {
-    if(pdata->direction == VariableDirection::invalid) {
+    if(pdata->direction.dir == VariableDirection::invalid) {
       if(!other.hasOwner()) {
-        pdata->direction = VariableDirection::feeding;
+        pdata->direction = {VariableDirection::feeding, false};
       }
       else {
         if(other.getOwner().hasFeedingNode()) {
-          pdata->direction = VariableDirection::consuming;
+          pdata->direction = {VariableDirection::consuming, false};
           if(getType() == NodeType::Device) {   // special treatment for Device-type variables: consumers are push-type
             pdata->mode = UpdateMode::push;
           }
         }
         else {
-          pdata->direction = VariableDirection::feeding;
+          pdata->direction = {VariableDirection::feeding, false};
         }
       }
     }
-    if(other.pdata->direction == VariableDirection::invalid) {
+    if(other.pdata->direction.dir == VariableDirection::invalid) {
       if(!hasOwner()) {
-        other.pdata->direction = VariableDirection::consuming;
+        other.pdata->direction = {VariableDirection::consuming, false};
         if(other.getType() == NodeType::Device) {   // special treatment for Device-type variables: consumers are push-type
           other.pdata->mode = UpdateMode::push;
         }
       }
       else {
         if(getOwner().hasFeedingNode()) {
-          other.pdata->direction = VariableDirection::consuming;
+          other.pdata->direction = {VariableDirection::consuming, false};
           if(other.getType() == NodeType::Device) {   // special treatment for Device-type variables: consumers are push-type
             other.pdata->mode = UpdateMode::push;
           }
         }
         else {
-          other.pdata->direction = VariableDirection::feeding;
+          other.pdata->direction = {VariableDirection::feeding, false};
         }
       }
     }
@@ -202,12 +202,12 @@ namespace ChimeraTK {
     }
 
     // force direction of the node we are operating on to be feeding
-    if(pdata->direction == VariableDirection::invalid) pdata->direction = VariableDirection::feeding;
-    assert(pdata->direction == VariableDirection::feeding);
+    if(pdata->direction.dir == VariableDirection::invalid) pdata->direction = {VariableDirection::feeding, false};
+    assert(pdata->direction.dir == VariableDirection::feeding);
 
     // force direction of the triggering node to be feeding
-    if(trigger.pdata->direction == VariableDirection::invalid) trigger.pdata->direction = VariableDirection::feeding;
-    assert(trigger.pdata->direction == VariableDirection::feeding);
+    if(trigger.pdata->direction.dir == VariableDirection::invalid) trigger.pdata->direction = {VariableDirection::feeding, false};
+    assert(trigger.pdata->direction.dir == VariableDirection::feeding);
 
     // check if already existing in map
     if(pdata->nodeWithTrigger.count(trigger) > 0) {
@@ -241,7 +241,7 @@ namespace ChimeraTK {
 
   void VariableNetworkNode::setDirection(VariableDirection newDirection) const {
     assert(pdata->type == NodeType::ControlSystem);
-    assert(pdata->direction == VariableDirection::feeding);
+    assert(pdata->direction.dir == VariableDirection::feeding);
     pdata->direction = newDirection;
   }
 

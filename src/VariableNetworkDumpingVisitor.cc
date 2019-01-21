@@ -34,7 +34,7 @@ void VariableNetworkDumpingVisitor::dispatch(const VariableNetwork& t) {
     stream() << _prefix << "  consumers: " << t.countConsumingNodes() << std::endl;
     size_t count = 0;
     for(auto &consumer : t.getConsumingNodes()) {
-      if(consumer.getDirection() != VariableDirection::consuming) continue;
+      if(consumer.getDirection().dir != VariableDirection::consuming) continue;
       stream() << _prefix << "    # " << ++count << ":";
       consumer.accept(*this);
     }

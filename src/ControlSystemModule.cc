@@ -24,7 +24,7 @@ namespace ChimeraTK {
                                                       size_t nElements) const {
     assert(variableName.find_first_of("/") == std::string::npos);
     if(variables.count(variableName) == 0) {
-      variables[variableName] = {variableNamePrefix/variableName, VariableDirection::invalid, valueType, nElements};
+      variables[variableName] = {variableNamePrefix/variableName, {VariableDirection::invalid, false}, valueType, nElements};
     }
     return variables[variableName];
   }

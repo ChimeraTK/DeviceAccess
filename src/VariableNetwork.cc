@@ -18,7 +18,7 @@ namespace ChimeraTK {
   bool VariableNetwork::hasFeedingNode() const {
     auto n = std::count_if( nodeList.begin(), nodeList.end(),
         [](const VariableNetworkNode node) {
-          return node.getDirection() == VariableDirection::feeding;
+          return node.getDirection().dir == VariableDirection::feeding;
         } );
     assert(n < 2);
     return n == 1;
@@ -39,12 +39,12 @@ namespace ChimeraTK {
     a.setOwner(this);
 
     // if node is feeding, save as feeder for this network
-    if(a.getDirection() == VariableDirection::feeding) {
+    if(a.getDirection().dir == VariableDirection::feeding) {
       // make sure we only have one feeding node per network
       if(hasFeedingNode()) {
         // check if current feeding node is a control system variable: if yes, switch it to consuming
         if(getFeedingNode().getType() == NodeType::ControlSystem) {
-          getFeedingNode().setDirection(VariableDirection::consuming);
+          getFeedingNode().setDirection({VariableDirection::consuming, false});
         }
         // Current feeder cannot be switch to consumer: throw exception
         else{
@@ -138,7 +138,7 @@ namespace ChimeraTK {
     // network is fed by a poll-type node: must have exactly one polling consumer
     size_t nPollingConsumers = count_if( nodeList.begin(), nodeList.end(),
         [](const VariableNetworkNode &n) {
-          return n.getDirection() == VariableDirection::consuming && n.getMode() == UpdateMode::poll;
+          return n.getDirection().dir == VariableDirection::consuming && n.getMode() == UpdateMode::poll;
         } );
     if(nPollingConsumers != 1) {
       std::stringstream msg;
@@ -234,6 +234,34 @@ namespace ChimeraTK {
 
     // check if trigger is correctly defined (the return type doesn't matter, only the checks done in the function are needed)
     getTriggerType();
+
+    // if (and only if) feeder has return channel, there must be exactly one consumer with return channel
+    if(getFeedingNode().getDirection().withReturn) {
+      size_t numberOfConsumersWithReturnChannel = 0;
+      for(auto &node : getConsumingNodes()) {
+        if(node.getDirection().withReturn) ++numberOfConsumersWithReturnChannel;
+      }
+      if(numberOfConsumersWithReturnChannel != 1) {
+        std::stringstream msg;
+        msg << "The network has a feeder with return channel but " << numberOfConsumersWithReturnChannel << " consumers"
+            << " with return channel (must have exactly 1)!" << std::endl;
+        msg << "The illegal network:" << std::endl;
+        dump("", msg);
+        throw ChimeraTK::logic_error(msg.str());
+      }
+    }
+    else {
+      for(auto &node : getConsumingNodes()) {
+        if(node.getDirection().withReturn) {
+          std::stringstream msg;
+          msg << "The network has no feeder with return channel but at least one consumer with return channel!" << std::endl;
+          msg << "The illegal network:" << std::endl;
+          dump("", msg);
+          throw ChimeraTK::logic_error(msg.str());
+        }
+      }
+
+    }
   }
 
   /*********************************************************************************************************************/
@@ -241,7 +269,7 @@ namespace ChimeraTK {
   VariableNetworkNode VariableNetwork::getFeedingNode() const {
     auto iter = std::find_if( nodeList.begin(), nodeList.end(),
         [](const VariableNetworkNode n) {
-          return n.getDirection() == VariableDirection::feeding;
+          return n.getDirection().dir == VariableDirection::feeding;
         } );
     if(iter == nodeList.end()) {
       std::stringstream msg;
@@ -257,7 +285,7 @@ namespace ChimeraTK {
 
   std::list<VariableNetworkNode> VariableNetwork::getConsumingNodes() const{
     std::list<VariableNetworkNode> consumers;
-    for(auto &n : nodeList) if(n.getDirection() == VariableDirection::consuming) consumers.push_back(n);
+    for(auto &n : nodeList) if(n.getDirection().dir == VariableDirection::consuming) consumers.push_back(n);
     return consumers;
   }
 
@@ -265,7 +293,7 @@ namespace ChimeraTK {
 
   bool VariableNetwork::hasApplicationConsumer() const {
     for(auto &n : nodeList) {
-      if(n.getDirection() == VariableDirection::consuming && n.getType() == NodeType::Application) return true;
+      if(n.getDirection().dir == VariableDirection::consuming && n.getType() == NodeType::Application) return true;
     }
     return false;
   }
@@ -295,7 +323,7 @@ namespace ChimeraTK {
     if(other.hasFeedingNode()) {
       VariableNetworkNode otherFeeder = other.getFeedingNode();
       other.removeNode(otherFeeder);
-      if(otherFeeder.getType() == NodeType::ControlSystem) otherFeeder.setDirection(VariableDirection::consuming);
+      if(otherFeeder.getType() == NodeType::ControlSystem) otherFeeder.setDirection({VariableDirection::consuming, false});
       addNode(otherFeeder);
     }
 

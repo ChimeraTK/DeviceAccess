@@ -21,6 +21,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /** Accessor for scalar variables (i.e. single values). Note for users: Use the convenience classes
   *  ScalarPollInput, ScalarPushInput, ScalarOutput instead of this class directly. */
   template< typename UserType >
@@ -70,24 +72,28 @@ namespace ChimeraTK {
 
   };
 
+  /********************************************************************************************************************/
+
   /** Convenience class for input scalar accessors with UpdateMode::push */
   template< typename UserType >
   struct ScalarPushInput : public ScalarAccessor<UserType> {
     ScalarPushInput(Module *owner, const std::string &name, std::string unit,
                     const std::string &description, const std::unordered_set<std::string> &tags={})
-    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::push,
+    : ScalarAccessor<UserType>(owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::push,
                                description, tags)
     {}
     ScalarPushInput() : ScalarAccessor<UserType>() {}
     using ScalarAccessor<UserType>::operator=;
   };
 
+  /********************************************************************************************************************/
+
   /** Convenience class for input scalar accessors with UpdateMode::poll */
   template< typename UserType >
   struct ScalarPollInput : public ScalarAccessor<UserType> {
     ScalarPollInput(Module *owner, const std::string &name, std::string unit,
                     const std::string &description, const std::unordered_set<std::string> &tags={})
-    : ScalarAccessor<UserType>(owner, name, VariableDirection::consuming, unit, UpdateMode::poll,
+    : ScalarAccessor<UserType>(owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::poll,
                                description, tags)
     {}
     ScalarPollInput() : ScalarAccessor<UserType>() {}
@@ -96,17 +102,49 @@ namespace ChimeraTK {
     using ScalarAccessor<UserType>::operator=;
   };
 
+  /********************************************************************************************************************/
+
   /** Convenience class for output scalar accessors (always UpdateMode::push) */
   template< typename UserType >
   struct ScalarOutput : public ScalarAccessor<UserType> {
     ScalarOutput(Module *owner, const std::string &name, std::string unit,
                  const std::string &description, const std::unordered_set<std::string> &tags={})
-    : ScalarAccessor<UserType>(owner, name, VariableDirection::feeding, unit, UpdateMode::push,
+    : ScalarAccessor<UserType>(owner, name, {VariableDirection::feeding, false}, unit, UpdateMode::push,
                                description, tags)
     {}
     ScalarOutput() : ScalarAccessor<UserType>() {}
     using ScalarAccessor<UserType>::operator=;
   };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for input scalar accessors with return channel ("write back") and UpdateMode::push */
+  template< typename UserType >
+  struct ScalarPushInputWB : public ScalarAccessor<UserType> {
+    ScalarPushInputWB(Module *owner, const std::string &name, std::string unit,
+                    const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ScalarAccessor<UserType>(owner, name, {VariableDirection::consuming, true}, unit, UpdateMode::push,
+                               description, tags)
+    {}
+    ScalarPushInputWB() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for output scalar accessors with return channel ("read back") (always UpdateMode::push) */
+  template< typename UserType >
+  struct ScalarOutputPushRB : public ScalarAccessor<UserType> {
+    ScalarOutputPushRB(Module *owner, const std::string &name, std::string unit,
+                 const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ScalarAccessor<UserType>(owner, name, {VariableDirection::feeding, true}, unit, UpdateMode::push,
+                               description, tags)
+    {}
+    ScalarOutputPushRB() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
 

@@ -42,7 +42,7 @@ namespace ChimeraTK {
       while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
         // if thread is not yet joined, send interrupt() to all variables.
         for(auto &var : getAccessorListRecursive()) {
-          if(var.getDirection() != VariableDirection::consuming) continue;
+          if(var.getDirection() == VariableDirection{VariableDirection::feeding,false}) continue;
           var.getAppAccessorNoType().getHighLevelImplElement()->interrupt();
         }
         // it may not suffice to send interrupt() once, as the exception might get overwritten in the queue, thus we

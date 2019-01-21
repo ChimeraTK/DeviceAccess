@@ -57,7 +57,7 @@ void VariableNetworkGraphDumpingVisitor::dispatch(const VariableNetwork& network
     }
 
     for (auto &consumerNode : network.getConsumingNodes()) {
-        if (consumerNode.getDirection() != VariableDirection::consuming)
+        if (consumerNode.getDirection().dir != VariableDirection::consuming)
             continue;
 
         if (consumerNode.getType() == NodeType::TriggerReceiver)

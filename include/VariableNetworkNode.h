@@ -181,7 +181,7 @@ namespace ChimeraTK {
     UpdateMode mode{UpdateMode::invalid};
 
     /** Node direction: feeding or consuming */
-    VariableDirection direction{VariableDirection::invalid};
+    VariableDirection direction{VariableDirection::invalid, false};
 
     /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
       *  the connections. */
@@ -249,11 +249,11 @@ namespace ChimeraTK {
     node.pdata->nElements = length;
     node.pdata->name = "*UNNAMED CONSTANT*";
     if(makeFeeder) {
-      node.pdata->direction = VariableDirection::feeding;
+      node.pdata->direction = {VariableDirection::feeding, false};
       node.pdata->mode = UpdateMode::push;
     }
     else {
-      node.pdata->direction = VariableDirection::consuming;
+      node.pdata->direction = {VariableDirection::consuming, false};
       node.pdata->mode = UpdateMode::poll;
     }
     return node;

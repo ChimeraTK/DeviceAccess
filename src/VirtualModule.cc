@@ -65,7 +65,7 @@ namespace ChimeraTK {
 
     // connect all direct variables of this module to their counter-parts in the right-hand-side module
     for(auto variable : getAccessorList()) {
-      if(variable.getDirection() == VariableDirection::feeding) {
+      if(variable.getDirection().dir == VariableDirection::feeding) {
         // use trigger?
         if(trigger != VariableNetworkNode() && target(variable.getName()).getMode() == UpdateMode::push
                                             && variable.getMode() == UpdateMode::poll ) {

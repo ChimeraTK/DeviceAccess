@@ -21,6 +21,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /** Accessor for array variables (i.e. vectors). Note for users: Use the convenience classes
   *  ArrayPollInput, ArrayPushInput, ArrayOutput instead of this class directly. */
   template< typename UserType >
@@ -70,24 +72,28 @@ namespace ChimeraTK {
 
   };
 
+  /********************************************************************************************************************/
+
   /** Convenience class for input array accessors with UpdateMode::push */
   template< typename UserType >
   struct ArrayPushInput : public ArrayAccessor<UserType> {
     ArrayPushInput(Module *owner, const std::string &name, std::string unit, size_t nElements,
                    const std::string &description, const std::unordered_set<std::string> &tags={})
-    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::push,
+    : ArrayAccessor<UserType>(owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::push,
                               description, tags)
     {}
     ArrayPushInput() : ArrayAccessor<UserType>() {}
     using ArrayAccessor<UserType>::operator=;
   };
 
+  /********************************************************************************************************************/
+
   /** Convenience class for input array accessors with UpdateMode::poll */
   template< typename UserType >
   struct ArrayPollInput : public ArrayAccessor<UserType> {
     ArrayPollInput(Module *owner, const std::string &name, std::string unit, size_t nElements,
                    const std::string &description, const std::unordered_set<std::string> &tags={})
-    : ArrayAccessor<UserType>(owner, name, VariableDirection::consuming, unit, nElements, UpdateMode::poll,
+    : ArrayAccessor<UserType>(owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::poll,
                               description, tags)
     {}
     ArrayPollInput() : ArrayAccessor<UserType>() {}
@@ -96,17 +102,49 @@ namespace ChimeraTK {
     using ArrayAccessor<UserType>::operator=;
   };
 
+  /********************************************************************************************************************/
+
   /** Convenience class for output array accessors (always UpdateMode::push) */
   template< typename UserType >
   struct ArrayOutput : public ArrayAccessor<UserType> {
     ArrayOutput(Module *owner, const std::string &name, std::string unit, size_t nElements,
                 const std::string &description, const std::unordered_set<std::string> &tags={})
-    : ArrayAccessor<UserType>(owner, name, VariableDirection::feeding, unit, nElements, UpdateMode::push,
+    : ArrayAccessor<UserType>(owner, name, {VariableDirection::feeding, false}, unit, nElements, UpdateMode::push,
                               description, tags)
     {}
     ArrayOutput() : ArrayAccessor<UserType>() {}
     using ArrayAccessor<UserType>::operator=;
   };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for input array accessors with return channel ("write back") and UpdateMode::push */
+  template< typename UserType >
+  struct ArrayPushInputWB : public ArrayAccessor<UserType> {
+    ArrayPushInputWB(Module *owner, const std::string &name, std::string unit, size_t nElements,
+                   const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ArrayAccessor<UserType>(owner, name, {VariableDirection::consuming, true}, unit, nElements, UpdateMode::push,
+                              description, tags)
+    {}
+    ArrayPushInputWB() : ArrayAccessor<UserType>() {}
+    using ArrayAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for output array accessors with return channel ("read back") (always UpdateMode::push) */
+  template< typename UserType >
+  struct ArrayOutputRB : public ArrayAccessor<UserType> {
+    ArrayOutputRB(Module *owner, const std::string &name, std::string unit, size_t nElements,
+                const std::string &description, const std::unordered_set<std::string> &tags={})
+    : ArrayAccessor<UserType>(owner, name, {VariableDirection::feeding, true}, unit, nElements, UpdateMode::push,
+                              description, tags)
+    {}
+    ArrayOutputRB() : ArrayAccessor<UserType>() {}
+    using ArrayAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
 

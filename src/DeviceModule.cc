@@ -26,7 +26,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode DeviceModule::operator()(const std::string& registerName, UpdateMode mode,
       const std::type_info &valueType, size_t nElements) const {
-    return {registerName, deviceAliasOrURI, registerNamePrefix/registerName, mode, VariableDirection::invalid, valueType, nElements};
+    return {registerName, deviceAliasOrURI, registerNamePrefix/registerName, mode, {VariableDirection::invalid, false}, valueType, nElements};
   }
 
   /*********************************************************************************************************************/
@@ -75,11 +75,11 @@ namespace ChimeraTK {
       VariableDirection direction;
       UpdateMode updateMode;
       if(reg.isWriteable()) {
-        direction = VariableDirection::consuming;
+        direction = {VariableDirection::consuming, false};
         updateMode = UpdateMode::push;
       }
       else {
-        direction = VariableDirection::feeding;
+        direction = {VariableDirection::feeding, false};
         if(reg.getSupportedAccessModes().has(AccessMode::wait_for_new_data)) {
           updateMode = UpdateMode::push;
         }

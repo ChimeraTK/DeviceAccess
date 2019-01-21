@@ -553,7 +553,8 @@ BOOST_AUTO_TEST_CASE( testApplicationModuleFnCallOp ) {
 
   BOOST_CHECK( app.testModule("nameOfSomeInput").getType() == ctk::NodeType::Application );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getMode() == ctk::UpdateMode::push );
-  BOOST_CHECK( app.testModule("nameOfSomeInput").getDirection() == ctk::VariableDirection::consuming );
+  BOOST_CHECK( app.testModule("nameOfSomeInput").getDirection().dir == ctk::VariableDirection::consuming );
+  BOOST_CHECK( app.testModule("nameOfSomeInput").getDirection().withReturn == false );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getValueType() == typeid(int) );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getName() == "nameOfSomeInput" );
   BOOST_CHECK( app.testModule("nameOfSomeInput").getQualifiedName() == "/myApp/testModule/nameOfSomeInput" );

@@ -159,7 +159,7 @@ void Application::run() {
   // (without triggering an action inside the application)
   for(auto &module : getSubmoduleListRecursive()) {
     for(auto &variable : module->getAccessorList()) {
-      if(variable.getDirection() == VariableDirection::consuming) {
+      if(variable.getDirection().dir == VariableDirection::consuming) {
         variable.getAppAccessorNoType().readLatest();
       }
     }
@@ -301,7 +301,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
 
   // use wait_for_new_data mode if push update mode was requested
   ChimeraTK::AccessModeFlags flags{};
-  if(mode == UpdateMode::push && direction == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
+  if(mode == UpdateMode::push && direction.dir == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
   // obatin the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
@@ -320,14 +320,14 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
-  if(node.getDirection() == VariableDirection::feeding) {
+  if(node.getDirection().dir == VariableDirection::feeding) {
     dir = SynchronizationDirection::controlSystemToDevice;
   }
   else {
     dir = SynchronizationDirection::deviceToControlSystem;
   }
   AccessModeFlags flags = {};
-  if(node.getDirection() == VariableDirection::consuming) {   // Application-to-controlsystem must be push-type
+  if(node.getDirection().dir == VariableDirection::consuming) {   // Application-to-controlsystem must be push-type
     flags = {AccessMode::wait_for_new_data};
   }
   else {
@@ -348,7 +348,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable.
   // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware of this.
-  if(testableMode && node.getDirection() == VariableDirection::feeding) {
+  if(testableMode && node.getDirection().dir == VariableDirection::feeding) {
 
     // The transfer mode of this process variable is considered to be polling, if only one consumer exists and this
     // consumer is polling. Reason: mulitple consumers will result in the use of a FanOut, so the communication up to
@@ -394,8 +394,15 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   // create the ProcessArray for the proper UserType
   std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
             boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> > pvarPair;
-  pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
-                                                      {}, 3, false, {}, flags);
+  assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
+  if(!node.getDirection().withReturn) {
+    pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
+                                                        {}, 3, false, {}, flags);
+  }
+  else {
+    pvarPair = createBidirectionalSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
+                                                        {}, 3, false, {}, flags);
+  }
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
 
@@ -421,8 +428,8 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
       ( consumer.getType() != NodeType::invalid && debugMode_variableList.count(consumer.getUniqueId()) ) ) {
 
     if(consumer.getType() != NodeType::invalid) {
-      assert(node.getDirection() == VariableDirection::feeding);
-      assert(consumer.getDirection() == VariableDirection::consuming);
+      assert(node.getDirection().dir == VariableDirection::feeding);
+      assert(consumer.getDirection().dir == VariableDirection::consuming);
       pvarPair.first = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.first, node.getQualifiedName());
       pvarPair.second = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.second, consumer.getQualifiedName());
     }
@@ -602,7 +609,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
     if(feeder.getType() == NodeType::Device) {
       feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
-          VariableDirection::consuming, feeder.getMode(), feeder.getNumberOfElements());
+          {VariableDirection::consuming, false}, feeder.getMode(), feeder.getNumberOfElements());
     }
     else if(feeder.getType() == NodeType::ControlSystem) {
       feedingImpl = createProcessVariable<UserType>(feeder);
@@ -620,7 +627,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       else if(consumer.getType() == NodeType::Device) {
         auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
+            {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
         // connect the Device with e.g. a ControlSystem node via a ThreadedFanOut
         auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
         fanOut->addSlave(consumingImpl);
@@ -696,7 +703,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
+              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -734,7 +741,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       else if(consumer.getType() == NodeType::Device) {
         auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
+            {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
         feeder.getAppAccessor<UserType>().replace(impl);
         connectionMade = true;
       }
@@ -776,7 +783,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
+              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           fanOut->addSlave(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
@@ -815,7 +822,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       }
       else if(consumer.getType() == NodeType::Device) {
         auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            VariableDirection::feeding, consumer.getMode(), consumer.getNumberOfElements());
+            {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
         impl->accessChannel(0) = feedingImpl->accessChannel(0);
         impl->write();
       }
