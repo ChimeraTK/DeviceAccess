@@ -11,15 +11,31 @@
 #include "SyncNDRegisterAccessor.h"
 #include "NumericAddressedLowLevelTransferElement.h"
 #include "FixedPointConverter.h"
+#include "IEEE754_SingleConverter.h"
 #include "ForwardDeclarations.h"
 
 namespace ChimeraTK {
 
+  /** This function is external to allow template specialisation. */
+  namespace detail{
+    template<typename ConverterT>
+    ConverterT createDataConverter(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+
+    template<>
+    FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+
+    template<>
+    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+
+  }
+
+  
   /*********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
    */
   template<typename UserType, typename DataConverterType>
   class NumericAddressedBackendRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
+
     public:
 
       NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
@@ -65,15 +81,11 @@ namespace ChimeraTK {
           NDRegisterAccessor<UserType>::buffer_2D.resize(1);
           NDRegisterAccessor<UserType>::buffer_2D[0].resize(_numberOfWords);
 
-          //FIXME: Other convertes will have a different signature!
-          // configure fixed point converter
           // We don't have to fill it in a special way if the accessor is raw
           // because we have an overloaded, more efficient implementation
           // in this case. So we can use it in setAsCooked() and getAsCooked()
-          _dataConverter = DataConverterType(_registerPathName,
-                                                     _registerInfo->width,
-                                                     _registerInfo->nFractionalBits,
-                                                     _registerInfo->signedFlag);
+          _dataConverter = detail::createDataConverter<DataConverterType>( _registerInfo );
+          
           if(flags.has(AccessMode::raw)) {
             if(typeid(UserType) != typeid(int32_t)) {
               throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
@@ -293,6 +305,7 @@ namespace ChimeraTK {
   void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPostWrite();
 
   DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter);
 
 
 }    // namespace ChimeraTK

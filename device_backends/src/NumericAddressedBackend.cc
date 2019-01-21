@@ -130,11 +130,19 @@ namespace ChimeraTK {
     boost::shared_ptr< NDRegisterAccessor<UserType> >  accessor;
     // obtain register info
     boost::shared_ptr<RegisterInfo> info = getRegisterInfo(registerPathName);
+    auto registerInfo = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
+
     // 1D or scalar register
     if(info->getNumberOfDimensions() <= 1) {
-      accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
-          new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter>(shared_from_this(), registerPathName,
-              numberOfWords, wordOffsetInRegister, flags) );
+      if (registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT){
+        accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
+          new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter>(shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags) );
+      }else if (registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754){
+        accessor = boost::shared_ptr< NDRegisterAccessor<UserType> >(
+          new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter>(shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags) );
+      }else{
+        throw ChimeraTK::logic_error("NumericAddressedBackend:: trying to get accessor for unsupported data type");
+      }
     }
     // 2D multiplexed register
     else {
