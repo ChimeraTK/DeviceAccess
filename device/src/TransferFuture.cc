@@ -8,12 +8,24 @@ namespace ChimeraTK {
 
   void TransferFuture::wait() {
     _transferElement->transferFutureWaitCallback();
-    _notifications.pop_wait();
+retry:
+    try {
+      _notifications.pop_wait();
+    }
+    catch(detail::DiscardValueException&) {
+      goto retry;
+    }
     _transferElement->postRead();
   }
 
   bool TransferFuture::hasNewData() {
-    return !(_notifications.empty());
+retry:
+    try {
+      return !(_notifications.empty());
+    }
+    catch(detail::DiscardValueException&) {
+      goto retry;
+    }
   }
 
   ChimeraTK::TransferElementID TransferFuture::getTransferElementID() {

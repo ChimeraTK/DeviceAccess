@@ -45,6 +45,14 @@ namespace ChimeraTK {
      */
     cppext::future_queue<void> getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future);
 
+    /**
+     *  Exception to be thrown by continuations of the notification queue used in TransferFuture when a value shall
+     *  be discarded. This is needed to avoid notifications of the application if a value should never reach the
+     *  application. The exception is caught in TransferFuture::wait() and TransferFuture::hasNewData() and should
+     *  never be visible to the application.
+     */
+    class DiscardValueException {};
+
   } /* namespace detail */
 
   /**
