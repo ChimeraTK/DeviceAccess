@@ -320,7 +320,10 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
-  if(node.getDirection().dir == VariableDirection::feeding) {
+  if(node.getDirection().withReturn) {
+    dir = SynchronizationDirection::bidirectional;
+  }
+  else if(node.getDirection().dir == VariableDirection::feeding) {
     dir = SynchronizationDirection::controlSystemToDevice;
   }
   else {
@@ -448,6 +451,10 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
 
 void Application::makeConnections() {
 
+  // finalise connections: decide still-undecided details, in particular for control-system and device varibales, which
+  // get created "on the fly".
+  finaliseConnections();
+
   // apply optimisations
   // note: checks may not be run before since sometimes networks may only be valid after optimisations
   optimiseConnections();
@@ -460,6 +467,36 @@ void Application::makeConnections() {
     makeConnectionsForNetwork(network);
   }
 
+}
+
+/*********************************************************************************************************************/
+
+void Application::finaliseConnections() {
+
+    // check for control system variables which should be made bidirectional
+    for(auto &network : networkList) {
+      size_t nBidir = network.getFeedingNode().getDirection().withReturn ? 1 : 0;
+      for(auto &consumer : network.getConsumingNodes()) {
+        if(consumer.getDirection().withReturn) ++nBidir;
+      }
+      if(nBidir != 1) continue;     // only if there is exactly one node with return channel we need to guess its peer
+      size_t nCS = network.getFeedingNode().getType() == NodeType::ControlSystem ? 1 : 0;
+      for(auto &consumer : network.getConsumingNodes()) {
+        if(consumer.getType() == NodeType::ControlSystem) ++nCS;
+      }
+      if(nCS != 1) continue;      // multiple CS-type variables found - cannot guess the peer
+      if(network.getFeedingNode().getType() == NodeType::ControlSystem) {
+        network.getFeedingNode().setDirection({VariableDirection::feeding,true});
+      }
+      else {
+        for(auto &consumer : network.getConsumingNodes()) {
+          if(consumer.getType() == NodeType::ControlSystem) {
+            consumer.setDirection({VariableDirection::consuming,true});
+            break;
+          }
+        }
+      }
+    }
 }
 
 /*********************************************************************************************************************/

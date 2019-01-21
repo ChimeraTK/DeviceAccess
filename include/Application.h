@@ -192,6 +192,9 @@ namespace ChimeraTK {
       template<typename UserType>
       friend class Accessor;
 
+      /** Finalise connections, i.e. decide still-undecided details mostly for Device and ControlSystem variables */
+      void finaliseConnections();
+
       /** Check if all connections are valid. Internally called in initialise(). */
       void checkConnections();
 
