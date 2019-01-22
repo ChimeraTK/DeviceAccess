@@ -25,7 +25,7 @@
 #include "ArrayAccessor.h"
 #include "ConstantAccessor.h"
 #include "TestableModeAccessorDecorator.h"
-#include "DebugDecoratorRegisterAccessor.h"
+#include "DebugPrintAccessorDecorator.h"
 #include "Visitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
 #include "XMLGeneratorVisitor.h"
@@ -433,12 +433,12 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
     if(consumer.getType() != NodeType::invalid) {
       assert(node.getDirection().dir == VariableDirection::feeding);
       assert(consumer.getDirection().dir == VariableDirection::consuming);
-      pvarPair.first = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.first, node.getQualifiedName());
-      pvarPair.second = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.second, consumer.getQualifiedName());
+      pvarPair.first = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.first, node.getQualifiedName());
+      pvarPair.second = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.second, consumer.getQualifiedName());
     }
     else {
-      pvarPair.first = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.first, node.getQualifiedName());
-      pvarPair.second = boost::make_shared<DebugDecoratorRegisterAccessor<UserType>>(pvarPair.second, node.getQualifiedName());
+      pvarPair.first = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.first, node.getQualifiedName());
+      pvarPair.second = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.second, node.getQualifiedName());
     }
 
   }

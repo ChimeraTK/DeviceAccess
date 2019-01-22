@@ -343,7 +343,7 @@ namespace ChimeraTK {
       friend class TestFacility;                    // needs access to testableMode_variables
 
       template<typename UserType>
-      friend class DebugDecoratorRegisterAccessor;   // needs access to the idMap
+      friend class DebugPrintAccessorDecorator;   // needs access to the idMap
 
       /** Counter for how many write() operations have overwritten unread data */
       std::atomic<size_t> dataLossCounter{0};

@@ -1,5 +1,5 @@
 /*
- * DebugDecoratorRegisterAccessor.h
+ * DebugPrintAccessorDecorator.h
  *
  *  Created on: Nov 21, 2017
  *      Author: Martin Hierholzer
@@ -16,9 +16,9 @@ namespace ChimeraTK {
 
   /** Decorator of the NDRegisterAccessor which facilitates tests of the application */
   template<typename UserType>
-  class DebugDecoratorRegisterAccessor : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
+  class DebugPrintAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
     public:
-      DebugDecoratorRegisterAccessor(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
+      DebugPrintAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
                                      const std::string &fullyQualifiedName)
       : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor),
         _fullyQualifiedName(fullyQualifiedName)
