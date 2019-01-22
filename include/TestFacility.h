@@ -73,7 +73,7 @@ namespace ChimeraTK {
         // decorate with TestableModeAccessorDecorator if variable is sender and receiver is not poll-type,
         // and store it in cache
         if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv);
+          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true);
           Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(scalarMap.table)[name].replace(ChimeraTK::ScalarRegisterAccessor<T>(deco));
         }
@@ -107,7 +107,7 @@ namespace ChimeraTK {
         // decorate with TestableModeAccessorDecorator if variable is sender and receiver is not poll-type,
         // and store it in cache
         if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv);
+          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true);
           Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(arrayMap.table)[name].replace(ChimeraTK::OneDRegisterAccessor<T>(deco));
         }

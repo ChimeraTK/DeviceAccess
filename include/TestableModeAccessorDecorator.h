@@ -18,8 +18,11 @@ namespace ChimeraTK {
   template<typename UserType>
   class TestableModeAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
     public:
-      TestableModeAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor)
-      : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor)
+      TestableModeAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
+                                    bool handleRead, bool handleWrite)
+      : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor),
+        _handleRead(handleRead),
+        _handleWrite(handleWrite)
       {
 
         // obtain variableId of target accessor
@@ -33,6 +36,8 @@ namespace ChimeraTK {
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+        if(!_handleWrite) return _target->doWriteTransfer(versionNumber);
+
         bool dataLost = false;
         if(!Application::testableModeTestLock()) {
           // may happen if first write in thread is done before first blocking read
@@ -57,7 +62,7 @@ namespace ChimeraTK {
       }
 
       void doReadTransfer() override {
-        releaseLock();
+        if(_handleRead) releaseLock();
         _target->doReadTransfer();
       }
 
@@ -110,17 +115,19 @@ namespace ChimeraTK {
 
         // the queue has been emptied, so make sure that the testableMode_counter reflects this
         // we only reduce the counter to 1, since it will be decremented in postRead().
-        auto &app = Application::getInstance();
-        assert(Application::testableModeTestLock());
-        if(app.testableMode_perVarCounter[variableId] > 1) {
-          app.testableMode_counter -= app.testableMode_perVarCounter[variableId] - 1;
-          app.testableMode_perVarCounter[variableId] = 1;
+        if(_handleRead) {
+          auto &app = Application::getInstance();
+          assert(Application::testableModeTestLock());
+          if(app.testableMode_perVarCounter[variableId] > 1) {
+            app.testableMode_counter -= app.testableMode_perVarCounter[variableId] - 1;
+            app.testableMode_perVarCounter[variableId] = 1;
+          }
         }
         return true;
       }
 
       void doPostRead() override {
-        obtainLockAndDecrementCounter();
+        if(_handleRead) obtainLockAndDecrementCounter();
         ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
       }
 
@@ -130,6 +137,8 @@ namespace ChimeraTK {
       using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
       size_t variableId;
+
+      bool _handleRead, _handleWrite;
   };
 
 } /* namespace ChimeraTK */
