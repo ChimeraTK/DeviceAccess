@@ -31,9 +31,6 @@ namespace ChimeraTK {
   template<typename UserType>
   class Accessor;
 
-  template<typename UserType>
-  class TestDecoratorRegisterAccessor;
-
   class Application : public ApplicationBase, public EntityOwner {
 
     public:
@@ -274,7 +271,7 @@ namespace ChimeraTK {
       /** Map of DeviceBackends used by this application. The map key is the alias name from the DMAP file */
       std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> deviceMap;
 
-      /** Flag if connections should be made in testable mode (i.e. the TestDecoratorRegisterAccessor is put around all
+      /** Flag if connections should be made in testable mode (i.e. the TestableModeAccessorDecorator is put around all
        *  push-type input accessors etc.). */
       bool testableMode{false};
 
@@ -330,7 +327,7 @@ namespace ChimeraTK {
       /** Map of unique IDs to namess, used along with testableMode_perVarCounter to print sensible information. */
       std::map<size_t, std::string> testableMode_names;
 
-      /** Map of unique IDs to process variables which have been decorated with the TestDecoratorRegisterAccessor. */
+      /** Map of unique IDs to process variables which have been decorated with the TestableModeAccessorDecorator. */
       std::map<size_t, boost::shared_ptr<TransferElement>> testableMode_processVars;
 
       /** Map of unique IDs to flags whether the update mode is UpdateMode::poll (so we do not use the decorator) */
@@ -341,10 +338,7 @@ namespace ChimeraTK {
       std::unordered_set<const void*> debugMode_variableList;
 
       template<typename UserType>
-      friend class TestDecoratorRegisterAccessor;   // needs access to the testableMode_mutex and testableMode_counter and the idMap
-
-      template<typename UserType>
-      friend class TestDecoratorTransferFuture;     // needs access to the testableMode_mutex and testableMode_counter
+      friend class TestableModeAccessorDecorator;   // needs access to the testableMode_mutex and testableMode_counter and the idMap
 
       friend class TestFacility;                    // needs access to testableMode_variables
 

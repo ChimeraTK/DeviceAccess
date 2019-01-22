@@ -15,7 +15,7 @@
 #include <ChimeraTK/OneDRegisterAccessor.h>
 
 #include "Application.h"
-#include "TestDecoratorRegisterAccessor.h"
+#include "TestableModeAccessorDecorator.h"
 
 namespace ChimeraTK {
 
@@ -66,14 +66,14 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error("Process variable '"+name+"' does not exist.");
         }
 
-        // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
+        // obtain variable id from pvIdMap and transfer it to idMap (required by the TestableModeAccessorDecorator)
         size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
         Application::getInstance().idMap[pv->getId()] = varId;
 
-        // decorate with TestDecoratorRegisterAccessor if variable is sender and receiver is not poll-type,
+        // decorate with TestableModeAccessorDecorator if variable is sender and receiver is not poll-type,
         // and store it in cache
         if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-          auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
+          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv);
           Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(scalarMap.table)[name].replace(ChimeraTK::ScalarRegisterAccessor<T>(deco));
         }
@@ -100,14 +100,14 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error("Process variable '"+name+"' does not exist.");
         }
 
-        // obtain variable id from pvIdMap and transfer it to idMap (required by the TestDecoratorRegisterAccessor)
+        // obtain variable id from pvIdMap and transfer it to idMap (required by the TestableModeAccessorDecorator)
         size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
         Application::getInstance().idMap[pv->getId()] = varId;
 
-        // decorate with TestDecoratorRegisterAccessor if variable is sender and receiver is not poll-type,
+        // decorate with TestableModeAccessorDecorator if variable is sender and receiver is not poll-type,
         // and store it in cache
         if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-          auto deco = boost::make_shared<TestDecoratorRegisterAccessor<T>>(pv);
+          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv);
           Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(arrayMap.table)[name].replace(ChimeraTK::OneDRegisterAccessor<T>(deco));
         }

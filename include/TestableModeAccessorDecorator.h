@@ -1,5 +1,5 @@
 /*
- * TestDecoratorRegisterAccessor.h
+ * TestableModeAccessorDecorator.h
  *
  *  Created on: Feb 17, 2017
  *      Author: Martin Hierholzer
@@ -16,9 +16,9 @@ namespace ChimeraTK {
 
   /** Decorator of the NDRegisterAccessor which facilitates tests of the application */
   template<typename UserType>
-  class TestDecoratorRegisterAccessor : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
+  class TestableModeAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
     public:
-      TestDecoratorRegisterAccessor(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor)
+      TestableModeAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor)
       : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor)
       {
 
@@ -43,13 +43,13 @@ namespace ChimeraTK {
           ++Application::getInstance().testableMode_counter;
           ++Application::getInstance().testableMode_perVarCounter[variableId];
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+            std::cout << "TestableModeAccessorDecorator::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
                          "increased, now at value " << Application::getInstance().testableMode_counter << std::endl;
           }
         }
         else {
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestDecoratorRegisterAccessor::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter not "
+            std::cout << "TestableModeAccessorDecorator::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter not "
                         "increased due to lost data" << std::endl;
           }
         }
@@ -84,14 +84,14 @@ namespace ChimeraTK {
           --Application::getInstance().testableMode_counter;
           --Application::getInstance().testableMode_perVarCounter[variableId];
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestDecoratorRegisterAccessor[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+            std::cout << "TestableModeAccessorDecorator[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
                         "decreased, now at value " << Application::getInstance().testableMode_counter << " / " <<
                         Application::getInstance().testableMode_perVarCounter[variableId] << std::endl;
           }
         }
         else {
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestDecoratorRegisterAccessor[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+            std::cout << "TestableModeAccessorDecorator[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
                         "NOT decreased, was already at value " << Application::getInstance().testableMode_counter << " / " <<
                         Application::getInstance().testableMode_perVarCounter[variableId] << std::endl;
           }

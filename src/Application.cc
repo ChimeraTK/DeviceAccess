@@ -24,7 +24,7 @@
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
 #include "ConstantAccessor.h"
-#include "TestDecoratorRegisterAccessor.h"
+#include "TestableModeAccessorDecorator.h"
 #include "DebugDecoratorRegisterAccessor.h"
 #include "Visitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
@@ -363,7 +363,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
     }
 
     if(mode != UpdateMode::poll) {
-      auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvar);
+      auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar);
       testableMode_names[idMap[pvarDec->getId()]] = "ControlSystem:"+node.getPublicName();
       return pvarDec;
     }
@@ -416,8 +416,8 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
 
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
-    pvarPair.first = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.first);
-    pvarPair.second = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(pvarPair.second);
+    pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first);
+    pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second);
 
     // put the decorators into the list
     testableMode_names[varId] = "Internal:"+node.getQualifiedName();
@@ -844,7 +844,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       if(consumer.getType() == NodeType::Application) {
         if(testableMode) {
           idMap[feedingImpl->getId()] = getNextVariableId();
-          auto pvarDec = boost::make_shared<TestDecoratorRegisterAccessor<UserType>>(feedingImpl);
+          auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl);
           testableMode_names[idMap[pvarDec->getId()]] = "Constant";
           consumer.getAppAccessor<UserType>().replace(pvarDec);
         }

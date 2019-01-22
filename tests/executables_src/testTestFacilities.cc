@@ -21,7 +21,7 @@
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 #include "ControlSystemModule.h"
-#include "TestDecoratorRegisterAccessor.h"
+#include "TestableModeAccessorDecorator.h"
 #include "VariableGroup.h"
 #include "TestFacility.h"
 
@@ -223,7 +223,7 @@ struct PollingTestApplication : public ctk::Application {
 };
 
 /*********************************************************************************************************************/
-/* test that no TestDecoratorRegisterAccessor is used if the testable mode is not enabled */
+/* test that no TestableModeAccessorDecorator is used if the testable mode is not enabled */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( testNoDecorator, T, test_types ) {
   std::cout << "*********************************************************************************************************************" << std::endl;
@@ -243,11 +243,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( testNoDecorator, T, test_types ) {
 
   // check if we got the decorator for the input
   auto hlinput = app.blockingReadTestModule.someInput.getHighLevelImplElement();
-  BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestDecoratorRegisterAccessor<T>>(hlinput) == nullptr );
+  BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hlinput) == nullptr );
 
   // check that we did not get the decorator for the output
   auto hloutput = app.blockingReadTestModule.someOutput.getHighLevelImplElement();
-  BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestDecoratorRegisterAccessor<T>>(hloutput) == nullptr );
+  BOOST_CHECK( boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hloutput) == nullptr );
 
 }
 
