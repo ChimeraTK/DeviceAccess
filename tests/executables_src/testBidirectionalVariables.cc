@@ -121,6 +121,7 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
     // ModuleB will change the value again
     max = 49.5*2.54;
     max.write();
+    test.stepApplication();
 
     // inject value which does not get limited
     var1 = 49;
