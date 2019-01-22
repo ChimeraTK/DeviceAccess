@@ -404,7 +404,7 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   }
   else {
     pvarPair = createBidirectionalSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
-                                                        {}, 3, false, {}, flags);
+                                                        {}, 3, {}, {}, flags);
   }
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
