@@ -21,6 +21,7 @@
 #include "Flags.h"
 #include "ConstantAccessor.h"
 #include "Visitor.h"
+#include "VersionNumberUpdatingRegisterDecorator.h"
 
 namespace ChimeraTK {
 
@@ -144,6 +145,9 @@ namespace ChimeraTK {
 
       template<typename UserType>
       ChimeraTK::NDRegisterAccessorAbstractor<UserType>& getAppAccessor() const;
+
+      template<typename UserType>
+      void setAppAccessorImplementation(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl) const;
 
 
       template<typename UserType>
@@ -275,6 +279,14 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> VariableNetworkNode::getConstAccessor() const {
     return boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<UserType>>(pdata->constNode);
+  }
+
+  /*********************************************************************************************************************/
+
+  template<typename UserType>
+  void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
+    auto decorated = boost::make_shared<VersionNumberUpdatingRegisterDecorator<UserType>>(impl, getOwningModule());
+    getAppAccessor<UserType>().replace(decorated);
   }
 
 } /* namespace ChimeraTK */

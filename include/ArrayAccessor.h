@@ -50,10 +50,17 @@ namespace ChimeraTK {
         return *this;
       }
 
-      bool write(ChimeraTK::VersionNumber versionNumber={}) {
+      bool write(ChimeraTK::VersionNumber versionNumber) = delete;
+
+      bool write() {
+        auto versionNumber = this->getOwner()->getCurrentVersionNumber();
         bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::write(versionNumber);
         if(dataLoss) Application::incrementDataLossCounter();
         return dataLoss;
+      }
+
+      TransferFuture readAsync() {
+        throw ChimeraTK::logic_error("ArrayAccessor::readAsync() is currently not supported by ApplicationCore!");
       }
 
     protected:

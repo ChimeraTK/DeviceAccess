@@ -50,7 +50,10 @@ namespace ChimeraTK {
         return *this;
       }
 
-      bool write(ChimeraTK::VersionNumber versionNumber={}) {
+      bool write(ChimeraTK::VersionNumber versionNumber) = delete;
+
+      bool write() {
+        auto versionNumber = this->getOwner()->getCurrentVersionNumber();
         bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::write(versionNumber);
         if(dataLoss) Application::incrementDataLossCounter();
         return dataLoss;

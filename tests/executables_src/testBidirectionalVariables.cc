@@ -39,14 +39,11 @@ struct ModuleA : public ctk::ApplicationModule {
       auto group = readAnyGroup();
       while(true) {
         auto var = group.readAny();
-        std::cout << "HIER0 var1=" << var1 << "  var2=" << var2 << std::endl;
         if(var == var2.getId()) {
           var1 = std::floor(var2/2.54);
-          std::cout << "HIER1 var1=" << var1 << std::endl;
           var1.write();
         }
         var2 = var1*2.54;
-        std::cout << "HIER2 var2=" << var2 << std::endl;
         var2.write();
       }
     }
@@ -153,21 +150,49 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
     var1.read();
     BOOST_CHECK_EQUAL(static_cast<int>(var1), 48);
 
-/*    // concurrent change of value and limit -> currently deactivated, as not yet working
-    var1 = 30;
-    max = 25.5*2.54;
-    var1.write();
-    usleep(1000000);
-    max.write();
-    test.stepApplication();
-    var3.read();
-    BOOST_CHECK_CLOSE(static_cast<double>(var3), 30*2.54, 0.001);
-    var3.read();
-    BOOST_CHECK_CLOSE(static_cast<double>(var3), 25.5*2.54, 0.001);
-    var3.read();
-    BOOST_CHECK_CLOSE(static_cast<double>(var3), 25*2.54, 0.001);
-    var1.read();
-    BOOST_CHECK_EQUAL(static_cast<int>(var1), 25); */
+    // Run the following tests a couple of times, as they are testing for the absence of race conditions. This makes
+    // it more likely to find failures in a single run of the test
+    for(size_t i=0; i<10; ++i) {
+
+      // feed in some default values (so the tests can be executed multiple times in a row)
+      BOOST_CHECK( var1.readNonBlocking() == false );
+      BOOST_CHECK( var3.readNonBlocking() == false );
+      max = 48.5*2.54;
+      max.write();
+      test.stepApplication();
+      var1 = 50;
+      var1.write();
+      test.stepApplication();
+      var1.readLatest();      // emtpy the queue
+      var3.readLatest();      // emtpy the queue
+      BOOST_CHECK_EQUAL(static_cast<int>(var1), 48);
+      BOOST_CHECK_CLOSE(static_cast<double>(var3), 48*2.54, 0.001);
+
+      // concurrent change of value and limit
+      var1 = 30;
+      max = 25.5*2.54;
+      var1.write();
+      max.write();
+      test.stepApplication();
+      BOOST_CHECK(var3.readLatest() == true);        // it is not perfectly deterministic what happens, but we should end up with this result
+      BOOST_CHECK_CLOSE(static_cast<double>(var3), 25*2.54, 0.001);
+      var1.read();
+      BOOST_CHECK_EQUAL(static_cast<int>(var1), 25);
+      BOOST_CHECK( var3.readNonBlocking() == false );   // nothing left
+      BOOST_CHECK( var1.readNonBlocking() == false );   // nothing left
+
+      // concurrent change of value and limit - other order than before
+      var1 = 15;
+      max = 20.5*2.54;
+      max.write();
+      var1.write();
+      test.stepApplication();
+      BOOST_CHECK(var3.readLatest() == true);        // it is not perfectly deterministic what happens, but we should end up with this result
+      BOOST_CHECK_CLOSE(static_cast<double>(var3), 15*2.54, 0.001);
+      BOOST_CHECK( var3.readNonBlocking() == false );   // nothing left
+      BOOST_CHECK( var1.readNonBlocking() == false );   // the value was rejected
+
+    }
 
 }
 

@@ -33,6 +33,13 @@ namespace ChimeraTK {
         if(this->isReadable()) {
           Application::getInstance().testableMode_processVars[variableId] = accessor;
         }
+
+        // if this decorating a bidirectional process variable, set the valueRejectCallback
+        auto bidir = boost::dynamic_pointer_cast<BidirectionalProcessArray<UserType>>(accessor);
+        if(bidir) {
+          bidir->setValueRejectCallback([this]{decrementCounter();});
+        }
+
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
@@ -68,12 +75,7 @@ namespace ChimeraTK {
 
       /** Release the testableModeLock */
       void releaseLock() {
-        try {
-          Application::testableModeUnlock("doReadTransfer "+this->getName());
-        }
-        catch(std::system_error &e) {   // ignore operation not permitted errors, since they happen the first time (lock not yet owned)
-          if(e.code() != std::errc::operation_not_permitted) throw e;
-        }
+        if(Application::testableModeTestLock()) Application::testableModeUnlock("doReadTransfer "+this->getName());
       }
 
       /** Implement callback called by TransferFuture before it blocks in wait() */
@@ -84,6 +86,11 @@ namespace ChimeraTK {
       /** Obtain the testableModeLock if not owned yet, and decrement the counter. */
       void obtainLockAndDecrementCounter() {
         if(!Application::testableModeTestLock()) Application::testableModeLock("doReadTransfer "+this->getName());
+        decrementCounter();
+      }
+
+      /** Obtain the testableModeLock if not owned yet, and decrement the counter. */
+      void decrementCounter() {
         if(Application::getInstance().testableMode_perVarCounter[variableId] > 0) {
           assert(Application::getInstance().testableMode_counter > 0);
           --Application::getInstance().testableMode_counter;

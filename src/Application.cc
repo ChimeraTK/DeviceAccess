@@ -467,6 +467,12 @@ void Application::makeConnections() {
     makeConnectionsForNetwork(network);
   }
 
+  // set all initial version numbers in the modules to the same value
+  VersionNumber startVersion;
+  for(auto &module : getSubmoduleListRecursive()) {
+    module->setCurrentVersionNumber(startVersion);
+  }
+
 }
 
 /*********************************************************************************************************************/
@@ -659,7 +665,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     if(nNodes == 2 && !useExternalTrigger) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        consumer.getAppAccessor<UserType>().replace(feedingImpl);
+        consumer.setAppAccessorImplementation(feedingImpl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Device) {
@@ -725,13 +731,13 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
           if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
-            consumer.getAppAccessor<UserType>().replace(consumingFanOut);
+            consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
             consumingFanOut.reset();
           }
           else {
             auto impls = createApplicationVariable<UserType>(consumer);
             fanOut->addSlave(impls.first);
-            consumer.getAppAccessor<UserType>().replace(impls.second);
+            consumer.setAppAccessorImplementation<UserType>(impls.second);
           }
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
@@ -767,30 +773,30 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
         auto impls = createApplicationVariable<UserType>(feeder,consumer);
-        feeder.getAppAccessor<UserType>().replace(impls.first);
-        consumer.getAppAccessor<UserType>().replace(impls.second);
+        feeder.setAppAccessorImplementation<UserType>(impls.first);
+        consumer.setAppAccessorImplementation<UserType>(impls.second);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
         auto impl = createProcessVariable<UserType>(consumer);
-        feeder.getAppAccessor<UserType>().replace(impl);
+        feeder.setAppAccessorImplementation<UserType>(impl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Device) {
         auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
             {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-        feeder.getAppAccessor<UserType>().replace(impl);
+        feeder.setAppAccessorImplementation<UserType>(impl);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
         auto impls = createApplicationVariable<UserType>(feeder,consumer);
-        feeder.getAppAccessor<UserType>().replace(impls.first);
+        feeder.setAppAccessorImplementation<UserType>(impls.first);
         consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::Constant) {
         auto impl = consumer.getConstAccessor<UserType>();
-        feeder.getAppAccessor<UserType>().replace(impl);
+        feeder.setAppAccessorImplementation<UserType>(impl);
         connectionMade = true;
       }
       else {
@@ -801,7 +807,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       // create FanOut and use it as the feeder implementation
       auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
                                                                 feeder.getDescription(), feeder.getNumberOfElements());
-      feeder.getAppAccessor<UserType>().replace(fanOut);
+      feeder.setAppAccessorImplementation<UserType>(fanOut);
 
       // In case we have one or more trigger receivers among our consumers, we produce exactly one application variable
       // for it. We never need more, since the distribution is done with a TriggerFanOut.
@@ -812,7 +818,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         if(consumer.getType() == NodeType::Application) {
           auto impls = createApplicationVariable<UserType>(consumer);
           fanOut->addSlave(impls.first);
-          consumer.getAppAccessor<UserType>().replace(impls.second);
+          consumer.setAppAccessorImplementation<UserType>(impls.second);
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           auto impl = createProcessVariable<UserType>(consumer);
@@ -846,10 +852,10 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           idMap[feedingImpl->getId()] = getNextVariableId();
           auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, true);
           testableMode_names[idMap[pvarDec->getId()]] = "Constant";
-          consumer.getAppAccessor<UserType>().replace(pvarDec);
+          consumer.setAppAccessorImplementation<UserType>(pvarDec);
         }
         else {
-          consumer.getAppAccessor<UserType>().replace(feedingImpl);
+          consumer.setAppAccessorImplementation<UserType>(feedingImpl);
         }
       }
       else if(consumer.getType() == NodeType::ControlSystem) {

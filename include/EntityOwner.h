@@ -151,6 +151,9 @@ namespace ChimeraTK {
        *  derived from. */
       virtual ModuleType getModuleType() const = 0;
 
+      /** Return the current version number which has been received with the last pusy-type read operation. */
+      VersionNumber getCurrentVersionNumber() { return currentVersionNumber; }
+
   protected:
 
       /** Add the part of the tree structure matching the given tag to a VirtualModule. Users normally will use
@@ -175,6 +178,18 @@ namespace ChimeraTK {
 
       /** List of tags to be added to all accessors and modules inside this module */
       std::unordered_set<std::string> _tags;
+
+      /** Set the current version number. This function is called by the push-type input accessors in their read
+       *  functions. */
+      void setCurrentVersionNumber(VersionNumber versionNumber) {
+        if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+      }
+
+      /** Version number of last push-type read operation - will be passed on to any write operations */
+      VersionNumber currentVersionNumber;
+
+      template<typename T> friend class VersionNumberUpdatingRegisterDecorator;
+      friend class Application;
 
   };
 
