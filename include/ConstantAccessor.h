@@ -91,6 +91,8 @@ namespace ChimeraTK {
         isInterrupted = true;
       }
 
+      VersionNumber getVersionNumber() const override { return versionNumber; }
+
     protected:
 
       std::vector<UserType> _value;
@@ -99,6 +101,8 @@ namespace ChimeraTK {
 
       bool isInterrupted{false};
       boost::promise<void> promise;
+
+      VersionNumber versionNumber;
 
   };
 

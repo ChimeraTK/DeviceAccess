@@ -135,6 +135,8 @@ namespace ChimeraTK {
 
       AccessModeFlags getAccessModeFlags() const override { return {}; }
 
+      VersionNumber getVersionNumber() const override { return FanOut<UserType>::slaves.front()->getVersionNumber(); }
+
   };
 
 } /* namespace ChimeraTK */

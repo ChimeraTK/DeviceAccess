@@ -64,6 +64,7 @@ class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<User
 
     void doPostRead() override {
       ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0][0]++;
+      currentVersion = {};
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber) override { return false; }
@@ -84,6 +85,12 @@ class TimerDummyRegisterAccessor : public ChimeraTK::SyncNDRegisterAccessor<User
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement>) override {}
 
     std::list<boost::shared_ptr<ChimeraTK::TransferElement> > getInternalElements() override { return {}; }
+
+    ChimeraTK::VersionNumber getVersionNumber() const override { return currentVersion; }
+
+  protected:
+
+    ChimeraTK::VersionNumber currentVersion;
 
 };
 
