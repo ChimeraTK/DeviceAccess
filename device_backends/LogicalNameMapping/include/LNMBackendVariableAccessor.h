@@ -82,7 +82,7 @@ namespace ChimeraTK {
       }
 
 
-      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
         if(isReadOnly()) {
           throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices is not possible.");
         }
@@ -90,6 +90,7 @@ namespace ChimeraTK {
           auto &v = _info->value_int[i+_wordOffsetInRegister];
           v = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
         }
+        currentVersion = versionNumber;
         return false;
       }
 
@@ -114,11 +115,14 @@ namespace ChimeraTK {
           auto &v = _info->value_int[i+_wordOffsetInRegister];
           NDRegisterAccessor<UserType>::buffer_2D[0][i] = _fixedPointConverter.toCooked<UserType>(v);
         }
+        currentVersion = {};
       }
 
       AccessModeFlags getAccessModeFlags() const override {
         return {};
       }
+
+      VersionNumber getVersionNumber() const override { return currentVersion; }
 
     protected:
 
@@ -148,6 +152,9 @@ namespace ChimeraTK {
       }
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}  // LCOV_EXCL_LINE
+
+      // Version number of the last transfer
+      VersionNumber currentVersion;
 
 
   };

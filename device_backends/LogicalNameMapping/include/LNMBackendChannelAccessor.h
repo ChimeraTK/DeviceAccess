@@ -122,6 +122,8 @@ namespace ChimeraTK {
         return _accessor->getAccessModeFlags();
       }
 
+      VersionNumber getVersionNumber() const override { return _accessor->getVersionNumber(); }
+
     protected:
 
       /// pointer to underlying accessor

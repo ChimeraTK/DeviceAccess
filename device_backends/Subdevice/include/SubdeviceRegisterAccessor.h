@@ -56,6 +56,8 @@ namespace ChimeraTK {
 
       AccessModeFlags getAccessModeFlags() const override;
 
+      VersionNumber getVersionNumber() const override { return _accData->getVersionNumber(); }
+
     protected:
 
       /// Pointer to the backend

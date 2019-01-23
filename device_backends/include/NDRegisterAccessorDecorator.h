@@ -40,6 +40,8 @@ namespace ChimeraTK {
 
         void interrupt() override { _target->interrupt(); }
 
+        ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
+
       protected:
 
         /// The accessor to be decorated
@@ -74,6 +76,8 @@ namespace ChimeraTK {
         }
 
         void interrupt() override { _target->interrupt(); }
+
+        ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
 
       protected:
 

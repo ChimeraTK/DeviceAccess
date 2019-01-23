@@ -198,14 +198,20 @@ namespace ChimeraTK {
       }
 
       /**
-      * Returns the version number that is associated with the last transfer (i.e. last read or write). See
-      * ChimeraTK::VersionNumber for details. The VersionNumber object also allows to determine the time stamp.
+      *  Returns the version number that is associated with the last transfer (i.e. last read or write). See
+      *  ChimeraTK::VersionNumber for details. The VersionNumber object also allows to determine the time stamp.
+      *
+      *  Implementation notes:
+      *
+      *  Accessors with direct hardware access need to implement this function by returning the
+      *  value of a member. The member needs to be set to a new version number in doPostRead() by assigning a
+      *  default-constructed ChimeraTK::VersionNumber. Also the argument of doWriteTransfer() needs to be assigned
+      *  to this member if the transfer was successful. This ensures correct tracking of the version number.
+      *
+      *  Accessors which rely on other accessors to obtain their data should pass through the function call to the
+      *  target accessor.
       */
-      virtual ChimeraTK::VersionNumber getVersionNumber() const {
-        /// @todo FIXME Default implementation is wrong! There should be no default implementation, since the version
-        /// number must be obtained in the last transfer!
-        return ChimeraTK::VersionNumber();
-      }
+      virtual ChimeraTK::VersionNumber getVersionNumber() const = 0;
 
       /** Check if transfer element is read only, i\.e\. it is readable but not writeable. */
       virtual bool isReadOnly() const = 0;

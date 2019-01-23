@@ -39,8 +39,9 @@ namespace ChimeraTK {
         _dev->read(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
       }
 
-      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override {
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
         _dev->write(_bar, _startAddress, rawDataBuffer.data(), _numberOfBytes);
+        currentVersion = versionNumber;
         return false;
       }
 
@@ -52,6 +53,10 @@ namespace ChimeraTK {
       bool doReadTransferLatest() override {
         doReadTransfer();
         return true;
+      }
+
+      void doPostRead() override {
+        currentVersion = {};
       }
 
       TransferFuture doReadTransferAsync() override {                                                                 // LCOV_EXCL_LINE
@@ -124,6 +129,8 @@ namespace ChimeraTK {
         return { AccessMode::raw };
       }
 
+      VersionNumber getVersionNumber() const override { return currentVersion; }
+
     protected:
 
       /** Set the start address (inside the bar given in the constructor) and number of words of this accessor. */
@@ -163,6 +170,9 @@ namespace ChimeraTK {
 
       /** raw buffer */
       std::vector<int32_t> rawDataBuffer;
+
+      /** version number of the last transfer */
+      VersionNumber currentVersion;
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };

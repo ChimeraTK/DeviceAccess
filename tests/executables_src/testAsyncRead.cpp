@@ -77,7 +77,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
           return true;
         }
 
-        bool doWriteTransfer(ChimeraTK::VersionNumber={}) override {
+        bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
+          currentVersion = versionNumber;
           return true;
         }
 
@@ -92,6 +93,7 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
         void doPostRead() override {
           buffer_2D[0][0] = _backend->registers.at(getName());
+          currentVersion = {};
         }
 
         AccessModeFlags getAccessModeFlags() const override { return _flags; }
@@ -106,6 +108,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
 
         bool futureCreated{false};
 
+        VersionNumber getVersionNumber() const override { return currentVersion; }
+
 
       protected:
         AsyncTestDummy *_backend;
@@ -113,6 +117,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
         using NDRegisterAccessor<UserType>::getName;
         using NDRegisterAccessor<UserType>::buffer_2D;
         using TransferElement::activeFuture;
+
+        VersionNumber currentVersion;
 
     };
 

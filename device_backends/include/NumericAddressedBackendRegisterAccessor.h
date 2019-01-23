@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
   }
 
-  
+
   /*********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for scalar and 1D registers.
    */
@@ -85,7 +85,7 @@ namespace ChimeraTK {
           // because we have an overloaded, more efficient implementation
           // in this case. So we can use it in setAsCooked() and getAsCooked()
           _dataConverter = detail::createDataConverter<DataConverterType>( _registerInfo );
-          
+
           if(flags.has(AccessMode::raw)) {
             if(typeid(UserType) != typeid(int32_t)) {
               throw ChimeraTK::logic_error("Given UserType when obtaining the NumericAddressedBackendRegisterAccessor in raw mode does not "
@@ -187,13 +187,17 @@ namespace ChimeraTK {
       // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does not get confused
       // by the comma which separates the two template parameters
       typedef NumericAddressedBackendRegisterAccessor<UserType, DataConverterType> THIS_TYPE;
-      
+
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, getAsCooked_impl, 2 );
       DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( THIS_TYPE, setAsCooked_impl, 3 );
 
       AccessModeFlags getAccessModeFlags() const override {
         if(isRaw) return { AccessMode::raw };
         return {};
+      }
+
+      VersionNumber getVersionNumber() const override {
+        return _rawAccessor->getVersionNumber();
       }
 
     protected:
@@ -266,7 +270,7 @@ namespace ChimeraTK {
         }
       };
 
-      
+
   };
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

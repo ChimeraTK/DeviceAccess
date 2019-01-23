@@ -45,7 +45,7 @@ namespace ChimeraTK {
 
       void doPostRead() override;
 
-      bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/={}) override;
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override;
 
       void doPreWrite() override;
 
@@ -78,6 +78,10 @@ namespace ChimeraTK {
         return {};
       }
 
+      VersionNumber getVersionNumber() const override {
+        return currentVersion;
+      }
+
     protected:
 
       /** One fixed point converter for each sequence. */
@@ -105,6 +109,9 @@ namespace ChimeraTK {
       /// area of interest
       size_t _numberOfElements;
       size_t _elementsOffset;
+
+      /// Version number of last transfer
+      VersionNumber currentVersion;
 
       std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
         return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
@@ -262,6 +269,7 @@ namespace ChimeraTK {
           }
         }
       }
+      currentVersion = {};
 
       SyncNDRegisterAccessor<UserType>::doPostRead();
   }
@@ -269,8 +277,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template <class UserType>
-  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/) {
+  bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
       _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
+      currentVersion = versionNumber;
       return false;
   }
 
