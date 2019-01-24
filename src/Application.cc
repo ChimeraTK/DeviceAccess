@@ -397,7 +397,7 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   // create the ProcessArray for the proper UserType
   std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
             boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> > pvarPair;
-  assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
+  if(consumer.getType() != NodeType::invalid) assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
   if(!node.getDirection().withReturn) {
     pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
                                                         {}, 3, false, {}, flags);
@@ -806,7 +806,8 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     else {
       // create FanOut and use it as the feeder implementation
       auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
-                                                                feeder.getDescription(), feeder.getNumberOfElements());
+                                                                feeder.getDescription(), feeder.getNumberOfElements(),
+                                                                feeder.getDirection().withReturn);
       feeder.setAppAccessorImplementation<UserType>(fanOut);
 
       // In case we have one or more trigger receivers among our consumers, we produce exactly one application variable
@@ -961,7 +962,8 @@ void Application::testableModeLock(const std::string& name) {
       std::cout << "    The following variables still contain unread values or had data loss due to a queue overflow:" << std::endl;
       for(auto &pair : Application::getInstance().testableMode_perVarCounter) {
         if(pair.second > 0) {
-          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first];
+          std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
+                    << getInstance().testableMode_processVars[pair.first]->getId() << "]";
           // check if process variable still has data in the queue
           try {
             if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
