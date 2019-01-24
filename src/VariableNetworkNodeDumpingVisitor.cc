@@ -19,6 +19,7 @@ void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
 
     if(t.getMode() == UpdateMode::push) stream() << _separator << "pushing";
     if(t.getMode() == UpdateMode::poll) stream() << _separator << "polling";
+    if(t.getDirection().withReturn) stream() << _separator << "with return";
     stream() << _separator;
 
     stream() << "data type: " << boost::core::demangle(t.getValueType().name());
