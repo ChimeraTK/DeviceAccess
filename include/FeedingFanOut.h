@@ -58,12 +58,6 @@ namespace ChimeraTK {
             _returnSlave = slave;
           }
         }
-        else {
-          if(slave->isReadable()) {
-            throw ChimeraTK::logic_error("FeedingFanOut: Cannot add slaves with return channel to FeedingFanOuts "
-                                         "without return channel!");
-          }
-        }
 
         // add the slave
         FanOut<UserType>::slaves.push_back(slave);
