@@ -54,7 +54,7 @@ namespace ChimeraTK {
         assert(feedingNode.get() != nullptr);
         transferGroup.addAccessor(feedingNode);
         auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>( feedingNode->getName(), feedingNode->getUnit(),
-            feedingNode->getDescription(), feedingNode->getNumberOfSamples() );
+            feedingNode->getDescription(), feedingNode->getNumberOfSamples(), false );    // in TriggerFanOuts we cannot have return channels
         boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
         return feedingFanOut;
       }

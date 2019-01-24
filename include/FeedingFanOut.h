@@ -23,9 +23,10 @@ namespace ChimeraTK {
     public:
 
       FeedingFanOut(std::string const &name, std::string const &unit, std::string const &description,
-                    size_t numberOfElements)
+                    size_t numberOfElements, bool withReturn)
       : FanOut<UserType>(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>()),
-        ChimeraTK::NDRegisterAccessor<UserType>(name, unit, description)
+        ChimeraTK::NDRegisterAccessor<UserType>("FeedingFanOut:"+name, unit, description),
+        _withReturn(withReturn)
       {
         ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
@@ -33,9 +34,7 @@ namespace ChimeraTK {
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
       void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) override {
-        if(!slave->isWriteable()) {
-          throw ChimeraTK::logic_error("FeedingFanOut::addSlave() has been called with a receiving implementation!");
-        }
+
         // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
         if( slave->getNumberOfSamples() != 0 &&
             ( slave->getNumberOfChannels() != 1 || slave->getNumberOfSamples() != this->getNumberOfSamples() ) ) {
@@ -43,11 +42,35 @@ namespace ChimeraTK {
           what += "' with incompatible array shape! Name of fan out: '" + this->getName() + "'";
           throw ChimeraTK::logic_error(what.c_str());
         }
+
+        // make sure slave is writeable
+        if(!slave->isWriteable()) {
+          throw ChimeraTK::logic_error("FeedingFanOut::addSlave() has been called with a receiving implementation!");
+        }
+
+        // handle return channels
+        if(_withReturn) {
+          if(slave->isReadable()) {
+            if(_hasReturnSlave) {
+              throw ChimeraTK::logic_error("FeedingFanOut: Cannot add multiple slaves with return channel!");
+            }
+            _hasReturnSlave = true;
+            _returnSlave = slave;
+          }
+        }
+        else {
+          if(slave->isReadable()) {
+            throw ChimeraTK::logic_error("FeedingFanOut: Cannot add slaves with return channel to FeedingFanOuts "
+                                         "without return channel!");
+          }
+        }
+
+        // add the slave
         FanOut<UserType>::slaves.push_back(slave);
       }
 
       bool isReadable() const override {
-        return false;
+        return _withReturn;
       }
 
       bool isReadOnly() const override {
@@ -59,27 +82,45 @@ namespace ChimeraTK {
       }
 
       void doReadTransfer() override {
-        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        _returnSlave->doReadTransfer();
       }
 
       bool doReadTransferNonBlocking() override {
-        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        return _returnSlave->doReadTransferNonBlocking();
       }
 
       bool doReadTransferLatest() override {
-        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        return _returnSlave->doReadTransferLatest();
       }
 
       void doPreRead() override {
-        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
+        _returnSlave->preRead();
       }
 
       void doPostRead() override {
-        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        assert(_hasReturnSlave);
+        _returnSlave->postRead();
+        _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
+        // distribute return-channel update to the other slaves
+        for(auto &slave : FanOut<UserType>::slaves) {     // send out copies to slaves
+          if(slave == _returnSlave) continue;
+          if(slave->getNumberOfSamples() != 0) {          // do not send copy if no data is expected (e.g. trigger)
+            slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
+          }
+          slave->write(_returnSlave->getVersionNumber());
+        }
+
       }
 
       ChimeraTK::TransferFuture doReadTransferAsync() override {
-        throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+        return {_returnSlave->doReadTransferAsync(), this};
       }
 
       void doPreWrite() override {
@@ -133,9 +174,25 @@ namespace ChimeraTK {
         /// @todo implement properly?
       }
 
-      AccessModeFlags getAccessModeFlags() const override { return {}; }
+      AccessModeFlags getAccessModeFlags() const override { return {AccessMode::wait_for_new_data}; }
 
       VersionNumber getVersionNumber() const override { return FanOut<UserType>::slaves.front()->getVersionNumber(); }
+
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getReturnSlave() {
+        return _returnSlave;
+      }
+
+    protected:
+
+      /// Flag whether this FeedingFanOut has a return channel. Is specified in the constructor
+      bool _withReturn;
+
+      /// Used if _withReturn is true: flag whether the corresponding slave with the return channel has already been
+      /// added.
+      bool _hasReturnSlave{false};
+
+      /// The slave with return channel
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
 
   };
 

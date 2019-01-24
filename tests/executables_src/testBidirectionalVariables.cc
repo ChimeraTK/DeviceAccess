@@ -101,12 +101,9 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
 
     TestApplication app;
 
-    //app.a.connectTo(app.cs);
-    //app.b.connectTo(app.cs);
-    app.cs("var1") >> app.a.var1;
-    app.a.var2 >> app.b.var2;
-    app.cs("max") >> app.b.max;
-    app.cs("var3") >> app.b.var3;
+    // the connections will result in a FeedingFanOut for var2, as it is connected to the control system as well
+    app.a.connectTo(app.cs);
+    app.b.connectTo(app.cs);
     ctk::TestFacility test;
     app.initialise();
     app.run();

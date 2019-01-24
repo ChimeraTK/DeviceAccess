@@ -11,6 +11,7 @@
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 #include "Application.h"
+#include "FeedingFanOut.h"
 
 namespace ChimeraTK {
 
@@ -37,7 +38,9 @@ namespace ChimeraTK {
         // if this decorating a bidirectional process variable, set the valueRejectCallback
         auto bidir = boost::dynamic_pointer_cast<BidirectionalProcessArray<UserType>>(accessor);
         if(bidir) {
-          bidir->setValueRejectCallback([this]{decrementCounter();});
+          bidir->setValueRejectCallback([this]{
+            decrementCounter();
+          });
         }
 
       }
