@@ -453,7 +453,7 @@ void Application::makeConnections() {
 
   // finalise connections: decide still-undecided details, in particular for control-system and device varibales, which
   // get created "on the fly".
-  finaliseConnections();
+  finaliseNetworks();
 
   // apply optimisations
   // note: checks may not be run before since sometimes networks may only be valid after optimisations
@@ -477,7 +477,7 @@ void Application::makeConnections() {
 
 /*********************************************************************************************************************/
 
-void Application::finaliseConnections() {
+void Application::finaliseNetworks() {
 
     // check for control system variables which should be made bidirectional
     for(auto &network : networkList) {
