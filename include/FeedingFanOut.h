@@ -33,7 +33,7 @@ namespace ChimeraTK {
       }
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
-      void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) override {
+      void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode&) override {
 
         // check if array shape is compatible, unless the receiver is a trigger node, so no data is expected
         if( slave->getNumberOfSamples() != 0 &&

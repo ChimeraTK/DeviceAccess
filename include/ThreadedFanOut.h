@@ -9,6 +9,7 @@
 #define CHIMERATK_THREADED_FAN_OUT_H
 
 #include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/ReadAnyGroup.h>
 
 #include "Application.h"
 #include "FanOut.h"
@@ -47,9 +48,10 @@ namespace ChimeraTK {
       }
 
       /** Synchronise feeder and the consumers. This function is executed in the separate thread. */
-      void run() {
+      virtual void run() {
         Application::registerThread("ThFO"+FanOut<UserType>::impl->getName());
         Application::testableModeLock("start");
+
         while(true) {
           // receive data
           boost::this_thread::interruption_point();
@@ -58,12 +60,13 @@ namespace ChimeraTK {
           Profiler::startMeasurement();
           boost::this_thread::interruption_point();
           // send out copies to slaves
+          auto version = FanOut<UserType>::impl->getVersionNumber();
           for(auto &slave : FanOut<UserType>::slaves) {
             // do not send copy if no data is expected (e.g. trigger)
             if(slave->getNumberOfSamples() != 0) {
               slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
             }
-            bool dataLoss = slave->write();
+            bool dataLoss = slave->write(version);
             if(dataLoss) Application::incrementDataLossCounter();
           }
         }
@@ -73,6 +76,70 @@ namespace ChimeraTK {
 
       /** Thread handling the synchronisation, if needed */
       boost::thread _thread;
+
+  };
+
+  /********************************************************************************************************************/
+
+  /** Same as ThreadedFanOut but with return channel */
+  template<typename UserType>
+  class ThreadedFanOutWithReturn : public ThreadedFanOut<UserType> {
+
+    public:
+
+      using ThreadedFanOut<UserType>::ThreadedFanOut;
+
+      void setReturnChannelSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> returnChannelSlave) {
+        _returnChannelSlave = returnChannelSlave;
+      }
+
+      void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave,
+                    VariableNetworkNode &consumer) override {
+        FanOut<UserType>::addSlave(slave, consumer);
+        if(consumer.getDirection().withReturn) {
+          assert(_returnChannelSlave == nullptr);
+          _returnChannelSlave = slave;
+        }
+      }
+
+      void run() override {
+        Application::registerThread("ThFO"+FanOut<UserType>::impl->getName());
+        Application::testableModeLock("start");
+
+        ReadAnyGroup group({FanOut<UserType>::impl, _returnChannelSlave});
+        while(true) {
+          // receive data
+          boost::this_thread::interruption_point();
+          Profiler::stopMeasurement();
+          auto var = group.readAny();
+          Profiler::startMeasurement();
+          boost::this_thread::interruption_point();
+          // if the update came through the return channel, return it to the feeder
+          if(var == _returnChannelSlave->getId()) {
+            FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
+            FanOut<UserType>::impl->write(_returnChannelSlave->getVersionNumber());
+          }
+          // send out copies to slaves
+          auto version = FanOut<UserType>::impl->getVersionNumber();
+          for(auto &slave : FanOut<UserType>::slaves) {
+            // do not feed back value returnChannelSlave if it was received from it
+            if(slave->getId() == var) continue;
+            // do not send copy if no data is expected (e.g. trigger)
+            if(slave->getNumberOfSamples() != 0) {
+              slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
+            }
+            bool dataLoss = slave->write(version);
+            if(dataLoss) Application::incrementDataLossCounter();
+          }
+        }
+      }
+
+    protected:
+
+      /** Thread handling the synchronisation, if needed */
+      boost::thread _thread;
+
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnChannelSlave;
 
   };
 

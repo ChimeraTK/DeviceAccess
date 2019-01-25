@@ -9,6 +9,7 @@
 #define CHIMERATK_FAN_OUT_H
 
 #include <ChimeraTK/NDRegisterAccessor.h>
+#include "VariableNetworkNode.h"
 
 namespace ChimeraTK {
 
@@ -25,7 +26,8 @@ namespace ChimeraTK {
       virtual ~FanOut() {}
 
       /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
-      virtual void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave) {
+      virtual void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave,
+                            VariableNetworkNode &/*consumer*/) {
         if(!slave->isWriteable()) {
           throw ChimeraTK::logic_error("FanOut::addSlave() has been called with a receiving implementation!");
         }

@@ -104,6 +104,7 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
     // the connections will result in a FeedingFanOut for var2, as it is connected to the control system as well
     app.a.connectTo(app.cs);
     app.b.connectTo(app.cs);
+    app.a.var1 >> app.cs("var1_copied");      // add a ThreadedFanOut with return channel as well...
     ctk::TestFacility test;
     app.initialise();
     app.run();

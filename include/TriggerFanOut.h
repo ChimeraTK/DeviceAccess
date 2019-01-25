@@ -73,7 +73,8 @@ namespace ChimeraTK {
           // receive data
           transferGroup.read();
           // send the data to the consumers
-          boost::fusion::for_each(fanOutMap.table, SendDataToConsumers());
+          auto version = externalTrigger->getVersionNumber();
+          boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
         }
       }
 
@@ -81,6 +82,8 @@ namespace ChimeraTK {
 
       /** Functor class to send data to the consumers, suitable for boost::fusion::for_each(). */
       struct SendDataToConsumers {
+        SendDataToConsumers(VersionNumber version): _version(version) {}
+
         template<typename PAIR>
         void operator()(PAIR &pair) const {
 
@@ -91,12 +94,14 @@ namespace ChimeraTK {
             auto feeder = network.first;
             auto fanOut = network.second;
             fanOut->accessChannel(0).swap(feeder->accessChannel(0));
-            bool dataLoss = fanOut->write();
+            bool dataLoss = fanOut->write(_version);
             if(dataLoss) Application::incrementDataLossCounter();
             // no need to swap back since we don't need the data
           }
 
         }
+
+        VersionNumber _version;
       };
 
       /** TransferElement acting as our trigger */

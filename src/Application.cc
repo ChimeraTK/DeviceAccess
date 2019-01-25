@@ -486,11 +486,11 @@ void Application::finaliseNetworks() {
         if(consumer.getDirection().withReturn) ++nBidir;
       }
       if(nBidir != 1) continue;     // only if there is exactly one node with return channel we need to guess its peer
-      size_t nCS = network.getFeedingNode().getType() == NodeType::ControlSystem ? 1 : 0;
+      size_t nCSconsumers = 0;
       for(auto &consumer : network.getConsumingNodes()) {
-        if(consumer.getType() == NodeType::ControlSystem) ++nCS;
+        if(consumer.getType() == NodeType::ControlSystem) ++nCSconsumers;
       }
-      if(nCS != 1) continue;      // multiple CS-type variables found - cannot guess the peer
+      if(nCSconsumers != 1) continue;      // multiple CS-type consumers found - cannot guess the peer
       if(network.getFeedingNode().getType() == NodeType::ControlSystem) {
         network.getFeedingNode().setDirection({VariableDirection::feeding,true});
       }
@@ -673,7 +673,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
             {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
         // connect the Device with e.g. a ControlSystem node via a ThreadedFanOut
         auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
-        fanOut->addSlave(consumingImpl);
+        fanOut->addSlave(consumingImpl, consumer);
         internalModuleList.push_back(fanOut);
         connectionMade = true;
       }
@@ -681,7 +681,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         auto consumingImpl = createProcessVariable<UserType>(consumer);
         // connect the ControlSystem with e.g. a Device node via an ThreadedFanOut
         auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
-        fanOut->addSlave(consumingImpl);
+        fanOut->addSlave(consumingImpl, consumer);
         internalModuleList.push_back(fanOut);
         connectionMade = true;
       }
@@ -712,7 +712,14 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       else if(useFeederTrigger) {
         // if the trigger is provided by the pushing feeder, use the treaded version of the FanOut to distribute
         // new values immediately to all consumers.
-        auto threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+        // Depending on whether we have a return channel or not, pick the right implementation of the FanOut
+        boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
+        if(!feeder.getDirection().withReturn) {
+          threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+        }
+        else {
+          threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl);
+        }
         internalModuleList.push_back(threadedFanOut);
         fanOut = threadedFanOut;
       }
@@ -736,21 +743,21 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           }
           else {
             auto impls = createApplicationVariable<UserType>(consumer);
-            fanOut->addSlave(impls.first);
+            fanOut->addSlave(impls.first, consumer);
             consumer.setAppAccessorImplementation<UserType>(impls.second);
           }
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           auto impl = createProcessVariable<UserType>(consumer);
-          fanOut->addSlave(impl);
+          fanOut->addSlave(impl, consumer);
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-          fanOut->addSlave(impl);
+          fanOut->addSlave(impl, consumer);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first);
+          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first, consumer);
           usedTriggerReceiver = true;
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
@@ -818,20 +825,20 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       for(auto &consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
           auto impls = createApplicationVariable<UserType>(consumer);
-          fanOut->addSlave(impls.first);
+          fanOut->addSlave(impls.first, consumer);
           consumer.setAppAccessorImplementation<UserType>(impls.second);
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           auto impl = createProcessVariable<UserType>(consumer);
-          fanOut->addSlave(impl);
+          fanOut->addSlave(impl, consumer);
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-          fanOut->addSlave(impl);
+          fanOut->addSlave(impl, consumer);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first);
+          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first, consumer);
           usedTriggerReceiver = true;
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
