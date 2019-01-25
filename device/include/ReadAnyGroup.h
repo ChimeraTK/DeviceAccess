@@ -167,9 +167,29 @@ namespace ChimeraTK {
 
   inline TransferElementID ReadAnyGroup::readAny() {
     size_t idx;
+
+    // We might block here until we receive an update, so call the transferFutureWaitCallback. Note this is a slightly
+    // ugly approximation here, as we call it for the first element in the group. It is used in ApplicationCore
+    // testable mode, where it doesn't matter which callback within the same group is called.
     push_elements[0].transferFutureWaitCallback();
+
+    // Wait for notification
+retry:
     notification_queue.pop_wait(idx);
-    push_elements[idx].readAsync().wait();
+
+    // The update we got notified about might have been discarded, in which case we need to wait again on the
+    // notification queue. The TransferFuture is handling those value discards already internally, so we cannot call
+    // TransferFuture::wait()
+    try {
+      auto tf = push_elements[idx].readAsync();
+      detail::getFutureQueueFromTransferFuture(tf).pop_wait();
+    }
+    catch(detail::DiscardValueException&) {
+      goto retry;
+    }
+    push_elements[idx].getHighLevelImplElement()->postRead();
+
+    // update all poll-type elements in the group
     for(auto &e : poll_elements) {
       if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
     }
