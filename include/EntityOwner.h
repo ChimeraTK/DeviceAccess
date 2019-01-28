@@ -152,7 +152,11 @@ namespace ChimeraTK {
       virtual ModuleType getModuleType() const = 0;
 
       /** Return the current version number which has been received with the last pusy-type read operation. */
-      VersionNumber getCurrentVersionNumber() { return currentVersionNumber; }
+      virtual VersionNumber getCurrentVersionNumber() const = 0;
+
+      /** Set the current version number. This function is called by the push-type input accessors in their read
+       *  functions. */
+      virtual void setCurrentVersionNumber(VersionNumber versionNumber) = 0;
 
   protected:
 
@@ -178,18 +182,6 @@ namespace ChimeraTK {
 
       /** List of tags to be added to all accessors and modules inside this module */
       std::unordered_set<std::string> _tags;
-
-      /** Set the current version number. This function is called by the push-type input accessors in their read
-       *  functions. */
-      void setCurrentVersionNumber(VersionNumber versionNumber) {
-        if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
-      }
-
-      /** Version number of last push-type read operation - will be passed on to any write operations */
-      VersionNumber currentVersionNumber;
-
-      template<typename T> friend class VersionNumberUpdatingRegisterDecorator;
-      friend class Application;
 
   };
 

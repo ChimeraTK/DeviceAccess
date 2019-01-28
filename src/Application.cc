@@ -470,6 +470,7 @@ void Application::makeConnections() {
   // set all initial version numbers in the modules to the same value
   VersionNumber startVersion;
   for(auto &module : getSubmoduleListRecursive()) {
+    if(module->getModuleType() != ModuleType::ApplicationModule) continue;
     module->setCurrentVersionNumber(startVersion);
   }
 

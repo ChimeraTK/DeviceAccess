@@ -122,6 +122,13 @@ namespace ChimeraTK {
        */
       void accept(Visitor<Module>& visitor) const { visitor.dispatch(*this); }
 
+      VersionNumber getCurrentVersionNumber() const override {
+        return _owner->getCurrentVersionNumber();
+      }
+      void setCurrentVersionNumber(VersionNumber version) override {
+        _owner->setCurrentVersionNumber(version);
+      }
+
     protected:
 
       /** Owner of this instance */

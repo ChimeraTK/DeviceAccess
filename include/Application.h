@@ -348,6 +348,15 @@ namespace ChimeraTK {
       /** Counter for how many write() operations have overwritten unread data */
       std::atomic<size_t> dataLossCounter{0};
 
+      VersionNumber getCurrentVersionNumber() const override {
+        throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably caused by "
+                                     "incorrect ownership of variables/accessors or VariableGroups.");
+      }
+      void setCurrentVersionNumber(VersionNumber) {
+        throw ChimeraTK::logic_error("setCurrentVersionNumber() called on the application. This is probably caused by "
+                                     "incorrect ownership of variables/accessors or VariableGroups.");
+      }
+
   };
 
 } /* namespace ChimeraTK */
