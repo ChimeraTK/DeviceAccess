@@ -88,18 +88,74 @@ struct TestApplication : public ctk::Application {
     void defineConnections() {}             // the setup is done in the tests
 
     ctk::ControlSystemModule cs;
-    ModuleA   a{this,"a", ""};
-    ModuleB   b{this,"b", ""};
+    ModuleA   a;
+    ModuleB   b;
 };
 
 /*********************************************************************************************************************/
-/*  */
 
-BOOST_AUTO_TEST_CASE(testNormalOperation) {
+BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
     ctk::ExperimentalFeatures::enable();
-    std::cout << "*** testNormalOperation" << std::endl;
+    std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
     TestApplication app;
+    app.b = {&app,"b", ""};
+    app.b.connectTo(app.cs);
+
+    ctk::TestFacility test;
+    app.initialise();
+    app.run();
+    auto var2 = test.getScalar<double>("var2");
+    auto var3 = test.getScalar<double>("var3");
+    auto max = test.getScalar<double>("max");
+
+    // set maximum in B
+    max = 49.5;
+    max.write();
+    test.stepApplication();
+
+    // inject value which does not get limited
+    var2 = 49;
+    var2.write();
+    test.stepApplication();
+    var3.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var3), 49, 0.001);
+    BOOST_CHECK( var2.readNonBlocking() == false );
+    BOOST_CHECK( var3.readNonBlocking() == false );
+
+    // inject value which gets limited
+    var2 = 50;
+    var2.write();
+    test.stepApplication();
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 49.5, 0.001);
+    var3.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var3), 49.5, 0.001);
+    BOOST_CHECK( var2.readNonBlocking() == false );
+    BOOST_CHECK( var3.readNonBlocking() == false );
+
+    // change the limit so the current value gets changed
+    max = 48.5;
+    max.write();
+    test.stepApplication();
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 48.5, 0.001);
+    var3.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var3), 48.5, 0.001);
+    BOOST_CHECK( var2.readNonBlocking() == false );
+    BOOST_CHECK( var3.readNonBlocking() == false );
+
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testRealisticExample) {
+    ctk::ExperimentalFeatures::enable();
+    std::cout << "*** testRealisticExample" << std::endl;
+
+    TestApplication app;
+    app.a = {&app,"a", ""};
+    app.b = {&app,"b", ""};
 
     // the connections will result in a FeedingFanOut for var2, as it is connected to the control system as well
     app.a.connectTo(app.cs);
@@ -114,7 +170,7 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
     auto var3 = test.getScalar<double>("var3");
     auto max = test.getScalar<double>("max");
 
-    // set maximum in ModuleC, so that var1=49 is still below maximum but var2=50 is already above and rounding in
+    // set maximum in B, so that var1=49 is still below maximum but var2=50 is already above and rounding in
     // ModuleB will change the value again
     max = 49.5*2.54;
     max.write();
