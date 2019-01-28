@@ -109,6 +109,8 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
     app.initialise();
     app.run();
     auto var1 = test.getScalar<int>("var1");
+    auto var1_copied = test.getScalar<int>("var1_copied");
+    auto var2 = test.getScalar<double>("var2");
     auto var3 = test.getScalar<double>("var3");
     auto max = test.getScalar<double>("max");
 
@@ -122,62 +124,109 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
     var1 = 49;
     var1.write();
     test.stepApplication();
+    var1_copied.read();
+    var2.read();
     var3.read();
+    BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 49);
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 49*2.54, 0.001);
     BOOST_CHECK_CLOSE(static_cast<double>(var3), 49*2.54, 0.001);
     BOOST_CHECK( var1.readNonBlocking() == false );     // nothing was sent through the return channel
+    BOOST_CHECK( var1_copied.readLatest() == false );
+    BOOST_CHECK( var2.readNonBlocking() == false );
+    BOOST_CHECK( var3.readNonBlocking() == false );
 
     // inject value which gets limited
     var1 = 50;
     var1.write();
     test.stepApplication();
+    var1.read();
+    BOOST_CHECK_EQUAL(static_cast<int>(var1), 49);
+    var1_copied.read();
+    BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 50);
+    var1_copied.read();
+    BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 49);
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 50*2.54, 0.001);
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 49.5*2.54, 0.001);
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 49*2.54, 0.001);
     var3.read();
     BOOST_CHECK_CLOSE(static_cast<double>(var3), 49.5*2.54, 0.001);
     var3.read();
     BOOST_CHECK_CLOSE(static_cast<double>(var3), 49*2.54, 0.001);
-    var1.read();
-    BOOST_CHECK_EQUAL(static_cast<int>(var1), 49);
+    BOOST_CHECK( var1.readNonBlocking() == false );
+    BOOST_CHECK( var1_copied.readLatest() == false );
+    BOOST_CHECK( var2.readNonBlocking() == false );
+    BOOST_CHECK( var3.readNonBlocking() == false );
 
     // change the limit so the current value gets changed
     max = 48.5*2.54;
     max.write();
     test.stepApplication();
+    var1.read();
+    BOOST_CHECK_EQUAL(static_cast<int>(var1), 48);
+    var1_copied.read();
+    BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 48);
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 48.5*2.54, 0.001);
+    var2.read();
+    BOOST_CHECK_CLOSE(static_cast<double>(var2), 48*2.54, 0.001);
     var3.read();
     BOOST_CHECK_CLOSE(static_cast<double>(var3), 48.5*2.54, 0.001);
     var3.read();
     BOOST_CHECK_CLOSE(static_cast<double>(var3), 48*2.54, 0.001);
-    var1.read();
-    BOOST_CHECK_EQUAL(static_cast<int>(var1), 48);
+    BOOST_CHECK( var1.readNonBlocking() == false );
+    BOOST_CHECK( var1_copied.readLatest() == false );
+    BOOST_CHECK( var2.readNonBlocking() == false );
+    BOOST_CHECK( var3.readNonBlocking() == false );
 
     // Run the following tests a couple of times, as they are testing for the absence of race conditions. This makes
     // it more likely to find failures in a single run of the test
     for(size_t i=0; i<10; ++i) {
 
       // feed in some default values (so the tests can be executed multiple times in a row)
-      BOOST_CHECK( var1.readNonBlocking() == false );
-      BOOST_CHECK( var3.readNonBlocking() == false );
       max = 48.5*2.54;
       max.write();
       test.stepApplication();
       var1 = 50;
       var1.write();
       test.stepApplication();
-      var1.readLatest();      // emtpy the queue
-      var3.readLatest();      // emtpy the queue
+      var1.readLatest();      // emtpy the queues
+      var1_copied.readLatest();
+      var2.readLatest();
+      var3.readLatest();
       BOOST_CHECK_EQUAL(static_cast<int>(var1), 48);
+      BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 48);
+      BOOST_CHECK_CLOSE(static_cast<double>(var2), 48*2.54, 0.001);
       BOOST_CHECK_CLOSE(static_cast<double>(var3), 48*2.54, 0.001);
+      BOOST_CHECK( var1.readNonBlocking() == false );
+      BOOST_CHECK( var1_copied.readLatest() == false );
+      BOOST_CHECK( var2.readNonBlocking() == false );
+      BOOST_CHECK( var3.readNonBlocking() == false );
 
-      // concurrent change of value and limit
+      // concurrent change of value and limit. Note: The final result must be deterministic, but which values are seen
+      // in between is subject to race conditions between the two concurrent updates. Thus we are using readLatest() in
+      // some cases here.
       var1 = 30;
       max = 25.5*2.54;
       var1.write();
       max.write();
       test.stepApplication();
-      BOOST_CHECK(var3.readLatest() == true);        // it is not perfectly deterministic what happens, but we should end up with this result
-      BOOST_CHECK_CLOSE(static_cast<double>(var3), 25*2.54, 0.001);
       var1.read();
       BOOST_CHECK_EQUAL(static_cast<int>(var1), 25);
-      BOOST_CHECK( var3.readNonBlocking() == false );   // nothing left
-      BOOST_CHECK( var1.readNonBlocking() == false );   // nothing left
+      var1_copied.read();
+      BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 30);
+      BOOST_CHECK( var1_copied.readLatest() == true );
+      BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 25);
+      BOOST_CHECK( var2.readLatest() == true );
+      BOOST_CHECK_CLOSE(static_cast<double>(var2), 25*2.54, 0.001);
+      BOOST_CHECK( var3.readLatest() == true );
+      BOOST_CHECK_CLOSE(static_cast<double>(var3), 25*2.54, 0.001);
+      BOOST_CHECK( var1.readNonBlocking() == false );
+      BOOST_CHECK( var1_copied.readLatest() == false );
+      BOOST_CHECK( var2.readNonBlocking() == false );
+      BOOST_CHECK( var3.readNonBlocking() == false );
 
       // concurrent change of value and limit - other order than before
       var1 = 15;
@@ -185,10 +234,16 @@ BOOST_AUTO_TEST_CASE(testNormalOperation) {
       max.write();
       var1.write();
       test.stepApplication();
-      BOOST_CHECK(var3.readLatest() == true);        // it is not perfectly deterministic what happens, but we should end up with this result
+      var1_copied.read();
+      BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 15);
+      BOOST_CHECK( var2.readLatest() == true );
+      BOOST_CHECK_CLOSE(static_cast<double>(var2), 15*2.54, 0.001);
+      BOOST_CHECK( var3.readLatest() == true );
       BOOST_CHECK_CLOSE(static_cast<double>(var3), 15*2.54, 0.001);
-      BOOST_CHECK( var3.readNonBlocking() == false );   // nothing left
-      BOOST_CHECK( var1.readNonBlocking() == false );   // the value was rejected
+      BOOST_CHECK( var1.readNonBlocking() == false );
+      BOOST_CHECK( var1_copied.readLatest() == false );
+      BOOST_CHECK( var2.readNonBlocking() == false );
+      BOOST_CHECK( var3.readNonBlocking() == false );
 
     }
 
