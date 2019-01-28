@@ -101,10 +101,11 @@ namespace ChimeraTK {
 /*********************************************************************************************************************/
 
   void Module::writeAll() {
+    auto versionNumber = getCurrentVersionNumber();
     auto accessorList = getAccessorListRecursive();
     for(auto accessor : accessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
-      accessor.getAppAccessorNoType().write();
+      accessor.getAppAccessorNoType().write(versionNumber);
     }
   }
 
