@@ -25,6 +25,7 @@ namespace ChimeraTK {
       /** Construct finalised group with the given elements. The group will behave like finalise() had already been
        *  called. */
       ReadAnyGroup(std::initializer_list<TransferElementAbstractor> list);
+      ReadAnyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
 
       template<typename ITERATOR>
       ReadAnyGroup(ITERATOR first, ITERATOR last);
@@ -35,6 +36,7 @@ namespace ChimeraTK {
        *
        *  The register must be must be readable. */
       void add(TransferElementAbstractor element);
+      void add(boost::shared_ptr<TransferElement> element);
 
       /** Finalise the group. From this point on, add() may no longer be called. Only after the group has been finalised
        *  the read functions of this group may be called. Also, after the group has been finalised, read functions may
@@ -122,6 +124,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  inline ReadAnyGroup::ReadAnyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list) {
+    for(auto &element : list) add(element);
+    finalise();
+  }
+
+  /********************************************************************************************************************/
+
   template<typename ITERATOR>
   ReadAnyGroup::ReadAnyGroup(ITERATOR first, ITERATOR last) {
     for(ITERATOR it = first; it != last; ++it) add(*it);
@@ -143,6 +152,12 @@ namespace ChimeraTK {
     else {
       poll_elements.push_back(element);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  inline void ReadAnyGroup::add(boost::shared_ptr<TransferElement> element) {
+    add(TransferElementAbstractor(element));
   }
 
   /********************************************************************************************************************/

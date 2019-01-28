@@ -44,6 +44,11 @@ namespace ChimeraTK {
 
     public:
 
+      /** Construct from TransferElement implementation */
+      explicit TransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
+      : _impl(impl)
+      {}
+
       /** Create an uninitialised abstractor - just for late initialisation */
       TransferElementAbstractor() {}
 
@@ -244,11 +249,6 @@ namespace ChimeraTK {
       }
 
     protected:
-
-      /** Construct from TransferElement implementation */
-      explicit TransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
-      : _impl(impl)
-      {}
 
       /** Untyped pointer to implementation */
       boost::shared_ptr< TransferElement > _impl;
