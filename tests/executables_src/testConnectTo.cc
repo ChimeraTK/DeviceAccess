@@ -141,10 +141,14 @@ BOOST_AUTO_TEST_CASE( testConnectTo ) {
     app.second.secondModule.myVec[i] = 6+i;
   }
 
-  app.first.writeAll();
-  app.second.writeAll();
-  app.first.readAllLatest();
-  app.second.readAllLatest();
+  app.first.testModule.writeAll();
+  app.first.secondModule.writeAll();
+  app.second.testModule.writeAll();
+  app.second.secondModule.writeAll();
+  app.first.testModule.readAllLatest();
+  app.first.secondModule.readAllLatest();
+  app.second.testModule.readAllLatest();
+  app.second.secondModule.readAllLatest();
 
   BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varA, 1 );
   BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varB, 2 );
@@ -181,10 +185,14 @@ BOOST_AUTO_TEST_CASE( testConnectTwice ) {
     app.second.secondModule.myVec[i] = 6+i;
   }
 
-  app.first.writeAll();
-  app.second.writeAll();
-  app.first.readAllLatest();
-  app.second.readAllLatest();
+  app.first.testModule.writeAll();
+  app.first.secondModule.writeAll();
+  app.second.testModule.writeAll();
+  app.second.secondModule.writeAll();
+  app.first.testModule.readAllLatest();
+  app.first.secondModule.readAllLatest();
+  app.second.testModule.readAllLatest();
+  app.second.secondModule.readAllLatest();
 
   BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varA, 1 );
   BOOST_CHECK_EQUAL( (int) app.first.testModule.varGroup.varB, 2 );
