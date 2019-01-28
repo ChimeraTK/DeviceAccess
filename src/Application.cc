@@ -491,11 +491,10 @@ void Application::finaliseNetworks() {
       for(auto &consumer : network.getConsumingNodes()) {
         if(consumer.getType() == NodeType::ControlSystem) ++nCSconsumers;
       }
-      if(nCSconsumers != 1) continue;      // multiple CS-type consumers found - cannot guess the peer
       if(network.getFeedingNode().getType() == NodeType::ControlSystem) {
         network.getFeedingNode().setDirection({VariableDirection::feeding,true});
       }
-      else {
+      else if(nCSconsumers == 1) {
         for(auto &consumer : network.getConsumingNodes()) {
           if(consumer.getType() == NodeType::ControlSystem) {
             consumer.setDirection({VariableDirection::consuming,true});
