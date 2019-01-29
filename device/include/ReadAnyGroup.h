@@ -99,9 +99,11 @@ namespace ChimeraTK {
        *  readAny() but the caller has to execute postRead() manually. Also the poll-type elements in the group are not
        *  updated in this function.
        *  This allows e.g. to acquire a lock before executing postRead(). Note that it is mandatory to call postRead()
-       *  on the TransferElement identified by the returned ID before accessing any TransferElement in the group in any
-       *  other way or the group itself. */
+       *  before accessing any TransferElement in the group or the group itself in any other way. */
       TransferElementID waitAny();
+
+      /** Execute the postRead action after waitAny().  */
+      void postRead();
 
     private:
 
@@ -117,9 +119,8 @@ namespace ChimeraTK {
       /// The notification queue, will be valid only if isFinalised == true
       cppext::future_queue<size_t> notification_queue;
 
-      /// Version of waitAny() which returns the index of the TransferElement in the push_elements vector.
-      size_t waitAny_internal();
-
+      /// Index (w.r.t. push_elements) of the last incomplete transfer, i.e. after waitAny().
+      size_t lastIncompleteTransfer{std::numeric_limits<size_t>::max()};
 
   };
 
@@ -193,24 +194,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline TransferElementID ReadAnyGroup::readAny() {
-    size_t idx = waitAny_internal();
-
-    // execute postRead of the updated element
-    push_elements[idx].getHighLevelImplElement()->postRead();
-
-    // update all poll-type elements in the group
-    for(auto &e : poll_elements) {
-      if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
-    }
-
-    // return the TransferElementID of the updated element
-    return push_elements[idx].getId();
+    auto id = waitAny();
+    postRead();
+    return id;
   }
 
   /********************************************************************************************************************/
 
-  inline size_t ReadAnyGroup::waitAny_internal() {
-    size_t idx;
+  inline TransferElementID ReadAnyGroup::waitAny() {
+    assert(lastIncompleteTransfer == std::numeric_limits<size_t>::max());
 
     // We might block here until we receive an update, so call the transferFutureWaitCallback. Note this is a slightly
     // ugly approximation here, as we call it for the first element in the group. It is used in ApplicationCore
@@ -219,13 +211,13 @@ namespace ChimeraTK {
 
     // Wait for notification
 retry:
-    notification_queue.pop_wait(idx);
+    notification_queue.pop_wait(lastIncompleteTransfer);
 
     // The update we got notified about might have been discarded, in which case we need to wait again on the
     // notification queue. The TransferFuture is handling those value discards already internally, so we cannot call
     // TransferFuture::wait()
     try {
-      auto tf = push_elements[idx].readAsync();
+      auto tf = push_elements[lastIncompleteTransfer].readAsync();
       detail::getFutureQueueFromTransferFuture(tf).pop_wait();
     }
     catch(detail::DiscardValueException&) {
@@ -233,13 +225,24 @@ retry:
     }
 
     // return the internal index, so we can easily use it in the readAny() implementation to execute postRead()
-    return idx;
+    return push_elements[lastIncompleteTransfer].getId();
   }
 
   /********************************************************************************************************************/
 
-  inline TransferElementID ReadAnyGroup::waitAny() {
-    return push_elements[waitAny_internal()].getId();
+  inline void ReadAnyGroup::postRead() {
+    assert(lastIncompleteTransfer != std::numeric_limits<size_t>::max());
+
+    // execute postRead of the updated element
+    push_elements[lastIncompleteTransfer].getHighLevelImplElement()->postRead();
+
+    // update all poll-type elements in the group
+    for(auto &e : poll_elements) {
+      if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
+    }
+
+    // reset lastIncompleteTransfer only if assert() are validated. The single = is intentional, this is an assignment!
+    assert(lastIncompleteTransfer = std::numeric_limits<size_t>::max());
   }
 
   /********************************************************************************************************************/

@@ -668,9 +668,7 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 3 );
       BOOST_CHECK( a4 == 4 );
-      a1.getHighLevelImplElement()->postRead();
-      a3.readLatest();
-      a4.readLatest();
+      group.postRead();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 120 );
@@ -701,9 +699,7 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
       BOOST_CHECK( a2 == 2 );
       BOOST_CHECK( a3 == 120 );
       BOOST_CHECK( a4 == 345 );
-      a2.getHighLevelImplElement()->postRead();
-      a3.readLatest();
-      a4.readLatest();
+      group.postRead();
       BOOST_CHECK( a1 == 42 );
       BOOST_CHECK( a2 == 123 );
       BOOST_CHECK( a3 == 121 );
