@@ -1,5 +1,7 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
-#include "boost_dynamic_init_test.h"
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE AsyncReadTest
+#include <boost/test/unit_test.hpp>
+using namespace boost::unit_test_framework;
 
 #include <algorithm>
 #include <thread>
@@ -14,10 +16,6 @@
 #include "NDRegisterAccessorDecorator.h"
 #include "ReadAnyGroup.h"
 
-namespace ChimeraTK{
-  using namespace ChimeraTK;
-}
-
 using namespace boost::unit_test_framework;
 using namespace ChimeraTK;
 
@@ -31,6 +29,8 @@ class AsyncTestDummy : public DeviceBackendImpl {
     {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     }
+
+    ~AsyncTestDummy() override;
 
     std::string readDeviceInfo() override {
       return std::string("AsyncTestDummy");
@@ -146,46 +146,22 @@ class AsyncTestDummy : public DeviceBackendImpl {
     std::map<std::string, size_t> registers;
 };
 
-/**********************************************************************************************************************/
-class AsyncReadTest {
-  public:
-
-    /// test normal asychronous read
-    void testAsyncRead();
-
-    /// test the readAny() function
-    void testReadAny();
-
-    /// test the readAny() function when also including poll-type variables (no AccessMode::wait_for_new_data)
-    void testReadAnyWithPoll();
-};
+AsyncTestDummy::~AsyncTestDummy() {}
 
 /**********************************************************************************************************************/
-class  AsyncReadTestSuite : public test_suite {
-  public:
-    AsyncReadTestSuite() : test_suite("Async read test suite") {
+
+struct Fixture {
+    Fixture() {
+      BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance,
+                                                      CHIMERATK_DEVICEACCESS_VERSION);
       BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
-      boost::shared_ptr<AsyncReadTest> asyncReadTest( new AsyncReadTest );
-
-      add( BOOST_CLASS_TEST_CASE( &AsyncReadTest::testAsyncRead, asyncReadTest ) );
-      add( BOOST_CLASS_TEST_CASE( &AsyncReadTest::testReadAny, asyncReadTest ) );
-      add( BOOST_CLASS_TEST_CASE( &AsyncReadTest::testReadAnyWithPoll, asyncReadTest ) );
-    }};
+    }
+};
+static Fixture fixture;
 
 /**********************************************************************************************************************/
-bool init_unit_test(){
-  std::cout << "This is the alternative init" << std::endl;
-  BackendFactory::getInstance().registerBackendType("AsyncTestDummy","",&AsyncTestDummy::createInstance,
-                                                    CHIMERATK_DEVICEACCESS_VERSION);
-  framework::master_test_suite().p_name.value = "Async read test suite";
-  framework::master_test_suite().add(new AsyncReadTestSuite);
 
-  return true;
-}
-
-
-/**********************************************************************************************************************/
-void AsyncReadTest::testAsyncRead() {
+BOOST_AUTO_TEST_CASE(testAsyncRead) {
   for(auto &sdmToUse : sdmList) {
     std::cout << "testAsyncRead: " << sdmToUse << std::endl;
 
@@ -260,7 +236,7 @@ void AsyncReadTest::testAsyncRead() {
 
 /**********************************************************************************************************************/
 
-void AsyncReadTest::testReadAny() {
+BOOST_AUTO_TEST_CASE(testReadAny) {
   for(auto &sdmToUse : sdmList) {
     std::cout << "testReadAny: " << sdmToUse << std::endl;
 
@@ -544,7 +520,7 @@ void AsyncReadTest::testReadAny() {
 
 /**********************************************************************************************************************/
 
-void AsyncReadTest::testReadAnyWithPoll() {
+BOOST_AUTO_TEST_CASE(testReadAnyWithPoll) {
   for(auto &sdmToUse : sdmList) {
     std::cout << "testReadAnyWithPoll: " << sdmToUse << std::endl;
 
@@ -625,6 +601,113 @@ void AsyncReadTest::testReadAnyWithPoll() {
       BOOST_CHECK( a3 == 121 );
       BOOST_CHECK( a4 == 346 );
       BOOST_CHECK( id == a2.getId() );
+
+      // retrigger the transfer
+      a2.readAsync();
+    }
+
+    device.close();
+
+  }
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testWaitAny) {
+  for(auto &sdmToUse : sdmList) {
+    std::cout << "testWaitAny: " << sdmToUse << std::endl;
+
+    Device device;
+    device.open(sdmToUse);
+    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(sdmToUse));
+    BOOST_CHECK( backend != nullptr );
+
+    // obtain register accessor with integral type
+    auto a1 = device.getScalarRegisterAccessor<uint8_t>("a1", 0, {AccessMode::wait_for_new_data});
+    auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
+    auto a3 = device.getScalarRegisterAccessor<int32_t>("a3");
+    auto a4 = device.getScalarRegisterAccessor<int32_t>("a4");
+
+    // initialise the buffers of the accessors
+    a1 = 1;
+    a2 = 2;
+    a3 = 3;
+    a4 = 4;
+
+    // initialise the dummy registers
+    backend->registers["/a1"] = 42;
+    backend->registers["/a2"] = 123;
+    backend->registers["/a3"] = 120;
+    backend->registers["/a4"] = 345;
+
+    // Create ReadAnyGroup
+    ReadAnyGroup group;
+    group.add(a1);
+    group.add(a2);
+    group.add(a3);
+    group.add(a4);
+    group.finalise();
+
+    TransferElementID id;
+
+    // register 1
+    {
+      // launch the readAny in a background thread
+      std::atomic<bool> flag{false};
+      std::thread thread([&group,&flag,&id] { id = group.waitAny(); flag = true; });
+
+      // check that it doesn't return too soon
+      usleep(100000);
+      BOOST_CHECK(flag == false);
+
+      // write register and check that readAny() completes
+      backend->notificationQueue["/a1"].push();    // trigger transfer
+      thread.join();
+      BOOST_CHECK( id == a1.getId() );
+      BOOST_CHECK( a1 == 1 );
+      BOOST_CHECK( a2 == 2 );
+      BOOST_CHECK( a3 == 3 );
+      BOOST_CHECK( a4 == 4 );
+      a1.getHighLevelImplElement()->postRead();
+      a3.readLatest();
+      a4.readLatest();
+      BOOST_CHECK( a1 == 42 );
+      BOOST_CHECK( a2 == 2 );
+      BOOST_CHECK( a3 == 120 );
+      BOOST_CHECK( a4 == 345 );
+
+      // retrigger the transfer
+      a1.readAsync();
+    }
+
+    backend->registers["/a3"] = 121;
+    backend->registers["/a4"] = 346;
+
+    // register 2
+    {
+      // launch the readAny in a background thread
+      std::atomic<bool> flag{false};
+      std::thread thread([&group,&flag,&id] { id = group.waitAny(); flag = true; });
+
+      // check that it doesn't return too soon
+      usleep(100000);
+      BOOST_CHECK(flag == false);
+
+      // write register and check that readAny() completes
+      backend->notificationQueue["/a2"].push();    // trigger transfer
+      thread.join();
+      BOOST_CHECK( id == a2.getId() );
+      BOOST_CHECK( a1 == 42 );
+      BOOST_CHECK( a2 == 2 );
+      BOOST_CHECK( a3 == 120 );
+      BOOST_CHECK( a4 == 345 );
+      a2.getHighLevelImplElement()->postRead();
+      a3.readLatest();
+      a4.readLatest();
+      BOOST_CHECK( a1 == 42 );
+      BOOST_CHECK( a2 == 123 );
+      BOOST_CHECK( a3 == 121 );
+      BOOST_CHECK( a4 == 346 );
 
       // retrigger the transfer
       a2.readAsync();

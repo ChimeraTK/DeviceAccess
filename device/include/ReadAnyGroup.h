@@ -95,6 +95,14 @@ namespace ChimeraTK {
       void readUntilAll(const std::vector<TransferElementID> &ids);
       void readUntilAll(const std::vector<TransferElementAbstractor> &elements);
 
+      /** Wait until one of the elements received an update, but do not execute the postRead action. This is similar to
+       *  readAny() but the caller has to execute postRead() manually. Also the poll-type elements in the group are not
+       *  updated in this function.
+       *  This allows e.g. to acquire a lock before executing postRead(). Note that it is mandatory to call postRead()
+       *  on the TransferElement identified by the returned ID before accessing any TransferElement in the group in any
+       *  other way or the group itself. */
+      TransferElementID waitAny();
+
     private:
 
       /// Flag if this group has been finalised already
@@ -108,6 +116,10 @@ namespace ChimeraTK {
 
       /// The notification queue, will be valid only if isFinalised == true
       cppext::future_queue<size_t> notification_queue;
+
+      /// Version of waitAny() which returns the index of the TransferElement in the push_elements vector.
+      size_t waitAny_internal();
+
 
   };
 
@@ -181,6 +193,23 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline TransferElementID ReadAnyGroup::readAny() {
+    size_t idx = waitAny_internal();
+
+    // execute postRead of the updated element
+    push_elements[idx].getHighLevelImplElement()->postRead();
+
+    // update all poll-type elements in the group
+    for(auto &e : poll_elements) {
+      if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
+    }
+
+    // return the TransferElementID of the updated element
+    return push_elements[idx].getId();
+  }
+
+  /********************************************************************************************************************/
+
+  inline size_t ReadAnyGroup::waitAny_internal() {
     size_t idx;
 
     // We might block here until we receive an update, so call the transferFutureWaitCallback. Note this is a slightly
@@ -202,13 +231,15 @@ retry:
     catch(detail::DiscardValueException&) {
       goto retry;
     }
-    push_elements[idx].getHighLevelImplElement()->postRead();
 
-    // update all poll-type elements in the group
-    for(auto &e : poll_elements) {
-      if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
-    }
-    return push_elements[idx].getId();
+    // return the internal index, so we can easily use it in the readAny() implementation to execute postRead()
+    return idx;
+  }
+
+  /********************************************************************************************************************/
+
+  inline TransferElementID ReadAnyGroup::waitAny() {
+    return push_elements[waitAny_internal()].getId();
   }
 
   /********************************************************************************************************************/
