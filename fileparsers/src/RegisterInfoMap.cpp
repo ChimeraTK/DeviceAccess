@@ -292,7 +292,7 @@ namespace ChimeraTK {
             true,                                                               // isSigned
             3 + 45,                                                             // nDigits
             45,                                                                 // nFractionalDigits
-            DataType::float32);
+            DataType::int32);// we have integer in the transport layer
       }
       else if(width == 64) {
         // smallest possible 5e-324, largest 2e308
@@ -301,7 +301,7 @@ namespace ChimeraTK {
             true,                                                               // isSigned
             3 + 325,                                                            // nDigits
             325,                                                                // nFractionalDigits
-            DataType::float64);
+            DataType::int64);        
       }
       else {
         throw logic_error("Wrong data width for data type IEEE754. Check your map file!");

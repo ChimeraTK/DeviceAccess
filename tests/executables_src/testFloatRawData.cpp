@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE( testCatalogueEntries ) {
   BOOST_CHECK( dataDescriptor.isIntegral() == false);
   BOOST_CHECK_EQUAL( dataDescriptor.nDigits(), 48 );
   BOOST_CHECK_EQUAL( dataDescriptor.nFractionalDigits(), 45 );
-  BOOST_CHECK_EQUAL( dataDescriptor.rawDataType(), DataType::TheType::float32 );
+  BOOST_CHECK_EQUAL( dataDescriptor.rawDataType(), DataType::TheType::int32 );
   BOOST_CHECK_EQUAL( dataDescriptor.transportLayerDataType(), DataType::TheType::none ); // FIXME: should be int32, but this layer is not accessible through the interface anyway.
 }
 
@@ -40,11 +40,13 @@ BOOST_AUTO_TEST_CASE(testReading) {
   Device d;
   d.open("(dummy?map=floatRawTest.map)");
 
-  // take the back door and use int register which points to the same memory
-  // space. Raw accessors are not supported (yet?).
-  auto rawAccessor = d.getScalarRegisterAccessor<int32_t>("FLOAT_TEST/SCALAR_AS_INT", 0, {AccessMode::raw});
-  rawAccessor = 0x40700000; // IEE754 bit representation of 3.75
-  rawAccessor.write();
+  // There are two ways to check what is going on in the dummy (we want to go back there and check that is ends up correctly)
+  // 1. We get the dummy backend and use DummyRegisterAccessors
+  // 2. We use "integer" accessors pointing to the same memory, which have already been tested and we know that they work
+  // Here we use the second approach.
+  auto rawIntAccessor = d.getScalarRegisterAccessor<int32_t>("FLOAT_TEST/SCALAR_AS_INT", 0, {AccessMode::raw});
+  rawIntAccessor = 0x40700000; // IEE754 bit representation of 3.75
+  rawIntAccessor.write();
 
   auto floatAccessor = d.getScalarRegisterAccessor<float>("FLOAT_TEST/SCALAR");
   floatAccessor.read();
