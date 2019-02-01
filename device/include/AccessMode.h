@@ -35,8 +35,7 @@ namespace ChimeraTK {
      * case a DeviceException with the id NOT_IMPLEMENTED will be thrown. */
     wait_for_new_data
 
-    /* IMPORTANT: When adding flags, don't forget to update
-       AccessModeFlags::getStringMap()! */
+    /* IMPORTANT: When extending this class with new flags, don't forget to update AccessModeFlags::getStringMap()! */
   };
 
   /** Set of AccessMode flags with additional functionality for an easier
@@ -59,14 +58,20 @@ namespace ChimeraTK {
     bool empty() const { return (_flags == std::set<AccessMode>()); }
 
     /** Check of any flag which is not in the given set "knownFlags" is set. If an
-     * unknown flag has been found, a
-     *  DeviceException with the id NOT_IMPLEMENTED is raised. */
+      * unknown flag has been found, a ChimeraTK::logic_error is raised. */
     void checkForUnknownFlags(const std::set<AccessMode>& knownFlags) const {
       for(auto flag : _flags) {
         if(knownFlags.count(flag) == 0) {
           throw ChimeraTK::logic_error("Access mode flag '" + getString(flag) + "' is not known by this backend.");
         }
       }
+      }
+
+      /** Check whether two sets of acces mode flags are the same.
+       */
+      bool operator==(const AccessModeFlags & other) const{
+        // fortunately the std::set already has a comparison operator which does exacty what we want
+        return _flags==other._flags;
     }
 
     /** Remove the given flag from the set */

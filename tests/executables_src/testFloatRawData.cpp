@@ -10,9 +10,31 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 using namespace ChimeraTK;
 
-// BOOST_AUTO_TEST_CASE( testCatalogueEntries ) {
-//  BOOST_CHECK(false);
-//}
+BOOST_AUTO_TEST_CASE( testCatalogueEntries ) {
+  Device d;
+  d.open("(dummy?map=floatRawTest.map)");
+
+  auto registerCatalogue = d.getRegisterCatalogue();
+  auto scalarInfo = registerCatalogue.getRegister("FLOAT_TEST/SCALAR");
+
+  BOOST_CHECK_EQUAL( scalarInfo->getRegisterName(), "FLOAT_TEST/SCALAR" );
+  BOOST_CHECK_EQUAL( scalarInfo->getNumberOfElements(), 1 );
+  BOOST_CHECK_EQUAL( scalarInfo->getNumberOfChannels(), 1 );
+  BOOST_CHECK_EQUAL( scalarInfo->getNumberOfDimensions(), 0 );
+  BOOST_CHECK( scalarInfo->isReadable() );
+  BOOST_CHECK( scalarInfo->isWriteable() ) ;
+  
+  BOOST_CHECK( scalarInfo->getSupportedAccessModes() == AccessModeFlags({AccessMode::raw}));
+  
+  auto dataDescriptor = scalarInfo->getDataDescriptor();
+  BOOST_CHECK( dataDescriptor.fundamentalType() == RegisterInfo::FundamentalType::numeric );
+  BOOST_CHECK( dataDescriptor.isSigned() );
+  BOOST_CHECK( dataDescriptor.isIntegral() == false);
+  BOOST_CHECK_EQUAL( dataDescriptor.nDigits(), 48 );
+  BOOST_CHECK_EQUAL( dataDescriptor.nFractionalDigits(), 45 );
+  BOOST_CHECK_EQUAL( dataDescriptor.rawDataType(), DataType::TheType::float32 );
+  BOOST_CHECK_EQUAL( dataDescriptor.transportLayerDataType(), DataType::TheType::none ); // FIXME: should be int32, but this layer is not accessible through the interface anyway.
+}
 
 BOOST_AUTO_TEST_CASE(testReading) {
   Device d;
