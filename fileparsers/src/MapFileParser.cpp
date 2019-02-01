@@ -38,7 +38,7 @@ namespace ChimeraTK {
       bool failed = false;
       line_nr++;
       // Remove whitespace from beginning of line
-      line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
+      line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c){return !isspace(c);}));
       if (!line.size())       {continue;}
       if (line[0] == '#')     {continue;}
       if (line[0] == '@'){
@@ -47,14 +47,14 @@ namespace ChimeraTK {
         // Remove the '@' character...
         line.erase(line.begin(), line.begin() + 1);
         // ... and remove all the whitespace after it
-        line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
+        line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c){return !isspace(c);}));
         is.str(line);
         is >> md.name;
         if (!is){
           throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr));
         }
         line.erase(line.begin(), line.begin() + md.name.length());
-        line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int,int>(isspace))));
+        line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c){return !isspace(c);}));
         md.value = line;
         pmap->insert(md);
         is.clear();

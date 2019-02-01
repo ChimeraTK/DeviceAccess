@@ -27,7 +27,7 @@ namespace ChimeraTK {
     DeviceInfoMapPointer dmap(new DeviceInfoMap(absPathToDMapFile));
     while (std::getline(file, line)) {
       line_nr++;
-      line.erase(line.begin(), std::find_if(line.begin(), line.end(), std::not1(std::ptr_fun<int, int>(isspace))));
+      line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](int c){return !isspace(c);}));
       if (!line.size()) {
         continue;
       }
