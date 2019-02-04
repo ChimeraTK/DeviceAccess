@@ -94,7 +94,15 @@ void XMLGeneratorVisitor::dispatch(const VariableNetworkNode &node) {
 
     // add sub-element containing the data flow direction
     std::string dataFlowName{"application_to_control_system"};
-    if(owner.getFeedingNode() == node) { dataFlowName = "control_system_to_application"; }
+    if(owner.getFeedingNode() == node) {
+      dataFlowName = "control_system_to_application";
+      if(!owner.getFeedingNode().getDirection().withReturn) {
+        dataFlowName = "control_system_to_application";
+      }
+      else {
+        dataFlowName = "control_system_to_application_with_return";
+      }
+    }
     xmlpp::Element *directionElement = variable->add_child("direction");
     directionElement->set_child_text(dataFlowName);
 

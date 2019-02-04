@@ -206,6 +206,10 @@ void Application::generateXML() {
   // also search for unconnected nodes - this is here only executed to print the warnings
   processUnconnectedNodes();
 
+  // finalise connections: decide still-undecided details, in particular for control-system and device varibales, which
+  // get created "on the fly".
+  finaliseNetworks();
+
   XMLGeneratorVisitor visitor;
   visitor.dispatch(*this);
   visitor.save(applicationName + ".xml");
