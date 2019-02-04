@@ -97,7 +97,7 @@ install( TARGETS ${PROJECT_NAME}
          ARCHIVE DESTINATION lib )
 
 # Generate configuration files for dependencies
-set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${Boost_INCLUDE_DIRS} ${ChimeraTK-cppext_INCLUDE_DIRS}")
 set(${PROJECT_NAME}_LIBRARIES "${Boost_LIBRARIES}")
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${Boost_LIBRARY_DIRS}")
 # already set: ${PROJECT_NAME}_CXX_FLAGS
