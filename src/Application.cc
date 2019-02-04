@@ -862,7 +862,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       if(consumer.getType() == NodeType::Application) {
         if(testableMode) {
           auto varId = getNextVariableId();
-          auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, true, varId, varId);
+          auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
           testableMode_names[varId] = "Constant";
           consumer.setAppAccessorImplementation<UserType>(pvarDec);
         }
