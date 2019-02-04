@@ -194,9 +194,16 @@ namespace ChimeraTK {
     // Check if descriptor string is a ChimeraTK device descriptor
     if(Utilities::isDeviceDescriptor(deviceInfo.uri)) {
       auto cdd = Utilities::parseDeviceDesciptor(deviceInfo.uri);
-      auto backend = (creatorMap[cdd.backendType])(cdd.address, cdd.parameters);
-      _existingBackends[deviceInfo.uri] = backend;
-      return backend;
+      try {
+          auto backend = (creatorMap.at(cdd.backendType))(cdd.address, cdd.parameters);
+          _existingBackends[deviceInfo.uri] = backend;
+          return backend;
+      } catch (std::out_of_range& ) {
+          throw ChimeraTK::logic_error("Unknown backend: \"" + cdd.backendType + "\" at " +
+                                       deviceInfo.dmapFileName + ":" +
+                                       std::to_string(deviceInfo.dmapFileLineNumber) + " for " +
+                                       deviceInfo.uri);
+      }
     }
 
 
