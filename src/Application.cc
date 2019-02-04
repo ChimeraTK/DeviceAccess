@@ -407,20 +407,27 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   assert(pvarPair.second->getName() != "");
 
   // create variable IDs
-  auto varId = getNextVariableId();
-  auto varIdReturn = getNextVariableId();
+  size_t varId = getNextVariableId();
+  size_t varIdReturn;
+  if(node.getDirection().withReturn) varIdReturn = getNextVariableId();
 
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
-    pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true, varIdReturn, varId);
-    pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true, varId, varIdReturn);
+    if(!node.getDirection().withReturn) {
+      pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, false, true, varId, varId);
+      pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, false, varId, varId);
+    }
+    else {
+      pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true, varIdReturn, varId);
+      pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true, varId, varIdReturn);
+    }
 
     // put the decorators into the list
     testableMode_names[varId] = "Internal:"+node.getQualifiedName();
     if(consumer.getType() != NodeType::invalid) {
       testableMode_names[varId] += "->"+consumer.getQualifiedName();
     }
-    testableMode_names[varIdReturn] = testableMode_names[varId]+" (return)";
+    if(node.getDirection().withReturn) testableMode_names[varIdReturn] = testableMode_names[varId]+" (return)";
   }
 
   // if debug mode was requested for either node, decorate both accessors
