@@ -13,7 +13,7 @@
 
 namespace ChimeraTK {
 
-  template<typename UserType, typename DataConverterType>
+  template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
 
   /*********************************************************************************************************************/
@@ -180,7 +180,7 @@ namespace ChimeraTK {
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
 
-    template<typename UserType, typename DataConverterType>
+    template<typename UserType, typename DataConverterType, bool isRaw>
     friend class NumericAddressedBackendRegisterAccessor;
   };
 

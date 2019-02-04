@@ -131,12 +131,12 @@ namespace ChimeraTK {
     if(info->getNumberOfDimensions() <= 1) {
       if(registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) {
         accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-            new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter>(
+            new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(
                 shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
       }
       else if(registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754) {
         accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
-            new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter>(
+            new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(
                 shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
       }
       else {

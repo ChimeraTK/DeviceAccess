@@ -10,8 +10,9 @@
 namespace ChimeraTK {
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPostRead() {
-    if(!isRaw) {
+  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostRead() {
+    //if(!isRaw) {
+    if(false) {// FIXME: to make complile without the variable isRaw available
       auto itsrc = _rawAccessor->begin(_startAddress);
       for(auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
           itdst != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
@@ -34,8 +35,9 @@ namespace ChimeraTK {
   }
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPreWrite() {
-    if(!isRaw) {
+  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPreWrite() {
+    //    if(!isRaw) {
+    if(false) {// FIXME: to make complile without the variable isRaw available
       auto itdst = _rawAccessor->begin(_startAddress);
       for(auto itsrc = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
           itsrc != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
@@ -57,12 +59,12 @@ namespace ChimeraTK {
   }
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPostWrite() {
-    if(isRaw) {
+  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostWrite() {
+    //if(isRaw) {
       if(!_rawAccessor->isShared) {
         NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
       }
-    }
+      //}
   }
 
   namespace detail {
@@ -81,7 +83,7 @@ namespace ChimeraTK {
 
   } // namespace detail
 
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter);
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
 
 } /* namespace ChimeraTK */

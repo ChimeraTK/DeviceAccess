@@ -36,7 +36,7 @@ namespace ChimeraTK {
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for
    * scalar and 1D registers.
    */
-  template<typename UserType, typename DataConverterType>
+  template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
    public:
     NumericAddressedBackendRegisterAccessor(boost::shared_ptr<DeviceBackend> dev,
@@ -44,7 +44,7 @@ namespace ChimeraTK {
         size_t numberOfWords,
         size_t wordOffsetInRegister,
         AccessModeFlags flags)
-    : SyncNDRegisterAccessor<UserType>(registerPathName), _dataConverter(registerPathName), isRaw(false),
+    : SyncNDRegisterAccessor<UserType>(registerPathName), _dataConverter(registerPathName),
       _registerPathName(registerPathName), _numberOfWords(numberOfWords) {
       try {
         // check for unknown flags
@@ -97,7 +97,8 @@ namespace ChimeraTK {
                                          "name: " +
                 _registerPathName + "')");
           }
-          isRaw = true;
+            // FIXME: this has to move to the creation
+            //isRaw = true;
         }
       }
       catch(...) {
@@ -159,14 +160,14 @@ namespace ChimeraTK {
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted =
-          boost::dynamic_pointer_cast<const NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>>(
+          boost::dynamic_pointer_cast<const NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>>(
               other);
       if(!rhsCasted) return false;
       if(_dev != rhsCasted->_dev) return false;
       if(_bar != rhsCasted->_bar) return false;
       if(_startAddress != rhsCasted->_startAddress) return false;
       if(_numberOfWords != rhsCasted->_numberOfWords) return false;
-      if(isRaw != rhsCasted->isRaw) return false;
+      // if(isRaw != rhsCasted->isRaw) return false; FIXME remove this line when cleaning up. obsolete with the template parameters. Just keeping in in case I have to revert
       if(_dataConverter != rhsCasted->_dataConverter) return false;
       return true;
     }
@@ -189,7 +190,7 @@ namespace ChimeraTK {
 
     // a local typename so the DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER does
     // not get confused by the comma which separates the two template parameters
-    typedef NumericAddressedBackendRegisterAccessor<UserType, DataConverterType> THIS_TYPE;
+    typedef NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw> THIS_TYPE;
 
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, getAsCooked_impl, 2);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(THIS_TYPE, setAsCooked_impl, 3);
@@ -208,7 +209,6 @@ namespace ChimeraTK {
 
     /** Converter to interpret the data */
     DataConverterType _dataConverter;
-    bool isRaw;
 
     /** register and module name */
     RegisterPath _registerPathName;
@@ -272,9 +272,9 @@ namespace ChimeraTK {
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<typename UserType, typename DataConverterType>
+  template<typename UserType, typename DataConverterType, bool isRaw>
   template<typename COOKED_TYPE>
-  COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::getAsCooked_impl(
+    COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>::getAsCooked_impl(
       unsigned int channel,
       unsigned int sample) {
     if(isRaw) {
@@ -288,9 +288,9 @@ namespace ChimeraTK {
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<typename UserType, typename DataConverterType>
+  template<typename UserType, typename DataConverterType, bool isRaw>
   template<typename COOKED_TYPE>
-  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType>::setAsCooked_impl(unsigned int channel,
+  void NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>::setAsCooked_impl(unsigned int channel,
       unsigned int sample,
       COOKED_TYPE value) {
     if(isRaw) {
@@ -305,16 +305,16 @@ namespace ChimeraTK {
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPostRead();
+  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostRead();
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPreWrite();
+  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPreWrite();
 
   template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter>::doPostWrite();
+  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostWrite();
 
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter);
-  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
 
 } // namespace ChimeraTK
 
