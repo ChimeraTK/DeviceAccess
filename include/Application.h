@@ -294,10 +294,6 @@ namespace ChimeraTK {
       /** Flag whether to warn about unconnected variables or not */
       bool enableUnconnectedVariablesWarning{false};
 
-      /** Map from accessor ID to the variable ID used in the other maps here, e.g. for the testable mode. This allows
-       *  associating sender and receiver pairs of the same ProcessArray. */
-      std::map<ChimeraTK::TransferElementID, size_t> idMap;
-
       /** Map from ProcessArray uniqueId to the variable ID for control system variables. This is required for the
        *  TestFacility. */
       std::map<size_t, size_t> pvIdMap;

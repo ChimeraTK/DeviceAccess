@@ -306,9 +306,6 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   // obatin the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
-  // create variable ID
-  idMap[accessor->getId()] = getNextVariableId();
-
   // return accessor
   return accessor;
 }
@@ -346,8 +343,8 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
   assert(pvar->getName() != "");
 
   // create variable ID
-  idMap[pvar->getId()] = getNextVariableId();
-  pvIdMap[pvar->getUniqueId()] = idMap[pvar->getId()];
+  auto varId = getNextVariableId();
+  pvIdMap[pvar->getUniqueId()] = varId;
 
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable.
   // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware of this.
@@ -363,12 +360,12 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
     }
 
     if(mode != UpdateMode::poll) {
-      auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false);
-      testableMode_names[idMap[pvarDec->getId()]] = "ControlSystem:"+node.getPublicName();
+      auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
+      testableMode_names[varId] = "ControlSystem:"+node.getPublicName();
       return pvarDec;
     }
     else {
-      testableMode_isPollMode[idMap[pvar->getId()]] = true;
+      testableMode_isPollMode[varId] = true;
     }
   }
 
@@ -409,21 +406,21 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
 
-  // create variable ID
+  // create variable IDs
   auto varId = getNextVariableId();
-  idMap[pvarPair.first->getId()] = varId;
-  idMap[pvarPair.second->getId()] = varId;
+  auto varIdReturn = getNextVariableId();
 
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
-    pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true);
-    pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true);
+    pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true, varIdReturn, varId);
+    pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true, varId, varIdReturn);
 
     // put the decorators into the list
     testableMode_names[varId] = "Internal:"+node.getQualifiedName();
     if(consumer.getType() != NodeType::invalid) {
       testableMode_names[varId] += "->"+consumer.getQualifiedName();
     }
+    testableMode_names[varIdReturn] = testableMode_names[varId]+" (return)";
   }
 
   // if debug mode was requested for either node, decorate both accessors
@@ -857,9 +854,9 @@ void Application::typedMakeConnection(VariableNetwork &network) {
     for(auto &consumer : consumers) {
       if(consumer.getType() == NodeType::Application) {
         if(testableMode) {
-          idMap[feedingImpl->getId()] = getNextVariableId();
-          auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, true);
-          testableMode_names[idMap[pvarDec->getId()]] = "Constant";
+          auto varId = getNextVariableId();
+          auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, true, varId, varId);
+          testableMode_names[varId] = "Constant";
           consumer.setAppAccessorImplementation<UserType>(pvarDec);
         }
         else {
@@ -988,8 +985,11 @@ void Application::testableModeLock(const std::string& name) {
           std::cout << std::endl;
         }
       }
+      std::cout << "(end of list)" << std::endl;
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       throw TestsStalled();
+      //getInstance().testableMode_counter = 0;
+      //for(auto &pair : Application::getInstance().testableMode_perVarCounter) pair.second = 0;
     }
   }
   else {

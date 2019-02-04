@@ -60,7 +60,7 @@ struct TestApplication : public ctk::Application {
 
 struct TestApplicationConnectTo : ctk::Application {
     TestApplicationConnectTo() : Application("testSuite") {}
-    ~TestApplicationConnectTo() { shutdown(); }
+    ~TestApplicationConnectTo();
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     void defineConnections() {
@@ -72,6 +72,9 @@ struct TestApplicationConnectTo : ctk::Application {
     ctk::DeviceModule dev{"(dummy?map=test3.map)"};
     ctk::ControlSystemModule cs;
 };
+TestApplicationConnectTo::~TestApplicationConnectTo() {
+  shutdown();
+}
 
 /*********************************************************************************************************************/
 

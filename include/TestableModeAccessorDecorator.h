@@ -20,19 +20,20 @@ namespace ChimeraTK {
   class TestableModeAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
     public:
       TestableModeAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
-                                    bool handleRead, bool handleWrite)
+                                    bool handleRead, bool handleWrite,
+                                    size_t variableIdRead, size_t variableIdWrite)
       : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor),
         _handleRead(handleRead),
-        _handleWrite(handleWrite)
+        _handleWrite(handleWrite),
+        _variableIdRead(variableIdRead),
+        _variableIdWrite(variableIdWrite)
       {
-
-        // obtain variableId of target accessor
-        variableId = Application::getInstance().idMap[this->_id];
-        assert(variableId != 0);
+        assert(_variableIdRead != 0);
+        assert(_variableIdWrite != 0);
 
         // if receiving end, register for testable mode (stall detection)
-        if(this->isReadable()) {
-          Application::getInstance().testableMode_processVars[variableId] = accessor;
+        if(this->isReadable() && handleRead) {
+          Application::getInstance().testableMode_processVars[_variableIdRead] = accessor;
         }
 
         // if this decorating a bidirectional process variable, set the valueRejectCallback
@@ -42,7 +43,9 @@ namespace ChimeraTK {
             decrementCounter();
           });
         }
-
+        else {
+          assert(! (handleRead && handleWrite) );
+        }
       }
 
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
@@ -56,15 +59,15 @@ namespace ChimeraTK {
         dataLost = _target->doWriteTransfer(versionNumber);
         if(!dataLost) {
           ++Application::getInstance().testableMode_counter;
-          ++Application::getInstance().testableMode_perVarCounter[variableId];
+          ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestableModeAccessorDecorator::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+            std::cout << "TestableModeAccessorDecorator::write[name='"<<this->getName()<<"', id="<<_variableIdWrite<<"]: testableMode_counter "
                          "increased, now at value " << Application::getInstance().testableMode_counter << std::endl;
           }
         }
         else {
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestableModeAccessorDecorator::write[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter not "
+            std::cout << "TestableModeAccessorDecorator::write[name='"<<this->getName()<<"', id="<<_variableIdWrite<<"]: testableMode_counter not "
                         "increased due to lost data" << std::endl;
           }
         }
@@ -89,28 +92,30 @@ namespace ChimeraTK {
       /** Obtain the testableModeLock if not owned yet, and decrement the counter. */
       void obtainLockAndDecrementCounter() {
         if(!Application::testableModeTestLock()) Application::testableModeLock("doReadTransfer "+this->getName());
-        decrementCounter();
-      }
-
-      /** Obtain the testableModeLock if not owned yet, and decrement the counter. */
-      void decrementCounter() {
-        if(Application::getInstance().testableMode_perVarCounter[variableId] > 0) {
+        if(Application::getInstance().testableMode_perVarCounter[_variableIdRead] > 0) {
           assert(Application::getInstance().testableMode_counter > 0);
           --Application::getInstance().testableMode_counter;
-          --Application::getInstance().testableMode_perVarCounter[variableId];
+          --Application::getInstance().testableMode_perVarCounter[_variableIdRead];
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestableModeAccessorDecorator[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+            std::cout << "TestableModeAccessorDecorator[name='"<<this->getName()<<"', id="<<_variableIdRead<<"]: testableMode_counter "
                         "decreased, now at value " << Application::getInstance().testableMode_counter << " / " <<
-                        Application::getInstance().testableMode_perVarCounter[variableId] << std::endl;
+                        Application::getInstance().testableMode_perVarCounter[_variableIdRead] << std::endl;
           }
         }
         else {
           if(Application::getInstance().enableDebugTestableMode) {
-            std::cout << "TestableModeAccessorDecorator[name='"<<this->getName()<<"', id="<<variableId<<"]: testableMode_counter "
+            std::cout << "TestableModeAccessorDecorator[name='"<<this->getName()<<"', id="<<_variableIdRead<<"]: testableMode_counter "
                         "NOT decreased, was already at value " << Application::getInstance().testableMode_counter << " / " <<
-                        Application::getInstance().testableMode_perVarCounter[variableId] << std::endl;
+                        Application::getInstance().testableMode_perVarCounter[_variableIdRead] << std::endl;
+            std::cout << Application::getInstance().testableMode_names[_variableIdRead] << std::endl;
           }
         }
+      }
+
+      /** Obtain the testableModeLock if not owned yet, decrement the counter, and release the lock again. */
+      void decrementCounter() {
+        obtainLockAndDecrementCounter();
+        releaseLock();
       }
 
       bool doReadTransferNonBlocking() override {
@@ -128,9 +133,9 @@ namespace ChimeraTK {
         if(_handleRead) {
           auto &app = Application::getInstance();
           assert(Application::testableModeTestLock());
-          if(app.testableMode_perVarCounter[variableId] > 1) {
-            app.testableMode_counter -= app.testableMode_perVarCounter[variableId] - 1;
-            app.testableMode_perVarCounter[variableId] = 1;
+          if(app.testableMode_perVarCounter[_variableIdRead] > 1) {
+            app.testableMode_counter -= app.testableMode_perVarCounter[_variableIdRead] - 1;
+            app.testableMode_perVarCounter[_variableIdRead] = 1;
           }
         }
         return true;
@@ -146,9 +151,9 @@ namespace ChimeraTK {
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
       using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
 
-      size_t variableId;
-
       bool _handleRead, _handleWrite;
+      size_t _variableIdRead, _variableIdWrite;
+
   };
 
 } /* namespace ChimeraTK */

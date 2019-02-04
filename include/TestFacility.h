@@ -68,12 +68,11 @@ namespace ChimeraTK {
 
         // obtain variable id from pvIdMap and transfer it to idMap (required by the TestableModeAccessorDecorator)
         size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
-        Application::getInstance().idMap[pv->getId()] = varId;
 
         // decorate with TestableModeAccessorDecorator if variable is sender and receiver is not poll-type,
         // and store it in cache
         if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true);
+          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
           Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(scalarMap.table)[name].replace(ChimeraTK::ScalarRegisterAccessor<T>(deco));
         }
@@ -102,12 +101,11 @@ namespace ChimeraTK {
 
         // obtain variable id from pvIdMap and transfer it to idMap (required by the TestableModeAccessorDecorator)
         size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
-        Application::getInstance().idMap[pv->getId()] = varId;
 
         // decorate with TestableModeAccessorDecorator if variable is sender and receiver is not poll-type,
         // and store it in cache
         if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true);
+          auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
           Application::getInstance().testableMode_names[varId] = "ControlSystem:"+name;
           boost::fusion::at_key<T>(arrayMap.table)[name].replace(ChimeraTK::OneDRegisterAccessor<T>(deco));
         }
