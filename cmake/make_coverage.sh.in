@@ -25,7 +25,7 @@
 
 rm -f `find . -name "*\.gcda"`
 make test
-lcov --capture --directory . --output-file coverage_all.info
+lcov --capture --directory . --output-file coverage_all.info --ignore-errors gcov
 
 #lcov capture also includes external stuff like glibc, boost etc.
 #only extract the reports for this project

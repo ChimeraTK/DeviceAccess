@@ -5,7 +5,7 @@
 # project-template!
 #
 # The macro is called "add_dependency" and takes 3 arguments:
-#   - name of the dependency project as passed to FIND_PACKAGE (e.g. "mtca4u-deviceaccess")
+#   - name of the dependency project as passed to FIND_PACKAGE (e.g. "ChimeraTK-DeviceAccess")
 #   - required version as passed to FIND_PACKAGE
 #   - a list of components used by this project including the REQUIRED keyword etc.
 #

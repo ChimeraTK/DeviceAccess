@@ -44,9 +44,11 @@ endforeach()
 
 string(REPLACE " " ";" LIST "${PROJECT_NAME} ${${PROJECT_NAME}_LIBRARIES}")
 foreach(LIBRARY ${LIST})
-  if(LIBRARY MATCHES "/")  # library name contains slashes: link against the a file path name
+  if(LIBRARY MATCHES "/")         # library name contains slashes: link against the a file path name
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} ${LIBRARY}")
-  else()                   # library name does not contain slashes: link against library with -l option
+  elseif(LIBRARY MATCHES "^-l")   # library name does not contain slashes but already the -l option: directly quote it
+    set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} ${LIBRARY}")
+  else()                          # link against library with -l option
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} -l${LIBRARY}")
   endif()
 endforeach()
