@@ -34,8 +34,6 @@ namespace ChimeraTK {
     }
 
     // set the acceptor backlog to 1
-    /*  _connectionAcceptor.open(_serverEndpoint.protocol());
-    _connectionAcceptor.bind(_serverEndpoint);*/
     _connectionAcceptor.listen(1);
 
     // The first address of the register space is set to a reference value. This
@@ -70,9 +68,6 @@ namespace ChimeraTK {
 
       // http://www.boost.org/doc/libs/1_46_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
       RebotDummyServer::handleAcceptedConnection(incomingConnection);
-      // boost::asio::detail::thread
-      // t(boost::bind(&RebotDummyServer::handleAcceptedConnection, this,
-      // incomingConnection));
     }
   }
 
@@ -185,7 +180,6 @@ namespace ChimeraTK {
       if(errorCode == boost::asio::error::eof) {
         // The client has closed the connection; move to the outer loop to accept new connections
         _currentClientConnection->close();
-        //std::cout << "connection closed" << std::endl;
         break;
       }
       else if (errorCode && stop_rebot_server) {
