@@ -8,7 +8,7 @@
 
 namespace ChimeraTK {
 
-  bool volatile stop_rebot_server = false;
+  std::atomic<bool> stop_rebot_server(false);
 
   RebotDummyServer::RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion)
   : _state(ACCEPT_NEW_COMMAND),
@@ -23,10 +23,10 @@ namespace ChimeraTK {
     _connectionAcceptor(_io, _serverEndpoint),
     _currentClientConnection()
   {
-    if (protocolVersion == 0) {
+    if(protocolVersion == 0) {
       _protocolImplementor.reset(new DummyProtocol0(*this));
     }
-    else if (protocolVersion == 1) {
+    else if(protocolVersion == 1) {
       _protocolImplementor.reset(new DummyProtocol1(*this));
     }
     else {
@@ -58,13 +58,16 @@ namespace ChimeraTK {
         _connectionAcceptor.accept(*incomingConnection);
       }
       catch(boost::system::system_error&) {
-        if (stop_rebot_server) {
+        if(stop_rebot_server) {
           break; // exit gracefully
         }
         else {
           throw; // something else went wrong, rethrow the exception
         }
+
       }
+
+      if(stop_rebot_server) break;
 
       // http://www.boost.org/doc/libs/1_46_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
       RebotDummyServer::handleAcceptedConnection(incomingConnection);
@@ -182,14 +185,14 @@ namespace ChimeraTK {
         _currentClientConnection->close();
         break;
       }
-      else if (errorCode && stop_rebot_server) {
+      else if(errorCode && stop_rebot_server) {
         /* reading was interrupted by a terminate signal; move to the outer loop which will also quit and end the
          * server gracefully */
         _currentClientConnection->close();
         std::cout << "Terminate signal detected while reading. Connection closed, will exit now." << std::endl;
         break;
       }
-      else if (errorCode) {
+      else if(errorCode) {
         throw boost::system::system_error(errorCode);
       }
 
@@ -201,6 +204,12 @@ namespace ChimeraTK {
 
   void RebotDummyServer::stop() {
     stop_rebot_server = true;
+    // open connection so the server stops waiting for new connections. We just want the call
+    // _connectionAcceptor.accept() in RebotDummyServer::start() to exit, so start() terminates.
+    boost::asio::io_service io_service;
+    boost::asio::ip::tcp::socket socket(io_service);
+    boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string("127.0.0.1"), _serverPort);
+    socket.connect(endpoint);
   }
 
 } /* namespace ChimeraTK */

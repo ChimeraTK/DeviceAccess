@@ -14,8 +14,8 @@ namespace ChimeraTK{
 }
 namespace ChimeraTK {
   using namespace ChimeraTK;
-  
-extern bool volatile stop_rebot_server;
+
+extern std::atomic<bool> stop_rebot_server;
 
 /*
  * starts a blocking Rebot server on localhost:port. where port is the
@@ -47,7 +47,7 @@ class RebotDummyServer {
   static const uint32_t HELLO = 4;
   static const uint32_t PING = 5;
   static const uint32_t REBOT_MAGIC_WORD = 0x72626f74; // ascii code 'rbot'
-  
+
   // internal states. Currently there are only two when the connection is open
   static const uint32_t ACCEPT_NEW_COMMAND = 1;
   // a multi word write can be so large that it needs more than one package
@@ -59,7 +59,7 @@ class RebotDummyServer {
   std::atomic<uint32_t> _heartbeatCount;
   std::atomic<uint32_t> _helloCount; // in protocol version 1 we have to send hello instead of heartbeat
   std::atomic<bool> _dont_answer; // flag to cause an error condition
- 
+
   DummyBackend _registerSpace;
   unsigned int _serverPort;
   unsigned int _protocolVersion;
@@ -68,7 +68,7 @@ class RebotDummyServer {
   ip::tcp::acceptor _connectionAcceptor;
   boost::shared_ptr<ip::tcp::socket> _currentClientConnection;
   std::unique_ptr<DummyProtocolImplementor> _protocolImplementor;
-  
+
   void processReceivedPackage(std::vector<uint32_t> &buffer);
   void writeWordToRequestedAddress(std::vector<uint32_t> &buffer);
   void readRegisterAndSendData(std::vector<uint32_t> &buffer);
