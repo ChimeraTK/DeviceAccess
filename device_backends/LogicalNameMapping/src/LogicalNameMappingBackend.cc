@@ -163,6 +163,10 @@ namespace ChimeraTK {
       info_cast.writeable = target_info->isWriteable();
       info_cast.supportedFlags = target_info->getSupportedAccessModes();
 
+      if(targetType == LNMBackendRegisterInfo::TargetType::CHANNEL) {
+        info_cast.writeable = false;
+      }
+
       if(targetType == LNMBackendRegisterInfo::TargetType::REGISTER) {
         info_cast.nDimensions = target_info->getNumberOfDimensions();
         info_cast.nChannels = target_info->getNumberOfChannels();
