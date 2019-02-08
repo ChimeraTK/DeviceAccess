@@ -30,8 +30,8 @@ namespace ChimeraTK {
     int32_t  nFractionalBits; /**< Number of fractional bits */
     bool     signedFlag; /**< Signed/Unsigned flag */
     RegisterInfoMap::RegisterInfo::Access registerAccess;
-    RegisterInfoMap::RegisterInfo::Type type;    
-    
+    RegisterInfoMap::RegisterInfo::Type type;
+
     std::string module; /**< Name of the module this register is in*/
 
     while (std::getline(file, line)) {
@@ -84,7 +84,7 @@ namespace ChimeraTK {
       signedFlag = true;
       registerAccess = RegisterInfoMap::RegisterInfo::Access::READWRITE;
       type =  RegisterInfoMap::RegisterInfo::Type::FIXED_POINT;
-      
+
       is >> std::setbase(0) >> bar;
       if (is.fail()){
         failed = true;
@@ -110,7 +110,7 @@ namespace ChimeraTK {
           auto type_and_nFractionBits = getTypeAndNFractionalBits(bitInterpretation);
           type = type_and_nFractionBits.first;
           nFractionalBits = type_and_nFractionBits.second;
-          
+
           if (nFractionalBits > 1023 || nFractionalBits < -1024) {
             throw ChimeraTK::logic_error("Parsing error in map file '"+file_name+"' on line "+std::to_string(line_nr)+": "
                                          "too many fractional bits");
@@ -159,8 +159,8 @@ namespace ChimeraTK {
       // count number of channels and number of entries per channel
       size_t nChannels = 0;
       size_t nBytesPerEntry = 0;        // nb. of bytes per entry for all channels together
-      // We have to aggregate the fractional/ signed information of all cannels. Afterwards we set fractional to 9999 (way out of range, max allowed is 1023) 
-      // if there are fractional bits, just to indicate that the register is not integer and probablu a floating point accessor should be used (e.g. in QtHardMon).
+      // We have to aggregate the fractional/ signed information of all cannels. Afterwards we set fractional to 9999 (way out of range, max allowed is 1023)
+      // if there are fractional bits, just to indicate that the register is not integer and probably a floating point accessor should be used (e.g. in QtHardMon).
       bool isSigned = false;
       bool isInteger = true;
       uint32_t maxWidth=0;
@@ -178,7 +178,8 @@ namespace ChimeraTK {
         }
         maxWidth=std::max(maxWidth, subInfo.width);
       }
-      if(nChannels > 0) nElements = info.nBytes / nBytesPerEntry;
+      if(nChannels == 0) continue;
+      nElements = info.nBytes / nBytesPerEntry;
       // add it to the map
       RegisterInfoMap::RegisterInfo newEntry(name, nElements, info.address, info.nBytes, info.bar, maxWidth, (isInteger?0:9999) /*fractional bits*/,
                                              isSigned, info.module, nChannels, true);
@@ -238,6 +239,6 @@ namespace ChimeraTK {
       }
     }
   }
-  
+
 }//namespace ChimeraTK
 
