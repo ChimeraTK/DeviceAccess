@@ -14,7 +14,8 @@
 #include "Module.h"
 #include "VirtualModule.h"
 #include "VariableGroup.h"
-//#include "ScalarAccessor.h"
+//#include "Application.h"
+#include "ScalarAccessor.h"
 
 namespace ChimeraTK {
 class Application;
@@ -86,15 +87,12 @@ class DeviceModule : public Module {
       
     public:
       struct DeviceError : public VariableGroup {
-        /*using VariableGroup::VariableGroup;
-        ScalarOutput<double> status{this,"status","",""}; 
-        ScalarOutput<std::string> message{this,"errMsg","",""}; */
-        int status;
-        std::string message;
-         
+        using VariableGroup::VariableGroup;
+        ScalarOutput<int> status{this,"status","",""}; 
+        ScalarOutput<std::string> message{this,"errMsg","",""}; 
       };  
-      DeviceError deviceError;
-      //DeviceError deviceError{this, "deviceError", "...",true}; 
+      //DeviceError deviceError;
+      DeviceError deviceError{this, "deviceError", "Error"}; 
     private:
       /** The thread executing reportException() */
       boost::thread moduleThread;

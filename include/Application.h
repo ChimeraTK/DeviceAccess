@@ -19,7 +19,7 @@
 #include "InternalModule.h"
 #include "EntityOwner.h"
 #include "Profiler.h"
-#include "DeviceModule.h"
+//#include "DeviceModule.h"
 
 namespace ChimeraTK {
 
@@ -28,7 +28,7 @@ namespace ChimeraTK {
   class VariableNetwork;
   class TriggerFanOut;
   class TestFacility;
-  //class DeviceModule;
+  class DeviceModule;
   
   template<typename UserType>
   class Accessor;

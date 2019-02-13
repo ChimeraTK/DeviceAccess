@@ -94,6 +94,14 @@ BOOST_AUTO_TEST_CASE(testThinkOfAName) {
   var1.write();
   test.stepApplication();
   
+  boost::shared_ptr< ExceptionDummy > backend = boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend("Exception") );
+  backend->close();
+  backend->throwException = true;    
+  //backend->open();
+  app.dev.reportException("exception");
+
+  
   /*auto var2 = test.getScalar<double>("var2");
   var2.read();
   test.stepApplication();

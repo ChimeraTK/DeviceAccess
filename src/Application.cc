@@ -29,7 +29,7 @@
 #include "Visitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
 #include "XMLGeneratorVisitor.h"
-//#include "DeviceModule.h"
+#include "DeviceModule.h"
 
 using namespace ChimeraTK;
 
