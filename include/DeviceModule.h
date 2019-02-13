@@ -10,20 +10,23 @@
 
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
-
 #include "VariableNetworkNode.h"
 #include "Module.h"
 #include "VirtualModule.h"
+#include "VariableGroup.h"
+//#include "ScalarAccessor.h"
 
 namespace ChimeraTK {
-
-  class DeviceModule : public Module {
-
+class Application;
+class DeviceModule : public Module {
     public:
 
       /** Constructor: The device represented by this DeviceModule is identified by either the device alias found
        *  in the DMAP file or directly an URI. The given optional prefix will be prepended to all register names
        *  (separated by a slash). */
+      
+      DeviceModule(Application *application, const std::string& deviceAliasOrURI, const std::string& registerNamePrefix="");
+
       DeviceModule(const std::string& deviceAliasOrURI, const std::string& registerNamePrefix="");
 
       /** Default constructor: create dysfunctional device module */
@@ -60,9 +63,15 @@ namespace ChimeraTK {
       void connectTo(const Module &target, VariableNetworkNode trigger={}) const override;
 
       ModuleType getModuleType() const override { return ModuleType::Device; }
-
+      
+      void reportException(std::string errMsg);
+      
+      void run() override;
+      
+      void terminate() override;
+      
+      
     protected:
-
       // populate virtualisedModuleFromCatalog based on the information in the device's catalogue
       VirtualModule& virtualiseFromCatalog() const;
       mutable VirtualModule virtualisedModuleFromCatalog{"INVALID", "", ModuleType::Invalid};
@@ -74,7 +83,26 @@ namespace ChimeraTK {
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
       mutable std::map<std::string, DeviceModule> subModules;
-
+      
+    public:
+      struct DeviceError : public VariableGroup {
+        /*using VariableGroup::VariableGroup;
+        ScalarOutput<double> status{this,"status","",""}; 
+        ScalarOutput<std::string> message{this,"errMsg","",""}; */
+        int status;
+        std::string message;
+         
+      };  
+      DeviceError deviceError;
+      //DeviceError deviceError{this, "deviceError", "...",true}; 
+    private:
+      /** The thread executing reportException() */
+      boost::thread moduleThread;
+      cppext::future_queue<std::string> errorQueue{5};
+      std::mutex errorMutex;
+      std::condition_variable errorCondVar;
+    
+      void handleException();
   };
 
 } /* namespace ChimeraTK */

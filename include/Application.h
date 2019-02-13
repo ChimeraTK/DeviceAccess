@@ -19,6 +19,7 @@
 #include "InternalModule.h"
 #include "EntityOwner.h"
 #include "Profiler.h"
+#include "DeviceModule.h"
 
 namespace ChimeraTK {
 
@@ -27,7 +28,8 @@ namespace ChimeraTK {
   class VariableNetwork;
   class TriggerFanOut;
   class TestFacility;
-
+  //class DeviceModule;
+  
   template<typename UserType>
   class Accessor;
 
@@ -177,7 +179,9 @@ namespace ChimeraTK {
       static VariableNetworkNode makeConstant(UserType value, size_t length=1, bool makeFeeder=true) {
         return VariableNetworkNode::makeConstant(makeFeeder, value, length);
       }
-
+      
+      void registerDeviceModule(DeviceModule* deviceModule);
+      
     protected:
 
       friend class Module;
@@ -185,6 +189,7 @@ namespace ChimeraTK {
       friend class VariableNetworkNode;
       friend class VariableNetworkGraphDumpingVisitor;
       friend class XMLGeneratorVisitor;
+      
 
       template<typename UserType>
       friend class Accessor;
@@ -251,6 +256,7 @@ namespace ChimeraTK {
 
       /** List of InternalModules */
       std::list<boost::shared_ptr<InternalModule>> internalModuleList;
+      
 
       /** List of variable networks */
       std::list<VariableNetwork> networkList;
@@ -352,6 +358,11 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("setCurrentVersionNumber() called on the application. This is probably caused by "
                                      "incorrect ownership of variables/accessors or VariableGroups.");
       }
+     
+      std::list<DeviceModule*> deviceModuleList;
+     
+        
+      
 
   };
 

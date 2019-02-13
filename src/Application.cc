@@ -29,6 +29,7 @@
 #include "Visitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
 #include "XMLGeneratorVisitor.h"
+//#include "DeviceModule.h"
 
 using namespace ChimeraTK;
 
@@ -167,7 +168,13 @@ void Application::run() {
 
   // start the threads for the modules
   for(auto &module : getSubmoduleListRecursive()) {
+    std::cout<<module->getFullDescription()<<std::endl;
     module->run();
+  }
+
+  for(auto &deviceModule : deviceModuleList) {
+    std::cout<<"registered module"<<std::endl;
+    deviceModule->run();
   }
 
 }
@@ -1045,4 +1052,10 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
     // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
     thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
     return myLock;
+}
+
+/*********************************************************************************************************************/
+void Application::registerDeviceModule(DeviceModule* deviceModule)
+{
+  deviceModuleList.push_back(deviceModule);
 }

@@ -20,8 +20,27 @@ namespace ChimeraTK {
            ""),
     deviceAliasOrURI(_deviceAliasOrURI),
     registerNamePrefix(_registerNamePrefix)
-  {}
+  {  
+    
+  }
 
+  
+  /*********************************************************************************************************************/
+  
+  DeviceModule::DeviceModule(Application *application, const std::string& _deviceAliasOrURI, const std::string& _registerNamePrefix)
+  : Module(nullptr,
+           _registerNamePrefix.empty() ? "<Device:"+_deviceAliasOrURI+">"
+             : _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/")+1),
+           ""),
+    deviceAliasOrURI(_deviceAliasOrURI),
+    registerNamePrefix(_registerNamePrefix)
+  {
+    std::cout<<"deviceModule"<<std::endl;
+    application->registerDeviceModule(this);
+  }
+
+  
+  
   /*********************************************************************************************************************/
 
   VariableNetworkNode DeviceModule::operator()(const std::string& registerName, UpdateMode mode,
@@ -32,6 +51,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   Module& DeviceModule::operator[](const std::string& moduleName) const {
+    std::cout<<"DeviceModule:"<<moduleName<<std::endl;
+    
     if(subModules.count(moduleName) == 0) {
       subModules[moduleName] = {deviceAliasOrURI, registerNamePrefix/moduleName};
     }
@@ -59,6 +80,7 @@ namespace ChimeraTK {
     virtualisedModuleFromCatalog = VirtualModule(deviceAliasOrURI, "Device module", ModuleType::Device);
 
     // obtain register catalogue
+    std::cout<<"DeviceModule::virtualiseFromCatalog"<<std::endl;
     Device d;
     d.open(deviceAliasOrURI);   /// @todo: do not actually open the device (needs extension of DeviceAccess)!
     auto catalog = d.getRegisterCatalogue();
@@ -146,6 +168,78 @@ namespace ChimeraTK {
     virtualisedModuleFromCatalog_isValid = true;
     return virtualisedModuleFromCatalog;
   }
+  
+  /*********************************************************************************************************************/
 
+  void DeviceModule::reportException(std::string errMsg ){
+    DeviceError deviceError;
+    deviceError.status = 1;
+    deviceError.message = errMsg;
+    deviceError.writeAll();
+    std::unique_lock<std::mutex> lk(errorMutex);
+    errorQueue.push(errMsg);
+    errorCondVar.wait(lk);
+  }
+  
+  /*********************************************************************************************************************/
+  
+  void DeviceModule::handleException(){
+    std::string error;
+    while(true)
+    {
+      try{
+        errorQueue.pop_wait(error);
+        Device d;          
+        while(true) 
+        {
+          d.open(deviceAliasOrURI);
+          if (d.isOpened())
+          {
+            break;
+          }
+          usleep(5000);
+        }
+        deviceError.status = 1;
+        deviceError.message = "";
+        //lk.unlock();
+        errorCondVar.notify_all();
+      }
+      catch(std::exception ex)
+      {
+        std::cout<<"caught exception:"<<ex.what()<<std::endl;
+        //deviceError.message = ex.what();
+      }
+    }
+    
+  }
+  
+  /*********************************************************************************************************************/
+
+  void DeviceModule::run() {
+
+    // start the module thread
+    std::cout<<"start the module thread"<<std::endl;
+    assert(!moduleThread.joinable());
+    moduleThread = boost::thread(&DeviceModule::handleException, this);
+  }
+
+/*********************************************************************************************************************/
+
+  void DeviceModule::terminate() {
+    if(moduleThread.joinable()) {
+      moduleThread.interrupt();
+      // try joining the thread
+      while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
+        // if thread is not yet joined, send interrupt() to all variables.
+        for(auto &var : getAccessorListRecursive()) {
+          if(var.getDirection() == VariableDirection{VariableDirection::feeding,false}) continue;
+          var.getAppAccessorNoType().getHighLevelImplElement()->interrupt();
+        }
+        // it may not suffice to send interrupt() once, as the exception might get overwritten in the queue, thus we
+        // repeat this until the thread was joined.
+      }
+    }
+    assert(!moduleThread.joinable());
+  }
 }
 
