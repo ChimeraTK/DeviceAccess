@@ -2,22 +2,14 @@
 
 namespace ChimeraTK {
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   SubdeviceRegisterAccessor::SubdeviceRegisterAccessor(boost::shared_ptr<SubdeviceBackend> backend,
-                            const std::string &registerPathName,
-                            boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
-                            boost::shared_ptr<NDRegisterAccessor<int32_t>> accData,
-                            boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
-                            size_t byteOffset, size_t numberOfWords)
-  : SyncNDRegisterAccessor<int32_t>(registerPathName),
-    _backend(backend),
-    _accAddress(accAddress),
-    _accData(accData),
-    _accStatus(accStatus),
-    _byteOffset(byteOffset),
-    _numberOfWords(numberOfWords)
-  {
+      const std::string& registerPathName, boost::shared_ptr<NDRegisterAccessor<int32_t>> accAddress,
+      boost::shared_ptr<NDRegisterAccessor<int32_t>> accData, boost::shared_ptr<NDRegisterAccessor<int32_t>> accStatus,
+      size_t byteOffset, size_t numberOfWords)
+  : SyncNDRegisterAccessor<int32_t>(registerPathName), _backend(backend), _accAddress(accAddress), _accData(accData),
+    _accStatus(accStatus), _byteOffset(byteOffset), _numberOfWords(numberOfWords) {
     NDRegisterAccessor<int32_t>::buffer_2D.resize(1);
     NDRegisterAccessor<int32_t>::buffer_2D[0].resize(numberOfWords);
     _buffer.resize(numberOfWords);
@@ -25,7 +17,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  SubdeviceRegisterAccessor::~SubdeviceRegisterAccessor() {shutdown();}
+  SubdeviceRegisterAccessor::~SubdeviceRegisterAccessor() { shutdown(); }
 
   /*********************************************************************************************************************/
 
@@ -38,7 +30,7 @@ namespace ChimeraTK {
   bool SubdeviceRegisterAccessor::doWriteTransfer(ChimeraTK::VersionNumber) {
     std::lock_guard<decltype(_backend->mutex)> lockGuard(_backend->mutex);
     size_t idx = 0;
-    for(size_t adr=_byteOffset; adr<_byteOffset+4*_numberOfWords; adr+=4) {
+    for(size_t adr = _byteOffset; adr < _byteOffset + 4 * _numberOfWords; adr += 4) {
       if(_backend->type == SubdeviceBackend::Type::threeRegisters) {
         while(true) {
           _accStatus->read();
@@ -74,68 +66,57 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPreRead() {
-  }
+  void SubdeviceRegisterAccessor::doPreRead() {}
 
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doPostRead() {
-    assert( NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size() );
+    assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
   }
 
   /*********************************************************************************************************************/
 
   void SubdeviceRegisterAccessor::doPreWrite() {
-    assert( NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size() );
+    assert(NDRegisterAccessor<int32_t>::buffer_2D[0].size() == _buffer.size());
     NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
   }
 
   /*********************************************************************************************************************/
 
-  void SubdeviceRegisterAccessor::doPostWrite() {
-    NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer);
-  }
+  void SubdeviceRegisterAccessor::doPostWrite() { NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_buffer); }
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::mayReplaceOther(const boost::shared_ptr<TransferElement const> &) const {
+  bool SubdeviceRegisterAccessor::mayReplaceOther(const boost::shared_ptr<TransferElement const>&) const {
     return false;
   }
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::isReadOnly() const {
-    return false;
+  bool SubdeviceRegisterAccessor::isReadOnly() const { return false; }
+
+  /*********************************************************************************************************************/
+
+  bool SubdeviceRegisterAccessor::isReadable() const { return false; }
+
+  /*********************************************************************************************************************/
+
+  bool SubdeviceRegisterAccessor::isWriteable() const { return true; }
+
+  /*********************************************************************************************************************/
+
+  AccessModeFlags SubdeviceRegisterAccessor::getAccessModeFlags() const { return {AccessMode::raw}; }
+
+  /*********************************************************************************************************************/
+
+  std::vector<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor::getHardwareAccessingElements() {
+    return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
   }
 
   /*********************************************************************************************************************/
 
-  bool SubdeviceRegisterAccessor::isReadable() const {
-    return false;
-  }
-
-  /*********************************************************************************************************************/
-
-  bool SubdeviceRegisterAccessor::isWriteable() const {
-    return true;
-  }
-
-  /*********************************************************************************************************************/
-
-  AccessModeFlags SubdeviceRegisterAccessor::getAccessModeFlags() const {
-    return {AccessMode::raw};
-  }
-
-  /*********************************************************************************************************************/
-
-  std::vector< boost::shared_ptr<TransferElement> > SubdeviceRegisterAccessor::getHardwareAccessingElements() {
-    return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
-  }
-
-  /*********************************************************************************************************************/
-
-  std::list< boost::shared_ptr<TransferElement> > SubdeviceRegisterAccessor::getInternalElements() {
+  std::list<boost::shared_ptr<TransferElement>> SubdeviceRegisterAccessor::getInternalElements() {
     return {_accAddress, _accData, _accStatus};
   }
 
@@ -143,4 +124,4 @@ namespace ChimeraTK {
 
   void SubdeviceRegisterAccessor::replaceTransferElement(boost::shared_ptr<TransferElement>) {}
 
-}    // namespace ChimeraTK
+} // namespace ChimeraTK

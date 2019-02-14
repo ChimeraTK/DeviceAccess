@@ -10,17 +10,17 @@
 
 #include <vector>
 
-namespace ChimeraTK{
+namespace ChimeraTK {
 
   class DeviceBackend;
   class Device;
   class TransferGroup;
   class RegisterAccessor;
 
-  template< typename UserType >
+  template<typename UserType>
   class BufferingRegisterAccessor;
 
-  template< typename UserType >
+  template<typename UserType>
   class NDRegisterAccessor;
 
   template<typename UserType>
@@ -29,6 +29,6 @@ namespace ChimeraTK{
   template<typename UserType>
   class MultiplexedDataAccessor;
 
-}
+} // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_FORWARD_DECLARATIONS_H */

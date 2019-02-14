@@ -18,16 +18,16 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void TransferGroup::read() {
-    for(auto &elem : highLevelElements) {
+    for(auto& elem : highLevelElements) {
       elem->preRead();
     }
-    for(auto &elem : lowLevelElements) {
+    for(auto& elem : lowLevelElements) {
       elem->doReadTransfer();
     }
-    for(auto &elem : copyDecorators) {
+    for(auto& elem : copyDecorators) {
       elem->postRead();
     }
-    for(auto &elem : highLevelElements) {
+    for(auto& elem : highLevelElements) {
       elem->postRead();
     }
   }
@@ -38,27 +38,24 @@ namespace ChimeraTK {
     if(isReadOnly()) {
       throw ChimeraTK::logic_error("TransferGroup::write() called, but the TransferGroup is read-only.");
     }
-    for(auto &elem : highLevelElements) {
+    for(auto& elem : highLevelElements) {
       elem->preWrite();
     }
-    for(auto &elem : lowLevelElements) {
+    for(auto& elem : lowLevelElements) {
       elem->doWriteTransfer();
     }
-    for(auto &elem : highLevelElements) {
+    for(auto& elem : highLevelElements) {
       elem->postWrite();
     }
   }
 
   /*********************************************************************************************************************/
 
-  bool TransferGroup::isReadOnly() {
-    return readOnly;
-  }
+  bool TransferGroup::isReadOnly() { return readOnly; }
 
   /*********************************************************************************************************************/
 
-  void TransferGroup::addAccessor(TransferElementAbstractor &accessor) {
-
+  void TransferGroup::addAccessor(TransferElementAbstractor& accessor) {
     // check if accessor is already in a transfer group
     if(accessor.getHighLevelImplElement()->isInTransferGroup) {
       throw ChimeraTK::logic_error("The given accessor is already in a TransferGroup and cannot be added to another.");
@@ -71,17 +68,17 @@ namespace ChimeraTK {
     highLevelElementsWithNewAccessor.insert(accessor.getHighLevelImplElement());
 
     // try replacing all internal elements in all high-level elements
-    for(auto &hlElem1 : highLevelElementsWithNewAccessor) {
-
+    for(auto& hlElem1 : highLevelElementsWithNewAccessor) {
       auto list = hlElem1->getInternalElements();
       list.push_front(hlElem1);
 
-      for(auto &replacement : list) {
+      for(auto& replacement : list) {
         // try on the abstractor first, to make sure we replace at the highest level if possible
         accessor.replaceTransferElement(replacement);
         // try on all high-level elements already stored in the list
-        for(auto &hlElem : highLevelElementsWithNewAccessor) {
-          hlElem->replaceTransferElement(replacement);     // note: this does nothing, if the replacement cannot be used by the hlElem!
+        for(auto& hlElem : highLevelElementsWithNewAccessor) {
+          hlElem->replaceTransferElement(replacement); // note: this does nothing, if the replacement cannot be used by
+                                                       // the hlElem!
         }
       }
     }
@@ -93,17 +90,17 @@ namespace ChimeraTK {
     // update the list of hardware-accessing elements, since we might just have made some of them redundant
     // since we are using a set to store the elements, duplicates are intrinsically avoided.
     lowLevelElements.clear();
-    for(auto &hlElem : highLevelElements) {
-      for(auto &hwElem : hlElem->getHardwareAccessingElements()) lowLevelElements.insert(hwElem);
+    for(auto& hlElem : highLevelElements) {
+      for(auto& hwElem : hlElem->getHardwareAccessingElements()) lowLevelElements.insert(hwElem);
     }
 
     // update the list of CopyRegisterDecorators
     copyDecorators.clear();
-    for(auto &hlElem : highLevelElements) {
+    for(auto& hlElem : highLevelElements) {
       if(boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(hlElem) != nullptr) {
         copyDecorators.insert(hlElem);
       }
-      for(auto &hwElem : hlElem->getInternalElements()) {
+      for(auto& hwElem : hlElem->getInternalElements()) {
         if(boost::dynamic_pointer_cast<ChimeraTK::CopyRegisterDecoratorTrait>(hwElem) != nullptr) {
           copyDecorators.insert(hwElem);
         }
@@ -119,18 +116,18 @@ namespace ChimeraTK {
   namespace detail {
     /// just used in TransferGroup::addAccessor(const boost::shared_ptr<TransferElement> &accessor)
     struct TransferGroupTransferElementAbstractor : TransferElementAbstractor {
-      TransferGroupTransferElementAbstractor(boost::shared_ptr< TransferElement > impl)
+      TransferGroupTransferElementAbstractor(boost::shared_ptr<TransferElement> impl)
       : TransferElementAbstractor(impl) {}
 
       void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) {
         _impl->replaceTransferElement(newElement);
       }
     };
-  }
+  } // namespace detail
 
   /*********************************************************************************************************************/
 
-  void TransferGroup::addAccessor(const boost::shared_ptr<TransferElement> &accessor) {
+  void TransferGroup::addAccessor(const boost::shared_ptr<TransferElement>& accessor) {
     /// @todo implement smarter and more efficient!
     auto x = detail::TransferGroupTransferElementAbstractor(accessor);
     addAccessor(x);
@@ -139,17 +136,15 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void TransferGroup::dump() {
-
     std::cout << "=== Accessors added to this group: " << std::endl;
-    for(auto &elem : highLevelElements) {
+    for(auto& elem : highLevelElements) {
       std::cout << " - " << elem->getName() << std::endl;
     }
     std::cout << "=== Low-level transfer elements in this group: " << std::endl;
-    for(auto &elem : lowLevelElements) {
+    for(auto& elem : lowLevelElements) {
       std::cout << " - " << elem->getName() << std::endl;
     }
     std::cout << "===" << std::endl;
-
   }
 
 } /* namespace ChimeraTK */

@@ -24,37 +24,30 @@ namespace ChimeraTK {
    *  on the NDRegisterAccessorDecorator<T>. */
   template<typename T>
   struct CopyRegisterDecorator : ChimeraTK::NDRegisterAccessorDecorator<T>, CopyRegisterDecoratorTrait {
-
-      CopyRegisterDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> &target)
-      : ChimeraTK::NDRegisterAccessorDecorator<T>(target)
-      {
-        if(!target->isReadable()) {
-          throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.");
-        }
+    CopyRegisterDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>& target)
+    : ChimeraTK::NDRegisterAccessorDecorator<T>(target) {
+      if(!target->isReadable()) {
+        throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Target accessor is not readable.");
       }
+    }
 
-      void doPreWrite() override {
-        throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
-      }
+    void doPreWrite() override {
+      throw ChimeraTK::logic_error("ChimeraTK::CopyRegisterDecorator: Accessor is not writeable.");
+    }
 
-      void doPostRead() override {
-        _target->postRead();
-        for(size_t i=0; i<_target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
-      }
+    void doPostRead() override {
+      _target->postRead();
+      for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) buffer_2D[i] = _target->accessChannel(i);
+    }
 
-      bool isReadOnly() const override {
-        return true;
-      }
+    bool isReadOnly() const override { return true; }
 
-      bool isWriteable() const override {
-        return false;
-      }
+    bool isWriteable() const override { return false; }
 
-      using ChimeraTK::NDRegisterAccessorDecorator<T>::_target;
-      using ChimeraTK::NDRegisterAccessorDecorator<T>::buffer_2D;
+    using ChimeraTK::NDRegisterAccessorDecorator<T>::_target;
+    using ChimeraTK::NDRegisterAccessorDecorator<T>::buffer_2D;
   };
 
-
-}
+} // namespace ChimeraTK
 
 #endif /* CHIMERATK_COPY_REGISTER_DECORATOR_H */

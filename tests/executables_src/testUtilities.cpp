@@ -10,11 +10,11 @@ using namespace boost::unit_test_framework;
 
 #define VALID_SDM "sdm://./pci:pcieunidummys6;undefined"
 #define VALID_SDM_WITH_PARAMS "sdm://./dummy=goodMapFile.map"
-#define INVALID_SDM "://./pci:pcieunidummys6;" //no sdm at the start
-#define INVALID_SDM_2 "sdm://./pci:pcieunidummys6;;" //more than one semi-colons(;)
-#define INVALID_SDM_3 "sdm://./pci::pcieunidummys6;" //more than one colons(:)
-#define INVALID_SDM_4 "sdm://./dummy=goodMapFile.map=MapFile.map" //more than one equals to(=)
-#define INVALID_SDM_5 "sdm://.pci:pcieunidummys6;" //no slash (/) after host.
+#define INVALID_SDM "://./pci:pcieunidummys6;"                    // no sdm at the start
+#define INVALID_SDM_2 "sdm://./pci:pcieunidummys6;;"              // more than one semi-colons(;)
+#define INVALID_SDM_3 "sdm://./pci::pcieunidummys6;"              // more than one colons(:)
+#define INVALID_SDM_4 "sdm://./dummy=goodMapFile.map=MapFile.map" // more than one equals to(=)
+#define INVALID_SDM_5 "sdm://.pci:pcieunidummys6;"                // no slash (/) after host.
 #define VALID_PCI_STRING "/dev/mtcadummys0"
 #define VALID_DUMMY_STRING "testfile.map"
 #define VALID_DUMMY_STRING_2 "testfile.mapp"
@@ -26,10 +26,11 @@ using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testParseCDD ) {
+BOOST_AUTO_TEST_CASE(testParseCDD) {
   {
     // check standard case
-    auto r = Utilities::parseDeviceDesciptor("(myBackendType:some/weired*address 234?par1=someValue with spaces&map=file)");
+    auto r =
+        Utilities::parseDeviceDesciptor("(myBackendType:some/weired*address 234?par1=someValue with spaces&map=file)");
     BOOST_CHECK_EQUAL(r.backendType, "myBackendType");
     BOOST_CHECK_EQUAL(r.address, "some/weired*address 234");
     BOOST_CHECK_EQUAL(r.parameters.size(), 2);
@@ -38,7 +39,8 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
   }
   {
     // check proper trimming
-    auto r = Utilities::parseDeviceDesciptor(" ( myBackendType    :     some/weired*address 234 ?   par1 = someValue with spaces & map  =   file  )   ");
+    auto r = Utilities::parseDeviceDesciptor(
+        " ( myBackendType    :     some/weired*address 234 ?   par1 = someValue with spaces & map  =   file  )   ");
     BOOST_CHECK_EQUAL(r.backendType, "myBackendType");
     BOOST_CHECK_EQUAL(r.address, "some/weired*address 234");
     BOOST_CHECK_EQUAL(r.parameters.size(), 2);
@@ -108,7 +110,8 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
   }
   {
     // check escaping special characters
-    auto r = Utilities::parseDeviceDesciptor("(x:address\\?withQuestionmark?para=value\\&with\\&ampersand\\&&x=y\\\\&y=\\))");
+    auto r = Utilities::parseDeviceDesciptor(
+        "(x:address\\?withQuestionmark?para=value\\&with\\&ampersand\\&&x=y\\\\&y=\\))");
     BOOST_CHECK_EQUAL(r.backendType, "x");
     BOOST_CHECK_EQUAL(r.address, "address?withQuestionmark");
     BOOST_CHECK_EQUAL(r.parameters.size(), 3);
@@ -118,7 +121,8 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
   }
   {
     // check nesting CDDs
-    auto r = Utilities::parseDeviceDesciptor("(nested:(pci:pcieunis6?map=dummy.map)?anotherCdd=with(dummycdd)otherText)");
+    auto r =
+        Utilities::parseDeviceDesciptor("(nested:(pci:pcieunis6?map=dummy.map)?anotherCdd=with(dummycdd)otherText)");
     BOOST_CHECK_EQUAL(r.backendType, "nested");
     BOOST_CHECK_EQUAL(r.address, "(pci:pcieunis6?map=dummy.map)");
     BOOST_CHECK_EQUAL(r.parameters.size(), 1);
@@ -136,13 +140,15 @@ BOOST_AUTO_TEST_CASE( testParseCDD ) {
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?bad*key=value)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(x?key=value&key=duplicateKey)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(unmatchedParentheses"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in(aValue)"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in)aValue)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in(aValue)"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      Utilities::parseDeviceDesciptor("(another:Unmatched?parentheses=in)aValue)"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(Utilities::parseDeviceDesciptor("(badEscaping:a\\bc)"), ChimeraTK::logic_error);
 }
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testParseSdm ) {
+BOOST_AUTO_TEST_CASE(testParseSdm) {
   Sdm sdm = Utilities::parseSdm(VALID_SDM);
   BOOST_CHECK(sdm._Host == ".");
   BOOST_CHECK(sdm._Interface == "pci");
@@ -155,18 +161,18 @@ BOOST_AUTO_TEST_CASE( testParseSdm ) {
   BOOST_CHECK(sdm._Interface == "dummy");
   BOOST_CHECK(sdm._Parameters.size() == 1);
   BOOST_CHECK(sdm._Parameters.front() == "goodMapFile.map");
-  BOOST_CHECK_THROW(Utilities::parseSdm(""),ChimeraTK::logic_error); //Empty string
-  BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"),ChimeraTK::logic_error); //shorter than sdm:// signature
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM),ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_2),ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_3),ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_4),ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5),ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(""), ChimeraTK::logic_error);     // Empty string
+  BOOST_CHECK_THROW(Utilities::parseSdm("sdm:"), ChimeraTK::logic_error); // shorter than sdm:// signature
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_2), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_3), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_4), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(Utilities::parseSdm(INVALID_SDM_5), ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testParseDeviceString ) {
+BOOST_AUTO_TEST_CASE(testParseDeviceString) {
   Sdm sdm = Utilities::parseDeviceString(VALID_PCI_STRING);
   BOOST_CHECK(sdm._Interface == "pci");
   sdm = Utilities::parseDeviceString(VALID_DUMMY_STRING);
@@ -179,20 +185,19 @@ BOOST_AUTO_TEST_CASE( testParseDeviceString ) {
   BOOST_CHECK(sdm._Interface == "");
   sdm = Utilities::parseDeviceString(INVALID_DEVICE_STRING_3);
   BOOST_CHECK(sdm._Interface == "");
-
 }
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testcountOccurence ) {
-  BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string",',')==2); //2 commas
-  BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string",';')==1); //1 semi-colon
-  BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string",':')==1); //1 colon
+BOOST_AUTO_TEST_CASE(testcountOccurence) {
+  BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string", ',') == 2); // 2 commas
+  BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string", ';') == 1); // 1 semi-colon
+  BOOST_CHECK(Utilities::countOccurence("this,is;a:test,string", ':') == 1); // 1 colon
 }
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testIsSdm ) {
+BOOST_AUTO_TEST_CASE(testIsSdm) {
   BOOST_CHECK(Utilities::isSdm(VALID_SDM) == true);
   BOOST_CHECK(Utilities::isSdm(INVALID_SDM) == false);
   BOOST_CHECK(Utilities::isSdm(VALID_PCI_STRING) == false);
@@ -200,29 +205,25 @@ BOOST_AUTO_TEST_CASE( testIsSdm ) {
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testAliasLookUp ) {
+BOOST_AUTO_TEST_CASE(testAliasLookUp) {
   std::string testFilePath = TEST_DMAP_FILE_PATH;
-  BOOST_CHECK_THROW(Utilities::aliasLookUp("test",testFilePath), ChimeraTK::logic_error);
-  auto deviceInfo = Utilities::aliasLookUp("DUMMYD0",testFilePath);
-  BOOST_CHECK(deviceInfo.deviceName =="DUMMYD0");
+  BOOST_CHECK_THROW(Utilities::aliasLookUp("test", testFilePath), ChimeraTK::logic_error);
+  auto deviceInfo = Utilities::aliasLookUp("DUMMYD0", testFilePath);
+  BOOST_CHECK(deviceInfo.deviceName == "DUMMYD0");
 }
 
 /**********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE( testgetAliasList ) {
+BOOST_AUTO_TEST_CASE(testgetAliasList) {
   auto initialDmapFile = ChimeraTK::getDMapFilePath();
 
   ChimeraTK::setDMapFilePath("");
   BOOST_CHECK_THROW(Utilities::getAliasList(), ChimeraTK::logic_error);
 
   // entries in dummies.dmap when this was written
-  std::vector<std::string> expectedListOfAliases{
-    "PCIE1",   "PCIE0",   "PCIE2",    "PCIE3",     "PCIE0",
-    "FAKE0",   "FAKE1",   "FAKE3",    "DUMMYD0",   "DUMMYD1",  "DUMMYD2",  "DUMMYD3",
-    "example", "DUMMYD9", "PERFTEST", "mskrebot", "mskrebot1", "OLD_PCIE",
-    "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES", "PCIE_DOUBLEMAP",
-    "REBOT_DOUBLEMAP"
-  };
+  std::vector<std::string> expectedListOfAliases{"PCIE1", "PCIE0", "PCIE2", "PCIE3", "PCIE0", "FAKE0", "FAKE1", "FAKE3",
+      "DUMMYD0", "DUMMYD1", "DUMMYD2", "DUMMYD3", "example", "DUMMYD9", "PERFTEST", "mskrebot", "mskrebot1", "OLD_PCIE",
+      "SEQUENCES", "MIXED_SEQUENCES", "INVALID_SEQUENCES", "PCIE_DOUBLEMAP", "REBOT_DOUBLEMAP"};
 
   ChimeraTK::setDMapFilePath("./dummies.dmap");
   auto returnedListOfAliases = Utilities::getAliasList();
@@ -230,7 +231,7 @@ BOOST_AUTO_TEST_CASE( testgetAliasList ) {
 
   int index = 0;
   BOOST_CHECK(returnedListOfAliases.size() == expectedListOfAliases.size());
-  for(auto alias: expectedListOfAliases){
+  for(auto alias : expectedListOfAliases) {
     BOOST_CHECK(alias == returnedListOfAliases.at(index++));
   }
 }

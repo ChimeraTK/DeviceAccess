@@ -4,10 +4,10 @@
 #include "RebotProtocol0.h"
 #include <chrono>
 
-namespace ChimeraTK{
+namespace ChimeraTK {
 
-  struct RebotProtocol1 : public RebotProtocol0{
-    explicit RebotProtocol1(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
+  struct RebotProtocol1 : public RebotProtocol0 {
+    explicit RebotProtocol1(boost::shared_ptr<TcpCtrl>& tcpCommunicator);
     virtual ~RebotProtocol1(){};
 
     virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
@@ -21,6 +21,6 @@ namespace ChimeraTK{
     std::chrono::time_point<std::chrono::steady_clock> _lastSendTime;
   };
 
-}// namespace ChimeraTK
+} // namespace ChimeraTK
 
 #endif // CHIMERATK_REBOT_PROTOCOL_1

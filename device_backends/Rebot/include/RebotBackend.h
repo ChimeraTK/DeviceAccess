@@ -19,7 +19,6 @@
 #include <boost/chrono.hpp>
 #include "NumericAddressedBackend.h"
 
-
 namespace ChimeraTK {
 
   class TcpCtrl;
@@ -31,48 +30,48 @@ namespace ChimeraTK {
   // without having to wait for the tread to wake up and finish before you can join it.
   // The thread locks the mutex and checks if it should finish when it wakes up, which it
   // can do because the mutex and flag still exist thanks to the shared pointer.
-  struct ThreadInformerMutex{
+  struct ThreadInformerMutex {
     std::mutex mutex;
     bool quitThread;
-    ThreadInformerMutex() : quitThread(false){}
+    ThreadInformerMutex() : quitThread(false) {}
   };
 
   class RebotBackend : public NumericAddressedBackend {
+   protected:
+    std::string _boardAddr;
+    int _port;
 
-    protected:
-      std::string _boardAddr;
-      int _port;
+    boost::shared_ptr<ThreadInformerMutex> _threadInformerMutex;
+    // Only access the following membergs when holding the mutex. They are
+    // also accessed by the heartbeat thread
+    boost::shared_ptr<TcpCtrl> _tcpCommunicator;
+    std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
+    /// The time when the last command (read/write/heartbeat) was send
+    boost::chrono::steady_clock::time_point _lastSendTime;
+    unsigned int _connectionTimeout;
 
-      boost::shared_ptr<ThreadInformerMutex> _threadInformerMutex;
-      // Only access the following membergs when holding the mutex. They are
-      // also accessed by the heartbeat thread
-      boost::shared_ptr<TcpCtrl> _tcpCommunicator;
-      std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
-      /// The time when the last command (read/write/heartbeat) was send
-      boost::chrono::steady_clock::time_point _lastSendTime;
-      unsigned int _connectionTimeout;
+   public:
+    RebotBackend(std::string boardAddr, int port, std::string mapFileName = "");
+    ~RebotBackend();
+    /// The function opens the connection to the device
+    void open() override;
+    void close() override;
+    void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
+    void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
+    std::string readDeviceInfo() override { return std::string("RebotDevice"); }
 
-    public:
-      RebotBackend(std::string boardAddr, int port, std::string mapFileName="");
-      ~RebotBackend();
-      /// The function opens the connection to the device
-      void open() override;
-      void close() override;
-      void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
-      void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
-      std::string readDeviceInfo() override { return std::string("RebotDevice"); }
-
-      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        std::string address, std::map<std::string, std::string> parameters);
 
    protected:
-      // This is not in the protocol implementor. Only the result of the hello tells us
-      // which implementor to instantiate.
-      uint32_t getServerProtocolVersion();
-      std::vector<uint32_t> frameClientHello();
-      uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
+    // This is not in the protocol implementor. Only the result of the hello tells us
+    // which implementor to instantiate.
+    uint32_t getServerProtocolVersion();
+    std::vector<uint32_t> frameClientHello();
+    uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
 
-      void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
-      boost::thread _heartbeatThread;
+    void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
+    boost::thread _heartbeatThread;
   };
 
 } // namespace ChimeraTK

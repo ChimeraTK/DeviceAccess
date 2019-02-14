@@ -13,7 +13,7 @@
  * documentation.
  */
 
-int main(){
+int main() {
   ChimeraTK::Device myDevice;
   /*
    * If you have the mtcadummy driver installed you can also use a pci device:
@@ -33,8 +33,8 @@ int main(){
    *
    * When using numeric addresses directly, no fixed point conversion is performed.
    */
-  ChimeraTK::ScalarRegisterAccessor<int> temperatureSetPoint
-      = myDevice.getScalarRegisterAccessor<int>(ChimeraTK::numeric_address::BAR/0/32*4);
+  ChimeraTK::ScalarRegisterAccessor<int> temperatureSetPoint =
+      myDevice.getScalarRegisterAccessor<int>(ChimeraTK::numeric_address::BAR / 0 / 32 * 4);
 
   temperatureSetPoint.read();
   std::cout << "Current temperature set point is " << temperatureSetPoint << std::endl;

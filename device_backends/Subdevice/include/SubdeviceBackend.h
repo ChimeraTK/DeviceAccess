@@ -24,9 +24,8 @@ namespace ChimeraTK {
    *                  \verbatim(subdevice?type=area&device=<targetDevice>&area=<targetRegister>&map=mapFile>)\endverbatim
    *
    *  - "3regs" type: use three scalar registers: address, data and status. Before access, a value of 0 in the status
-   *                  register is awaited. Next, the address is written to the address register. The value is then written
-   *                  to resp. read from the data register.\n
-   *                  URI scheme:\n
+   *                  register is awaited. Next, the address is written to the address register. The value is then
+   * written to resp. read from the data register.\n URI scheme:\n
    *                  \verbatim(subdevice?type=3regs&device=<targetDevice>&address=<addressRegister>&data=<dataRegister>&status=<statusRegister>&sleep=<usecs>&map=<mapFile>)\endverbatim
    *                  The sleep parameter is optional and defaults to 100 usecs. It sets the polling interval for the
    *                  status register.
@@ -43,76 +42,72 @@ namespace ChimeraTK {
    *  change in future. Please do not use these for reading in production code!
    */
   class SubdeviceBackend : public DeviceBackendImpl {
+   public:
+    SubdeviceBackend(std::map<std::string, std::string> parameters);
 
-    public:
+    ~SubdeviceBackend() {}
 
-      SubdeviceBackend(std::map<std::string,std::string> parameters);
+    void open() override;
 
-      ~SubdeviceBackend(){}
+    void close() override;
 
-      void open() override;
+    std::string readDeviceInfo() override {
+      return std::string("Subdevice"); /// @todo extend information
+    }
 
-      void close() override;
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        std::string address, std::map<std::string, std::string> parameters);
 
-      std::string readDeviceInfo() override {
-        return std::string("Subdevice");  /// @todo extend information
-      }
+   protected:
+    friend class SubdeviceRegisterAccessor;
 
-      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
+    enum class Type {
+      area,           // address space is visible as an area in the target device
+      threeRegisters, // use three registers (address, data and status) in target device. status must be 0 when idle
+      twoRegisters    // same as three registers but without status
+    };
 
-    protected:
+    /// Mutex to deal with concurrent access to the device
+    std::mutex mutex;
 
-      friend class SubdeviceRegisterAccessor;
+    /// type of the subdeivce
+    Type type;
 
-      enum class Type {
-        area,               // address space is visible as an area in the target device
-        threeRegisters,     // use three registers (address, data and status) in target device. status must be 0 when idle
-        twoRegisters        // same as three registers but without status
-      };
+    /// the target device name
+    std::string targetAlias;
 
-      /// Mutex to deal with concurrent access to the device
-      std::mutex mutex;
+    /// The target device backend itself. We are using directly a backend since we want to obtain
+    //  NDRegisterAccessors which we can directly return in getRegisterAccessor_impl().
+    boost::shared_ptr<ChimeraTK::DeviceBackend> targetDevice;
 
-      /// type of the subdeivce
-      Type type;
+    /// for type == area: the name of the target register
+    std::string targetArea;
 
-      /// the target device name
-      std::string targetAlias;
+    /// for type == threeRegisters or twoRegisters: the name of the target registers
+    std::string targetAddress, targetData, targetControl;
 
-      /// The target device backend itself. We are using directly a backend since we want to obtain
-      //  NDRegisterAccessors which we can directly return in getRegisterAccessor_impl().
-      boost::shared_ptr<ChimeraTK::DeviceBackend> targetDevice;
+    /// for type == threeRegisters or twoRegisters: sleep time of polling loop resp. between operations, in usecs.
+    size_t sleepTime{100};
 
-      /// for type == area: the name of the target register
-      std::string targetArea;
+    /// map from register names to addresses
+    boost::shared_ptr<RegisterInfoMap> _registerMap;
 
-      /// for type == threeRegisters or twoRegisters: the name of the target registers
-      std::string targetAddress, targetData, targetControl;
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(SubdeviceBackend, getRegisterAccessor_impl, 4);
 
-      /// for type == threeRegisters or twoRegisters: sleep time of polling loop resp. between operations, in usecs.
-      size_t sleepTime{100};
+    /// getRegisterAccessor implemenation for area types
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_area(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
-      /// map from register names to addresses
-      boost::shared_ptr<RegisterInfoMap> _registerMap;
-
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
-          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( SubdeviceBackend, getRegisterAccessor_impl, 4 );
-
-      /// getRegisterAccessor implemenation for area types
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_area(
-          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-
-      /// getRegisterAccessor implemenation for threeRegisters types
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_3regs(
-          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-
+    /// getRegisterAccessor implemenation for threeRegisters types
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_3regs(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
   };
 
 } // namespace ChimeraTK
 
 #endif /*CHIMERATK_SUBDEVICE_BACKEND_H*/
-

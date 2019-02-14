@@ -11,6 +11,6 @@ namespace ChimeraTK {
    */
   typedef ChimeraTK::runtime_error NotImplementedException;
 
-}// namespace ChimeraTK
+} // namespace ChimeraTK
 
-#endif// CHIMERA_TK_NOT_IMPLEMENTED_EXCEPTION_H
+#endif // CHIMERA_TK_NOT_IMPLEMENTED_EXCEPTION_H

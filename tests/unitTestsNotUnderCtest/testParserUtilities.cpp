@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-namespace ChimeraTK{
+namespace ChimeraTK {
   using namespace ChimeraTK;
 }
 using namespace boost::unit_test_framework;
@@ -17,43 +17,38 @@ namespace parsutils = ChimeraTK::parserUtilities;
 /*                  Code for setting up test suite                            */
 /******************************************************************************/
 class ParserUtilsTestClass {
-  public:
-    explicit ParserUtilsTestClass(std::string const& currentWorkingDirectory);
-    void testGetCurrentWorkingDir();
-    void testConvertToAbsPath();
-    void testExtractDirectory();
-    void testExtractFileName();
-    void testConcatenatePaths();
-  private:
-    std::string _currentWorkingDir;
+ public:
+  explicit ParserUtilsTestClass(std::string const& currentWorkingDirectory);
+  void testGetCurrentWorkingDir();
+  void testConvertToAbsPath();
+  void testExtractDirectory();
+  void testExtractFileName();
+  void testConcatenatePaths();
+
+ private:
+  std::string _currentWorkingDir;
 };
 
 class ParserUtilitiesTestSuite : public test_suite {
-  public:
-    explicit ParserUtilitiesTestSuite(std::string const& currentWorkingDirectory)
-    : test_suite("ParserUtilitiesTestSuite") {
-
-      boost::shared_ptr<ParserUtilsTestClass> parserUtilTest( new ParserUtilsTestClass(currentWorkingDirectory));
-      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testGetCurrentWorkingDir,
-                                parserUtilTest));
-      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConvertToAbsPath,
-                                parserUtilTest));
-      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractDirectory,
-                                parserUtilTest));
-      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractFileName,
-                                parserUtilTest));
-      add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConcatenatePaths,
-                                parserUtilTest));
-    }
+ public:
+  explicit ParserUtilitiesTestSuite(std::string const& currentWorkingDirectory)
+  : test_suite("ParserUtilitiesTestSuite") {
+    boost::shared_ptr<ParserUtilsTestClass> parserUtilTest(new ParserUtilsTestClass(currentWorkingDirectory));
+    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testGetCurrentWorkingDir, parserUtilTest));
+    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConvertToAbsPath, parserUtilTest));
+    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractDirectory, parserUtilTest));
+    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testExtractFileName, parserUtilTest));
+    add(BOOST_CLASS_TEST_CASE(&ParserUtilsTestClass::testConcatenatePaths, parserUtilTest));
+  }
 };
 
-bool init_unit_test(){
-  if (framework::master_test_suite().argc < 2) {
+bool init_unit_test() {
+  if(framework::master_test_suite().argc < 2) {
     std::cout << "Usage: " << framework::master_test_suite().argv[0] << "currentWorkingDir" << std::endl;
     return false;
   }
   auto currentWorkingDir = framework::master_test_suite().argv[1];
-  
+
   framework::master_test_suite().p_name.value = "Rebot backend test suite";
   framework::master_test_suite().add(new ParserUtilitiesTestSuite(currentWorkingDir));
 
@@ -61,10 +56,9 @@ bool init_unit_test(){
 }
 
 ParserUtilsTestClass::ParserUtilsTestClass(const std::string& currentWorkingDirectory)
-    : _currentWorkingDir(currentWorkingDirectory) {}
+: _currentWorkingDir(currentWorkingDirectory) {}
 
 /******************************************************************************/
-
 
 /* Test cases... */
 void ParserUtilsTestClass::testGetCurrentWorkingDir() {
@@ -83,8 +77,8 @@ void ParserUtilsTestClass::testConvertToAbsPath() {
   BOOST_CHECK(parsutils::convertToAbsolutePath("") == _currentWorkingDir + "/");
 }
 
-void ParserUtilsTestClass::testExtractDirectory(){
-  BOOST_CHECK(parsutils::extractDirectory("./test") ==  "./");
+void ParserUtilsTestClass::testExtractDirectory() {
+  BOOST_CHECK(parsutils::extractDirectory("./test") == "./");
   BOOST_CHECK(parsutils::extractDirectory("./test/") == "./test/");
   BOOST_CHECK(parsutils::extractDirectory("/test") == "/");
   BOOST_CHECK(parsutils::extractDirectory("/") == "/");
