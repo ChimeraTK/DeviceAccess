@@ -65,7 +65,7 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";ddaq;")
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSddaq timinginfo daqevstat DAQFSM TTF2XML xerces-c BM TTF2evutl)
 endif()
 
-set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap)
+set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap gul)
 
 # now set the required variables based on the determined DOOCS_DIR
 set(DOOCS_INCLUDE_DIRS ${DOOCS_DIR}/include)
