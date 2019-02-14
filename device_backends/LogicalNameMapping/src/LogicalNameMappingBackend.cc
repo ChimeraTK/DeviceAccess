@@ -60,8 +60,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(
-      std::string /*address*/, std::map<std::string, std::string> parameters) {
+  boost::shared_ptr<DeviceBackend> LogicalNameMappingBackend::createInstance(std::string /*address*/,
+      std::map<std::string, std::string>
+          parameters) {
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("Map file name not speficied.");
     }
@@ -75,7 +76,10 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> LogicalNameMappingBackend::getRegisterAccessor_impl(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+      const RegisterPath& registerPathName,
+      size_t numberOfWords,
+      size_t wordOffsetInRegister,
+      AccessModeFlags flags) {
     // obtain register info
     auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
 

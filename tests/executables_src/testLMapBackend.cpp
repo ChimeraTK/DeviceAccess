@@ -392,7 +392,8 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
   // reading via const_reverse_iterator
   index = 1024;
   for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin();
-      it != acc_const.rend(); ++it) {
+      it != acc_const.rend();
+      ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -465,7 +466,8 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
   // reading via const_reverse_iterator
   index = 20;
   for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin();
-      it != acc_const.rend(); ++it) {
+      it != acc_const.rend();
+      ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }

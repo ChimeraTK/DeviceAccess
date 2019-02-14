@@ -129,7 +129,8 @@ void BufferingRegisterTest::testRegisterAccessor() {
   }
   ic = 0;
   for(BufferingRegisterAccessor<int>::const_reverse_iterator it = const_intRegister.rbegin();
-      it != const_intRegister.rend(); ++it) {
+      it != const_intRegister.rend();
+      ++it) {
     BOOST_CHECK(*it == 1234 * (3 - ic));
     ic++;
   }

@@ -16,8 +16,10 @@
 namespace ChimeraTK {
 
   template<typename T>
-  T LogicalNameMapParser::getValueFromXmlSubnode(
-      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, T defaultValue) {
+  T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node* node,
+      const std::string& subnodeName,
+      bool hasDefault,
+      T defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {

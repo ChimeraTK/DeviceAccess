@@ -59,11 +59,12 @@ BOOST_AUTO_TEST_CASE(testCreateBackend) {
   BOOST_CHECK(testPtr);
   BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("FAKE1"), ChimeraTK::logic_error); // entry in
                                                                                                    // dummies.dmap for
-                                                                                                   // unregistered device
+                                                                                                   // unregistered
+                                                                                                   // device
   boost::shared_ptr<DeviceBackend> testPtr2;
   BOOST_CHECK_NO_THROW(testPtr2 = BackendFactory::getInstance().createBackend("DUMMYD9")); // open existing backend
                                                                                            // again
-  BOOST_CHECK(testPtr2 == testPtr); // must be same
+  BOOST_CHECK(testPtr2 == testPtr);                                                        // must be same
 }
 
 BOOST_AUTO_TEST_CASE(testPluginMechanism) {
