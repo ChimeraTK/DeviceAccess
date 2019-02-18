@@ -173,7 +173,6 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::reportException(std::string errMsg ){
-    status = 1;
     deviceError.status = 1;
     deviceError.message = errMsg;
     deviceError.writeAll();
