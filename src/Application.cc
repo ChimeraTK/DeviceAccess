@@ -173,7 +173,7 @@ void Application::run() {
   }
 
   for(auto &deviceModule : deviceModuleList) {
-    std::cout<<"registered module"<<std::endl;
+    std::cout<<"registered Device module"<<std::endl;
     deviceModule->run();
   }
 
@@ -198,7 +198,13 @@ void Application::shutdown() {
   for(auto &module : getSubmoduleListRecursive()) {
     module->terminate();
   }
-
+  
+  for(auto &deviceModule : deviceModuleList) {
+    std::cout<<"terminate Device module"<<std::endl;
+    deviceModule->terminate();
+  }
+  
+   
   ApplicationBase::shutdown();
 
 }
@@ -485,7 +491,9 @@ void Application::makeConnections() {
   // set all initial version numbers in the modules to the same value
   VersionNumber startVersion;
   for(auto &module : getSubmoduleListRecursive()) {
-    if(module->getModuleType() != ModuleType::ApplicationModule) continue;
+    if( (module->getModuleType() != ModuleType::ApplicationModule) 
+    || (module->getModuleType() != ModuleType::Device) )
+      continue;
     module->setCurrentVersionNumber(startVersion);
   }
 
