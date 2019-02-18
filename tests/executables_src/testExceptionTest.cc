@@ -55,7 +55,11 @@ struct TestApplication : public ctk::Application {
 
     using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
     
-    void defineConnections() {dumpConnections(); }             // the setup is done in the tests
+    void defineConnections() {
+      //testableMode = true;
+      debugTestableMode();
+      
+      dumpConnections(); }             // the setup is done in the tests
     
     ctk::DeviceModule dev{this,"Exception"};
     //ModuleB   b;
@@ -73,33 +77,52 @@ BOOST_AUTO_TEST_CASE(testThinkOfAName) {
   
   
   TestApplication app;
-
+  
   //app.b = {&app,"b", ""};
   
   /*app.b.var2 >> app.dev("probeSignal");
   
   app.b.connectTo(app.cs);
   
-  app.cs("probeSignal") >> app.dev("probeSignal");*/
+  app.cs("probeSignal") >> app.dev("probeSignal");
   
   app.dev.connectTo(app.cs);
-  //app.cs >> app.b.var1;
-  
+  //app.cs >> app.b.var1;*/
+  //app.cs("probeSignal") >> app.dev("probeSignal");
+  app.dev.connectTo(app.cs);
+  std::cout<<"CONNECTED"<<std::endl;
   ctk::TestFacility test;
   app.initialise();
   app.run();
-
-  auto var1 = test.getScalar<uint32_t>("probeSignal/probeSignal");
+  
+  std::cout<<"RUNNING"<<std::endl;
+  
+  
+  /*auto var1 = test.getScalar<uint32_t>("probeSignal");
   var1 = 10;
   var1.write();
-  test.stepApplication();
+  test.stepApplication();*/
+  //std::cout<<"STEP"<<std::endl;
+  //app.dev.reportException("exception");
+  
+  
   
   boost::shared_ptr< ExceptionDummy > backend = boost::dynamic_pointer_cast<ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend("Exception") );
   backend->close();
+  std::cout<<"backend closed"<<std::endl;
   backend->throwException = true;    
-  //backend->open();
+  try{
+    backend->open();
+    BOOST_FAIL("Exception expected.");
+  }
+  catch(ChimeraTK::runtime_error&) {
+  }
+  std::cout<<"report an exception"<<std::endl;
   app.dev.reportException("exception");
+  sleep(5);
+  backend->throwException = false; 
+  std::cout<<"THE END"<<std::endl;
 
   
   /*auto var2 = test.getScalar<double>("var2");
