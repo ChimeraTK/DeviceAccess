@@ -18,6 +18,6 @@ namespace ChimeraTK {
    */
   typedef ChimeraTK::runtime_error DeviceBackendException;
 
-}
+} // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_DEVICE_BACKEND_EXCEPTION_H */

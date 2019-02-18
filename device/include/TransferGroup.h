@@ -33,48 +33,43 @@ namespace ChimeraTK {
    *  the device (maybe both in an undefined order).
    */
   class TransferGroup {
+   public:
+    TransferGroup() : readOnly(false){};
+    ~TransferGroup(){};
 
-    public:
+    /** Add a register accessor to the group. The register accessor might internally be altered so that accessors
+     *  accessing the same hardware register will share their buffers. Register accessors must not be placed into
+     *  multiple TransferGroups. */
+    void addAccessor(TransferElementAbstractor& accessor);
+    void addAccessor(const boost::shared_ptr<TransferElement>& accessor);
 
-      TransferGroup()
-      : readOnly(false)
-      {};
-      ~TransferGroup() {};
+    /** Trigger read transfer for all accessors in the group */
+    void read();
 
-      /** Add a register accessor to the group. The register accessor might internally be altered so that accessors
-       *  accessing the same hardware register will share their buffers. Register accessors must not be placed into
-       *  multiple TransferGroups. */
-      void addAccessor(TransferElementAbstractor &accessor);
-      void addAccessor(const boost::shared_ptr<TransferElement> &accessor);
+    /** Trigger write transfer for all accessors in the group */
+    void write();
 
-      /** Trigger read transfer for all accessors in the group */
-      void read();
+    /** Check if transfer group is read-only. A transfer group is read-only, if at least one of its transfer
+     *  elements is read-only. */
+    bool isReadOnly();
 
-      /** Trigger write transfer for all accessors in the group */
-      void write();
+    /** Print information about the accessors in this group to screen, which might help to understand which
+     *  transfers were merged and which were not. */
+    void dump();
 
-      /** Check if transfer group is read-only. A transfer group is read-only, if at least one of its transfer
-       *  elements is read-only. */
-      bool isReadOnly();
+   protected:
+    /** List of low-level TransferElements in this group, which are directly responsible for the hardware access */
+    std::set<boost::shared_ptr<TransferElement>> lowLevelElements;
 
-      /** Print information about the accessors in this group to screen, which might help to understand which
-       *  transfers were merged and which were not. */
-      void dump();
+    /** List of all CopyRegisterDecorators in the group. On these elements, postRead() has to be executed before all
+     *  other elements. */
+    std::set<boost::shared_ptr<TransferElement>> copyDecorators;
 
-    protected:
+    /** List of high-level TransferElements in this group which are directly used by the user */
+    std::set<boost::shared_ptr<TransferElement>> highLevelElements;
 
-      /** List of low-level TransferElements in this group, which are directly responsible for the hardware access */
-      std::set< boost::shared_ptr<TransferElement> > lowLevelElements;
-
-      /** List of all CopyRegisterDecorators in the group. On these elements, postRead() has to be executed before all
-       *  other elements. */
-      std::set< boost::shared_ptr<TransferElement> > copyDecorators;
-
-      /** List of high-level TransferElements in this group which are directly used by the user */
-      std::set< boost::shared_ptr<TransferElement> > highLevelElements;
-
-      /** Flag if group is read-only */
-      bool readOnly;
+    /** Flag if group is read-only */
+    bool readOnly;
   };
 
 } /* namespace ChimeraTK */

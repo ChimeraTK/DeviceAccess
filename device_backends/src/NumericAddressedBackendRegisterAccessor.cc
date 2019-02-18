@@ -14,8 +14,8 @@ namespace ChimeraTK {
     if(!isRaw) {
       auto itsrc = _rawAccessor->begin(_startAddress);
       for(auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-               itdst != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
-             ++itdst) {
+          itdst != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
+          ++itdst) {
         *itdst = _dataConverter.toCooked<int32_t>(*itsrc);
         ++itsrc;
       }
@@ -27,7 +27,7 @@ namespace ChimeraTK {
       else {
         auto itsrc = _rawAccessor->begin(_startAddress);
         auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), _numberOfWords*sizeof(int32_t));
+        memcpy(&(*itdst), &(*itsrc), _numberOfWords * sizeof(int32_t));
       }
     }
     SyncNDRegisterAccessor<int32_t>::doPostRead();
@@ -38,8 +38,8 @@ namespace ChimeraTK {
     if(!isRaw) {
       auto itdst = _rawAccessor->begin(_startAddress);
       for(auto itsrc = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-               itsrc != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
-             ++itsrc) {
+          itsrc != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
+          ++itsrc) {
         *itdst = _dataConverter.toRaw<int32_t>(*itsrc);
         ++itdst;
       }
@@ -51,7 +51,7 @@ namespace ChimeraTK {
       else {
         auto itdst = _rawAccessor->begin(_startAddress);
         auto itsrc = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), _numberOfWords*sizeof(int32_t));
+        memcpy(&(*itdst), &(*itsrc), _numberOfWords * sizeof(int32_t));
       }
     }
   }
@@ -65,23 +65,23 @@ namespace ChimeraTK {
     }
   }
 
-  namespace detail{
+  namespace detail {
     template<>
-    FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo){
-      return FixedPointConverter(registerInfo->name, registerInfo->width,
-                                 registerInfo->nFractionalBits, registerInfo->signedFlag);
+    FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo>
+            registerInfo) {
+      return FixedPointConverter(
+          registerInfo->name, registerInfo->width, registerInfo->nFractionalBits, registerInfo->signedFlag);
     }
-    
+
     template<>
-    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo> /*registerInfo*/){
+    IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
+        boost::shared_ptr<RegisterInfoMap::RegisterInfo> /*registerInfo*/) {
       return IEEE754_SingleConverter();
     }
 
-  }// namespace detail
+  } // namespace detail
 
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor,
-                                                      FixedPointConverter);
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor,
-                                                      IEEE754_SingleConverter);
-  
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter);
+
 } /* namespace ChimeraTK */

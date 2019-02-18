@@ -13,23 +13,20 @@ namespace ChimeraTK {
    *  retrying the operation (potentially after reopening the device, if applicable).
    */
   class runtime_error : public std::exception {
-    public:
+   public:
+    /**
+     *  Constructor. The passed message is returned by a call to what() and should describe what exactly went wront.
+     */
+    runtime_error(const std::string& message) noexcept;
 
-      /**
-       *  Constructor. The passed message is returned by a call to what() and should describe what exactly went wront.
-       */
-      runtime_error(const std::string &message) noexcept;
+    /**
+     *  Return the message describing what exactly went wrong. The returned message is only descriptive and only meant
+     *  for display. Program logic must never be based on the content of this string.
+     */
+    const char* what() const noexcept override;
 
-      /**
-       *  Return the message describing what exactly went wrong. The returned message is only descriptive and only meant
-       *  for display. Program logic must never be based on the content of this string.
-       */
-      const char* what() const noexcept override;
-
-    private:
-
-      std::string         _message;
-
+   private:
+    std::string _message;
   };
 
   /**
@@ -43,23 +40,20 @@ namespace ChimeraTK {
    *  type of exceptions in applications, or to catch the error only for proper dispaly in a GUI and then terminate.
    */
   class logic_error : public std::exception {
-    public:
+   public:
+    /**
+     *  Constructor. The passed message is returned by a call to what() and should describe what exactly went wront.
+     */
+    logic_error(const std::string& message) noexcept;
 
-      /**
-       *  Constructor. The passed message is returned by a call to what() and should describe what exactly went wront.
-       */
-      logic_error(const std::string &message) noexcept;
+    /**
+     *  Return the message describing what exactly went wrong. The returned message is only descriptive and only meant
+     *  for display. Program logic must never be based on the content of this string.
+     */
+    const char* what() const noexcept override;
 
-      /**
-       *  Return the message describing what exactly went wrong. The returned message is only descriptive and only meant
-       *  for display. Program logic must never be based on the content of this string.
-       */
-      const char* what() const noexcept override;
-
-    private:
-
-      std::string         _message;
-
+   private:
+    std::string _message;
   };
 
   /**
@@ -67,7 +61,6 @@ namespace ChimeraTK {
    */
   typedef ChimeraTK::runtime_error Exception;
 
-}//namespace ChimeraTK
+} // namespace ChimeraTK
 
-#endif  /* CHIMERA_TK_EXCEPTION_H */
-
+#endif /* CHIMERA_TK_EXCEPTION_H */

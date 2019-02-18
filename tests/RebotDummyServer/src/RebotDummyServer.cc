@@ -11,18 +11,9 @@ namespace ChimeraTK {
   std::atomic<bool> stop_rebot_server(false);
 
   RebotDummyServer::RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion)
-  : _state(ACCEPT_NEW_COMMAND),
-    _heartbeatCount(0),
-    _helloCount(0),
-    _dont_answer(false),
-    _registerSpace(mapFile),
-    _serverPort(portNumber),
-    _protocolVersion(protocolVersion),
-    _io(),
-    _serverEndpoint(ip::tcp::v4(), _serverPort),
-    _connectionAcceptor(_io, _serverEndpoint),
-    _currentClientConnection()
-  {
+  : _state(ACCEPT_NEW_COMMAND), _heartbeatCount(0), _helloCount(0), _dont_answer(false), _registerSpace(mapFile),
+    _serverPort(portNumber), _protocolVersion(protocolVersion), _io(), _serverEndpoint(ip::tcp::v4(), _serverPort),
+    _connectionAcceptor(_io, _serverEndpoint), _currentClientConnection() {
     if(protocolVersion == 0) {
       _protocolImplementor.reset(new DummyProtocol0(*this));
     }
@@ -52,7 +43,6 @@ namespace ChimeraTK {
 
     // loop accepts client connections - one at a time
     while(stop_rebot_server == false) {
-
       boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
       try {
         _connectionAcceptor.accept(*incomingConnection);
@@ -64,7 +54,6 @@ namespace ChimeraTK {
         else {
           throw; // something else went wrong, rethrow the exception
         }
-
       }
 
       if(stop_rebot_server) break;
@@ -80,7 +69,7 @@ namespace ChimeraTK {
     if(_state == INSIDE_MULTI_WORD_WRITE) {
       _state = _protocolImplementor->continueMultiWordWrite(buffer);
     }
-    else {  // has to be ACCEPT_NEW_COMMAND
+    else { // has to be ACCEPT_NEW_COMMAND
 
       // cause an error condition: just don't answer
       if(_dont_answer) {
@@ -89,21 +78,20 @@ namespace ChimeraTK {
 
       uint32_t requestedAction = buffer.at(0);
       switch(requestedAction) {
-
         case SINGLE_WORD_WRITE:
           _protocolImplementor->singleWordWrite(buffer);
           break;
-        case  MULTI_WORD_WRITE:
+        case MULTI_WORD_WRITE:
           _state = _protocolImplementor->multiWordWrite(buffer);
           break;
-        case  MULTI_WORD_READ:
+        case MULTI_WORD_READ:
           _protocolImplementor->multiWordRead(buffer);
           break;
-        case  HELLO:
+        case HELLO:
           ++_helloCount;
           _protocolImplementor->hello(buffer);
           break;
-        case  PING:
+        case PING:
           ++_heartbeatCount;
           _protocolImplementor->ping(buffer);
           break;
@@ -150,7 +138,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void RebotDummyServer::sendSingleWord(int32_t response) {
-    std::vector<int32_t> data{ response };
+    std::vector<int32_t> data{response};
     boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
   }
 
@@ -175,7 +163,6 @@ namespace ChimeraTK {
 
     // This loop handles the accepted connection
     while(stop_rebot_server == false) {
-
       std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
       boost::system::error_code errorCode;
       _currentClientConnection->read_some(boost::asio::buffer(dataBuffer), errorCode);

@@ -9,7 +9,7 @@
 #define CHIMERA_TK_DUMMY_REGISTER_ACCESSOR_H
 
 #include "DummyBackend.h"
-#include "NumericAddressedBackendMuxedRegisterAccessor.h"    // for the prefixes to the register names
+#include "NumericAddressedBackendMuxedRegisterAccessor.h" // for the prefixes to the register names
 
 namespace ChimeraTK {
 
@@ -22,65 +22,59 @@ namespace ChimeraTK {
     /// registers governed by a FixedPointConverter.
     template<typename T>
     class DummyRegisterElement {
-
-      public:
-
-        DummyRegisterElement(FixedPointConverter *_fpc, int _nbytes, uint32_t *_buffer)
+     public:
+      DummyRegisterElement(FixedPointConverter* _fpc, int _nbytes, uint32_t* _buffer)
       : fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
 
-        /// Implicit type conversion to user type T.
-        /// This covers already a lot of operations like arithmetics and comparison
-        inline operator T() const {
-          return fpcptr->template toCooked<T>(*buffer);
-        }
+      /// Implicit type conversion to user type T.
+      /// This covers already a lot of operations like arithmetics and comparison
+      inline operator T() const { return fpcptr->template toCooked<T>(*buffer); }
 
-        /// assignment operator
-        inline DummyRegisterElement<T> operator=(T rhs)
-        {
-          uint32_t raw = fpcptr->toRaw(rhs);
-          memcpy(buffer, &raw, nbytes);
-          return *this;
-        }
+      /// assignment operator
+      inline DummyRegisterElement<T> operator=(T rhs) {
+        uint32_t raw = fpcptr->toRaw(rhs);
+        memcpy(buffer, &raw, nbytes);
+        return *this;
+      }
 
-        /// pre-increment operator
-        inline DummyRegisterElement<T> operator++() {
-          T v = fpcptr->template toCooked<T>(*buffer);
-          return operator=( v + 1 );
-        }
+      /// pre-increment operator
+      inline DummyRegisterElement<T> operator++() {
+        T v = fpcptr->template toCooked<T>(*buffer);
+        return operator=(v + 1);
+      }
 
-        /// pre-decrement operator
-        inline DummyRegisterElement<T> operator--() {
-          T v = fpcptr->template toCooked<T>(*buffer);
-          return operator=( v - 1 );
-        }
+      /// pre-decrement operator
+      inline DummyRegisterElement<T> operator--() {
+        T v = fpcptr->template toCooked<T>(*buffer);
+        return operator=(v - 1);
+      }
 
-        /// post-increment operator
-        inline T operator++(int) {
-          T v = fpcptr->template toCooked<T>(*buffer);
-          operator=( v + 1 );
-          return v;
-        }
+      /// post-increment operator
+      inline T operator++(int) {
+        T v = fpcptr->template toCooked<T>(*buffer);
+        operator=(v + 1);
+        return v;
+      }
 
-        /// post-decrement operator
-        inline T operator--(int) {
-          T v = fpcptr->template toCooked<T>(*buffer);
-          operator=( v - 1 );
-          return v;
-        }
+      /// post-decrement operator
+      inline T operator--(int) {
+        T v = fpcptr->template toCooked<T>(*buffer);
+        operator=(v - 1);
+        return v;
+      }
 
-      protected:
+     protected:
+      /// constructer when used as a base class in DummyRegister
+      DummyRegisterElement() : fpcptr(NULL), nbytes(0), buffer(NULL) {}
 
-        /// constructer when used as a base class in DummyRegister
-        DummyRegisterElement() : fpcptr(NULL),nbytes(0),buffer(NULL) {}
+      /// fixed point converter to be used for this element
+      FixedPointConverter* fpcptr;
 
-        /// fixed point converter to be used for this element
-        FixedPointConverter *fpcptr;
+      /// number of bytes per word
+      int nbytes;
 
-        /// number of bytes per word
-        int nbytes;
-
-        /// raw buffer of this element
-        uint32_t *buffer;
+      /// raw buffer of this element
+      uint32_t* buffer;
     };
 
     /*********************************************************************************************************************/
@@ -88,66 +82,55 @@ namespace ChimeraTK {
     /// Will be returned by the first [] operator.
     template<typename T>
     class DummyRegisterSequence {
-
-      public:
-
-        DummyRegisterSequence(FixedPointConverter *_fpc, int _nbytes, int _pitch, uint32_t *_buffer)
+     public:
+      DummyRegisterSequence(FixedPointConverter* _fpc, int _nbytes, int _pitch, uint32_t* _buffer)
       : fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
 
-        /// Get or set register content by [] operator.
-        inline DummyRegisterElement<T> operator[](unsigned int sample)
-        {
-          char *basePtr = reinterpret_cast<char*>(buffer);
-          return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<uint32_t*>(basePtr + pitch*sample) );
-        }
+      /// Get or set register content by [] operator.
+      inline DummyRegisterElement<T> operator[](unsigned int sample) {
+        char* basePtr = reinterpret_cast<char*>(buffer);
+        return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<uint32_t*>(basePtr + pitch * sample));
+      }
 
-      protected:
+     protected:
+      /// fixed point converter to be used for this sequence
+      FixedPointConverter* fpcptr;
 
-        /// fixed point converter to be used for this sequence
-        FixedPointConverter *fpcptr;
+      /// number of bytes per word
+      int nbytes;
 
-        /// number of bytes per word
-        int nbytes;
+      /// pitch in bytes (distance between samples of the same sequence)
+      int pitch;
 
-        /// pitch in bytes (distance between samples of the same sequence)
-        int pitch;
+      /// reference to the raw buffer (first word of the sequence)
+      uint32_t* buffer;
 
-        /// reference to the raw buffer (first word of the sequence)
-        uint32_t *buffer;
-
-    private:
-
+     private:
       /** prevent copying by operator=, since it will be confusing */
       void operator=(const DummyRegisterSequence& rightHandSide) const;
-
     };
-  }     // namespace proxies
+  } // namespace proxies
 
   /*********************************************************************************************************************/
   /** Class providing a function to check whether a given address is inside the address range of a register or not.
    */
   class DummyRegisterAddressChecker {
-    public:
-      DummyRegisterAddressChecker(RegisterInfoMap::RegisterInfo _registerInfo)
-      : registerInfo(_registerInfo)
-      {}
+   public:
+    DummyRegisterAddressChecker(RegisterInfoMap::RegisterInfo _registerInfo) : registerInfo(_registerInfo) {}
 
-      /// check if the given address is in range of the register
-      bool isAddressInRange(uint8_t bar, uint32_t address, size_t length) {
-        return ( bar == registerInfo.bar &&
-                 address >= registerInfo.address &&
-                 address+length <= registerInfo.address+registerInfo.nBytes );
-      }
+    /// check if the given address is in range of the register
+    bool isAddressInRange(uint8_t bar, uint32_t address, size_t length) {
+      return (bar == registerInfo.bar && address >= registerInfo.address &&
+          address + length <= registerInfo.address + registerInfo.nBytes);
+    }
 
-    protected:
+   protected:
+    /// constructor for derived classes
+    DummyRegisterAddressChecker() {}
 
-      /// constructor for derived classes
-      DummyRegisterAddressChecker() {}
-
-      /// register map information
-      RegisterInfoMap::RegisterInfo registerInfo;
+    /// register map information
+    RegisterInfoMap::RegisterInfo registerInfo;
   };
-
 
   /*********************************************************************************************************************/
   /** Register accessor for accessing single word or 1D array registers internally of a DummyBackend implementation.
@@ -163,61 +146,51 @@ namespace ChimeraTK {
    */
   template<typename T>
   class DummyRegisterAccessor : public proxies::DummyRegisterElement<T>, public DummyRegisterAddressChecker {
-    public:
+   public:
+    /// Constructor should normally be called in the constructor of the DummyBackend implementation.
+    /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
+    /// DummyBackend itself. module and name denominate the register entry in the map file.
+    DummyRegisterAccessor(DummyBackend* dev, std::string module, std::string name)
+    : _dev(dev), fpc(module + "/" + name) {
+      _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
+      fpc = FixedPointConverter(
+          module + "/" + name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
+      // initialise the base DummyRegisterElement
+      proxies::DummyRegisterElement<T>::fpcptr = &fpc;
+      proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
+      proxies::DummyRegisterElement<T>::buffer = getElement(0);
+    }
 
-      /// Constructor should normally be called in the constructor of the DummyBackend implementation.
-      /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
-      /// DummyBackend itself. module and name denominate the register entry in the map file.
-      DummyRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-        : _dev(dev), fpc(module+"/"+name)
-      {
-        _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
-        fpc =  FixedPointConverter(module+"/"+name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
-        // initialise the base DummyRegisterElement
-        proxies::DummyRegisterElement<T>::fpcptr = &fpc;
-        proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
-        proxies::DummyRegisterElement<T>::buffer = getElement(0);
-      }
+    /// Get or set register content by [] operator.
+    inline proxies::DummyRegisterElement<T> operator[](unsigned int index) { return getProxy(index); }
 
-      /// Get or set register content by [] operator.
-      inline proxies::DummyRegisterElement<T> operator[](unsigned int index)
-      {
-        return getProxy(index);
-      }
+    /// return number of elements
+    unsigned int getNumberOfElements() { return registerInfo.nElements; }
 
-      /// return number of elements
-      unsigned int getNumberOfElements()
-      {
-        return registerInfo.nElements;
-      }
+    /// expose = operator from base class
+    using proxies::DummyRegisterElement<T>::operator=;
 
-      /// expose = operator from base class
-      using proxies::DummyRegisterElement<T>::operator=;
+   protected:
+    /// pointer to VirtualDevice
+    DummyBackend* _dev;
 
-    protected:
+    /// fixed point converter
+    FixedPointConverter fpc;
 
-      /// pointer to VirtualDevice
-      DummyBackend *_dev;
+    /// return element
+    inline uint32_t* getElement(unsigned int index) {
+      return reinterpret_cast<uint32_t*>(
+          &(_dev->_barContents[registerInfo.bar][registerInfo.address / sizeof(uint32_t) + index]));
+    }
 
-      /// fixed point converter
-      FixedPointConverter fpc;
+    /// return a proxy object
+    inline proxies::DummyRegisterElement<T> getProxy(int index) {
+      return proxies::DummyRegisterElement<T>(&fpc, sizeof(uint32_t), getElement(index));
+    }
 
-      /// return element
-      inline uint32_t* getElement(unsigned int index) {
-        return reinterpret_cast<uint32_t*>
-        (&(_dev->_barContents[registerInfo.bar][registerInfo.address/sizeof(uint32_t) + index]));
-      }
-
-      /// return a proxy object
-      inline proxies::DummyRegisterElement<T> getProxy(int index) {
-        return proxies::DummyRegisterElement<T>(&fpc, sizeof(uint32_t), getElement(index));
-      }
-
-    private:
-
-      /** prevent copying by operator=, since it will be confusing */
-      void operator=(const DummyRegisterAccessor& rightHandSide) const;
-
+   private:
+    /** prevent copying by operator=, since it will be confusing */
+    void operator=(const DummyRegisterAccessor& rightHandSide) const;
   };
 
   /*********************************************************************************************************************/
@@ -230,96 +203,83 @@ namespace ChimeraTK {
    */
   template<typename T>
   class DummyMultiplexedRegisterAccessor : public DummyRegisterAddressChecker {
-    public:
+   public:
+    /// Constructor should normally be called in the constructor of the DummyBackend implementation.
+    /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
+    /// DummyBackend itself. module and name denominate the register entry in the map file.
+    /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the name when searching for the register.
+    DummyMultiplexedRegisterAccessor(DummyBackend* dev, std::string module, std::string name) : _dev(dev), pitch(0) {
+      _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX + name, registerInfo, module);
 
-      /// Constructor should normally be called in the constructor of the DummyBackend implementation.
-      /// dev must be the pointer to the DummyBackend to be accessed. A raw pointer is needed, as used inside the
-      /// DummyBackend itself. module and name denominate the register entry in the map file.
-      /// Note: The string "AREA_MULTIPLEXED_SEQUENCE_" will be prepended to the name when searching for the register.
-      DummyMultiplexedRegisterAccessor(DummyBackend *dev, std::string module, std::string name)
-        : _dev(dev), pitch(0)
-      {
-        _dev->_registerMapping->getRegisterInfo(MULTIPLEXED_SEQUENCE_PREFIX+name, registerInfo, module);
-
-        int i = 0;
-        while(true) {
-          // obtain register information for sequence
-          RegisterInfoMap::RegisterInfo elem;
-          std::stringstream sequenceNameStream;
-          sequenceNameStream << SEQUENCE_PREFIX << name << "_" << i++;
-          try{
-            _dev->_registerMapping->getRegisterInfo( sequenceNameStream.str(), elem, module );
-          }
-          catch(ChimeraTK::logic_error &) {
-            break;
-          }
-          // create fixed point converter for sequence
-          fpc.push_back( FixedPointConverter(module+"/"+name,elem.width, elem.nFractionalBits, elem.signedFlag) );
-          // store offsets and number of bytes per word
-          offsets.push_back(elem.address);
-          nbytes.push_back(elem.nBytes);
-          // determine pitch
-          pitch += elem.nBytes;
+      int i = 0;
+      while(true) {
+        // obtain register information for sequence
+        RegisterInfoMap::RegisterInfo elem;
+        std::stringstream sequenceNameStream;
+        sequenceNameStream << SEQUENCE_PREFIX << name << "_" << i++;
+        try {
+          _dev->_registerMapping->getRegisterInfo(sequenceNameStream.str(), elem, module);
         }
-
-        if(fpc.empty()) {
-          throw ChimeraTK::logic_error("No sequenes found for name \""+name+"\".");
+        catch(ChimeraTK::logic_error&) {
+          break;
         }
-
-        // compute number of elements per sequence
-        nElements = registerInfo.nBytes/pitch;
+        // create fixed point converter for sequence
+        fpc.push_back(FixedPointConverter(module + "/" + name, elem.width, elem.nFractionalBits, elem.signedFlag));
+        // store offsets and number of bytes per word
+        offsets.push_back(elem.address);
+        nbytes.push_back(elem.nBytes);
+        // determine pitch
+        pitch += elem.nBytes;
       }
 
-      /// return number of elements per sequence
-      unsigned int getNumberOfElements()
-      {
-        return nElements;
+      if(fpc.empty()) {
+        throw ChimeraTK::logic_error("No sequenes found for name \"" + name + "\".");
       }
 
-      /// return number of sequences
-      unsigned int getNumberOfSequences()
-      {
-        return fpc.size();
-      }
+      // compute number of elements per sequence
+      nElements = registerInfo.nBytes / pitch;
+    }
 
-      /// Get or set register content by [] operators.
-      /// The first [] denotes the sequence (aka. channel number), the second [] indicates the sample inside the sequence.
-      /// This means that in a sense the first index is the faster counting index.
-      /// Example: myMuxRegister[3][987] will give you the 988th sample of the 4th channel.
-      inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence)
-      {
-        int8_t *basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.bar].data());
-        uint32_t *seq = reinterpret_cast<uint32_t*>(basePtr + offsets[sequence]);
-        return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
-      }
+    /// return number of elements per sequence
+    unsigned int getNumberOfElements() { return nElements; }
 
-    protected:
+    /// return number of sequences
+    unsigned int getNumberOfSequences() { return fpc.size(); }
 
-      /// pointer to VirtualDevice
-      DummyBackend *_dev;
+    /// Get or set register content by [] operators.
+    /// The first [] denotes the sequence (aka. channel number), the second [] indicates the sample inside the sequence.
+    /// This means that in a sense the first index is the faster counting index.
+    /// Example: myMuxRegister[3][987] will give you the 988th sample of the 4th channel.
+    inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence) {
+      int8_t* basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.bar].data());
+      uint32_t* seq = reinterpret_cast<uint32_t*>(basePtr + offsets[sequence]);
+      return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
+    }
 
-      /// pointer to fixed point converter
-      std::vector<FixedPointConverter> fpc;
+   protected:
+    /// pointer to VirtualDevice
+    DummyBackend* _dev;
 
-      /// offsets in bytes for sequences
-      std::vector<int> offsets;
+    /// pointer to fixed point converter
+    std::vector<FixedPointConverter> fpc;
 
-      /// number of bytes per word for sequences
-      std::vector<int> nbytes;
+    /// offsets in bytes for sequences
+    std::vector<int> offsets;
 
-      /// pitch in bytes (distance between samples of the same sequence)
-      int pitch;
+    /// number of bytes per word for sequences
+    std::vector<int> nbytes;
 
-      /// number of elements per sequence
-      unsigned  int nElements;
+    /// pitch in bytes (distance between samples of the same sequence)
+    int pitch;
 
-    private:
+    /// number of elements per sequence
+    unsigned int nElements;
 
-      /** prevent copying by operator=, since it will be confusing */
-      void operator=(const DummyMultiplexedRegisterAccessor& rightHandSide) const;
-
+   private:
+    /** prevent copying by operator=, since it will be confusing */
+    void operator=(const DummyMultiplexedRegisterAccessor& rightHandSide) const;
   };
 
-}// namespace ChimeraTK
+} // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_DUMMY_REGISTER_ACCESSOR_H */

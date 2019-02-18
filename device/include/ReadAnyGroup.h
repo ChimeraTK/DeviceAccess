@@ -16,112 +16,108 @@ namespace ChimeraTK {
 
   /** Group several registers (= TransferElement) to allow waiting for an update of any of the registers. */
   class ReadAnyGroup {
+   public:
+    /** Construct empty group. Elements can later be added using the add() function, or by copying another object. */
+    ReadAnyGroup();
 
-    public:
+    /** Construct finalised group with the given elements. The group will behave like finalise() had already been
+     *  called. */
+    ReadAnyGroup(std::initializer_list<TransferElementAbstractor> list);
+    ReadAnyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
 
-      /** Construct empty group. Elements can later be added using the add() function, or by copying another object. */
-      ReadAnyGroup();
+    template<typename ITERATOR>
+    ReadAnyGroup(ITERATOR first, ITERATOR last);
 
-      /** Construct finalised group with the given elements. The group will behave like finalise() had already been
-       *  called. */
-      ReadAnyGroup(std::initializer_list<TransferElementAbstractor> list);
-      ReadAnyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
+    /** Add register to group. Note that calling this function is only allowed before finalise() has been
+     *  called. The given register may not yet be part of a ReadAnyGroup or a TransferGroup, otherwise an
+     *  exception is thrown.
+     *
+     *  The register must be must be readable. */
+    void add(TransferElementAbstractor element);
+    void add(boost::shared_ptr<TransferElement> element);
 
-      template<typename ITERATOR>
-      ReadAnyGroup(ITERATOR first, ITERATOR last);
+    /** Finalise the group. From this point on, add() may no longer be called. Only after the group has been finalised
+     *  the read functions of this group may be called. Also, after the group has been finalised, read functions may
+     *  no longer be called directly on the participating elements (including other copies of the same element).
+     *
+     *  The order of update notifications will only be well-defined for updates which happen after the call to
+     *  finalise(). Any unread values which are present in the TransferElements when this function is called will not
+     *  be processed in the correct sequence. Only the sequence within each TransferElement can be guaranteed. For any
+     *  updates which arrive after the call to finalise() the correct sequence will be guaranteed even accross
+     *  TransferElements.
+     *
+     *  This function will call readAsync() on all elements with AccessMode::wait_for_new_data in the group. There
+     *  must be at least one transfer element with AccessMode::wait_for_new_data in the group, otherwise an exception
+     *  is thrown. */
+    void finalise();
 
-      /** Add register to group. Note that calling this function is only allowed before finalise() has been
-       *  called. The given register may not yet be part of a ReadAnyGroup or a TransferGroup, otherwise an
-       *  exception is thrown.
-       *
-       *  The register must be must be readable. */
-      void add(TransferElementAbstractor element);
-      void add(boost::shared_ptr<TransferElement> element);
+    /** Wait until one of the elements in this group has received an update. The function will return the
+     *  TransferElementID of the element which has received the update. If multiple updates are received at the same
+     *  time or if multiple updates were already present before the call to this function, the ID of the first element
+     *  receiving an update will be returned.
+     *
+     *  Only elements with AccessMode::wait_for_new_data are used for waiting. Once an update has been received for
+     *  one of these elements, the function will call readLatest() on all elements without
+     *  AccessMode::wait_for_new_data.
+     *
+     *  Before returning, the postRead action will be called on the TransferElement whose ID is returned, so the read
+     *  data will already be present in the user buffer. All other TransferElements in this group will not be
+     *  altered.
+     *
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    TransferElementID readAny();
 
-      /** Finalise the group. From this point on, add() may no longer be called. Only after the group has been finalised
-       *  the read functions of this group may be called. Also, after the group has been finalised, read functions may
-       *  no longer be called directly on the participating elements (including other copies of the same element).
-       *
-       *  The order of update notifications will only be well-defined for updates which happen after the call to
-       *  finalise(). Any unread values which are present in the TransferElements when this function is called will not
-       *  be processed in the correct sequence. Only the sequence within each TransferElement can be guaranteed. For any
-       *  updates which arrive after the call to finalise() the correct sequence will be guaranteed even accross
-       *  TransferElements.
-       *
-       *  This function will call readAsync() on all elements with AccessMode::wait_for_new_data in the group. There
-       *  must be at least one transfer element with AccessMode::wait_for_new_data in the group, otherwise an exception
-       *  is thrown. */
-      void finalise();
+    /** Wait until the given TransferElement has received an update and store it to its user buffer. All updates of
+     *  other elements which are received before the update of the given element will be processed and are thus
+     *  visible in the user buffers when this function returns.
+     *
+     *  The specified TransferElement must be part of this ReadAnyGroup, otherwise the behaviour is undefined.
+     *
+     *  This is merely a convenience function calling waitAny() in a loop until the ID of the given element is
+     *  returned.
+     *
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    void readUntil(const TransferElementID& id);
+    void readUntil(const TransferElementAbstractor& element);
 
-      /** Wait until one of the elements in this group has received an update. The function will return the
-       *  TransferElementID of the element which has received the update. If multiple updates are received at the same
-       *  time or if multiple updates were already present before the call to this function, the ID of the first element
-       *  receiving an update will be returned.
-       *
-       *  Only elements with AccessMode::wait_for_new_data are used for waiting. Once an update has been received for
-       *  one of these elements, the function will call readLatest() on all elements without
-       *  AccessMode::wait_for_new_data.
-       *
-       *  Before returning, the postRead action will be called on the TransferElement whose ID is returned, so the read
-       *  data will already be present in the user buffer. All other TransferElements in this group will not be
-       *  altered.
-       *
-       *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
-      TransferElementID readAny();
+    /** Wait until all of the given TransferElements has received an update and store it to its user buffer. All
+     *  updates of other elements which are received before the update of the given element will be processed and are
+     *  thus visible in the user buffers when this function returns.
+     *
+     *  The specified TransferElement must be part of this ReadAnyGroup, otherwise the behaviour is undefined.
+     *
+     *  This is merely a convenience function calling waitAny() in a loop until the ID of the given element is
+     *  returned.
+     *
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    void readUntilAll(const std::vector<TransferElementID>& ids);
+    void readUntilAll(const std::vector<TransferElementAbstractor>& elements);
 
-      /** Wait until the given TransferElement has received an update and store it to its user buffer. All updates of
-       *  other elements which are received before the update of the given element will be processed and are thus
-       *  visible in the user buffers when this function returns.
-       *
-       *  The specified TransferElement must be part of this ReadAnyGroup, otherwise the behaviour is undefined.
-       *
-       *  This is merely a convenience function calling waitAny() in a loop until the ID of the given element is
-       *  returned.
-       *
-       *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
-      void readUntil(const TransferElementID &id);
-      void readUntil(const TransferElementAbstractor &element);
+    /** Wait until one of the elements received an update, but do not execute the postRead action. This is similar to
+     *  readAny() but the caller has to execute postRead() manually. Also the poll-type elements in the group are not
+     *  updated in this function.
+     *  This allows e.g. to acquire a lock before executing postRead(). Note that it is mandatory to call postRead()
+     *  before accessing any TransferElement in the group or the group itself in any other way. */
+    TransferElementID waitAny();
 
-      /** Wait until all of the given TransferElements has received an update and store it to its user buffer. All
-       *  updates of other elements which are received before the update of the given element will be processed and are
-       *  thus visible in the user buffers when this function returns.
-       *
-       *  The specified TransferElement must be part of this ReadAnyGroup, otherwise the behaviour is undefined.
-       *
-       *  This is merely a convenience function calling waitAny() in a loop until the ID of the given element is
-       *  returned.
-       *
-       *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
-      void readUntilAll(const std::vector<TransferElementID> &ids);
-      void readUntilAll(const std::vector<TransferElementAbstractor> &elements);
+    /** Execute the postRead action after waitAny().  */
+    void postRead();
 
-      /** Wait until one of the elements received an update, but do not execute the postRead action. This is similar to
-       *  readAny() but the caller has to execute postRead() manually. Also the poll-type elements in the group are not
-       *  updated in this function.
-       *  This allows e.g. to acquire a lock before executing postRead(). Note that it is mandatory to call postRead()
-       *  before accessing any TransferElement in the group or the group itself in any other way. */
-      TransferElementID waitAny();
+   private:
+    /// Flag if this group has been finalised already
+    bool isFinalised{false};
 
-      /** Execute the postRead action after waitAny().  */
-      void postRead();
+    /// Vector of push-type elements in this group
+    std::vector<TransferElementAbstractor> push_elements;
 
-    private:
+    /// Vector of poll-type elements in this group
+    std::vector<TransferElementAbstractor> poll_elements;
 
-      /// Flag if this group has been finalised already
-      bool isFinalised{false};
+    /// The notification queue, will be valid only if isFinalised == true
+    cppext::future_queue<size_t> notification_queue;
 
-      /// Vector of push-type elements in this group
-      std::vector<TransferElementAbstractor> push_elements;
-
-      /// Vector of poll-type elements in this group
-      std::vector<TransferElementAbstractor> poll_elements;
-
-      /// The notification queue, will be valid only if isFinalised == true
-      cppext::future_queue<size_t> notification_queue;
-
-      /// Index (w.r.t. push_elements) of the last incomplete transfer, i.e. after waitAny().
-      size_t lastIncompleteTransfer{std::numeric_limits<size_t>::max()};
-
+    /// Index (w.r.t. push_elements) of the last incomplete transfer, i.e. after waitAny().
+    size_t lastIncompleteTransfer{std::numeric_limits<size_t>::max()};
   };
 
   /********************************************************************************************************************/
@@ -131,14 +127,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::ReadAnyGroup(std::initializer_list<TransferElementAbstractor> list) {
-    for(auto &element : list) add(element);
+    for(auto& element : list) add(element);
     finalise();
   }
 
   /********************************************************************************************************************/
 
   inline ReadAnyGroup::ReadAnyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list) {
-    for(auto &element : list) add(element);
+    for(auto& element : list) add(element);
     finalise();
   }
 
@@ -157,7 +153,8 @@ namespace ChimeraTK {
       throw std::logic_error("ReadAnyGroup has already been finalised, calling add() is no longer allowed.");
     }
     if(!element.isReadable()) {
-      throw std::logic_error("Cannot add non-readable accessor for register "+element.getName()+" to ReadAnyGroup.");
+      throw std::logic_error(
+          "Cannot add non-readable accessor for register " + element.getName() + " to ReadAnyGroup.");
     }
     if(element.getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
       push_elements.push_back(element);
@@ -169,19 +166,18 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::add(boost::shared_ptr<TransferElement> element) {
-    add(TransferElementAbstractor(element));
-  }
+  inline void ReadAnyGroup::add(boost::shared_ptr<TransferElement> element) { add(TransferElementAbstractor(element)); }
 
   /********************************************************************************************************************/
 
   inline void ReadAnyGroup::finalise() {
-    if(isFinalised) throw std::logic_error("ReadAnyGroup has already been finalised, calling finalise() is no longer allowed.");
+    if(isFinalised)
+      throw std::logic_error("ReadAnyGroup has already been finalised, calling finalise() is no longer allowed.");
     std::vector<cppext::future_queue<void>> queueList;
     bool groupEmpty = true;
-    for(auto &e : push_elements) {
+    for(auto& e : push_elements) {
       auto tf = e.readAsync();
-      queueList.push_back( detail::getFutureQueueFromTransferFuture(tf) );
+      queueList.push_back(detail::getFutureQueueFromTransferFuture(tf));
       groupEmpty = false;
     }
     if(groupEmpty) {
@@ -210,7 +206,7 @@ namespace ChimeraTK {
     push_elements[0].transferFutureWaitCallback();
 
     // Wait for notification
-retry:
+  retry:
     notification_queue.pop_wait(lastIncompleteTransfer);
 
     // The update we got notified about might have been discarded, in which case we need to wait again on the
@@ -237,7 +233,7 @@ retry:
     push_elements[lastIncompleteTransfer].getHighLevelImplElement()->postRead();
 
     // update all poll-type elements in the group
-    for(auto &e : poll_elements) {
+    for(auto& e : poll_elements) {
       if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
     }
 
@@ -247,7 +243,7 @@ retry:
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::readUntil(const TransferElementID &id) {
+  inline void ReadAnyGroup::readUntil(const TransferElementID& id) {
     while(true) {
       auto read = readAny();
       if(read == id) return;
@@ -256,20 +252,18 @@ retry:
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::readUntil(const TransferElementAbstractor &element) {
-    readUntil(element.getId());
-  }
+  inline void ReadAnyGroup::readUntil(const TransferElementAbstractor& element) { readUntil(element.getId()); }
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::readUntilAll(const std::vector<TransferElementID> &ids) {
+  inline void ReadAnyGroup::readUntilAll(const std::vector<TransferElementID>& ids) {
     std::map<TransferElementID, bool> found;
-    for(auto &id : ids) found[id] = false;    // initialise map so we can tell from the map if a variable is in the vector
+    for(auto& id : ids) found[id] = false; // initialise map so we can tell from the map if a variable is in the vector
     size_t leftToFind = ids.size();
     while(true) {
       auto read = readAny();
-      if(found.count(read) == 0) continue;    // variable is not in the vector ids
-      if(found[read] == true) continue;       // variable has been read already
+      if(found.count(read) == 0) continue; // variable is not in the vector ids
+      if(found[read] == true) continue;    // variable has been read already
       found[read] = true;
       --leftToFind;
       if(leftToFind == 0) return;
@@ -278,14 +272,15 @@ retry:
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::readUntilAll(const std::vector<TransferElementAbstractor> &elements) {
+  inline void ReadAnyGroup::readUntilAll(const std::vector<TransferElementAbstractor>& elements) {
     std::map<TransferElementID, bool> found;
-    for(auto &elem : elements) found[elem.getId()] = false;    // initialise map so we can tell from the map if a variable is in the vector
+    for(auto& elem : elements)
+      found[elem.getId()] = false; // initialise map so we can tell from the map if a variable is in the vector
     size_t leftToFind = elements.size();
     while(true) {
       auto read = readAny();
-      if(found.count(read) == 0) continue;    // variable is not in the vector elements
-      if(found[read] == true) continue;       // variable has been read already
+      if(found.count(read) == 0) continue; // variable is not in the vector elements
+      if(found[read] == true) continue;    // variable has been read already
       found[read] = true;
       --leftToFind;
       if(leftToFind == 0) return;

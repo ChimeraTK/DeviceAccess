@@ -3,33 +3,33 @@
 
 #include "DummyProtocol0.h"
 
-namespace ChimeraTK{
-  
-class RebotDummyServer;
+namespace ChimeraTK {
 
-/// Only put commands which don't exist in all versions, or behave differently
-struct DummyProtocol1: public DummyProtocol0{
-  DummyProtocol1(RebotDummyServer & parent);
-    
-  /// The multi word read is not limited in the size any more
-  virtual void multiWordRead(std::vector<uint32_t>& buffer);
+  class RebotDummyServer;
 
-  /// First protocol version that implements hello
-  virtual uint32_t multiWordWrite(std::vector<uint32_t>& buffer);
-  virtual uint32_t continueMultiWordWrite(std::vector<uint32_t>& buffer);
+  /// Only put commands which don't exist in all versions, or behave differently
+  struct DummyProtocol1 : public DummyProtocol0 {
+    DummyProtocol1(RebotDummyServer& parent);
 
-  /// First protocol version that implements hello
-  virtual void hello(std::vector<uint32_t>& buffer);
+    /// The multi word read is not limited in the size any more
+    virtual void multiWordRead(std::vector<uint32_t>& buffer);
 
-  virtual uint32_t protocolVersion(){return 1;}
+    /// First protocol version that implements hello
+    virtual uint32_t multiWordWrite(std::vector<uint32_t>& buffer);
+    virtual uint32_t continueMultiWordWrite(std::vector<uint32_t>& buffer);
 
-  // part of the multi word write across many packets
-  uint32_t _nextAddressInWords;
-  uint32_t _nWordsLeft;
+    /// First protocol version that implements hello
+    virtual void hello(std::vector<uint32_t>& buffer);
 
-  static const uint8_t BAR=0;
-};
+    virtual uint32_t protocolVersion() { return 1; }
 
-}//  namespace ChimeraTK
+    // part of the multi word write across many packets
+    uint32_t _nextAddressInWords;
+    uint32_t _nWordsLeft;
 
-#endif //DUMMY_PROTOCOL_1_H
+    static const uint8_t BAR = 0;
+  };
+
+} //  namespace ChimeraTK
+
+#endif // DUMMY_PROTOCOL_1_H

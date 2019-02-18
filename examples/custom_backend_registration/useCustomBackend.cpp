@@ -1,7 +1,7 @@
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/Utilities.h>
 
-int main(){
+int main() {
   ChimeraTK::setDMapFilePath("registration_example.dmap");
   // The device in known now because it is specified in the dmap file.
 
@@ -10,6 +10,3 @@ int main(){
 
   return 0;
 }
-
-
-

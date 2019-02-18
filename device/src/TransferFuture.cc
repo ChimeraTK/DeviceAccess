@@ -8,7 +8,7 @@ namespace ChimeraTK {
 
   void TransferFuture::wait() {
     _transferElement->transferFutureWaitCallback();
-retry:
+  retry:
     try {
       _notifications.pop_wait();
     }
@@ -19,7 +19,7 @@ retry:
   }
 
   bool TransferFuture::hasNewData() {
-retry:
+  retry:
     try {
       return !(_notifications.empty());
     }
@@ -28,16 +28,14 @@ retry:
     }
   }
 
-  ChimeraTK::TransferElementID TransferFuture::getTransferElementID() {
-    return _transferElement->getId();
-  }
+  ChimeraTK::TransferElementID TransferFuture::getTransferElementID() { return _transferElement->getId(); }
 
   namespace detail {
 
-    cppext::future_queue<void> getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture &future) {
+    cppext::future_queue<void> getFutureQueueFromTransferFuture(ChimeraTK::TransferFuture& future) {
       return future._notifications;
     }
 
   } /* namespace detail */
 
-}
+} // namespace ChimeraTK

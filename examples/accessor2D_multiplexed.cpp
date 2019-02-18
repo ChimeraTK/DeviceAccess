@@ -23,8 +23,8 @@ int main() {
    */
   auto dataRegion = myDevice.getOneDRegisterAccessor<double>("ADC/AREA_DATA_RAW");
   int counter = 0;
-  for(auto & dataWord : dataRegion) {
-    dataWord=counter++;
+  for(auto& dataWord : dataRegion) {
+    dataWord = counter++;
   }
   dataRegion.write();
 
@@ -37,8 +37,8 @@ int main() {
 
   for(size_t i = 0; i < twoDAccessor.getNChannels(); ++i) {
     std::cout << "Channel " << i << ":";
-    std::vector<double> & channel = twoDAccessor[i];
-    for (double sample : channel){
+    std::vector<double>& channel = twoDAccessor[i];
+    for(double sample : channel) {
       std::cout << " " << sample;
     }
     std::cout << std::endl;

@@ -70,9 +70,8 @@ namespace ChimeraTK {
      *          <li> path1 concatenated with path2 when path2 is a relative path.
      *        </ul>
      */
-    std::string concatenatePaths(const std::string& path1,
-        const std::string& path2);
-  }
-}
+    std::string concatenatePaths(const std::string& path1, const std::string& path2);
+  } // namespace parserUtilities
+} // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_PARSER_UTILITIES_H */

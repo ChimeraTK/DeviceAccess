@@ -7,44 +7,40 @@
 #include "parserUtilities.h"
 #include "Utilities.h"
 
-namespace ChimeraTK{
+namespace ChimeraTK {
   using namespace ChimeraTK;
 }
 using namespace boost::unit_test_framework;
 
 class DMapFileParserTest {
-  public:
-    void testFileNotFound();
-    void testErrorInDmapFile();
-    void testNoDataInDmapFile();
-    void testParseFile();
+ public:
+  void testFileNotFound();
+  void testErrorInDmapFile();
+  void testNoDataInDmapFile();
+  void testParseFile();
 };
 
 class DMapFileParserTestSuite : public test_suite {
-  public:
-    DMapFileParserTestSuite() : test_suite("DMapFileParser class test suite") {
-      boost::shared_ptr<DMapFileParserTest> dMapFileParserTest(
-          new DMapFileParserTest);
+ public:
+  DMapFileParserTestSuite() : test_suite("DMapFileParser class test suite") {
+    boost::shared_ptr<DMapFileParserTest> dMapFileParserTest(new DMapFileParserTest);
 
-      test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(
-          &DMapFileParserTest::testFileNotFound, dMapFileParserTest);
-      test_case* testErrorInDmapFile = BOOST_CLASS_TEST_CASE(
-          &DMapFileParserTest::testErrorInDmapFile, dMapFileParserTest);
-      test_case* testNoDataInDmapFile = BOOST_CLASS_TEST_CASE(
-          &DMapFileParserTest::testNoDataInDmapFile, dMapFileParserTest);
-      test_case* testParseFile = BOOST_CLASS_TEST_CASE(
-          &DMapFileParserTest::testParseFile, dMapFileParserTest);
+    test_case* testFileNotFound = BOOST_CLASS_TEST_CASE(&DMapFileParserTest::testFileNotFound, dMapFileParserTest);
+    test_case* testErrorInDmapFile =
+        BOOST_CLASS_TEST_CASE(&DMapFileParserTest::testErrorInDmapFile, dMapFileParserTest);
+    test_case* testNoDataInDmapFile =
+        BOOST_CLASS_TEST_CASE(&DMapFileParserTest::testNoDataInDmapFile, dMapFileParserTest);
+    test_case* testParseFile = BOOST_CLASS_TEST_CASE(&DMapFileParserTest::testParseFile, dMapFileParserTest);
 
-      add(testFileNotFound);
-      add(testErrorInDmapFile);
-      add(testParseFile);
-      add(testNoDataInDmapFile);
-    }
+    add(testFileNotFound);
+    add(testErrorInDmapFile);
+    add(testParseFile);
+    add(testNoDataInDmapFile);
+  }
 };
 
-bool init_unit_test(){
-  framework::master_test_suite().p_name.value =
-      "DMapFileParser class test suite";
+bool init_unit_test() {
+  framework::master_test_suite().p_name.value = "DMapFileParser class test suite";
   framework::master_test_suite().add(new DMapFileParserTestSuite());
 
   return true;
@@ -66,7 +62,6 @@ void DMapFileParserTest::testErrorInDmapFile() {
   BOOST_CHECK_THROW(fileParser.parse("badLoadlib.dmap"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(fileParser.parse("badLoadlib2.dmap"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(fileParser.parse("unkownKey.dmap"), ChimeraTK::logic_error);
-
 }
 
 void DMapFileParserTest::testNoDataInDmapFile() {
@@ -94,8 +89,9 @@ void DMapFileParserTest::testParseFile() {
   populateDummyDeviceInfo(deviceInfo2, absPathToDmap, "card2", "/dev/dev2",
       ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir, "./goodMapFile_withoutModules.map"));
   populateDummyDeviceInfo(deviceInfo3, absPathToDmap, "card3", "/dev/dev3",
-      ChimeraTK::parserUtilities::getCurrentWorkingDirectory()+"goodMapFile_withoutModules.map");
-  populateDummyDeviceInfo(deviceInfo4, absPathToDmap, "card4", "(pci:mtcadummys0?map=goodMapFile_withoutModules.map)", "");
+      ChimeraTK::parserUtilities::getCurrentWorkingDirectory() + "goodMapFile_withoutModules.map");
+  populateDummyDeviceInfo(
+      deviceInfo4, absPathToDmap, "card4", "(pci:mtcadummys0?map=goodMapFile_withoutModules.map)", "");
 
   deviceInfo1.dmapFileLineNumber = 6;
   deviceInfo2.dmapFileLineNumber = 7;
@@ -103,18 +99,18 @@ void DMapFileParserTest::testParseFile() {
   deviceInfo4.dmapFileLineNumber = 9;
 
   // we use require here so it is safe to increase and dereference the iterator below
-  BOOST_REQUIRE( mapFilePtr->getSize() == 4);
+  BOOST_REQUIRE(mapFilePtr->getSize() == 4);
 
   ChimeraTK::DeviceInfoMap::const_iterator it = mapFilePtr->begin();
 
-  BOOST_CHECK( compareDeviceInfos(deviceInfo1, *(it++)) == true);
-  BOOST_CHECK( compareDeviceInfos(deviceInfo2, *(it++)) == true);
-  BOOST_CHECK( compareDeviceInfos(deviceInfo3, *(it++)) == true);
-  BOOST_CHECK( compareDeviceInfos(deviceInfo4, *(it++)) == true);
+  BOOST_CHECK(compareDeviceInfos(deviceInfo1, *(it++)) == true);
+  BOOST_CHECK(compareDeviceInfos(deviceInfo2, *(it++)) == true);
+  BOOST_CHECK(compareDeviceInfos(deviceInfo3, *(it++)) == true);
+  BOOST_CHECK(compareDeviceInfos(deviceInfo4, *(it++)) == true);
 
   auto pluginLibraries = mapFilePtr->getPluginLibraries();
 
-  BOOST_CHECK( pluginLibraries.size() == 2 );
-  BOOST_CHECK( pluginLibraries[0]  == absPathToDmapDir+"libMyLib.so" );
-  BOOST_CHECK( pluginLibraries[1] == "/system/libAnotherLib.so" );
+  BOOST_CHECK(pluginLibraries.size() == 2);
+  BOOST_CHECK(pluginLibraries[0] == absPathToDmapDir + "libMyLib.so");
+  BOOST_CHECK(pluginLibraries[1] == "/system/libAnotherLib.so");
 }

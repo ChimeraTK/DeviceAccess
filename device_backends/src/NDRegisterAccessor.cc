@@ -9,9 +9,8 @@ namespace ChimeraTK {
     return boost::make_shared<CopyRegisterDecorator<UserType>>(casted);
   }
 
+  /**********************************************************************************************************************/
 
-/**********************************************************************************************************************/
-
-  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES( NDRegisterAccessor );
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NDRegisterAccessor);
 
 } /* namespace ChimeraTK */

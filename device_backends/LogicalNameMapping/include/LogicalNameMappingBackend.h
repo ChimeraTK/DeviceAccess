@@ -32,67 +32,62 @@ namespace ChimeraTK {
    *  inside the xlmap file
    */
   class LogicalNameMappingBackend : public DeviceBackendImpl {
+   public:
+    LogicalNameMappingBackend(std::string lmapFileName = "");
 
-    public:
+    ~LogicalNameMappingBackend() override {}
 
-      LogicalNameMappingBackend(std::string lmapFileName="");
+    void open() override;
 
-      ~LogicalNameMappingBackend() override {}
+    void close() override;
 
-      void open() override;
+    std::string readDeviceInfo() override { return std::string("Logical name mapping file: ") + _lmapFileName; }
 
-      void close() override;
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        std::string address, std::map<std::string, std::string> parameters);
 
-      std::string readDeviceInfo() override {
-        return std::string("Logical name mapping file: ") + _lmapFileName;
-      }
+    const RegisterCatalogue& getRegisterCatalogue() const override;
 
-      static boost::shared_ptr<DeviceBackend> createInstance(std::string address, std::map<std::string,std::string> parameters);
+   protected:
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+    DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(LogicalNameMappingBackend, getRegisterAccessor_impl, 4);
 
-      const RegisterCatalogue& getRegisterCatalogue() const override;
+    /// parse the logical map file, if not yet done
+    void parse();
 
-    protected:
+    /// flag if already parsed
+    bool hasParsed;
 
-      template<typename UserType>
-      boost::shared_ptr< NDRegisterAccessor<UserType> > getRegisterAccessor_impl(
-          const RegisterPath &registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
-      DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER( LogicalNameMappingBackend, getRegisterAccessor_impl, 4);
+    /// name of the logical map file
+    std::string _lmapFileName;
 
-      /// parse the logical map file, if not yet done
-      void parse();
+    /// map of target devices
+    std::map<std::string, boost::shared_ptr<DeviceBackend>> _devices;
 
-      /// flag if already parsed
-      bool hasParsed;
+    /// map of parameters passed through the CDD
+    std::map<std::string, std::string> _parameters;
 
-      /// name of the logical map file
-      std::string _lmapFileName;
+    /** We need to make the catalogue mutable, since we fill it within getRegisterCatalogue() */
+    mutable RegisterCatalogue _catalogue_mutable;
 
-      /// map of target devices
-      std::map< std::string, boost::shared_ptr<DeviceBackend> > _devices;
+    /** Flag whether the catalogue has already been filled with extra information from the target backends */
+    mutable bool catalogueCompleted{false};
 
-      /// map of parameters passed through the CDD
-      std::map< std::string, std::string > _parameters;
+    template<typename T>
+    friend class LNMBackendRegisterAccessor;
 
-      /** We need to make the catalogue mutable, since we fill it within getRegisterCatalogue() */
-      mutable RegisterCatalogue _catalogue_mutable;
+    template<typename T>
+    friend class LNMBackendChannelAccessor;
 
-      /** Flag whether the catalogue has already been filled with extra information from the target backends */
-      mutable bool catalogueCompleted{false};
+    template<typename T>
+    friend class LNMBackendBitAccessor;
 
-      template<typename T>
-      friend class LNMBackendRegisterAccessor;
-
-      template<typename T>
-      friend class LNMBackendChannelAccessor;
-
-      template<typename T>
-      friend class LNMBackendBitAccessor;
-
-      template<typename T>
-      friend class LNMBackendVariableAccessor;
-
+    template<typename T>
+    friend class LNMBackendVariableAccessor;
   };
 
-}
+} // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H */
