@@ -27,8 +27,11 @@
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 
-#The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+# The make coverage command is only available in debug mode.  Also
+# factor in that cmake treats CMAKE_BUILD_TYPE string as case
+# insensitive.
+string(TOUPPER ${CMAKE_BUILD_TYPE} build_type_uppercase)
+IF(build_type_uppercase STREQUAL "DEBUG")
   configure_file(cmake/make_coverage.sh.in
     ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
   add_custom_target(coverage
@@ -36,5 +39,5 @@ IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating test coverage documentation" VERBATIM
     )
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+ENDIF()
 
