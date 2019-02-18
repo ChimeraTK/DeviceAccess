@@ -14,7 +14,6 @@
 #include "Module.h"
 #include "VirtualModule.h"
 #include "VariableGroup.h"
-//#include "Application.h"
 #include "ScalarAccessor.h"
 
 namespace ChimeraTK {
@@ -32,7 +31,11 @@ class DeviceModule : public Module {
 
       /** Default constructor: create dysfunctional device module */
       DeviceModule() {}
-
+      
+      /** Destructor */
+      virtual ~DeviceModule();
+      
+      
       /** Move operation with the move constructor */
       DeviceModule(DeviceModule &&other) { operator=(std::move(other)); }
 
@@ -42,6 +45,7 @@ class DeviceModule : public Module {
         deviceAliasOrURI = std::move(other.deviceAliasOrURI);
         registerNamePrefix = std::move(other.registerNamePrefix);
         subModules = std::move(other.subModules);
+        deviceError = std::move(other.deviceError);
         return *this;
       }
 
@@ -71,7 +75,14 @@ class DeviceModule : public Module {
       
       void terminate() override;
       
+      VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
       
+      void setCurrentVersionNumber(VersionNumber versionNumber) override {
+        if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+      }
+
+      /** Version number of last push-type read operation - will be passed on to any write operations */
+      VersionNumber currentVersionNumber;
     protected:
       // populate virtualisedModuleFromCatalog based on the information in the device's catalogue
       VirtualModule& virtualiseFromCatalog() const;
@@ -91,7 +102,7 @@ class DeviceModule : public Module {
         ScalarOutput<int> status{this,"status","",""}; 
         ScalarOutput<std::string> message{this,"errMsg","",""}; 
       };  
-      //DeviceError deviceError;
+      
       DeviceError deviceError{this, "deviceError", "Error"}; 
     private:
       /** The thread executing reportException() */
