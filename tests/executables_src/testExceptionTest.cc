@@ -83,6 +83,7 @@ BOOST_AUTO_TEST_CASE(testThinkOfAName) {
   //app.cs >> app.b.var1;*/
   // app.cs("probeSignal") >> app.dev("probeSignal");
   app.dev.connectTo(app.cs);
+  app.dev.deviceError.connectTo(app.cs["DeviceError"]);
   std::cout << "CONNECTED" << std::endl;
   ctk::TestFacility test;
   app.initialise();
