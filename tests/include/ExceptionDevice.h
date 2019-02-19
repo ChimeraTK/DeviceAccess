@@ -15,7 +15,10 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
   void open() override {
     std::cout << "ExceptionDummy opened called" << std::endl;
     if(throwException)
+    {
+      std::cout << "ExceptionDummy throwException" << std::endl;
       throw(ChimeraTK::runtime_error("DummyException: This is a test"));
+    }
     else
       ChimeraTK::DummyBackend::open();
   }
