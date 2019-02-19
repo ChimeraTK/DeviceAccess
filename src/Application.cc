@@ -173,7 +173,6 @@ void Application::run() {
   }
 
   for(auto &deviceModule : deviceModuleList) {
-    std::cout<<"registered Device module"<<std::endl;
     deviceModule->run();
   }
 
@@ -472,6 +471,11 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
 
 void Application::makeConnections() {
 
+  for(auto &devModule : deviceModuleList)
+  {
+    devModule->defineConnections();
+  }
+  
   // finalise connections: decide still-undecided details, in particular for control-system and device varibales, which
   // get created "on the fly".
   finaliseNetworks();
@@ -487,12 +491,11 @@ void Application::makeConnections() {
   for(auto &network : networkList) {
     makeConnectionsForNetwork(network);
   }
-
+  std::cout<<"Application::makeConnections()"<<std::endl;
   // set all initial version numbers in the modules to the same value
   VersionNumber startVersion;
   for(auto &module : getSubmoduleListRecursive()) {
-    if( (module->getModuleType() != ModuleType::ApplicationModule) 
-    || (module->getModuleType() != ModuleType::Device) )
+    if(module->getModuleType() != ModuleType::ApplicationModule) 
       continue;
     module->setCurrentVersionNumber(startVersion);
   }

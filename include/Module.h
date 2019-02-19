@@ -82,6 +82,7 @@ namespace ChimeraTK {
       /** Return the virtual version of this module and its sub-modules, i.e. eliminate hierarchies where requested and
        *  apply other dynamic model changes. */
       virtual const Module& virtualise() const = 0;
+      virtual void defineConnections(){};
 
       /**
         * Connect the entire module into another module. All variables inside this module and all
@@ -128,6 +129,8 @@ namespace ChimeraTK {
       void setCurrentVersionNumber(VersionNumber version) override {
         _owner->setCurrentVersionNumber(version);
       }
+      
+      
 
     protected:
 

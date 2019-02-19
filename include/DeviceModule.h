@@ -15,6 +15,7 @@
 #include "VirtualModule.h"
 #include "VariableGroup.h"
 #include "ScalarAccessor.h"
+#include "ControlSystemModule.h"
 
 namespace ChimeraTK {
 class Application;
@@ -81,8 +82,9 @@ class DeviceModule : public Module {
         if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
       }
 
-      /** Version number of last push-type read operation - will be passed on to any write operations */
       VersionNumber currentVersionNumber;
+      //ControlSystemModule cs;
+      void defineConnections() override;
     protected:
       // populate virtualisedModuleFromCatalog based on the information in the device's catalogue
       VirtualModule& virtualiseFromCatalog() const;

@@ -10,6 +10,7 @@
 
 #include "Application.h"
 #include "DeviceModule.h"
+//#include "ControlSystemModule.h"
 
 namespace ChimeraTK {
 
@@ -173,15 +174,12 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::reportException(std::string errMsg ){
-    deviceError.status = 1;
-    deviceError.message = errMsg;
-    deviceError.writeAll();
+    
     std::unique_lock<std::mutex> lk(errorMutex);
     errorQueue.push(errMsg);
     errorCondVar.wait(lk);
-    deviceError.status = 0;
-    deviceError.message = "";
-    deviceError.writeAll();
+    lk.unlock();
+    
   }
   
   /*********************************************************************************************************************/
@@ -189,12 +187,21 @@ namespace ChimeraTK {
   void DeviceModule::handleException(){
     Application::registerThread("DM_"+getName());
     std::string error;
+    
     while(true)
     {
       
         errorQueue.pop_wait(error);
-        //if (error == "none")
-          //break;
+        //std::scoped_lock<std::mutex> lk(errorMutex);
+        std::lock_guard<std::mutex> lk(errorMutex);
+        deviceError.status = 1;
+        deviceError.message = error;
+        VersionNumber cV;
+        deviceError.setCurrentVersionNumber(cV);
+        deviceError.writeAll();
+
+        if (error == "ExitOnNone")
+          break;
         Device d;          
         while(true) 
         {
@@ -204,17 +211,26 @@ namespace ChimeraTK {
             {
               break;
             }
-            usleep(5000);
+            boost::this_thread::interruption_point();
           }
           catch(std::exception ex)
           {
-            //std::cout<<"caught exception:"<<ex.what()<<std::endl;
-            //deviceError.message = ex.what();
+            deviceError.status = 1;
+            deviceError.message = ex.what();
+            deviceError.setCurrentVersionNumber(cV);
+            deviceError.writeAll();
           }
+          usleep(500000);
+          boost::this_thread::interruption_point();
+        }
+        boost::this_thread::interruption_point();
+        deviceError.status = 0;
+        deviceError.message = "";
+        deviceError.setCurrentVersionNumber(cV);
+        deviceError.writeAll();
         errorCondVar.notify_all();
       }
-      
-    }
+      errorCondVar.notify_all();
   }
   
   /*********************************************************************************************************************/
@@ -230,21 +246,19 @@ namespace ChimeraTK {
 
   void DeviceModule::terminate() {
     
-    //reportException("none");
+    reportException("ExitOnNone");
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
-      // try joining the thread
-      while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
-        // if thread is not yet joined, send interrupt() to all variables.
-        for(auto &var : getAccessorListRecursive()) {
-          
-          if(var.getDirection() == VariableDirection{VariableDirection::feeding,false}) continue;
-          var.getAppAccessorNoType().getHighLevelImplElement()->interrupt();
-          
-        }
-      }
+      moduleThread.join();  
     }
     assert(!moduleThread.joinable());
   }
-}
 
+
+  void DeviceModule::defineConnections(){
+    std::string prefix = "Device."+deviceAliasOrURI+"/";
+    ControlSystemModule cs(prefix);
+    deviceError.connectTo(cs["DeviceError"]);
+  }
+
+}
