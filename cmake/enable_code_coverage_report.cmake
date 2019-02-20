@@ -30,7 +30,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 # The make coverage command is only available in debug mode.  Also
 # factor in that cmake treats CMAKE_BUILD_TYPE string as case
 # insensitive.
-string(TOUPPER ${CMAKE_BUILD_TYPE} build_type_uppercase)
+string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uppercase)
 IF(build_type_uppercase STREQUAL "DEBUG")
   configure_file(cmake/make_coverage.sh.in
     ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
