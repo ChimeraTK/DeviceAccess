@@ -37,10 +37,7 @@ std::mutex Application::testableMode_mutex;
 
 /*********************************************************************************************************************/
 
-Application::Application(const std::string& name)
-: ApplicationBase(name),
-  EntityOwner(name, "")
-{
+Application::Application(const std::string& name) : ApplicationBase(name), EntityOwner(name, "") {
   // check if the application name has been set
   if(applicationName == "") {
     shutdown();
@@ -51,14 +48,14 @@ Application::Application(const std::string& name)
   bool nameContainsIllegalChars = name.find_first_not_of(legalChars) != std::string::npos;
   if(nameContainsIllegalChars) {
     shutdown();
-    throw ChimeraTK::logic_error("Error: The application name may only contain alphanumeric characters and underscores.");
+    throw ChimeraTK::logic_error(
+        "Error: The application name may only contain alphanumeric characters and underscores.");
   }
 }
 
 /*********************************************************************************************************************/
 
 void Application::initialise() {
-
   // call the user-defined defineConnections() function which describes the structure of the application
   defineConnections();
 
@@ -75,33 +72,36 @@ void Application::initialise() {
 namespace {
   struct CreateConstantForUnconnectedVar {
     /// @todo test unconnected variables for all types!
-    CreateConstantForUnconnectedVar(const std::type_info &typeInfo, bool makeFeeder, size_t length)
+    CreateConstantForUnconnectedVar(const std::type_info& typeInfo, bool makeFeeder, size_t length)
     : _typeInfo(typeInfo), _makeFeeder(makeFeeder), _length(length) {}
 
     template<typename PAIR>
     void operator()(PAIR&) const {
       if(typeid(typename PAIR::first_type) != _typeInfo) return;
-      theNode = VariableNetworkNode::makeConstant<typename PAIR::first_type>(_makeFeeder, typename PAIR::first_type(), _length);
+      theNode = VariableNetworkNode::makeConstant<typename PAIR::first_type>(
+          _makeFeeder, typename PAIR::first_type(), _length);
       done = true;
     }
 
-    const std::type_info &_typeInfo;
+    const std::type_info& _typeInfo;
     bool _makeFeeder;
     size_t _length;
     mutable bool done{false};
     mutable VariableNetworkNode theNode;
   };
-}
+} // namespace
 
 /*********************************************************************************************************************/
 
 void Application::processUnconnectedNodes() {
-  for(auto &module : getSubmoduleListRecursive()) {
-    for(auto &accessor : module->getAccessorList()) {
+  for(auto& module : getSubmoduleListRecursive()) {
+    for(auto& accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
         if(enableUnconnectedVariablesWarning) {
-          std::cerr << "*** Warning: Variable '" << accessor.getQualifiedName() << "' is not connected. "    // LCOV_EXCL_LINE
-                       "Reading will always result in 0, writing will be ignored." << std::endl;             // LCOV_EXCL_LINE
+          std::cerr << "*** Warning: Variable '" << accessor.getQualifiedName()
+                    << "' is not connected. " // LCOV_EXCL_LINE
+                       "Reading will always result in 0, writing will be ignored."
+                    << std::endl; // LCOV_EXCL_LINE
         }
         networkList.emplace_back();
         networkList.back().addNode(accessor);
@@ -121,45 +121,43 @@ void Application::processUnconnectedNodes() {
 /*********************************************************************************************************************/
 
 void Application::checkConnections() {
-
   // check all networks for validity
-  for(auto &network : networkList) {
+  for(auto& network : networkList) {
     network.check();
   }
 
   // check if all accessors are connected
   // note: this in principle cannot happen, since processUnconnectedNodes() is called before
-  for(auto &module : getSubmoduleListRecursive()) {
-    for(auto &accessor : module->getAccessorList()) {
+  for(auto& module : getSubmoduleListRecursive()) {
+    for(auto& accessor : module->getAccessorList()) {
       if(!accessor.hasOwner()) {
-        throw ChimeraTK::logic_error("The accessor '"+accessor.getName()+"' of the module '"+module->getName()+    // LCOV_EXCL_LINE
-                                     "' was not connected!");                                                      // LCOV_EXCL_LINE
+        throw ChimeraTK::logic_error("The accessor '" + accessor.getName() + "' of the module '" +
+            module->getName() +      // LCOV_EXCL_LINE
+            "' was not connected!"); // LCOV_EXCL_LINE
       }
     }
   }
-
 }
 
 /*********************************************************************************************************************/
 
 void Application::run() {
-
   assert(applicationName != "");
 
   // prepare the modules
-  for(auto &module : getSubmoduleListRecursive()) {
+  for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
   }
 
   // start the necessary threads for the FanOuts etc.
-  for(auto &internalModule : internalModuleList) {
+  for(auto& internalModule : internalModuleList) {
     internalModule->activate();
   }
 
   // read all input variables once, to set the startup value e.g. coming from the config file
   // (without triggering an action inside the application)
-  for(auto &module : getSubmoduleListRecursive()) {
-    for(auto &variable : module->getAccessorList()) {
+  for(auto& module : getSubmoduleListRecursive()) {
+    for(auto& variable : module->getAccessorList()) {
       if(variable.getDirection().dir == VariableDirection::consuming) {
         variable.getAppAccessorNoType().readLatest();
       }
@@ -167,21 +165,19 @@ void Application::run() {
   }
 
   // start the threads for the modules
-  for(auto &module : getSubmoduleListRecursive()) {
-    std::cout<<module->getFullDescription()<<std::endl;
+  for(auto& module : getSubmoduleListRecursive()) {
+    std::cout << module->getFullDescription() << std::endl;
     module->run();
   }
 
-  for(auto &deviceModule : deviceModuleList) {
+  for(auto& deviceModule : deviceModuleList) {
     deviceModule->run();
   }
-
 }
 
 /*********************************************************************************************************************/
 
 void Application::shutdown() {
-
   // first allow to run the application threads again, if we are in testable mode
   if(testableMode && testableModeTestLock()) {
     testableModeUnlock("shutdown");
@@ -189,23 +185,20 @@ void Application::shutdown() {
 
   // deactivate the FanOuts first, since they have running threads inside accessing the modules etc.
   // (note: the modules are members of the Application implementation and thus get destroyed after this destructor)
-  for(auto &internalModule : internalModuleList) {
+  for(auto& internalModule : internalModuleList) {
     internalModule->deactivate();
   }
 
   // next deactivate the modules, as they have running threads inside as well
-  for(auto &module : getSubmoduleListRecursive()) {
+  for(auto& module : getSubmoduleListRecursive()) {
     module->terminate();
   }
-  
-  for(auto &deviceModule : deviceModuleList) {
-    std::cout<<"terminate Device module"<<std::endl;
+
+  for(auto& deviceModule : deviceModuleList) {
     deviceModule->terminate();
   }
-  
-   
-  ApplicationBase::shutdown();
 
+  ApplicationBase::shutdown();
 }
 /*********************************************************************************************************************/
 
@@ -230,7 +223,6 @@ void Application::generateXML() {
 /*********************************************************************************************************************/
 
 VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode b) {
-
   // if one of the nodes has the value type AnyType, set it to the type of the other
   // if both are AnyType, nothing changes.
   if(a.getValueType() == typeid(AnyType)) {
@@ -258,23 +250,25 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
     throw ChimeraTK::logic_error(what.str());
   }
 
-  // if both nodes already have an owner, we are either already done (same owners) or we need to try to merge the networks
+  // if both nodes already have an owner, we are either already done (same owners) or we need to try to merge the
+  // networks
   if(a.hasOwner() && b.hasOwner()) {
     if(&(a.getOwner()) != &(b.getOwner())) {
-      auto &networkToMerge = b.getOwner();
+      auto& networkToMerge = b.getOwner();
       bool success = a.getOwner().merge(networkToMerge);
       if(!success) {
         std::stringstream what;
         what << "*** ERROR: Trying to connect two nodes which are already part of different networks, and merging these"
-                " networks is not possible (cannot have two non-control-system or two control-system feeders)!" << std::endl;
+                " networks is not possible (cannot have two non-control-system or two control-system feeders)!"
+             << std::endl;
         what << "Node A:" << std::endl;
         a.dump(what);
         what << "Node B:" << std::endl;
         b.dump(what);
         what << "Owner of node A:" << std::endl;
-        a.getOwner().dump("",what);
+        a.getOwner().dump("", what);
         what << "Owner of node B:" << std::endl;
-        b.getOwner().dump("",what);
+        b.getOwner().dump("", what);
         throw ChimeraTK::logic_error(what.str());
       }
       for(auto n = networkList.begin(); n != networkList.end(); ++n) {
@@ -306,9 +300,9 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(const std::string &deviceAlias,
-    const std::string &registerName, VariableDirection direction, UpdateMode mode, size_t nElements) {
-
+boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(
+    const std::string& deviceAlias, const std::string& registerName, VariableDirection direction, UpdateMode mode,
+    size_t nElements) {
   // open device if needed
   if(deviceMap.count(deviceAlias) == 0) {
     deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
@@ -329,8 +323,8 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
 /*********************************************************************************************************************/
 
 template<typename UserType>
-boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createProcessVariable(VariableNetworkNode const &node) {
-
+boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createProcessVariable(
+    VariableNetworkNode const& node) {
   // determine the SynchronizationDirection
   SynchronizationDirection dir;
   if(node.getDirection().withReturn) {
@@ -343,19 +337,18 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
     dir = SynchronizationDirection::deviceToControlSystem;
   }
   AccessModeFlags flags = {};
-  if(node.getDirection().dir == VariableDirection::consuming) {   // Application-to-controlsystem must be push-type
+  if(node.getDirection().dir == VariableDirection::consuming) { // Application-to-controlsystem must be push-type
     flags = {AccessMode::wait_for_new_data};
   }
   else {
-    for(auto &consumer : node.getOwner().getConsumingNodes()) {
+    for(auto& consumer : node.getOwner().getConsumingNodes()) {
       if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
     }
   }
 
   // create the ProcessArray for the proper UserType
   auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(),
-                    node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(),
-                    {}, false, 3, flags);
+      node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(), {}, false, 3, flags);
   assert(pvar->getName() != "");
 
   // create variable ID
@@ -363,9 +356,9 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
   pvIdMap[pvar->getUniqueId()] = varId;
 
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable.
-  // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware of this.
+  // Also don't decorate, if the mode is polling. Instead flag the variable to be polling, so the TestFacility is aware
+  // of this.
   if(testableMode && node.getDirection().dir == VariableDirection::feeding) {
-
     // The transfer mode of this process variable is considered to be polling, if only one consumer exists and this
     // consumer is polling. Reason: mulitple consumers will result in the use of a FanOut, so the communication up to
     // the FanOut will be push-type, even if all consumers are poll-type.
@@ -377,7 +370,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 
     if(mode != UpdateMode::poll) {
       auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
-      testableMode_names[varId] = "ControlSystem:"+node.getPublicName();
+      testableMode_names[varId] = "ControlSystem:" + node.getPublicName();
       return pvarDec;
     }
     else {
@@ -392,9 +385,9 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 /*********************************************************************************************************************/
 
 template<typename UserType>
-std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> >
-  Application::createApplicationVariable(VariableNetworkNode const &node, VariableNetworkNode const &consumer) {
-
+std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>
+    Application::createApplicationVariable(VariableNetworkNode const& node, VariableNetworkNode const& consumer) {
   // obtain the meta data
   size_t nElements = node.getNumberOfElements();
   std::string name = node.getName();
@@ -408,16 +401,18 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   }
 
   // create the ProcessArray for the proper UserType
-  std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
-            boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> > pvarPair;
-  if(consumer.getType() != NodeType::invalid) assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
+  std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>
+      pvarPair;
+  if(consumer.getType() != NodeType::invalid)
+    assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
   if(!node.getDirection().withReturn) {
-    pvarPair = createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
-                                                        {}, 3, false, {}, flags);
+    pvarPair = createSynchronizedProcessArray<UserType>(
+        nElements, name, node.getUnit(), node.getDescription(), {}, 3, false, {}, flags);
   }
   else {
-    pvarPair = createBidirectionalSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(),
-                                                        {}, 3, {}, {}, flags);
+    pvarPair = createBidirectionalSynchronizedProcessArray<UserType>(
+        nElements, name, node.getUnit(), node.getDescription(), {}, 3, {}, {}, flags);
   }
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
@@ -430,37 +425,43 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
   // decorate the process variable if testable mode is enabled and mode is push-type
   if(testableMode && node.getMode() == UpdateMode::push) {
     if(!node.getDirection().withReturn) {
-      pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, false, true, varId, varId);
-      pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, false, varId, varId);
+      pvarPair.first =
+          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, false, true, varId, varId);
+      pvarPair.second =
+          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, false, varId, varId);
     }
     else {
-      pvarPair.first = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true, varIdReturn, varId);
-      pvarPair.second = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true, varId, varIdReturn);
+      pvarPair.first =
+          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true, varIdReturn, varId);
+      pvarPair.second =
+          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true, varId, varIdReturn);
     }
 
     // put the decorators into the list
-    testableMode_names[varId] = "Internal:"+node.getQualifiedName();
+    testableMode_names[varId] = "Internal:" + node.getQualifiedName();
     if(consumer.getType() != NodeType::invalid) {
-      testableMode_names[varId] += "->"+consumer.getQualifiedName();
+      testableMode_names[varId] += "->" + consumer.getQualifiedName();
     }
-    if(node.getDirection().withReturn) testableMode_names[varIdReturn] = testableMode_names[varId]+" (return)";
+    if(node.getDirection().withReturn) testableMode_names[varIdReturn] = testableMode_names[varId] + " (return)";
   }
 
   // if debug mode was requested for either node, decorate both accessors
-  if( debugMode_variableList.count(node.getUniqueId()) ||
-      ( consumer.getType() != NodeType::invalid && debugMode_variableList.count(consumer.getUniqueId()) ) ) {
-
+  if(debugMode_variableList.count(node.getUniqueId()) ||
+      (consumer.getType() != NodeType::invalid && debugMode_variableList.count(consumer.getUniqueId()))) {
     if(consumer.getType() != NodeType::invalid) {
       assert(node.getDirection().dir == VariableDirection::feeding);
       assert(consumer.getDirection().dir == VariableDirection::consuming);
-      pvarPair.first = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.first, node.getQualifiedName());
-      pvarPair.second = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.second, consumer.getQualifiedName());
+      pvarPair.first =
+          boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.first, node.getQualifiedName());
+      pvarPair.second =
+          boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.second, consumer.getQualifiedName());
     }
     else {
-      pvarPair.first = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.first, node.getQualifiedName());
-      pvarPair.second = boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.second, node.getQualifiedName());
+      pvarPair.first =
+          boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.first, node.getQualifiedName());
+      pvarPair.second =
+          boost::make_shared<DebugPrintAccessorDecorator<UserType>>(pvarPair.second, node.getQualifiedName());
     }
-
   }
 
   // return the pair
@@ -470,12 +471,10 @@ std::pair< boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, boost::sh
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
-
-  for(auto &devModule : deviceModuleList)
-  {
+  for(auto& devModule : deviceModuleList) {
     devModule->defineConnections();
   }
-  
+
   // finalise connections: decide still-undecided details, in particular for control-system and device varibales, which
   // get created "on the fly".
   finaliseNetworks();
@@ -488,53 +487,49 @@ void Application::makeConnections() {
   checkConnections();
 
   // make the connections for all networks
-  for(auto &network : networkList) {
+  for(auto& network : networkList) {
     makeConnectionsForNetwork(network);
   }
-  std::cout<<"Application::makeConnections()"<<std::endl;
+  std::cout << "Application::makeConnections()" << std::endl;
   // set all initial version numbers in the modules to the same value
   VersionNumber startVersion;
-  for(auto &module : getSubmoduleListRecursive()) {
-    if(module->getModuleType() != ModuleType::ApplicationModule) 
-      continue;
+  for(auto& module : getSubmoduleListRecursive()) {
+    if(module->getModuleType() != ModuleType::ApplicationModule) continue;
     module->setCurrentVersionNumber(startVersion);
   }
-
 }
 
 /*********************************************************************************************************************/
 
 void Application::finaliseNetworks() {
-
-    // check for control system variables which should be made bidirectional
-    for(auto &network : networkList) {
-      size_t nBidir = network.getFeedingNode().getDirection().withReturn ? 1 : 0;
-      for(auto &consumer : network.getConsumingNodes()) {
-        if(consumer.getDirection().withReturn) ++nBidir;
-      }
-      if(nBidir != 1) continue;     // only if there is exactly one node with return channel we need to guess its peer
-      size_t nCSconsumers = 0;
-      for(auto &consumer : network.getConsumingNodes()) {
-        if(consumer.getType() == NodeType::ControlSystem) ++nCSconsumers;
-      }
-      if(network.getFeedingNode().getType() == NodeType::ControlSystem) {
-        network.getFeedingNode().setDirection({VariableDirection::feeding,true});
-      }
-      else if(nCSconsumers == 1) {
-        for(auto &consumer : network.getConsumingNodes()) {
-          if(consumer.getType() == NodeType::ControlSystem) {
-            consumer.setDirection({VariableDirection::consuming,true});
-            break;
-          }
+  // check for control system variables which should be made bidirectional
+  for(auto& network : networkList) {
+    size_t nBidir = network.getFeedingNode().getDirection().withReturn ? 1 : 0;
+    for(auto& consumer : network.getConsumingNodes()) {
+      if(consumer.getDirection().withReturn) ++nBidir;
+    }
+    if(nBidir != 1) continue; // only if there is exactly one node with return channel we need to guess its peer
+    size_t nCSconsumers = 0;
+    for(auto& consumer : network.getConsumingNodes()) {
+      if(consumer.getType() == NodeType::ControlSystem) ++nCSconsumers;
+    }
+    if(network.getFeedingNode().getType() == NodeType::ControlSystem) {
+      network.getFeedingNode().setDirection({VariableDirection::feeding, true});
+    }
+    else if(nCSconsumers == 1) {
+      for(auto& consumer : network.getConsumingNodes()) {
+        if(consumer.getType() == NodeType::ControlSystem) {
+          consumer.setDirection({VariableDirection::consuming, true});
+          break;
         }
       }
     }
+  }
 }
 
 /*********************************************************************************************************************/
 
 void Application::optimiseConnections() {
-
   // list of iterators of networks to be removed from the networkList after the merge operation
   std::list<VariableNetwork*> deleteNetworks;
 
@@ -581,7 +576,7 @@ void Application::optimiseConnections() {
 
       // if trigger present, remove corresponding trigger receiver node from the trigger network
       if(feeder1.hasExternalTrigger()) {
-        for(auto &itTrig : networkList) {
+        for(auto& itTrig : networkList) {
           if(itTrig.getFeedingNode() != feeder1.getExternalTrigger()) continue;
           itTrig.removeNodeToTrigger(it1->getFeedingNode());
         }
@@ -597,29 +592,28 @@ void Application::optimiseConnections() {
   for(auto net : deleteNetworks) {
     networkList.remove(*net);
   }
-
 }
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections() {                                                                 // LCOV_EXCL_LINE
-  std::cout << "==== List of all variable connections of the current Application ====" << std::endl;  // LCOV_EXCL_LINE
-  for(auto &network : networkList) {                                                                  // LCOV_EXCL_LINE
-    network.dump();                                                                                   // LCOV_EXCL_LINE
-  }                                                                                                   // LCOV_EXCL_LINE
-  std::cout << "=====================================================================" << std::endl;  // LCOV_EXCL_LINE
-}                                                                                                     // LCOV_EXCL_LINE
+void Application::dumpConnections() {                                                                // LCOV_EXCL_LINE
+  std::cout << "==== List of all variable connections of the current Application ====" << std::endl; // LCOV_EXCL_LINE
+  for(auto& network : networkList) {                                                                 // LCOV_EXCL_LINE
+    network.dump();                                                                                  // LCOV_EXCL_LINE
+  }                                                                                                  // LCOV_EXCL_LINE
+  std::cout << "=====================================================================" << std::endl; // LCOV_EXCL_LINE
+} // LCOV_EXCL_LINE
 
 void Application::dumpConnectionGraph(const std::string& fileName) {
-    std::fstream file{fileName, std::ios_base::out};
+  std::fstream file{fileName, std::ios_base::out};
 
-    VariableNetworkGraphDumpingVisitor visitor{file};
-    visitor.dispatch(*this);
+  VariableNetworkGraphDumpingVisitor visitor{file};
+  visitor.dispatch(*this);
 }
 
 /*********************************************************************************************************************/
 
-Application::TypedMakeConnectionCaller::TypedMakeConnectionCaller(Application &owner, VariableNetwork &network)
+Application::TypedMakeConnectionCaller::TypedMakeConnectionCaller(Application& owner, VariableNetwork& network)
 : _owner(owner), _network(network) {}
 
 /*********************************************************************************************************************/
@@ -633,15 +627,13 @@ void Application::TypedMakeConnectionCaller::operator()(PAIR&) const {
 
 /*********************************************************************************************************************/
 
-
-void Application::makeConnectionsForNetwork(VariableNetwork &network) {
-
+void Application::makeConnectionsForNetwork(VariableNetwork& network) {
   // if the network has been created already, do nothing
   if(network.isCreated()) return;
 
   // if the trigger type is external, create the trigger first
   if(network.getFeedingNode().hasExternalTrigger()) {
-    VariableNetwork &dependency = network.getFeedingNode().getExternalTrigger().getOwner();
+    VariableNetwork& dependency = network.getFeedingNode().getExternalTrigger().getOwner();
     if(!dependency.isCreated()) makeConnectionsForNetwork(dependency);
   }
 
@@ -657,10 +649,10 @@ void Application::makeConnectionsForNetwork(VariableNetwork &network) {
 /*********************************************************************************************************************/
 
 template<typename UserType>
-void Application::typedMakeConnection(VariableNetwork &network) {
-  bool connectionMade = false;  // to check the logic...
+void Application::typedMakeConnection(VariableNetwork& network) {
+  bool connectionMade = false; // to check the logic...
 
-  size_t nNodes = network.countConsumingNodes()+1;
+  size_t nNodes = network.countConsumingNodes() + 1;
   auto feeder = network.getFeedingNode();
   auto consumers = network.getConsumingNodes();
   bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
@@ -669,7 +661,6 @@ void Application::typedMakeConnection(VariableNetwork &network) {
 
   // 1st case: the feeder requires a fixed implementation
   if(feeder.hasImplementation() && !constantFeeder) {
-
     // Create feeding implementation. Note: though the implementation is derived from the feeder, it will be used as
     // the implementation of the (or one of the) consumer. Logically, implementations are always pairs of
     // implementations (sender and receiver), but in this case the feeder already has a fixed implementation pair.
@@ -684,7 +675,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
       feedingImpl = createProcessVariable<UserType>(feeder);
     }
     else {
-      throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+      throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
     }
 
     // if we just have two nodes, directly connect them
@@ -716,7 +707,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else {
-        throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+        throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
       }
     }
     else { /* !(nNodes == 2 && !useExternalTrigger) */
@@ -750,18 +741,18 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         fanOut = threadedFanOut;
       }
       else {
-        assert(network.hasApplicationConsumer());   // checkConnections should catch this
+        assert(network.hasApplicationConsumer()); // checkConnections should catch this
         consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl);
         fanOut = consumingFanOut;
       }
 
       // In case we have one or more trigger receivers among our consumers, we produce exactly one application variable
       // for it. We never need more, since the distribution is done with a TriggerFanOut.
-      bool usedTriggerReceiver{false};        // flag if we already have a trigger receiver
-      auto triggerConnection = createApplicationVariable<UserType>(feeder);   // will get destroyed if not used
+      bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
+      auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
 
       // add all consumers to the FanOut
-      for(auto &consumer : consumers) {
+      for(auto& consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
           if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
             consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
@@ -788,24 +779,24 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
-          throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+          throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
         }
       }
       connectionMade = true;
     }
   }
   // 2nd case: the feeder does not require a fixed implementation
-  else if(!constantFeeder) {    /* !feeder.hasImplementation() */
+  else if(!constantFeeder) { /* !feeder.hasImplementation() */
     // we should be left with an application feeder node
     if(feeder.getType() != NodeType::Application) {
-      throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+      throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
     }
     assert(!useExternalTrigger);
     // if we just have two nodes, directly connect them
     if(nNodes == 2) {
       auto consumer = consumers.front();
       if(consumer.getType() == NodeType::Application) {
-        auto impls = createApplicationVariable<UserType>(feeder,consumer);
+        auto impls = createApplicationVariable<UserType>(feeder, consumer);
         feeder.setAppAccessorImplementation<UserType>(impls.first);
         consumer.setAppAccessorImplementation<UserType>(impls.second);
         connectionMade = true;
@@ -822,7 +813,7 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createApplicationVariable<UserType>(feeder,consumer);
+        auto impls = createApplicationVariable<UserType>(feeder, consumer);
         feeder.setAppAccessorImplementation<UserType>(impls.first);
         consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
         connectionMade = true;
@@ -833,22 +824,21 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         connectionMade = true;
       }
       else {
-        throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+        throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
       }
     }
     else {
       // create FanOut and use it as the feeder implementation
       auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
-                                                                feeder.getDescription(), feeder.getNumberOfElements(),
-                                                                feeder.getDirection().withReturn);
+          feeder.getDescription(), feeder.getNumberOfElements(), feeder.getDirection().withReturn);
       feeder.setAppAccessorImplementation<UserType>(fanOut);
 
       // In case we have one or more trigger receivers among our consumers, we produce exactly one application variable
       // for it. We never need more, since the distribution is done with a TriggerFanOut.
-      bool usedTriggerReceiver{false};        // flag if we already have a trigger receiver
-      auto triggerConnection = createApplicationVariable<UserType>(feeder);   // will get destroyed if not used
+      bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
+      auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
 
-      for(auto &consumer : consumers) {
+      for(auto& consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
           auto impls = createApplicationVariable<UserType>(consumer);
           fanOut->addSlave(impls.first, consumer);
@@ -869,22 +859,23 @@ void Application::typedMakeConnection(VariableNetwork &network) {
           consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
         }
         else {
-          throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+          throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
         }
       }
       connectionMade = true;
     }
   }
-  else {    /* constantFeeder */
+  else { /* constantFeeder */
     assert(feeder.getType() == NodeType::Constant);
     auto feedingImpl = feeder.getConstAccessor<UserType>();
     assert(feedingImpl != nullptr);
 
-    for(auto &consumer : consumers) {
+    for(auto& consumer : consumers) {
       if(consumer.getType() == NodeType::Application) {
         if(testableMode) {
           auto varId = getNextVariableId();
-          auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
+          auto pvarDec =
+              boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
           testableMode_names[varId] = "Constant";
           consumer.setAppAccessorImplementation<UserType>(pvarDec);
         }
@@ -907,18 +898,16 @@ void Application::typedMakeConnection(VariableNetwork &network) {
         throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
       }
       else {
-        throw ChimeraTK::logic_error("Unexpected node type!");    // LCOV_EXCL_LINE (assert-like)
+        throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
       }
     }
     connectionMade = true;
-
   }
 
-  if(!connectionMade) {                                                                       // LCOV_EXCL_LINE (assert-like)
-    throw ChimeraTK::logic_error(              // LCOV_EXCL_LINE (assert-like)
-        "The variable network cannot be handled. Implementation missing!");                   // LCOV_EXCL_LINE (assert-like)
-  }                                                                                           // LCOV_EXCL_LINE (assert-like)
-
+  if(!connectionMade) {                                                     // LCOV_EXCL_LINE (assert-like)
+    throw ChimeraTK::logic_error(                                           // LCOV_EXCL_LINE (assert-like)
+        "The variable network cannot be handled. Implementation missing!"); // LCOV_EXCL_LINE (assert-like)
+  }                                                                         // LCOV_EXCL_LINE (assert-like)
 }
 
 /*********************************************************************************************************************/
@@ -945,9 +934,10 @@ void Application::stepApplication() {
   // let the application run until it has processed all data (i.e. the semaphore counter is 0)
   size_t oldCounter = 0;
   while(testableMode_counter > 0) {
-    if(enableDebugTestableMode && ( oldCounter != testableMode_counter) ) {                                         // LCOV_EXCL_LINE (only cout)
-      std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter << std::endl;  // LCOV_EXCL_LINE (only cout)
-      oldCounter = testableMode_counter;                                                                            // LCOV_EXCL_LINE (only cout)
+    if(enableDebugTestableMode && (oldCounter != testableMode_counter)) { // LCOV_EXCL_LINE (only cout)
+      std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter
+                << std::endl;            // LCOV_EXCL_LINE (only cout)
+      oldCounter = testableMode_counter; // LCOV_EXCL_LINE (only cout)
     }
     testableModeUnlock("stepApplication");
     boost::this_thread::yield();
@@ -962,10 +952,11 @@ void Application::testableModeLock(const std::string& name) {
   if(!getInstance().testableMode) return;
 
   // debug output if enabled (also prevent spamming the same message)
-  if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {          // LCOV_EXCL_LINE (only cout)
-    std::cout << "Application::testableModeLock(): Thread " << threadName()                                   // LCOV_EXCL_LINE (only cout)
-              << " tries to obtain lock for " << name << std::endl;                                           // LCOV_EXCL_LINE (only cout)
-  }                                                                                                           // LCOV_EXCL_LINE (only cout)
+  if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) { // LCOV_EXCL_LINE
+                                                                                                     // (only cout)
+    std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
+              << " tries to obtain lock for " << name << std::endl;         // LCOV_EXCL_LINE (only cout)
+  }                                                                         // LCOV_EXCL_LINE (only cout)
 
   // if last lock was obtained repeatedly by the same thread, sleep a short time before obtaining the lock to give the
   // other threads a chance to get the lock first
@@ -978,11 +969,12 @@ void Application::testableModeLock(const std::string& name) {
   // lock
   if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
     // debug output if enabled
-    if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) {        // LCOV_EXCL_LINE (only cout)
-      std::cout << "Application::testableModeLock(): Thread " << threadName()                                 // LCOV_EXCL_LINE (only cout)
-                << " repeatedly obtained lock successfully for " << name                                      // LCOV_EXCL_LINE (only cout)
-                << ". Further messages will be suppressed." << std::endl;                                     // LCOV_EXCL_LINE (only cout)
-    }                                                                                                         // LCOV_EXCL_LINE (only cout)
+    if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) { // LCOV_EXCL_LINE
+                                                                                                       // (only cout)
+      std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
+                << " repeatedly obtained lock successfully for " << name      // LCOV_EXCL_LINE (only cout)
+                << ". Further messages will be suppressed." << std::endl;     // LCOV_EXCL_LINE (only cout)
+    }                                                                         // LCOV_EXCL_LINE (only cout)
 
     // increase counter for stall detection
     getInstance().testableMode_repeatingMutexOwner++;
@@ -992,8 +984,9 @@ void Application::testableModeLock(const std::string& name) {
     if(getInstance().testableMode_repeatingMutexOwner > 100) {
       // print an informative message first, which lists also all variables currently containing unread data.
       std::cout << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
-      std::cout << "    The following variables still contain unread values or had data loss due to a queue overflow:" << std::endl;
-      for(auto &pair : Application::getInstance().testableMode_perVarCounter) {
+      std::cout << "    The following variables still contain unread values or had data loss due to a queue overflow:"
+                << std::endl;
+      for(auto& pair : Application::getInstance().testableMode_perVarCounter) {
         if(pair.second > 0) {
           std::cout << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
                     << getInstance().testableMode_processVars[pair.first]->getId() << "]";
@@ -1017,8 +1010,8 @@ void Application::testableModeLock(const std::string& name) {
       std::cout << "(end of list)" << std::endl;
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       throw TestsStalled();
-      //getInstance().testableMode_counter = 0;
-      //for(auto &pair : Application::getInstance().testableMode_perVarCounter) pair.second = 0;
+      // getInstance().testableMode_counter = 0;
+      // for(auto &pair : Application::getInstance().testableMode_perVarCounter) pair.second = 0;
     }
   }
   else {
@@ -1027,10 +1020,10 @@ void Application::testableModeLock(const std::string& name) {
     getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
 
     // debug output if enabled
-    if(getInstance().enableDebugTestableMode) {                                             // LCOV_EXCL_LINE (only cout)
-      std::cout << "Application::testableModeLock(): Thread " << threadName()               // LCOV_EXCL_LINE (only cout)
-                << " obtained lock successfully for " << name << std::endl;                 // LCOV_EXCL_LINE (only cout)
-    }                                                                                       // LCOV_EXCL_LINE (only cout)
+    if(getInstance().enableDebugTestableMode) {                               // LCOV_EXCL_LINE (only cout)
+      std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
+                << " obtained lock successfully for " << name << std::endl;   // LCOV_EXCL_LINE (only cout)
+    }                                                                         // LCOV_EXCL_LINE (only cout)
   }
 }
 
@@ -1038,35 +1031,35 @@ void Application::testableModeLock(const std::string& name) {
 
 void Application::testableModeUnlock(const std::string& name) {
   if(!getInstance().testableMode) return;
-  if(getInstance().enableDebugTestableMode && (!getInstance().testableMode_repeatingMutexOwner      // LCOV_EXCL_LINE (only cout)
-    || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) {                  // LCOV_EXCL_LINE (only cout)
-    std::cout << "Application::testableModeUnlock(): Thread " << threadName()                       // LCOV_EXCL_LINE (only cout)
-              << " releases lock for " << name << std::endl;                                        // LCOV_EXCL_LINE (only cout)
-  }                                                                                                 // LCOV_EXCL_LINE (only cout)
+  if(getInstance().enableDebugTestableMode &&
+      (!getInstance().testableMode_repeatingMutexOwner                                   // LCOV_EXCL_LINE (only cout)
+          || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
+    std::cout << "Application::testableModeUnlock(): Thread " << threadName()            // LCOV_EXCL_LINE (only cout)
+              << " releases lock for " << name << std::endl;                             // LCOV_EXCL_LINE (only cout)
+  }                                                                                      // LCOV_EXCL_LINE (only cout)
   getTestableModeLockObject().unlock();
 }
 /*********************************************************************************************************************/
 
 std::string& Application::threadName() {
-    // Note: due to a presumed bug in gcc (still present in gcc 7), the thread_local definition must be in the cc file
-    // to prevent seeing different objects in the same thread under some conditions.
-    // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
-    thread_local std::string name{"**UNNAMED**"};
-    return name;
+  // Note: due to a presumed bug in gcc (still present in gcc 7), the thread_local definition must be in the cc file
+  // to prevent seeing different objects in the same thread under some conditions.
+  // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
+  thread_local std::string name{"**UNNAMED**"};
+  return name;
 }
 
 /*********************************************************************************************************************/
 
 std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
-    // Note: due to a presumed bug in gcc (still present in gcc 7), the thread_local definition must be in the cc file
-    // to prevent seeing different objects in the same thread under some conditions.
-    // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
-    thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
-    return myLock;
+  // Note: due to a presumed bug in gcc (still present in gcc 7), the thread_local definition must be in the cc file
+  // to prevent seeing different objects in the same thread under some conditions.
+  // Another workaround for this problem can be found in commit dc051bfe35ce6c1ed954010559186f63646cf5d4
+  thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
+  return myLock;
 }
 
 /*********************************************************************************************************************/
-void Application::registerDeviceModule(DeviceModule* deviceModule)
-{
+void Application::registerDeviceModule(DeviceModule* deviceModule) {
   deviceModuleList.push_back(deviceModule);
 }
