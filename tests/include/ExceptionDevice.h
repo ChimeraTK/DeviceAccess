@@ -4,10 +4,7 @@
 
 class ExceptionDummy : public ChimeraTK::DummyBackend {
  public:
-  ExceptionDummy(std::string mapFileName) : DummyBackend(mapFileName) {
-    std::cout << "ExceptionDummy::ExceptionDummy" << std::endl;
-    throwException = false;
-  }
+  ExceptionDummy(std::string mapFileName) : DummyBackend(mapFileName) { throwException = false; }
   bool throwException;
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));

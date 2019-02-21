@@ -490,6 +490,7 @@ void Application::makeConnections() {
   for(auto& network : networkList) {
     makeConnectionsForNetwork(network);
   }
+
   // set all initial version numbers in the modules to the same value
   VersionNumber startVersion;
   for(auto& module : getSubmoduleListRecursive()) {
