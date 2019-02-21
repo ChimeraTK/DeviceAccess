@@ -17,6 +17,81 @@ namespace ChimeraTK {
   /** Group several registers (= TransferElement) to allow waiting for an update of any of the registers. */
   class ReadAnyGroup {
    public:
+    /** Notification object returned by waitAny(). A notification can be accepted immediately or retained to be
+     *  accepted at a later point in time. */
+    class Notification {
+     public:
+      friend class ReadAnyGroup;
+
+      /** Create an empty notification. Such a notification only acts as a place-holder that can be assigned from
+       *  another notification and is invalid until it is assigned. */
+      Notification();
+
+      /** Construct a notification from another notification. After this, this notification will contain the state
+       *  and information of the other notification and the other notification is going to be invalid. */
+      Notification(Notification &&other);
+
+      /** Desructor. Calls accept() if this notification is valid and has not been accepted yet. */
+      ~Notification();
+
+      /** Assign this notification from another notification.  After this, this notification will contain the state
+       *  and information of the other notification and the other notification is going to be invalid. If this
+       *  notification was valid and had not been accepted before, accept() is called before assigning the data from
+       *  the other notification. */
+      Notification &operator=(Notification &&other);
+
+      /** Accept the notification. This will complete the read operation of the transfer element for which this
+       *  notification has been generated. After accepting a notification, this notification object becomes invalid.
+       *
+       *  Due to implementation details, it can happen that a notification is generated without a new value being
+       *  actually available. In these cases, this method returns false and the transfer element is not updated with a
+       *  new value. In all other cases, this method returns true.
+       *
+       *  This method throws an std::logic_error if this method is called on an invalid notification or a notification
+       *  that has already been accepted. */
+      bool accept();
+
+      /** Return the ID of the transfer element for which this notification has been generated.
+       *
+       *  This method throws an std::logic_error if this method is called on an invalid notification. */
+      TransferElementID getId();
+
+      /** Return the index of the transfer element for which this notifiaction has bee ngenerated. The index is the
+       *  offset into the list of transfer elements that was specified when creating the ReadAnyGroup.
+       *
+       *  This method throws an std::logic_error if this method is called on an invalid notification. */
+      std::size_t getIndex();
+
+      /** Return the transfer element for which this notification has been generated.
+       *
+       *  This method throws an std::logic_error if this method is called on an invalid notification. */
+      TransferElementAbstractor getTransferElement();
+
+      /** Tell whether this notification is valid and has not been accepted yet. */
+      bool isReady();
+
+     private:
+      /** Private constructor used by ReadAnyGroup::waitAny(). This is the only constructor that can construct a new,
+       *  valid notification. */
+      Notification(TransferElementAbstractor const &transferElement, std::size_t index);
+
+      /** Notifications cannot be copied because each notification can only be accepted once. */
+      Notification(const Notification &) = delete;
+      Notification &operator=(const Notification &) = delete;
+
+      // Flag indicating whether accept() has been called.
+      bool accepted{false};
+
+      // Index of the transfer element in the list of transfer elements.
+      std::size_t index;
+
+      // Transfer element for which this notification was generated..
+      TransferElementAbstractor transferElement;
+
+      // Flag indicating whether this notification is valid.
+      bool valid{false};
+    };
+
     /** Construct empty group. Elements can later be added using the add() function, or by copying another object. */
     ReadAnyGroup();
 
@@ -58,7 +133,7 @@ namespace ChimeraTK {
      *
      *  Only elements with AccessMode::wait_for_new_data are used for waiting. Once an update has been received for
      *  one of these elements, the function will call readLatest() on all elements without
-     *  AccessMode::wait_for_new_data.
+     *  AccessMode::wait_for_new_data (this is equivalent to calling processPolled()).
      *
      *  Before returning, the postRead action will be called on the TransferElement whose ID is returned, so the read
      *  data will already be present in the user buffer. All other TransferElements in this group will not be
@@ -93,15 +168,19 @@ namespace ChimeraTK {
     void readUntilAll(const std::vector<TransferElementID>& ids);
     void readUntilAll(const std::vector<TransferElementAbstractor>& elements);
 
-    /** Wait until one of the elements received an update, but do not execute the postRead action. This is similar to
-     *  readAny() but the caller has to execute postRead() manually. Also the poll-type elements in the group are not
-     *  updated in this function.
-     *  This allows e.g. to acquire a lock before executing postRead(). Note that it is mandatory to call postRead()
-     *  before accessing any TransferElement in the group or the group itself in any other way. */
-    TransferElementID waitAny();
+    /** Wait until one of the elements received an update notification, but do not actually process the updated value
+     *  yet. This is similar to readAny() but the caller has to call accept() on the returned object manually.
+     *  Also the poll-type elements in the group are not updated in this function.
+     *
+     *  This allows e.g. to acquire a lock before executing accept().
+     *
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    Notification waitAny();
 
-    /** Execute the postRead action after waitAny().  */
-    void postRead();
+    /** Process polled transfer elements (update them if new values are available).
+     *
+     *  Before calling this function, finalise() must have been called, otherwise the behaviour is undefined. */
+    void processPolled();
 
    private:
     /// Flag if this group has been finalised already
@@ -115,10 +194,106 @@ namespace ChimeraTK {
 
     /// The notification queue, will be valid only if isFinalised == true
     cppext::future_queue<size_t> notification_queue;
-
-    /// Index (w.r.t. push_elements) of the last incomplete transfer, i.e. after waitAny().
-    size_t lastIncompleteTransfer{std::numeric_limits<size_t>::max()};
   };
+
+  /********************************************************************************************************************/
+
+  inline ReadAnyGroup::Notification::Notification() {}
+
+  /********************************************************************************************************************/
+
+  inline ReadAnyGroup::Notification::Notification(Notification &&other) : accepted(other.accepted), index(other.index),
+      transferElement(other.transferElement), valid(other.valid) {
+    other.valid = false;
+    other.transferElement = TransferElementAbstractor();
+  }
+
+  /********************************************************************************************************************/
+
+  inline ReadAnyGroup::Notification::~Notification() {
+    // It is important that each received notification is consumed. This means that we have to accept a notification
+    // before we can destroy it.
+    if (this->valid && !this->accepted) {
+      this->accept();
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  inline ReadAnyGroup::Notification &ReadAnyGroup::Notification::operator=(Notification &&other) {
+    // It is important that each received notification is consumed. This means that we have to accept this notification
+    // before we can overwrite it with another one.
+    if (this->valid && !this->accepted) {
+      this->accept();
+    }
+    this->accepted = other.accepted;
+    this->index = other.index;
+    this->transferElement = other.transferElement;
+    this->valid = other.valid;
+    other.valid = false;
+    other.transferElement = TransferElementAbstractor();
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
+  inline bool ReadAnyGroup::Notification::accept() {
+    if (!this->valid) {
+      throw std::logic_error("This notification object is invalid.");
+    }
+    if (this->accepted) {
+      throw std::logic_error("This notification has already been accepted.");
+    }
+    this->accepted = true;
+    try {
+      auto tf = this->transferElement.readAsync();
+      detail::getFutureQueueFromTransferFuture(tf).pop_wait();
+    }
+    catch(detail::DiscardValueException&) {
+      return false;
+    }
+    this->transferElement.getHighLevelImplElement()->postRead();
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
+  inline TransferElementID ReadAnyGroup::Notification::getId() {
+    if (!this->valid) {
+      throw std::logic_error("This notification object is invalid.");
+    }
+    return this->transferElement.getId();
+  }
+
+  /********************************************************************************************************************/
+
+  inline std::size_t ReadAnyGroup::Notification::getIndex() {
+    if (!this->valid) {
+      throw std::logic_error("This notification object is invalid.");
+    }
+    return this->index;
+  }
+
+  /********************************************************************************************************************/
+
+  inline TransferElementAbstractor ReadAnyGroup::Notification::getTransferElement() {
+    if (!this->valid) {
+      throw std::logic_error("This notification object is invalid.");
+    }
+    return this->transferElement;
+  }
+
+  /********************************************************************************************************************/
+
+  inline bool ReadAnyGroup::Notification::isReady() {
+    return this->valid && !this->accepted;
+  }
+
+  /********************************************************************************************************************/
+
+  inline ReadAnyGroup::Notification::Notification(TransferElementAbstractor const &transferElement, std::size_t index) :
+      index(index), transferElement(transferElement), valid(true) {
+  }
 
   /********************************************************************************************************************/
 
@@ -190,55 +365,37 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline TransferElementID ReadAnyGroup::readAny() {
-    auto id = waitAny();
-    postRead();
-    return id;
+    Notification notification;
+    do {
+      notification = this->waitAny();
+    } while (!notification.accept());
+
+    this->processPolled();
+
+    return notification.getId();
   }
 
   /********************************************************************************************************************/
 
-  inline TransferElementID ReadAnyGroup::waitAny() {
-    assert(lastIncompleteTransfer == std::numeric_limits<size_t>::max());
-
+  inline ReadAnyGroup::Notification ReadAnyGroup::waitAny() {
     // We might block here until we receive an update, so call the transferFutureWaitCallback. Note this is a slightly
     // ugly approximation here, as we call it for the first element in the group. It is used in ApplicationCore
     // testable mode, where it doesn't matter which callback within the same group is called.
     push_elements[0].transferFutureWaitCallback();
 
     // Wait for notification
-  retry:
-    notification_queue.pop_wait(lastIncompleteTransfer);
-
-    // The update we got notified about might have been discarded, in which case we need to wait again on the
-    // notification queue. The TransferFuture is handling those value discards already internally, so we cannot call
-    // TransferFuture::wait()
-    try {
-      auto tf = push_elements[lastIncompleteTransfer].readAsync();
-      detail::getFutureQueueFromTransferFuture(tf).pop_wait();
-    }
-    catch(detail::DiscardValueException&) {
-      goto retry;
-    }
-
-    // return the internal index, so we can easily use it in the readAny() implementation to execute postRead()
-    return push_elements[lastIncompleteTransfer].getId();
+    std::size_t index;
+    notification_queue.pop_wait(index);
+    return Notification(push_elements[index], index);
   }
 
   /********************************************************************************************************************/
 
-  inline void ReadAnyGroup::postRead() {
-    assert(lastIncompleteTransfer != std::numeric_limits<size_t>::max());
-
-    // execute postRead of the updated element
-    push_elements[lastIncompleteTransfer].getHighLevelImplElement()->postRead();
-
+  inline void ReadAnyGroup::processPolled() {
     // update all poll-type elements in the group
     for(auto& e : poll_elements) {
       if(!e.getAccessModeFlags().has(AccessMode::wait_for_new_data)) e.readLatest();
     }
-
-    // reset lastIncompleteTransfer only if assert() are validated. The single = is intentional, this is an assignment!
-    assert(lastIncompleteTransfer = std::numeric_limits<size_t>::max());
   }
 
   /********************************************************************************************************************/

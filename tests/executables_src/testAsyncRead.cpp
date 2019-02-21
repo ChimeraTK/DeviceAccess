@@ -657,14 +657,14 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
     group.add(a4);
     group.finalise();
 
-    TransferElementID id;
+    ReadAnyGroup::Notification notification;
 
     // register 1
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&group, &flag, &id] {
-        id = group.waitAny();
+      std::thread thread([&group, &flag, &notification] {
+        notification = group.waitAny();
         flag = true;
       });
 
@@ -675,12 +675,17 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
       // write register and check that readAny() completes
       backend->notificationQueue["/a1"].push(); // trigger transfer
       thread.join();
-      BOOST_CHECK(id == a1.getId());
+      BOOST_CHECK(notification.getId() == a1.getId());
       BOOST_CHECK(a1 == 1);
       BOOST_CHECK(a2 == 2);
       BOOST_CHECK(a3 == 3);
       BOOST_CHECK(a4 == 4);
-      group.postRead();
+      BOOST_CHECK(notification.accept());
+      BOOST_CHECK(a1 == 42);
+      BOOST_CHECK(a2 == 2);
+      BOOST_CHECK(a3 == 3);
+      BOOST_CHECK(a4 == 4);
+      group.processPolled();
       BOOST_CHECK(a1 == 42);
       BOOST_CHECK(a2 == 2);
       BOOST_CHECK(a3 == 120);
@@ -697,8 +702,8 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
     {
       // launch the readAny in a background thread
       std::atomic<bool> flag{false};
-      std::thread thread([&group, &flag, &id] {
-        id = group.waitAny();
+      std::thread thread([&group, &flag, &notification] {
+        notification = group.waitAny();
         flag = true;
       });
 
@@ -709,12 +714,13 @@ BOOST_AUTO_TEST_CASE(testWaitAny) {
       // write register and check that readAny() completes
       backend->notificationQueue["/a2"].push(); // trigger transfer
       thread.join();
-      BOOST_CHECK(id == a2.getId());
+      BOOST_CHECK(notification.getId() == a2.getId());
       BOOST_CHECK(a1 == 42);
       BOOST_CHECK(a2 == 2);
       BOOST_CHECK(a3 == 120);
       BOOST_CHECK(a4 == 345);
-      group.postRead();
+      BOOST_CHECK(notification.accept());
+      group.processPolled();
       BOOST_CHECK(a1 == 42);
       BOOST_CHECK(a2 == 123);
       BOOST_CHECK(a3 == 121);
