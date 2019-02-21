@@ -13,10 +13,7 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
     return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
   }
   void open() override {
-    std::cout << "ExceptionDummy opened called" << std::endl;
-    if(throwException)
-    {
-      std::cout << "ExceptionDummy throwException" << std::endl;
+    if(throwException) {
       throw(ChimeraTK::runtime_error("DummyException: This is a test"));
     }
     else
