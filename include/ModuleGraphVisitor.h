@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <ostream>
+#include <string>
 
 #include "Visitor.h"
 
@@ -14,20 +14,23 @@ class Module;
 /**
  * @brief The ModuleGraphVisitor class
  *
- * This class is responsible for generating the Graphiviz representation of the module hierarchy.
+ * This class is responsible for generating the Graphiviz representation of the
+ * module hierarchy.
  */
-class ModuleGraphVisitor : public Visitor<EntityOwner, Module, VariableNetworkNode> {
+class ModuleGraphVisitor
+    : public Visitor<EntityOwner, Module, VariableNetworkNode> {
 public:
-    ModuleGraphVisitor(std::ostream& stream, bool showVariables = true);
-    virtual ~ModuleGraphVisitor() {}
+  ModuleGraphVisitor(std::ostream &stream, bool showVariables = true);
+  virtual ~ModuleGraphVisitor() {}
 
-    void dispatch(const EntityOwner &owner);
-    void dispatch(const Module &module);
-    void dispatch(const VariableNetworkNode &node);
+  void dispatch(const EntityOwner &owner);
+  void dispatch(const Module &module);
+  void dispatch(const VariableNetworkNode &node);
+
 private:
-    std::ostream& _stream;
-    bool _showVariables;
+  std::ostream &_stream;
+  bool _showVariables;
 
-    void dumpEntityOwner(const EntityOwner &owner);
+  void dumpEntityOwner(const EntityOwner &owner);
 };
 } // namespace ChimeraTK

@@ -1,24 +1,27 @@
-#include <ChimeraTK/DummyBackend.h>
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/DeviceAccessVersion.h>
+#include <ChimeraTK/DummyBackend.h>
 
 class ExceptionDummy : public ChimeraTK::DummyBackend {
- public:
-  ExceptionDummy(std::string mapFileName) : DummyBackend(mapFileName) { throwException = false; }
+public:
+  ExceptionDummy(std::string mapFileName) : DummyBackend(mapFileName) {
+    throwException = false;
+  }
   bool throwException;
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
-    return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
+  static boost::shared_ptr<DeviceBackend>
+  createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return boost::shared_ptr<DeviceBackend>(
+        new ExceptionDummy(parameters["map"]));
   }
   void open() override {
-    if(throwException) {
+    if (throwException) {
       throw(ChimeraTK::runtime_error("DummyException: This is a test"));
-    }
-    else
+    } else
       ChimeraTK::DummyBackend::open();
   }
 
   class BackendRegisterer {
-   public:
+  public:
     BackendRegisterer();
   };
   static BackendRegisterer backendRegisterer;
@@ -27,6 +30,9 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
 ExceptionDummy::BackendRegisterer ExceptionDummy::backendRegisterer;
 
 ExceptionDummy::BackendRegisterer::BackendRegisterer() {
-  std::cout << "ExceptionDummy::BackendRegisterer: registering backend type ExceptionDummy" << std::endl;
-  ChimeraTK::BackendFactory::getInstance().registerBackendType("ExceptionDummy", &ExceptionDummy::createInstance);
+  std::cout << "ExceptionDummy::BackendRegisterer: registering backend type "
+               "ExceptionDummy"
+            << std::endl;
+  ChimeraTK::BackendFactory::getInstance().registerBackendType(
+      "ExceptionDummy", &ExceptionDummy::createInstance);
 }

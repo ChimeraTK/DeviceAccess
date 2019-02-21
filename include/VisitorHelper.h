@@ -8,7 +8,7 @@ class VariableNetworkNode;
 namespace detail {
 
 std::string encodeDotNodeName(std::string name);
-std::string nodeName(const VariableNetworkNode& node);
+std::string nodeName(const VariableNetworkNode &node);
 
-} // namespace detail)
-}// namespace ChimeraTK
+} // namespace detail
+} // namespace ChimeraTK
