@@ -102,7 +102,7 @@ class DeviceModule : public Module {
       struct DeviceError : public VariableGroup {
         using VariableGroup::VariableGroup;
         ScalarOutput<int> status{this,"status","",""}; 
-        ScalarOutput<std::string> message{this,"errMsg","",""}; 
+        ScalarOutput<std::string> message{this,"message","",""}; 
       };  
       
       DeviceError deviceError{this, "deviceError", "Error"}; 

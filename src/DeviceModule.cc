@@ -256,7 +256,7 @@ namespace ChimeraTK {
 
 
   void DeviceModule::defineConnections(){
-    std::string prefix = "Device."+deviceAliasOrURI+"/";
+    std::string prefix = "Devices."+deviceAliasOrURI+"/";
     ControlSystemModule cs(prefix);
     deviceError.connectTo(cs["DeviceError"]);
   }
