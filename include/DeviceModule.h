@@ -8,10 +8,9 @@
  *  - "state" (boolean flag if error occurred)
  *  - "message" (string with error message)
  *
- * These variables are placed together in a VariableGroup called "DeviceError".
- * They are connected to the contorlsystem in this format
- *  - /Devices.{AliasName}/DeviceError/message
- *  - /Devices.{AliasName}/DeviceError/status.
+ * These variables are automatically connected to the control systen in this format:
+ *  - /Devices/{AliasName}/message
+ *  - /Devices/{AliasName}/status
  *
  * In this implementation a user/application can report an exception
  * by calling reportException of DeviceModule with an exception string.
