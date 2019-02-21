@@ -16,62 +16,55 @@ namespace ChimeraTK {
 
   DeviceModule::DeviceModule(const std::string& _deviceAliasOrURI, const std::string& _registerNamePrefix)
   : Module(nullptr,
-           _registerNamePrefix.empty() ? "<Device:"+_deviceAliasOrURI+">"
-             : _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/")+1),
-           ""),
-    deviceAliasOrURI(_deviceAliasOrURI),
-    registerNamePrefix(_registerNamePrefix)
-  {  
-    
-  }
+        _registerNamePrefix.empty() ? "<Device:" + _deviceAliasOrURI + ">" :
+                                      _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/") + 1),
+        ""),
+    deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(_registerNamePrefix) {}
 
-  
   /*********************************************************************************************************************/
-  
-  DeviceModule::DeviceModule(Application *application, const std::string& _deviceAliasOrURI, const std::string& _registerNamePrefix)
+
+  DeviceModule::DeviceModule(Application* application,
+      const std::string& _deviceAliasOrURI,
+      const std::string& _registerNamePrefix)
   : Module(nullptr,
-           _registerNamePrefix.empty() ? "<Device:"+_deviceAliasOrURI+">"
-             : _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/")+1),
-           ""),
-    deviceAliasOrURI(_deviceAliasOrURI),
-    registerNamePrefix(_registerNamePrefix)
-  {
+        _registerNamePrefix.empty() ? "<Device:" + _deviceAliasOrURI + ">" :
+                                      _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/") + 1),
+        ""),
+    deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(_registerNamePrefix) {
     application->registerDeviceModule(this);
   }
 
   /*********************************************************************************************************************/
 
-  DeviceModule::~DeviceModule() {
-    assert(!moduleThread.joinable());
-  }
-  
-  
+  DeviceModule::~DeviceModule() { assert(!moduleThread.joinable()); }
+
   /*********************************************************************************************************************/
 
-  VariableNetworkNode DeviceModule::operator()(const std::string& registerName, UpdateMode mode,
-      const std::type_info &valueType, size_t nElements) const {
-    return {registerName, deviceAliasOrURI, registerNamePrefix/registerName, mode, {VariableDirection::invalid, false}, valueType, nElements};
+  VariableNetworkNode DeviceModule::operator()(const std::string& registerName,
+      UpdateMode mode,
+      const std::type_info& valueType,
+      size_t nElements) const {
+    return {registerName, deviceAliasOrURI, registerNamePrefix / registerName, mode,
+        {VariableDirection::invalid, false}, valueType, nElements};
   }
 
   /*********************************************************************************************************************/
 
   Module& DeviceModule::operator[](const std::string& moduleName) const {
     if(subModules.count(moduleName) == 0) {
-      subModules[moduleName] = {deviceAliasOrURI, registerNamePrefix/moduleName};
+      subModules[moduleName] = {deviceAliasOrURI, registerNamePrefix / moduleName};
     }
     return subModules[moduleName];
   }
 
   /*********************************************************************************************************************/
 
-  const Module& DeviceModule::virtualise() const {
-    return *this;
-  }
+  const Module& DeviceModule::virtualise() const { return *this; }
 
   /*********************************************************************************************************************/
 
-  void DeviceModule::connectTo(const Module &target, VariableNetworkNode trigger) const {
-    auto &cat = virtualiseFromCatalog();
+  void DeviceModule::connectTo(const Module& target, VariableNetworkNode trigger) const {
+    auto& cat = virtualiseFromCatalog();
     cat.connectTo(target, trigger);
   }
 
@@ -84,13 +77,13 @@ namespace ChimeraTK {
 
     // obtain register catalogue
     Device d;
-    d.open(deviceAliasOrURI);   /// @todo: do not actually open the device (needs extension of DeviceAccess)!
+    d.open(deviceAliasOrURI); /// @todo: do not actually open the device (needs extension of DeviceAccess)!
     auto catalog = d.getRegisterCatalogue();
 
     // iterate catalogue, create VariableNetworkNode for all registers starting with the registerNamePrefix
     size_t prefixLength = registerNamePrefix.length();
-    for(auto &reg : catalog) {
-      if(std::string(reg.getRegisterName()).substr(0,prefixLength) != std::string(registerNamePrefix)) continue;
+    for(auto& reg : catalog) {
+      if(std::string(reg.getRegisterName()).substr(0, prefixLength) != std::string(registerNamePrefix)) continue;
 
       // ignore 2D registers
       if(reg.getNumberOfDimensions() > 1) continue;
@@ -113,8 +106,8 @@ namespace ChimeraTK {
       }
 
       // guess type
-      const std::type_info *valTyp{&typeid(AnyType)};
-      auto &dd = reg.getDataDescriptor();  //numeric, string, boolean, nodata, undefined
+      const std::type_info* valTyp{&typeid(AnyType)};
+      auto& dd = reg.getDataDescriptor(); // numeric, string, boolean, nodata, undefined
       if(dd.fundamentalType() == RegisterInfo::FundamentalType::numeric) {
         if(dd.isIntegral()) {
           if(dd.isSigned()) {
@@ -146,7 +139,7 @@ namespace ChimeraTK {
             }
           }
         }
-        else {    // fractional
+        else { // fractional
           valTyp = &typeid(double);
         }
       }
@@ -159,106 +152,97 @@ namespace ChimeraTK {
 
       auto name = std::string(reg.getRegisterName()).substr(prefixLength);
       auto lastSlash = name.find_last_of("/");
-      auto dirname = name.substr(0,lastSlash);
-      auto basename = name.substr(lastSlash+1);
-      VariableNetworkNode node(basename, deviceAliasOrURI, reg.getRegisterName(), updateMode,
-                               direction, *valTyp, reg.getNumberOfElements());
+      auto dirname = name.substr(0, lastSlash);
+      auto basename = name.substr(lastSlash + 1);
+      VariableNetworkNode node(
+          basename, deviceAliasOrURI, reg.getRegisterName(), updateMode, direction, *valTyp, reg.getNumberOfElements());
       virtualisedModuleFromCatalog.createAndGetSubmoduleRecursive(dirname).addAccessor(node);
-
     }
 
     virtualisedModuleFromCatalog_isValid = true;
     return virtualisedModuleFromCatalog;
   }
-  
+
   /*********************************************************************************************************************/
 
-  void DeviceModule::reportException(std::string errMsg ){
-    
+  void DeviceModule::reportException(std::string errMsg) {
     std::unique_lock<std::mutex> lk(errorMutex);
     errorQueue.push(errMsg);
     errorCondVar.wait(lk);
     lk.unlock();
-    
   }
-  
+
   /*********************************************************************************************************************/
-  
-  void DeviceModule::handleException(){
-    Application::registerThread("DM_"+getName());
+
+  void DeviceModule::handleException() {
+    Application::registerThread("DM_" + getName());
+    Device d;
     std::string error;
-    
-    while(true)
-    {
-      
+
+    try {
+      while(true) {
         errorQueue.pop_wait(error);
-        //std::scoped_lock<std::mutex> lk(errorMutex);
+        boost::this_thread::interruption_point();
         std::lock_guard<std::mutex> lk(errorMutex);
         deviceError.status = 1;
         deviceError.message = error;
-        VersionNumber cV;
-        deviceError.setCurrentVersionNumber(cV);
+        deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
-
-        if (error == "ExitOnNone")
-          break;
-        Device d;          
-        while(true) 
-        {
-          try{
+        while(true) {
+          boost::this_thread::interruption_point();
+          try {
             d.open(deviceAliasOrURI);
-            if (d.isOpened())
-            {
+            if(d.isOpened()) {
               break;
             }
-            boost::this_thread::interruption_point();
           }
-          catch(std::exception ex)
-          {
+          catch(std::exception& ex) {
             deviceError.status = 1;
             deviceError.message = ex.what();
-            deviceError.setCurrentVersionNumber(cV);
+            deviceError.setCurrentVersionNumber({});
             deviceError.writeAll();
           }
           usleep(500000);
-          boost::this_thread::interruption_point();
         }
-        boost::this_thread::interruption_point();
         deviceError.status = 0;
         deviceError.message = "";
-        deviceError.setCurrentVersionNumber(cV);
+        deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
         errorCondVar.notify_all();
       }
+    }
+    catch(...) {
+      // before we leave this thread, we might need to notify other waiting threads.
+      // boost::this_thread::interruption_point() throws an exception when the thread should be interrupted, so we will
+      // end up here
       errorCondVar.notify_all();
+      throw;
+    }
   }
-  
+
   /*********************************************************************************************************************/
 
   void DeviceModule::run() {
-
     // start the module thread
     assert(!moduleThread.joinable());
     moduleThread = boost::thread(&DeviceModule::handleException, this);
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   void DeviceModule::terminate() {
-    
-    reportException("ExitOnNone");
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
-      moduleThread.join();  
+      reportException("ExitOnNone");
+      moduleThread.join();
     }
     assert(!moduleThread.joinable());
   }
 
-
-  void DeviceModule::defineConnections(){
-    std::string prefix = "Devices."+deviceAliasOrURI+"/";
+  void DeviceModule::defineConnections() {
+    std::string prefix = "Devices/" + deviceAliasOrURI + "/";
     ControlSystemModule cs(prefix);
-    deviceError.connectTo(cs["DeviceError"]);
+    deviceError.connectTo(cs);
   }
 
-}
+} // namespace ChimeraTK

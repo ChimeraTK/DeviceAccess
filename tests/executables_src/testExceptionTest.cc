@@ -23,82 +23,77 @@ namespace ctk = ChimeraTK;
 
 /* dummy application */
 
-//bool resetDevice = false;
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
-  void onExceptionResetDevice();
 
   using Application::makeConnections; // we call makeConnections() manually in the tests to catch exceptions etc.
 
-  void defineConnections() {
-    // testableMode = true;
-    debugTestableMode();
+  void defineConnections() {} // the setup is done in the tests
 
-    dumpConnections();
-  } // the setup is done in the tests
-  
   ctk::DeviceModule dev{this, "(ExceptionDummy?map=DemoDummy.map)"};
   ctk::ControlSystemModule cs;
 };
 
-
-  
 /*********************************************************************************************************************/
 
-
-
 BOOST_AUTO_TEST_CASE(testThinkOfAName) {
-  
   TestApplication app;
-  
+  boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=DemoDummy.map)"));
+
   app.dev.connectTo(app.cs);
-  //app.dev.deviceError.connectTo(app.cs["DeviceError"]);
   ctk::TestFacility test;
   app.initialise();
   app.run();
-  auto message = test.getScalar<std::string>("/Devices.(ExceptionDummy?map=DemoDummy.map)/DeviceError/message");
-  auto status = test.getScalar<int>("/Devices.(ExceptionDummy?map=DemoDummy.map)/DeviceError/status");
-  
+  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=DemoDummy.map)/message");
+  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=DemoDummy.map)/status");
+
+  // initially there should be no error set
   message.readLatest();
   status.readLatest();
   BOOST_CHECK(static_cast<std::string>(message) == "");
   BOOST_CHECK(status.readLatest() == 0);
-  
-  boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=DemoDummy.map)"));
-      backend->close();
+
+  // close the device, reopening it will throw an exception
+  backend->close();
   backend->throwException = true;
+
+  // test the error injection capability of our ExceptionDummy
   try {
     backend->open();
     BOOST_FAIL("Exception expected.");
   }
   catch(ChimeraTK::runtime_error&) {
   }
+
+  // report exception to the DeviceModule: it should try reopening the device but fail
   std::atomic<bool> reportExceptionFinished;
   reportExceptionFinished = false;
-  std::thread reportThread([&]{
-    app.dev.reportException("exception");
+  std::thread reportThread([&] { // need to launch in background, reportException() blocks
+    app.dev.reportException("Some fancy exception text");
     reportExceptionFinished = true;
   });
+
+  // check the error status and that reportException() is still blocking
   sleep(2);
-  
   message.readLatest();
   status.readLatest();
-  BOOST_CHECK(static_cast<std::string>(message) != "");
+  BOOST_CHECK_EQUAL(static_cast<std::string>(message), "DummyException: This is a test"); // from the ExceptionDummy
   BOOST_CHECK(status == 1);
   BOOST_CHECK(reportExceptionFinished == false);
+  BOOST_CHECK(!backend->isOpen());
+
+  // allow to reopen the device successfully, wait until this has hapopened
   backend->throwException = false;
   reportThread.join();
-  
-  BOOST_CHECK(reportExceptionFinished == true);
+
+  // the device should now be open again
+  BOOST_CHECK(backend->isOpen());
+
+  // check the error status has been cleared
   message.readLatest();
   status.readLatest();
   BOOST_CHECK(static_cast<std::string>(message) == "");
   BOOST_CHECK(status.readLatest() == 0);
-  
-  
-  
-  
-  
 }
