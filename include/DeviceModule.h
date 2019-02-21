@@ -83,7 +83,7 @@ class DeviceModule : public Module {
       }
 
       VersionNumber currentVersionNumber;
-      //ControlSystemModule cs;
+      /*This function connects DeviceError Variable Group to cs*/
       void defineConnections() override;
     protected:
       // populate virtualisedModuleFromCatalog based on the information in the device's catalogue
@@ -97,7 +97,8 @@ class DeviceModule : public Module {
       // List of sub modules accessed through the operator[]. This is mutable since it is little more than a cache and
       // thus does not change the logical state of this module
       mutable std::map<std::string, DeviceModule> subModules;
-      
+    
+    /* A  VariableGroup for exception status and message*/ 
     public:
       struct DeviceError : public VariableGroup {
         using VariableGroup::VariableGroup;
@@ -112,7 +113,8 @@ class DeviceModule : public Module {
       cppext::future_queue<std::string> errorQueue{5};
       std::mutex errorMutex;
       std::condition_variable errorCondVar;
-    
+      /** This functions tries to open the device and set the deviceError.
+       * Once done it notifies the waiting thread(s) */
       void handleException();
   };
 
