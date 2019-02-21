@@ -1,3 +1,32 @@
+/*!
+ * \author Nadeem Shehzad (DESY)
+ * \date 21.02.2019
+ * \page excpetiondoc Exception Handling
+ * \section Introduction
+ *
+ * To handle expection, the current simple implementation includes two error state variables:
+ *  - "state" (boolean flag if error occurred)
+ *  - "message" (string with error message)
+ * 
+ * These variables are placed together in a VariableGroup called "DeviceError". 
+ * They are connected to the contorlsystem in this format 
+ *  - /Devices.{AliasName}/DeviceError/message 
+ *  - /Devices.{AliasName}/DeviceError/status.
+ * 
+ * In this implementation a user/application can report an exception
+ * by calling reportException of DeviceModule with an exception string.
+ * The reportException packs the exception in a queue and the blocks the thread.
+ * This queue is processed by an internal function handleException which
+ * updates the DeviceError variables (status=1 and message= YourExceptionString)
+ * and tries to open the device. Once device can be opened the DeviceError 
+ * variables are updated (status=0 and message="") and blocking threads
+ * are notified to continue. It must be noted that whatever operation which
+ * lead to exception e.g., read or write, should be repeated after the exception
+ * is handled.
+ * 
+ * Checkout testExceptionTest.cc under tests/executables_src to see how it works.
+*/
+
 /*
  * DeviceModule.h
  *
@@ -70,6 +99,7 @@ class DeviceModule : public Module {
 
       ModuleType getModuleType() const override { return ModuleType::Device; }
       
+      /** Use this function to report an exception*/
       void reportException(std::string errMsg);
       
       void run() override;
@@ -83,7 +113,7 @@ class DeviceModule : public Module {
       }
 
       VersionNumber currentVersionNumber;
-      /*This function connects DeviceError Variable Group to cs*/
+      /** This function connects DeviceError VariableGroup to ContolSystem*/
       void defineConnections() override;
     protected:
       // populate virtualisedModuleFromCatalog based on the information in the device's catalogue
@@ -98,7 +128,7 @@ class DeviceModule : public Module {
       // thus does not change the logical state of this module
       mutable std::map<std::string, DeviceModule> subModules;
     
-    /* A  VariableGroup for exception status and message*/ 
+    /** A  VariableGroup for exception status and message*/ 
     public:
       struct DeviceError : public VariableGroup {
         using VariableGroup::VariableGroup;
