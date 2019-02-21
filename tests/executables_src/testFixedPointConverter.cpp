@@ -5,11 +5,11 @@ using namespace boost::unit_test_framework;
 
 /*  Test requirements:
  *  Test to and from double for the follwing cases:
- *  int32, uint32, int16, uint16, int8, uint8. No fractional bits (standard data types)
- *  32 bits with -12 (negative), -1 (test rounding), 1 (test rounding),
- *  7 (somewhere in the middle), 31, 32 (resolution edge) and 43 (larger than 32 bits),
- *  fractional bits, signed and unsigned
- *  18 bits with -12, 0, 7, 17, 18, 43 fractional bits, signed and unsigned
+ *  int32, uint32, int16, uint16, int8, uint8. No fractional bits (standard data
+ * types) 32 bits with -12 (negative), -1 (test rounding), 1 (test rounding), 7
+ * (somewhere in the middle), 31, 32 (resolution edge) and 43 (larger than 32
+ * bits), fractional bits, signed and unsigned 18 bits with -12, 0, 7, 17, 18,
+ * 43 fractional bits, signed and unsigned
  *
  *  All tests are run with the bit sequence 0xAAAAAAAA (negative when signed)
  *  and 0x55555555 (positive when signed) to float,
@@ -19,38 +19,34 @@ using namespace boost::unit_test_framework;
  */
 
 #define HEX_TO_DOUBLE(INPUT) static_cast<double>(INPUT)
-#define SIGNED_HEX_TO_DOUBLE(INPUT) static_cast<double>(static_cast<int32_t>(INPUT))
-#define SIGNED_HEX_TO_INT64(INPUT) static_cast<int64_t>(static_cast<int32_t>(INPUT))
+#define SIGNED_HEX_TO_DOUBLE(INPUT)                                            \
+  static_cast<double>(static_cast<int32_t>(INPUT))
+#define SIGNED_HEX_TO_INT64(INPUT)                                             \
+  static_cast<int64_t>(static_cast<int32_t>(INPUT))
 
-#define CHECK_SIGNED_FIXED_POINT_NO_FRACTIONAL                                                                         \
-  checkToFixedPoint(converter, 0.25, 0);                                                                               \
-  checkToFixedPoint(converter, -0.25, 0);                                                                              \
-  checkToFixedPoint(converter, 0.75, 1);                                                                               \
-  checkToFixedPoint(converter, -0.75, -1);                                                                             \
-  checkToFixedPoint(converter, 3.25, 3);                                                                               \
-  checkToFixedPoint(converter, -3.25, -3);                                                                             \
-  checkToFixedPoint(converter, 5.75, 6);                                                                               \
+#define CHECK_SIGNED_FIXED_POINT_NO_FRACTIONAL                                 \
+  checkToFixedPoint(converter, 0.25, 0);                                       \
+  checkToFixedPoint(converter, -0.25, 0);                                      \
+  checkToFixedPoint(converter, 0.75, 1);                                       \
+  checkToFixedPoint(converter, -0.75, -1);                                     \
+  checkToFixedPoint(converter, 3.25, 3);                                       \
+  checkToFixedPoint(converter, -3.25, -3);                                     \
+  checkToFixedPoint(converter, 5.75, 6);                                       \
   checkToFixedPoint(converter, -5.75, -6);
 
-#include <sstream>
 #include "Exception.h"
+#include <sstream>
 
 #include "FixedPointConverter.h"
 namespace ChimeraTK {
-  using namespace ChimeraTK;
+using namespace ChimeraTK;
 }
 using namespace ChimeraTK;
 
 // get name of a type for better readible error messages
-template<typename T>
-inline const char* typeName(void) {
-  return "unknown";
-}
-#define DEF_TYPENAME(name)                                                                                             \
-  template<>                                                                                                           \
-  inline const char* typeName<name>(void) {                                                                            \
-    return #name;                                                                                                      \
-  }
+template <typename T> inline const char *typeName(void) { return "unknown"; }
+#define DEF_TYPENAME(name)                                                     \
+  template <> inline const char *typeName<name>(void) { return #name; }
 DEF_TYPENAME(int32_t)
 DEF_TYPENAME(uint32_t)
 DEF_TYPENAME(int16_t)
@@ -63,47 +59,53 @@ DEF_TYPENAME(float)
 DEF_TYPENAME(double)
 DEF_TYPENAME(std::string)
 
-template<typename T>
-void checkToCookedOverflowNeg(FixedPointConverter const& converter, uint32_t input) {
+template <typename T>
+void checkToCookedOverflowNeg(FixedPointConverter const &converter,
+                              uint32_t input) {
   std::stringstream message;
   message << "checkToCookedOverflowNeg failed for type " << typeName<T>();
 
   bool hasThrown = false;
   try {
     converter.template toCooked<T>(input);
-  }
-  catch(boost::numeric::negative_overflow& e) {
-    // Although we do not check the content of the what() message, we execute it here
-    // to see that it's working.
-    // We leave the printout in here to have the code covarage and the possibility to manually
-    // check the output of the test.
-    std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
+  } catch (boost::numeric::negative_overflow &e) {
+    // Although we do not check the content of the what() message, we execute it
+    // here to see that it's working. We leave the printout in here to have the
+    // code covarage and the possibility to manually check the output of the
+    // test.
+    std::cout << "Caught exception where it was expected: " << e.what()
+              << std::endl;
     hasThrown = true;
   }
-  if(!hasThrown) BOOST_FAIL(message.str());
+  if (!hasThrown)
+    BOOST_FAIL(message.str());
 }
 
-template<typename T>
-void checkToCookedOverflowPos(FixedPointConverter const& converter, uint32_t input) {
+template <typename T>
+void checkToCookedOverflowPos(FixedPointConverter const &converter,
+                              uint32_t input) {
   std::stringstream message;
   message << "checkToCookedOverflowPos failed for type " << typeName<T>();
 
   bool hasThrown = false;
   try {
     converter.template toCooked<T>(input);
-  }
-  catch(boost::numeric::positive_overflow& e) {
-    std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
+  } catch (boost::numeric::positive_overflow &e) {
+    std::cout << "Caught exception where it was expected: " << e.what()
+              << std::endl;
     hasThrown = true;
   }
-  if(!hasThrown) BOOST_FAIL(message.str());
+  if (!hasThrown)
+    BOOST_FAIL(message.str());
 }
 
-template<typename T>
-void checkToCooked(FixedPointConverter const& converter, uint32_t input, T expectedValue) {
+template <typename T>
+void checkToCooked(FixedPointConverter const &converter, uint32_t input,
+                   T expectedValue) {
   std::stringstream message;
-  message << "testToCooked failed for type " << typeName<T>() << " with input " << std::hex << "0x" << input << std::hex
-          << ", expected 0x" << expectedValue << std::dec;
+  message << "testToCooked failed for type " << typeName<T>() << " with input "
+          << std::hex << "0x" << input << std::hex << ", expected 0x"
+          << expectedValue << std::dec;
 
   BOOST_TEST_CHECKPOINT(message.str());
 
@@ -114,11 +116,12 @@ void checkToCooked(FixedPointConverter const& converter, uint32_t input, T expec
   BOOST_CHECK_MESSAGE(result == expectedValue, message.str());
 }
 
-template<typename T>
-void checkToRaw(FixedPointConverter const& converter, T input, uint32_t expectedValue) {
+template <typename T>
+void checkToRaw(FixedPointConverter const &converter, T input,
+                uint32_t expectedValue) {
   std::stringstream message;
-  message << "testToRaw failed for type " << typeName<T>() << " with input 0x" << std::hex << input << ", expected 0x"
-          << expectedValue << std::dec;
+  message << "testToRaw failed for type " << typeName<T>() << " with input 0x"
+          << std::hex << input << ", expected 0x" << expectedValue << std::dec;
 
   BOOST_TEST_CHECKPOINT(message.str());
 
@@ -136,17 +139,21 @@ BOOST_AUTO_TEST_CASE(testConstructor) {
   BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable", 16, 42, false));
 
   // number of significant bits
-  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 33), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 33),
+                    ChimeraTK::logic_error);
 
   // dynamic range of sufficient for bit shift
-  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 2, 1021 - 1), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 2, -1024 + 1), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 2, 1021 - 1),
+                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(FixedPointConverter("UnknownVariable", 2, -1024 + 1),
+                    ChimeraTK::logic_error);
   BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable", 2, 1021 - 2));
   BOOST_CHECK_NO_THROW(FixedPointConverter("UnknownVariable", 2, -1024 + 2));
 }
 
 BOOST_AUTO_TEST_CASE(testInt32) {
-  FixedPointConverter converter("Variable32signed"); // default parameters are signed 32 bit
+  FixedPointConverter converter(
+      "Variable32signed"); // default parameters are signed 32 bit
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555));
   checkToCooked(converter, 0xAAAAAAAA, (int)0xAAAAAAAA);
@@ -180,16 +187,20 @@ BOOST_AUTO_TEST_CASE(testInt32) {
   checkToRaw(converter, (unsigned short)0xAAAA, 0xAAAA);
   checkToRaw(converter, (int64_t)0x5555, 0x5555);
   checkToRaw(converter, (int64_t)0xFFFFFFFFFFFFAAAA, 0xFFFFAAAA);
-  checkToRaw(converter, (int64_t)0xFFFFFFFAAAAAAAAA, 0x80000000); // Smallest signed representation possible
+  checkToRaw(converter, (int64_t)0xFFFFFFFAAAAAAAAA,
+             0x80000000); // Smallest signed representation possible
   checkToRaw(converter, (int64_t)0xFFFFFFFFF, 0x7FFFFFFF);
-  checkToRaw(converter, (uint64_t)0xFFFFFFFFF, 0x7FFFFFFF); // max signed representation possible
+  checkToRaw(converter, (uint64_t)0xFFFFFFFFF,
+             0x7FFFFFFF); // max signed representation possible
 
   checkToCooked(converter, 0x55555555, std::string("1431655765"));
   checkToRaw(converter, std::string("1431655765"), 0x55555555);
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32) {
-  FixedPointConverter converter("Variable32unsigned", 32, 0, false); // 32 bits, 0 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable32unsigned", 32, 0,
+      false); // 32 bits, 0 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555));
@@ -220,9 +231,11 @@ BOOST_AUTO_TEST_CASE(testUInt32) {
   checkToRaw(converter, (unsigned short)0x5555, 0x5555);
   checkToRaw(converter, (unsigned short)0xAAAA, 0xAAAA);
   checkToRaw(converter, (int64_t)0x5555, 0x5555);
-  checkToRaw(converter, SIGNED_HEX_TO_INT64(0xAAAAAAAA), 0x0); // Lowest range of 32 bit wide unsigned register
+  checkToRaw(converter, SIGNED_HEX_TO_INT64(0xAAAAAAAA),
+             0x0); // Lowest range of 32 bit wide unsigned register
   checkToRaw(converter, (int64_t)0x100000000, 0xFFFFFFFF);
-  checkToRaw(converter, (uint64_t)0x100000000, 0xFFFFFFFF); // max signed representation possible
+  checkToRaw(converter, (uint64_t)0x100000000,
+             0xFFFFFFFF); // max signed representation possible
 
   checkToCooked(converter, 0x55555555, std::string("1431655765"));
   checkToRaw(converter, std::string("1431655765"), 0x55555555);
@@ -232,7 +245,8 @@ BOOST_AUTO_TEST_CASE(testUInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt16) {
-  FixedPointConverter converter("Variable16signed", 16); // 16 bits, 0 fractional bits, signed
+  FixedPointConverter converter("Variable16signed",
+                                16); // 16 bits, 0 fractional bits, signed
 
   checkToCooked(converter, 0xAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFFAAAA));
   checkToCooked(converter, 0x5555, HEX_TO_DOUBLE(0x5555));
@@ -245,7 +259,8 @@ BOOST_AUTO_TEST_CASE(testInt16) {
   checkToCookedOverflowNeg<unsigned short>(converter, 0xAAAA);
   checkToCooked(converter, 0x5555, (unsigned short)0x5555);
   checkToCooked(converter, 0x5555, (int64_t)0x5555);
-  checkToCooked(converter, 0xAAAA, static_cast<int64_t>(static_cast<int16_t>(0xAAAA)));
+  checkToCooked(converter, 0xAAAA,
+                static_cast<int64_t>(static_cast<int16_t>(0xAAAA)));
 
   checkToCooked(converter, 0x5555, (uint64_t)0x5555);
   checkToCookedOverflowNeg<uint64_t>(converter, 0xAAAA);
@@ -268,16 +283,20 @@ BOOST_AUTO_TEST_CASE(testInt16) {
   checkToRaw(converter, (unsigned short)0x5555, 0x5555);
   checkToRaw(converter, (unsigned short)0xAAAA, 0x7FFF);
   checkToRaw(converter, (int64_t)0x5555, 0x5555);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int16_t>(0xAAAA)), 0xAAAA);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int16_t>(0xAAAA)),
+             0xAAAA);
   checkToRaw(converter, (int64_t)0x555555, 0x7FFF);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0x8000);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)),
+             0x8000);
   checkToRaw(converter, (uint64_t)0x5555, 0x5555);
   checkToRaw(converter, (uint64_t)0x0, 0x0);
   checkToRaw(converter, (uint64_t)0xF555, 0x7FFF);
 }
 
 BOOST_AUTO_TEST_CASE(testUInt16) {
-  FixedPointConverter converter("Variable16unsigned", 16, 0, false); // 16 bits, 0 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable16unsigned", 16, 0,
+      false); // 16 bits, 0 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAA, HEX_TO_DOUBLE(0xAAAA));
   checkToCooked(converter, 0x5555, HEX_TO_DOUBLE(0x5555));
@@ -320,7 +339,8 @@ BOOST_AUTO_TEST_CASE(testUInt16) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt8) {
-  FixedPointConverter converter("Variable8signed", 8); // 8 bits, 0 fractional bits, signed
+  FixedPointConverter converter("Variable8signed",
+                                8); // 8 bits, 0 fractional bits, signed
 
   checkToCooked(converter, 0xAA, SIGNED_HEX_TO_DOUBLE(0xFFFFFFAA));
   checkToCooked(converter, 0x55, HEX_TO_DOUBLE(0x55));
@@ -333,7 +353,8 @@ BOOST_AUTO_TEST_CASE(testInt8) {
   checkToCookedOverflowNeg<unsigned short>(converter, 0xAA);
   checkToCooked(converter, 0x55, (unsigned short)0x55);
   checkToCooked(converter, 0x55, (int64_t)0x55);
-  checkToCooked(converter, 0xAA, static_cast<int64_t>(static_cast<int8_t>(0xAA)));
+  checkToCooked(converter, 0xAA,
+                static_cast<int64_t>(static_cast<int8_t>(0xAA)));
   checkToCooked(converter, 0x55, (uint64_t)0x55);
   checkToCookedOverflowNeg<uint64_t>(converter, 0xAA);
 
@@ -358,13 +379,15 @@ BOOST_AUTO_TEST_CASE(testInt8) {
   checkToRaw(converter, (int64_t)0x55, 0x55);
   checkToRaw(converter, static_cast<int64_t>(static_cast<int8_t>(0xAA)), 0xAA);
   checkToRaw(converter, (int64_t)0x5555, 0x7F);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0x80);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)),
+             0x80);
   checkToRaw(converter, (uint64_t)0x55, 0x55);
   checkToRaw(converter, (uint64_t)0xF5, 0x7F);
 }
 
 BOOST_AUTO_TEST_CASE(testUInt8) {
-  FixedPointConverter converter("Variable8unsigned", 8, 0, false); // 8 bits, 0 fractional bits, not signed
+  FixedPointConverter converter("Variable8unsigned", 8, 0,
+                                false); // 8 bits, 0 fractional bits, not signed
 
   checkToCooked(converter, 0xAA, HEX_TO_DOUBLE(0xAA));
   checkToCooked(converter, 0x55, HEX_TO_DOUBLE(0x55));
@@ -407,11 +430,15 @@ BOOST_AUTO_TEST_CASE(testUInt8) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fractionMinus12) {
-  FixedPointConverter converter("Variable32minus12signed", 32, -12); // 32 bits, -12 fractional bits, signed
+  FixedPointConverter converter("Variable32minus12signed", 32,
+                                -12); // 32 bits, -12 fractional bits, signed
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, 12)); // Basically a left shift 12
-                                                                                       // places
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, 12));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) *
+                    pow(2, 12)); // Basically a left shift 12
+                                 // places
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, 12));
   checkToCookedOverflowPos<int>(converter, 0x000AAAAA);
   checkToCooked(converter, 0xFFFAAAAA, (int)0xAAAAA000);
   checkToCooked(converter, 0x00055555, (int)0x55555000);
@@ -441,7 +468,8 @@ BOOST_AUTO_TEST_CASE(testInt32_fractionMinus12) {
   checkToRaw(converter, (unsigned short)0x5555, 0x00000005);
   checkToRaw(converter, (unsigned short)0xAAAA, 0x0000000B);
   checkToRaw(converter, (int64_t)0x55555555, 0x00055555);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0XFFFAAAAB);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)),
+             0XFFFAAAAB);
   checkToRaw(converter, (int64_t)0x5555555555555, 0x7fffffff); // full range
   checkToRaw(converter, (int64_t)0xFFFFA55555555555, 0x80000000);
   checkToRaw(converter, (uint64_t)0x55555, 0x00000055);
@@ -449,8 +477,9 @@ BOOST_AUTO_TEST_CASE(testInt32_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus12) {
-  FixedPointConverter converter("Variable32minus12unsigned", 32, -12, false); // 32 bits, -12 fractional bits, not
-                                                                              // signed
+  FixedPointConverter converter("Variable32minus12unsigned", 32, -12,
+                                false); // 32 bits, -12 fractional bits, not
+                                        // signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, 12));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * pow(2, 12));
@@ -483,14 +512,16 @@ BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus12) {
   checkToRaw(converter, (unsigned short)0x5555, 0x00000005);
   checkToRaw(converter, (unsigned short)0xAAAA, 0x0000000B);
   checkToRaw(converter, (int64_t)0x55555555, 0x00055555);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0x0);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)),
+             0x0);
   checkToRaw(converter, (int64_t)0x5555555555555, 0xFFFFFFFF); // full range
   checkToRaw(converter, (uint64_t)0x55555, 0x00000055);
   checkToRaw(converter, (uint64_t)0x5555555555555, 0XFFFFFFFF);
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fractionMinus1) {
-  FixedPointConverter converter("Variable32minus1signed", 32, -1); // 32 bits, -12 fractional bits, signed
+  FixedPointConverter converter("Variable32minus1signed", 32,
+                                -1); // 32 bits, -12 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * 2);
   checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * 2);
@@ -525,12 +556,15 @@ BOOST_AUTO_TEST_CASE(testInt32_fractionMinus1) {
   checkToRaw(converter, (short)0xAAAA, 0xFFFFD555);
   checkToRaw(converter, (unsigned short)0x5555, 0x00002AAB);
   checkToRaw(converter, (unsigned short)0xAAAA, 0x00005555);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)), 0xD5555555);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xAAAAAAAA)),
+             0xD5555555);
   checkToRaw(converter, static_cast<uint64_t>(0xAAAAAAAA), 0x55555555);
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus1) {
-  FixedPointConverter converter("Variable32minus1unsigned", 32, -1, false); // 32 bits, -12 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable32minus1unsigned", 32, -1,
+      false); // 32 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * 2);
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * 2);
@@ -562,7 +596,8 @@ BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus1) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction1) {
-  FixedPointConverter converter("Variable32plus1signed", 32, 1); // 32 bits, 1 fractional bit, signed
+  FixedPointConverter converter("Variable32plus1signed", 32,
+                                1); // 32 bits, 1 fractional bit, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * 0.5);
   checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * 0.5);
@@ -601,12 +636,14 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction1) {
   checkToRaw(converter, (short)0xAAAA, 0xFFFF5554);
   checkToRaw(converter, (unsigned short)0x5555, 0x0000AAAA);
   checkToRaw(converter, (unsigned short)0xAAAA, 0x00015554);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xFAAAAAAA)), 0XF5555554);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xFAAAAAAA)),
+             0XF5555554);
   checkToRaw(converter, static_cast<uint64_t>(0xAAAAAAA), 0X15555554);
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction1) {
-  FixedPointConverter converter("Variable32plus1unsigned", 32, 1, false); // 32 bits, 1 fractional bit, not signed
+  FixedPointConverter converter("Variable32plus1unsigned", 32, 1,
+                                false); // 32 bits, 1 fractional bit, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * 0.5);
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * 0.5);
@@ -641,15 +678,19 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction1) {
   checkToRaw(converter, (short)0xAAAA, 0);
   checkToRaw(converter, (unsigned short)0x5555, 0x0000AAAA);
   checkToRaw(converter, (unsigned short)0xAAAA, 0x00015554);
-  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xFAAAAAAA)), 0x0);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xFAAAAAAA)),
+             0x0);
   checkToRaw(converter, static_cast<uint64_t>(0xFAAAAAAA), 0XFFFFFFFF);
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction7) {
-  FixedPointConverter converter("Variable32plus7signed", 32, 7); // 32 bits, 7 fractional bits, signed
+  FixedPointConverter converter("Variable32plus7signed", 32,
+                                7); // 32 bits, 7 fractional bits, signed
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -7));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -7));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -7));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -7));
   checkToCooked(converter, 0xAAAAAA20, (int)0xFF555554);
   checkToCooked(converter, 0xAAAAAA60, (int)0xFF555555);
   checkToCooked(converter, 0xAAAAAA80, (int)0xFF555555);
@@ -693,7 +734,9 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction7) {
-  FixedPointConverter converter("Variable32plus7unsigned", 32, 7, false); // 32 bits, -7 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable32plus7unsigned", 32, 7,
+      false); // 32 bits, -7 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -7));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * pow(2, -7));
@@ -729,10 +772,13 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction31) {
-  FixedPointConverter converter("Variable32plus31signed", 32, 31); // 32 bits, 31 fractional bits, signed
+  FixedPointConverter converter("Variable32plus31signed", 32,
+                                31); // 32 bits, 31 fractional bits, signed
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -31));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -31));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -31));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -31));
   checkToCooked(converter, 0xAAAAAAAA, (int)-1);
   checkToCooked(converter, 0x55555555, (int)1);
   checkToCooked(converter, 0x22220222, (int)0);
@@ -772,7 +818,9 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction31) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction31) {
-  FixedPointConverter converter("Variable32plus31unsigned", 32, 31, false); // 32 bits, 31 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable32plus31unsigned", 32, 31,
+      false); // 32 bits, 31 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -31));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * pow(2, -31));
@@ -816,10 +864,13 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction31) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction32) {
-  FixedPointConverter converter("Variable32plus32signed", 32, 32); // 32 bits, 32 fractional bits, signed
+  FixedPointConverter converter("Variable32plus32signed", 32,
+                                32); // 32 bits, 32 fractional bits, signed
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -32));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -32));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -32));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -32));
   checkToCooked(converter, 0xAAAAAAAA, (int)0);
   checkToCooked(converter, 0x55555555, (int)0);
   checkToCooked(converter, 0xAAAAAAAA, (unsigned int)0);
@@ -856,7 +907,9 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction32) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction32) {
-  FixedPointConverter converter("Variable32plus32unsigned", 32, 32, false); // 32 bits, 32 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable32plus32unsigned", 32, 32,
+      false); // 32 bits, 32 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -32));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * pow(2, -32));
@@ -895,10 +948,13 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction32) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32_fraction43) {
-  FixedPointConverter converter("Variable32plus43signed", 32, 43); // 32 bits, 43 fractional bits, signed
+  FixedPointConverter converter("Variable32plus43signed", 32,
+                                43); // 32 bits, 43 fractional bits, signed
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -43));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -43));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -43));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x55555555) * pow(2, -43));
   checkToCooked(converter, 0xAAAAAAAA, (int)0);
   checkToCooked(converter, 0x55555555, (int)0);
   checkToCooked(converter, 0xAAAAAAAA, (unsigned int)0);
@@ -935,7 +991,9 @@ BOOST_AUTO_TEST_CASE(testInt32_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt32_fraction43) {
-  FixedPointConverter converter("Variable32plus43unsigned", 32, 43, false); // 32 bits, 43 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable32plus43unsigned", 32, 43,
+      false); // 32 bits, 43 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * pow(2, -43));
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * pow(2, -43));
@@ -971,14 +1029,18 @@ BOOST_AUTO_TEST_CASE(testUInt32_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fractionMinus12) {
-  FixedPointConverter converter("int18_fractionMinus12", 18, -12); // 10 bits, -12 fractional bits, signed
+  FixedPointConverter converter("int18_fractionMinus12", 18,
+                                -12); // 10 bits, -12 fractional bits, signed
 
-  checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, 12));
+  checkToCooked(converter, 0x2AAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, 12));
   checkToCooked(converter, 0x15555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, 12));
 
   // the converter should ignore bits which are not in the spec
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, 12));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, 12));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, 12));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, 12));
 
   checkToCooked(converter, 0x2AAAA, (int)0xEAAAA000);
   checkToCooked(converter, 0x15555, (int)0x15555000);
@@ -1003,8 +1065,9 @@ BOOST_AUTO_TEST_CASE(testInt18_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fractionMinus12) {
-  FixedPointConverter converter("Variable18minus12unsigned", 18, -12, false); // 10 bits, -12 fractional bits, not
-                                                                              // signed
+  FixedPointConverter converter("Variable18minus12unsigned", 18, -12,
+                                false); // 10 bits, -12 fractional bits, not
+                                        // signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, 12));
   checkToCooked(converter, 0x15555, HEX_TO_DOUBLE(0x15555) * pow(2, 12));
@@ -1037,7 +1100,8 @@ BOOST_AUTO_TEST_CASE(testUInt18_fractionMinus12) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction0) {
-  FixedPointConverter converter("Variable18minus12signed", 18); // 18 bits, 0 fractional bits, signed
+  FixedPointConverter converter("Variable18minus12signed",
+                                18); // 18 bits, 0 fractional bits, signed
 
   checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA));
   checkToCooked(converter, 0x15555, SIGNED_HEX_TO_DOUBLE(0x15555));
@@ -1077,7 +1141,9 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction0) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction0) {
-  FixedPointConverter converter("Variable18unsigned", 18, 0, false); // 10 bits, -12 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable18unsigned", 18, 0,
+      false); // 10 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA));
   checkToCooked(converter, 0x15555, HEX_TO_DOUBLE(0x15555));
@@ -1110,13 +1176,17 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction0) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction7) {
-  FixedPointConverter converter("Variable18plus7signed", 18, 7); // 18 bits, 7 fractional bits, signed
+  FixedPointConverter converter("Variable18plus7signed", 18,
+                                7); // 18 bits, 7 fractional bits, signed
 
-  checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -7));
+  checkToCooked(converter, 0x2AAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -7));
   checkToCooked(converter, 0x15555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -7));
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -7));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -7));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -7));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -7));
 
   checkToCooked(converter, 0x2AAAA, (int)0xFFFFFD55);
   checkToCooked(converter, 0x15555, (int)0x02AB);
@@ -1141,7 +1211,9 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction7) {
-  FixedPointConverter converter("Variable18plus7unsigned", 18, 7, false); // 10 bits, -12 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable18plus7unsigned", 18, 7,
+      false); // 10 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -7));
   checkToCooked(converter, 0x15555, HEX_TO_DOUBLE(0x15555) * pow(2, -7));
@@ -1177,13 +1249,18 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction7) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction17) {
-  FixedPointConverter converter("Variable18plus17signed", 18, 17); // 18 bits, 17 fractional bits, signed
+  FixedPointConverter converter("Variable18plus17signed", 18,
+                                17); // 18 bits, 17 fractional bits, signed
 
-  checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -17));
-  checkToCooked(converter, 0x15555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -17));
+  checkToCooked(converter, 0x2AAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -17));
+  checkToCooked(converter, 0x15555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -17));
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -17));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -17));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -17));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -17));
 
   checkToRaw(converter, 0.25, 0x8000);
   checkToRaw(converter, -0.25, 0x38000);
@@ -1198,7 +1275,9 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction17) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction17) {
-  FixedPointConverter converter("Variable18plus17unsigned", 18, 17, false); // 18 bits, 17 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable18plus17unsigned", 18, 17,
+      false); // 18 bits, 17 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -17));
   checkToCooked(converter, 0x15555, HEX_TO_DOUBLE(0x15555) * pow(2, -17));
@@ -1219,18 +1298,24 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction17) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction18) {
-  FixedPointConverter converter("Variable18plus18signed", 18, 18); // 18 bits, 18 fractional bits, signed
+  FixedPointConverter converter("Variable18plus18signed", 18,
+                                18); // 18 bits, 18 fractional bits, signed
 
-  checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -18));
-  checkToCooked(converter, 0x15555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -18));
+  checkToCooked(converter, 0x2AAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -18));
+  checkToCooked(converter, 0x15555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -18));
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -18));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -18));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -18));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -18));
 
   checkToRaw(converter, 0.25, 0x10000);
   checkToRaw(converter, -0.25, 0x30000);
   // +- 0.75 are out of range
-  checkToRaw(converter, 0.75, 0x1FFFF);  // the largest possible value (0.5 - 1e-18)
+  checkToRaw(converter, 0.75,
+             0x1FFFF); // the largest possible value (0.5 - 1e-18)
   checkToRaw(converter, -0.75, 0x20000); // -0.5, the smallest possible value
 
   checkToCooked(converter, 0x10000, 0.25);
@@ -1244,7 +1329,9 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction18) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction18) {
-  FixedPointConverter converter("Variable18plus18unsigned", 18, 18, false); // 10 bits, -12 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable18plus18unsigned", 18, 18,
+      false); // 10 bits, -12 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -18));
   checkToCooked(converter, 0x15555, HEX_TO_DOUBLE(0x15555) * pow(2, -18));
@@ -1267,13 +1354,18 @@ BOOST_AUTO_TEST_CASE(testUInt18_fraction18) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt18_fraction43) {
-  FixedPointConverter converter("int18_fraction43", 18, 43); // 18 bits, 43 fractional bits, signed
+  FixedPointConverter converter("int18_fraction43", 18,
+                                43); // 18 bits, 43 fractional bits, signed
 
-  checkToCooked(converter, 0x2AAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -43));
-  checkToCooked(converter, 0x15555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -43));
+  checkToCooked(converter, 0x2AAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -43));
+  checkToCooked(converter, 0x15555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -43));
 
-  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -43));
-  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -43));
+  checkToCooked(converter, 0xAAAAAAAA,
+                SIGNED_HEX_TO_DOUBLE(0xFFFEAAAA) * pow(2, -43));
+  checkToCooked(converter, 0x55555555,
+                SIGNED_HEX_TO_DOUBLE(0x15555) * pow(2, -43));
 
   // all out of range
   checkToRaw(converter, 0.25, 0x1FFFF);
@@ -1288,7 +1380,9 @@ BOOST_AUTO_TEST_CASE(testInt18_fraction43) {
 }
 
 BOOST_AUTO_TEST_CASE(testUInt18_fraction43) {
-  FixedPointConverter converter("Variable18plus43unsigned", 18, 43, false); // 18 bits, -43 fractional bits, not signed
+  FixedPointConverter converter(
+      "Variable18plus43unsigned", 18, 43,
+      false); // 18 bits, -43 fractional bits, not signed
 
   checkToCooked(converter, 0x2AAAA, HEX_TO_DOUBLE(0x2AAAA) * pow(2, -43));
   checkToCooked(converter, 0x15555, HEX_TO_DOUBLE(0x15555) * pow(2, -43));
@@ -1321,7 +1415,8 @@ BOOST_AUTO_TEST_CASE(testGetters) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32ToInt32) {
-  FixedPointConverter converter("int32toInt32"); // default parameters are signed 32 bit
+  FixedPointConverter converter(
+      "int32toInt32"); // default parameters are signed 32 bit
 
   checkToCooked(converter, 0, (int32_t)0);
   checkToCooked(converter, 1, (int32_t)1);
@@ -1343,7 +1438,8 @@ BOOST_AUTO_TEST_CASE(testInt32ToInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testInt32ToInt16) {
-  FixedPointConverter converter("int32ToInt16"); // default constructor is signed 32 bit
+  FixedPointConverter converter(
+      "int32ToInt16"); // default constructor is signed 32 bit
 
   checkToCooked(converter, 0, (int16_t)0);
   checkToCooked(converter, 1, (int16_t)1);
@@ -1395,7 +1491,8 @@ BOOST_AUTO_TEST_CASE(testInt18ToInt32) {
 }
 
 BOOST_AUTO_TEST_CASE(testIntSignedToUnsigned) {
-  FixedPointConverter converter("signedToUnsigned"); // default parameters are signed 32 bit
+  FixedPointConverter converter(
+      "signedToUnsigned"); // default parameters are signed 32 bit
 
   checkToCooked(converter, 0, (uint32_t)0);
   checkToCooked(converter, 1, (uint32_t)1);
@@ -1435,7 +1532,8 @@ BOOST_AUTO_TEST_CASE(testInt17SignedToInt16Unsigned) {
   checkToRaw(converter, (uint16_t)0xFFFF, 0xFFFF);
 }
 
-BOOST_AUTO_TEST_CASE(testInt0unsigned) { // test with 0 significant bits (unsigned, no fractional bits)
+BOOST_AUTO_TEST_CASE(testInt0unsigned) { // test with 0 significant bits
+                                         // (unsigned, no fractional bits)
   FixedPointConverter converter("int0unsigned", 0, 0, false);
 
   checkToCooked(converter, 0, 0);
@@ -1450,7 +1548,8 @@ BOOST_AUTO_TEST_CASE(testInt0unsigned) { // test with 0 significant bits (unsign
   checkToRaw(converter, -1, 0);
 }
 
-BOOST_AUTO_TEST_CASE(testInt0signed) { // test with 0 significant bits (signed, no fractional bits)
+BOOST_AUTO_TEST_CASE(testInt0signed) { // test with 0 significant bits (signed,
+                                       // no fractional bits)
   FixedPointConverter converter("int0signed", 0, 0, true);
 
   checkToCooked(converter, 0, 0);
@@ -1465,7 +1564,9 @@ BOOST_AUTO_TEST_CASE(testInt0signed) { // test with 0 significant bits (signed, 
   checkToRaw(converter, -1, 0);
 }
 
-BOOST_AUTO_TEST_CASE(testInt0unsignedFractional) { // test with 0 significant bits (unsigned, with fractional bits)
+BOOST_AUTO_TEST_CASE(
+    testInt0unsignedFractional) { // test with 0 significant bits (unsigned,
+                                  // with fractional bits)
   FixedPointConverter converter("int0unsignedFractional", 0, 5, false);
 
   checkToCooked(converter, 0, 0);
@@ -1480,7 +1581,9 @@ BOOST_AUTO_TEST_CASE(testInt0unsignedFractional) { // test with 0 significant bi
   checkToRaw(converter, -1, 0);
 }
 
-BOOST_AUTO_TEST_CASE(testInt0signedFractional) { // test with 0 significant bits (signed, with negative fractional bits)
+BOOST_AUTO_TEST_CASE(
+    testInt0signedFractional) { // test with 0 significant bits (signed, with
+                                // negative fractional bits)
   FixedPointConverter converter("int0signedFractional", 0, -5, true);
 
   checkToCooked(converter, 0, 0);
@@ -1502,7 +1605,8 @@ BOOST_AUTO_TEST_CASE(testDynamicRangePos) {
   checkToCooked(converter, 1, pow(2., -(1021 - 16)));
   checkToCooked(converter, 0xFFFF, 65535. * pow(2., -(1021 - 16)));
 
-  // check that our comparison values are not already exceeding the dynamic range
+  // check that our comparison values are not already exceeding the dynamic
+  // range
   BOOST_CHECK(!std::isinf(65535. * pow(2., -(1021 - 16))));
 }
 
@@ -1513,7 +1617,8 @@ BOOST_AUTO_TEST_CASE(testDynamicRangeNeg) {
   checkToCooked(converter, 1, pow(2., 1024 - 16));
   checkToCooked(converter, 0xFFFF, 65535. * pow(2., 1024 - 16));
 
-  // check that our comparison values are not already exceeding the dynamic range
+  // check that our comparison values are not already exceeding the dynamic
+  // range
   BOOST_CHECK(pow(2., -(1024 - 16)) > 0.);
 }
 

@@ -5,21 +5,23 @@ using namespace boost::unit_test_framework;
 
 #include <cstring>
 
-#include "Device.h"
-#include "PcieBackend.h"
-#include "DeviceBackend.h"
 #include "BackendFactory.h"
-#include "MapFileParser.h"
-#include "Exception.h"
+#include "Device.h"
+#include "DeviceBackend.h"
 #include "DummyRegisterAccessor.h"
+#include "Exception.h"
+#include "MapFileParser.h"
+#include "PcieBackend.h"
 
 namespace ChimeraTK {
-  using namespace ChimeraTK;
+using namespace ChimeraTK;
 }
 
 class TestableDevice : public ChimeraTK::Device {
- public:
-  boost::shared_ptr<ChimeraTK::DeviceBackend> getBackend() { return _deviceBackendPointer; }
+public:
+  boost::shared_ptr<ChimeraTK::DeviceBackend> getBackend() {
+    return _deviceBackendPointer;
+  }
 };
 
 BOOST_AUTO_TEST_SUITE(DeviceTestSuite)
@@ -28,11 +30,14 @@ BOOST_AUTO_TEST_CASE(testConvenienceReadWrite) {
   ChimeraTK::setDMapFilePath("dummies.dmap");
   ChimeraTK::Device device;
   device.open("DUMMYD2");
-  boost::shared_ptr<ChimeraTK::DummyBackend> backend = boost::dynamic_pointer_cast<ChimeraTK::DummyBackend>(
-      ChimeraTK::BackendFactory::getInstance().createBackend("DUMMYD2"));
+  boost::shared_ptr<ChimeraTK::DummyBackend> backend =
+      boost::dynamic_pointer_cast<ChimeraTK::DummyBackend>(
+          ChimeraTK::BackendFactory::getInstance().createBackend("DUMMYD2"));
 
-  ChimeraTK::DummyRegisterAccessor<int32_t> wordStatus(backend.get(), "APP0", "WORD_STATUS");
-  ChimeraTK::DummyRegisterAccessor<int32_t> module0(backend.get(), "APP0", "MODULE0");
+  ChimeraTK::DummyRegisterAccessor<int32_t> wordStatus(backend.get(), "APP0",
+                                                       "WORD_STATUS");
+  ChimeraTK::DummyRegisterAccessor<int32_t> module0(backend.get(), "APP0",
+                                                    "MODULE0");
 
   int32_t data;
   std::vector<int32_t> dataVector;
@@ -67,13 +72,17 @@ BOOST_AUTO_TEST_CASE(testConvenienceReadWrite) {
   BOOST_CHECK(dataVector.size() == 1);
   BOOST_CHECK(dataVector[0] == -33333);
 
-  BOOST_CHECK_THROW(device.read<int32_t>("APP0/DOESNT_EXIST"), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.read<int32_t>("DOESNT_EXIST/AT_ALL", 1, 0), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device.read<int32_t>("APP0/DOESNT_EXIST"),
+                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device.read<int32_t>("DOESNT_EXIST/AT_ALL", 1, 0),
+                    ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testDeviceCreation) {
-  std::string initialDmapFilePath = ChimeraTK::BackendFactory::getInstance().getDMapFilePath();
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("dMapDir/testRelativePaths.dmap");
+  std::string initialDmapFilePath =
+      ChimeraTK::BackendFactory::getInstance().getDMapFilePath();
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath(
+      "dMapDir/testRelativePaths.dmap");
 
   ChimeraTK::Device device1;
   BOOST_CHECK(device1.isOpened() == false);
@@ -126,7 +135,8 @@ BOOST_AUTO_TEST_CASE(testDeviceCreation) {
   BOOST_CHECK(device5.isOpened() == true);
   auto backend5 = device5.getBackend();
   BOOST_CHECK_NO_THROW(device5.open("DUMMYD1"));
-  BOOST_CHECK(backend5->isOpen()); // backend5 is still the current backend of device5
+  BOOST_CHECK(
+      backend5->isOpen()); // backend5 is still the current backend of device5
   BOOST_CHECK(device5.isOpened() == true);
 
   // check closing and opening again
@@ -140,8 +150,8 @@ BOOST_AUTO_TEST_CASE(testDeviceCreation) {
   BOOST_CHECK(device5.isOpened() == true);
   BOOST_CHECK(backend5->isOpen());
 
-  // Now that we are done with the tests, move the factory to the state it was in
-  // before we started
+  // Now that we are done with the tests, move the factory to the state it was
+  // in before we started
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath(initialDmapFilePath);
 }
 
@@ -183,7 +193,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer1) {
   device = boost::shared_ptr<ChimeraTK::Device>(new ChimeraTK::Device());
   std::string validMappingFileWithModules = "mtcadummy.map";
   boost::shared_ptr<ChimeraTK::DeviceBackend> testBackendWithModules(
-      new ChimeraTK::PcieBackend("/dev/mtcadummys0", validMappingFileWithModules));
+      new ChimeraTK::PcieBackend("/dev/mtcadummys0",
+                                 validMappingFileWithModules));
   device->open(testBackendWithModules);
 
   data = 0;
@@ -194,14 +205,16 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer1) {
   device->readReg("ADC.WORD_CLK_DUMMY", &data);
   BOOST_CHECK(data == 0x444d4d59);
 
-  BOOST_CHECK_THROW(device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device->readReg("WORD_CLK_DUMMY", "WRONG_MODULE", &data),
+                    ChimeraTK::logic_error);
 
   data = 1;
   sizeInBytes = 4 * 4;
   dataOffsetInBytes = 1 * 4;
 
   device->writeReg("WORD_ADC_ENA", "ADC", &data);
-  device->readReg("AREA_DMAABLE", "ADC", adcData, sizeInBytes, dataOffsetInBytes);
+  device->readReg("AREA_DMAABLE", "ADC", adcData, sizeInBytes,
+                  dataOffsetInBytes);
   BOOST_CHECK(adcData[0] == 1);
   BOOST_CHECK(adcData[1] == 4);
   BOOST_CHECK(adcData[2] == 9);
@@ -267,7 +280,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer4) {
   uint32_t dataOffsetInBytes = 1 * 4;
 
   device->writeReg("AREA_DMAABLE", adcData, sizeInBytes, dataOffsetInBytes);
-  device->readReg("AREA_DMAABLE", retreivedData, sizeInBytes, dataOffsetInBytes);
+  device->readReg("AREA_DMAABLE", retreivedData, sizeInBytes,
+                  dataOffsetInBytes);
   BOOST_CHECK(retreivedData[0] == 1);
   BOOST_CHECK(retreivedData[1] == 7);
   BOOST_CHECK(retreivedData[2] == 9);
@@ -283,14 +297,20 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer5) {
   size_t dataSize = 4;
   uint32_t addRegOffset = 3;
   int32_t data = 1;
-  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
+      ChimeraTK::logic_error);
 
   dataSize = 3;
   addRegOffset = 4;
-  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
+      ChimeraTK::logic_error);
 
   dataSize = 4;
-  BOOST_CHECK_THROW(device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      device->writeReg("WORD_ADC_ENA", &data, dataSize, addRegOffset),
+      ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer6) {
@@ -303,13 +323,14 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer6) {
   int32_t data = 1;
   boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> non_dma_accesible_reg =
       device->getRegisterAccessor("AREA_DMAABLE");
-  // BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data), ChimeraTK::DeviceException); // there is no distinction
-  // any more...
+  // BOOST_CHECK_THROW(non_dma_accesible_reg->readDMA(&data),
+  // ChimeraTK::DeviceException); // there is no distinction any more...
 
   device->writeReg("WORD_ADC_ENA", &data);
   int32_t retreived_data[6];
   uint32_t size = 6 * 4;
-  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> area_dma = device->getRegisterAccessor("AREA_DMA_VIA_DMA");
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> area_dma =
+      device->getRegisterAccessor("AREA_DMA_VIA_DMA");
   area_dma->readDMA(retreived_data, size);
   BOOST_CHECK(retreived_data[0] == 0);
   BOOST_CHECK(retreived_data[1] == 1);
@@ -329,15 +350,19 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer7) {
   size_t dataSize = 4;
   uint32_t addRegOffset = 3;
   int32_t data = 1;
-  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> word_adc_ena = device->getRegisterAccessor("WORD_ADC_ENA");
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> word_adc_ena =
+      device->getRegisterAccessor("WORD_ADC_ENA");
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
+                    ChimeraTK::logic_error);
 
   dataSize = 3;
   addRegOffset = 4;
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
+                    ChimeraTK::logic_error);
 
   dataSize = 4;
-  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(word_adc_ena->writeRaw(&data, dataSize, addRegOffset),
+                    ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer8) {
@@ -346,7 +371,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer8) {
   boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend(
       new ChimeraTK::PcieBackend("/dev/mtcadummys0", validMappingFile));
   device->open(testBackend);
-  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> word_clk_dummy = device->getRegisterAccessor("WORD_CLK_DUMMY");
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> word_clk_dummy =
+      device->getRegisterAccessor("WORD_CLK_DUMMY");
   int32_t data = 0;
   word_clk_dummy->readRaw(&data);
   BOOST_CHECK(data == 0x444d4d59);
@@ -358,7 +384,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer9) {
   boost::shared_ptr<ChimeraTK::DeviceBackend> testBackend(
       new ChimeraTK::PcieBackend("/dev/mtcadummys0", validMappingFile));
   device->open(testBackend);
-  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> word_clk_rst = device->getRegisterAccessor("WORD_CLK_RST");
+  boost::shared_ptr<ChimeraTK::Device::RegisterAccessor> word_clk_rst =
+      device->getRegisterAccessor("WORD_CLK_RST");
   int32_t input_data = 16;
   int32_t read_data;
   word_clk_rst->writeRaw(&input_data);
@@ -402,7 +429,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer12) {
   device->open(testBackend);
 
   int32_t data = 0;
-  BOOST_CHECK_THROW(device->readReg("NON_EXISTENT_REGISTER", &data), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(device->readReg("NON_EXISTENT_REGISTER", &data),
+                    ChimeraTK::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer13) {
@@ -412,7 +440,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer13) {
       new ChimeraTK::PcieBackend("/dev/mtcadummys0", validMappingFile));
   device->open(testBackend);
   int32_t data = 0;
-  BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data), ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(device->writeReg("BROKEN_WRITE", &data),
+                    ChimeraTK::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer14) {
@@ -424,7 +453,9 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer14) {
   int32_t adcdata[2];
   size_t dataSizeInBytes = 2 * 4;
 
-  BOOST_CHECK_THROW(device->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      device->readDMA("AREA_DMA_VIA_DMA", adcdata, dataSizeInBytes),
+      ChimeraTK::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer15) {
@@ -445,10 +476,12 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer15) {
 BOOST_AUTO_TEST_CASE(testCompatibilityLayer16) {
   boost::shared_ptr<ChimeraTK::Device> device(new ChimeraTK::Device());
   device->open("DUMMYD1");
-  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> registerInfoList = device->getRegistersInModule("APP0");
+  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo> registerInfoList =
+      device->getRegistersInModule("APP0");
 
   BOOST_CHECK(registerInfoList.size() == 4);
-  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo>::iterator registerInfo = registerInfoList.begin();
+  std::list<ChimeraTK::RegisterInfoMap::RegisterInfo>::iterator registerInfo =
+      registerInfoList.begin();
   BOOST_CHECK(registerInfo->name == "MODULE0");
   BOOST_CHECK(registerInfo->module == "APP0");
   ++registerInfo;
@@ -470,8 +503,8 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer17) {
   // the dummy device is opened with twice the map file name (use map file
   // instead of device node)
 
-  std::list<boost::shared_ptr<ChimeraTK::Device::RegisterAccessor>> accessorList =
-      device->getRegisterAccessorsInModule("APP0");
+  std::list<boost::shared_ptr<ChimeraTK::Device::RegisterAccessor>>
+      accessorList = device->getRegisterAccessorsInModule("APP0");
   BOOST_CHECK(accessorList.size() == 4);
 
   auto accessor = accessorList.begin();

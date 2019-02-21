@@ -1,10 +1,11 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+///@todo FIXME My dynamic init header is a hack. Change the test to use
+///BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
 
-#include "RegisterPath.h"
 #include "NumericAddress.h"
+#include "RegisterPath.h"
 namespace ChimeraTK {
-  using namespace ChimeraTK;
+using namespace ChimeraTK;
 }
 
 using namespace boost::unit_test_framework;
@@ -12,25 +13,29 @@ using namespace ChimeraTK;
 using ChimeraTK::numeric_address::BAR;
 
 class RegisterPathTest {
- public:
+public:
   void testRegisterPath();
   void testNumericAddresses();
   void testComponents();
 };
 
 class RegisterPathTestSuite : public test_suite {
- public:
+public:
   RegisterPathTestSuite() : test_suite("RegisterPath class test suite") {
     boost::shared_ptr<RegisterPathTest> registerPathTest(new RegisterPathTest);
 
-    add(BOOST_CLASS_TEST_CASE(&RegisterPathTest::testRegisterPath, registerPathTest));
-    add(BOOST_CLASS_TEST_CASE(&RegisterPathTest::testNumericAddresses, registerPathTest));
-    add(BOOST_CLASS_TEST_CASE(&RegisterPathTest::testComponents, registerPathTest));
+    add(BOOST_CLASS_TEST_CASE(&RegisterPathTest::testRegisterPath,
+                              registerPathTest));
+    add(BOOST_CLASS_TEST_CASE(&RegisterPathTest::testNumericAddresses,
+                              registerPathTest));
+    add(BOOST_CLASS_TEST_CASE(&RegisterPathTest::testComponents,
+                              registerPathTest));
   }
 };
 
 bool init_unit_test() {
-  framework::master_test_suite().p_name.value = "LogicalNameMap class test suite";
+  framework::master_test_suite().p_name.value =
+      "LogicalNameMap class test suite";
   framework::master_test_suite().add(new RegisterPathTestSuite());
 
   return true;
@@ -58,8 +63,10 @@ void RegisterPathTest::testRegisterPath() {
   path4.setAltSeparator(".");
   BOOST_CHECK(path4 == "/moduleX/Yblah/sub");
   BOOST_CHECK(path4.getWithAltSeparator() == "moduleX.Yblah.sub");
-  BOOST_CHECK((path4 / "next.register").getWithAltSeparator() == "moduleX.Yblah.sub.next.register");
-  path4.setAltSeparator("/"); // this should clear the alternate separator as well
+  BOOST_CHECK((path4 / "next.register").getWithAltSeparator() ==
+              "moduleX.Yblah.sub.next.register");
+  path4.setAltSeparator(
+      "/"); // this should clear the alternate separator as well
   BOOST_CHECK(path4 == "/moduleX..Yblah./sub");
   path4.setAltSeparator("");
   BOOST_CHECK(path4 == "/moduleX..Yblah./sub");

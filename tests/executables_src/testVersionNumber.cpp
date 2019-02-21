@@ -1,16 +1,17 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+///@todo FIXME My dynamic init header is a hack. Change the test to use
+///BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
 using namespace boost::unit_test_framework;
 
-#include <thread>
 #include <iostream>
+#include <thread>
 
 #include "VersionNumber.h"
 
 using namespace ChimeraTK;
 
 class VersionNumberTest {
- public:
+public:
   void testEqual();
   void testNotEqual();
   void testSmaller();
@@ -33,7 +34,7 @@ class VersionNumberTest {
 };
 
 class VersionNumberTestSuite : public test_suite {
- public:
+public:
   VersionNumberTestSuite() : test_suite("VersionNumber test suite") {
     boost::shared_ptr<VersionNumberTest> test(new VersionNumberTest);
     add(BOOST_CLASS_TEST_CASE(&VersionNumberTest::testEqual, test));
@@ -254,28 +255,33 @@ void VersionNumberTest::testThreadedCreation() {
   std::cout << "Filling lists of VersionNumbers..." << std::endl;
 
   std::thread t([this] {
-    for(int i = 0; i < 1000; ++i) this->listA.push_back(VersionNumber());
+    for (int i = 0; i < 1000; ++i)
+      this->listA.push_back(VersionNumber());
   });
-  for(int i = 0; i < 1000; ++i) listB.push_back(VersionNumber());
+  for (int i = 0; i < 1000; ++i)
+    listB.push_back(VersionNumber());
   t.join();
 
-  std::cout << "Now comparing all pairs of elements in the lists..." << std::endl;
+  std::cout << "Now comparing all pairs of elements in the lists..."
+            << std::endl;
 
-  for(auto& a : listA) {
-    for(auto& b : listB) {
+  for (auto &a : listA) {
+    for (auto &b : listB) {
       BOOST_CHECK(a != b);
     }
     int nSelfMatches = 0;
-    for(auto& a2 : listA) {
-      if(a == a2) nSelfMatches++;
+    for (auto &a2 : listA) {
+      if (a == a2)
+        nSelfMatches++;
     }
     BOOST_CHECK_EQUAL(nSelfMatches, 1);
   }
 
-  for(auto& b : listB) {
+  for (auto &b : listB) {
     int nSelfMatches = 0;
-    for(auto& b2 : listB) {
-      if(b == b2) nSelfMatches++;
+    for (auto &b2 : listB) {
+      if (b == b2)
+        nSelfMatches++;
     }
     BOOST_CHECK_EQUAL(nSelfMatches, 1);
   }

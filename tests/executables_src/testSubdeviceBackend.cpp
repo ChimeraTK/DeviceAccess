@@ -3,21 +3,24 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <thread>
 #include "Device.h"
+#include <thread>
 
 using namespace ChimeraTK;
 
-#define CHECK_TIMEOUT(execPreCheck, condition, maxMilliseconds)                                                        \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    execPreCheck while(!(condition)) {                                                                                 \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-      execPreCheck                                                                                                     \
-    }                                                                                                                  \
+#define CHECK_TIMEOUT(execPreCheck, condition, maxMilliseconds)                \
+  {                                                                            \
+    std::chrono::steady_clock::time_point t0 =                                 \
+        std::chrono::steady_clock::now();                                      \
+    execPreCheck while (!(condition)) {                                        \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) >         \
+                             std::chrono::milliseconds(maxMilliseconds);       \
+      BOOST_CHECK(!timeout_reached);                                           \
+      if (timeout_reached)                                                     \
+        break;                                                                 \
+      usleep(1000);                                                            \
+      execPreCheck                                                             \
+    }                                                                          \
   }
 
 BOOST_AUTO_TEST_SUITE(SubdeviceBackendTestSuite)
@@ -52,38 +55,51 @@ BOOST_AUTO_TEST_CASE(testMayReplaceOther) {
   target.open("TARGET1");
 
   {
-    auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
-    auto acc1_2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
-    BOOST_CHECK(acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
-    BOOST_CHECK(acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0,
+                                                       {AccessMode::raw});
+    auto acc1_2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1",
+                                                         0, {AccessMode::raw});
+    BOOST_CHECK(acc1.getHighLevelImplElement()->mayReplaceOther(
+        acc1_2.getHighLevelImplElement()));
+    BOOST_CHECK(acc1_2.getHighLevelImplElement()->mayReplaceOther(
+        acc1.getHighLevelImplElement()));
   }
 
   {
-    auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
+    auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0,
+                                                       {AccessMode::raw});
     auto acc1_2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1");
-    BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
-    BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(
+        acc1_2.getHighLevelImplElement()));
+    BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(
+        acc1.getHighLevelImplElement()));
   }
 
   {
     auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
     auto acc1_2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
-    BOOST_CHECK(acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
-    BOOST_CHECK(acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    BOOST_CHECK(acc1.getHighLevelImplElement()->mayReplaceOther(
+        acc1_2.getHighLevelImplElement()));
+    BOOST_CHECK(acc1_2.getHighLevelImplElement()->mayReplaceOther(
+        acc1.getHighLevelImplElement()));
   }
 
   {
     auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1");
     auto acc1_2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
-    BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
-    BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(
+        acc1_2.getHighLevelImplElement()));
+    BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(
+        acc1.getHighLevelImplElement()));
   }
 
   {
     auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2");
     auto acc1_2 = dev.getScalarRegisterAccessor<int16_t>("APP.0.MY_REGISTER2");
-    BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(acc1_2.getHighLevelImplElement()));
-    BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(acc1.getHighLevelImplElement()));
+    BOOST_CHECK(!acc1.getHighLevelImplElement()->mayReplaceOther(
+        acc1_2.getHighLevelImplElement()));
+    BOOST_CHECK(!acc1_2.getHighLevelImplElement()->mayReplaceOther(
+        acc1.getHighLevelImplElement()));
   }
 }
 
@@ -97,8 +113,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarRaw) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
-  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0, {AccessMode::raw});
+  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0,
+                                                     {AccessMode::raw});
+  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0,
+                                                         {AccessMode::raw});
 
   acc1 = 42;
   acc1.write();
@@ -110,8 +128,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarRaw) {
   acc1t.read();
   BOOST_CHECK_EQUAL((int32_t)acc1t, -120);
 
-  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2", 0, {AccessMode::raw});
-  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1, {AccessMode::raw});
+  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2", 0,
+                                                     {AccessMode::raw});
+  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1,
+                                                         {AccessMode::raw});
 
   acc2 = 666;
   acc2.write();
@@ -141,8 +161,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarInAreaRaw) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0, {AccessMode::raw});
-  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 2, {AccessMode::raw});
+  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0,
+                                                     {AccessMode::raw});
+  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 2,
+                                                         {AccessMode::raw});
 
   acc1 = 42;
   acc1.write();
@@ -154,8 +176,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarInAreaRaw) {
   acc1t.read();
   BOOST_CHECK_EQUAL((int32_t)acc1t, -120);
 
-  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 3, {AccessMode::raw});
-  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 5, {AccessMode::raw});
+  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 3,
+                                                     {AccessMode::raw});
+  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 5,
+                                                         {AccessMode::raw});
 
   acc2 = 666;
   acc2.write();
@@ -180,18 +204,22 @@ BOOST_AUTO_TEST_CASE(testWriteArrayRaw) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getOneDRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0, 0, {AccessMode::raw});
-  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2, {AccessMode::raw});
+  auto acc1 = dev.getOneDRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0, 0,
+                                                   {AccessMode::raw});
+  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2,
+                                                       {AccessMode::raw});
 
   acc1 = {10, 20, 30, 40, 50, 60};
   acc1.write();
   acc1t.read();
-  BOOST_CHECK((std::vector<int32_t>)acc1t == std::vector<int32_t>({10, 20, 30, 40, 50, 60}));
+  BOOST_CHECK((std::vector<int32_t>)acc1t ==
+              std::vector<int32_t>({10, 20, 30, 40, 50, 60}));
 
   acc1 = {15, 25, 35, 45, 55, 65};
   acc1.write();
   acc1t.read();
-  BOOST_CHECK((std::vector<int32_t>)acc1t == std::vector<int32_t>({15, 25, 35, 45, 55, 65}));
+  BOOST_CHECK((std::vector<int32_t>)acc1t ==
+              std::vector<int32_t>({15, 25, 35, 45, 55, 65}));
 
   dev.close();
 }
@@ -206,8 +234,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarCooked) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER1"); // 0 fractional bits
-  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0, {AccessMode::raw});
+  auto acc1 = dev.getScalarRegisterAccessor<double>(
+      "APP.0.MY_REGISTER1"); // 0 fractional bits
+  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0,
+                                                         {AccessMode::raw});
 
   acc1 = 42;
   acc1.write();
@@ -219,8 +249,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarCooked) {
   acc1t.read();
   BOOST_CHECK_EQUAL((int32_t)acc1t, -120);
 
-  auto acc2 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER2"); // 2 fractional bits
-  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1, {AccessMode::raw});
+  auto acc2 = dev.getScalarRegisterAccessor<double>(
+      "APP.0.MY_REGISTER2"); // 2 fractional bits
+  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1,
+                                                         {AccessMode::raw});
 
   acc2 = 666;
   acc2.write();
@@ -230,8 +262,10 @@ BOOST_AUTO_TEST_CASE(testWriteScalarCooked) {
   acc2 = -333;
   acc2.write();
   acc2t.read();
-  BOOST_CHECK_EQUAL((int32_t)acc2t, (-333 * 4) & 0x3FFFF); // the raw value does not get negative since we have 18 bits
-                                                           // only
+  BOOST_CHECK_EQUAL((int32_t)acc2t,
+                    (-333 * 4) &
+                        0x3FFFF); // the raw value does not get negative since
+                                  // we have 18 bits only
 
   acc2 = -99999;
   acc2.write();
@@ -252,19 +286,22 @@ BOOST_AUTO_TEST_CASE(testWriteArrayCooked) {
   target.open("TARGET1");
 
   auto acc1 = dev.getOneDRegisterAccessor<int32_t>("APP.0.MY_AREA1");
-  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2, {AccessMode::raw});
+  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2,
+                                                       {AccessMode::raw});
 
   acc1 = {10, 20, 30, 40, 50, 60};
   acc1.write();
   acc1t.read();
   BOOST_CHECK((std::vector<int32_t>)acc1t ==
-      std::vector<int32_t>({10 * 65536, 20 * 65536, 30 * 65536, 40 * 65536, 50 * 65536, 60 * 65536}));
+              std::vector<int32_t>({10 * 65536, 20 * 65536, 30 * 65536,
+                                    40 * 65536, 50 * 65536, 60 * 65536}));
 
   acc1 = {15, 25, 35, 45, 55, 65};
   acc1.write();
   acc1t.read();
   BOOST_CHECK((std::vector<int32_t>)acc1t ==
-      std::vector<int32_t>({15 * 65536, 25 * 65536, 35 * 65536, 45 * 65536, 55 * 65536, 65 * 65536}));
+              std::vector<int32_t>({15 * 65536, 25 * 65536, 35 * 65536,
+                                    45 * 65536, 55 * 65536, 65 * 65536}));
 
   dev.close();
 }
@@ -280,8 +317,10 @@ BOOST_AUTO_TEST_CASE(testReadScalarRaw) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0, {AccessMode::raw});
-  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0, {AccessMode::raw});
+  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER1", 0,
+                                                     {AccessMode::raw});
+  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0,
+                                                         {AccessMode::raw});
 
   acc1t = 42;
   acc1t.write();
@@ -293,8 +332,10 @@ BOOST_AUTO_TEST_CASE(testReadScalarRaw) {
   acc1.read();
   BOOST_CHECK_EQUAL((int32_t)acc1, -120);
 
-  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2", 0, {AccessMode::raw});
-  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1, {AccessMode::raw});
+  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_REGISTER2", 0,
+                                                     {AccessMode::raw});
+  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1,
+                                                         {AccessMode::raw});
 
   acc2t = 666;
   acc2t.write();
@@ -319,8 +360,10 @@ BOOST_AUTO_TEST_CASE(testReadScalarInAreaRaw) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0, {AccessMode::raw});
-  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 2, {AccessMode::raw});
+  auto acc1 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0,
+                                                     {AccessMode::raw});
+  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 2,
+                                                         {AccessMode::raw});
 
   acc1t = 42;
   acc1t.write();
@@ -332,8 +375,10 @@ BOOST_AUTO_TEST_CASE(testReadScalarInAreaRaw) {
   acc1.read();
   BOOST_CHECK_EQUAL((int32_t)acc1, -120);
 
-  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 3, {AccessMode::raw});
-  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 5, {AccessMode::raw});
+  auto acc2 = dev.getScalarRegisterAccessor<int32_t>("APP.0.MY_AREA1", 3,
+                                                     {AccessMode::raw});
+  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 5,
+                                                         {AccessMode::raw});
 
   acc2t = 666;
   acc2t.write();
@@ -358,18 +403,22 @@ BOOST_AUTO_TEST_CASE(testReadArrayRaw) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getOneDRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0, 0, {AccessMode::raw});
-  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2, {AccessMode::raw});
+  auto acc1 = dev.getOneDRegisterAccessor<int32_t>("APP.0.MY_AREA1", 0, 0,
+                                                   {AccessMode::raw});
+  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2,
+                                                       {AccessMode::raw});
 
   acc1t = {10, 20, 30, 40, 50, 60};
   acc1t.write();
   acc1.read();
-  BOOST_CHECK((std::vector<int32_t>)acc1 == std::vector<int32_t>({10, 20, 30, 40, 50, 60}));
+  BOOST_CHECK((std::vector<int32_t>)acc1 ==
+              std::vector<int32_t>({10, 20, 30, 40, 50, 60}));
 
   acc1t = {15, 25, 35, 45, 55, 65};
   acc1t.write();
   acc1.read();
-  BOOST_CHECK((std::vector<int32_t>)acc1 == std::vector<int32_t>({15, 25, 35, 45, 55, 65}));
+  BOOST_CHECK((std::vector<int32_t>)acc1 ==
+              std::vector<int32_t>({15, 25, 35, 45, 55, 65}));
 
   dev.close();
 }
@@ -384,8 +433,10 @@ BOOST_AUTO_TEST_CASE(testReadScalarCooked) {
   Device target;
   target.open("TARGET1");
 
-  auto acc1 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER1"); // 0 fractional bits
-  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0, {AccessMode::raw});
+  auto acc1 = dev.getScalarRegisterAccessor<double>(
+      "APP.0.MY_REGISTER1"); // 0 fractional bits
+  auto acc1t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 0,
+                                                         {AccessMode::raw});
 
   acc1t = 42;
   acc1t.write();
@@ -397,8 +448,10 @@ BOOST_AUTO_TEST_CASE(testReadScalarCooked) {
   acc1.read();
   BOOST_CHECK_EQUAL((int32_t)acc1, -120);
 
-  auto acc2 = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER2"); // 2 fractional bits
-  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1, {AccessMode::raw});
+  auto acc2 = dev.getScalarRegisterAccessor<double>(
+      "APP.0.MY_REGISTER2"); // 2 fractional bits
+  auto acc2t = target.getScalarRegisterAccessor<int32_t>("APP.0.THE_AREA", 1,
+                                                         {AccessMode::raw});
 
   acc2t = 666 * 4;
   acc2t.write();
@@ -408,7 +461,9 @@ BOOST_AUTO_TEST_CASE(testReadScalarCooked) {
   acc2t = -333 * 4;
   acc2t.write();
   acc2.read();
-  BOOST_CHECK_EQUAL((int32_t)acc2, -333); // the raw value does not get negative since we have 18 bits only
+  BOOST_CHECK_EQUAL(
+      (int32_t)acc2,
+      -333); // the raw value does not get negative since we have 18 bits only
 
   acc2t = 131072;
   acc2t.write();
@@ -429,17 +484,22 @@ BOOST_AUTO_TEST_CASE(testReadArrayCooked) {
   target.open("TARGET1");
 
   auto acc1 = dev.getOneDRegisterAccessor<int32_t>("APP.0.MY_AREA1");
-  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2, {AccessMode::raw});
+  auto acc1t = target.getOneDRegisterAccessor<int32_t>("APP.0.THE_AREA", 6, 2,
+                                                       {AccessMode::raw});
 
-  acc1t = {10 * 65536, 20 * 65536, 30 * 65536, 40 * 65536, 50 * 65536, 60 * 65536};
+  acc1t = {10 * 65536, 20 * 65536, 30 * 65536,
+           40 * 65536, 50 * 65536, 60 * 65536};
   acc1t.write();
   acc1.read();
-  BOOST_CHECK((std::vector<int32_t>)acc1 == std::vector<int32_t>({10, 20, 30, 40, 50, 60}));
+  BOOST_CHECK((std::vector<int32_t>)acc1 ==
+              std::vector<int32_t>({10, 20, 30, 40, 50, 60}));
 
-  acc1t = {15 * 65536, 25 * 65536, 35 * 65536, 45 * 65536, 55 * 65536, 65 * 65536};
+  acc1t = {15 * 65536, 25 * 65536, 35 * 65536,
+           45 * 65536, 55 * 65536, 65 * 65536};
   acc1t.write();
   acc1.read();
-  BOOST_CHECK((std::vector<int32_t>)acc1 == std::vector<int32_t>({15, 25, 35, 45, 55, 65}));
+  BOOST_CHECK((std::vector<int32_t>)acc1 ==
+              std::vector<int32_t>({15, 25, 35, 45, 55, 65}));
 
   dev.close();
 }
@@ -527,7 +587,8 @@ BOOST_AUTO_TEST_CASE(test3regsArray) {
   accD.read();
   BOOST_CHECK_EQUAL(static_cast<int32_t>(accD), 456);
 
-  /// @todo Make a proper test with a custom backend, to make sure all elements of the array are properly written
+  /// @todo Make a proper test with a custom backend, to make sure all elements
+  /// of the array are properly written
 
   dev.close();
 }
@@ -542,7 +603,8 @@ BOOST_AUTO_TEST_CASE(test3regsByteOffset1) {
   Device target;
   target.open("TARGET1");
 
-  auto acc = dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER_AT_BYTE_1");
+  auto acc =
+      dev.getScalarRegisterAccessor<double>("APP.0.MY_REGISTER_AT_BYTE_1");
   auto accA = target.getScalarRegisterAccessor<int32_t>("APP.1.ADDRESS");
   auto accD = target.getScalarRegisterAccessor<int32_t>("APP.1.DATA");
   auto accS = target.getScalarRegisterAccessor<int32_t>("APP.1.STATUS");

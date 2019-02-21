@@ -6,15 +6,15 @@ using namespace boost::unit_test_framework;
 #include <algorithm>
 #include <unordered_map>
 
-#include <math.h>
-#include <boost/lambda/lambda.hpp>
-#include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
+#include <math.h>
 
 #include "Device.h"
-#include "DummyRegisterAccessor.h"
 #include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
 #include "ScalarRegisterAccessor.h"
 
 #include "accessPrivateData.h"
@@ -30,17 +30,20 @@ BOOST_AUTO_TEST_CASE(testCreation) {
   Device device;
   device.open("DUMMYD2");
   boost::shared_ptr<DummyBackend> backend =
-      boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend("DUMMYD2"));
+      boost::dynamic_pointer_cast<DummyBackend>(
+          BackendFactory::getInstance().createBackend("DUMMYD2"));
   BOOST_CHECK(backend != NULL);
 
   // obtain register accessor in disconnected state
   ScalarRegisterAccessor<int> intRegisterDisconnected;
   BOOST_CHECK(intRegisterDisconnected.isInitialised() == false);
-  intRegisterDisconnected.replace(device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS"));
+  intRegisterDisconnected.replace(
+      device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS"));
   BOOST_CHECK(intRegisterDisconnected.isInitialised() == true);
 
   // obtain register accessor with integral type
-  ScalarRegisterAccessor<int> intRegister = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  ScalarRegisterAccessor<int> intRegister =
+      device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
   BOOST_CHECK(intRegister.isInitialised() == true);
 
   device.close();
@@ -54,11 +57,13 @@ BOOST_AUTO_TEST_CASE(testIntRegisterAccessor) {
   Device device;
   device.open("DUMMYD2");
   boost::shared_ptr<DummyBackend> backend =
-      boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend("DUMMYD2"));
+      boost::dynamic_pointer_cast<DummyBackend>(
+          BackendFactory::getInstance().createBackend("DUMMYD2"));
   BOOST_CHECK(backend != NULL);
 
   // obtain register accessor with integral type
-  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
+  ScalarRegisterAccessor<int> accessor =
+      device.getScalarRegisterAccessor<int>("APP0/WORD_STATUS");
   BOOST_CHECK(accessor.isReadOnly() == false);
   BOOST_CHECK(accessor.isReadable());
   BOOST_CHECK(accessor.isWriteable());
@@ -144,11 +149,13 @@ BOOST_AUTO_TEST_CASE(testFloatRegisterAccessor) {
   Device device;
   device.open("DUMMYD2");
   boost::shared_ptr<DummyBackend> backend =
-      boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend("DUMMYD2"));
+      boost::dynamic_pointer_cast<DummyBackend>(
+          BackendFactory::getInstance().createBackend("DUMMYD2"));
   BOOST_CHECK(backend != NULL);
 
   // obtain register accessor with integral type
-  ScalarRegisterAccessor<float> accessor = device.getScalarRegisterAccessor<float>("MODULE1/WORD_USER2");
+  ScalarRegisterAccessor<float> accessor =
+      device.getScalarRegisterAccessor<float>("MODULE1/WORD_USER2");
 
   // dummy register accessor for comparison
   DummyRegisterAccessor<float> dummy(backend.get(), "MODULE1", "WORD_USER2");
@@ -159,7 +166,8 @@ BOOST_AUTO_TEST_CASE(testFloatRegisterAccessor) {
   BOOST_CHECK_CLOSE(requiredVal, 5.3, 1);
 
   accessor.read();
-  float val = accessor; // BOOST_CHECK_CLOSE requires implicit conversion in both directions, so we must help us here
+  float val = accessor; // BOOST_CHECK_CLOSE requires implicit conversion in
+                        // both directions, so we must help us here
   BOOST_CHECK_CLOSE(val, requiredVal, 0.01);
   BOOST_CHECK_CLOSE(float(accessor), requiredVal, 0.01);
   BOOST_CHECK_CLOSE(2. * accessor, 2 * requiredVal, 0.01);
@@ -189,20 +197,25 @@ BOOST_AUTO_TEST_CASE(testWordOffset) {
   Device device;
   device.open("DUMMYD2");
   boost::shared_ptr<DummyBackend> backend =
-      boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend("DUMMYD2"));
+      boost::dynamic_pointer_cast<DummyBackend>(
+          BackendFactory::getInstance().createBackend("DUMMYD2"));
   BOOST_CHECK(backend != NULL);
 
   // The second entry in module 1 is WORD_USER2
   DummyRegisterAccessor<float> dummy(backend.get(), "MODULE1", "WORD_USER2");
   dummy = 3.5;
 
-  // obtain register accessor with integral type. We use and offset of 1 (second word in module1), and raw  mode to
-  // check that argument passing works
-  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, {AccessMode::raw});
+  // obtain register accessor with integral type. We use and offset of 1 (second
+  // word in module1), and raw  mode to check that argument passing works
+  ScalarRegisterAccessor<int> accessor = device.getScalarRegisterAccessor<int>(
+      "APP0/MODULE1", 1, {AccessMode::raw});
   accessor.read();
-  BOOST_CHECK(accessor == static_cast<int>(3.5 * (1 << 5))); // 5 fractional bits, float value 3.5
+  BOOST_CHECK(
+      accessor ==
+      static_cast<int>(3.5 * (1 << 5))); // 5 fractional bits, float value 3.5
 
-  // Just to be safe that we don't accidentally have another register with content 112: modify it
+  // Just to be safe that we don't accidentally have another register with
+  // content 112: modify it
   ++accessor;
   accessor.write();
   BOOST_CHECK(dummy == 3.53125);
@@ -219,8 +232,10 @@ BOOST_AUTO_TEST_CASE(testUniqueID) {
   device.open("DUMMYD2");
 
   // get register accessors
-  ScalarRegisterAccessor<int> accessor1 = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, {AccessMode::raw});
-  ScalarRegisterAccessor<int> accessor2 = device.getScalarRegisterAccessor<int>("APP0/MODULE1", 1, {AccessMode::raw});
+  ScalarRegisterAccessor<int> accessor1 = device.getScalarRegisterAccessor<int>(
+      "APP0/MODULE0", 1, {AccessMode::raw});
+  ScalarRegisterAccessor<int> accessor2 = device.getScalarRegisterAccessor<int>(
+      "APP0/MODULE1", 1, {AccessMode::raw});
 
   // self consistency check
   BOOST_CHECK(accessor1.getId() == accessor1.getId());
@@ -243,7 +258,9 @@ BOOST_AUTO_TEST_CASE(testUniqueID) {
   BOOST_CHECK(accessor2Copied.getId() != accessor1.getId());
 
   // compare with accessor for same register but created another time
-  ScalarRegisterAccessor<int> accessor1a = device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1, {AccessMode::raw});
+  ScalarRegisterAccessor<int> accessor1a =
+      device.getScalarRegisterAccessor<int>("APP0/MODULE0", 1,
+                                            {AccessMode::raw});
   BOOST_CHECK(accessor1a.getId() == accessor1a.getId());
   BOOST_CHECK(accessor1.getId() != accessor1a.getId());
   BOOST_CHECK(accessor2.getId() != accessor1a.getId());

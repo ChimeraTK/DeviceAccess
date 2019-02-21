@@ -3,8 +3,8 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-/* This test is checking that IEE754 encoded single precision floats (32 bits) are transferred
- * corretly to and from int32_t raw registers.
+/* This test is checking that IEE754 encoded single precision floats (32 bits)
+ * are transferred corretly to and from int32_t raw registers.
  */
 
 #include "Device.h"
@@ -18,9 +18,10 @@ BOOST_AUTO_TEST_CASE(testReading) {
   Device d;
   d.open("(dummy?map=floatRawTest.map)");
 
-  // take the back door and use int register which points to the same memory space. Raw accessors are not supported
-  // (yet?).
-  auto rawAccessor = d.getScalarRegisterAccessor<int32_t>("FLOAT_TEST/SCALAR_AS_INT", 0, {AccessMode::raw});
+  // take the back door and use int register which points to the same memory
+  // space. Raw accessors are not supported (yet?).
+  auto rawAccessor = d.getScalarRegisterAccessor<int32_t>(
+      "FLOAT_TEST/SCALAR_AS_INT", 0, {AccessMode::raw});
   rawAccessor = 0x40700000; // IEE754 bit representation of 3.75
   rawAccessor.write();
 
@@ -28,7 +29,8 @@ BOOST_AUTO_TEST_CASE(testReading) {
   floatAccessor.read();
   BOOST_CHECK_CLOSE(float(floatAccessor), 3.75, 0.0001);
 
-  auto doubleAccessor = d.getScalarRegisterAccessor<double>("FLOAT_TEST/SCALAR");
+  auto doubleAccessor =
+      d.getScalarRegisterAccessor<double>("FLOAT_TEST/SCALAR");
   doubleAccessor.read();
   BOOST_CHECK_CLOSE(double(doubleAccessor), 3.75, 0.0001);
 
@@ -36,14 +38,15 @@ BOOST_AUTO_TEST_CASE(testReading) {
   intAccessor.read();
   BOOST_CHECK_EQUAL(int32_t(intAccessor), 4);
 
-  auto stringAccessor = d.getScalarRegisterAccessor<std::string>("FLOAT_TEST/SCALAR");
+  auto stringAccessor =
+      d.getScalarRegisterAccessor<std::string>("FLOAT_TEST/SCALAR");
   stringAccessor.read();
   BOOST_CHECK_EQUAL(std::string(stringAccessor), std::to_string(3.75));
 }
 
 void checkAsRaw(int32_t rawValue, float expectedValue) {
-  void* warningAvoider = &rawValue;
-  float testValue = *(reinterpret_cast<float*>(warningAvoider));
+  void *warningAvoider = &rawValue;
+  float testValue = *(reinterpret_cast<float *>(warningAvoider));
 
   BOOST_CHECK_CLOSE(testValue, expectedValue, 0.0001);
 }
@@ -59,7 +62,8 @@ BOOST_AUTO_TEST_CASE(testWriting) {
   floatAccessor[3] = 4.23;
   floatAccessor.write();
 
-  auto rawAccessor = d.getOneDRegisterAccessor<int32_t>("FLOAT_TEST/ARRAY_AS_INT", 0, 0, {AccessMode::raw});
+  auto rawAccessor = d.getOneDRegisterAccessor<int32_t>(
+      "FLOAT_TEST/ARRAY_AS_INT", 0, 0, {AccessMode::raw});
   rawAccessor.read();
   checkAsRaw(rawAccessor[0], 1.23);
   checkAsRaw(rawAccessor[1], 2.23);
@@ -92,7 +96,8 @@ BOOST_AUTO_TEST_CASE(testWriting) {
   checkAsRaw(rawAccessor[2], 3.);
   checkAsRaw(rawAccessor[3], 4.);
 
-  auto stringAccessor = d.getOneDRegisterAccessor<std::string>("FLOAT_TEST/ARRAY");
+  auto stringAccessor =
+      d.getOneDRegisterAccessor<std::string>("FLOAT_TEST/ARRAY");
   stringAccessor[0] = "17.4";
   stringAccessor[1] = "17.5";
   stringAccessor[2] = "17.6";

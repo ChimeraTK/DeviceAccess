@@ -16,24 +16,31 @@ BOOST_AUTO_TEST_CASE(testBackendLoading) {
   BackendFactory::getInstance().setDMapFilePath("");
 
   // check that we can load backends always known to the factory,
-  // but we cannot load the one coming from the plugin to exclude that we accidentally already
-  // linkes the so file we want to load
-  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("sdm://./dummy=goodMapFile.map"));
-  BOOST_CHECK_THROW(
-      BackendFactory::getInstance().createBackend("sdm://./working=goodMapFile.map"), ChimeraTK::logic_error);
+  // but we cannot load the one coming from the plugin to exclude that we
+  // accidentally already linkes the so file we want to load
+  BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend(
+      "sdm://./dummy=goodMapFile.map"));
+  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend(
+                        "sdm://./working=goodMapFile.map"),
+                    ChimeraTK::logic_error);
 
-  BackendFactory::getInstance().setDMapFilePath("runtimeLoading/wrongVersionPlugin.dmap");
-  // although a plugin with a wrong version was in the dmap file, the other backends can
-  // still be opended
+  BackendFactory::getInstance().setDMapFilePath(
+      "runtimeLoading/wrongVersionPlugin.dmap");
+  // although a plugin with a wrong version was in the dmap file, the other
+  // backends can still be opended
   BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("MY_DUMMY"));
 
   // Only when we access the one where loading failed we get an error
   // (not using boost throw to print excaption.what())
-  BOOST_CHECK_THROW(BackendFactory::getInstance().createBackend("WRONG_VERSION"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      BackendFactory::getInstance().createBackend("WRONG_VERSION"),
+      ChimeraTK::logic_error);
 
   // Now try loading valid plugins
-  BackendFactory::getInstance().setDMapFilePath("runtimeLoading/runtimeLoading.dmap");
-  // Each call of createBackend is loading the plugins. Check that this is not causing problems.
+  BackendFactory::getInstance().setDMapFilePath(
+      "runtimeLoading/runtimeLoading.dmap");
+  // Each call of createBackend is loading the plugins. Check that this is not
+  // causing problems.
   BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("WORKING"));
   BOOST_CHECK_NO_THROW(BackendFactory::getInstance().createBackend("ANOTHER"));
 }

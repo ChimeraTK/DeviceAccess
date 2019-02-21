@@ -9,8 +9,8 @@
 
 namespace ChimeraTK {
 
-  constexpr char TransferElement::unitNotSet[];
+constexpr char TransferElement::unitNotSet[];
 
-  TransferElement::~TransferElement() {}
+TransferElement::~TransferElement() {}
 
 } // namespace ChimeraTK

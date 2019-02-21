@@ -6,12 +6,12 @@
 
 namespace ChimeraTK {
 
-  /**
-   *  Compatibility typedefs for the old exception classes
-   */
-  typedef ChimeraTK::runtime_error DeviceException;
-  typedef DeviceException TwoDRegisterAccessorException;
-  typedef DeviceException MultiplexedDataAccessorException;
+/**
+ *  Compatibility typedefs for the old exception classes
+ */
+typedef ChimeraTK::runtime_error DeviceException;
+typedef DeviceException TwoDRegisterAccessorException;
+typedef DeviceException MultiplexedDataAccessorException;
 
 } // namespace ChimeraTK
 

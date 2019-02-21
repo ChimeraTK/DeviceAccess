@@ -1,13 +1,14 @@
-///@todo FIXME My dynamic init header is a hack. Change the test to use BOOST_AUTO_TEST_CASE!
+///@todo FIXME My dynamic init header is a hack. Change the test to use
+///BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
 
 #include <algorithm>
-#include <math.h>
-#include <boost/lambda/lambda.hpp>
-#include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/function.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/make_shared.hpp>
+#include <math.h>
 
 #include "DummyBackend.h"
 #include "DummyRegisterAccessor.h"
@@ -21,10 +22,10 @@ using namespace ChimeraTK;
 // Test implementation of the dummy backend with two accessors
 class DummyRegisterTest;
 class TestableDummyBackend : public DummyBackend {
- public:
+public:
   explicit TestableDummyBackend(std::string mapFileName)
-  : DummyBackend(mapFileName), someRegister(this, "APP0", "SOME_REGISTER"),
-    someMuxedRegister(this, "APP0", "DAQ0_ADCA") {}
+      : DummyBackend(mapFileName), someRegister(this, "APP0", "SOME_REGISTER"),
+        someMuxedRegister(this, "APP0", "DAQ0_ADCA") {}
 
   DummyRegisterAccessor<int> someRegister;
   DummyMultiplexedRegisterAccessor<int> someMuxedRegister;
@@ -34,9 +35,10 @@ class TestableDummyBackend : public DummyBackend {
 
 // Test implementation of the dummy backend for the invalid map file
 class InvalidDummyBackend : public DummyBackend {
- public:
+public:
   explicit InvalidDummyBackend(std::string mapFileName)
-  : DummyBackend(mapFileName), invalidRegister(this, "INVALID", "NO_WORDS") {}
+      : DummyBackend(mapFileName),
+        invalidRegister(this, "INVALID", "NO_WORDS") {}
 
   DummyMultiplexedRegisterAccessor<int> invalidRegister;
 
@@ -45,8 +47,11 @@ class InvalidDummyBackend : public DummyBackend {
 
 /**********************************************************************************************************************/
 class DummyRegisterTest {
- public:
-  DummyRegisterTest() { device = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE)); }
+public:
+  DummyRegisterTest() {
+    device = boost::shared_ptr<TestableDummyBackend>(
+        new TestableDummyBackend(TEST_MAPPING_FILE));
+  }
 
   /// test exceptions
   void testExceptions();
@@ -60,21 +65,25 @@ class DummyRegisterTest {
   /// test the DummyRegisterAddressChecker class
   void testDummyRegisterAddressChecker();
 
- private:
+private:
   boost::shared_ptr<TestableDummyBackend> device;
   friend class DummyRegisterTestSuite;
 };
 
 /**********************************************************************************************************************/
 class DummyRegisterTestSuite : public test_suite {
- public:
+public:
   DummyRegisterTestSuite() : test_suite("DummyRegister test suite") {
     boost::shared_ptr<DummyRegisterTest> dummyDeviceTest(new DummyRegisterTest);
 
-    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testRegisterAccessor, dummyDeviceTest));
-    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testMuxedRegisterAccessor, dummyDeviceTest));
-    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testExceptions, dummyDeviceTest));
-    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testDummyRegisterAddressChecker, dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testRegisterAccessor,
+                              dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testMuxedRegisterAccessor,
+                              dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(&DummyRegisterTest::testExceptions,
+                              dummyDeviceTest));
+    add(BOOST_CLASS_TEST_CASE(
+        &DummyRegisterTest::testDummyRegisterAddressChecker, dummyDeviceTest));
   }
 };
 
@@ -90,7 +99,8 @@ bool init_unit_test() {
 void DummyRegisterTest::testExceptions() {
   std::cout << "testExceptions" << std::endl;
 
-  BOOST_CHECK_THROW(new InvalidDummyBackend(INVALID_MAPPING_FILE), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(new InvalidDummyBackend(INVALID_MAPPING_FILE),
+                    ChimeraTK::logic_error);
 }
 
 /**********************************************************************************************************************/
@@ -152,11 +162,13 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(device->someMuxedRegister.getNumberOfElements() == 4096);
   BOOST_CHECK(device->someMuxedRegister.getNumberOfSequences() == 16);
 
-  // the area offset is 1000 bytes. When addressing the index of the 32 bit word in the bar, we have to divide by 4
+  // the area offset is 1000 bytes. When addressing the index of the 32 bit word
+  // in the bar, we have to divide by 4
   static const int areaIndexOffset = 1000 / 4;
 
-  // since our register does not have a fixed type, we use this union/struct to fill the bar content directly
-  // the packed attribute prevents the compiler from adding a padding between the struct fields
+  // since our register does not have a fixed type, we use this union/struct to
+  // fill the bar content directly the packed attribute prevents the compiler
+  // from adding a padding between the struct fields
   union _mixedReg {
     struct _cooked {
       int32_t r0;
@@ -198,14 +210,19 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 13;
   mixedReg.cooked.r14 = 14;
   mixedReg.cooked.r15 = 15;
-  for(int i = 0; i < 13; i++) device->_barContents[0xD][areaIndexOffset + i] = mixedReg.raw[i];
+  for (int i = 0; i < 13; i++)
+    device->_barContents[0xD][areaIndexOffset + i] = mixedReg.raw[i];
 
   // test the test, to be sure the union is not going wrong
-  BOOST_CHECK((int)((char*)&(mixedReg.cooked.r5) - (char*)&(mixedReg.cooked.r0)) == 10);
-  BOOST_CHECK((int)((char*)&(mixedReg.cooked.r10) - (char*)&(mixedReg.cooked.r0)) == 28);
-  BOOST_CHECK((int)((char*)&(mixedReg.cooked.r15) - (char*)&(mixedReg.cooked.r0)) == pitch - 4);
+  BOOST_CHECK((int)((char *)&(mixedReg.cooked.r5) -
+                    (char *)&(mixedReg.cooked.r0)) == 10);
+  BOOST_CHECK((int)((char *)&(mixedReg.cooked.r10) -
+                    (char *)&(mixedReg.cooked.r0)) == 28);
+  BOOST_CHECK((int)((char *)&(mixedReg.cooked.r15) -
+                    (char *)&(mixedReg.cooked.r0)) == pitch - 4);
   BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 0] == 42);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 1] == 120 + 0x10000 * 222);
+  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 1] ==
+              120 + 0x10000 * 222);
   BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 9] == 12);
   BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + 12] == 15);
 
@@ -225,16 +242,21 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   mixedReg.cooked.r13 = 333;
   mixedReg.cooked.r14 = 444;
   mixedReg.cooked.r15 = 555;
-  for(int i = 0; i < 13; i++) device->_barContents[0xD][areaIndexOffset + pitch / 4 + i] = mixedReg.raw[i];
+  for (int i = 0; i < 13; i++)
+    device->_barContents[0xD][areaIndexOffset + pitch / 4 + i] =
+        mixedReg.raw[i];
 
   // test the test, to be sure the union is not going wrong
   BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 0] == 1);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 1] == 11 + 0x10000 * 22);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 9] == 222);
-  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 12] == 555);
+  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 1] ==
+              11 + 0x10000 * 22);
+  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 9] ==
+              222);
+  BOOST_CHECK(device->_barContents[0xD][areaIndexOffset + pitch / 4 + 12] ==
+              555);
 
   // fill the rest of the register (has 4096 samples per channel)
-  for(int i = 2; i < 4096; i++) {
+  for (int i = 2; i < 4096; i++) {
     mixedReg.cooked.r0 = i + 0;
     mixedReg.cooked.r1 = i + 1;
     mixedReg.cooked.r2 = i + 2;
@@ -251,7 +273,9 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
     mixedReg.cooked.r13 = i + 13;
     mixedReg.cooked.r14 = i + 14;
     mixedReg.cooked.r15 = i + 15;
-    for(int k = 0; k < 13; k++) device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k] = mixedReg.raw[k];
+    for (int k = 0; k < 13; k++)
+      device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k] =
+          mixedReg.raw[k];
   }
 
   // test reading by [][] operator
@@ -289,26 +313,25 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(device->someMuxedRegister[14][1] == 444);
   BOOST_CHECK(device->someMuxedRegister[15][1] == 555);
 
-  for(int i = 2; i < 65536 / 16; i++) {
-    for(int k = 0; k < 16; k++) {
+  for (int i = 2; i < 65536 / 16; i++) {
+    for (int k = 0; k < 16; k++) {
       int expectedValue = i + k;
-      void* ptr = (void*)&expectedValue;
-      if(k == 1 || k == 2 || k == 6) { // 16 bit
-        expectedValue = *(reinterpret_cast<int16_t*>(ptr));
-      }
-      else if(k == 3) { // 8 bit
-        expectedValue = *(reinterpret_cast<int8_t*>(ptr));
-      }
-      else if(k == 4) { // 1 bit
+      void *ptr = (void *)&expectedValue;
+      if (k == 1 || k == 2 || k == 6) { // 16 bit
+        expectedValue = *(reinterpret_cast<int16_t *>(ptr));
+      } else if (k == 3) { // 8 bit
+        expectedValue = *(reinterpret_cast<int8_t *>(ptr));
+      } else if (k == 4) { // 1 bit
         expectedValue = expectedValue & 0x1;
-      }
-      else if(k == 7) { // 24 bit
+      } else if (k == 7) { // 24 bit
         expectedValue = expectedValue & 0xFFFFFF;
       }
       std::stringstream message;
-      message << "someMuxedRegister[" << k << "][" << i << "] == " << device->someMuxedRegister[k][i] << " but "
+      message << "someMuxedRegister[" << k << "][" << i
+              << "] == " << device->someMuxedRegister[k][i] << " but "
               << expectedValue << " expected.";
-      BOOST_CHECK_MESSAGE(device->someMuxedRegister[k][i] == expectedValue, message.str());
+      BOOST_CHECK_MESSAGE(device->someMuxedRegister[k][i] == expectedValue,
+                          message.str());
     }
   }
 
@@ -330,13 +353,14 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   device->someMuxedRegister[14][0] = 5555;
   device->someMuxedRegister[15][0] = 6666;
 
-  for(int i = 1; i < 65536 / 16; i++) {
-    for(int k = 0; k < 16; k++) {
+  for (int i = 1; i < 65536 / 16; i++) {
+    for (int k = 0; k < 16; k++) {
       device->someMuxedRegister[k][i] = 10 * k + i;
     }
   }
 
-  for(int k = 0; k < 13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + k];
+  for (int k = 0; k < 13; k++)
+    mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + k];
   BOOST_CHECK(mixedReg.cooked.r0 == 666);
   BOOST_CHECK(mixedReg.cooked.r1 == 999);
   BOOST_CHECK(mixedReg.cooked.r2 == 222);
@@ -354,8 +378,10 @@ void DummyRegisterTest::testMuxedRegisterAccessor() {
   BOOST_CHECK(mixedReg.cooked.r14 == 5555);
   BOOST_CHECK(mixedReg.cooked.r15 == 6666);
 
-  for(int i = 1; i < 65536 / 16; i++) {
-    for(int k = 0; k < 13; k++) mixedReg.raw[k] = device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k];
+  for (int i = 1; i < 65536 / 16; i++) {
+    for (int k = 0; k < 13; k++)
+      mixedReg.raw[k] =
+          device->_barContents[0xD][areaIndexOffset + i * (pitch / 4) + k];
     BOOST_CHECK(mixedReg.cooked.r0 == 10 * 0 + i);
     BOOST_CHECK(mixedReg.cooked.r1 == std::min(10 * 1 + i, 32767));
     BOOST_CHECK(mixedReg.cooked.r2 == std::min(10 * 2 + i, 32767));
@@ -399,12 +425,18 @@ void DummyRegisterTest::testDummyRegisterAddressChecker() {
 
   // check via DummyRegisterAccessor
   device->_registerMapping->getRegisterInfo("SOME_REGISTER", info, "APP0");
-  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address, 1) == true);
-  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address, 40) == true);
-  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address, 41) == false);
-  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar + 1, info.address, 1) == false);
-  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address + 39, 1) == true);
-  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address + 40, 1) == false);
+  BOOST_CHECK(
+      device->someRegister.isAddressInRange(info.bar, info.address, 1) == true);
+  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address,
+                                                    40) == true);
+  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address,
+                                                    41) == false);
+  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar + 1, info.address,
+                                                    1) == false);
+  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address + 39,
+                                                    1) == true);
+  BOOST_CHECK(device->someRegister.isAddressInRange(info.bar, info.address + 40,
+                                                    1) == false);
 
   // close the device
   device->close();

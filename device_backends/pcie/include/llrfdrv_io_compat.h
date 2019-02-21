@@ -8,9 +8,10 @@
 #define LLRFDRV_IO_COMPAT_H
 
 /*
- * Put an extern "C" declaration when compiling with C++. Like this the structs can be used from the included
- * header files. Having this declatation in the header saves extern "C" declaration in all C++ files using
- * this header (avoid code duplication and frogetting the declaration).
+ * Put an extern "C" declaration when compiling with C++. Like this the structs
+ * can be used from the included header files. Having this declatation in the
+ * header saves extern "C" declaration in all C++ files using this header (avoid
+ * code duplication and frogetting the declaration).
  */
 #ifdef __cplusplus
 extern "C" {

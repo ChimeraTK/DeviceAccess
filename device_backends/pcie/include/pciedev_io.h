@@ -1,8 +1,8 @@
 #ifndef _PCIEDEV_IO_H
 #define _PCIEDEV_IO_H
 
-#include <linux/types.h>
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
+#include <linux/types.h>
 
 #define RW_D8 0x0
 #define RW_D16 0x1
@@ -49,8 +49,10 @@ struct device_ioctrl_dma {
   u_int dma_size;
   u_int dma_cmd;       // value to DMA Control register
   u_int dma_pattern;   // DMA BAR num
-  u_int dma_reserved1; // DMA Control register offset (31:16) DMA Length register offset (15:0)
-  u_int dma_reserved2; // DMA Read/Write Source register offset (31:16) Destination register offset (15:0)
+  u_int dma_reserved1; // DMA Control register offset (31:16) DMA Length
+                       // register offset (15:0)
+  u_int dma_reserved2; // DMA Read/Write Source register offset (31:16)
+                       // Destination register offset (15:0)
 };
 typedef struct device_ioctrl_dma device_ioctrl_dma;
 

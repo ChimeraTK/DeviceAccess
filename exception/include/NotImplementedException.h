@@ -6,10 +6,10 @@
 
 namespace ChimeraTK {
 
-  /**
-   *  Compatibility typedefs for the old exception classes
-   */
-  typedef ChimeraTK::runtime_error NotImplementedException;
+/**
+ *  Compatibility typedefs for the old exception classes
+ */
+typedef ChimeraTK::runtime_error NotImplementedException;
 
 } // namespace ChimeraTK
 

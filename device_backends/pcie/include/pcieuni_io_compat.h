@@ -1,15 +1,18 @@
 #ifndef _PCIEUNI_IO_COMPAT_H
 #define _PCIEUNI_IO_COMPAT_H
 
-/** Information about the offsets of the bars in the address space of the character device.
+/** Information about the offsets of the bars in the address space of the
+ * character device.
  */
-static const loff_t PCIEUNI_BAR_OFFSETS[6] = {0LL, (1LL) << 60, (2LL) << 60, (3LL) << 60, (4LL) << 60, (5LL) << 60};
+static const loff_t PCIEUNI_BAR_OFFSETS[6] = {
+    0LL, (1LL) << 60, (2LL) << 60, (3LL) << 60, (4LL) << 60, (5LL) << 60};
 
 /** Information about the bar sizes. It is retrieved via IOCTL.
  */
 typedef struct _pcieuni_ioctl_bar_sizes {
   size_t barSizes[6]; /** Sizes of bar 0 to 5*/
-  size_t dmaAreaSize; /** Size of the address range which can transferred via DMA.*/
+  size_t dmaAreaSize; /** Size of the address range which can transferred via
+                         DMA.*/
 } pcieuni_ioctl_bar_sizes;
 
 /* Use 'U' like pcieUni as magic number */
