@@ -29,7 +29,7 @@ namespace ChimeraTK {
 
       /** Construct a notification from another notification. After this, this notification will contain the state
        *  and information of the other notification and the other notification is going to be invalid. */
-      Notification(Notification &&other);
+      Notification(Notification&& other);
 
       /** Desructor. Calls accept() if this notification is valid and has not been accepted yet. */
       ~Notification();
@@ -38,7 +38,7 @@ namespace ChimeraTK {
        *  and information of the other notification and the other notification is going to be invalid. If this
        *  notification was valid and had not been accepted before, accept() is called before assigning the data from
        *  the other notification. */
-      Notification &operator=(Notification &&other);
+      Notification& operator=(Notification&& other);
 
       /** Accept the notification. This will complete the read operation of the transfer element for which this
        *  notification has been generated. After accepting a notification, this notification object becomes invalid.
@@ -73,11 +73,11 @@ namespace ChimeraTK {
      private:
       /** Private constructor used by ReadAnyGroup::waitAny(). This is the only constructor that can construct a new,
        *  valid notification. */
-      Notification(TransferElementAbstractor const &transferElement, std::size_t index);
+      Notification(TransferElementAbstractor const& transferElement, std::size_t index);
 
       /** Notifications cannot be copied because each notification can only be accepted once. */
-      Notification(const Notification &) = delete;
-      Notification &operator=(const Notification &) = delete;
+      Notification(const Notification&) = delete;
+      Notification& operator=(const Notification&) = delete;
 
       // Flag indicating whether accept() has been called.
       bool accepted{false};
@@ -202,8 +202,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline ReadAnyGroup::Notification::Notification(Notification &&other) : accepted(other.accepted), index(other.index),
-      transferElement(other.transferElement), valid(other.valid) {
+  inline ReadAnyGroup::Notification::Notification(Notification&& other)
+  : accepted(other.accepted), index(other.index), transferElement(other.transferElement), valid(other.valid) {
     other.valid = false;
     other.transferElement = TransferElementAbstractor();
   }
@@ -213,17 +213,17 @@ namespace ChimeraTK {
   inline ReadAnyGroup::Notification::~Notification() {
     // It is important that each received notification is consumed. This means that we have to accept a notification
     // before we can destroy it.
-    if (this->valid && !this->accepted) {
+    if(this->valid && !this->accepted) {
       this->accept();
     }
   }
 
   /********************************************************************************************************************/
 
-  inline ReadAnyGroup::Notification &ReadAnyGroup::Notification::operator=(Notification &&other) {
+  inline ReadAnyGroup::Notification& ReadAnyGroup::Notification::operator=(Notification&& other) {
     // It is important that each received notification is consumed. This means that we have to accept this notification
     // before we can overwrite it with another one.
-    if (this->valid && !this->accepted) {
+    if(this->valid && !this->accepted) {
       this->accept();
     }
     this->accepted = other.accepted;
@@ -238,10 +238,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline bool ReadAnyGroup::Notification::accept() {
-    if (!this->valid) {
+    if(!this->valid) {
       throw std::logic_error("This notification object is invalid.");
     }
-    if (this->accepted) {
+    if(this->accepted) {
       throw std::logic_error("This notification has already been accepted.");
     }
     this->accepted = true;
@@ -259,7 +259,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline TransferElementID ReadAnyGroup::Notification::getId() {
-    if (!this->valid) {
+    if(!this->valid) {
       throw std::logic_error("This notification object is invalid.");
     }
     return this->transferElement.getId();
@@ -268,7 +268,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline std::size_t ReadAnyGroup::Notification::getIndex() {
-    if (!this->valid) {
+    if(!this->valid) {
       throw std::logic_error("This notification object is invalid.");
     }
     return this->index;
@@ -277,7 +277,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline TransferElementAbstractor ReadAnyGroup::Notification::getTransferElement() {
-    if (!this->valid) {
+    if(!this->valid) {
       throw std::logic_error("This notification object is invalid.");
     }
     return this->transferElement;
@@ -285,15 +285,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline bool ReadAnyGroup::Notification::isReady() {
-    return this->valid && !this->accepted;
-  }
+  inline bool ReadAnyGroup::Notification::isReady() { return this->valid && !this->accepted; }
 
   /********************************************************************************************************************/
 
-  inline ReadAnyGroup::Notification::Notification(TransferElementAbstractor const &transferElement, std::size_t index) :
-      index(index), transferElement(transferElement), valid(true) {
-  }
+  inline ReadAnyGroup::Notification::Notification(TransferElementAbstractor const& transferElement_, std::size_t index_)
+  : index(index_), transferElement(transferElement_), valid(true) {}
 
   /********************************************************************************************************************/
 
@@ -368,7 +365,7 @@ namespace ChimeraTK {
     Notification notification;
     do {
       notification = this->waitAny();
-    } while (!notification.accept());
+    } while(!notification.accept());
 
     this->processPolled();
 
