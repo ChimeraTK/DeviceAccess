@@ -3,12 +3,13 @@
 
 namespace ChimeraTK {
 
-  template<typename T>
-  void VersionNumberUpdatingRegisterDecorator<T>::doPostRead() {
-    NDRegisterAccessorDecorator<T,T>::doPostRead();
-    _owner->setCurrentVersionNumber(this->getVersionNumber());
-  }
-
+template <typename T>
+void VersionNumberUpdatingRegisterDecorator<T>::doPostRead() {
+  NDRegisterAccessorDecorator<T, T>::doPostRead();
+  _owner->setCurrentVersionNumber(this->getVersionNumber());
 }
 
-INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES( ChimeraTK::VersionNumberUpdatingRegisterDecorator );
+} // namespace ChimeraTK
+
+INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+    ChimeraTK::VersionNumberUpdatingRegisterDecorator);

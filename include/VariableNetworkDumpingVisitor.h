@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Visitor.h"
 #include "VariableNetworkNodeDumpingVisitor.h"
+#include "Visitor.h"
 
 #include <string>
 
@@ -15,15 +15,17 @@ class VariableNetwork;
  *
  * This class provides a textual dump of the VariableNetwork
  */
-class VariableNetworkDumpingVisitor : public Visitor<VariableNetwork>, public VariableNetworkNodeDumpingVisitor {
+class VariableNetworkDumpingVisitor : public Visitor<VariableNetwork>,
+                                      public VariableNetworkNodeDumpingVisitor {
 public:
-    VariableNetworkDumpingVisitor(const std::string &prefix, std::ostream &stream);
-    virtual ~VariableNetworkDumpingVisitor() {}
-    void dispatch(const VariableNetwork& t);
-    using Visitor<VariableNetworkNode>::dispatch;
+  VariableNetworkDumpingVisitor(const std::string &prefix,
+                                std::ostream &stream);
+  virtual ~VariableNetworkDumpingVisitor() {}
+  void dispatch(const VariableNetwork &t);
+  using Visitor<VariableNetworkNode>::dispatch;
 
 private:
-    std::string _prefix;
+  std::string _prefix;
 };
 
 } // namespace ChimeraTK

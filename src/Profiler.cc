@@ -2,8 +2,8 @@
 
 namespace ChimeraTK {
 
-  std::list<Profiler::ThreadData*> Profiler::threadDataList;
+std::list<Profiler::ThreadData *> Profiler::threadDataList;
 
-  std::mutex Profiler::threadDataList_mutex;
+std::mutex Profiler::threadDataList_mutex;
 
 } /* namespace ChimeraTK */
