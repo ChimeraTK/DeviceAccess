@@ -169,7 +169,6 @@ void Application::run() {
     std::cout << module->getFullDescription() << std::endl;
     module->run();
   }
-
   for(auto& deviceModule : deviceModuleList) {
     deviceModule->run();
   }
@@ -197,7 +196,6 @@ void Application::shutdown() {
   for(auto& deviceModule : deviceModuleList) {
     deviceModule->terminate();
   }
-
   ApplicationBase::shutdown();
 }
 /*********************************************************************************************************************/
@@ -474,7 +472,6 @@ void Application::makeConnections() {
   for(auto& devModule : deviceModuleList) {
     devModule->defineConnections();
   }
-
   // finalise connections: decide still-undecided details, in particular for control-system and device varibales, which
   // get created "on the fly".
   finaliseNetworks();
@@ -509,21 +506,11 @@ void Application::finaliseNetworks() {
       if(consumer.getDirection().withReturn) ++nBidir;
     }
     if(nBidir != 1) continue; // only if there is exactly one node with return channel we need to guess its peer
-    size_t nCSconsumers = 0;
-    for(auto& consumer : network.getConsumingNodes()) {
-      if(consumer.getType() == NodeType::ControlSystem) ++nCSconsumers;
+    if(network.getFeedingNode().getType() != NodeType::ControlSystem) {
+      // only a feeding control system variable can be made bidirectional
+      continue;
     }
-    if(network.getFeedingNode().getType() == NodeType::ControlSystem) {
-      network.getFeedingNode().setDirection({VariableDirection::feeding, true});
-    }
-    else if(nCSconsumers == 1) {
-      for(auto& consumer : network.getConsumingNodes()) {
-        if(consumer.getType() == NodeType::ControlSystem) {
-          consumer.setDirection({VariableDirection::consuming, true});
-          break;
-        }
-      }
-    }
+    network.getFeedingNode().setDirection({VariableDirection::feeding, true});
   }
 }
 
