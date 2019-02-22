@@ -16,49 +16,45 @@
 
 namespace ChimeraTK {
 
-class ApplicationModule;
+  class ApplicationModule;
 
-class VariableGroup : public ModuleImpl {
+  class VariableGroup : public ModuleImpl {
+   public:
+    /** Constructor: register the VariableGroup with its owner. If
+     * eliminateHierarchy is true, the hierarchy level introduced by this group
+     * will be eliminated from the "dynamic" data model (see
+     *  EntityOwner::setEliminateHierarchy()). The tags given as the last argument
+     * are added to all variables in this group recursively (see
+     * EntityOwner::addTag()).
+     *
+     *  Note: VariableGroups may only be owned by ApplicationModules or other
+     * VariableGroups. */
+    VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+        bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {});
 
-public:
-  /** Constructor: register the VariableGroup with its owner. If
-   * eliminateHierarchy is true, the hierarchy level introduced by this group
-   * will be eliminated from the "dynamic" data model (see
-   *  EntityOwner::setEliminateHierarchy()). The tags given as the last argument
-   * are added to all variables in this group recursively (see
-   * EntityOwner::addTag()).
-   *
-   *  Note: VariableGroups may only be owned by ApplicationModules or other
-   * VariableGroups. */
-  VariableGroup(EntityOwner *owner, const std::string &name,
-                const std::string &description, bool eliminateHierarchy = false,
-                const std::unordered_set<std::string> &tags = {});
+    /** Default constructor: Allows late initialisation of VariableGroups (e.g.
+     * when creating arrays of VariableGroups).
+     *
+     *  This construtor also has to be here to mitigate a bug in gcc. It is needed
+     * to allow constructor inheritance of modules owning other modules. This
+     * constructor will not actually be called then. See this bug report:
+     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
+    VariableGroup() {}
 
-  /** Default constructor: Allows late initialisation of VariableGroups (e.g.
-   * when creating arrays of VariableGroups).
-   *
-   *  This construtor also has to be here to mitigate a bug in gcc. It is needed
-   * to allow constructor inheritance of modules owning other modules. This
-   * constructor will not actually be called then. See this bug report:
-   * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-  VariableGroup() {}
+    /** Destructor */
+    virtual ~VariableGroup(){};
 
-  /** Destructor */
-  virtual ~VariableGroup(){};
+    /** Move constructor */
+    VariableGroup(VariableGroup&& other) { operator=(std::move(other)); }
 
-  /** Move constructor */
-  VariableGroup(VariableGroup &&other) { operator=(std::move(other)); }
+    /** Move assignment */
+    VariableGroup& operator=(VariableGroup&& other) {
+      ModuleImpl::operator=(std::move(other));
+      return *this;
+    }
 
-  /** Move assignment */
-  VariableGroup &operator=(VariableGroup &&other) {
-    ModuleImpl::operator=(std::move(other));
-    return *this;
-  }
-
-  ModuleType getModuleType() const override {
-    return ModuleType::VariableGroup;
-  }
-};
+    ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
+  };
 
 } /* namespace ChimeraTK */
 

@@ -21,28 +21,24 @@ using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
-                         float, double>
-    test_types;
+typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
 
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                              \
-  {                                                                            \
-    std::chrono::steady_clock::time_point t0 =                                 \
-        std::chrono::steady_clock::now();                                      \
-    while (!(condition)) {                                                     \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) >         \
-                             std::chrono::milliseconds(maxMilliseconds);       \
-      BOOST_CHECK(!timeout_reached);                                           \
-      if (timeout_reached)                                                     \
-        break;                                                                 \
-      usleep(1000);                                                            \
-    }                                                                          \
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(!(condition)) {                                                                                              \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK(!timeout_reached);                                                                                   \
+      if(timeout_reached) break;                                                                                       \
+      usleep(1000);                                                                                                    \
+    }                                                                                                                  \
   }
 
 /*********************************************************************************************************************/
 /* dummy application */
 
-template <typename T> struct TestApplication : public ctk::Application {
+template<typename T>
+struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {
     ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   }
@@ -73,16 +69,15 @@ struct TestApplicationConnectTo : ctk::Application {
   ctk::DeviceModule dev{"(dummy?map=test3.map)"};
   ctk::ControlSystemModule cs;
 };
-TestApplicationConnectTo::~TestApplicationConnectTo() { shutdown(); }
+TestApplicationConnectTo::~TestApplicationConnectTo() {
+  shutdown();
+}
 
 /*********************************************************************************************************************/
 
-template <typename T, typename LAMBDA>
-void testDirectRegister(ctk::TestFacility &test,
-                        ChimeraTK::ScalarRegisterAccessor<T> sender,
-                        ChimeraTK::ScalarRegisterAccessor<T> receiver,
-                        LAMBDA trigger, bool testMinMax = true) {
-
+template<typename T, typename LAMBDA>
+void testDirectRegister(ctk::TestFacility& test, ChimeraTK::ScalarRegisterAccessor<T> sender,
+    ChimeraTK::ScalarRegisterAccessor<T> receiver, LAMBDA trigger, bool testMinMax = true) {
   sender = 42;
   sender.write();
   trigger();
@@ -90,7 +85,7 @@ void testDirectRegister(ctk::TestFacility &test,
   receiver.read();
   BOOST_CHECK_EQUAL(receiver, 42);
 
-  if (std::numeric_limits<T>::is_signed) {
+  if(std::numeric_limits<T>::is_signed) {
     sender = -120;
     sender.write();
     trigger();
@@ -99,7 +94,7 @@ void testDirectRegister(ctk::TestFacility &test,
     BOOST_CHECK_EQUAL(receiver, -120);
   }
 
-  if (testMinMax) {
+  if(testMinMax) {
     sender = std::numeric_limits<T>::max();
     sender.write();
     trigger();
@@ -165,8 +160,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator") >>
-      app.dev("/MyModule/readBack");
+  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator") >> app.dev("/MyModule/readBack");
   app.initialise();
   app.run();
 
@@ -200,23 +194,17 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   TestApplicationConnectTo app;
 
   ctk::TestFacility test;
-  auto devActuator =
-      dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
-  auto devReadback =
-      dev.getScalarRegisterAccessor<int32_t>("/MyModule/readBack");
+  auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
+  auto devReadback = dev.getScalarRegisterAccessor<int32_t>("/MyModule/readBack");
   auto devint32 = dev.getScalarRegisterAccessor<int32_t>("/Integers/signed32");
-  auto devuint32 =
-      dev.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
+  auto devuint32 = dev.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
   auto devint16 = dev.getScalarRegisterAccessor<int16_t>("/Integers/signed16");
-  auto devuint16 =
-      dev.getScalarRegisterAccessor<uint16_t>("/Integers/unsigned16");
+  auto devuint16 = dev.getScalarRegisterAccessor<uint16_t>("/Integers/unsigned16");
   auto devint8 = dev.getScalarRegisterAccessor<int8_t>("/Integers/signed8");
   auto devuint8 = dev.getScalarRegisterAccessor<uint8_t>("/Integers/unsigned8");
   auto devfloat = dev.getScalarRegisterAccessor<double>("/FixedPoint/value");
-  auto devDeep1 = dev.getScalarRegisterAccessor<int32_t>(
-      "/Deep/Hierarchies/Need/Tests/As/well");
-  auto devDeep2 = dev.getScalarRegisterAccessor<int32_t>(
-      "/Deep/Hierarchies/Need/Another/test");
+  auto devDeep1 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
+  auto devDeep2 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Another/test");
   auto csActuator = test.getScalar<int32_t>("/MyModule/actuator");
   auto csReadback = test.getScalar<int32_t>("/MyModule/readBack");
   auto csint32 = test.getScalar<int32_t>("/Integers/signed32");
@@ -226,14 +214,12 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   auto csint8 = test.getScalar<int8_t>("/Integers/signed8");
   auto csuint8 = test.getScalar<uint8_t>("/Integers/unsigned8");
   auto csfloat = test.getScalar<double>("/FixedPoint/value");
-  auto csDeep1 =
-      test.getScalar<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
+  auto csDeep1 = test.getScalar<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
   auto csDeep2 = test.getScalar<int32_t>("/Deep/Hierarchies/Need/Another/test");
   test.runApplication();
 
   testDirectRegister(test, csActuator, devActuator, [] {});
-  testDirectRegister(test, devReadback, csReadback,
-                     [&] { app.trigger.sendTrigger(); });
+  testDirectRegister(test, devReadback, csReadback, [&] { app.trigger.sendTrigger(); });
   testDirectRegister(test, csint32, devint32, [] {});
   testDirectRegister(test, csuint32, devuint32, [] {});
   testDirectRegister(test, csint16, devint16, [] {});

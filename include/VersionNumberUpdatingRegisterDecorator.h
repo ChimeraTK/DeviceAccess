@@ -7,26 +7,22 @@
 
 namespace ChimeraTK {
 
-class EntityOwner;
+  class EntityOwner;
 
-/**
- *  NDRegisterAccessorDecorator which sets the current version number of the
- * owning ApplicationModule in postRead
- */
-template <typename T>
-struct VersionNumberUpdatingRegisterDecorator
-    : NDRegisterAccessorDecorator<T, T> {
+  /**
+   *  NDRegisterAccessorDecorator which sets the current version number of the
+   * owning ApplicationModule in postRead
+   */
+  template<typename T>
+  struct VersionNumberUpdatingRegisterDecorator : NDRegisterAccessorDecorator<T, T> {
+    VersionNumberUpdatingRegisterDecorator(const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner)
+    : NDRegisterAccessorDecorator<T, T>(target), _owner(owner) {}
 
-  VersionNumberUpdatingRegisterDecorator(
-      const boost::shared_ptr<NDRegisterAccessor<T>> &target,
-      EntityOwner *owner)
-      : NDRegisterAccessorDecorator<T, T>(target), _owner(owner) {}
+    void doPostRead() override;
 
-  void doPostRead() override;
-
-protected:
-  EntityOwner *_owner;
-};
+   protected:
+    EntityOwner* _owner;
+  };
 
 } /* namespace ChimeraTK */
 

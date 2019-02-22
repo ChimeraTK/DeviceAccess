@@ -112,149 +112,139 @@ namespace ctk = ChimeraTK;
 
 namespace logging {
 
-/** Pair of message and messageLevel */
-using Message =
-    std::pair<ctk::ScalarPushInput<std::string>, ctk::ScalarPushInput<uint>>;
+  /** Pair of message and messageLevel */
+  using Message = std::pair<ctk::ScalarPushInput<std::string>, ctk::ScalarPushInput<uint>>;
 
-/** Define available logging levels. */
-enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
+  /** Define available logging levels. */
+  enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
 
-/** Define stream operator to use the LogLevel in streams, e.g. std::cout */
-std::ostream &operator<<(std::ostream &os, const LogLevel &level);
+  /** Define stream operator to use the LogLevel in streams, e.g. std::cout */
+  std::ostream& operator<<(std::ostream& os, const LogLevel& level);
 
-/** Construct a sting containing the current time. */
-std::string getTime();
+  /** Construct a sting containing the current time. */
+  std::string getTime();
 
-/**
- * \brief Class used to send messages in a convenient way to the LoggingModule.
- *
- * In principle this class only adds two output variables and provides a simple
- * method to fill these variables. They are supposed to be connected to the
- * LoggingModule via LoggingModule::addSource. If sendMessage is used before
- * chimeraTK process variables are initialized an internal buffer is used to
- * store those messages. Once the process variables are initialized the messages
- * from the buffer are send. \attention This only happens once a message is send
- * after chimeraTK process variables are initialized! In other words if no
- * message is send in the mainLoop messages from defineConnections will never be
- * shown.
- */
-class Logger {
-private:
-  std::queue<std::pair<std::string, logging::LogLevel>> msg_buffer;
-
-public:
   /**
-   * \brief Default constructor: Allows late initialization of modules (e.g.
-   * when creating arrays of modules).
+   * \brief Class used to send messages in a convenient way to the LoggingModule.
    *
-   *  This constructor also has to be here to mitigate a bug in gcc. It is
-   * needed to allow constructor inheritance of modules owning other modules.
-   * This constructor will not actually be called then. See this bug report:
-   * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-  Logger(){};
+   * In principle this class only adds two output variables and provides a simple
+   * method to fill these variables. They are supposed to be connected to the
+   * LoggingModule via LoggingModule::addSource. If sendMessage is used before
+   * chimeraTK process variables are initialized an internal buffer is used to
+   * store those messages. Once the process variables are initialized the messages
+   * from the buffer are send. \attention This only happens once a message is send
+   * after chimeraTK process variables are initialized! In other words if no
+   * message is send in the mainLoop messages from defineConnections will never be
+   * shown.
+   */
+  class Logger {
+   private:
+    std::queue<std::pair<std::string, logging::LogLevel>> msg_buffer;
+
+   public:
+    /**
+     * \brief Default constructor: Allows late initialization of modules (e.g.
+     * when creating arrays of modules).
+     *
+     *  This constructor also has to be here to mitigate a bug in gcc. It is
+     * needed to allow constructor inheritance of modules owning other modules.
+     * This constructor will not actually be called then. See this bug report:
+     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
+    Logger(){};
+
+    /**
+     * \brief Constructor to be used.
+     *
+     * \param module The owning module that is using the Logger. It will appear as
+     * sender in the LoggingModule, which is receiving messages from the Logger.
+     */
+    Logger(ctk::Module* module);
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<std::string> message;
+
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<uint> messageLevel;
+
+    /**
+     * \brief Send a message, which means to update the message and messageLevel
+     * member variables.
+     *
+     */
+    void sendMessage(const std::string& msg, const logging::LogLevel& level);
+  };
 
   /**
-   * \brief Constructor to be used.
+   * \brief Module used to handle logging messages.
    *
-   * \param module The owning module that is using the Logger. It will appear as
-   * sender in the LoggingModule, which is receiving messages from the Logger.
-   */
-  Logger(ctk::Module *module);
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<std::string> message;
-
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<uint> messageLevel;
-
-  /**
-   * \brief Send a message, which means to update the message and messageLevel
-   * member variables.
+   * A ChimeraTK module is producing messages, that are send to the LoggingModule
+   * via the \c message variable. The message is then put into the logfile ring
+   * buffer and published in the \c LogFileTail. In addidtion the message can be
+   * put to an ostream. Available streams are:
+   * - file stream
+   * - cout/cerr
    *
+   * You can control which stream is used by setting the targetStream varibale:
+   * 0: cout/cerr and logfile
+   * 1: logfile
+   * 2: cout/cerr
+   * 3: none
+   *
+   * The logfile is given by the client using the logFile variable.
    */
-  void sendMessage(const std::string &msg, const logging::LogLevel &level);
-};
+  class LoggingModule : public ctk::ApplicationModule {
+   private:
+    std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode> getAccessorPair(const std::string& sender);
 
-/**
- * \brief Module used to handle logging messages.
- *
- * A ChimeraTK module is producing messages, that are send to the LoggingModule
- * via the \c message variable. The message is then put into the logfile ring
- * buffer and published in the \c LogFileTail. In addidtion the message can be
- * put to an ostream. Available streams are:
- * - file stream
- * - cout/cerr
- *
- * You can control which stream is used by setting the targetStream varibale:
- * 0: cout/cerr and logfile
- * 1: logfile
- * 2: cout/cerr
- * 3: none
- *
- * The logfile is given by the client using the logFile variable.
- */
-class LoggingModule : public ctk::ApplicationModule {
-private:
-  std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode>
-  getAccessorPair(const std::string &sender);
+    /** Map key is the feeding module */
+    std::map<std::string, Message> msg_list;
 
-  /** Map key is the feeding module */
-  std::map<std::string, Message> msg_list;
+    /** Update message or messageLevel from the sending module
+     * Basically the first element read by readAny() could be either the message
+     * or the messageLevel. Here the element not updated by readSAny is also read,
+     * since both are PushInput variables.
+     */
+    std::map<std::string, Message>::iterator UpdatePair(const ChimeraTK::TransferElementID& id);
 
-  /** Update message or messageLevel from the sending module
-   * Basically the first element read by readAny() could be either the message
-   * or the messageLevel. Here the element not updated by readSAny is also read,
-   * since both are PushInput variables.
-   */
-  std::map<std::string, Message>::iterator
-  UpdatePair(const ChimeraTK::TransferElementID &id);
+    /** Number of messages stored in the tail */
+    size_t messageCounter;
 
-  /** Number of messages stored in the tail */
-  size_t messageCounter;
+    /** Broadcast message to cout/cerr and log file
+     * \param msg The mesage
+     * \param isError If true cerr is used. Else cout is used.
+     */
+    void broadcastMessage(std::string msg, bool isError = false);
 
-  /** Broadcast message to cout/cerr and log file
-   * \param msg The mesage
-   * \param isError If true cerr is used. Else cout is used.
-   */
-  void broadcastMessage(std::string msg, bool isError = false);
+   public:
+    using ctk::ApplicationModule::ApplicationModule;
 
-public:
-  using ctk::ApplicationModule::ApplicationModule;
+    ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
+        "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
+        "(cout/cerr), 3 (none)"};
 
-  ctk::ScalarPollInput<uint> targetStream{
-      this, "targetStream", "",
-      "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
-      "(cout/cerr), 3 (none)"};
+    ctk::ScalarPollInput<std::string> logFile{this, "Logfile", "",
+        "Name of the external logfile. If empty messages are pushed to "
+        "cout/cerr"};
 
-  ctk::ScalarPollInput<std::string> logFile{
-      this, "Logfile", "",
-      "Name of the external logfile. If empty messages are pushed to "
-      "cout/cerr"};
+    ctk::ScalarPollInput<uint> tailLength{
+        this, "maxLength", "", "Maximum number of messages to be shown in the logging stream tail."};
 
-  ctk::ScalarPollInput<uint> tailLength{
-      this, "maxLength", "",
-      "Maximum number of messages to be shown in the logging stream tail."};
+    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "", "Current log level used for messages."};
 
-  ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "",
-                                      "Current log level used for messages."};
+    ctk::ScalarOutput<std::string> logTail{
+        this, "LogTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
 
-  ctk::ScalarOutput<std::string> logTail{this,
-                                         "LogTail",
-                                         "",
-                                         "Tail of the logging stream.",
-                                         {"CS", "PROCESS", getName()}};
+    std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
-  std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
+    /** Add a Module as a source to this DAQ. */
+    void addSource(Logger* logger);
 
-  /** Add a Module as a source to this DAQ. */
-  void addSource(Logger *logger);
+    /**
+     * Application core main loop.
+     */
+    void mainLoop() override;
 
-  /**
-   * Application core main loop.
-   */
-  void mainLoop() override;
-
-  void terminate() override;
-};
+    void terminate() override;
+  };
 
 } // namespace logging
 

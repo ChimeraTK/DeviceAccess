@@ -3,12 +3,12 @@
 #include <string>
 
 namespace ChimeraTK {
-class VariableNetworkNode;
+  class VariableNetworkNode;
 
-namespace detail {
+  namespace detail {
 
-std::string encodeDotNodeName(std::string name);
-std::string nodeName(const VariableNetworkNode &node);
+    std::string encodeDotNodeName(std::string name);
+    std::string nodeName(const VariableNetworkNode& node);
 
-} // namespace detail
+  } // namespace detail
 } // namespace ChimeraTK

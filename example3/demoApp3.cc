@@ -7,8 +7,7 @@ struct ExampleApp : public ctk::Application {
   ExampleApp() : Application("exampleApp") {}
   ~ExampleApp() { shutdown(); }
 
-  ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller",
-                             1000};
+  ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
   ctk::DeviceModule dev{"oven"};
   ctk::ControlSystemModule cs{"Bakery"};

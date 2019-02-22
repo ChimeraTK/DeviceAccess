@@ -5,15 +5,13 @@ namespace ctk = ChimeraTK;
 
 struct Controller : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPollInput<double> sp{
-      this, "temperatureSetpoint", "degC", "Description", {"CS"}};
-  ctk::ScalarPushInput<double> rb{
-      this, "temperatureReadback", "degC", "...", {"DEV", "CS"}};
+  ctk::ScalarPollInput<double> sp{this, "temperatureSetpoint", "degC", "Description", {"CS"}};
+  ctk::ScalarPushInput<double> rb{this, "temperatureReadback", "degC", "...", {"DEV", "CS"}};
   ctk::ScalarOutput<double> cur{this, "heatingCurrent", "mA", "...", {"DEV"}};
 
   void mainLoop() {
     const double gain = 100.0;
-    while (true) {
+    while(true) {
       readAll(); // waits until rb updated, then reads sp
 
       cur = gain * (sp - rb);
@@ -28,8 +26,7 @@ struct ExampleApp : public ctk::Application {
 
   Controller controller{this, "Controller", "The Controller"};
 
-  ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller",
-                             1000};
+  ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
   ctk::DeviceModule heater{"oven", "heater"};
   ctk::ControlSystemModule cs{"Bakery"};

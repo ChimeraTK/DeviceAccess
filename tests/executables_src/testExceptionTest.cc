@@ -40,19 +40,15 @@ struct TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(testThinkOfAName) {
   TestApplication app;
-  boost::shared_ptr<ExceptionDummy> backend =
-      boost::dynamic_pointer_cast<ExceptionDummy>(
-          ChimeraTK::BackendFactory::getInstance().createBackend(
-              "(ExceptionDummy?map=DemoDummy.map)"));
+  boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=DemoDummy.map)"));
 
   app.dev.connectTo(app.cs);
   ctk::TestFacility test;
   app.initialise();
   app.run();
-  auto message = test.getScalar<std::string>(
-      "/Devices/(ExceptionDummy?map=DemoDummy.map)/message");
-  auto status =
-      test.getScalar<int>("/Devices/(ExceptionDummy?map=DemoDummy.map)/status");
+  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=DemoDummy.map)/message");
+  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=DemoDummy.map)/status");
 
   // initially there should be no error set
   message.readLatest();
@@ -68,25 +64,24 @@ BOOST_AUTO_TEST_CASE(testThinkOfAName) {
   try {
     backend->open();
     BOOST_FAIL("Exception expected.");
-  } catch (ChimeraTK::runtime_error &) {
+  }
+  catch(ChimeraTK::runtime_error&) {
   }
 
   // report exception to the DeviceModule: it should try reopening the device
   // but fail
   std::atomic<bool> reportExceptionFinished;
   reportExceptionFinished = false;
-  std::thread reportThread(
-      [&] { // need to launch in background, reportException() blocks
-        app.dev.reportException("Some fancy exception text");
-        reportExceptionFinished = true;
-      });
+  std::thread reportThread([&] { // need to launch in background, reportException() blocks
+    app.dev.reportException("Some fancy exception text");
+    reportExceptionFinished = true;
+  });
 
   // check the error status and that reportException() is still blocking
   sleep(2);
   message.readLatest();
   status.readLatest();
-  BOOST_CHECK_EQUAL(
-      static_cast<std::string>(message),
+  BOOST_CHECK_EQUAL(static_cast<std::string>(message),
       "DummyException: This is a test"); // from the ExceptionDummy
   BOOST_CHECK(status == 1);
   BOOST_CHECK(reportExceptionFinished == false);
