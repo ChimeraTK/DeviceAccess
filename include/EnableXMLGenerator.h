@@ -19,7 +19,7 @@
  * main function is definde here. */
 #ifdef GENERATE_XML
 
-int main(int, char **) {
+int main(int, char**) {
   ChimeraTK::Application::getInstance().generateXML();
   return 0;
 }

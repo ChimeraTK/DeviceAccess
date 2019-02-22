@@ -19,10 +19,10 @@ struct Automation : public ctk::ApplicationModule {
   ctk::ScalarPushInput<int> trigger{this, "trigger", "", "..."};
 
   void mainLoop() {
-    while (true) {
+    while(true) {
       trigger.read();
       opSP.readLatest(); // opSP.read() would be equivalent
-      if (std::abs(opSP - curSP) > 0.01) {
+      if(std::abs(opSP - curSP) > 0.01) {
         curSP += std::max(std::min(opSP - curSP, 0.1), -0.1);
         curSP.write();
       }
@@ -43,23 +43,20 @@ struct TableGeneration : public ctk::ApplicationModule {
   };
   TableParameters tableParameters{this, "tableParameters", "..."};
 
-  ctk::ArrayOutput<int32_t> setpointTable{this, "setpointTable", "bits",
-                                          tableLength, "..."};
-  ctk::ArrayOutput<int32_t> feedforwardTable{this, "feedforwardTable", "bits",
-                                             tableLength, "..."};
+  ctk::ArrayOutput<int32_t> setpointTable{this, "setpointTable", "bits", tableLength, "..."};
+  ctk::ArrayOutput<int32_t> feedforwardTable{this, "feedforwardTable", "bits", tableLength, "..."};
 
   void mainLoop() {
     ctk::ReadAnyGroup tableParametersReadGroup = tableParameters.readAnyGroup();
-    while (true) {
-      tableParametersReadGroup
-          .readAny(); // block until the any table parameter is changed
+    while(true) {
+      tableParametersReadGroup.readAny(); // block until the any table parameter is changed
 
-      for (size_t i = 0; i < tableLength; ++i) {
-        if (i < tableParameters.pulseLength * samplingFrequency) {
+      for(size_t i = 0; i < tableLength; ++i) {
+        if(i < tableParameters.pulseLength * samplingFrequency) {
           setpointTable[i] = tableParameters.setpoint * bitScalingFactor;
-          feedforwardTable[i] =
-              0.5 * tableParameters.setpoint * bitScalingFactor;
-        } else {
+          feedforwardTable[i] = 0.5 * tableParameters.setpoint * bitScalingFactor;
+        }
+        else {
           setpointTable[i] = 0;
           feedforwardTable[i] = 0;
         }
@@ -89,11 +86,9 @@ void ExampleApp::defineConnections() {
   ChimeraTK::setDMapFilePath("dummy.dmap");
 
   cs("setpoint") >> automation.opSP;
-  automation.curSP >> tableGeneration.tableParameters.setpoint >>
-      cs("currentSetpoint");
+  automation.curSP >> tableGeneration.tableParameters.setpoint >> cs("currentSetpoint");
 
-  auto macropulseNr =
-      timer("macropulseNr", typeid(int), 1, ctk::UpdateMode::push);
+  auto macropulseNr = timer("macropulseNr", typeid(int), 1, ctk::UpdateMode::push);
   macropulseNr >> automation.trigger;
 
   cs("pulseLength") >> tableGeneration.tableParameters.pulseLength;
@@ -101,8 +96,7 @@ void ExampleApp::defineConnections() {
   tableGeneration.setpointTable >> dev("setpointTable");
   tableGeneration.feedforwardTable >> dev("feedforwardTable");
 
-  dev("probeSignal", typeid(int), tableLength)[macropulseNr] >>
-      cs("probeSignal");
+  dev("probeSignal", typeid(int), tableLength)[macropulseNr] >> cs("probeSignal");
 
   dumpConnections();
   dumpConnectionGraph();

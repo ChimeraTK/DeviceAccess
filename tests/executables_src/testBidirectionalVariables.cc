@@ -33,16 +33,14 @@ namespace ctk = ChimeraTK;
 struct ModuleA : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInputWB<int> var1{
-      this, "var1", "inches", "A length, for some reason rounded to integer"};
-  ctk::ScalarOutputPushRB<double> var2{this, "var2", "centimeters",
-                                       "Same length converted to centimeters"};
+  ctk::ScalarPushInputWB<int> var1{this, "var1", "inches", "A length, for some reason rounded to integer"};
+  ctk::ScalarOutputPushRB<double> var2{this, "var2", "centimeters", "Same length converted to centimeters"};
 
   void mainLoop() {
     auto group = readAnyGroup();
-    while (true) {
+    while(true) {
       auto var = group.readAny();
-      if (var == var2.getId()) {
+      if(var == var2.getId()) {
         var1 = std::floor(var2 / 2.54);
         var1.write();
       }
@@ -58,26 +56,22 @@ struct ModuleA : public ctk::ApplicationModule {
 struct ModuleB : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInputWB<double> var2{
-      this, "var2", "centimeters",
-      "Some length, confined to a configuratble range"};
-  ctk::ScalarPushInput<double> max{this, "max", "centimeters",
-                                   "Maximum length"};
-  ctk::ScalarOutput<double> var3{this, "var3", "centimeters",
-                                 "The limited length"};
+  ctk::ScalarPushInputWB<double> var2{this, "var2", "centimeters", "Some length, confined to a configuratble range"};
+  ctk::ScalarPushInput<double> max{this, "max", "centimeters", "Maximum length"};
+  ctk::ScalarOutput<double> var3{this, "var3", "centimeters", "The limited length"};
 
   void mainLoop() {
     auto group = readAnyGroup();
-    while (true) {
+    while(true) {
       auto var = group.readAny();
       bool write = var == var2.getId();
-      if (var2 > max) {
+      if(var2 > max) {
         var2 = static_cast<double>(max);
         var2.write();
         write = true;
       }
-      if (write) { // write only if var2 was received or the value was changed
-                   // due to a reduced limit
+      if(write) { // write only if var2 was received or the value was changed
+                  // due to a reduced limit
         var3 = static_cast<double>(var2);
         var3.write();
       }
@@ -88,7 +82,6 @@ struct ModuleB : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 
 struct TestApplication : public ctk::Application {
-
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
@@ -169,9 +162,7 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
   // to the control system as well
   app.a.connectTo(app.cs);
   app.b.connectTo(app.cs);
-  app.a.var1 >>
-      app.cs(
-          "var1_copied"); // add a ThreadedFanOut with return channel as well...
+  app.a.var1 >> app.cs("var1_copied"); // add a ThreadedFanOut with return channel as well...
   ctk::TestFacility test;
   app.initialise();
   app.run();
@@ -197,8 +188,7 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
   BOOST_CHECK_EQUAL(static_cast<int>(var1_copied), 49);
   BOOST_CHECK_CLOSE(static_cast<double>(var2), 49 * 2.54, 0.001);
   BOOST_CHECK_CLOSE(static_cast<double>(var3), 49 * 2.54, 0.001);
-  BOOST_CHECK(var1.readNonBlocking() ==
-              false); // nothing was sent through the return channel
+  BOOST_CHECK(var1.readNonBlocking() == false); // nothing was sent through the return channel
   BOOST_CHECK(var1_copied.readLatest() == false);
   BOOST_CHECK(var2.readNonBlocking() == false);
   BOOST_CHECK(var3.readNonBlocking() == false);
@@ -252,8 +242,7 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
   // Run the following tests a couple of times, as they are testing for the
   // absence of race conditions. This makes it more likely to find failures in a
   // single run of the test
-  for (size_t i = 0; i < 10; ++i) {
-
+  for(size_t i = 0; i < 10; ++i) {
     // feed in some default values (so the tests can be executed multiple times
     // in a row)
     max = 48.5 * 2.54;

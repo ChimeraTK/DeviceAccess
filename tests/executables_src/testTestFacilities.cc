@@ -28,24 +28,19 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                              \
-  {                                                                            \
-    std::chrono::steady_clock::time_point t0 =                                 \
-        std::chrono::steady_clock::now();                                      \
-    while (!(condition)) {                                                     \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) >         \
-                             std::chrono::milliseconds(maxMilliseconds);       \
-      BOOST_CHECK(!timeout_reached);                                           \
-      if (timeout_reached)                                                     \
-        break;                                                                 \
-      usleep(1000);                                                            \
-    }                                                                          \
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(!(condition)) {                                                                                              \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK(!timeout_reached);                                                                                   \
+      if(timeout_reached) break;                                                                                       \
+      usleep(1000);                                                                                                    \
+    }                                                                                                                  \
   }
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
-                         float, double>
-    test_types;
+typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
 
 constexpr char dummySdm[] = "sdm://./dummy=test.map";
 
@@ -53,16 +48,15 @@ constexpr char dummySdm[] = "sdm://./dummy=test.map";
 /* the BlockingReadTestModule blockingly reads its input in the main loop and
  * writes the result to its output */
 
-template <typename T>
+template<typename T>
 struct BlockingReadTestModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<T> someInput{this, "someInput", "cm",
-                                    "This is just some input for testing"};
+  ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
   ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
 
   void mainLoop() {
-    while (true) {
+    while(true) {
       someInput.read();
       T val = someInput;
       someOutput = val;
@@ -77,16 +71,15 @@ struct BlockingReadTestModule : public ctk::ApplicationModule {
 /* the AsyncReadTestModule asynchronously reads its input in the main loop and
  * writes the result to its output */
 
-template <typename T>
+template<typename T>
 struct AsyncReadTestModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<T> someInput{this, "someInput", "cm",
-                                    "This is just some input for testing"};
+  ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
   ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
 
   void mainLoop() {
-    while (true) {
+    while(true) {
       auto future = someInput.readAsync();
       future.wait();
       T val = someInput;
@@ -102,7 +95,8 @@ struct AsyncReadTestModule : public ctk::ApplicationModule {
 /* the ReadAnyTestModule calls readAny on a bunch of inputs and outputs some
  * information on the received data */
 
-template <typename T> struct ReadAnyTestModule : public ctk::ApplicationModule {
+template<typename T>
+struct ReadAnyTestModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
   struct Inputs : public ctk::VariableGroup {
@@ -113,29 +107,31 @@ template <typename T> struct ReadAnyTestModule : public ctk::ApplicationModule {
     ctk::ScalarPushInput<T> v4{this, "v4", "cm", "Input 4 for testing"};
   };
   Inputs inputs{this, "inputs", "A group of inputs"};
-  ctk::ScalarOutput<T> value{this, "value", "cm",
-                             "The last value received from any of the inputs"};
+  ctk::ScalarOutput<T> value{this, "value", "cm", "The last value received from any of the inputs"};
   ctk::ScalarOutput<uint32_t> index{
-      this, "index", "",
-      "The index (1..4) of the input where the last value was received"};
+      this, "index", "", "The index (1..4) of the input where the last value was received"};
 
   void mainLoop() {
     auto group = inputs.readAnyGroup();
-    while (true) {
+    while(true) {
       auto justRead = group.readAny();
-      if (inputs.v1.getId() == justRead) {
+      if(inputs.v1.getId() == justRead) {
         index = 1;
         value = (T)inputs.v1;
-      } else if (inputs.v2.getId() == justRead) {
+      }
+      else if(inputs.v2.getId() == justRead) {
         index = 2;
         value = (T)inputs.v2;
-      } else if (inputs.v3.getId() == justRead) {
+      }
+      else if(inputs.v3.getId() == justRead) {
         index = 3;
         value = (T)inputs.v3;
-      } else if (inputs.v4.getId() == justRead) {
+      }
+      else if(inputs.v4.getId() == justRead) {
         index = 4;
         value = (T)inputs.v4;
-      } else {
+      }
+      else {
         index = 0;
         value = 0;
       }
@@ -151,23 +147,20 @@ template <typename T> struct ReadAnyTestModule : public ctk::ApplicationModule {
 /* the PollingReadModule is designed to test poll-type transfers (even mixed
  * with push-type) */
 
-template <typename T> struct PollingReadModule : public ctk::ApplicationModule {
+template<typename T>
+struct PollingReadModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<T> push{this, "push", "cm", "A push-type input"};
-  ctk::ScalarPushInput<T> push2{this, "push2", "cm",
-                                "A second push-type input"};
+  ctk::ScalarPushInput<T> push2{this, "push2", "cm", "A second push-type input"};
   ctk::ScalarPollInput<T> poll{this, "poll", "cm", "A poll-type input"};
 
-  ctk::ScalarOutput<T> valuePush{this, "valuePush", "cm",
-                                 "The last value received for 'push'"};
-  ctk::ScalarOutput<T> valuePoll{this, "valuePoll", "cm",
-                                 "The last value received for 'poll'"};
+  ctk::ScalarOutput<T> valuePush{this, "valuePush", "cm", "The last value received for 'push'"};
+  ctk::ScalarOutput<T> valuePoll{this, "valuePoll", "cm", "The last value received for 'poll'"};
   ctk::ScalarOutput<int> state{this, "state", "", "State of the test mainLoop"};
 
   void mainLoop() {
-
-    while (true) {
+    while(true) {
       push.read();
       poll.read();
       valuePush = (T)push;
@@ -203,7 +196,8 @@ template <typename T> struct PollingReadModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
-template <typename T> struct TestApplication : public ctk::Application {
+template<typename T>
+struct TestApplication : public ctk::Application {
   TestApplication() : Application("testApplication") {}
   ~TestApplication() { shutdown(); }
 
@@ -213,26 +207,23 @@ template <typename T> struct TestApplication : public ctk::Application {
 
   ctk::ControlSystemModule cs{""};
   ctk::DeviceModule dev{dummySdm, ""};
-  BlockingReadTestModule<T> blockingReadTestModule{
-      this, "blockingReadTestModule", "Module for testing blocking read"};
-  AsyncReadTestModule<T> asyncReadTestModule{this, "asyncReadTestModule",
-                                             "Module for testing async read"};
-  ReadAnyTestModule<T> readAnyTestModule{this, "readAnyTestModule",
-                                         "Module for testing readAny()"};
+  BlockingReadTestModule<T> blockingReadTestModule{this, "blockingReadTestModule", "Module for testing blocking read"};
+  AsyncReadTestModule<T> asyncReadTestModule{this, "asyncReadTestModule", "Module for testing async read"};
+  ReadAnyTestModule<T> readAnyTestModule{this, "readAnyTestModule", "Module for testing readAny()"};
 };
 
 /*********************************************************************************************************************/
 /* second application */
 
-template <typename T> struct PollingTestApplication : public ctk::Application {
+template<typename T>
+struct PollingTestApplication : public ctk::Application {
   PollingTestApplication() : Application("testApplication") {}
   ~PollingTestApplication() { shutdown(); }
 
   void defineConnections() {} // setup is done in the tests
 
   ctk::ControlSystemModule cs{""};
-  PollingReadModule<T> pollingReadModule{
-      this, "pollingReadModule", "Module for testing poll-type transfers"};
+  PollingReadModule<T> pollingReadModule{this, "pollingReadModule", "Module for testing poll-type transfers"};
 };
 
 /*********************************************************************************************************************/
@@ -259,16 +250,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
 
   // check if we got the decorator for the input
   auto hlinput = app.blockingReadTestModule.someInput.getHighLevelImplElement();
-  BOOST_CHECK(
-      boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(
-          hlinput) == nullptr);
+  BOOST_CHECK(boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hlinput) == nullptr);
 
   // check that we did not get the decorator for the output
-  auto hloutput =
-      app.blockingReadTestModule.someOutput.getHighLevelImplElement();
-  BOOST_CHECK(
-      boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(
-          hloutput) == nullptr);
+  auto hloutput = app.blockingReadTestModule.someOutput.getHighLevelImplElement();
+  BOOST_CHECK(boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hloutput) == nullptr);
 }
 
 /*********************************************************************************************************************/
@@ -294,7 +280,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
 
   // test blocking read when taking control in the test thread (note: the
   // blocking read is executed in the app module!)
-  for (int i = 0; i < 5; ++i) {
+  for(int i = 0; i < 5; ++i) {
     pvInput = 120 + i;
     pvInput.write();
     usleep(10000);
@@ -319,9 +305,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testAsyncRead, T, test_types) {
 
   app.cs("input") >> app.asyncReadTestModule.someInput;
   app.asyncReadTestModule.someOutput >> app.cs("output");
-  app.blockingReadTestModule.connectTo(
-      app.cs["blocking"]);                            // avoid runtime warning
-  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
+  app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
+  app.readAnyTestModule.connectTo(app.cs["readAny"]);       // avoid runtime warning
 
   ctk::TestFacility test;
 
@@ -331,7 +316,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testAsyncRead, T, test_types) {
   test.runApplication();
 
   // test blocking read when taking control in the test thread
-  for (int i = 0; i < 5; ++i) {
+  for(int i = 0; i < 5; ++i) {
     pvInput = 120 + i;
     pvInput.write();
     usleep(10000);
@@ -339,7 +324,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testAsyncRead, T, test_types) {
     test.stepApplication();
     bool ret = pvOutput.readNonBlocking();
     BOOST_CHECK(ret == true);
-    if (!ret) {
+    if(!ret) {
       CHECK_TIMEOUT(pvOutput.readNonBlocking() == true, 10000);
     }
     int val = pvOutput;
@@ -361,9 +346,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
   app.readAnyTestModule.value >> app.cs("value");
   app.readAnyTestModule.index >> app.cs("index");
-  app.blockingReadTestModule.connectTo(
-      app.cs["blocking"]);                            // avoid runtime warning
-  app.asyncReadTestModule.connectTo(app.cs["async"]); // avoid runtime warning
+  app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
+  app.asyncReadTestModule.connectTo(app.cs["async"]);       // avoid runtime warning
 
   ctk::TestFacility test;
   auto value = test.getScalar<T>("value");
@@ -464,7 +448,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   try {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
-  } catch (ChimeraTK::logic_error &) {
+  }
+  catch(ChimeraTK::logic_error&) {
   }
 
   // check that we still don't receive anything anymore
@@ -497,8 +482,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testChainedModules, T, test_types) {
   std::cout << "***************************************************************"
                "******************************************************"
             << std::endl;
-  std::cout << "==> testChainedModules<" << typeid(T).name() << ">"
-            << std::endl;
+  std::cout << "==> testChainedModules<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
 
@@ -576,7 +560,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testChainedModules, T, test_types) {
   try {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
-  } catch (ChimeraTK::logic_error &) {
+  }
+  catch(ChimeraTK::logic_error&) {
   }
 
   // check that we still don't receive anything anymore
@@ -598,8 +583,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
 
   // distribute a value to multiple inputs
   app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
-  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >>
-      app.asyncReadTestModule.someInput;
+  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >> app.asyncReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
   app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
   app.readAnyTestModule.index >> app.cs("index");
@@ -682,7 +666,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   try {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
-  } catch (ChimeraTK::logic_error &) {
+  }
+  catch(ChimeraTK::logic_error&) {
   }
 
   // check that we still don't receive anything anymore
@@ -708,8 +693,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   app.dev("REG2")[triggernode] >> app.readAnyTestModule.inputs.v2;
   app.cs("v3") >> app.readAnyTestModule.inputs.v3;
   app.cs("v4") >> app.readAnyTestModule.inputs.v4;
-  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >>
-      app.asyncReadTestModule.someInput;
+  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput >> app.asyncReadTestModule.someInput;
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
   app.asyncReadTestModule.someOutput >> app.cs("valueFromAsync");
   app.readAnyTestModule.index >> app.cs("index");
@@ -775,7 +759,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   try {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
-  } catch (ChimeraTK::logic_error &) {
+  }
+  catch(ChimeraTK::logic_error&) {
   }
 
   // check that we still don't receive anything anymore
@@ -792,8 +777,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   std::cout << "***************************************************************"
                "******************************************************"
             << std::endl;
-  std::cout << "==> testWithTriggerFanOut<" << typeid(T).name() << ">"
-            << std::endl;
+  std::cout << "==> testWithTriggerFanOut<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
   // distribute a value to multiple inputs
@@ -895,7 +879,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   try {
     test.stepApplication();
     BOOST_ERROR("IllegalParameter exception expected.");
-  } catch (ChimeraTK::logic_error &) {
+  }
+  catch(ChimeraTK::logic_error&) {
   }
 
   // check that we still don't receive anything anymore
@@ -913,8 +898,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
   std::cout << "***************************************************************"
                "******************************************************"
             << std::endl;
-  std::cout << "==> testConvenienceRead<" << typeid(T).name() << ">"
-            << std::endl;
+  std::cout << "==> testConvenienceRead<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
 
@@ -928,7 +912,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
 
   // test blocking read when taking control in the test thread (note: the
   // blocking read is executed in the app module!)
-  for (int i = 0; i < 5; ++i) {
+  for(int i = 0; i < 5; ++i) {
     test.writeScalar<T>("input", 120 + i);
     test.stepApplication();
     CHECK_TIMEOUT(test.readScalar<T>("output") == T(120 + i), 200);
@@ -936,12 +920,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
 
   // same with array function (still a scalar variable behind, but this does not
   // matter)
-  for (int i = 0; i < 5; ++i) {
+  for(int i = 0; i < 5; ++i) {
     std::vector<T> myValue{T(120 + i)};
     test.writeArray<T>("input", myValue);
     test.stepApplication();
-    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120 + i)},
-                  200);
+    CHECK_TIMEOUT(test.readArray<T>("output") == std::vector<T>{T(120 + i)}, 200);
   }
 }
 
@@ -957,16 +940,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
   {
     TestApplication<T> app;
 
-    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >>
-        app.blockingReadTestModule.someInput;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >>
-        app.asyncReadTestModule.someInput;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 22) >>
-        app.readAnyTestModule.inputs.v1;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 23) >>
-        app.readAnyTestModule.inputs.v2;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 24) >>
-        app.readAnyTestModule.inputs.v3;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.blockingReadTestModule.someInput;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.asyncReadTestModule.someInput;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 22) >> app.readAnyTestModule.inputs.v1;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 23) >> app.readAnyTestModule.inputs.v2;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 24) >> app.readAnyTestModule.inputs.v3;
     app.blockingReadTestModule.someOutput >> app.cs("blockingOutput");
     app.asyncReadTestModule.someOutput >> app.cs("asyncOutput");
     app.cs("v4") >> app.readAnyTestModule.inputs.v4;
@@ -996,10 +974,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
   {
     PollingTestApplication<T> app;
 
-    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >>
-        app.pollingReadModule.push2;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >>
-        app.pollingReadModule.poll;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.pollingReadModule.push2;
+    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.pollingReadModule.poll;
     app.pollingReadModule.connectTo(app.cs);
 
     ctk::TestFacility test;
@@ -1021,7 +997,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
     try {
       test.stepApplication();
       BOOST_ERROR("Exception expected.");
-    } catch (ctk::Application::TestsStalled &) {
+    }
+    catch(ctk::Application::TestsStalled&) {
     }
   }
 }

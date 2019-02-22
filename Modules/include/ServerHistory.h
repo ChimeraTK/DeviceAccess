@@ -64,61 +64,55 @@
 #include <tuple>
 #include <vector>
 
-namespace ChimeraTK {
-namespace history {
+namespace ChimeraTK { namespace history {
 
-struct AccessorAttacher;
+  struct AccessorAttacher;
 
-struct ServerHistory : public ApplicationModule {
-  ServerHistory(EntityOwner *owner, const std::string &name,
-                const std::string &description, size_t historyLength = 1200,
-                bool eliminateHierarchy = false,
-                const std::unordered_set<std::string> &tags = {})
-      : ApplicationModule(owner, name, description, eliminateHierarchy, tags),
-        _historyLength(historyLength) {}
+  struct ServerHistory : public ApplicationModule {
+    ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
+        size_t historyLength = 1200, bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, eliminateHierarchy, tags), _historyLength(historyLength) {}
 
-  /** Default constructor, creates a non-working module. Can be used for late
-   * initialisation. */
-  ServerHistory() : _historyLength(1200) {}
+    /** Default constructor, creates a non-working module. Can be used for late
+     * initialisation. */
+    ServerHistory() : _historyLength(1200) {}
 
-  /** Add a Module as a source to this History module. */
-  void addSource(const Module &source, const RegisterPath &namePrefix);
+    /** Add a Module as a source to this History module. */
+    void addSource(const Module& source, const RegisterPath& namePrefix);
 
-protected:
-  void mainLoop() override;
+   protected:
+    void mainLoop() override;
 
-  template <typename UserType>
-  VariableNetworkNode getAccessor(const std::string &variableName,
-                                  const size_t &nElements);
+    template<typename UserType>
+    VariableNetworkNode getAccessor(const std::string& variableName, const size_t& nElements);
 
-  /** Map of VariableGroups required to build the hierarchies. The key it the
-   * full path name. */
-  std::map<std::string, VariableGroup> groupMap;
+    /** Map of VariableGroups required to build the hierarchies. The key it the
+     * full path name. */
+    std::map<std::string, VariableGroup> groupMap;
 
-  /** boost::fusion::map of UserTypes to std::lists containing the
-   * ArrayPushInput and ArrayOutput accessors. These accessors are dynamically
-   * created by the AccessorAttacher. */
-  template <typename UserType>
-  using AccessorList = std::list<
-      std::pair<ArrayPushInput<UserType>, std::vector<ArrayOutput<UserType>>>>;
-  TemplateUserTypeMap<AccessorList> _accessorListMap;
+    /** boost::fusion::map of UserTypes to std::lists containing the
+     * ArrayPushInput and ArrayOutput accessors. These accessors are dynamically
+     * created by the AccessorAttacher. */
+    template<typename UserType>
+    using AccessorList = std::list<std::pair<ArrayPushInput<UserType>, std::vector<ArrayOutput<UserType>>>>;
+    TemplateUserTypeMap<AccessorList> _accessorListMap;
 
-  /** boost::fusion::map of UserTypes to std::lists containing the names of the
-   * accessors. Technically there would be no need to use TemplateUserTypeMap
-   * for this (as type does not depend on the UserType), but since these lists
-   * must be filled consistently with the accessorListMap, the same construction
-   * is used here. */
-  template <typename UserType> using NameList = std::list<std::string>;
-  TemplateUserTypeMap<NameList> _nameListMap;
+    /** boost::fusion::map of UserTypes to std::lists containing the names of the
+     * accessors. Technically there would be no need to use TemplateUserTypeMap
+     * for this (as type does not depend on the UserType), but since these lists
+     * must be filled consistently with the accessorListMap, the same construction
+     * is used here. */
+    template<typename UserType>
+    using NameList = std::list<std::string>;
+    TemplateUserTypeMap<NameList> _nameListMap;
 
-  /** Overall variable name list, used to detect name collisions */
-  std::list<std::string> _overallVariableList;
+    /** Overall variable name list, used to detect name collisions */
+    std::list<std::string> _overallVariableList;
 
-  size_t _historyLength;
+    size_t _historyLength;
 
-  friend struct AccessorAttacher;
-};
+    friend struct AccessorAttacher;
+  };
 
-} // namespace history
-} // namespace ChimeraTK
+}}     // namespace ChimeraTK::history
 #endif /* MODULES_SERVERHISTORY_H_ */

@@ -31,9 +31,8 @@ struct testApp : public ChimeraTK::Application {
   testApp() : Application("test"), fileCreated(false) {}
   ~testApp() {
     shutdown();
-    if (fileCreated) {
-      BOOST_CHECK_EQUAL(boost::filesystem::remove("/tmp/testLogging/test.log"),
-                        true);
+    if(fileCreated) {
+      BOOST_CHECK_EQUAL(boost::filesystem::remove("/tmp/testLogging/test.log"), true);
       BOOST_CHECK_EQUAL(boost::filesystem::remove("/tmp/testLogging/"), true);
     }
   }
@@ -84,10 +83,8 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
   std::string ss = (std::string)tf.readScalar<std::string>("LogTail");
   std::vector<std::string> strs;
   boost::split(strs, ss, boost::is_any_of("\n"), boost::token_compress_on);
-  BOOST_CHECK_EQUAL(
-      strs.at(2).substr(strs.at(2).find("->") + 3),
-      std::string(
-          "Failed to open log file for writing: /tmp/testLogging/test.log"));
+  BOOST_CHECK_EQUAL(strs.at(2).substr(strs.at(2).find("->") + 3),
+      std::string("Failed to open log file for writing: /tmp/testLogging/test.log"));
 }
 
 BOOST_AUTO_TEST_CASE(testLogfile) {
@@ -96,8 +93,7 @@ BOOST_AUTO_TEST_CASE(testLogfile) {
 
   auto logFile = tf.getScalar<std::string>("logFile");
 
-  if (!boost::filesystem::is_directory("/tmp/testLogging/"))
-    boost::filesystem::create_directory("/tmp/testLogging/");
+  if(!boost::filesystem::is_directory("/tmp/testLogging/")) boost::filesystem::create_directory("/tmp/testLogging/");
   tf.runApplication();
   logFile = std::string("/tmp/testLogging/test.log");
   logFile.write();
@@ -107,14 +103,12 @@ BOOST_AUTO_TEST_CASE(testLogfile) {
   std::fstream file;
   file.open("/tmp/testLogging/test.log");
   BOOST_CHECK_EQUAL(file.good(), true);
-  if (file.good())
-    app.fileCreated = true;
+  if(file.good()) app.fileCreated = true;
   std::string line;
 
   std::getline(file, line);
   BOOST_CHECK_EQUAL(
-      line.substr(line.find("->") + 3),
-      std::string("Opened log file for writing: /tmp/testLogging/test.log"));
+      line.substr(line.find("->") + 3), std::string("Opened log file for writing: /tmp/testLogging/test.log"));
   std::getline(file, line);
   BOOST_CHECK_EQUAL(line.substr(line.find("->") + 3), std::string("test"));
 }

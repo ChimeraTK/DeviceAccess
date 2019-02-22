@@ -31,32 +31,21 @@ struct TestModule : public ctk::ApplicationModule {
 
   struct MixedGroup : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPushInput<int> consumingPush{this, "consumingPush", "MV/m",
-                                            "Descrption"};
-    ctk::ScalarPushInput<int> consumingPush2{this, "consumingPush2", "MV/m",
-                                             "Descrption"};
-    ctk::ScalarPushInput<int> consumingPush3{this, "consumingPush3", "MV/m",
-                                             "Descrption"};
-    ctk::ScalarPollInput<int> consumingPoll{this, "consumingPoll", "MV/m",
-                                            "Descrption"};
-    ctk::ScalarPollInput<int> consumingPoll2{this, "consumingPoll2", "MV/m",
-                                             "Descrption"};
-    ctk::ScalarPollInput<int> consumingPoll3{this, "consumingPoll3", "MV/m",
-                                             "Descrption"};
+    ctk::ScalarPushInput<int> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
+    ctk::ScalarPushInput<int> consumingPush2{this, "consumingPush2", "MV/m", "Descrption"};
+    ctk::ScalarPushInput<int> consumingPush3{this, "consumingPush3", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<int> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<int> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
+    ctk::ScalarPollInput<int> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
   };
-  MixedGroup mixedGroup{this, "mixedGroup",
-                        "A group with both push and poll inputs"};
+  MixedGroup mixedGroup{this, "mixedGroup", "A group with both push and poll inputs"};
 
   ctk::ScalarOutput<int> feedingPush{this, "feedingPush", "MV/m", "Descrption"};
-  ctk::ScalarOutput<int> feedingPush2{this, "feedingPush2", "MV/m",
-                                      "Descrption"};
-  ctk::ScalarOutput<int> feedingPush3{this, "feedingPush3", "MV/m",
-                                      "Descrption"};
+  ctk::ScalarOutput<int> feedingPush2{this, "feedingPush2", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPush3{this, "feedingPush3", "MV/m", "Descrption"};
   ctk::ScalarOutput<int> feedingPoll{this, "feedingPoll", "MV/m", "Descrption"};
-  ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m",
-                                      "Descrption"};
-  ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m",
-                                      "Descrption"};
+  ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m", "Descrption"};
+  ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m", "Descrption"};
 
   void mainLoop() {}
 };
@@ -302,10 +291,8 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
 
   // launch readAny() asynchronously and make sure it does not yet receive
   // anything
-  auto futureRead =
-      std::async(std::launch::async, [&group] { group.readAny(); });
-  BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(200)) ==
-              std::future_status::timeout);
+  auto futureRead = std::async(std::launch::async, [&group] { group.readAny(); });
+  BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -318,8 +305,7 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
   app.testModule.feedingPush.write();
 
   // check that the group now receives the just written value
-  BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(2000)) ==
-              std::future_status::ready);
+  BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -329,10 +315,8 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
 
   // launch another readAny() asynchronously and make sure it does not yet
   // receive anything
-  auto futureRead2 =
-      std::async(std::launch::async, [&group] { group.readAny(); });
-  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) ==
-              std::future_status::timeout);
+  auto futureRead2 = std::async(std::launch::async, [&group] { group.readAny(); });
+  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -349,8 +333,7 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
   app.testModule.feedingPoll3.write();
 
   // make sure readAny still does not receive anything
-  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) ==
-              std::future_status::timeout);
+  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -363,8 +346,7 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
   app.testModule.feedingPush2.write();
 
   // check that the group now receives the just written values
-  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(2000)) ==
-              std::future_status::ready);
+  BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 123);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -373,10 +355,8 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
 
   // two changes at a time
-  auto futureRead3 =
-      std::async(std::launch::async, [&group] { group.readAny(); });
-  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(200)) ==
-              std::future_status::timeout);
+  auto futureRead3 = std::async(std::launch::async, [&group] { group.readAny(); });
+  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 123);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
@@ -389,12 +369,9 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
   app.testModule.feedingPush2.write();
   app.testModule.feedingPush3.write();
 
-  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(2000)) ==
-              std::future_status::ready);
-  auto futureRead4 =
-      std::async(std::launch::async, [&group] { group.readAny(); });
-  BOOST_CHECK(futureRead4.wait_for(std::chrono::milliseconds(2000)) ==
-              std::future_status::ready);
+  BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+  auto futureRead4 = std::async(std::launch::async, [&group] { group.readAny(); });
+  BOOST_CHECK(futureRead4.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 234);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 345);

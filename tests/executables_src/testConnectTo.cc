@@ -48,15 +48,11 @@ struct FirstHierarchy : ctk::ModuleGroup {
   } testModule{this, "TestModule", ""};
 
   struct SecondModule : ctk::ApplicationModule {
-    SecondModule(EntityOwner *owner, const std::string &name,
-                 const std::string &description)
-        : ctk::ApplicationModule(owner, name, description) {
-      for (size_t i = 0; i < 22; ++i)
-        myVec.emplace_back(this, "Var" + std::to_string(i), "Unit", "Foo");
+    SecondModule(EntityOwner* owner, const std::string& name, const std::string& description)
+    : ctk::ApplicationModule(owner, name, description) {
+      for(size_t i = 0; i < 22; ++i) myVec.emplace_back(this, "Var" + std::to_string(i), "Unit", "Foo");
     }
-    SecondModule() {
-      throw;
-    } // work around for gcc bug: constructor must be present but is unused
+    SecondModule() { throw; } // work around for gcc bug: constructor must be present but is unused
 
     std::vector<ctk::ScalarPushInput<int>> myVec;
 
@@ -90,25 +86,18 @@ struct SecondHierarchy : ctk::ModuleGroup {
       struct VarGroup : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
         ctk::ScalarOutput<int> varB{this, "varB", "MV/m", "Desc"};
-      } varGroup{
-          this, "VarGroup",
-          "This group shall be merged with testModule.varGroup in connectTo()"};
-    } eliminatedGroup{this, "eliminatedGroup",
-                      "A group whose hierarchy gets eliminated", true};
+      } varGroup{this, "VarGroup", "This group shall be merged with testModule.varGroup in connectTo()"};
+    } eliminatedGroup{this, "eliminatedGroup", "A group whose hierarchy gets eliminated", true};
 
     void mainLoop() {}
   } testModule{this, "TestModule", ""};
 
   struct SecondModule : ctk::ApplicationModule {
-    SecondModule(EntityOwner *owner, const std::string &name,
-                 const std::string &description)
-        : ctk::ApplicationModule(owner, name, description) {
-      for (size_t i = 0; i < 22; ++i)
-        myVec.emplace_back(this, "Var" + std::to_string(i), "Unit", "Foo");
+    SecondModule(EntityOwner* owner, const std::string& name, const std::string& description)
+    : ctk::ApplicationModule(owner, name, description) {
+      for(size_t i = 0; i < 22; ++i) myVec.emplace_back(this, "Var" + std::to_string(i), "Unit", "Foo");
     }
-    SecondModule() {
-      throw;
-    } // work around for gcc bug: constructor must be present but is unused
+    SecondModule() { throw; } // work around for gcc bug: constructor must be present but is unused
 
     struct ExtraGroup : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
@@ -158,7 +147,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   app.first.testModule.varGroup.varC = 3;
   app.second.testModule.varA = 4;
   app.first.testModule.varX = 5;
-  for (int i = 0; i < 22; ++i) {
+  for(int i = 0; i < 22; ++i) {
     app.second.secondModule.myVec[i] = 6 + i;
   }
 
@@ -176,7 +165,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   BOOST_CHECK_EQUAL((int)app.second.testModule.varGroup.varC, 3);
   BOOST_CHECK_EQUAL((int)app.first.testModule.varA, 4);
   BOOST_CHECK_EQUAL((int)app.second.testModule.eliminatedGroup.varX, 5);
-  for (int i = 0; i < 22; ++i) {
+  for(int i = 0; i < 22; ++i) {
     BOOST_CHECK_EQUAL((int)app.first.secondModule.myVec[i], 6 + i);
   }
 }
@@ -203,7 +192,7 @@ BOOST_AUTO_TEST_CASE(testConnectTwice) {
   app.first.testModule.varGroup.varC = 3;
   app.second.testModule.varA = 4;
   app.first.testModule.varX = 5;
-  for (int i = 0; i < 22; ++i) {
+  for(int i = 0; i < 22; ++i) {
     app.second.secondModule.myVec[i] = 6 + i;
   }
 
@@ -221,7 +210,7 @@ BOOST_AUTO_TEST_CASE(testConnectTwice) {
   BOOST_CHECK_EQUAL((int)app.second.testModule.varGroup.varC, 3);
   BOOST_CHECK_EQUAL((int)app.first.testModule.varA, 4);
   BOOST_CHECK_EQUAL((int)app.second.testModule.eliminatedGroup.varX, 5);
-  for (int i = 0; i < 22; ++i) {
+  for(int i = 0; i < 22; ++i) {
     BOOST_CHECK_EQUAL((int)app.first.secondModule.myVec[i], 6 + i);
   }
 }

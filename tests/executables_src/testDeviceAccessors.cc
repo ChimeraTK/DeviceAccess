@@ -26,40 +26,32 @@ using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
-                         float, double>
-    test_types;
+typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
 
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                              \
-  {                                                                            \
-    std::chrono::steady_clock::time_point t0 =                                 \
-        std::chrono::steady_clock::now();                                      \
-    while (!(condition)) {                                                     \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) >         \
-                             std::chrono::milliseconds(maxMilliseconds);       \
-      BOOST_CHECK(!timeout_reached);                                           \
-      if (timeout_reached)                                                     \
-        break;                                                                 \
-      usleep(1000);                                                            \
-    }                                                                          \
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(!(condition)) {                                                                                              \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK(!timeout_reached);                                                                                   \
+      if(timeout_reached) break;                                                                                       \
+      usleep(1000);                                                                                                    \
+    }                                                                                                                  \
   }
 
 /*********************************************************************************************************************/
 /* the ApplicationModule for the test is a template of the user type */
 
-template <typename T> struct TestModule : public ctk::ApplicationModule {
+template<typename T>
+struct TestModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m",
-                                        "Description"};
+  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
-  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m",
-                                        "Description"};
-  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m",
-                                         "Description"};
+  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
+  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
 
-  ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m",
-                                       "Description"};
+  ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
   void mainLoop() {}
 };
@@ -67,7 +59,8 @@ template <typename T> struct TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
-template <typename T> struct TestApplication : public ctk::Application {
+template<typename T>
+struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
@@ -126,8 +119,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.devMymodule("actuator") >>
-      app.devMymodule("readBack");
+  app.testModule.feedingToDevice >> app.devMymodule("actuator") >> app.devMymodule("readBack");
   app.initialise();
 
   ChimeraTK::Device dev;
@@ -205,8 +197,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >>
-      app.testModule.consumingPush >> app.testModule.consumingPush2;
+  app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
+      app.testModule.consumingPush2;
   app.initialise();
 
   ChimeraTK::Device dev;
@@ -292,16 +284,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
   TestApplication<T> app;
 
   // we abuse "feedingToDevice" as trigger here...
-  app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >>
-      app.testModule.consumingPush;
-  app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >>
-      app.testModule.consumingPush2;
+  app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush;
+  app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush2;
 
   // check that we have two separate networks for both connections
   size_t nDeviceFeeders = 0;
-  for (auto &net : app.networkList) {
-    if (net.getFeedingNode().getType() == ctk::NodeType::Device)
-      nDeviceFeeders++;
+  for(auto& net : app.networkList) {
+    if(net.getFeedingNode().getType() == ctk::NodeType::Device) nDeviceFeeders++;
   }
   BOOST_CHECK_EQUAL(nDeviceFeeders, 2);
 
@@ -310,9 +299,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
 
   // check we are left with just one network fed by the device
   nDeviceFeeders = 0;
-  for (auto &net : app.networkList) {
-    if (net.getFeedingNode().getType() == ctk::NodeType::Device)
-      nDeviceFeeders++;
+  for(auto& net : app.networkList) {
+    if(net.getFeedingNode().getType() == ctk::NodeType::Device) nDeviceFeeders++;
   }
   BOOST_CHECK_EQUAL(nDeviceFeeders, 1);
 
@@ -356,8 +344,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
 
   TestApplication<T> app;
 
-  ctk::VariableNetworkNode::makeConstant<T>(true, 18) >>
-      app.dev("/MyModule/actuator");
+  ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
   app.initialise();
   app.run();
 
@@ -377,8 +364,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  ctk::VariableNetworkNode::makeConstant<T>(true, 20) >>
-      app.dev("/MyModule/actuator") >> app.dev("/MyModule/readBack");
+  ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >> app.dev("/MyModule/readBack");
   app.initialise();
   app.run();
 
@@ -429,8 +415,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleVirtuallise) {
 
   TestApplication<int> app;
 
-  app.testModule.feedingToDevice >>
-      app.dev.virtualise()["MyModule"]("actuator");
+  app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
 
   app.initialise();
 

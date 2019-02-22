@@ -9,37 +9,33 @@
 
 namespace ChimeraTK {
 
-/**
- *  Module which gathers statistics on data loss inside the application. It will
- * read the data loss counter once per trigger and update the output statistics
- * variables.
- */
-struct DataLossCounter : ApplicationModule {
+  /**
+   *  Module which gathers statistics on data loss inside the application. It will
+   * read the data loss counter once per trigger and update the output statistics
+   * variables.
+   */
+  struct DataLossCounter : ApplicationModule {
+    using ApplicationModule::ApplicationModule;
 
-  using ApplicationModule::ApplicationModule;
+    ScalarPushInput<int32_t> trigger{this, "trigger", "", "Trigger input"};
 
-  ScalarPushInput<int32_t> trigger{this, "trigger", "", "Trigger input"};
+    ScalarOutput<uint64_t> lostDataInLastTrigger{this, "lostDataInLastTrigger", "",
+        "Number of data transfers during "
+        "the last trigger which resulted in data loss."};
+    ScalarOutput<uint64_t> triggersWithDataLoss{this, "triggersWithDataLoss", "",
+        "Number of trigger periods during "
+        "which at least on data transfer resulted in data loss."};
 
-  ScalarOutput<uint64_t> lostDataInLastTrigger{
-      this, "lostDataInLastTrigger", "",
-      "Number of data transfers during "
-      "the last trigger which resulted in data loss."};
-  ScalarOutput<uint64_t> triggersWithDataLoss{
-      this, "triggersWithDataLoss", "",
-      "Number of trigger periods during "
-      "which at least on data transfer resulted in data loss."};
-
-  void mainLoop() override {
-    while (true) {
-      trigger.read();
-      uint64_t counter = Application::getAndResetDataLossCounter();
-      lostDataInLastTrigger = counter;
-      if (counter > 0)
-        ++triggersWithDataLoss;
-      writeAll();
+    void mainLoop() override {
+      while(true) {
+        trigger.read();
+        uint64_t counter = Application::getAndResetDataLossCounter();
+        lostDataInLastTrigger = counter;
+        if(counter > 0) ++triggersWithDataLoss;
+        writeAll();
+      }
     }
-  }
-};
+  };
 
 } // namespace ChimeraTK
 
