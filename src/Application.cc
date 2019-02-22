@@ -20,6 +20,7 @@
 #include "ConstantAccessor.h"
 #include "ConsumingFanOut.h"
 #include "DebugPrintAccessorDecorator.h"
+#include "DeviceModule.h"
 #include "FeedingFanOut.h"
 #include "ScalarAccessor.h"
 #include "TestableModeAccessorDecorator.h"
@@ -169,7 +170,11 @@ void Application::run() {
 
   // start the threads for the modules
   for(auto& module : getSubmoduleListRecursive()) {
+    std::cout << module->getFullDescription() << std::endl;
     module->run();
+  }
+  for(auto& deviceModule : deviceModuleList) {
+    deviceModule->run();
   }
 }
 
@@ -194,6 +199,9 @@ void Application::shutdown() {
     module->terminate();
   }
 
+  for(auto& deviceModule : deviceModuleList) {
+    deviceModule->terminate();
+  }
   ApplicationBase::shutdown();
 }
 /*********************************************************************************************************************/
@@ -477,6 +485,9 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
+  for(auto& devModule : deviceModuleList) {
+    devModule->defineConnections();
+  }
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
   finaliseNetworks();
@@ -1083,4 +1094,9 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
   // dc051bfe35ce6c1ed954010559186f63646cf5d4
   thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
   return myLock;
+}
+
+/*********************************************************************************************************************/
+void Application::registerDeviceModule(DeviceModule* deviceModule) {
+  deviceModuleList.push_back(deviceModule);
 }

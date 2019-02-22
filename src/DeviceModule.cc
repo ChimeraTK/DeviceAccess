@@ -10,6 +10,7 @@
 
 #include "Application.h"
 #include "DeviceModule.h"
+//#include "ControlSystemModule.h"
 
 namespace ChimeraTK {
 
@@ -19,6 +20,23 @@ namespace ChimeraTK {
                                       _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/") + 1),
         ""),
     deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(_registerNamePrefix) {}
+
+  /*********************************************************************************************************************/
+
+  DeviceModule::DeviceModule(Application* application,
+      const std::string& _deviceAliasOrURI,
+      const std::string& _registerNamePrefix)
+  : Module(nullptr,
+        _registerNamePrefix.empty() ? "<Device:" + _deviceAliasOrURI + ">" :
+                                      _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/") + 1),
+        ""),
+    deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(_registerNamePrefix) {
+    application->registerDeviceModule(this);
+  }
+
+  /*********************************************************************************************************************/
+
+  DeviceModule::~DeviceModule() { assert(!moduleThread.joinable()); }
 
   /*********************************************************************************************************************/
 
@@ -145,6 +163,87 @@ namespace ChimeraTK {
 
     virtualisedModuleFromCatalog_isValid = true;
     return virtualisedModuleFromCatalog;
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::reportException(std::string errMsg) {
+    std::unique_lock<std::mutex> lk(errorMutex);
+    errorQueue.push(errMsg);
+    errorCondVar.wait(lk);
+    lk.unlock();
+  }
+  /*********************************************************************************************************************/
+
+  void DeviceModule::handleException() {
+    Application::registerThread("DM_" + getName());
+    Device d;
+    std::string error;
+
+    try {
+      while(true) {
+        errorQueue.pop_wait(error);
+        boost::this_thread::interruption_point();
+        std::lock_guard<std::mutex> lk(errorMutex);
+        deviceError.status = 1;
+        deviceError.message = error;
+        deviceError.setCurrentVersionNumber({});
+        deviceError.writeAll();
+        while(true) {
+          boost::this_thread::interruption_point();
+          try {
+            d.open(deviceAliasOrURI);
+            if(d.isOpened()) {
+              break;
+            }
+          }
+          catch(std::exception& ex) {
+            deviceError.status = 1;
+            deviceError.message = ex.what();
+            deviceError.setCurrentVersionNumber({});
+            deviceError.writeAll();
+          }
+          usleep(500000);
+        }
+        deviceError.status = 0;
+        deviceError.message = "";
+        deviceError.setCurrentVersionNumber({});
+        deviceError.writeAll();
+        errorCondVar.notify_all();
+      }
+    }
+    catch(...) {
+      // before we leave this thread, we might need to notify other waiting
+      // threads. boost::this_thread::interruption_point() throws an exception
+      // when the thread should be interrupted, so we will end up here
+      errorCondVar.notify_all();
+      throw;
+    }
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::run() {
+    // start the module thread
+    assert(!moduleThread.joinable());
+    moduleThread = boost::thread(&DeviceModule::handleException, this);
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::terminate() {
+    if(moduleThread.joinable()) {
+      moduleThread.interrupt();
+      reportException("ExitOnNone");
+      moduleThread.join();
+    }
+    assert(!moduleThread.joinable());
+  }
+
+  void DeviceModule::defineConnections() {
+    std::string prefix = "Devices/" + deviceAliasOrURI + "/";
+    ControlSystemModule cs(prefix);
+    deviceError.connectTo(cs);
   }
 
 } // namespace ChimeraTK

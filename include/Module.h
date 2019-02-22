@@ -91,6 +91,7 @@ namespace ChimeraTK {
      * eliminate hierarchies where requested and apply other dynamic model
      * changes. */
     virtual const Module& virtualise() const = 0;
+    virtual void defineConnections(){};
 
     /**
      * Connect the entire module into another module. All variables inside this

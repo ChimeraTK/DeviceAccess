@@ -62,6 +62,7 @@ namespace ChimeraTK {
     Application::registerThread("AM_" + getName());
     Application::testableModeLock("start");
     // enter the main loop
+    std::cout << "mainLoopWrapper" << std::endl;
     mainLoop();
     Application::testableModeUnlock("terminate");
   }
