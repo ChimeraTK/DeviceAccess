@@ -170,7 +170,6 @@ void Application::run() {
 
   // start the threads for the modules
   for(auto& module : getSubmoduleListRecursive()) {
-    std::cout << module->getFullDescription() << std::endl;
     module->run();
   }
   for(auto& deviceModule : deviceModuleList) {
