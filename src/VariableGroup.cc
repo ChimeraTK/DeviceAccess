@@ -14,7 +14,6 @@ namespace ChimeraTK {
   : ModuleImpl(owner, name, description, eliminateHierarchy, tags) {
     if(!dynamic_cast<ApplicationModule*>(owner) && !dynamic_cast<DeviceModule*>(owner) &&
         !dynamic_cast<VariableGroup*>(owner)) {
-      std::cout << "VariableGroup is throwing" << std::endl;
       throw ChimeraTK::logic_error("VariableGroups must be owned by ApplicationModule, DeviceModule or "
                                    "other VariableGroups!");
     }
