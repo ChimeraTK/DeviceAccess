@@ -19,6 +19,7 @@
 #include "InternalModule.h"
 #include "Profiler.h"
 #include "VariableNetwork.h"
+//#include "DeviceModule.h"
 
 namespace ChimeraTK {
 
@@ -27,6 +28,7 @@ namespace ChimeraTK {
   class VariableNetwork;
   class TriggerFanOut;
   class TestFacility;
+  class DeviceModule;
 
   template<typename UserType>
   class Accessor;
@@ -192,6 +194,7 @@ namespace ChimeraTK {
       return VariableNetworkNode::makeConstant(makeFeeder, value, length);
     }
 
+    void registerDeviceModule(DeviceModule* deviceModule);
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -393,6 +396,7 @@ namespace ChimeraTK {
                                    "caused by "
                                    "incorrect ownership of variables/accessors or VariableGroups.");
     }
+    std::list<DeviceModule*> deviceModuleList;
   };
 
 } /* namespace ChimeraTK */
