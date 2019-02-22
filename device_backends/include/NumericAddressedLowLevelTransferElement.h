@@ -28,8 +28,10 @@ namespace ChimeraTK {
    */
   class NumericAddressedLowLevelTransferElement : public TransferElement {
    public:
-    NumericAddressedLowLevelTransferElement(
-        boost::shared_ptr<NumericAddressedBackend> dev, size_t bar, size_t startAddress, size_t numberOfWords)
+    NumericAddressedLowLevelTransferElement(boost::shared_ptr<NumericAddressedBackend> dev,
+        size_t bar,
+        size_t startAddress,
+        size_t numberOfWords)
     : _dev(dev), _bar(bar), isShared(false) {
       setAddress(startAddress, numberOfWords);
     }

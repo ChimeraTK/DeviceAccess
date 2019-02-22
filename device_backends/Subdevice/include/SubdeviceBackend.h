@@ -105,19 +105,25 @@ namespace ChimeraTK {
     boost::shared_ptr<RegisterInfoMap> _registerMap;
 
     template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
+        size_t numberOfWords,
+        size_t wordOffsetInRegister,
+        AccessModeFlags flags);
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(SubdeviceBackend, getRegisterAccessor_impl, 4);
 
     /// getRegisterAccessor implemenation for area types
     template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_area(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_area(const RegisterPath& registerPathName,
+        size_t numberOfWords,
+        size_t wordOffsetInRegister,
+        AccessModeFlags flags);
 
     /// getRegisterAccessor implemenation for threeRegisters types
     template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_3regs(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_3regs(const RegisterPath& registerPathName,
+        size_t numberOfWords,
+        size_t wordOffsetInRegister,
+        AccessModeFlags flags);
   };
 
 } // namespace ChimeraTK

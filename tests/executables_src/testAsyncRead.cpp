@@ -110,8 +110,10 @@ class AsyncTestDummy : public DeviceBackendImpl {
   };
 
   template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+  boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
+      size_t numberOfWords,
+      size_t wordOffsetInRegister,
+      AccessModeFlags flags) {
     assert(numberOfWords == 1);
     assert(wordOffsetInRegister == 0);
     (void)numberOfWords;

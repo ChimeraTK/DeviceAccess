@@ -22,12 +22,13 @@ namespace ChimeraTK {
     ConverterT createDataConverter(boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
 
     template<>
-    FixedPointConverter createDataConverter<FixedPointConverter>(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+    FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo>
+            registerInfo);
 
     template<>
     IEEE754_SingleConverter createDataConverter<IEEE754_SingleConverter>(
-        boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo);
+        boost::shared_ptr<RegisterInfoMap::RegisterInfo>
+            registerInfo);
 
   } // namespace detail
 

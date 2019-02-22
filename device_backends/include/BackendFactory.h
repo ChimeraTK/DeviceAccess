@@ -87,8 +87,8 @@ namespace ChimeraTK {
     /** Holds device type and function pointer to the createInstance function of
      * plugin */
     std::map<std::string,
-        boost::function<
-            boost::shared_ptr<DeviceBackend>(std::string address, std::map<std::string, std::string> parameters)>>
+        boost::function<boost::shared_ptr<DeviceBackend>(
+            std::string address, std::map<std::string, std::string> parameters)>>
         creatorMap;
 
     /** Compatibility creatorMap for old-style backends which just take a plain

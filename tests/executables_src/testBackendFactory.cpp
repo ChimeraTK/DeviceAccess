@@ -22,8 +22,11 @@ using namespace ChimeraTK;
 struct NewBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
 
-  static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string /*host*/,
+      std::string instance,
+      std::list<std::string>
+          parameters,
+      std::string /*mapFileName*/) {
     return returnInstance<NewBackend>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
   }
 

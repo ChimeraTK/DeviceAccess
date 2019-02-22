@@ -142,8 +142,9 @@ namespace ChimeraTK {
     }
   }
 
-  boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(
-      std::string address, std::map<std::string, std::string> parameters) {
+  boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string address,
+      std::map<std::string, std::string>
+          parameters) {
     std::string mapFileName = parameters["map"];
     if(mapFileName == "") {
       throw ChimeraTK::logic_error("No map file name given.");
