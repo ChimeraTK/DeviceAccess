@@ -32,7 +32,7 @@ struct TestApplication : public ctk::Application {
 
   void defineConnections() {} // the setup is done in the tests
 
-  ctk::DeviceModule dev{this, "(ExceptionDummy?map=DemoDummy.map)"};
+  ctk::DeviceModule dev{this, "(ExceptionDummy?map=test.map)"};
   ctk::ControlSystemModule cs;
 };
 
@@ -41,14 +41,14 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testThinkOfAName) {
   TestApplication app;
   boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=DemoDummy.map)"));
+      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test.map)"));
 
   app.dev.connectTo(app.cs);
   ctk::TestFacility test;
   app.initialise();
   app.run();
-  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=DemoDummy.map)/message");
-  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=DemoDummy.map)/status");
+  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=test.map)/message");
+  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=test.map)/status");
 
   // initially there should be no error set
   message.readLatest();
