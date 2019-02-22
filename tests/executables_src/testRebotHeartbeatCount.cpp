@@ -25,11 +25,9 @@ BOOST_AUTO_TEST_SUITE(RebotHeartbeatCountTestSuite)
 
 // This test is for protocol version 1
 BOOST_AUTO_TEST_CASE(testHeartbeat1) {
-  RebotDummyServer rebotServer(5001 /*port*/, "./mtcadummy_rebot.map",
-                               1 /*protocol version*/);
+  RebotDummyServer rebotServer(5001 /*port*/, "./mtcadummy_rebot.map", 1 /*protocol version*/);
 
-  boost::thread serverThread(
-      boost::bind(&RebotDummyServer::start, boost::ref(rebotServer)));
+  boost::thread serverThread(boost::bind(&RebotDummyServer::start, boost::ref(rebotServer)));
 
   BOOST_CHECK(rebotServer._helloCount == 0);
 
@@ -44,30 +42,27 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   RebotSleepSynchroniser::_clientMayGetLock = true;
   std::cout << "test locked manually , mayget is true" << std::endl;
 
-  for (uint32_t i = 1; i < 5; ++i) {
+  for(uint32_t i = 1; i < 5; ++i) {
     d.write("BOARD.WORD_USER", 42);
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 2500));
   }
 
   BOOST_CHECK(rebotServer._helloCount == 1);
 
-  for (uint32_t i = 1; i < 5; ++i) {
-    testable_rebot_sleep::advance_until(
-        boost::chrono::milliseconds(i * 5000 + 10000));
+  for(uint32_t i = 1; i < 5; ++i) {
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 5000 + 10000));
     BOOST_CHECK(rebotServer._helloCount == i + 1);
   }
 
-  for (uint32_t i = 1; i < 5; ++i) {
+  for(uint32_t i = 1; i < 5; ++i) {
     d.read<int>("BOARD.WORD_USER");
-    testable_rebot_sleep::advance_until(
-        boost::chrono::milliseconds(i * 2500 + 30000));
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 2500 + 30000));
   }
 
   BOOST_CHECK(rebotServer._helloCount == 5);
 
-  for (uint32_t i = 1; i < 5; ++i) {
-    testable_rebot_sleep::advance_until(
-        boost::chrono::milliseconds(i * 5000 + 40000));
+  for(uint32_t i = 1; i < 5; ++i) {
+    testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 5000 + 40000));
     BOOST_CHECK(rebotServer._helloCount == i + 5);
   }
 

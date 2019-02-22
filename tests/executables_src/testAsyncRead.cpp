@@ -24,31 +24,25 @@ static std::set<std::string> sdmList = {"sdm://./AsyncTestDummy"};
 /**********************************************************************************************************************/
 
 class AsyncTestDummy : public DeviceBackendImpl {
-public:
-  explicit AsyncTestDummy() {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
-  }
+ public:
+  explicit AsyncTestDummy() { FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl); }
 
   ~AsyncTestDummy() override;
 
-  std::string readDeviceInfo() override {
-    return std::string("AsyncTestDummy");
-  }
+  std::string readDeviceInfo() override { return std::string("AsyncTestDummy"); }
 
   static boost::shared_ptr<DeviceBackend> createInstance(std::string,
-                                                         std::string,
-                                                         std::list<std::string>,
-                                                         std::string) {
+      std::string,
+      std::list<std::string>,
+      std::string) {
     return boost::shared_ptr<DeviceBackend>(new AsyncTestDummy());
   }
 
-  template <typename UserType>
+  template<typename UserType>
   class Accessor : public NDRegisterAccessor<UserType> {
-  public:
-    Accessor(AsyncTestDummy *backend, const RegisterPath &registerPathName,
-             AccessModeFlags &flags)
-        : NDRegisterAccessor<UserType>(registerPathName), _backend(backend),
-          _flags(flags) {
+   public:
+    Accessor(AsyncTestDummy* backend, const RegisterPath& registerPathName, AccessModeFlags& flags)
+    : NDRegisterAccessor<UserType>(registerPathName), _backend(backend), _flags(flags) {
       buffer_2D.resize(1);
       buffer_2D[0].resize(1);
     }
@@ -59,10 +53,9 @@ public:
       // create future_queue if not already created and continue it to enusre
       // postRead is called (in the user thread, so we use the deferred launch
       // policy)
-      if (!futureCreated) {
+      if(!futureCreated) {
         _backend->notificationQueue[getName()] = cppext::future_queue<void>(2);
-        activeFuture =
-            TransferFuture(_backend->notificationQueue[getName()], this);
+        activeFuture = TransferFuture(_backend->notificationQueue[getName()], this);
         futureCreated = true;
       }
 
@@ -97,21 +90,17 @@ public:
     bool isReadable() const override { return true; }
     bool isWriteable() const override { return true; }
 
-    std::vector<boost::shared_ptr<TransferElement>>
-    getHardwareAccessingElements() override {
+    std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return {this->shared_from_this()};
     }
-    std::list<boost::shared_ptr<TransferElement>>
-    getInternalElements() override {
-      return {};
-    }
+    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
     bool futureCreated{false};
 
     VersionNumber getVersionNumber() const override { return currentVersion; }
 
-  protected:
-    AsyncTestDummy *_backend;
+   protected:
+    AsyncTestDummy* _backend;
     AccessModeFlags _flags;
     using NDRegisterAccessor<UserType>::getName;
     using NDRegisterAccessor<UserType>::buffer_2D;
@@ -120,21 +109,17 @@ public:
     VersionNumber currentVersion;
   };
 
-  template <typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>>
-  getRegisterAccessor_impl(const RegisterPath &registerPathName,
-                           size_t numberOfWords, size_t wordOffsetInRegister,
-                           AccessModeFlags flags) {
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     assert(numberOfWords == 1);
     assert(wordOffsetInRegister == 0);
     (void)numberOfWords;
     (void)wordOffsetInRegister;
-    return boost::make_shared<Accessor<UserType>>(this, registerPathName,
-                                                  flags);
+    return boost::make_shared<Accessor<UserType>>(this, registerPathName, flags);
   }
 
-  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(AsyncTestDummy,
-                                                 getRegisterAccessor_impl, 4);
+  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(AsyncTestDummy, getRegisterAccessor_impl, 4);
 
   void open() override { _opened = true; }
 
@@ -151,8 +136,7 @@ AsyncTestDummy::~AsyncTestDummy() {}
 struct Fixture {
   Fixture() {
     BackendFactory::getInstance().registerBackendType(
-        "AsyncTestDummy", "", &AsyncTestDummy::createInstance,
-        CHIMERATK_DEVICEACCESS_VERSION);
+        "AsyncTestDummy", "", &AsyncTestDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
     BackendFactory::getInstance().setDMapFilePath("dummies.dmap");
   }
 };
@@ -161,18 +145,16 @@ static Fixture fixture;
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testAsyncRead) {
-  for (auto &sdmToUse : sdmList) {
+  for(auto& sdmToUse : sdmList) {
     std::cout << "testAsyncRead: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
-    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(
-        BackendFactory::getInstance().createBackend(sdmToUse));
+    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(sdmToUse));
     BOOST_CHECK(backend != nullptr);
 
     // obtain register accessor with integral type
-    auto accessor = device.getScalarRegisterAccessor<int>(
-        "REG", 0, {AccessMode::wait_for_new_data});
+    auto accessor = device.getScalarRegisterAccessor<int>("REG", 0, {AccessMode::wait_for_new_data});
 
     // simple reading through readAsync without actual need
     TransferFuture future;
@@ -192,7 +174,7 @@ BOOST_AUTO_TEST_CASE(testAsyncRead) {
 
     // check that future's wait() function won't return before the read is
     // complete
-    for (int i = 0; i < 5; ++i) {
+    for(int i = 0; i < 5; ++i) {
       backend->registers["/REG"] = 42 + i;
       future = accessor.readAsync();
       std::atomic<bool> flag;
@@ -211,10 +193,9 @@ BOOST_AUTO_TEST_CASE(testAsyncRead) {
 
     // check that obtaining the same future multiple times works properly
     backend->registers["/REG"] = 666;
-    for (int i = 0; i < 5; ++i) {
+    for(int i = 0; i < 5; ++i) {
       future = accessor.readAsync();
-      BOOST_CHECK(accessor ==
-                  46); // still the old value from the last test part
+      BOOST_CHECK(accessor == 46); // still the old value from the last test part
     }
     backend->notificationQueue["/REG"].push(); // trigger transfer
     future.wait();
@@ -244,24 +225,19 @@ BOOST_AUTO_TEST_CASE(testAsyncRead) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadAny) {
-  for (auto &sdmToUse : sdmList) {
+  for(auto& sdmToUse : sdmList) {
     std::cout << "testReadAny: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
-    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(
-        BackendFactory::getInstance().createBackend(sdmToUse));
+    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(sdmToUse));
     BOOST_CHECK(backend != nullptr);
 
     // obtain register accessor with integral type
-    auto a1 = device.getScalarRegisterAccessor<uint8_t>(
-        "a1", 0, {AccessMode::wait_for_new_data});
-    auto a2 = device.getScalarRegisterAccessor<int32_t>(
-        "a2", 0, {AccessMode::wait_for_new_data});
-    auto a3 = device.getScalarRegisterAccessor<int32_t>(
-        "a3", 0, {AccessMode::wait_for_new_data});
-    auto a4 = device.getScalarRegisterAccessor<int32_t>(
-        "a4", 0, {AccessMode::wait_for_new_data});
+    auto a1 = device.getScalarRegisterAccessor<uint8_t>("a1", 0, {AccessMode::wait_for_new_data});
+    auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
+    auto a3 = device.getScalarRegisterAccessor<int32_t>("a3", 0, {AccessMode::wait_for_new_data});
+    auto a4 = device.getScalarRegisterAccessor<int32_t>("a4", 0, {AccessMode::wait_for_new_data});
 
     // initialise the buffers of the accessors
     a1 = 1;
@@ -553,20 +529,17 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testReadAnyWithPoll) {
-  for (auto &sdmToUse : sdmList) {
+  for(auto& sdmToUse : sdmList) {
     std::cout << "testReadAnyWithPoll: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
-    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(
-        BackendFactory::getInstance().createBackend(sdmToUse));
+    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(sdmToUse));
     BOOST_CHECK(backend != nullptr);
 
     // obtain register accessor with integral type
-    auto a1 = device.getScalarRegisterAccessor<uint8_t>(
-        "a1", 0, {AccessMode::wait_for_new_data});
-    auto a2 = device.getScalarRegisterAccessor<int32_t>(
-        "a2", 0, {AccessMode::wait_for_new_data});
+    auto a1 = device.getScalarRegisterAccessor<uint8_t>("a1", 0, {AccessMode::wait_for_new_data});
+    auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
     auto a3 = device.getScalarRegisterAccessor<int32_t>("a3");
     auto a4 = device.getScalarRegisterAccessor<int32_t>("a4");
 
@@ -654,20 +627,17 @@ BOOST_AUTO_TEST_CASE(testReadAnyWithPoll) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testWaitAny) {
-  for (auto &sdmToUse : sdmList) {
+  for(auto& sdmToUse : sdmList) {
     std::cout << "testWaitAny: " << sdmToUse << std::endl;
 
     Device device;
     device.open(sdmToUse);
-    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(
-        BackendFactory::getInstance().createBackend(sdmToUse));
+    auto backend = boost::dynamic_pointer_cast<AsyncTestDummy>(BackendFactory::getInstance().createBackend(sdmToUse));
     BOOST_CHECK(backend != nullptr);
 
     // obtain register accessor with integral type
-    auto a1 = device.getScalarRegisterAccessor<uint8_t>(
-        "a1", 0, {AccessMode::wait_for_new_data});
-    auto a2 = device.getScalarRegisterAccessor<int32_t>(
-        "a2", 0, {AccessMode::wait_for_new_data});
+    auto a1 = device.getScalarRegisterAccessor<uint8_t>("a1", 0, {AccessMode::wait_for_new_data});
+    auto a2 = device.getScalarRegisterAccessor<int32_t>("a2", 0, {AccessMode::wait_for_new_data});
     auto a3 = device.getScalarRegisterAccessor<int32_t>("a3");
     auto a4 = device.getScalarRegisterAccessor<int32_t>("a4");
 

@@ -15,7 +15,7 @@ using namespace boost::unit_test_framework;
 #include "TwoDRegisterAccessor.h"
 
 namespace ChimeraTK {
-using namespace ChimeraTK;
+  using namespace ChimeraTK;
 }
 using namespace ChimeraTK;
 
@@ -36,29 +36,22 @@ BOOST_AUTO_TEST_CASE(testConstructor) {
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
   device.open(DEVICE_ALIAS);
-  TwoDRegisterAccessor<double> deMultiplexer =
-      device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH / "FRAC_INT");
+  TwoDRegisterAccessor<double> deMultiplexer = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH / "FRAC_INT");
   BOOST_CHECK(deMultiplexer[0].size() == 5);
 
   device.close();
   device.open(DEVICE_INVALID_SEQUENCES_ALIAS);
 
+  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH / "NO_WORDS"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH / "WRONG_SIZE"), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
-      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH / "NO_WORDS"),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH /
-                                                           "WRONG_SIZE"),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH /
-                                                           "WRONG_NELEMENTS"),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH /
-                                                           "DOES_NOT_EXIST"),
-                    ChimeraTK::logic_error);
+      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH / "WRONG_NELEMENTS"), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      device.getTwoDRegisterAccessor<double>(INVALID_MODULE_PATH / "DOES_NOT_EXIST"), ChimeraTK::logic_error);
 }
 
 // test the de-multiplexing itself, with 'identity' fixed point conversion
-template <class SequenceWordType>
+template<class SequenceWordType>
 void testDeMultiplexing(std::string areaName) {
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
@@ -66,10 +59,8 @@ void testDeMultiplexing(std::string areaName) {
   device.open(DEVICE_ALIAS);
 
   std::vector<SequenceWordType> ioBuffer(15);
-  auto area = device.getOneDRegisterAccessor<int32_t>(
-      TEST_MODULE_NAME + "/AREA_MULTIPLEXED_SEQUENCE_" + areaName);
-  size_t nBytes = std::min(area.getNElements() * sizeof(int32_t),
-                           15 * sizeof(SequenceWordType));
+  auto area = device.getOneDRegisterAccessor<int32_t>(TEST_MODULE_NAME + "/AREA_MULTIPLEXED_SEQUENCE_" + areaName);
+  size_t nBytes = std::min(area.getNElements() * sizeof(int32_t), 15 * sizeof(SequenceWordType));
   ioBuffer[0] = 'A';
   ioBuffer[1] = 'a';
   ioBuffer[2] = '0';
@@ -89,8 +80,7 @@ void testDeMultiplexing(std::string areaName) {
   area.write();
 
   TwoDRegisterAccessor<SequenceWordType> deMultiplexer =
-      device.getTwoDRegisterAccessor<SequenceWordType>(TEST_MODULE_PATH /
-                                                       areaName);
+      device.getTwoDRegisterAccessor<SequenceWordType>(TEST_MODULE_PATH / areaName);
 
   BOOST_CHECK(deMultiplexer.isReadOnly() == false);
   BOOST_CHECK(deMultiplexer.isReadable());
@@ -114,8 +104,8 @@ void testDeMultiplexing(std::string areaName) {
   BOOST_CHECK(deMultiplexer[2][3] == '3');
   BOOST_CHECK(deMultiplexer[2][4] == '4');
 
-  for (size_t sequenceIndex = 0; sequenceIndex < 3; ++sequenceIndex) {
-    for (size_t i = 0; i < 5; ++i) {
+  for(size_t sequenceIndex = 0; sequenceIndex < 3; ++sequenceIndex) {
+    for(size_t i = 0; i < 5; ++i) {
       deMultiplexer[sequenceIndex][i] += 5;
     }
   }
@@ -153,7 +143,7 @@ BOOST_AUTO_TEST_CASE(testDeMultiplexing8) {
 
 // test the de-multiplexing itself, with  fixed point conversion
 // and using the factory function
-template <class SequenceWordType>
+template<class SequenceWordType>
 void testWithConversion(std::string multiplexedSequenceName) {
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
@@ -161,19 +151,18 @@ void testWithConversion(std::string multiplexedSequenceName) {
   device.open(DEVICE_ALIAS);
 
   std::vector<SequenceWordType> ioBuffer(15);
-  auto area = device.getOneDRegisterAccessor<int32_t>(
-      TEST_MODULE_PATH / MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName);
-  size_t nBytes = std::min(area.getNElements() * sizeof(int32_t),
-                           15 * sizeof(SequenceWordType));
+  auto area =
+      device.getOneDRegisterAccessor<int32_t>(TEST_MODULE_PATH / MULTIPLEXED_SEQUENCE_PREFIX + multiplexedSequenceName);
+  size_t nBytes = std::min(area.getNElements() * sizeof(int32_t), 15 * sizeof(SequenceWordType));
 
-  for (size_t i = 0; i < ioBuffer.size(); ++i) {
+  for(size_t i = 0; i < ioBuffer.size(); ++i) {
     ioBuffer[i] = i;
   }
   memcpy(&(area[0]), ioBuffer.data(), nBytes);
   area.write();
 
-  TwoDRegisterAccessor<float> accessor = device.getTwoDRegisterAccessor<float>(
-      TEST_MODULE_PATH / multiplexedSequenceName);
+  TwoDRegisterAccessor<float> accessor =
+      device.getTwoDRegisterAccessor<float>(TEST_MODULE_PATH / multiplexedSequenceName);
   accessor.read();
 
   BOOST_CHECK(accessor[0][0] == 0);
@@ -192,8 +181,8 @@ void testWithConversion(std::string multiplexedSequenceName) {
   BOOST_CHECK(accessor[1][4] == 3.25);  // 13 with 2 frac bits
   BOOST_CHECK(accessor[2][4] == 1.75);  // 14 with 3 frac bits
 
-  for (size_t sequenceIndex = 0; sequenceIndex < 3; ++sequenceIndex) {
-    for (size_t i = 0; i < 5; ++i) {
+  for(size_t sequenceIndex = 0; sequenceIndex < 3; ++sequenceIndex) {
+    for(size_t i = 0; i < 5; ++i) {
       accessor[sequenceIndex][i] += 1.;
     }
   }
@@ -203,16 +192,13 @@ void testWithConversion(std::string multiplexedSequenceName) {
   area.read();
   memcpy(ioBuffer.data(), &(area[0]), nBytes);
 
-  for (size_t i = 0; i < 15; ++i) {
+  for(size_t i = 0; i < 15; ++i) {
     // with i%3+1 fractional bits the added floating point value of 1
     // corresponds to 2^(i%3+1) in fixed point represetation
     int addedValue = 1 << (i % 3 + 1);
     std::stringstream message;
-    message << "ioBuffer[" << i << "] is " << ioBuffer[i] << ", expected "
-            << i + addedValue;
-    BOOST_CHECK_MESSAGE(ioBuffer[i] ==
-                            static_cast<SequenceWordType>(i + addedValue),
-                        message.str());
+    message << "ioBuffer[" << i << "] is " << ioBuffer[i] << ", expected " << i + addedValue;
+    BOOST_CHECK_MESSAGE(ioBuffer[i] == static_cast<SequenceWordType>(i + addedValue), message.str());
   }
 }
 
@@ -232,10 +218,9 @@ BOOST_AUTO_TEST_CASE(testMixed) {
   Device device;
   device.open(DEVICE_MIXED_ALIAS);
 
-  TwoDRegisterAccessor<double> myMixedData =
-      device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM");
-  auto myRawData = device.getOneDRegisterAccessor<int32_t>(
-      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 0, {AccessMode::raw});
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM");
+  auto myRawData =
+      device.getOneDRegisterAccessor<int32_t>("APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 0, {AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNChannels() == 17);
   BOOST_CHECK(myMixedData.getNElementsPerChannel() == 372);
@@ -278,15 +263,13 @@ BOOST_AUTO_TEST_CASE(testMixed) {
 }
 
 BOOST_AUTO_TEST_CASE(testNumberOfSequencesDetected) {
-  boost::shared_ptr<RegisterInfoMap> registerMap =
-      MapFileParser().parse(MAP_FILE_NAME);
+  boost::shared_ptr<RegisterInfoMap> registerMap = MapFileParser().parse(MAP_FILE_NAME);
   // open a dummy device with the sequence map file
   BackendFactory::getInstance().setDMapFilePath(DMAP_FILE_NAME);
   Device device;
   device.open(DEVICE_ALIAS);
 
-  TwoDRegisterAccessor<double> deMuxedData =
-      device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH / "FRAC_INT");
+  TwoDRegisterAccessor<double> deMuxedData = device.getTwoDRegisterAccessor<double>(TEST_MODULE_PATH / "FRAC_INT");
 
   BOOST_CHECK(deMuxedData.getNChannels() == 3);
 }
@@ -299,17 +282,15 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestOffset) {
 
   const size_t nWordsPerBlock = 44 / sizeof(int32_t);
 
-  TwoDRegisterAccessor<double> myMixedData =
-      device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 0, 42);
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 0, 42);
   auto myRawData = device.getOneDRegisterAccessor<int32_t>(
-      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 42 * nWordsPerBlock,
-      {AccessMode::raw});
+      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 42 * nWordsPerBlock, {AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNChannels() == 17);
   BOOST_CHECK(myMixedData.getNElementsPerChannel() == 372 - 42);
   BOOST_CHECK(myMixedData[0].size() == 372 - 42);
 
-  for (unsigned int i = 0; i < myMixedData.getNElementsPerChannel(); ++i) {
+  for(unsigned int i = 0; i < myMixedData.getNElementsPerChannel(); ++i) {
     myMixedData[0][i] = -24673; // 1001 1111 1001 1111
     myMixedData[1][i] = -13724; // 1100 1010 0110 0100
     myMixedData[2][i] = 130495;
@@ -390,16 +371,15 @@ BOOST_AUTO_TEST_CASE(testAreaOfInterestLength) {
 
   const size_t nWordsPerBlock = 44 / sizeof(int32_t);
 
-  TwoDRegisterAccessor<double> myMixedData =
-      device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 120);
-  auto myRawData = device.getOneDRegisterAccessor<int32_t>(
-      "APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 0, {AccessMode::raw});
+  TwoDRegisterAccessor<double> myMixedData = device.getTwoDRegisterAccessor<double>("APP0/DAQ0_BAM", 120);
+  auto myRawData =
+      device.getOneDRegisterAccessor<int32_t>("APP0/AREA_MULTIPLEXED_SEQUENCE_DAQ0_BAM", 0, 0, {AccessMode::raw});
 
   BOOST_CHECK(myMixedData.getNChannels() == 17);
   BOOST_CHECK(myMixedData.getNElementsPerChannel() == 120);
   BOOST_CHECK(myMixedData[0].size() == 120);
 
-  for (unsigned int i = 0; i < myMixedData.getNElementsPerChannel(); ++i) {
+  for(unsigned int i = 0; i < myMixedData.getNElementsPerChannel(); ++i) {
     myMixedData[0][i] = -24673; // 1001 1111 1001 1111
     myMixedData[1][i] = -13724; // 1100 1010 0110 0100
     myMixedData[2][i] = 130495;

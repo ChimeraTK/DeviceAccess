@@ -3,7 +3,7 @@
 #include "DummyBackend.h"
 
 namespace ChimeraTK {
-using namespace ChimeraTK;
+  using namespace ChimeraTK;
 }
 using namespace ChimeraTK;
 #define WRONG_VERSION "00.18"
@@ -12,11 +12,10 @@ using namespace ChimeraTK;
 // registered, thus it is never instantiated
 struct WrongVersionBackend : public DummyBackend {
   using DummyBackend::DummyBackend;
-  static boost::shared_ptr<DeviceBackend>
-  createInstance(std::string address,
-                 std::map<std::string, std::string> parameters) {
-    return returnInstance<WrongVersionBackend>(
-        address, convertPathRelativeToDmapToAbs(parameters["map"]));
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
+      std::map<std::string, std::string>
+          parameters) {
+    return returnInstance<WrongVersionBackend>(address, convertPathRelativeToDmapToAbs(parameters["map"]));
   }
 
   // LCOV_EXCL_STOP The registerern and the version functions have to be called
@@ -24,8 +23,7 @@ struct WrongVersionBackend : public DummyBackend {
   struct BackendRegisterer {
     BackendRegisterer() {
       ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "wrongVersionBackend", &WrongVersionBackend::createInstance, {},
-          WRONG_VERSION);
+          "wrongVersionBackend", &WrongVersionBackend::createInstance, {}, WRONG_VERSION);
     }
   };
 };

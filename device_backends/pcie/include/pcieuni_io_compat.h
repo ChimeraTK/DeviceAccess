@@ -4,8 +4,7 @@
 /** Information about the offsets of the bars in the address space of the
  * character device.
  */
-static const loff_t PCIEUNI_BAR_OFFSETS[6] = {
-    0LL, (1LL) << 60, (2LL) << 60, (3LL) << 60, (4LL) << 60, (5LL) << 60};
+static const loff_t PCIEUNI_BAR_OFFSETS[6] = {0LL, (1LL) << 60, (2LL) << 60, (3LL) << 60, (4LL) << 60, (5LL) << 60};
 
 /** Information about the bar sizes. It is retrieved via IOCTL.
  */

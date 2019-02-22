@@ -1,5 +1,5 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
-///BOOST_AUTO_TEST_CASE!
+/// BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
 using namespace boost::unit_test_framework;
 
@@ -18,7 +18,7 @@ using namespace boost::unit_test_framework;
 #include "PcieBackend.h"
 
 namespace ChimeraTK {
-using namespace ChimeraTK;
+  using namespace ChimeraTK;
 }
 using namespace ChimeraTK;
 using ChimeraTK::numeric_address::BAR;
@@ -45,36 +45,32 @@ using ChimeraTK::numeric_address::BAR;
 //
 // Note: The lock is automatically released when the process terminates!
 struct TestLocker {
-  std::vector<std::string> usedNodes{"mtcadummys0", "llrfdummys4",
-                                     "noioctldummys5", "pcieunidummys6"};
+  std::vector<std::string> usedNodes{"mtcadummys0", "llrfdummys4", "noioctldummys5", "pcieunidummys6"};
 
   TestLocker() {
-    mkdir(
-        "/var/run/lock/mtcadummy",
+    mkdir("/var/run/lock/mtcadummy",
         0777); // ignore errors intentionally, as directory might already exist
-    for (auto &node : usedNodes) {
+    for(auto& node : usedNodes) {
       std::string lockfile = "/var/run/lock/mtcadummy/" + node;
 
       // open dmap file for locking
       int fd = open(lockfile.c_str(), O_WRONLY | O_CREAT, 0777);
-      if (fd == -1) {
-        std::cout << "Cannot open file '" << lockfile << "' for locking."
-                  << std::endl;
+      if(fd == -1) {
+        std::cout << "Cannot open file '" << lockfile << "' for locking." << std::endl;
         exit(1);
       }
 
       // obtain lock
       int res = flock(fd, LOCK_EX);
-      if (res == -1) {
-        std::cout << "Cannot acquire lock on file 'shareddummyTest.dmap'."
-                  << std::endl;
+      if(res == -1) {
+        std::cout << "Cannot acquire lock on file 'shareddummyTest.dmap'." << std::endl;
         exit(1);
       }
     }
   }
 
   ~TestLocker() {
-    for (auto &node : usedNodes) {
+    for(auto& node : usedNodes) {
       std::string lockfile = "/var/run/lock/mtcadummy/" + node;
       unlink(lockfile.c_str());
     }
@@ -91,10 +87,10 @@ static TestLocker testLocker;
  *  has to be executed first, and testClose() has to be executed last.
  *  Further dependencies are implemented in the teste suite.
  */
-static BackendFactory &factoryInstance = BackendFactory::getInstance();
+static BackendFactory& factoryInstance = BackendFactory::getInstance();
 class PcieBackendTest {
-public:
-  PcieBackendTest(std::string const &deviceFileName, unsigned int slot);
+ public:
+  PcieBackendTest(std::string const& deviceFileName, unsigned int slot);
 
   /** A simple test which calls the default constructor and checks that the
    * backend is closed. We keep this separate because in principle constructors
@@ -131,7 +127,7 @@ public:
   /// Test that all functions throw an exception if the backend is not opened.
   void testFailIfBackendClosed();
 
-private:
+ private:
   PcieBackend _pcieBackend;
   std::string _deviceFileName;
   unsigned int _slot;
@@ -140,49 +136,36 @@ private:
 
   // Internal function for better code readablility.
   // Returns an error message. If the message is empty the test succeeded.
-  std::string checkDmaValues(std::vector<int32_t> const &dmaBuffer);
+  std::string checkDmaValues(std::vector<int32_t> const& dmaBuffer);
 };
 
 class PcieBackendTestSuite : public test_suite {
-public:
-  PcieBackendTestSuite(std::string const &deviceFileName, unsigned int slot)
-      : test_suite("PcieBackend test suite") {
+ public:
+  PcieBackendTestSuite(std::string const& deviceFileName, unsigned int slot) : test_suite("PcieBackend test suite") {
     BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
     // add member function test cases to a test suite
-    boost::shared_ptr<PcieBackendTest> pcieBackendTest(
-        new PcieBackendTest(deviceFileName, slot));
+    boost::shared_ptr<PcieBackendTest> pcieBackendTest(new PcieBackendTest(deviceFileName, slot));
 
-    test_case *createBackendTestCase = BOOST_CLASS_TEST_CASE(
-        &PcieBackendTest::testCreateBackend, pcieBackendTest);
-    test_case *openTestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testOpen, pcieBackendTest);
+    test_case* createBackendTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testCreateBackend, pcieBackendTest);
+    test_case* openTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testOpen, pcieBackendTest);
 
-    test_case *readTestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testRead, pcieBackendTest);
-    test_case *writeAreaTestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testWriteArea, pcieBackendTest);
+    test_case* readTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testRead, pcieBackendTest);
+    test_case* writeAreaTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testWriteArea, pcieBackendTest);
 
-    test_case *readRegisterTestCase = BOOST_CLASS_TEST_CASE(
-        &PcieBackendTest::testReadRegister, pcieBackendTest);
-    test_case *writeRegisterTestCase = BOOST_CLASS_TEST_CASE(
-        &PcieBackendTest::testWriteRegister, pcieBackendTest);
+    test_case* readRegisterTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testReadRegister, pcieBackendTest);
+    test_case* writeRegisterTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testWriteRegister, pcieBackendTest);
 
-    test_case *readDMATestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testReadDMA, pcieBackendTest);
-    test_case *writeDMATestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testWriteDMA, pcieBackendTest);
+    test_case* readDMATestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testReadDMA, pcieBackendTest);
+    test_case* writeDMATestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testWriteDMA, pcieBackendTest);
 
-    test_case *readDeviceInfoTestCase = BOOST_CLASS_TEST_CASE(
-        &PcieBackendTest::testReadDeviceInfo, pcieBackendTest);
+    test_case* readDeviceInfoTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testReadDeviceInfo, pcieBackendTest);
 
-    test_case *closeTestCase =
-        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testClose, pcieBackendTest);
+    test_case* closeTestCase = BOOST_CLASS_TEST_CASE(&PcieBackendTest::testClose, pcieBackendTest);
 
-    test_case *failIfBackendClosedTestCase = BOOST_CLASS_TEST_CASE(
-        &PcieBackendTest::testFailIfBackendClosed, pcieBackendTest);
+    test_case* failIfBackendClosedTestCase =
+        BOOST_CLASS_TEST_CASE(&PcieBackendTest::testFailIfBackendClosed, pcieBackendTest);
 
-    test_case *testConstructor =
-        BOOST_TEST_CASE(&PcieBackendTest::testConstructor);
+    test_case* testConstructor = BOOST_TEST_CASE(&PcieBackendTest::testConstructor);
 
     createBackendTestCase->depends_on(testConstructor);
     openTestCase->depends_on(createBackendTestCase);
@@ -216,7 +199,7 @@ public:
     add(failIfBackendClosedTestCase);
   }
 
-private:
+ private:
 };
 
 bool init_unit_test() {
@@ -236,8 +219,7 @@ bool init_unit_test() {
 
   std::stringstream pcieunidummyFileName;
   pcieunidummyFileName << "/dev/pcieunidummys" << PCIEUNI_TEST_SLOT;
-  framework::master_test_suite().add(
-      new PcieBackendTestSuite(PCIE_UNI_DEVICE, PCIEUNI_TEST_SLOT));
+  framework::master_test_suite().add(new PcieBackendTestSuite(PCIE_UNI_DEVICE, PCIEUNI_TEST_SLOT));
 
   return true;
 }
@@ -251,24 +233,21 @@ void PcieBackendTest::testConstructor() {
   BOOST_CHECK(pcieBackend.isConnected() == true);
 }
 
-PcieBackendTest::PcieBackendTest(std::string const &deviceFileName,
-                                 unsigned int slot)
-    : _pcieBackend(deviceFileName), _deviceFileName(deviceFileName),
-      _slot(slot) {}
+PcieBackendTest::PcieBackendTest(std::string const& deviceFileName, unsigned int slot)
+: _pcieBackend(deviceFileName), _deviceFileName(deviceFileName), _slot(slot) {}
 
-std::string
-PcieBackendTest::checkDmaValues(std::vector<int32_t> const &dmaBuffer) {
+std::string PcieBackendTest::checkDmaValues(std::vector<int32_t> const& dmaBuffer) {
   std::cout << "testDmaValues" << std::endl;
   bool dmaValuesOK = true;
   size_t i; // we need this after the loop
-  for (i = 0; i < dmaBuffer.size(); ++i) {
-    if (dmaBuffer[i] != static_cast<int32_t>(i * i)) {
+  for(i = 0; i < dmaBuffer.size(); ++i) {
+    if(dmaBuffer[i] != static_cast<int32_t>(i * i)) {
       dmaValuesOK = false;
       break;
     }
   }
 
-  if (dmaValuesOK) {
+  if(dmaValuesOK) {
     return std::string(); // an empty string means test is ok
   }
 
@@ -298,27 +277,19 @@ void PcieBackendTest::testFailIfBackendClosed() {
       ChimeraTK::logic_error);
   // BOOST_CHECK_THROW(  _pcieBackendInstance->read(WORD_USER_OFFSET, &dataWord,
   // sizeof(dataWord), /*bar*/ 0),
-  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET,
-                                               &dataWord, sizeof(dataWord)),
-                    ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
-      _pcieBackendInstance->read(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)),
-      ChimeraTK::logic_error);
+      _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 0, 0, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
   // BOOST_CHECK_THROW(  _pcieBackendInstance->writeReg(/*bar*/ 0,
   // WORD_USER_OFFSET, 0),
+  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, 0, 4), ChimeraTK::logic_error);
   BOOST_CHECK_THROW(
-      _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, 0, 4),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET,
-                                                &dataWord, sizeof(dataWord)),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET,
-                                                &dataWord, sizeof(dataWord)),
-                    ChimeraTK::logic_error);
+      _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      _pcieBackendInstance->write(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, sizeof(dataWord)), ChimeraTK::logic_error);
 
   // std::string deviceInfo;
-  BOOST_CHECK_THROW(_pcieBackendInstance->readDeviceInfo(),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->readDeviceInfo(), ChimeraTK::logic_error);
 }
 
 void PcieBackendTest::testReadDeviceInfo() {
@@ -350,8 +321,7 @@ void PcieBackendTest::testReadDMA() {
 
   std::vector<int32_t> dmaUserBuffer(N_WORDS_DMA, -1);
 
-  _pcieBackendInstance->read(/*the dma bar*/ 2, /*offset*/ 0, &dmaUserBuffer[0],
-                             N_WORDS_DMA * sizeof(int32_t));
+  _pcieBackendInstance->read(/*the dma bar*/ 2, /*offset*/ 0, &dmaUserBuffer[0], N_WORDS_DMA * sizeof(int32_t));
 
   std::string errorMessage = checkDmaValues(dmaUserBuffer);
   BOOST_CHECK_MESSAGE(errorMessage.empty(), errorMessage);
@@ -361,12 +331,11 @@ void PcieBackendTest::testReadDMA() {
   std::vector<int32_t> smallBuffer(20, -1);
   static const unsigned int readOffset = 5;
   _pcieBackendInstance->read(
-      /*the dma bar*/ 2, /*offset*/ readOffset * sizeof(int32_t),
-      &smallBuffer[0], smallBuffer.size() * sizeof(int32_t));
+      /*the dma bar*/ 2, /*offset*/ readOffset * sizeof(int32_t), &smallBuffer[0],
+      smallBuffer.size() * sizeof(int32_t));
 
-  for (size_t i = 0; i < smallBuffer.size(); ++i) {
-    BOOST_CHECK(smallBuffer[i] ==
-                static_cast<int32_t>((i + readOffset) * (i + readOffset)));
+  for(size_t i = 0; i < smallBuffer.size(); ++i) {
+    BOOST_CHECK(smallBuffer[i] == static_cast<int32_t>((i + readOffset) * (i + readOffset)));
   }
 }
 
@@ -383,27 +352,22 @@ void PcieBackendTest::testRead() {
   // We checked that single reading worked, so we use it to create the
   // reference.
   int32_t firmwareContent;
-  _pcieBackendInstance->read(/*bar*/ 0, WORD_FIRMWARE_OFFSET, &firmwareContent,
-                             4);
+  _pcieBackendInstance->read(/*bar*/ 0, WORD_FIRMWARE_OFFSET, &firmwareContent, 4);
   int32_t compilationContent;
-  _pcieBackendInstance->read(/*bar*/ 0, WORD_COMPILATION_OFFSET,
-                             &compilationContent, 4);
+  _pcieBackendInstance->read(/*bar*/ 0, WORD_COMPILATION_OFFSET, &compilationContent, 4);
 
   // Now try reading them as area
   int32_t twoWords[2];
   twoWords[0] = 0xFFFFFFFF;
   twoWords[1] = 0xFFFFFFFF;
 
-  _pcieBackendInstance->read(/*bar*/ 0, WORD_FIRMWARE_OFFSET, twoWords,
-                             2 * sizeof(int32_t));
-  BOOST_CHECK((twoWords[0] == firmwareContent) &&
-              (twoWords[1] == compilationContent));
+  _pcieBackendInstance->read(/*bar*/ 0, WORD_FIRMWARE_OFFSET, twoWords, 2 * sizeof(int32_t));
+  BOOST_CHECK((twoWords[0] == firmwareContent) && (twoWords[1] == compilationContent));
 
   // now try to read only six of the eight bytes. This should throw an exception
   // because it is not a multiple of 4.
-  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 0, /*offset*/ 0,
-                                               twoWords, /*nBytes*/ 6),
-                    ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(
+      _pcieBackendInstance->read(/*bar*/ 0, /*offset*/ 0, twoWords, /*nBytes*/ 6), ChimeraTK::runtime_error);
 
   // also check another bar
   // Start the ADC on the dummy device. This will fill bar 2 (the "DMA" buffer)
@@ -412,8 +376,7 @@ void PcieBackendTest::testRead() {
   _pcieBackendInstance->write(/*bar*/ 0, WORD_ADC_ENA_OFFSET, &data, 4);
   // use the same test as for DMA
   std::vector<int32_t> bar2Buffer(N_WORDS_DMA, -1);
-  _pcieBackendInstance->read(/*the dma bar*/ 2, /*offset*/ 0, &bar2Buffer[0],
-                             N_WORDS_DMA * sizeof(int32_t));
+  _pcieBackendInstance->read(/*the dma bar*/ 2, /*offset*/ 0, &bar2Buffer[0], N_WORDS_DMA * sizeof(int32_t));
 
   std::string errorMessage = checkDmaValues(bar2Buffer);
   BOOST_CHECK_MESSAGE(errorMessage.empty(), errorMessage);
@@ -429,32 +392,26 @@ void PcieBackendTest::testWriteArea() {
   int32_t increasedClockCounts[2];
   int32_t readbackClockCounts[2];
 
-  _pcieBackendInstance->read(/*bar*/ 0, WORD_CLK_CNT_OFFSET,
-                             originalClockCounts, 2 * sizeof(int32_t));
+  _pcieBackendInstance->read(/*bar*/ 0, WORD_CLK_CNT_OFFSET, originalClockCounts, 2 * sizeof(int32_t));
   increasedClockCounts[0] = originalClockCounts[0] + 1;
   increasedClockCounts[1] = originalClockCounts[1] + 1;
-  _pcieBackendInstance->write(/*bar*/ 0, WORD_CLK_CNT_OFFSET,
-                              increasedClockCounts, 2 * sizeof(int32_t));
-  _pcieBackendInstance->read(/*bar*/ 0, WORD_CLK_CNT_OFFSET,
-                             readbackClockCounts, 2 * sizeof(int32_t));
-  BOOST_CHECK((increasedClockCounts[0] == readbackClockCounts[0]) &&
-              (increasedClockCounts[1] == readbackClockCounts[1]));
+  _pcieBackendInstance->write(/*bar*/ 0, WORD_CLK_CNT_OFFSET, increasedClockCounts, 2 * sizeof(int32_t));
+  _pcieBackendInstance->read(/*bar*/ 0, WORD_CLK_CNT_OFFSET, readbackClockCounts, 2 * sizeof(int32_t));
+  BOOST_CHECK(
+      (increasedClockCounts[0] == readbackClockCounts[0]) && (increasedClockCounts[1] == readbackClockCounts[1]));
 
   // now try to write only six of the eight bytes. This should throw an
   // exception because it is not a multiple of 4.
-  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 0, WORD_CLK_CNT_OFFSET,
-                                                originalClockCounts,
-                                                /*nBytes*/ 6),
-                    ChimeraTK::runtime_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 0, WORD_CLK_CNT_OFFSET, originalClockCounts,
+                        /*nBytes*/ 6),
+      ChimeraTK::runtime_error);
 
   // also test another bar (area in bar 2), the usual drill: write and read
   // back, we know that reading works from the previous test
   std::vector<int32_t> writeBuffer(N_WORDS_DMA, 0xABCDEF01);
   std::vector<int32_t> readbackBuffer(N_WORDS_DMA, -1);
-  _pcieBackendInstance->write(/*bar*/ 2, 0, &writeBuffer[0],
-                              N_WORDS_DMA * sizeof(int32_t));
-  _pcieBackendInstance->read(/*bar*/ 2, 0, &readbackBuffer[0],
-                             N_WORDS_DMA * sizeof(int32_t));
+  _pcieBackendInstance->write(/*bar*/ 2, 0, &writeBuffer[0], N_WORDS_DMA * sizeof(int32_t));
+  _pcieBackendInstance->read(/*bar*/ 2, 0, &readbackBuffer[0], N_WORDS_DMA * sizeof(int32_t));
   BOOST_CHECK(readbackBuffer == writeBuffer);
 }
 
@@ -464,20 +421,16 @@ void PcieBackendTest::testReadRegister() {
   // code
 
   // read the WORD_COMPILATION register in bar 0. It's value is not 0.
-  int32_t dataWord =
-      0; // initialise with 0 so we can check if reading the content works.
+  int32_t dataWord = 0; // initialise with 0 so we can check if reading the content works.
 
   // check that the exception is thrown if the backend is not opened
   _pcieBackendInstance->close();
-  BOOST_CHECK_THROW(
-      _pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4),
-      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4), ChimeraTK::logic_error);
 
   _pcieBackendInstance->open(); // no need to check if this works because we did
                                 // the open test first
   //_pcieBackendInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
-  BOOST_CHECK_THROW(
-      _pcieBackendInstance->open(),
+  BOOST_CHECK_THROW(_pcieBackendInstance->open(),
       ChimeraTK::logic_error); // try opening again will cause an exception
   _pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4);
   BOOST_CHECK_EQUAL(dataWord, DMMY_AS_ASCII);
@@ -486,9 +439,7 @@ void PcieBackendTest::testReadRegister() {
    * range. */
   // BOOST_CHECK_THROW( _pcieBackendInstance->readReg(WORD_DUMMY_OFFSET,
   // &dataWord, /*bar*/ 6),
-  BOOST_CHECK_THROW(
-      _pcieBackendInstance->read(/*bar*/ 6, WORD_DUMMY_OFFSET, &dataWord, 4),
-      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->read(/*bar*/ 6, WORD_DUMMY_OFFSET, &dataWord, 4), ChimeraTK::logic_error);
 }
 
 void PcieBackendTest::testWriteRegister() {
@@ -511,9 +462,7 @@ void PcieBackendTest::testWriteRegister() {
    * range. */
   // BOOST_CHECK_THROW( _pcieBackendInstance->writeReg( /*bar*/ 6,
   // WORD_DUMMY_OFFSET, newUserWord),
-  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 6, WORD_DUMMY_OFFSET,
-                                                &newUserWord, 4),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(_pcieBackendInstance->write(/*bar*/ 6, WORD_DUMMY_OFFSET, &newUserWord, 4), ChimeraTK::logic_error);
 }
 
 void PcieBackendTest::testClose() {
@@ -536,11 +485,9 @@ void PcieBackendTest::testOpen() {
 void PcieBackendTest::testCreateBackend() {
   std::cout << "testCreateBackend" << std::endl;
   /** Try creating a non existing backend */
-  BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(factoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
   /** Try creating an existing backend */
-  _pcieBackendInstance = boost::dynamic_pointer_cast<PcieBackend>(
-      factoryInstance.createBackend(_deviceFileName));
+  _pcieBackendInstance = boost::dynamic_pointer_cast<PcieBackend>(factoryInstance.createBackend(_deviceFileName));
   BOOST_CHECK(_pcieBackendInstance != nullptr);
   /** Backend should be in connect state now */
   BOOST_CHECK(_pcieBackendInstance->isConnected() == true);
@@ -581,10 +528,9 @@ void PcieBackendTest::testCreateBackend() {
   // 3. We don't have a map file, so we have to use numerical addressing
   Device thirdDevice;
   thirdDevice.open("sdm://./pci:pcieunidummys6");
-  BOOST_CHECK(thirdDevice.read<int32_t>(BAR / 0 / 0xC) ==
-              48 << 3); // The user register is on bar 0, address 0xC.
-                        // We have no fixed point data conversion but 3
-                        // fractional bits.
+  BOOST_CHECK(thirdDevice.read<int32_t>(BAR / 0 / 0xC) == 48 << 3); // The user register is on bar 0, address 0xC.
+                                                                    // We have no fixed point data conversion but 3
+                                                                    // fractional bits.
 
   // 4. This should print a warning. We can't check that, so we just check that
   // it does work like the other two options.

@@ -18,7 +18,7 @@ using namespace ChimeraTK;
  * acceptable also on slower machines in debug build mode).
  *
  */
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   struct timeval tv;
   int64_t t0, tdur;
 
@@ -28,9 +28,10 @@ int main(int argc, char **argv) {
   device.open("PERFTEST");
 
   int niterBlock;
-  if (argc <= 1) {
+  if(argc <= 1) {
     niterBlock = 10;
-  } else {
+  }
+  else {
     niterBlock = atoi(argv[1]);
   }
 
@@ -47,32 +48,27 @@ int main(int argc, char **argv) {
   gettimeofday(&tv, nullptr);
   t0 = tv.tv_sec * 1000000 + tv.tv_usec;
   std::cout << " reading block ";
-  for (int i = 0; i < niterBlock; ++i) {
+  for(int i = 0; i < niterBlock; ++i) {
     acc1D.read();
     sum += acc1D[i];
   }
   gettimeofday(&tv, nullptr);
   tdur = (tv.tv_sec * 1000000 + tv.tv_usec) - t0;
-  std::cout << "took " << static_cast<double>(tdur) / 1000. / niterBlock
-            << " ms per block" << std::endl;
-  fresult << "1D_COOKEDus="
-          << std::round(static_cast<double>(tdur) / niterBlock) << std::endl;
+  std::cout << "took " << static_cast<double>(tdur) / 1000. / niterBlock << " ms per block" << std::endl;
+  fresult << "1D_COOKEDus=" << std::round(static_cast<double>(tdur) / niterBlock) << std::endl;
 
-  auto acc1Draw = device.getOneDRegisterAccessor<int>("ADC/AREA_DMA_VIA_DMA", 0,
-                                                      0, {AccessMode::raw});
+  auto acc1Draw = device.getOneDRegisterAccessor<int>("ADC/AREA_DMA_VIA_DMA", 0, 0, {AccessMode::raw});
   gettimeofday(&tv, nullptr);
   t0 = tv.tv_sec * 1000000 + tv.tv_usec;
   std::cout << " raw-reading block ";
-  for (int i = 0; i < niterBlock; ++i) {
+  for(int i = 0; i < niterBlock; ++i) {
     acc1Draw.read();
     sum += acc1Draw[i];
   }
   gettimeofday(&tv, nullptr);
   tdur = (tv.tv_sec * 1000000 + tv.tv_usec) - t0;
-  std::cout << "took " << static_cast<double>(tdur) / 1000. / niterBlock
-            << " ms per block" << std::endl;
-  fresult << "1D_RAWus=" << std::round(static_cast<double>(tdur) / niterBlock)
-          << std::endl;
+  std::cout << "took " << static_cast<double>(tdur) / 1000. / niterBlock << " ms per block" << std::endl;
+  fresult << "1D_RAWus=" << std::round(static_cast<double>(tdur) / niterBlock) << std::endl;
 
   std::cout << " **************************************************************"
                "*************"

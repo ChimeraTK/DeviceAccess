@@ -11,8 +11,7 @@ using namespace ChimeraTK;
 /********************************************************************************************************************/
 
 void testErrorInDmapFileSingle(std::string fileName) {
-  BOOST_CHECK_THROW(LogicalNameMapParser lmap(fileName, {}),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(LogicalNameMapParser lmap(fileName, {}), ChimeraTK::logic_error);
 }
 
 /********************************************************************************************************************/
@@ -42,53 +41,43 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   LogicalNameMapParser lmap("valid.xlmap", {});
   RegisterCatalogue catalogue = lmap.getCatalogue();
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("SingleWord"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWord"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
   BOOST_CHECK(info->deviceName == "PCIE2");
   BOOST_CHECK(info->registerName == "BOARD.WORD_USER");
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("PartOfArea"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("PartOfArea"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
   BOOST_CHECK(info->deviceName == "PCIE2");
   BOOST_CHECK(info->registerName == "ADC.AREA_DMAABLE");
   BOOST_CHECK(info->firstIndex == 10);
   BOOST_CHECK(info->length == 20);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("FullArea"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("FullArea"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
   BOOST_CHECK(info->deviceName == "PCIE2");
   BOOST_CHECK(info->registerName == "ADC.AREA_DMAABLE");
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Channel3"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Channel3"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
   BOOST_CHECK(info->deviceName == "PCIE3");
   BOOST_CHECK(info->registerName == "TEST.NODMA");
   BOOST_CHECK(info->channel == 3);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Channel4"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Channel4"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
   BOOST_CHECK(info->deviceName == "PCIE3");
   BOOST_CHECK(info->registerName == "TEST.NODMA");
   BOOST_CHECK(info->channel == 4);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Constant"));
-  BOOST_CHECK(info->targetType ==
-              LNMBackendRegisterInfo::TargetType::INT_CONSTANT);
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Constant"));
+  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT);
   BOOST_CHECK(info->value_int[0] == 42);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("/MyModule/SomeSubmodule/Variable"));
-  BOOST_CHECK(info->targetType ==
-              LNMBackendRegisterInfo::TargetType::INT_VARIABLE);
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("/MyModule/SomeSubmodule/Variable"));
+  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE);
   BOOST_CHECK(info->value_int[0] == 2);
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("MyModule/ConfigurableChannel"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("MyModule/ConfigurableChannel"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
   BOOST_CHECK(info->deviceName == "PCIE3");
   BOOST_CHECK(info->registerName == "TEST.NODMA");
@@ -99,10 +88,8 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(targetDevices.count("PCIE2") == 1);
   BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("ArrayConstant"));
-  BOOST_CHECK(info->targetType ==
-              LNMBackendRegisterInfo::TargetType::INT_CONSTANT);
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("ArrayConstant"));
+  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT);
   BOOST_CHECK(info->length == 5);
   BOOST_CHECK(info->value_int.size() == 5);
   BOOST_CHECK(info->value_int[0] == 1111);
@@ -111,29 +98,25 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(info->value_int[3] == 4444);
   BOOST_CHECK(info->value_int[4] == 5555);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Bit0ofVar"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit0ofVar"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::BIT);
   BOOST_CHECK(info->deviceName == "this");
   BOOST_CHECK(info->registerName == "/MyModule/SomeSubmodule/Variable");
   BOOST_CHECK(info->bit == 0);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Bit1ofVar"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit1ofVar"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::BIT);
   BOOST_CHECK(info->deviceName == "this");
   BOOST_CHECK(info->registerName == "/MyModule/SomeSubmodule/Variable");
   BOOST_CHECK(info->bit == 1);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Bit2ofVar"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit2ofVar"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::BIT);
   BOOST_CHECK(info->deviceName == "this");
   BOOST_CHECK(info->registerName == "/MyModule/SomeSubmodule/Variable");
   BOOST_CHECK(info->bit == 2);
 
-  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-      catalogue.getRegister("Bit3ofVar"));
+  info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit3ofVar"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::BIT);
   BOOST_CHECK(info->deviceName == "this");
   BOOST_CHECK(info->registerName == "/MyModule/SomeSubmodule/Variable");
@@ -153,10 +136,8 @@ BOOST_AUTO_TEST_CASE(testParameters) {
     LogicalNameMapParser lmap("withParams.xlmap", params);
     RegisterCatalogue catalogue = lmap.getCatalogue();
 
-    info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-        catalogue.getRegister("SingleWordWithParams"));
-    BOOST_CHECK(info->targetType ==
-                LNMBackendRegisterInfo::TargetType::REGISTER);
+    info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWordWithParams"));
+    BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
     BOOST_CHECK(info->deviceName == "ValueA");
     BOOST_CHECK(info->registerName == "ValueB");
   }
@@ -169,10 +150,8 @@ BOOST_AUTO_TEST_CASE(testParameters) {
     LogicalNameMapParser lmap("withParams.xlmap", params);
     RegisterCatalogue catalogue = lmap.getCatalogue();
 
-    info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(
-        catalogue.getRegister("SingleWordWithParams"));
-    BOOST_CHECK(info->targetType ==
-                LNMBackendRegisterInfo::TargetType::REGISTER);
+    info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("SingleWordWithParams"));
+    BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::REGISTER);
     BOOST_CHECK(info->deviceName == "OtherValues");
     BOOST_CHECK(info->registerName == "ThisTime");
   }

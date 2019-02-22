@@ -8,11 +8,8 @@ using namespace ChimeraTK;
 struct NotRegisteringPlugin : public DummyBackend {
   using DummyBackend::DummyBackend;
 
-  static boost::shared_ptr<DeviceBackend>
-  createInstance(std::string /*host*/, std::string instance,
-                 std::list<std::string> parameters,
-                 std::string /*mapFileName*/) {
-    return returnInstance<NotRegisteringPlugin>(
-        instance, convertPathRelativeToDmapToAbs(parameters.front()));
+  static boost::shared_ptr<DeviceBackend> createInstance(
+      std::string /*host*/, std::string instance, std::list<std::string> parameters, std::string /*mapFileName*/) {
+    return returnInstance<NotRegisteringPlugin>(instance, convertPathRelativeToDmapToAbs(parameters.front()));
   }
 };

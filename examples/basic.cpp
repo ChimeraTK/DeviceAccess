@@ -31,8 +31,7 @@ int main() {
    * The example device has a temperature controller with a set value.
    */
   ChimeraTK::ScalarRegisterAccessor<float> temperatureSetPoint =
-      myDevice.getScalarRegisterAccessor<float>(
-          "TEMPERATURE_CONTROLLER/SET_POINT");
+      myDevice.getScalarRegisterAccessor<float>("TEMPERATURE_CONTROLLER/SET_POINT");
 
   /*
    * To get the value from the device call read.
@@ -42,11 +41,9 @@ int main() {
   /*
    * Now you can treat the accessor as if it was a regular float variable.
    */
-  std::cout << "Current temperature set point is " << temperatureSetPoint
-            << std::endl;
+  std::cout << "Current temperature set point is " << temperatureSetPoint << std::endl;
   temperatureSetPoint += 1.5;
-  std::cout << "Temperature set point changed to " << temperatureSetPoint
-            << std::endl;
+  std::cout << "Temperature set point changed to " << temperatureSetPoint << std::endl;
 
   /*
    * After you are done manipulating the accessor write it to the hardware.

@@ -20,10 +20,9 @@ int main() {
    * We use a register named AREA_DATA_RAW which provides plain access to the
    * data region.
    */
-  auto dataRegion =
-      myDevice.getOneDRegisterAccessor<double>("ADC/AREA_DATA_RAW");
+  auto dataRegion = myDevice.getOneDRegisterAccessor<double>("ADC/AREA_DATA_RAW");
   int counter = 0;
-  for (auto &dataWord : dataRegion) {
+  for(auto& dataWord : dataRegion) {
     dataWord = counter++;
   }
   dataRegion.write();
@@ -32,14 +31,13 @@ int main() {
    * Now check how it looks using the TwoDRegisterAccessor. We just copy it from
    * the accessor2D.cpp example.
    */
-  ChimeraTK::TwoDRegisterAccessor<double> twoDAccessor =
-      myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
+  ChimeraTK::TwoDRegisterAccessor<double> twoDAccessor = myDevice.getTwoDRegisterAccessor<double>("ADC/DATA");
   twoDAccessor.read();
 
-  for (size_t i = 0; i < twoDAccessor.getNChannels(); ++i) {
+  for(size_t i = 0; i < twoDAccessor.getNChannels(); ++i) {
     std::cout << "Channel " << i << ":";
-    std::vector<double> &channel = twoDAccessor[i];
-    for (double sample : channel) {
+    std::vector<double>& channel = twoDAccessor[i];
+    for(double sample : channel) {
       std::cout << " " << sample;
     }
     std::cout << std::endl;

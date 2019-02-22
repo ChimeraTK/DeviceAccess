@@ -12,10 +12,10 @@ using namespace boost::unit_test_framework;
 #include "Utilities.h"
 
 namespace ChimeraTK {
-using namespace ChimeraTK;
+  using namespace ChimeraTK;
 }
 
-void checkWriteReadFromRegister(ChimeraTK::Device &rebotDevice);
+void checkWriteReadFromRegister(ChimeraTK::Device& rebotDevice);
 
 BOOST_AUTO_TEST_SUITE(RebotDeviceTestSuite)
 
@@ -56,13 +56,12 @@ BOOST_AUTO_TEST_CASE(testFactoryForRebotDeviceCreation) {
   // 3. We don't have a map file, so we have to use numerical addressing
   ChimeraTK::Device thirdDevice;
   thirdDevice.open("sdm://./rebot=localhost,5001");
-  BOOST_CHECK(thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR / 0 /
-                                        0xC) == 48 << 3); // The user register
-                                                          // is on bar 0,
-                                                          // address 0xC. We
-                                                          // have no fixed point
-                                                          // data conversion but
-                                                          // 3 fractional bits.
+  BOOST_CHECK(thirdDevice.read<int32_t>(ChimeraTK::numeric_address::BAR / 0 / 0xC) == 48 << 3); // The user register
+                                                                                                // is on bar 0,
+                                                                                                // address 0xC. We
+                                                                                                // have no fixed point
+                                                                                                // data conversion but
+                                                                                                // 3 fractional bits.
   thirdDevice.close();
 
   // 4. This should print a warning. We can't check that, so we just check that
@@ -77,14 +76,13 @@ BOOST_AUTO_TEST_CASE(testFactoryForRebotDeviceCreation) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-void checkWriteReadFromRegister(ChimeraTK::Device &rebotDevice) {
+void checkWriteReadFromRegister(ChimeraTK::Device& rebotDevice) {
   std::vector<int32_t> dataToWrite({2, 3, 100, 20});
 
   // 0xDEADBEEF is a word preset by the dummy firmware in the WORD_COMPILATION
   // register (addr 0x04). reading and verifying this register means the read
   // api of device acces works for the rebot device.
-  BOOST_CHECK_EQUAL(rebotDevice.read<uint32_t>("BOARD/WORD_COMPILATION"),
-                    0xDEADBEEF);
+  BOOST_CHECK_EQUAL(rebotDevice.read<uint32_t>("BOARD/WORD_COMPILATION"), 0xDEADBEEF);
 
   // ADC.WORLD_CLK_MUX is a 4 word/element register, this test would verify
   // write to the device through the api works. (THe read command has been
@@ -93,8 +91,7 @@ void checkWriteReadFromRegister(ChimeraTK::Device &rebotDevice) {
   BOOST_CHECK(rebotDevice.read<int>("ADC/WORD_CLK_MUX", 4) == dataToWrite);
 
   // test read from offset 2 on a multi word/element register.
-  auto acc1 =
-      rebotDevice.getScalarRegisterAccessor<int32_t>("ADC/WORD_CLK_MUX", 2);
+  auto acc1 = rebotDevice.getScalarRegisterAccessor<int32_t>("ADC/WORD_CLK_MUX", 2);
   acc1.read();
   BOOST_CHECK_EQUAL(dataToWrite[2], static_cast<int32_t>(acc1));
 
@@ -106,8 +103,7 @@ void checkWriteReadFromRegister(ChimeraTK::Device &rebotDevice) {
   BOOST_CHECK_EQUAL(dataToWrite[0], static_cast<int32_t>(acc1));
 
   // test writing a continuous block from offset 1 in a multiword register.
-  auto acc2 =
-      rebotDevice.getOneDRegisterAccessor<int32_t>("ADC/WORD_CLK_MUX", 2, 1);
+  auto acc2 = rebotDevice.getOneDRegisterAccessor<int32_t>("ADC/WORD_CLK_MUX", 2, 1);
   acc2 = std::vector<int32_t>({676, 9987});
   acc2.write();
   acc2 = std::vector<int32_t>({0, 0});
@@ -116,14 +112,13 @@ void checkWriteReadFromRegister(ChimeraTK::Device &rebotDevice) {
   BOOST_CHECK_EQUAL(acc2[1], 9987);
 
   // write to larger area
-  auto testArea = rebotDevice.getOneDRegisterAccessor<int32_t>(
-      "ADC/TEST_AREA"); // testArea is 1024 words long
-  for (int i = 0; i < 10; ++i) {
+  auto testArea = rebotDevice.getOneDRegisterAccessor<int32_t>("ADC/TEST_AREA"); // testArea is 1024 words long
+  for(int i = 0; i < 10; ++i) {
     testArea[i] = i;
   }
   testArea.write();
   testArea.read();
-  for (int i = 0; i < 10; ++i) {
+  for(int i = 0; i < 10; ++i) {
     BOOST_CHECK_EQUAL(testArea[i], i);
   }
 }

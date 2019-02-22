@@ -12,18 +12,22 @@
 
 namespace ChimeraTK {
 
-class DeviceBackend;
-class Device;
-class TransferGroup;
-class RegisterAccessor;
+  class DeviceBackend;
+  class Device;
+  class TransferGroup;
+  class RegisterAccessor;
 
-template <typename UserType> class BufferingRegisterAccessor;
+  template<typename UserType>
+  class BufferingRegisterAccessor;
 
-template <typename UserType> class NDRegisterAccessor;
+  template<typename UserType>
+  class NDRegisterAccessor;
 
-template <typename UserType> class TwoDRegisterAccessor;
+  template<typename UserType>
+  class TwoDRegisterAccessor;
 
-template <typename UserType> class MultiplexedDataAccessor;
+  template<typename UserType>
+  class MultiplexedDataAccessor;
 
 } // namespace ChimeraTK
 

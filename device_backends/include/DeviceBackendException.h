@@ -13,10 +13,10 @@
 
 namespace ChimeraTK {
 
-/**
- *  Compatibility typedefs for the old exception classes
- */
-typedef ChimeraTK::runtime_error DeviceBackendException;
+  /**
+   *  Compatibility typedefs for the old exception classes
+   */
+  typedef ChimeraTK::runtime_error DeviceBackendException;
 
 } // namespace ChimeraTK
 

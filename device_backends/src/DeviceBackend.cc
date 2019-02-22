@@ -6,6 +6,6 @@
 
 namespace ChimeraTK {
 
-DeviceBackend::~DeviceBackend() {}
+  DeviceBackend::~DeviceBackend() {}
 
 } /* namespace ChimeraTK */

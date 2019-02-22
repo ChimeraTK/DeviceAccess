@@ -15,7 +15,7 @@
  * run time.
  */
 class CustomBackend : public ChimeraTK::DummyBackend {
-public:
+ public:
   // C++11 shorthand syntax that we want a constructor with the same parameters
   // as the parent class.
   using ChimeraTK::DummyBackend::DummyBackend;
@@ -25,9 +25,9 @@ public:
    * signature. This function is later given to the BackendFactory to create
    * this type of backend when it is requested.
    */
-  static boost::shared_ptr<ChimeraTK::DeviceBackend>
-  createInstance(std::string /*address*/,
-                 std::map<std::string, std::string> parameters) {
+  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string /*address*/,
+      std::map<std::string, std::string>
+          parameters) {
     /*
      * Inside createInstance the parameters are interpreted and passed on to the
      * constructor. Like this the backend constructor can have arbitrary
@@ -44,8 +44,7 @@ public:
      * This part will vary, depending on the requirements of the particular
      backend.
      */
-    std::string absolutePath =
-        convertPathRelativeToDmapToAbs(parameters["map"]);
+    std::string absolutePath = convertPathRelativeToDmapToAbs(parameters["map"]);
 
     /*
      * Now we have all parameters for the constructor. We just have to create a
@@ -74,8 +73,7 @@ public:
        * The factory stores this pointer together with the type name and call
        * the functions when this type if backed needs to be created.
        */
-      ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "CUSTOM", &CustomBackend::createInstance);
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("CUSTOM", &CustomBackend::createInstance);
     }
   };
 };

@@ -36,15 +36,12 @@ int main() {
    * performed.
    */
   ChimeraTK::ScalarRegisterAccessor<int> temperatureSetPoint =
-      myDevice.getScalarRegisterAccessor<int>(ChimeraTK::numeric_address::BAR /
-                                              0 / 32 * 4);
+      myDevice.getScalarRegisterAccessor<int>(ChimeraTK::numeric_address::BAR / 0 / 32 * 4);
 
   temperatureSetPoint.read();
-  std::cout << "Current temperature set point is " << temperatureSetPoint
-            << std::endl;
+  std::cout << "Current temperature set point is " << temperatureSetPoint << std::endl;
   temperatureSetPoint += 15;
-  std::cout << "Temperature set point changed to " << temperatureSetPoint
-            << std::endl;
+  std::cout << "Temperature set point changed to " << temperatureSetPoint << std::endl;
   temperatureSetPoint.write();
 
   myDevice.close();

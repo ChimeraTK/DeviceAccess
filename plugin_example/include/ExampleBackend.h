@@ -22,29 +22,27 @@
  */
 // LCOV_EXCL_START dont include this in the coverage report
 class ExampleBackend : public ChimeraTK::DeviceBackendImpl {
-public:
+ public:
   ExampleBackend();
   virtual ~ExampleBackend();
   virtual void open();
   virtual void close();
-  static boost::shared_ptr<ChimeraTK::DeviceBackend>
-  createInstance(std::string address,
-                 std::map<std::string, std::string> parameters);
+  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string address,
+      std::map<std::string, std::string>
+          parameters);
 
   virtual std::string readDeviceInfo() { return std::string("Example_Device"); }
 
-protected:
+ protected:
   /** Implement the virtual function template to obtain the buffering register
    * accessor */
-  template <typename UserType>
-  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>
-  getRegisterAccessor_impl(const ChimeraTK::RegisterPath &registerPathName,
-                           size_t numberOfWords, size_t wordOffsetInRegister,
-                           ChimeraTK::AccessModeFlags flags);
-  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ExampleBackend,
-                                                 getRegisterAccessor_impl, 4);
+  template<typename UserType>
+  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+      const ChimeraTK::RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister,
+      ChimeraTK::AccessModeFlags flags);
+  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(ExampleBackend, getRegisterAccessor_impl, 4);
 
-public:
+ public:
   /**
    *  The registerer is announcing the new type to the registerer in its
    * constructor. We have one static instance of this registerer in the backend.
@@ -52,10 +50,9 @@ public:
    * the backend is known by the factory afterwards.
    */
   class BackendRegisterer {
-  public:
+   public:
     BackendRegisterer() {
-      ChimeraTK::BackendFactory::getInstance().registerBackendType(
-          "exx", &ExampleBackend::createInstance);
+      ChimeraTK::BackendFactory::getInstance().registerBackendType("exx", &ExampleBackend::createInstance);
     }
   };
   /**

@@ -1,5 +1,5 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
-///BOOST_AUTO_TEST_CASE!
+/// BOOST_AUTO_TEST_CASE!
 #include "boost_dynamic_init_test.h"
 
 #include <boost/bind.hpp>
@@ -13,7 +13,7 @@
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {
-using namespace ChimeraTK;
+  using namespace ChimeraTK;
 }
 using namespace ChimeraTK;
 
@@ -26,7 +26,7 @@ using namespace ChimeraTK;
 #define EXISTING_DEVICE "DUMMYD0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
-static BackendFactory &FactoryInstance = BackendFactory::getInstance();
+static BackendFactory& FactoryInstance = BackendFactory::getInstance();
 // declaration so we can make it friend
 // of TestableDummyBackend.
 class DummyBackendTest;
@@ -36,19 +36,17 @@ class DummyBackendTest;
  *  This is done by declaring DummybackendTest as a friend.
  */
 class TestableDummyBackend : public DummyBackend {
-public:
-  explicit TestableDummyBackend(std::string mapFileName)
-      : DummyBackend(mapFileName) {}
+ public:
+  explicit TestableDummyBackend(std::string mapFileName) : DummyBackend(mapFileName) {}
   friend class DummyBackendTest;
 };
 
 class DummyBackendTest {
-public:
+ public:
   DummyBackendTest() : a(0), b(0), c(0), _backendInstance() {
     std::list<std::string> parameters;
     parameters.push_back(std::string(TEST_MAPPING_FILE));
-    _dummyBackend = boost::shared_ptr<TestableDummyBackend>(
-        new TestableDummyBackend(TEST_MAPPING_FILE));
+    _dummyBackend = boost::shared_ptr<TestableDummyBackend>(new TestableDummyBackend(TEST_MAPPING_FILE));
   }
 
   static void testCalculateVirtualAddress();
@@ -78,9 +76,9 @@ public:
 
   void testOpenClose();
 
-private:
+ private:
   boost::shared_ptr<TestableDummyBackend> _dummyBackend;
-  TestableDummyBackend *getBackendInstance(bool reOpen = false);
+  TestableDummyBackend* getBackendInstance(bool reOpen = false);
   friend class DummyBackendTestSuite;
 
   // stuff for the callback function test
@@ -92,45 +90,35 @@ private:
 };
 
 class DummyBackendTestSuite : public test_suite {
-public:
+ public:
   DummyBackendTestSuite() : test_suite("DummyBackend test suite") {
     BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
     boost::shared_ptr<DummyBackendTest> dummyBackendTest(new DummyBackendTest);
 
     // Pointers to test cases with dependencies. All other test cases are added
     // directly.
-    test_case *readOnlyTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testReadOnly, dummyBackendTest);
-    test_case *writeCallbackFunctionsTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testWriteCallbackFunctions, dummyBackendTest);
-    test_case *writeRegisterWithoutCallbackTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testWriteRegisterWithoutCallback, dummyBackendTest);
+    test_case* readOnlyTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadOnly, dummyBackendTest);
+    test_case* writeCallbackFunctionsTestCase =
+        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteCallbackFunctions, dummyBackendTest);
+    test_case* writeRegisterWithoutCallbackTestCase =
+        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteRegisterWithoutCallback, dummyBackendTest);
 
-    test_case *createBackendTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testCreateBackend, dummyBackendTest);
-    test_case *openTestCase =
-        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testOpen, dummyBackendTest);
-    test_case *openCloseTestCase = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testOpenClose, dummyBackendTest);
-    test_case *closeTestCase =
-        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testClose, dummyBackendTest);
+    test_case* createBackendTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testCreateBackend, dummyBackendTest);
+    test_case* openTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testOpen, dummyBackendTest);
+    test_case* openCloseTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testOpenClose, dummyBackendTest);
+    test_case* closeTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testClose, dummyBackendTest);
 
-    test_case *testCalculateVirtualAddress =
-        BOOST_TEST_CASE(DummyBackendTest::testCalculateVirtualAddress);
-    test_case *testCheckSizeIsMultipleOfWordSize =
-        BOOST_TEST_CASE(DummyBackendTest::testCheckSizeIsMultipleOfWordSize);
-    test_case *testAddressRange =
-        BOOST_TEST_CASE(DummyBackendTest::testAddressRange);
-    test_case *testReadWriteSingleWordRegister = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testReadWriteSingleWordRegister, dummyBackendTest);
-    test_case *testReadWriteMultiWordRegister = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testReadWriteMultiWordRegister, dummyBackendTest);
-    test_case *testReadDeviceInfo = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testReadDeviceInfo, dummyBackendTest);
-    test_case *testIsWriteRangeOverlap = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testIsWriteRangeOverlap, dummyBackendTest);
-    test_case *testFinalClosing = BOOST_CLASS_TEST_CASE(
-        &DummyBackendTest::testFinalClosing, dummyBackendTest);
+    test_case* testCalculateVirtualAddress = BOOST_TEST_CASE(DummyBackendTest::testCalculateVirtualAddress);
+    test_case* testCheckSizeIsMultipleOfWordSize = BOOST_TEST_CASE(DummyBackendTest::testCheckSizeIsMultipleOfWordSize);
+    test_case* testAddressRange = BOOST_TEST_CASE(DummyBackendTest::testAddressRange);
+    test_case* testReadWriteSingleWordRegister =
+        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadWriteSingleWordRegister, dummyBackendTest);
+    test_case* testReadWriteMultiWordRegister =
+        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadWriteMultiWordRegister, dummyBackendTest);
+    test_case* testReadDeviceInfo = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testReadDeviceInfo, dummyBackendTest);
+    test_case* testIsWriteRangeOverlap =
+        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testIsWriteRangeOverlap, dummyBackendTest);
+    test_case* testFinalClosing = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testFinalClosing, dummyBackendTest);
 
     // we use the setup from the read-only test to check that the callback
     // function is not executed if the register is not writeable.
@@ -141,8 +129,7 @@ public:
     testReadDeviceInfo->depends_on(testReadWriteMultiWordRegister);
     readOnlyTestCase->depends_on(testReadDeviceInfo);
     writeCallbackFunctionsTestCase->depends_on(readOnlyTestCase);
-    writeRegisterWithoutCallbackTestCase->depends_on(
-        writeCallbackFunctionsTestCase);
+    writeRegisterWithoutCallbackTestCase->depends_on(writeCallbackFunctionsTestCase);
     testIsWriteRangeOverlap->depends_on(writeRegisterWithoutCallbackTestCase);
     testFinalClosing->depends_on(testIsWriteRangeOverlap);
     createBackendTestCase->depends_on(testFinalClosing);
@@ -178,35 +165,28 @@ bool init_unit_test() {
 void DummyBackendTest::testCalculateVirtualAddress() {
   BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0) == 0UL);
   BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x35, 0) == 0x35UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x67875, 0x3) ==
-              0x3000000000067875UL);
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0x4) ==
-              0x4000000000000000UL);
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x67875, 0x3) == 0x3000000000067875UL);
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0, 0x4) == 0x4000000000000000UL);
 
   // the first bit of the bar has to be cropped
-  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x123, 0xD) ==
-              0x5000000000000123UL);
+  BOOST_CHECK(DummyBackend::calculateVirtualAddress(0x123, 0xD) == 0x5000000000000123UL);
 }
 
 void DummyBackendTest::testCheckSizeIsMultipleOfWordSize() {
   // just some arbitrary numbers to test %4 = 0, 1, 2, 3
   BOOST_CHECK_NO_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(24));
 
-  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(25),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(25), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(26),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(26), ChimeraTK::logic_error);
 
-  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(27),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(TestableDummyBackend::checkSizeIsMultipleOfWordSize(27), ChimeraTK::logic_error);
 }
 
 void DummyBackendTest::testReadWriteSingleWordRegister() {
-  TestableDummyBackend *dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING,
-                                                  mappingElement);
+  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
   uint32_t offset = mappingElement.address;
   uint8_t bar = mappingElement.bar;
   int32_t dataContent = -1;
@@ -222,23 +202,16 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
   BOOST_CHECK(dataContent == 47);
 
   // the size as index is invalid, allowed range is 0..size-1 included.
-  BOOST_CHECK_THROW(dummyBackend->read(bar,
-                                       dummyBackend->_barContents[bar].size() *
-                                           sizeof(int32_t),
-                                       &dataContent, 4),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(dummyBackend->write(bar,
-                                        dummyBackend->_barContents[bar].size() *
-                                            sizeof(int32_t),
-                                        &dataContent, 4),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(dummyBackend->read(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &dataContent, 4),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(dummyBackend->write(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &dataContent, 4),
+      ChimeraTK::logic_error);
 }
 
 void DummyBackendTest::testReadWriteMultiWordRegister() {
-  TestableDummyBackend *dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
-                                                  mappingElement);
+  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
   uint32_t offset = mappingElement.address;
   uint8_t bar = mappingElement.bar;
@@ -246,20 +219,17 @@ void DummyBackendTest::testReadWriteMultiWordRegister() {
   size_t sizeInWords = mappingElement.nBytes / sizeof(int32_t);
   std::vector<int32_t> dataContent(sizeInWords, -1);
 
-  BOOST_CHECK_NO_THROW(
-      dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes));
-  for (std::vector<int32_t>::iterator dataIter = dataContent.begin();
-       dataIter != dataContent.end(); ++dataIter) {
+  BOOST_CHECK_NO_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes));
+  for(std::vector<int32_t>::iterator dataIter = dataContent.begin(); dataIter != dataContent.end(); ++dataIter) {
     std::stringstream errorMessage;
     errorMessage << "*dataIter = " << *dataIter;
     BOOST_CHECK_MESSAGE(*dataIter == 0, errorMessage.str());
   }
 
-  for (unsigned int index = 0; index < dataContent.size(); ++index) {
+  for(unsigned int index = 0; index < dataContent.size(); ++index) {
     dataContent[index] = static_cast<int32_t>((index + 1) * (index + 1));
   }
-  BOOST_CHECK_NO_THROW(
-      dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes));
+  BOOST_CHECK_NO_THROW(dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes));
   // make sure the value is really being read
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
 
@@ -267,76 +237,60 @@ void DummyBackendTest::testReadWriteMultiWordRegister() {
   dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes);
 
   // make sure the value is really being read
-  for (unsigned int index = 0; index < dataContent.size(); ++index) {
-    BOOST_CHECK(dataContent[index] ==
-                static_cast<int32_t>((index + 1) * (index + 1)));
+  for(unsigned int index = 0; index < dataContent.size(); ++index) {
+    BOOST_CHECK(dataContent[index] == static_cast<int32_t>((index + 1) * (index + 1)));
   }
 
   // tests for exceptions
   // 1. base address too large
-  BOOST_CHECK_THROW(dummyBackend->read(bar,
-                                       dummyBackend->_barContents[bar].size() *
-                                           sizeof(int32_t),
-                                       &(dataContent[0]), sizeInBytes),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(dummyBackend->write(bar,
-                                        dummyBackend->_barContents[bar].size() *
-                                            sizeof(int32_t),
-                                        &(dataContent[0]), sizeInBytes),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      dummyBackend->read(bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &(dataContent[0]), sizeInBytes),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(dummyBackend->write(
+                        bar, dummyBackend->_barContents[bar].size() * sizeof(int32_t), &(dataContent[0]), sizeInBytes),
+      ChimeraTK::logic_error);
   // 2. size too large (works because the target register is not at offfset 0)
   // resize the data vector for this test
   dataContent.resize(dummyBackend->_barContents[bar].size());
-  BOOST_CHECK_THROW(dummyBackend->read(bar, offset, &(dataContent[0]),
-                                       dummyBackend->_barContents[bar].size() *
-                                           sizeof(int32_t)),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(dummyBackend->write(bar, offset, &(dataContent[0]),
-                                        dummyBackend->_barContents[bar].size() *
-                                            sizeof(int32_t)),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      dummyBackend->read(bar, offset, &(dataContent[0]), dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
+      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(
+      dummyBackend->write(bar, offset, &(dataContent[0]), dummyBackend->_barContents[bar].size() * sizeof(int32_t)),
+      ChimeraTK::logic_error);
   // 3. size not multiple of 4
-  BOOST_CHECK_THROW(
-      dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes - 1),
-      ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(
-      dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1),
-      ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(dummyBackend->read(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
 }
 
-TestableDummyBackend *DummyBackendTest::getBackendInstance(bool reOpen) {
-  if (_backendInstance == 0)
-    _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
-  if (reOpen || (!_backendInstance->isOpen())) {
-    if (_backendInstance->isOpen())
-      _backendInstance->close();
+TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
+  if(_backendInstance == 0) _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
+  if(reOpen || (!_backendInstance->isOpen())) {
+    if(_backendInstance->isOpen()) _backendInstance->close();
     _backendInstance->open();
   }
-  DeviceBackend *rawBasePointer = _backendInstance.get();
-  return (static_cast<TestableDummyBackend *>(rawBasePointer));
+  DeviceBackend* rawBasePointer = _backendInstance.get();
+  return (static_cast<TestableDummyBackend*>(rawBasePointer));
 }
 
 void DummyBackendTest::testReadDeviceInfo() {
   std::string deviceInfo;
-  TestableDummyBackend *dummyBackend = getBackendInstance();
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   deviceInfo = dummyBackend->readDeviceInfo();
   std::cout << deviceInfo << std::endl;
 
   // DummyDevice instances created using the factory now deals with absolute
   // paths to the dmap file. We frame an absolute path for comaprison
   std::string absolutePathToMapfile =
-      ChimeraTK::parserUtilities::getCurrentWorkingDirectory() + "./" +
-      TEST_MAPPING_FILE;
+      ChimeraTK::parserUtilities::getCurrentWorkingDirectory() + "./" + TEST_MAPPING_FILE;
 
-  BOOST_CHECK(deviceInfo == (std::string("DummyBackend with mapping file ") +
-                             absolutePathToMapfile));
+  BOOST_CHECK(deviceInfo == (std::string("DummyBackend with mapping file ") + absolutePathToMapfile));
 }
 
 void DummyBackendTest::testReadOnly() {
-  TestableDummyBackend *dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance(true);
   RegisterInfoMap::RegisterInfo mappingElement;
-  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING,
-                                                  mappingElement);
+  dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
   uint32_t offset = mappingElement.address;
   uint8_t bar = mappingElement.bar;
@@ -348,7 +302,7 @@ void DummyBackendTest::testReadOnly() {
   BOOST_REQUIRE_MESSAGE(sizeInWords == 4, errorMessage.str());
 
   std::vector<int32_t> dataContent(sizeInWords);
-  for (unsigned int index = 0; index < dataContent.size(); ++index) {
+  for(unsigned int index = 0; index < dataContent.size(); ++index) {
     dataContent[index] = static_cast<int32_t>((index + 1) * (index + 1));
   }
   dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes);
@@ -367,14 +321,12 @@ void DummyBackendTest::testReadOnly() {
   // also set the last two words to read only. Now only the second word has to
   // change.
   // We use the addressRange interface for it to also cover this.
-  TestableDummyBackend::AddressRange lastTwoMuxRegisters(
-      bar, offset + 2 * sizeof(int32_t), 2 * sizeof(int32_t));
+  TestableDummyBackend::AddressRange lastTwoMuxRegisters(bar, offset + 2 * sizeof(int32_t), 2 * sizeof(int32_t));
   dummyBackend->setReadOnly(lastTwoMuxRegisters);
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = 29);
   // also test with single write operations
-  for (size_t index = 0; index < sizeInWords; ++index) {
-    dummyBackend->write(bar, offset + index * sizeof(int32_t),
-                        &dataContent[index], 4);
+  for(size_t index = 0; index < sizeInWords; ++index) {
+    dummyBackend->write(bar, offset + index * sizeof(int32_t), &dataContent[index], 4);
   }
 
   std::for_each(dataContent.begin(), dataContent.end(), boost::lambda::_1 = -1);
@@ -401,20 +353,17 @@ void DummyBackendTest::testWriteCallbackFunctions() {
   // but this is not the purpose of this test.
 
   // from the previous test we know that adresses 32, 40 and 44 are write only
-  TestableDummyBackend *dummyBackend = getBackendInstance();
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   BOOST_REQUIRE(dummyBackend->_barContents[0].size() >= 13);
   a = 0;
   b = 0;
   c = 0;
   dummyBackend->setWriteCallbackFunction(
-      TestableDummyBackend::AddressRange(0, 36, 4),
-      boost::bind(&DummyBackendTest::increaseA, this));
+      TestableDummyBackend::AddressRange(0, 36, 4), boost::bind(&DummyBackendTest::increaseA, this));
   dummyBackend->setWriteCallbackFunction(
-      TestableDummyBackend::AddressRange(0, 28, 24),
-      boost::bind(&DummyBackendTest::increaseB, this));
+      TestableDummyBackend::AddressRange(0, 28, 24), boost::bind(&DummyBackendTest::increaseB, this));
   dummyBackend->setWriteCallbackFunction(
-      TestableDummyBackend::AddressRange(0, 20, 12),
-      boost::bind(&DummyBackendTest::increaseC, this));
+      TestableDummyBackend::AddressRange(0, 20, 12), boost::bind(&DummyBackendTest::increaseC, this));
 
   // test single writes
   int32_t dataWord(42);
@@ -495,9 +444,8 @@ void DummyBackendTest::testWriteRegisterWithoutCallback() {
   b = 0;
   c = 0;
   int32_t dataWord = 42;
-  TestableDummyBackend *dummyBackend = getBackendInstance();
-  dummyBackend->writeRegisterWithoutCallback(
-      0, 20, dataWord); // c has callback installed on this register
+  TestableDummyBackend* dummyBackend = getBackendInstance();
+  dummyBackend->writeRegisterWithoutCallback(0, 20, dataWord); // c has callback installed on this register
   BOOST_CHECK(a == 0);
   BOOST_CHECK(b == 0);
   BOOST_CHECK(c == 0); // c must not change
@@ -517,14 +465,11 @@ void DummyBackendTest::testAddressRange() {
   BOOST_CHECK(range24_8_0.sizeInBytes == 8);
   BOOST_CHECK(range24_8_0.bar == 0);
 
-  TestableDummyBackend::AddressRange range24_8_1(1, 24, 8); // larger bar
-  TestableDummyBackend::AddressRange range12_8_1(
-      1, 12, 8); // larger bar, smaller offset
-  TestableDummyBackend::AddressRange range28_8_0(0, 28, 8); // larger offset
-  TestableDummyBackend::AddressRange range28_8_1(
-      1, 28, 8); // larger bar, larger offset
-  TestableDummyBackend::AddressRange range24_12_0(
-      0, 24, 12); // different size, compares equal with range1
+  TestableDummyBackend::AddressRange range24_8_1(1, 24, 8);   // larger bar
+  TestableDummyBackend::AddressRange range12_8_1(1, 12, 8);   // larger bar, smaller offset
+  TestableDummyBackend::AddressRange range28_8_0(0, 28, 8);   // larger offset
+  TestableDummyBackend::AddressRange range28_8_1(1, 28, 8);   // larger bar, larger offset
+  TestableDummyBackend::AddressRange range24_12_0(0, 24, 12); // different size, compares equal with range1
 
   // compare 24_8_0 with the other cases as left argument
   BOOST_CHECK((range24_8_0 < range24_8_1));
@@ -544,16 +489,15 @@ void DummyBackendTest::testAddressRange() {
 void DummyBackendTest::testIsWriteRangeOverlap() {
   // the only test not covered by the writeCallbackFunction test:
   // An overlapping range in different bars
-  TestableDummyBackend *dummyBackend = getBackendInstance();
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   bool overlap = dummyBackend->isWriteRangeOverlap(
-      TestableDummyBackend::AddressRange(0, 0, 12),
-      TestableDummyBackend::AddressRange(1, 0, 12));
+      TestableDummyBackend::AddressRange(0, 0, 12), TestableDummyBackend::AddressRange(1, 0, 12));
   BOOST_CHECK(overlap == false);
 }
 
 void DummyBackendTest::testFinalClosing() {
   // all features have to be enabled before closing
-  TestableDummyBackend *dummyBackend = getBackendInstance();
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   BOOST_CHECK(dummyBackend->_barContents.size() != 0);
   BOOST_CHECK(dummyBackend->_readOnlyAddresses.size() != 0);
   BOOST_CHECK(dummyBackend->_writeCallbackFunctions.size() != 0);
@@ -566,17 +510,15 @@ void DummyBackendTest::testFinalClosing() {
 }
 
 void DummyBackendTest::testOpenClose() {
-  TestableDummyBackend *dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance(true);
   // there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes,
   // plus the dma bar 0xD
   // BOOST_CHECK((*dummyBackend)._barContents.size() == 3 );
   BOOST_CHECK(dummyBackend->_barContents.size() == 3);
-  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar0Iter =
-      dummyBackend->_barContents.find(0);
+  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar0Iter = dummyBackend->_barContents.find(0);
   BOOST_REQUIRE(bar0Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar0Iter->second.size() == 0x53); // 0x14C bytes in 32 bit words
-  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar2Iter =
-      dummyBackend->_barContents.find(2);
+  std::map<uint8_t, std::vector<int32_t>>::const_iterator bar2Iter = dummyBackend->_barContents.find(2);
   BOOST_REQUIRE(bar2Iter != dummyBackend->_barContents.end());
   BOOST_CHECK(bar2Iter->second.size() == 0x400); // 0x1000 bytes in 32 bit words
 
@@ -609,11 +551,9 @@ void DummyBackendTest::testOpen() {
 void DummyBackendTest::testCreateBackend() {
   /** Only for testing purpose */
   std::map<std::string, std::string> pararmeters;
-  BOOST_CHECK_THROW(DummyBackend::createInstance("", pararmeters),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(DummyBackend::createInstance("", pararmeters), ChimeraTK::logic_error);
   /** Try creating a non existing backend */
-  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(FactoryInstance.createBackend(NON_EXISTING_DEVICE), ChimeraTK::logic_error);
   /** Try creating an existing backend */
   _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
   BOOST_CHECK(_backendInstance);

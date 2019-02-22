@@ -12,119 +12,112 @@
 
 namespace ChimeraTK {
 
-/*********************************************************************************************************************/
-/** Accessor class to read and write scalar registers transparently by using the
- * accessor object like a variable of the type UserType. Conversion to and from
- * the UserType will be handled by a data converter matching the register
- * description in the map, if required. Obtain the accessor using the
- * Device::getScalarRegisterAccessor() function.
- *
- *  Note: Transfers between the device and the internal buffer need to be
- * triggered using the read() and write() functions before reading from resp.
- * after writing to the buffer using the operators.
- */
-template <typename UserType>
-class ScalarRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
-public:
-  /** Constructor. @attention Do not normally use directly.
-   *  Users should call Device::getScalarRegisterAccessor() to obtain an
-   * instance instead. */
-  ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
-      : NDRegisterAccessorAbstractor<UserType>(impl) {}
-
-  /** Placeholder constructor, to allow late initialisation of the accessor,
-   * e.g. in the open function.
-   *  @attention Accessors created with this constructors will be dysfunctional,
-   * calling any member function will throw an exception (by the
-   * boost::shared_ptr)! */
-  ScalarRegisterAccessor() {}
-
-  /** Implicit type conversion to user type T to access the value as a
-   * reference. */
-  operator UserType &() { return get()->accessData(0, 0); }
-
-  /** Implicit type conversion to user type T to access the const value. */
-  operator const UserType &() const { return get()->accessData(0, 0); }
-
-  /** Assignment operator, assigns the first element. */
-  ScalarRegisterAccessor<UserType> &operator=(UserType rightHandSide) {
-    get()->accessData(0, 0) = rightHandSide;
-    return *this;
-  }
-
-  /** Pre-increment operator for the first element. */
-  ScalarRegisterAccessor<UserType> &operator++() {
-    return operator=(get()->accessData(0, 0) + 1);
-  }
-
-  /** Pre-decrement operator for the first element. */
-  ScalarRegisterAccessor<UserType> &operator--() {
-    return operator=(get()->accessData(0, 0) - 1);
-  }
-
-  /** Post-increment operator for the first element. */
-  UserType operator++(int) {
-    UserType v = get()->accessData(0, 0);
-    operator=(v + 1);
-    return v;
-  }
-
-  /** Post-decrement operator for the first element. */
-  UserType operator--(int) {
-    UserType v = get()->accessData(0, 0);
-    operator=(v - 1);
-    return v;
-  }
-
-  /** Get the cooked values in case the accessor is a raw accessor (which does
-   * not do data conversion). This returns the converted data from the user
-   * buffer. It does not do any read or write transfer.
+  /*********************************************************************************************************************/
+  /** Accessor class to read and write scalar registers transparently by using the
+   * accessor object like a variable of the type UserType. Conversion to and from
+   * the UserType will be handled by a data converter matching the register
+   * description in the map, if required. Obtain the accessor using the
+   * Device::getScalarRegisterAccessor() function.
+   *
+   *  Note: Transfers between the device and the internal buffer need to be
+   * triggered using the read() and write() functions before reading from resp.
+   * after writing to the buffer using the operators.
    */
-  template <typename COOKED_TYPE> COOKED_TYPE getAsCooked() {
-    return get()->template getAsCooked<COOKED_TYPE>(0, 0);
-  }
+  template<typename UserType>
+  class ScalarRegisterAccessor : public NDRegisterAccessorAbstractor<UserType> {
+   public:
+    /** Constructor. @attention Do not normally use directly.
+     *  Users should call Device::getScalarRegisterAccessor() to obtain an
+     * instance instead. */
+    ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<UserType>> impl)
+    : NDRegisterAccessorAbstractor<UserType>(impl) {}
 
-  /** Set the cooked values in case the accessor is a raw accessor (which does
-   * not do data conversion). This converts to raw and writes the data to the
-   * user buffer. It does not do any read or write transfer.
-   */
-  template <typename COOKED_TYPE> void setAsCooked(COOKED_TYPE value) {
-    return get()->template setAsCooked<COOKED_TYPE>(0, 0, value);
-  }
+    /** Placeholder constructor, to allow late initialisation of the accessor,
+     * e.g. in the open function.
+     *  @attention Accessors created with this constructors will be dysfunctional,
+     * calling any member function will throw an exception (by the
+     * boost::shared_ptr)! */
+    ScalarRegisterAccessor() {}
 
-  friend class TransferGroup;
+    /** Implicit type conversion to user type T to access the value as a
+     * reference. */
+    operator UserType&() { return get()->accessData(0, 0); }
 
-  using NDRegisterAccessorAbstractor<UserType>::get;
-};
+    /** Implicit type conversion to user type T to access the const value. */
+    operator const UserType&() const { return get()->accessData(0, 0); }
 
-// Template specialisation for string. It does not have the ++ and -- operators
-template <>
-class ScalarRegisterAccessor<std::string>
-    : public NDRegisterAccessorAbstractor<std::string> {
-public:
-  inline ScalarRegisterAccessor(
-      boost::shared_ptr<NDRegisterAccessor<std::string>> impl)
-      : NDRegisterAccessorAbstractor<std::string>(impl) {}
+    /** Assignment operator, assigns the first element. */
+    ScalarRegisterAccessor<UserType>& operator=(UserType rightHandSide) {
+      get()->accessData(0, 0) = rightHandSide;
+      return *this;
+    }
 
-  inline ScalarRegisterAccessor() {}
+    /** Pre-increment operator for the first element. */
+    ScalarRegisterAccessor<UserType>& operator++() { return operator=(get()->accessData(0, 0) + 1); }
 
-  inline operator std::string &() {
-    return boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)
-        ->accessData(0, 0);
-  }
+    /** Pre-decrement operator for the first element. */
+    ScalarRegisterAccessor<UserType>& operator--() { return operator=(get()->accessData(0, 0) - 1); }
 
-  inline ScalarRegisterAccessor<std::string> &
-  operator=(std::string rightHandSide) {
-    boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)
-        ->accessData(0, 0) = rightHandSide;
-    return *this;
-  }
+    /** Post-increment operator for the first element. */
+    UserType operator++(int) {
+      UserType v = get()->accessData(0, 0);
+      operator=(v + 1);
+      return v;
+    }
 
-  friend class TransferGroup;
-};
+    /** Post-decrement operator for the first element. */
+    UserType operator--(int) {
+      UserType v = get()->accessData(0, 0);
+      operator=(v - 1);
+      return v;
+    }
 
-// Do not declare the template for all user types as extern here.
-// This could avoid optimisation of the inline code.
+    /** Get the cooked values in case the accessor is a raw accessor (which does
+     * not do data conversion). This returns the converted data from the user
+     * buffer. It does not do any read or write transfer.
+     */
+    template<typename COOKED_TYPE>
+    COOKED_TYPE getAsCooked() {
+      return get()->template getAsCooked<COOKED_TYPE>(0, 0);
+    }
+
+    /** Set the cooked values in case the accessor is a raw accessor (which does
+     * not do data conversion). This converts to raw and writes the data to the
+     * user buffer. It does not do any read or write transfer.
+     */
+    template<typename COOKED_TYPE>
+    void setAsCooked(COOKED_TYPE value) {
+      return get()->template setAsCooked<COOKED_TYPE>(0, 0, value);
+    }
+
+    friend class TransferGroup;
+
+    using NDRegisterAccessorAbstractor<UserType>::get;
+  };
+
+  // Template specialisation for string. It does not have the ++ and -- operators
+  template<>
+  class ScalarRegisterAccessor<std::string> : public NDRegisterAccessorAbstractor<std::string> {
+   public:
+    inline ScalarRegisterAccessor(boost::shared_ptr<NDRegisterAccessor<std::string>> impl)
+    : NDRegisterAccessorAbstractor<std::string>(impl) {}
+
+    inline ScalarRegisterAccessor() {}
+
+    inline operator std::string&() {
+      return boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0, 0);
+    }
+
+    inline ScalarRegisterAccessor<std::string>& operator=(std::string rightHandSide) {
+      boost::static_pointer_cast<NDRegisterAccessor<std::string>>(_impl)->accessData(0, 0) = rightHandSide;
+      return *this;
+    }
+
+    friend class TransferGroup;
+  };
+
+  // Do not declare the template for all user types as extern here.
+  // This could avoid optimisation of the inline code.
 
 } // namespace ChimeraTK
 

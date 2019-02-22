@@ -12,7 +12,7 @@ void setSigtemIndicator(int /*signalNumber*/) {
   ChimeraTK::stop_rebot_server = true;
 }
 
-int main(int, char **argv) {
+int main(int, char** argv) {
   // https://airtower.wordpress.com/2010/06/16/catch-sigterm-exit-gracefully/
   struct sigaction action;
   memset(&action, 0, sizeof(struct sigaction));
@@ -23,8 +23,7 @@ int main(int, char **argv) {
   std::string mapFileLocation = getMapFileLocation(argv);
   unsigned int protocolVersion = getProtocolVersion(argv);
 
-  ChimeraTK::RebotDummyServer testServer(portNumber, mapFileLocation,
-                                         protocolVersion);
+  ChimeraTK::RebotDummyServer testServer(portNumber, mapFileLocation, protocolVersion);
   testServer.start();
 
   return 0;

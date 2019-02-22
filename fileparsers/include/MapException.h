@@ -9,14 +9,14 @@
 
 namespace ChimeraTK {
 
-/**
- *  Compatibility typedefs for the old exception classes
- */
-typedef ChimeraTK::runtime_error LibMapException;
-typedef ChimeraTK::runtime_error MapFileException;
-typedef ChimeraTK::runtime_error MapFileParserException;
-typedef ChimeraTK::runtime_error DMapFileException;
-typedef ChimeraTK::runtime_error DMapFileParserException;
+  /**
+   *  Compatibility typedefs for the old exception classes
+   */
+  typedef ChimeraTK::runtime_error LibMapException;
+  typedef ChimeraTK::runtime_error MapFileException;
+  typedef ChimeraTK::runtime_error MapFileParserException;
+  typedef ChimeraTK::runtime_error DMapFileException;
+  typedef ChimeraTK::runtime_error DMapFileParserException;
 
 } // namespace ChimeraTK
 

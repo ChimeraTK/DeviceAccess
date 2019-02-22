@@ -1,5 +1,5 @@
 ///@todo FIXME My dynamic init header is a hack. Change the test to use
-///BOOST_AUTO_TEST_CASE!
+/// BOOST_AUTO_TEST_CASE!
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "boost_dynamic_init_test.h"
 
@@ -16,7 +16,7 @@
 #include "Device.h"
 
 namespace ChimeraTK {
-using namespace ChimeraTK;
+  using namespace ChimeraTK;
 }
 
 using namespace boost::unit_test_framework;
@@ -24,7 +24,7 @@ using namespace ChimeraTK;
 
 /**********************************************************************************************************************/
 class BufferingRegisterTest {
-public:
+ public:
   BufferingRegisterTest() {
     device = boost::shared_ptr<Device>(new Device());
     device->open("DUMMYD1");
@@ -33,21 +33,19 @@ public:
   /// test the register accessor
   void testRegisterAccessor();
 
-private:
+ private:
   boost::shared_ptr<Device> device;
   friend class BufferingRegisterTestSuite;
 };
 
 /**********************************************************************************************************************/
 class BufferingRegisterTestSuite : public test_suite {
-public:
+ public:
   BufferingRegisterTestSuite() : test_suite("DummyRegister test suite") {
     BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE_PATH);
-    boost::shared_ptr<BufferingRegisterTest> bufferingRegisterTest(
-        new BufferingRegisterTest);
+    boost::shared_ptr<BufferingRegisterTest> bufferingRegisterTest(new BufferingRegisterTest);
 
-    add(BOOST_CLASS_TEST_CASE(&BufferingRegisterTest::testRegisterAccessor,
-                              bufferingRegisterTest));
+    add(BOOST_CLASS_TEST_CASE(&BufferingRegisterTest::testRegisterAccessor, bufferingRegisterTest));
   }
 };
 
@@ -64,8 +62,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
   std::cout << "testRegisterAccessor" << std::endl;
 
   // obtain register accessor with integral type
-  BufferingRegisterAccessor<int> intRegister =
-      device->getBufferingRegisterAccessor<int>("APP0", "MODULE0");
+  BufferingRegisterAccessor<int> intRegister = device->getBufferingRegisterAccessor<int>("APP0", "MODULE0");
 
   // variable to read to for comparison
   int compare;
@@ -93,8 +90,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
 
   // test iterators with begin and end
   int ic = 0;
-  for (BufferingRegisterAccessor<int>::iterator it = intRegister.begin();
-       it != intRegister.end(); ++it) {
+  for(BufferingRegisterAccessor<int>::iterator it = intRegister.begin(); it != intRegister.end(); ++it) {
     *it = 1000 * (ic + 1);
     ic++;
   }
@@ -106,9 +102,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
 
   // test iterators with rbegin and rend
   ic = 0;
-  for (BufferingRegisterAccessor<int>::reverse_iterator it =
-           intRegister.rbegin();
-       it != intRegister.rend(); ++it) {
+  for(BufferingRegisterAccessor<int>::reverse_iterator it = intRegister.rbegin(); it != intRegister.rend(); ++it) {
     *it = 333 * (ic + 1);
     ic++;
   }
@@ -129,16 +123,15 @@ void BufferingRegisterTest::testRegisterAccessor() {
   intRegister.read();
   const BufferingRegisterAccessor<int> const_intRegister = intRegister;
   ic = 0;
-  for (BufferingRegisterAccessor<int>::const_iterator it =
-           const_intRegister.begin();
-       it != const_intRegister.end(); ++it) {
+  for(BufferingRegisterAccessor<int>::const_iterator it = const_intRegister.begin(); it != const_intRegister.end();
+      ++it) {
     BOOST_CHECK(*it == 1234 * (ic + 1));
     ic++;
   }
   ic = 0;
-  for (BufferingRegisterAccessor<int>::const_reverse_iterator it =
-           const_intRegister.rbegin();
-       it != const_intRegister.rend(); ++it) {
+  for(BufferingRegisterAccessor<int>::const_reverse_iterator it = const_intRegister.rbegin();
+      it != const_intRegister.rend();
+      ++it) {
     BOOST_CHECK(*it == 1234 * (3 - ic));
     ic++;
   }
@@ -189,13 +182,10 @@ void BufferingRegisterTest::testRegisterAccessor() {
   // test pre-increment operator
   BufferingRegisterAccessor<double> copy = ++floatRegister;
   boost::shared_ptr<NDRegisterAccessor<double>> impl, implCopy;
-  impl = boost::dynamic_pointer_cast<NDRegisterAccessor<double>>(
-      floatRegister.getHighLevelImplElement());
-  implCopy = boost::dynamic_pointer_cast<NDRegisterAccessor<double>>(
-      copy.getHighLevelImplElement());
+  impl = boost::dynamic_pointer_cast<NDRegisterAccessor<double>>(floatRegister.getHighLevelImplElement());
+  implCopy = boost::dynamic_pointer_cast<NDRegisterAccessor<double>>(copy.getHighLevelImplElement());
 
-  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] ==
-              impl->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] == impl->getHardwareAccessingElements()[0]);
   BOOST_CHECK(floatRegister == 23.);
   floatRegister.write();
   device->readReg("WORD_USER1", "MODULE0", &compare, sizeof(int), 0);
@@ -203,8 +193,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
 
   // test pre-decrement operator
   copy.replace(--floatRegister);
-  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] ==
-              impl->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] == impl->getHardwareAccessingElements()[0]);
   BOOST_CHECK(floatRegister == 22.);
   BOOST_CHECK(copy == 22.);
   floatRegister.write();
@@ -215,8 +204,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
   float oldValue = floatRegister++;
   BOOST_CHECK(oldValue == 22.);
   BOOST_CHECK(floatRegister == 23.);
-  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] ==
-              impl->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] == impl->getHardwareAccessingElements()[0]);
   floatRegister.write();
   device->readReg("WORD_USER1", "MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK(compare == 23. * 8.);
@@ -225,8 +213,7 @@ void BufferingRegisterTest::testRegisterAccessor() {
   oldValue = floatRegister--;
   BOOST_CHECK(oldValue == 23.);
   BOOST_CHECK(floatRegister == 22.);
-  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] ==
-              impl->getHardwareAccessingElements()[0]);
+  BOOST_CHECK(implCopy->getHardwareAccessingElements()[0] == impl->getHardwareAccessingElements()[0]);
   floatRegister.write();
   device->readReg("WORD_USER1", "MODULE0", &compare, sizeof(int), 0);
   BOOST_CHECK(compare == 22. * 8.);
