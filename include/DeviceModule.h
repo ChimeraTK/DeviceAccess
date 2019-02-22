@@ -109,7 +109,6 @@ namespace ChimeraTK {
      * device. This function shall not be called by the user, all exception
      *  handling is done internally by ApplicationCore. */
     void reportException(std::string errMsg);
-
     void run() override;
 
     void terminate() override;
@@ -138,7 +137,6 @@ namespace ChimeraTK {
     // it is little more than a cache and thus does not change the logical state
     // of this module
     mutable std::map<std::string, DeviceModule> subModules;
-
     /** A  VariableGroup for exception status and message. It can be protected, as
      * it is automatically connected to the control system in
      * DeviceModule::defineConnections() */

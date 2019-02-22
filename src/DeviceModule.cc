@@ -173,7 +173,6 @@ namespace ChimeraTK {
     errorCondVar.wait(lk);
     lk.unlock();
   }
-
   /*********************************************************************************************************************/
 
   void DeviceModule::handleException() {

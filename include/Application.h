@@ -195,7 +195,6 @@ namespace ChimeraTK {
     }
 
     void registerDeviceModule(DeviceModule* deviceModule);
-
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -397,7 +396,6 @@ namespace ChimeraTK {
                                    "caused by "
                                    "incorrect ownership of variables/accessors or VariableGroups.");
     }
-
     std::list<DeviceModule*> deviceModuleList;
   };
 
