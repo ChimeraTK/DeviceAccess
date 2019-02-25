@@ -72,15 +72,22 @@ foreach(subdir ${subdirs})
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/ DESTINATION include/ChimeraTK)
 endforeach()
 
+include(CheckLibraryExists)
+find_package(Threads)
+
+check_library_exists(rt shm_open "sys/mman.h" HAVE_SHMOPEN_RT)
+if(HAVE_SHMOPEN_RT)
+    set(RT_LIBRARIES "-lrt")
+else()
+    set(RT_LIBRARIES "")
+endif()
+
 # add the library
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
-if(UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME} rt pthread)
-endif()
+target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} ${RT_LIBRARIES} Threads::Threads)
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
