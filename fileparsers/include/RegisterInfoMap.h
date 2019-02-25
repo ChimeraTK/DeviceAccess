@@ -413,7 +413,8 @@ namespace ChimeraTK {
     RegisterCatalogue _catalogue;
   };
   /**
-   * @typedef Introduce specialisation of shared_ptr template for pointers to
+   * @typedef RegisterInfoMapPointer
+   * Introduce specialisation of shared_ptr template for pointers to
    * RegisterInfoMap object as a RegisterInfoMapPointer
    */
   typedef boost::shared_ptr<RegisterInfoMap> RegisterInfoMapPointer;
