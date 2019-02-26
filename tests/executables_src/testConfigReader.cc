@@ -35,6 +35,12 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
   ctk::ArrayPushInput<int32_t> intArray{this, "intArray", "MV/m", 10, "Desc"};
   ctk::ArrayPushInput<std::string> stringArray{this, "stringArray", "", 8, "Desc"};
 
+  ctk::ScalarPushInput<int16_t> m1_var16{this, "module1/var16", "MV/m", "Desc"};
+  ctk::ScalarPushInput<uint16_t> m1_var16u{this, "module1/var16u", "MV/m", "Desc"};
+  ctk::ScalarPushInput<int32_t> m1_var32{this, "module1/var32", "MV/m", "Desc"};
+  ctk::ScalarPushInput<uint32_t> m1_var32u{this, "module1/var32u", "MV/m", "Desc"};
+  ctk::ScalarPushInput<uint32_t> m1_sub_var32u{this, "module1/submodule/var32u", "MV/m", "Desc"};
+
   std::atomic<bool> done{false};
 
   void mainLoop() {
@@ -57,6 +63,12 @@ struct TestModule : ctk::ApplicationModule { using ctk::ApplicationModule::Appli
 
     BOOST_CHECK_EQUAL(stringArray.getNElements(), 8);
     for(size_t i=0; i<8; ++i) BOOST_CHECK_EQUAL(stringArray[i], "Hallo"+std::to_string(i+1));
+
+    BOOST_CHECK_EQUAL((int16_t)m1_var16, -567);
+    BOOST_CHECK_EQUAL((uint16_t)m1_var16u, 678);
+    BOOST_CHECK_EQUAL((int32_t)m1_var32, -345678);
+    BOOST_CHECK_EQUAL((uint32_t)m1_var32u, 234567);
+    BOOST_CHECK_EQUAL((uint32_t)m1_sub_var32u, 234567);
 
     // no further update shall be received
     usleep(1000000);   // 1 second
@@ -121,6 +133,12 @@ BOOST_AUTO_TEST_CASE( testConfigReader ) {
   std::vector<std::string> arrayValueString = app.config.get<std::vector<std::string>>("stringArray");
   BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
   for(size_t i=0; i<8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo"+std::to_string(i+1));
+
+  BOOST_CHECK_EQUAL(app.config.get<int16_t>("module1/var16"), -567);
+  BOOST_CHECK_EQUAL(app.config.get<uint16_t>("module1/var16u"), 678);
+  BOOST_CHECK_EQUAL(app.config.get<int32_t>("module1/var32"), -345678);
+  BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/var32u"), 234567);
+  BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/submodule/var32u"), 234567);
 
   app.config.connectTo(app.testModule);
 
