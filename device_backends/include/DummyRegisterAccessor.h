@@ -294,6 +294,53 @@ namespace ChimeraTK {
     void operator=(const DummyMultiplexedRegisterAccessor& rightHandSide) const;
   };
 
+  /** Accessor for raw 32 bit integer access to the underlying memory space.
+   *  Usually you want the interpreted version, but for debugging the converters themselves
+   *  and functionality of the NumericAddressedBackendRegisterAccessor we directly
+   *  want to write to the registers, without having to mess with absoute addresses
+   *  (we still depend on the map file parser, but the whole dummy does. The address
+   *   translation is re-done in the dummy, we are not using the one from the regular accessors.)
+   */
+  class DummyRegisterRawAccessor : public DummyRegisterAddressChecker {
+    public:
+      /// Implicit type conversion to int32_t.
+      /// This basically covers all operators for single integers.
+      operator int32_t & (){
+        return *buffer;
+      }
+
+      DummyRegisterRawAccessor(DummyBackend *dev, std::string module, std::string name)
+        : _dev(dev)
+      {
+        _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
+        buffer = &(_dev->_barContents[registerInfo.bar][registerInfo.address/sizeof(int32_t)]);
+      }
+
+      /// Get or set register content by [] operator.
+      int32_t & operator[](unsigned int index){
+        return buffer[index];
+      }
+
+      /// return number of elements
+      unsigned int getNumberOfElements(){
+        return registerInfo.nElements;
+      }
+
+  protected:
+
+      /// pointer to VirtualDevice
+      DummyBackend *_dev;
+
+      /// raw buffer of this accessor
+      int32_t *buffer;
+
+  private:
+
+      /** prevent copying by operator=, since it will be confusing */
+      void operator=(const DummyRegisterRawAccessor& rightHandSide) const;
+  };
+  
+
 } // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_DUMMY_REGISTER_ACCESSOR_H */

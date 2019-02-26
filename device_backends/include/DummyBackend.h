@@ -18,9 +18,13 @@ namespace ChimeraTK {
   // foward declarations
   template<typename T>
   class DummyRegisterAccessor;
+  
   template<typename T>
   class DummyMultiplexedRegisterAccessor;
 
+  class DummyRegisterRawAccessor;
+
+ 
   /** The dummy device opens a mapping file instead of a device, and
    *  implements all registers defined in the mapping file in memory.
    *  Like this it mimiks the real PCIe device.
@@ -119,6 +123,8 @@ namespace ChimeraTK {
 
     template<typename T>
     friend class DummyMultiplexedRegisterAccessor;
+
+      friend class DummyRegisterRawAccessor;
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
 
