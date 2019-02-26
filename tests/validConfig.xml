@@ -38,6 +38,15 @@
     <value i="6" v="Hallo7"/>
     <value i="7" v="Hallo8"/>
   </variable>
+  <module name="emptymodule"/>
+  <module name="module1">
+    <variable name="var16u" type="uint16" value="678"/>
+    <variable name="var32" type="int32" value="-345678"/>
+    <variable name="var32u" type="uint32" value="234567"/>
+    <module name="submodule">
+      <variable name="var32u" type="uint32" value="234567"/>
+    </module>
+  </module>
   <!-- Just a random comment -->
 </configuration>
 <!-- Just a random comment -->
