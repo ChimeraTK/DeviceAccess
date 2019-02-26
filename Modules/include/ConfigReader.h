@@ -14,14 +14,20 @@ namespace ChimeraTK {
   struct FunctorSetValues;
   struct FunctorSetValuesArray;
 
-  /**
-   *  Generic module to read an XML config file and provide the defined values as
-  constant variables. The config file
-   *  should look like this:
+  /** Generic module to read an XML config file and provide the defined values as
+   *  constant variables. The config file should look like this:
    *  \code{.xml}
   <configuration>
   <variable name="variableName" type="int32" value="42"/>
   <variable name="anotherVariable" type="string" value="Hello world!"/>
+  <variable name="someArray" type="string">
+    <value i="0" v="StringEntry1" />
+    <value i="1" v="StringEntry2" />
+    <value i="2" v="StringEntry3" />
+    <value i="3" v="StringEntry4" />
+    <value i="4" v="StringEntry5" />
+    <value i="5" v="StringEntry6" />
+  </variable>
   </configuration>
       \endcode
    *
@@ -32,7 +38,7 @@ namespace ChimeraTK {
    *  blocking read operation on the receivers will block forever.
    *
    *  Configuration values can already be accessed during the
-  Application::defineConnection() function by using the
+  Application::defineConnections() function by using the
    *  ConfigReader::get() function.
    */
   struct ConfigReader : ApplicationModule {
