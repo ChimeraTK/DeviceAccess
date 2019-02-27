@@ -14,6 +14,7 @@
 #include "Module.h"
 #include "ModuleGraphVisitor.h"
 #include "VirtualModule.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
@@ -98,7 +99,16 @@ namespace ChimeraTK {
     VirtualModule module{_name, _description, getModuleType()};
 
     // add everything matching the tag to the virtual module and return it
-    findTagAndAppendToModule(module, tag, false, true);
+    if(this == &Application::getInstance()) {
+      // if this module is the top-level application, we need special treatment for HierarchyModifier::moveThisToRoot
+      findTagAndAppendToModule(module, tag, false, true, false, module);
+    }
+    else {
+      // Not the top-level module: Things that are moved to the top-level are simply discarded
+      VirtualModule discard("discarded", "", ModuleType::Invalid);
+      findTagAndAppendToModule(module, tag, false, true, false, discard);
+    }
+
     return module;
   }
 
@@ -109,14 +119,22 @@ namespace ChimeraTK {
     VirtualModule module{_name, _description, getModuleType()};
 
     // add everything matching the tag to the virtual module and return it
-    findTagAndAppendToModule(module, tag, false, true, true);
+    if(this == &Application::getInstance()) {
+      // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
+      findTagAndAppendToModule(module, tag, false, true, true, module);
+    }
+    else {
+      // Not the top-level module: Things that are moved to the top-level are simply discarded
+      VirtualModule discard("discarded", "", ModuleType::Invalid);
+      findTagAndAppendToModule(module, tag, false, true, true, discard);
+    }
     return module;
   }
 
   /*********************************************************************************************************************/
 
   void EntityOwner::findTagAndAppendToModule(VirtualModule& module, const std::string& tag,
-      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate) const {
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
     VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule* moduleToAddTo;
 
@@ -153,17 +171,22 @@ namespace ChimeraTK {
         // exists: add to the existing module
         auto* existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
         assert(existingSubModule != nullptr);
-        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate);
+        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate, root);
       }
       else {
         // does not yet exist: add as new submodule to the current module
-        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate);
+        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root);
       }
     }
 
     if(needToAddSubModule) {
       if(nextmodule.getAccessorList().size() > 0 || nextmodule.getSubmoduleList().size() > 0) {
-        module.addSubModule(nextmodule);
+        if(_hierarchyModifier != HierarchyModifier::moveToRoot) {
+          module.addSubModule(nextmodule);
+        }
+        else {
+          root.addSubModule(nextmodule);
+        }
       }
     }
   }
