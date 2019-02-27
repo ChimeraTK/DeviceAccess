@@ -33,13 +33,14 @@ namespace ChimeraTK {
   /** Enum to define types of VariableNetworkNode */
   enum class NodeType { Device, ControlSystem, Application, TriggerReceiver, TriggerProvider, Constant, invalid };
 
-  /** Hierarchy modifier: specify if and how the module hierarchy should be modified. */
+  /** Hierarchy modifier: specify if and how the module hierarchy should be modified in EntityOwner::findTag() etc. */
   enum class HierarchyModifier {
     none,      ///< No modification is performed
     hideThis,  ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
                ///< exactly one level up. The structure below this level is kept.
     moveToRoot ///< The module at which this flag is specified is moved to the root level, together with the entire
-               ///< structure below the module.
+               ///< structure below the module. Note: Unless you run findTag() or so on the entire application, the
+               ///< moved hierarchy structures might not be visible in the control system etc.
   };
 
 } /* namespace ChimeraTK */
