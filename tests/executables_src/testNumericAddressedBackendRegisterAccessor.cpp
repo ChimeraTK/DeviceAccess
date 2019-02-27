@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes){
 
   floatTestRaw.write();
 
-  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestRaw[0];
+  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[0];
 
   BOOST_CHECK_CLOSE( testValue, -2.5, 0.0001);
 
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(testConverterTypes){
   floatTestCoockedInt[1] = 16;
   floatTestCoockedInt.write();
 
-  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestRaw[1];
+  *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[1];
   BOOST_CHECK_CLOSE( testValue, 16.0, 0.001);
 
 }
