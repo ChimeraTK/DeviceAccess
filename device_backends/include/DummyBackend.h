@@ -71,7 +71,16 @@ namespace ChimeraTK {
         std::map<std::string, std::string>
             parameters);
 
-   protected:
+    /** Get a raw accessor to the underlying memory with the convenience of using 
+     *  register names. This accessor had nothing to do with regular, TransferElement based
+     *  accessors and serves as second, independet implementation for debugging.
+     *
+     *  We have to use the old module/register interface because the dummy uses the old style
+     *  mapping internally.
+     */
+    DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
+
+  protected:
     struct AddressRange {
       const uint32_t offset;
       const uint32_t sizeInBytes;

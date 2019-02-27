@@ -7,6 +7,7 @@
 #include "Exception.h"
 #include "MapFileParser.h"
 #include "parserUtilities.h"
+#include "DummyRegisterAccessor.h"
 
 // macro to avoid code duplication
 #define TRY_REGISTER_ACCESS(COMMAND)                                                                                   \
@@ -235,5 +236,10 @@ namespace ChimeraTK {
     // mapfilename to an absolute path
     return parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
   }
+
+  DummyRegisterRawAccessor DummyBackend::getRawAccessor(std::string module, std::string register_name){
+    return DummyRegisterRawAccessor(shared_from_this(), module, register_name);
+  }
+
 
 } // namespace ChimeraTK

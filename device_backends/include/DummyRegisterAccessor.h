@@ -309,11 +309,17 @@ namespace ChimeraTK {
         return *buffer;
       }
 
-      DummyRegisterRawAccessor(DummyBackend *dev, std::string module, std::string name)
-        : _dev(dev)
+      DummyRegisterRawAccessor(boost::shared_ptr<DeviceBackend> backend, std::string module, std::string name)
+        : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend))
       {
-        _dev->_registerMapping->getRegisterInfo(name, registerInfo, module);
-        buffer = &(_dev->_barContents[registerInfo.bar][registerInfo.address/sizeof(int32_t)]);
+        assert(_backend);
+        _backend->_registerMapping->getRegisterInfo(name, registerInfo, module);
+        buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address/sizeof(int32_t)]);
+      }
+
+      DummyRegisterRawAccessor operator=(int32_t rhs) {
+        buffer[0]=rhs;
+        return *this;
       }
 
       /// Get or set register content by [] operator.
@@ -328,8 +334,8 @@ namespace ChimeraTK {
 
   protected:
 
-      /// pointer to VirtualDevice
-      DummyBackend *_dev;
+      /// pointer to dummy backend
+      boost::shared_ptr<DummyBackend> _backend;
 
       /// raw buffer of this accessor
       int32_t *buffer;
@@ -338,6 +344,11 @@ namespace ChimeraTK {
 
       /** prevent copying by operator=, since it will be confusing */
       void operator=(const DummyRegisterRawAccessor& rightHandSide) const;
+
+      // The default copy/move constructor is fine. It will copy the raw pointer to the buffer,
+      // together with the shared pointer which holds the corresponding backend with the
+      // memory. So it is a consistent copy because the shared pointer is pointing to the
+      // same backend instance.
   };
   
 

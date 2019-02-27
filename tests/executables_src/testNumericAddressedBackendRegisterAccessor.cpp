@@ -7,6 +7,10 @@ using namespace boost::unit_test_framework;
 
 #include "Device.h"
 #include "TransferGroup.h"
+#include "BackendFactory.h"
+#include "DummyBackend.h"
+#include "DummyRegisterAccessor.h"
+
 namespace ChimeraTK {
   using namespace ChimeraTK;
 }
@@ -225,6 +229,59 @@ BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
   BOOST_CHECK(standalone[1] == 0xA2);
   BOOST_CHECK(standalone[2] == 0xA3);
   BOOST_CHECK(standalone[3] == 0xA4);
+}
+
+BOOST_AUTO_TEST_CASE(testConverterTypes){
+  //After the introduction of the IEEE754 floating point converter we have to test
+  //that all possible converters (two at the moment) are created when they should,
+  //and that raw and coocked accessors are working for all of them.
+
+  //As we cannot rely on any NumericAddressedRegisterAccessor at the moment we use the
+  //DummyRegisterRawAccessor to monitor what is going on in the target memory space on
+  //the device
+  auto deviceDescriptor = "(dummy?map=goodMapFile.map)";
+
+  auto dummyBackend = boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend(deviceDescriptor));
+  
+  Device device;
+  device.open(deviceDescriptor);
+
+  // MODULE0.WORD_USER1 is fixed point, 16 bit, 3 fractional, signed
+  auto user1Dummy = dummyBackend->getRawAccessor("MODULE0","WORD_USER1");
+  user1Dummy = 0x4321;
+
+  auto user1Coocked = device.getScalarRegisterAccessor<float>("MODULE0/WORD_USER1");
+  user1Coocked.read();
+
+  BOOST_CHECK_CLOSE( float(user1Coocked), 2148.125, 0.0001);
+
+  user1Coocked = -1;
+  user1Coocked.write();
+
+  BOOST_CHECK_EQUAL( int32_t(user1Dummy), 0xfff8);
+
+  auto user1Raw = device.getScalarRegisterAccessor<int32_t>("MODULE0/WORD_USER1", 0, {AccessMode::raw});
+  user1Raw.read();
+
+  BOOST_CHECK_EQUAL( int32_t(user1Raw), 0xfff8);
+  BOOST_CHECK_CLOSE( user1Raw.getAsCooked<float>(), -1, 0.0001);
+  
+  user1Raw.setAsCooked(-2.5);
+
+  user1Raw.write();
+
+  BOOST_CHECK_EQUAL( int32_t(user1Dummy), 0xffec);
+
+  // special case: int32 does not necessarily mean raw. There is also a cooked version:
+  auto user1CoockedInt = device.getScalarRegisterAccessor<int32_t>("MODULE0/WORD_USER1");
+  user1CoockedInt.read();
+
+  BOOST_CHECK_EQUAL( int(user1CoockedInt), -3);
+
+  user1CoockedInt = 16;
+  user1CoockedInt.write();
+
+  BOOST_CHECK_EQUAL( int32_t(user1Dummy), 0x80);
 }
 
 // After you finished all test you have to end the test suite.
