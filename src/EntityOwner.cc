@@ -17,11 +17,17 @@
 
 namespace ChimeraTK {
 
-  EntityOwner::EntityOwner(const std::string& name,
-      const std::string& description,
-      bool eliminateHierarchy,
+  EntityOwner::EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy,
       const std::unordered_set<std::string>& tags)
-  : _name(name), _description(description), _eliminateHierarchy(eliminateHierarchy), _tags(tags) {}
+  : _name(name), _description(description), _tags(tags) {
+    if(eliminateHierarchy) _hierarchyModifier = HierarchyModifier::hideThis;
+  }
+
+  /*********************************************************************************************************************/
+
+  EntityOwner::EntityOwner(const std::string& name, const std::string& description, HierarchyModifier hierarchyModifier,
+      const std::unordered_set<std::string>& tags)
+  : _name(name), _description(description), _hierarchyModifier(hierarchyModifier), _tags(tags) {}
 
   /*********************************************************************************************************************/
 
@@ -34,7 +40,7 @@ namespace ChimeraTK {
     _description = std::move(other._description);
     accessorList = std::move(other.accessorList);
     moduleList = std::move(other.moduleList);
-    _eliminateHierarchy = other._eliminateHierarchy;
+    _hierarchyModifier = other._hierarchyModifier;
     _tags = std::move(other._tags);
     for(auto mod : moduleList) {
       mod->setOwner(this);
@@ -109,11 +115,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void EntityOwner::findTagAndAppendToModule(VirtualModule& module,
-      const std::string& tag,
-      bool eliminateAllHierarchies,
-      bool eliminateFirstHierarchy,
-      bool negate) const {
+  void EntityOwner::findTagAndAppendToModule(VirtualModule& module, const std::string& tag,
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate) const {
     VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule* moduleToAddTo;
 

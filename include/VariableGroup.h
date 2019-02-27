@@ -20,17 +20,19 @@ namespace ChimeraTK {
 
   class VariableGroup : public ModuleImpl {
    public:
-    /** Constructor: register the VariableGroup with its owner. If
-     * eliminateHierarchy is true, the hierarchy level introduced by this group
-     * will be eliminated from the "dynamic" data model (see
-     *  EntityOwner::setEliminateHierarchy()). The tags given as the last argument
-     * are added to all variables in this group recursively (see
-     * EntityOwner::addTag()).
+    /** Constructor: Create ModuleGroup by the given name with the given description and register it with its
+     *  owner. The hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g.
+     *  in findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
+     *  instance.
      *
-     *  Note: VariableGroups may only be owned by ApplicationModules or other
-     * VariableGroups. */
+     *  Note: VariableGroups may only be owned by ApplicationModules or other VariableGroups. */
     VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
-        bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {});
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
+
+    /** Deprecated form of the constructor. Use the new signature instead. */
+    VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
+        const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor: Allows late initialisation of VariableGroups (e.g.
      * when creating arrays of VariableGroups).

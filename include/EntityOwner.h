@@ -12,6 +12,7 @@
 #include <string>
 
 #include "VariableNetworkNode.h"
+#include "Flags.h"
 
 namespace ChimeraTK {
 
@@ -26,8 +27,15 @@ namespace ChimeraTK {
    */
   class EntityOwner {
    public:
-    /** Constructor: register the EntityOwner with its owner */
-    EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy = false,
+    /** Constructor: Create EntityOwner by the given name with the given description. The hierarchy will be modified
+     *  according to the hierarchyModifier (when VirtualModules are created e.g. in findTag()). The specified list of
+     *  tags will be added to all elements directly or indirectly owned by this instance. */
+    EntityOwner(const std::string& name, const std::string& description,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
+
+    /** Deprecated form of the constructor. Use the new signature instead. */
+    EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy,
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor just for late initialisation */
@@ -124,7 +132,10 @@ namespace ChimeraTK {
      * information about tags. */
     void addTag(const std::string& tag);
 
-    /** Eliminate the level of hierarchy represented by this EntityOwner. This is
+    /** Note: this function is deprectated. Use the constructor parameter instead. If this is not sufficient, write a
+     *  feature request for a function to set the HierarchyModifier.
+     *
+     * Eliminate the level of hierarchy represented by this EntityOwner. This is
      * e.g. used when building the hierarchy of VirtualModules in findTag().
      * Eliminating one level of hierarchy will make all childs of that hierarchy
      * level to appear as if there were direct childs of the next higher hierarchy
@@ -133,10 +144,13 @@ namespace ChimeraTK {
      *  B.eliminateHierarchy()), the structure would look like "A.C". This of
      * course only affects the "dynamic" data
      *  model, while the static C++ model is fixed at compile time. */
-    void setEliminateHierarchy() { _eliminateHierarchy = true; }
+    void setEliminateHierarchy() { _hierarchyModifier = HierarchyModifier::hideThis; }
 
-    /** Returns the flag whether this level of hierarchy should be eliminated */
-    bool getEliminateHierarchy() const { return _eliminateHierarchy; }
+    /** Note: this function is deprectated. If you really need this, write a feature request for a function to get
+     *  the HierarchyModifier.
+     *
+     * Returns the flag whether this level of hierarchy should be eliminated */
+    bool getEliminateHierarchy() const { return _hierarchyModifier == HierarchyModifier::hideThis; }
 
     /** Create a VirtualModule which contains all variables of this EntityOwner in
      * a flat hierarchy. It will recurse
@@ -196,8 +210,8 @@ namespace ChimeraTK {
     /** List of modules owned by this instance */
     std::list<Module*> moduleList;
 
-    /** Flag whether this level of hierarchy should be eliminated or not */
-    bool _eliminateHierarchy{false};
+    /** Hierarchy modifier flag */
+    HierarchyModifier _hierarchyModifier{HierarchyModifier::none};
 
     /** List of tags to be added to all accessors and modules inside this module
      */

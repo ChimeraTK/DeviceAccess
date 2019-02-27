@@ -18,7 +18,7 @@ namespace ChimeraTK {
     /// @todo find a better way than storing plain pointers!
     for(auto& mod : other.submodules) addSubModule(mod);
     accessorList = other.accessorList;
-    _eliminateHierarchy = other._eliminateHierarchy;
+    _hierarchyModifier = other._hierarchyModifier;
     _moduleType = other.getModuleType();
   }
 
@@ -35,7 +35,7 @@ namespace ChimeraTK {
     /// @todo find a better way than storing plain pointers!
     for(auto& mod : other.submodules) addSubModule(mod);
     accessorList = other.accessorList;
-    _eliminateHierarchy = other._eliminateHierarchy;
+    _hierarchyModifier = other._hierarchyModifier;
     return *this;
   }
 

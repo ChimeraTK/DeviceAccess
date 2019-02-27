@@ -11,6 +11,14 @@
 
 namespace ChimeraTK {
 
+  Module::Module(EntityOwner* owner, const std::string& name, const std::string& description,
+      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
+  : EntityOwner(name, description, hierarchyModifier, tags), _owner(owner) {
+    if(_owner != nullptr) _owner->registerModule(this);
+  }
+
+  /*********************************************************************************************************************/
+
   Module::Module(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
       const std::unordered_set<std::string>& tags)
   : EntityOwner(name, description, eliminateHierarchy, tags), _owner(owner) {

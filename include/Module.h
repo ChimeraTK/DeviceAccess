@@ -19,12 +19,16 @@ namespace ChimeraTK {
    * have a common interface for these module types. */
   class Module : public EntityOwner {
    public:
-    /** Constructor: register the module with its owner. If eliminateHierarchy is
-     * true, the hierarchy level introduced by this module will be eliminated from
-     * the "dynamic" data model (see EntityOwner::setEliminateHierarchy()). The
-     * tags given as the last argument are added to all variables in this module
-     * recursively (see EntityOwner::addTag()). */
-    Module(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy = false,
+    /** Constructor: Create Module by the given name with the given description and register it with its owner. The
+     *  hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g. in
+     *  findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
+     *  instance. */
+    Module(EntityOwner* owner, const std::string& name, const std::string& description,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
+
+    /** Deprecated form of the constructor. Use the new signature instead. */
+    Module(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor: Allows late initialisation of modules (e.g. when

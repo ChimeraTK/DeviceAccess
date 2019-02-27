@@ -21,7 +21,11 @@ namespace ChimeraTK {
    public:
     // constructor inheritances does not work due to a gcc bug!?
     ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description,
-        bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
+    : Module(owner, name, description, hierarchyModifier, tags) {}
+
+    ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
+        const std::unordered_set<std::string>& tags = {})
     : Module(owner, name, description, eliminateHierarchy, tags) {}
 
     ModuleImpl() : Module() {}

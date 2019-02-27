@@ -33,6 +33,15 @@ namespace ChimeraTK {
   /** Enum to define types of VariableNetworkNode */
   enum class NodeType { Device, ControlSystem, Application, TriggerReceiver, TriggerProvider, Constant, invalid };
 
+  /** Hierarchy modifier: specify if and how the module hierarchy should be modified. */
+  enum class HierarchyModifier {
+    none,      ///< No modification is performed
+    hideThis,  ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
+               ///< exactly one level up. The structure below this level is kept.
+    moveToRoot ///< The module at which this flag is specified is moved to the root level, together with the entire
+               ///< structure below the module.
+  };
+
 } /* namespace ChimeraTK */
 
 #endif /* CHIMERATK_FLAGS_H */
