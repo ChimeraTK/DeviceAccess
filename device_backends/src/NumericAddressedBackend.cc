@@ -130,14 +130,26 @@ namespace ChimeraTK {
     // 1D or scalar register
     if(info->getNumberOfDimensions() <= 1) {
       if(registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) {
-        accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+        if (flags.has(AccessMode::raw)){
+          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
             new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>(
                 shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+        }else{
+          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            new NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>(
+                shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+        }
       }
       else if(registerInfo->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754) {
-        accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+        if (flags.has(AccessMode::raw)){
+          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
             new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>(
                 shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+        }else{
+          accessor = boost::shared_ptr<NDRegisterAccessor<UserType>>(
+            new NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>(
+                shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
+        }
       }
       else {
         throw ChimeraTK::logic_error("NumericAddressedBackend:: trying to get "
