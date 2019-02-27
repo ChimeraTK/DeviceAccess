@@ -87,7 +87,8 @@ struct SecondHierarchy : ctk::ModuleGroup {
         using ctk::VariableGroup::VariableGroup;
         ctk::ScalarOutput<int> varB{this, "varB", "MV/m", "Desc"};
       } varGroup{this, "VarGroup", "This group shall be merged with testModule.varGroup in connectTo()"};
-    } eliminatedGroup{this, "eliminatedGroup", "A group whose hierarchy gets eliminated", true};
+    } eliminatedGroup{
+        this, "eliminatedGroup", "A group whose hierarchy gets eliminated", ctk::HierarchyModifier::hideThis};
 
     void mainLoop() {}
   } testModule{this, "TestModule", ""};
