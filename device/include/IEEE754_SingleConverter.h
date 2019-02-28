@@ -5,7 +5,6 @@
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <float.h> // for float limits
-#include <iostream>
 
 namespace ChimeraTK {
 
@@ -42,7 +41,6 @@ namespace ChimeraTK {
 
   template<typename CookedType>
   CookedType IEEE754_SingleConverter::toCooked(uint32_t rawValue) const {
-    std::cout << std::hex << "raw value is " << rawValue << std::dec << std::endl;
     // Step 1: convert the raw data to the "generic" representation in the CPU:
     // float
     void* warningAvoider = &rawValue;
@@ -61,7 +59,6 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("negative overflow"); //+_variableName);
     }
 
-    std::cout << "returning cooked: " << cooked << std::endl;
     return cooked;
   }
 
