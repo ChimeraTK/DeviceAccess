@@ -19,7 +19,18 @@ namespace ctk = ChimeraTK;
 /* Module to receive the config values */
 
 struct TestModule : ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
+  TestModule(EntityOwner* owner, const std::string& name, const std::string& description)
+  : ctk::ApplicationModule(owner, name, description) {
+    try {
+      theConfigReader = &appConfig();
+    }
+    catch(ctk::logic_error&) {
+      appConfig_has_thrown = true;
+    }
+  }
+
+  ctk::ConfigReader* theConfigReader; // just to compare if the correct instance is returned
+  bool appConfig_has_thrown{false};
 
   ctk::ScalarPushInput<int8_t> var8{this, "var8", "MV/m", "Desc"};
   ctk::ScalarPushInput<uint8_t> var8u{this, "var8u", "MV/m", "Desc"};
@@ -92,16 +103,40 @@ struct TestApplication : public ctk::Application {
 };
 
 /*********************************************************************************************************************/
+/* dummy application with two config readers (to check the exception in ApplicationModule::appConfig()) */
+
+struct TestApplicationTwoConfigs : public ctk::Application {
+  TestApplicationTwoConfigs() : Application("TestApplicationTwoConfigs") {}
+  ~TestApplicationTwoConfigs() { shutdown(); }
+
+  void defineConnections() {}
+
+  ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
+  ctk::ConfigReader config2{this, "config2", "validConfig.xml"};
+  TestModule testModule{this, "TestModule", "The test module"};
+};
+
+/*********************************************************************************************************************/
+/* dummy application with no config readers (to check the exception in ApplicationModule::appConfig()) */
+
+struct TestApplicationNoConfigs : public ctk::Application {
+  TestApplicationNoConfigs() : Application("TestApplicationTwoConfigs") {}
+  ~TestApplicationNoConfigs() { shutdown(); }
+
+  void defineConnections() {}
+
+  TestModule testModule{this, "TestModule", "The test module"};
+};
+/*********************************************************************************************************************/
 /* test trigger by app variable when connecting a polled device register to an
  * app variable */
 
 BOOST_AUTO_TEST_CASE(testConfigReader) {
-  std::cout << "***************************************************************"
-               "******************************************************"
-            << std::endl;
   std::cout << "==> testConfigReader" << std::endl;
 
   TestApplication app;
+  BOOST_CHECK(!app.testModule.appConfig_has_thrown);
+  BOOST_CHECK(&(app.config) == app.testModule.theConfigReader);
 
   // check if values are already accessible
   BOOST_CHECK_EQUAL(app.config.get<int8_t>("var8"), -123);
@@ -131,4 +166,18 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
 
   // wait until tests in TestModule::mainLoop() are complete
   while(app.testModule.done == false) usleep(10000);
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testExceptions) {
+  std::cout << "==> testExceptions" << std::endl;
+  {
+    TestApplicationTwoConfigs app;
+    BOOST_CHECK(app.testModule.appConfig_has_thrown);
+  }
+  {
+    TestApplicationNoConfigs app;
+    BOOST_CHECK(app.testModule.appConfig_has_thrown);
+  }
 }

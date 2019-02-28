@@ -6,6 +6,7 @@
  */
 
 #include "ApplicationCore.h"
+#include "ConfigReader.h"
 
 namespace ChimeraTK {
 
@@ -77,6 +78,23 @@ namespace ChimeraTK {
     // enter the main loop
     mainLoop();
     Application::testableModeUnlock("terminate");
+  }
+
+  /*********************************************************************************************************************/
+
+  ConfigReader& ApplicationModule::appConfig() const {
+    size_t nConfigReaders = 0;
+    ConfigReader* instance = nullptr;
+    for(auto* mod : Application::getInstance().getSubmoduleListRecursive()) {
+      if(!dynamic_cast<ConfigReader*>(mod)) continue;
+      ++nConfigReaders;
+      instance = dynamic_cast<ConfigReader*>(mod);
+    }
+    if(nConfigReaders != 1) {
+      throw ChimeraTK::logic_error("ApplicationModule::appConfig() called but " + std::to_string(nConfigReaders) +
+          " instances of ChimeraTK::ConfigReader have been found.");
+    }
+    return *instance;
   }
 
 } /* namespace ChimeraTK */
