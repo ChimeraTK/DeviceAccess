@@ -19,3 +19,4 @@
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
 #include "VirtualModule.h"
+#include "ConfigReader.h"
