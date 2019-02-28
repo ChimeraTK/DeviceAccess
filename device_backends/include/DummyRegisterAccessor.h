@@ -302,55 +302,45 @@ namespace ChimeraTK {
    *   translation is re-done in the dummy, we are not using the one from the regular accessors.)
    */
   class DummyRegisterRawAccessor : public DummyRegisterAddressChecker {
-    public:
-      /// Implicit type conversion to int32_t.
-      /// This basically covers all operators for single integers.
-      operator int32_t & (){
-        return *buffer;
-      }
+   public:
+    /// Implicit type conversion to int32_t.
+    /// This basically covers all operators for single integers.
+    operator int32_t&() { return *buffer; }
 
-      DummyRegisterRawAccessor(boost::shared_ptr<DeviceBackend> backend, std::string module, std::string name)
-        : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend))
-      {
-        assert(_backend);
-        _backend->_registerMapping->getRegisterInfo(name, registerInfo, module);
-        buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address/sizeof(int32_t)]);
-      }
+    DummyRegisterRawAccessor(boost::shared_ptr<DeviceBackend> backend, std::string module, std::string name)
+    : _backend(boost::dynamic_pointer_cast<DummyBackend>(backend)) {
+      assert(_backend);
+      _backend->_registerMapping->getRegisterInfo(name, registerInfo, module);
+      buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t)]);
+    }
 
-      DummyRegisterRawAccessor operator=(int32_t rhs) {
-        buffer[0]=rhs;
-        return *this;
-      }
+    DummyRegisterRawAccessor operator=(int32_t rhs) {
+      buffer[0] = rhs;
+      return *this;
+    }
 
-      /// Get or set register content by [] operator.
-      int32_t & operator[](unsigned int index){
-        return buffer[index];
-      }
+    /// Get or set register content by [] operator.
+    int32_t& operator[](unsigned int index) { return buffer[index]; }
 
-      /// return number of elements
-      unsigned int getNumberOfElements(){
-        return registerInfo.nElements;
-      }
+    /// return number of elements
+    unsigned int getNumberOfElements() { return registerInfo.nElements; }
 
-  protected:
+   protected:
+    /// pointer to dummy backend
+    boost::shared_ptr<DummyBackend> _backend;
 
-      /// pointer to dummy backend
-      boost::shared_ptr<DummyBackend> _backend;
+    /// raw buffer of this accessor
+    int32_t* buffer;
 
-      /// raw buffer of this accessor
-      int32_t *buffer;
+   private:
+    /** prevent copying by operator=, since it will be confusing */
+    void operator=(const DummyRegisterRawAccessor& rightHandSide) const;
 
-  private:
-
-      /** prevent copying by operator=, since it will be confusing */
-      void operator=(const DummyRegisterRawAccessor& rightHandSide) const;
-
-      // The default copy/move constructor is fine. It will copy the raw pointer to the buffer,
-      // together with the shared pointer which holds the corresponding backend with the
-      // memory. So it is a consistent copy because the shared pointer is pointing to the
-      // same backend instance.
+    // The default copy/move constructor is fine. It will copy the raw pointer to the buffer,
+    // together with the shared pointer which holds the corresponding backend with the
+    // memory. So it is a consistent copy because the shared pointer is pointing to the
+    // same backend instance.
   };
-  
 
 } // namespace ChimeraTK
 

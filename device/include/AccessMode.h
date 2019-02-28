@@ -65,13 +65,13 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error("Access mode flag '" + getString(flag) + "' is not known by this backend.");
         }
       }
-      }
+    }
 
-      /** Check whether two sets of acces mode flags are the same.
+    /** Check whether two sets of acces mode flags are the same.
        */
-      bool operator==(const AccessModeFlags & other) const{
-        // fortunately the std::set already has a comparison operator which does exacty what we want
-        return _flags==other._flags;
+    bool operator==(const AccessModeFlags& other) const {
+      // fortunately the std::set already has a comparison operator which does exacty what we want
+      return _flags == other._flags;
     }
 
     /** Remove the given flag from the set */

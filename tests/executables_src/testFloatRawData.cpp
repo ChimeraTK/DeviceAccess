@@ -10,33 +10,34 @@ using namespace boost::unit_test_framework;
 #include "Device.h"
 using namespace ChimeraTK;
 
-BOOST_AUTO_TEST_CASE( testCatalogueEntries ) {
+BOOST_AUTO_TEST_CASE(testCatalogueEntries) {
   Device d;
   d.open("(dummy?map=floatRawTest.map)");
 
   auto registerCatalogue = d.getRegisterCatalogue();
   auto scalarInfo = registerCatalogue.getRegister("FLOAT_TEST/SCALAR");
 
-  BOOST_CHECK_EQUAL( scalarInfo->getRegisterName(), "FLOAT_TEST/SCALAR" );
-  BOOST_CHECK_EQUAL( scalarInfo->getNumberOfElements(), 1 );
-  BOOST_CHECK_EQUAL( scalarInfo->getNumberOfChannels(), 1 );
-  BOOST_CHECK_EQUAL( scalarInfo->getNumberOfDimensions(), 0 );
-  BOOST_CHECK( scalarInfo->isReadable() );
-  BOOST_CHECK( scalarInfo->isWriteable() ) ;
-  
-  BOOST_CHECK( scalarInfo->getSupportedAccessModes() == AccessModeFlags({AccessMode::raw}));
-  
+  BOOST_CHECK_EQUAL(scalarInfo->getRegisterName(), "FLOAT_TEST/SCALAR");
+  BOOST_CHECK_EQUAL(scalarInfo->getNumberOfElements(), 1);
+  BOOST_CHECK_EQUAL(scalarInfo->getNumberOfChannels(), 1);
+  BOOST_CHECK_EQUAL(scalarInfo->getNumberOfDimensions(), 0);
+  BOOST_CHECK(scalarInfo->isReadable());
+  BOOST_CHECK(scalarInfo->isWriteable());
+
+  BOOST_CHECK(scalarInfo->getSupportedAccessModes() == AccessModeFlags({AccessMode::raw}));
+
   auto dataDescriptor = scalarInfo->getDataDescriptor();
-  BOOST_CHECK( dataDescriptor.fundamentalType() == RegisterInfo::FundamentalType::numeric );
-  BOOST_CHECK( dataDescriptor.isSigned() );
-  BOOST_CHECK( dataDescriptor.isIntegral() == false);
-  BOOST_CHECK_EQUAL( dataDescriptor.nDigits(), 48 );
-  BOOST_CHECK_EQUAL( dataDescriptor.nFractionalDigits(), 45 );
-  BOOST_CHECK_EQUAL( dataDescriptor.rawDataType(), DataType::TheType::int32 );
-  BOOST_CHECK_EQUAL( dataDescriptor.transportLayerDataType(), DataType::TheType::none ); // FIXME: should be int32, but this layer is not accessible through the interface anyway.
+  BOOST_CHECK(dataDescriptor.fundamentalType() == RegisterInfo::FundamentalType::numeric);
+  BOOST_CHECK(dataDescriptor.isSigned());
+  BOOST_CHECK(dataDescriptor.isIntegral() == false);
+  BOOST_CHECK_EQUAL(dataDescriptor.nDigits(), 48);
+  BOOST_CHECK_EQUAL(dataDescriptor.nFractionalDigits(), 45);
+  BOOST_CHECK_EQUAL(dataDescriptor.rawDataType(), DataType::TheType::int32);
+  // FIXME: the following should be int32, but this layer is not accessible through the interface anyway.
+  BOOST_CHECK_EQUAL(dataDescriptor.transportLayerDataType(), DataType::TheType::none);
 }
-  
-BOOST_AUTO_TEST_CASE( testReading ) {
+
+BOOST_AUTO_TEST_CASE(testReading) {
   Device d;
   d.open("(dummy?map=floatRawTest.map)");
 
@@ -50,35 +51,34 @@ BOOST_AUTO_TEST_CASE( testReading ) {
 
   auto floatAccessor = d.getScalarRegisterAccessor<float>("FLOAT_TEST/SCALAR");
   floatAccessor.read();
-  BOOST_CHECK_CLOSE( float(floatAccessor), 3.75, 0.0001);
+  BOOST_CHECK_CLOSE(float(floatAccessor), 3.75, 0.0001);
 
   auto doubleAccessor = d.getScalarRegisterAccessor<double>("FLOAT_TEST/SCALAR");
   doubleAccessor.read();
-  BOOST_CHECK_CLOSE( double(doubleAccessor), 3.75, 0.0001 );
+  BOOST_CHECK_CLOSE(double(doubleAccessor), 3.75, 0.0001);
 
   auto intAccessor = d.getScalarRegisterAccessor<int32_t>("FLOAT_TEST/SCALAR");
   intAccessor.read();
-  BOOST_CHECK_EQUAL( int32_t(intAccessor), 4 );
+  BOOST_CHECK_EQUAL(int32_t(intAccessor), 4);
 
   auto stringAccessor = d.getScalarRegisterAccessor<std::string>("FLOAT_TEST/SCALAR");
   stringAccessor.read();
-  BOOST_CHECK_EQUAL( std::string(stringAccessor), std::to_string(3.75) );
+  BOOST_CHECK_EQUAL(std::string(stringAccessor), std::to_string(3.75));
 
   auto rawAccessor = d.getScalarRegisterAccessor<int32_t>("FLOAT_TEST/SCALAR", 0, {AccessMode::raw});
   rawAccessor.read();
-  BOOST_CHECK_EQUAL( int32_t(rawAccessor), 0x40700000);
-  BOOST_CHECK_CLOSE( rawAccessor.getAsCooked<float>(), 3.75, 0.0001);
-
+  BOOST_CHECK_EQUAL(int32_t(rawAccessor), 0x40700000);
+  BOOST_CHECK_CLOSE(rawAccessor.getAsCooked<float>(), 3.75, 0.0001);
 }
 
-void checkAsRaw(int32_t rawValue, float expectedValue){
-  void * warningAvoider = &rawValue;
-  float testValue = *(reinterpret_cast<float *>(warningAvoider));
+void checkAsRaw(int32_t rawValue, float expectedValue) {
+  void* warningAvoider = &rawValue;
+  float testValue = *(reinterpret_cast<float*>(warningAvoider));
 
   BOOST_CHECK_CLOSE(testValue, expectedValue, 0.0001);
 }
 
-BOOST_AUTO_TEST_CASE( testWriting ){
+BOOST_AUTO_TEST_CASE(testWriting) {
   Device d;
   d.open("(dummy?map=floatRawTest.map)");
 
@@ -134,7 +134,4 @@ BOOST_AUTO_TEST_CASE( testWriting ){
   checkAsRaw(rawIntAccessor[1], 17.5);
   checkAsRaw(rawIntAccessor[2], 17.6);
   checkAsRaw(rawIntAccessor[3], 17.7);
-
- 
-
 }

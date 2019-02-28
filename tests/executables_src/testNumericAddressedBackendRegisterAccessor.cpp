@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(testRawWithTransferGroup) {
   BOOST_CHECK(standalone[3] == 0xA4);
 }
 
-BOOST_AUTO_TEST_CASE(testConverterTypes){
+BOOST_AUTO_TEST_CASE(testConverterTypes) {
   //After the introduction of the IEEE754 floating point converter we have to test
   //that all possible converters (two at the moment) are created when they should,
   //and that raw and coocked accessors are working for all of them.
@@ -241,52 +241,53 @@ BOOST_AUTO_TEST_CASE(testConverterTypes){
   //the device
   auto deviceDescriptor = "(dummy?map=goodMapFile.map)";
 
-  auto dummyBackend = boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend(deviceDescriptor));
-  
+  auto dummyBackend =
+      boost::dynamic_pointer_cast<DummyBackend>(BackendFactory::getInstance().createBackend(deviceDescriptor));
+
   Device device;
   device.open(deviceDescriptor);
 
   // FixedPointConverter, raw and coocked accessors
   // MODULE0.WORD_USER1 is fixed point, 16 bit, 3 fractional, signed
-  auto user1Dummy = dummyBackend->getRawAccessor("MODULE0","WORD_USER1");
+  auto user1Dummy = dummyBackend->getRawAccessor("MODULE0", "WORD_USER1");
   user1Dummy = 0x4321;
 
   auto user1Coocked = device.getScalarRegisterAccessor<float>("MODULE0/WORD_USER1");
   user1Coocked.read();
 
-  BOOST_CHECK_CLOSE( float(user1Coocked), 2148.125, 0.0001);
+  BOOST_CHECK_CLOSE(float(user1Coocked), 2148.125, 0.0001);
 
   user1Coocked = -1;
   user1Coocked.write();
 
-  BOOST_CHECK_EQUAL( int32_t(user1Dummy), 0xfff8);
+  BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0xfff8);
 
   auto user1Raw = device.getScalarRegisterAccessor<int32_t>("MODULE0/WORD_USER1", 0, {AccessMode::raw});
   user1Raw.read();
 
-  BOOST_CHECK_EQUAL( int32_t(user1Raw), 0xfff8);
-  BOOST_CHECK_CLOSE( user1Raw.getAsCooked<float>(), -1, 0.0001);
-  
+  BOOST_CHECK_EQUAL(int32_t(user1Raw), 0xfff8);
+  BOOST_CHECK_CLOSE(user1Raw.getAsCooked<float>(), -1, 0.0001);
+
   user1Raw.setAsCooked(-2.5);
 
   user1Raw.write();
 
-  BOOST_CHECK_EQUAL( int32_t(user1Dummy), 0xffec);
+  BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0xffec);
 
   // special case: int32 does not necessarily mean raw. There is also a cooked version:
   auto user1CoockedInt = device.getScalarRegisterAccessor<int32_t>("MODULE0/WORD_USER1");
   user1CoockedInt.read();
 
-  BOOST_CHECK_EQUAL( int(user1CoockedInt), -3);
+  BOOST_CHECK_EQUAL(int(user1CoockedInt), -3);
 
   user1CoockedInt = 16;
   user1CoockedInt.write();
 
-  BOOST_CHECK_EQUAL( int32_t(user1Dummy), 0x80);
+  BOOST_CHECK_EQUAL(int32_t(user1Dummy), 0x80);
 
   // IEEE754 converter, raw and coocked accessors
   // FLOAT_TEST.ARRAY is IEEE754. We use the 1 D version in constrast to FixedPoint where we use scalar (just because we can)
-  auto floatTestDummy = dummyBackend->getRawAccessor("FLOAT_TEST","ARRAY");
+  auto floatTestDummy = dummyBackend->getRawAccessor("FLOAT_TEST", "ARRAY");
 
   float testValue = 1.1;
   void* warningAvoider = &testValue; // directly reinterpret-casting float gives compiler warnings
@@ -301,48 +302,47 @@ BOOST_AUTO_TEST_CASE(testConverterTypes){
   auto floatTestCoocked = device.getOneDRegisterAccessor<float>("FLOAT_TEST/ARRAY");
   floatTestCoocked.read();
 
-  BOOST_CHECK_CLOSE( floatTestCoocked[0], 1.1, 0.0001);
-  BOOST_CHECK_CLOSE( floatTestCoocked[1], 2.2, 0.0001);
-  BOOST_CHECK_CLOSE( floatTestCoocked[2], 3.3, 0.0001);
-  BOOST_CHECK_CLOSE( floatTestCoocked[3], 4.4, 0.0001);
+  BOOST_CHECK_CLOSE(floatTestCoocked[0], 1.1, 0.0001);
+  BOOST_CHECK_CLOSE(floatTestCoocked[1], 2.2, 0.0001);
+  BOOST_CHECK_CLOSE(floatTestCoocked[2], 3.3, 0.0001);
+  BOOST_CHECK_CLOSE(floatTestCoocked[3], 4.4, 0.0001);
 
   floatTestCoocked[3] = 44.4;
   floatTestCoocked.write();
 
   *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[3];
-  BOOST_CHECK_CLOSE( testValue, 44.4, 0.0001);
+  BOOST_CHECK_CLOSE(testValue, 44.4, 0.0001);
 
   auto floatTestRaw = device.getOneDRegisterAccessor<int32_t>("FLOAT_TEST/ARRAY", 0, 0, {AccessMode::raw});
   floatTestRaw.read();
 
   *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestRaw[2];
- 
+
   BOOST_CHECK_CLOSE(testValue, 3.3, 0.0001);
-  BOOST_CHECK_CLOSE( floatTestRaw.getAsCooked<float>(0), 1.1, 0.0001);
-  
-  floatTestRaw.setAsCooked(0,-2.5);
+  BOOST_CHECK_CLOSE(floatTestRaw.getAsCooked<float>(0), 1.1, 0.0001);
+
+  floatTestRaw.setAsCooked(0, -2.5);
 
   floatTestRaw.write();
 
   *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[0];
 
-  BOOST_CHECK_CLOSE( testValue, -2.5, 0.0001);
+  BOOST_CHECK_CLOSE(testValue, -2.5, 0.0001);
 
   // special case: int32 does not necessarily mean raw. There is also a cooked version:
   auto floatTestCoockedInt = device.getOneDRegisterAccessor<int32_t>("FLOAT_TEST/ARRAY");
   floatTestCoockedInt.read();
 
-  BOOST_CHECK_EQUAL( floatTestCoockedInt[0], -3); // was -2.5
-  BOOST_CHECK_EQUAL( floatTestCoockedInt[1], 2); // was 2.2
-  BOOST_CHECK_EQUAL( floatTestCoockedInt[2], 3); // was 3.3
-  BOOST_CHECK_EQUAL( floatTestCoockedInt[3], 44); // was 44.4
+  BOOST_CHECK_EQUAL(floatTestCoockedInt[0], -3); // was -2.5
+  BOOST_CHECK_EQUAL(floatTestCoockedInt[1], 2);  // was 2.2
+  BOOST_CHECK_EQUAL(floatTestCoockedInt[2], 3);  // was 3.3
+  BOOST_CHECK_EQUAL(floatTestCoockedInt[3], 44); // was 44.4
 
   floatTestCoockedInt[1] = 16;
   floatTestCoockedInt.write();
 
   *(reinterpret_cast<int32_t*>(warningAvoider)) = floatTestDummy[1];
-  BOOST_CHECK_CLOSE( testValue, 16.0, 0.001);
-
+  BOOST_CHECK_CLOSE(testValue, 16.0, 0.001);
 }
 
 // After you finished all test you have to end the test suite.

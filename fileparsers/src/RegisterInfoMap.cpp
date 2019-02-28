@@ -30,9 +30,8 @@ namespace ChimeraTK {
 
   void RegisterInfoMap::insert(MetaData& elem) { _catalogue.addMetadata(elem.name, elem.value); }
 
-  void RegisterInfoMap::getRegisterInfo(const std::string& reg_name,
-      RegisterInfoMap::RegisterInfo& value,
-      const std::string& reg_module) const {
+  void RegisterInfoMap::getRegisterInfo(
+      const std::string& reg_name, RegisterInfoMap::RegisterInfo& value, const std::string& reg_module) const {
     auto info = _catalogue.getRegister(RegisterPath(reg_module) / reg_name);
     auto infoCast = boost::static_pointer_cast<RegisterInfoMap::RegisterInfo>(info);
     value = *infoCast;
@@ -292,7 +291,7 @@ namespace ChimeraTK {
             true,                                                               // isSigned
             3 + 45,                                                             // nDigits
             45,                                                                 // nFractionalDigits
-            DataType::int32);// we have integer in the transport layer
+            DataType::int32); // we have integer in the transport layer
       }
       else if(width == 64) {
         // smallest possible 5e-324, largest 2e308
@@ -301,7 +300,7 @@ namespace ChimeraTK {
             true,                                                               // isSigned
             3 + 325,                                                            // nDigits
             325,                                                                // nFractionalDigits
-            DataType::int64);        
+            DataType::int64);
       }
       else {
         throw logic_error("Wrong data width for data type IEEE754. Check your map file!");

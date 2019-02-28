@@ -18,13 +18,12 @@ namespace ChimeraTK {
   // foward declarations
   template<typename T>
   class DummyRegisterAccessor;
-  
+
   template<typename T>
   class DummyMultiplexedRegisterAccessor;
 
   class DummyRegisterRawAccessor;
 
- 
   /** The dummy device opens a mapping file instead of a device, and
    *  implements all registers defined in the mapping file in memory.
    *  Like this it mimiks the real PCIe device.
@@ -67,9 +66,8 @@ namespace ChimeraTK {
     /// which contains all bars.
     static uint64_t calculateVirtualAddress(uint32_t registerOffsetInBar, uint8_t bar);
 
-    static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
-        std::map<std::string, std::string>
-            parameters);
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        std::string address, std::map<std::string, std::string> parameters);
 
     /** Get a raw accessor to the underlying memory with the convenience of using 
      *  register names. This accessor had nothing to do with regular, TransferElement based
@@ -80,7 +78,7 @@ namespace ChimeraTK {
      */
     DummyRegisterRawAccessor getRawAccessor(std::string module, std::string register_name);
 
-  protected:
+   protected:
     struct AddressRange {
       const uint32_t offset;
       const uint32_t sizeInBytes;
@@ -133,7 +131,7 @@ namespace ChimeraTK {
     template<typename T>
     friend class DummyMultiplexedRegisterAccessor;
 
-      friend class DummyRegisterRawAccessor;
+    friend class DummyRegisterRawAccessor;
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
 

@@ -11,8 +11,8 @@ namespace ChimeraTK {
 
   namespace detail {
     template<>
-    FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo>
-            registerInfo) {
+    FixedPointConverter createDataConverter<FixedPointConverter>(
+        boost::shared_ptr<RegisterInfoMap::RegisterInfo> registerInfo) {
       return FixedPointConverter(
           registerInfo->name, registerInfo->width, registerInfo->nFractionalBits, registerInfo->signedFlag);
     }
@@ -25,9 +25,13 @@ namespace ChimeraTK {
 
   } // namespace detail
 
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, false);
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
-  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, false);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendRegisterAccessor, FixedPointConverter, false);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(
+      NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, false);
 
 } /* namespace ChimeraTK */

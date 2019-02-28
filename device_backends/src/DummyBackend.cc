@@ -51,8 +51,7 @@ namespace ChimeraTK {
     std::map<uint8_t, size_t> barSizesInBytes = getBarSizesInBytesFromRegisterMapping();
 
     for(std::map<uint8_t, size_t>::const_iterator barSizeInBytesIter = barSizesInBytes.begin();
-        barSizeInBytesIter != barSizesInBytes.end();
-        ++barSizeInBytesIter) {
+        barSizeInBytesIter != barSizesInBytes.end(); ++barSizeInBytesIter) {
       // the size of the vector is in words, not in bytes -> convert fist
       _barContents[barSizeInBytesIter->first].resize(barSizeInBytesIter->second / sizeof(int32_t), 0);
     }
@@ -61,8 +60,7 @@ namespace ChimeraTK {
   std::map<uint8_t, size_t> DummyBackend::getBarSizesInBytesFromRegisterMapping() const {
     std::map<uint8_t, size_t> barSizesInBytes;
     for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-        mappingElementIter != _registerMapping->end();
-        ++mappingElementIter) {
+        mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
       barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
           static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
     }
@@ -150,8 +148,8 @@ namespace ChimeraTK {
     return (_readOnlyAddresses.find(virtualAddress) != _readOnlyAddresses.end());
   }
 
-  void DummyBackend::setWriteCallbackFunction(AddressRange addressRange,
-      boost::function<void(void)> const& writeCallbackFunction) {
+  void DummyBackend::setWriteCallbackFunction(
+      AddressRange addressRange, boost::function<void(void)> const& writeCallbackFunction) {
     _writeCallbackFunctions.insert(
         std::pair<AddressRange, boost::function<void(void)>>(addressRange, writeCallbackFunction));
   }
@@ -160,8 +158,7 @@ namespace ChimeraTK {
     std::list<boost::function<void(void)>> callbackFunctionsForThisRange =
         findCallbackFunctionsForAddressRange(addressRange);
     for(std::list<boost::function<void(void)>>::iterator functionIter = callbackFunctionsForThisRange.begin();
-        functionIter != callbackFunctionsForThisRange.end();
-        ++functionIter) {
+        functionIter != callbackFunctionsForThisRange.end(); ++functionIter) {
       (*functionIter)();
     }
   }
@@ -184,8 +181,7 @@ namespace ChimeraTK {
 
     std::list<boost::function<void(void)>> returnList;
     for(std::multimap<AddressRange, boost::function<void(void)>>::iterator callbackIter = startIterator;
-        callbackIter != endIterator;
-        ++callbackIter) {
+        callbackIter != endIterator; ++callbackIter) {
       if(isWriteRangeOverlap(callbackIter->first, addressRange)) {
         returnList.push_back(callbackIter->second);
       }
@@ -215,9 +211,8 @@ namespace ChimeraTK {
     return false;
   }
 
-  boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(std::string address,
-      std::map<std::string, std::string>
-          parameters) {
+  boost::shared_ptr<DeviceBackend> DummyBackend::createInstance(
+      std::string address, std::map<std::string, std::string> parameters) {
     if(parameters["map"].empty()) {
       throw ChimeraTK::logic_error("No map file name given.");
     }
@@ -237,9 +232,8 @@ namespace ChimeraTK {
     return parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
   }
 
-  DummyRegisterRawAccessor DummyBackend::getRawAccessor(std::string module, std::string register_name){
+  DummyRegisterRawAccessor DummyBackend::getRawAccessor(std::string module, std::string register_name) {
     return DummyRegisterRawAccessor(shared_from_this(), module, register_name);
   }
-
 
 } // namespace ChimeraTK
