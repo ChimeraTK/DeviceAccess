@@ -9,64 +9,6 @@
 
 namespace ChimeraTK {
 
-  template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostRead() {
-    //if(!isRaw) {
-    if(false) {// FIXME: to make complile without the variable isRaw available
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      for(auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-          itdst != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
-          ++itdst) {
-        *itdst = _dataConverter.toCooked<int32_t>(*itsrc);
-        ++itsrc;
-      }
-    }
-    else {
-      if(!_rawAccessor->isShared) {
-        NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
-      }
-      else {
-        auto itsrc = _rawAccessor->begin(_startAddress);
-        auto itdst = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), _numberOfWords * sizeof(int32_t));
-      }
-    }
-    SyncNDRegisterAccessor<int32_t>::doPostRead();
-  }
-
-  template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPreWrite() {
-    //    if(!isRaw) {
-    if(false) {// FIXME: to make complile without the variable isRaw available
-      auto itdst = _rawAccessor->begin(_startAddress);
-      for(auto itsrc = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-          itsrc != NDRegisterAccessor<int32_t>::buffer_2D[0].end();
-          ++itsrc) {
-        *itdst = _dataConverter.toRaw<int32_t>(*itsrc);
-        ++itdst;
-      }
-    }
-    else {
-      if(!_rawAccessor->isShared) {
-        NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
-      }
-      else {
-        auto itdst = _rawAccessor->begin(_startAddress);
-        auto itsrc = NDRegisterAccessor<int32_t>::buffer_2D[0].begin();
-        memcpy(&(*itdst), &(*itsrc), _numberOfWords * sizeof(int32_t));
-      }
-    }
-  }
-
-  template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostWrite() {
-    //if(isRaw) {
-      if(!_rawAccessor->isShared) {
-        NDRegisterAccessor<int32_t>::buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
-      }
-      //}
-  }
-
   namespace detail {
     template<>
     FixedPointConverter createDataConverter<FixedPointConverter>(boost::shared_ptr<RegisterInfoMap::RegisterInfo>
@@ -84,6 +26,8 @@ namespace ChimeraTK {
   } // namespace detail
 
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, false);
   INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
+  INSTANTIATE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, false);
 
 } /* namespace ChimeraTK */

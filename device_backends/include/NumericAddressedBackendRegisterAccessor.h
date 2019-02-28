@@ -35,14 +35,14 @@ namespace ChimeraTK {
      *  The functions are doPostRead, doPreWrite and doPostWrite.
      */
     template<typename UserType, typename DataConverterType, bool isRaw>
-    struct PrePostActionsImplementor{
+    struct NumericAddressedPrePostActionsImplementor{
       // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
       std::vector< std::vector<UserType> > & _buffer_2D;
       boost::shared_ptr<NumericAddressedLowLevelTransferElement> & _rawAccessor;
       size_t & _startAddress;
       DataConverterType & _dataConverter;
 
-    PrePostActionsImplementor( std::vector< std::vector<UserType> > & buffer, boost::shared_ptr<NumericAddressedLowLevelTransferElement> & rawAccessor, size_t & startAddress, DataConverterType & dataConverter):
+    NumericAddressedPrePostActionsImplementor( std::vector< std::vector<UserType> > & buffer, boost::shared_ptr<NumericAddressedLowLevelTransferElement> & rawAccessor, size_t & startAddress, DataConverterType & dataConverter):
         _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _dataConverter(dataConverter){
       }
 
@@ -53,13 +53,13 @@ namespace ChimeraTK {
 
     // only int32_t as raw needs special treatment
     template<typename DataConverterType>
-    struct PrePostActionsImplementor<int32_t, DataConverterType, true>{
+    struct NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>{
       // we just do references to the objects we need (even the shared ptr). The accessor we use it in guarantees the consistency.
       std::vector< std::vector<int32_t> > & _buffer_2D;
       boost::shared_ptr<NumericAddressedLowLevelTransferElement> & _rawAccessor;
       size_t & _startAddress;
 
-      PrePostActionsImplementor( std::vector< std::vector<int32_t> > & buffer, boost::shared_ptr<NumericAddressedLowLevelTransferElement> & rawAccessor, size_t & startAddress, DataConverterType & ):
+      NumericAddressedPrePostActionsImplementor( std::vector< std::vector<int32_t> > & buffer, boost::shared_ptr<NumericAddressedLowLevelTransferElement> & rawAccessor, size_t & startAddress, DataConverterType & ):
       _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress) {
       }
 
@@ -69,7 +69,7 @@ namespace ChimeraTK {
     };
 
     template<typename UserType, typename DataConverterType, bool isRaw>
-    void PrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPostRead(){
+    void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPostRead(){
       auto itsrc = _rawAccessor->begin(_startAddress);
       for(auto itdst = _buffer_2D[0].begin();
                itdst != _buffer_2D[0].end();
@@ -80,7 +80,7 @@ namespace ChimeraTK {
     }
 
     template<typename UserType, typename DataConverterType, bool isRaw>
-    void PrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPreWrite(){
+    void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPreWrite(){
       auto itsrc = _rawAccessor->begin(_startAddress);
       for(auto itdst = _buffer_2D[0].begin();
                itdst != _buffer_2D[0].end();
@@ -92,7 +92,7 @@ namespace ChimeraTK {
 
     // special implementations for int32 raw
     template<typename DataConverterType>
-    void PrePostActionsImplementor<int32_t, DataConverterType, true>::doPostRead(){
+    void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPostRead(){
       if(!_rawAccessor->isShared) {
         _buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
       }
@@ -104,7 +104,7 @@ namespace ChimeraTK {
     }
 
     template<typename DataConverterType>
-    void PrePostActionsImplementor<int32_t, DataConverterType, true>::doPreWrite(){
+    void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPreWrite(){
       if(!_rawAccessor->isShared) {
         _buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
       }
@@ -112,6 +112,13 @@ namespace ChimeraTK {
         auto itdst = _rawAccessor->begin(_startAddress);
         auto itsrc = _buffer_2D[0].begin();
         memcpy(&(*itdst), &(*itsrc), _buffer_2D[0].size()*sizeof(int32_t));
+      }
+    }
+
+    template<typename DataConverterType>
+    void NumericAddressedPrePostActionsImplementor<int32_t, DataConverterType, true>::doPostWrite(){
+      if(!_rawAccessor->isShared) {
+        _buffer_2D[0].swap(_rawAccessor->rawDataBuffer);
       }
     }
     
@@ -222,27 +229,17 @@ namespace ChimeraTK {
     }
 
     void doPostRead() override {
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
-          itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
-          ++itdst) {
-        *itdst = _dataConverter.template toCooked<UserType>(*itsrc);
-        ++itsrc;
-      }
+      _prePostActionsImplementor.doPostRead();
       SyncNDRegisterAccessor<UserType>::doPostRead();
     }
 
     void doPreWrite() override {
-      auto itsrc = _rawAccessor->begin(_startAddress);
-      for(auto itdst = NDRegisterAccessor<UserType>::buffer_2D[0].begin();
-          itdst != NDRegisterAccessor<UserType>::buffer_2D[0].end();
-          ++itdst) {
-        *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
-        ++itsrc;
-      }
+      _prePostActionsImplementor.doPreWrite();
     }
 
-    void doPostWrite() override {}
+    void doPostWrite() override {
+      _prePostActionsImplementor.doPostWrite();
+    }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted =
@@ -308,7 +305,7 @@ namespace ChimeraTK {
     /** number of 4-byte words to access */
     size_t _numberOfWords;
 
-      detail::PrePostActionsImplementor<UserType, DataConverterType, isRaw> _prePostActionsImplementor;
+    detail::NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw> _prePostActionsImplementor;
 
     /** raw accessor */
     boost::shared_ptr<NumericAddressedLowLevelTransferElement> _rawAccessor;
@@ -392,17 +389,10 @@ namespace ChimeraTK {
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostRead();
-
-  template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPreWrite();
-
-  template<>
-  void NumericAddressedBackendRegisterAccessor<int32_t, FixedPointConverter, true>::doPostWrite();
-
   DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, true);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, FixedPointConverter, false);
   DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, true);
+  DECLARE_MULTI_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendRegisterAccessor, IEEE754_SingleConverter, false);
 
 } // namespace ChimeraTK
 

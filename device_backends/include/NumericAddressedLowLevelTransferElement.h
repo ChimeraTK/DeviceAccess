@@ -16,6 +16,11 @@ namespace ChimeraTK {
   template<typename UserType, typename DataConverterType, bool isRaw>
   class NumericAddressedBackendRegisterAccessor;
 
+  namespace detail{
+    template<typename UserType, typename DataConverterType, bool isRaw>
+    class NumericAddressedPrePostActionsImplementor;
+  }
+
   /*********************************************************************************************************************/
   /** Implementation of the NDRegisterAccessor for NumericAddressedBackends,
    * responsible for the underlying raw data access. This accessor is never
@@ -182,6 +187,8 @@ namespace ChimeraTK {
 
     template<typename UserType, typename DataConverterType, bool isRaw>
     friend class NumericAddressedBackendRegisterAccessor;
+    template<typename UserType, typename DataConverterType, bool isRaw>
+    friend class detail::NumericAddressedPrePostActionsImplementor;
   };
 
 } // namespace ChimeraTK
