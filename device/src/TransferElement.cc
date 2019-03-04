@@ -13,4 +13,4 @@ namespace ChimeraTK {
 
   TransferElement::~TransferElement() {}
 
-}
+} // namespace ChimeraTK

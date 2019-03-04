@@ -7,12 +7,41 @@ buffering accessor, so you do read() and write() to access the hardware, and in 
 you can modify the data in the accessors buffer efficiently at will.
 
 The one-dimensional sequences/channels are implemeted as std::vector, so they are
-convenient to use. They are accessed via the [] operator of the accessor. This 
+convenient to use. They are accessed via the [] operator of the accessor. This
 also allows the "matrix" syntax \c accessor[][].
 \note As with all std::vectors, iterators are slightly more efficient because the repeated
-calculation of the address and indirections are not necessary for each element. 
+calculation of the address and indirections are not necessary for each element.
 
 \include accessor2D.cpp
+
+A special case: The 2D register might have multiplexed data on the backend
+side (backend specific implementation of the TwoDRegisterAccessor). This is commonly the
+case e.g. for PCIe backend devices. In the map file of a PCIe backend (or any other backend
+type based on the NumbericAddressedBackend) a special notation is used to define multiplexed
+2D registers:
+
+\verbatim
+# name                              number_of_elements  address   size  bar  width  fracbits  signed
+ADC.AREA_MULTIPLEXED_SEQUENCE_DATA                  13        0    132    2     32         0       0
+ADC.SEQUENCE_DATA_0                                  1        0      2    2     16         0       1
+ADC.SEQUENCE_DATA_1                                  1        2      2    2     16         0       1
+ADC.SEQUENCE_DATA_2                                  1        4      4    2     20         0       1
+ADC.SEQUENCE_DATA_3                                  1        8      2    2     16         0       1
+\endverbatim
+
+These five lines in the map file will result in a single register named "ADC.DATA". It will have 4
+sequences (or channels) with each 13 elements. The number of elements per channel is determined
+by the total size of the register (132 in this example) divided by the number of bytes per element
+summed for all channels (10 in this example), rounded down. The number of elements specified by
+the first line (13 in this case) is ignored, but it is convenient to write the correct number of
+elements per channel there. Please note that the total size of the register must be divisible by
+the size of the raw data type (which is fixed at 4 corrently), this is a general requirement by
+the NumbericAddressedBackend. The addresses of the SEQUENCE entries must be absolute addresses of
+each first element of the sequence in the BAR.
+
+The following code demonstrates how the (de)multiplexing internally works:
+\include accessor2D_multiplexed.cpp
+
 */
 
 /**

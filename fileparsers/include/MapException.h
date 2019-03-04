@@ -18,7 +18,6 @@ namespace ChimeraTK {
   typedef ChimeraTK::runtime_error DMapFileException;
   typedef ChimeraTK::runtime_error DMapFileParserException;
 
-}//namespace ChimeraTK
+} // namespace ChimeraTK
 
-#endif  /* CHIMERA_TK_MAP_EXCEPTION_H */
-
+#endif /* CHIMERA_TK_MAP_EXCEPTION_H */

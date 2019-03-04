@@ -13,7 +13,6 @@ void setSigtemIndicator(int /*signalNumber*/) {
 }
 
 int main(int, char** argv) {
-
   // https://airtower.wordpress.com/2010/06/16/catch-sigterm-exit-gracefully/
   struct sigaction action;
   memset(&action, 0, sizeof(struct sigaction));
@@ -23,7 +22,7 @@ int main(int, char** argv) {
   unsigned int portNumber = getPortNumber(argv);
   std::string mapFileLocation = getMapFileLocation(argv);
   unsigned int protocolVersion = getProtocolVersion(argv);
-  
+
   ChimeraTK::RebotDummyServer testServer(portNumber, mapFileLocation, protocolVersion);
   testServer.start();
 

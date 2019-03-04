@@ -24,7 +24,7 @@ int main() {
    */
   for(size_t i = 0; i < twoDAccessor.getNChannels(); ++i) {
     std::cout << "Channel " << i << ":";
-    std::vector<double> & channel = twoDAccessor[i];
+    std::vector<double>& channel = twoDAccessor[i];
     for(double sample : channel) {
       std::cout << " " << sample;
     }
@@ -37,7 +37,7 @@ int main() {
    */
   for(size_t i = 0; i < twoDAccessor.getNChannels(); ++i) {
     for(size_t j = 0; j < twoDAccessor.getNElementsPerChannel(); ++j) {
-      twoDAccessor[i][j] = i*100 + j;
+      twoDAccessor[i][j] = i * 100 + j;
     }
   }
 

@@ -8,8 +8,9 @@
 #ifndef SOURCE_DIRECTORY__TESTS_INCLUDE_ACCESSPRIVATEDATA_H_
 #define SOURCE_DIRECTORY__TESTS_INCLUDE_ACCESSPRIVATEDATA_H_
 
-// Helper classes to access private data of another class, which can be useful for whitebox tests
-// This code was taken from: https://gist.github.com/dabrahams/1528856
+// Helper classes to access private data of another class, which can be useful
+// for whitebox tests This code was taken from:
+// https://gist.github.com/dabrahams/1528856
 
 namespace accessPrivateData {
 
@@ -24,26 +25,24 @@ namespace accessPrivateData {
   // depend on the /value/ of the the stored address in any way so that
   // we can access it from ordinary code without directly touching
   // private data.
-  template <class Tag>
-  struct stowed
-  {
-       static typename Tag::type value;
+  template<class Tag>
+  struct stowed {
+    static typename Tag::type value;
   };
-  template <class Tag>
+  template<class Tag>
   typename Tag::type stowed<Tag>::value;
 
   // Generate a static data member whose constructor initializes
   // stowed<Tag>::value.  This type will only be named in an explicit
   // instantiation, where it is legal to pass the address of a private
   // member.
-  template <class Tag, typename Tag::type x>
-  struct stow_private
-  {
-       stow_private() { stowed<Tag>::value = x; }
-       static stow_private instance;
+  template<class Tag, typename Tag::type x>
+  struct stow_private {
+    stow_private() { stowed<Tag>::value = x; }
+    static stow_private instance;
   };
-  template <class Tag, typename Tag::type x>
-  stow_private<Tag,x> stow_private<Tag,x>::instance;
+  template<class Tag, typename Tag::type x>
+  stow_private<Tag, x> stow_private<Tag, x>::instance;
 
   /*
   // ------- Usage -------
@@ -75,6 +74,6 @@ namespace accessPrivateData {
   };
   */
 
-}
+} // namespace accessPrivateData
 
 #endif /* SOURCE_DIRECTORY__TESTS_INCLUDE_ACCESSPRIVATEDATA_H_ */

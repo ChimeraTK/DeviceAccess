@@ -1,9 +1,9 @@
 
 #include "RebotDummyServer.h"
 #include "DummyProtocol1.h" // the latest version includes all predecessors in the include
-#include <iostream>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <iostream>
 #include <stdexcept>
 
 namespace ChimeraTK {
@@ -11,18 +11,9 @@ namespace ChimeraTK {
   std::atomic<bool> stop_rebot_server(false);
 
   RebotDummyServer::RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion)
-  : _state(ACCEPT_NEW_COMMAND),
-    _heartbeatCount(0),
-    _helloCount(0),
-    _dont_answer(false),
-    _registerSpace(mapFile),
-    _serverPort(portNumber),
-    _protocolVersion(protocolVersion),
-    _io(),
-    _serverEndpoint(ip::tcp::v4(), _serverPort),
-    _connectionAcceptor(_io, _serverEndpoint),
-    _currentClientConnection()
-  {
+  : _state(ACCEPT_NEW_COMMAND), _heartbeatCount(0), _helloCount(0), _dont_answer(false), _registerSpace(mapFile),
+    _serverPort(portNumber), _protocolVersion(protocolVersion), _io(), _serverEndpoint(ip::tcp::v4(), _serverPort),
+    _connectionAcceptor(_io, _serverEndpoint), _currentClientConnection() {
     if(protocolVersion == 0) {
       _protocolImplementor.reset(new DummyProtocol0(*this));
     }
@@ -39,7 +30,8 @@ namespace ChimeraTK {
     // The first address of the register space is set to a reference value. This
     // would be used to test the rebot client.
     uint32_t registerAddress = 0x04;
-    int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized later (eg FW version ..)
+    int32_t wordToWrite = 0xDEADBEEF; // Change this to someting standardized
+                                      // later (eg FW version ..)
     uint8_t bar = 0;
     _registerSpace.open();
     _registerSpace.write(bar, registerAddress, &wordToWrite, sizeof(wordToWrite));
@@ -52,7 +44,6 @@ namespace ChimeraTK {
 
     // loop accepts client connections - one at a time
     while(stop_rebot_server == false) {
-
       boost::shared_ptr<ip::tcp::socket> incomingConnection(new ip::tcp::socket(_io));
       try {
         _connectionAcceptor.accept(*incomingConnection);
@@ -64,7 +55,6 @@ namespace ChimeraTK {
         else {
           throw; // something else went wrong, rethrow the exception
         }
-
       }
 
       if(stop_rebot_server) break;
@@ -80,7 +70,7 @@ namespace ChimeraTK {
     if(_state == INSIDE_MULTI_WORD_WRITE) {
       _state = _protocolImplementor->continueMultiWordWrite(buffer);
     }
-    else {  // has to be ACCEPT_NEW_COMMAND
+    else { // has to be ACCEPT_NEW_COMMAND
 
       // cause an error condition: just don't answer
       if(_dont_answer) {
@@ -89,21 +79,20 @@ namespace ChimeraTK {
 
       uint32_t requestedAction = buffer.at(0);
       switch(requestedAction) {
-
         case SINGLE_WORD_WRITE:
           _protocolImplementor->singleWordWrite(buffer);
           break;
-        case  MULTI_WORD_WRITE:
+        case MULTI_WORD_WRITE:
           _state = _protocolImplementor->multiWordWrite(buffer);
           break;
-        case  MULTI_WORD_READ:
+        case MULTI_WORD_READ:
           _protocolImplementor->multiWordRead(buffer);
           break;
-        case  HELLO:
+        case HELLO:
           ++_helloCount;
           _protocolImplementor->hello(buffer);
           break;
-        case  PING:
+        case PING:
           ++_heartbeatCount;
           _protocolImplementor->ping(buffer);
           break;
@@ -150,7 +139,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void RebotDummyServer::sendSingleWord(int32_t response) {
-    std::vector<int32_t> data{ response };
+    std::vector<int32_t> data{response};
     boost::asio::write(*_currentClientConnection, boost::asio::buffer(data));
   }
 
@@ -175,21 +164,23 @@ namespace ChimeraTK {
 
     // This loop handles the accepted connection
     while(stop_rebot_server == false) {
-
       std::vector<uint32_t> dataBuffer(BUFFER_SIZE_IN_WORDS);
       boost::system::error_code errorCode;
       _currentClientConnection->read_some(boost::asio::buffer(dataBuffer), errorCode);
 
       if(errorCode == boost::asio::error::eof) {
-        // The client has closed the connection; move to the outer loop to accept new connections
+        // The client has closed the connection; move to the outer loop to accept
+        // new connections
         _currentClientConnection->close();
         break;
       }
       else if(errorCode && stop_rebot_server) {
-        /* reading was interrupted by a terminate signal; move to the outer loop which will also quit and end the
-         * server gracefully */
+        /* reading was interrupted by a terminate signal; move to the outer loop
+         * which will also quit and end the server gracefully */
         _currentClientConnection->close();
-        std::cout << "Terminate signal detected while reading. Connection closed, will exit now." << std::endl;
+        std::cout << "Terminate signal detected while reading. Connection "
+                     "closed, will exit now."
+                  << std::endl;
         break;
       }
       else if(errorCode) {
@@ -204,8 +195,9 @@ namespace ChimeraTK {
 
   void RebotDummyServer::stop() {
     stop_rebot_server = true;
-    // open connection so the server stops waiting for new connections. We just want the call
-    // _connectionAcceptor.accept() in RebotDummyServer::start() to exit, so start() terminates.
+    // open connection so the server stops waiting for new connections. We just
+    // want the call _connectionAcceptor.accept() in RebotDummyServer::start() to
+    // exit, so start() terminates.
     boost::asio::io_service io_service;
     boost::asio::ip::tcp::socket socket(io_service);
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string("127.0.0.1"), _serverPort);

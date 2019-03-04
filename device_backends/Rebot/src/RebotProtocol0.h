@@ -1,23 +1,23 @@
 #ifndef CHIMERATK_REBOT_PROTOCOL_0
 #define CHIMERATK_REBOT_PROTOCOL_0
 
-#include <vector>
 #include <boost/shared_ptr.hpp>
+#include <vector>
 
 #include "RebotProtocolImplementor.h"
 
-namespace ChimeraTK{
+namespace ChimeraTK {
   class TcpCtrl;
 
-  struct RebotProtocol0 : RebotProtocolImplementor{
-    explicit RebotProtocol0(boost::shared_ptr<TcpCtrl> & tcpCommunicator);
+  struct RebotProtocol0 : RebotProtocolImplementor {
+    explicit RebotProtocol0(boost::shared_ptr<TcpCtrl>& tcpCommunicator);
     virtual ~RebotProtocol0(){};
 
     virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
     virtual void write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
     virtual void sendHeartbeat() override;
 
-    struct RegisterInfo{
+    struct RegisterInfo {
       uint32_t addressInWords;
       uint32_t nWords;
       // the constructor checks that the address and size are multiples of 4 and
@@ -32,6 +32,6 @@ namespace ChimeraTK{
     void transferVectorToDataPtr(std::vector<int32_t> source, int32_t* destination);
   };
 
-}// namespace ChimeraTK
+} // namespace ChimeraTK
 
 #endif // CHIMERATK_REBOT_PROTOCOL_0

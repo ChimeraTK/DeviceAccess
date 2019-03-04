@@ -1,151 +1,132 @@
 #ifndef CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H
 #define CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H
 
-#include <sstream>
 #include <boost/shared_ptr.hpp>
+#include <sstream>
 
-#include "SyncNDRegisterAccessor.h"
-#include "RegisterInfoMap.h"
-#include "FixedPointConverter.h"
-#include "NumericAddressedBackend.h"
 #include "Exception.h"
+#include "FixedPointConverter.h"
 #include "MapFileParser.h"
+#include "NumericAddressedBackend.h"
+#include "RegisterInfoMap.h"
+#include "SyncNDRegisterAccessor.h"
 
 namespace ChimeraTK {
 
-  static const std::string MULTIPLEXED_SEQUENCE_PREFIX="AREA_MULTIPLEXED_SEQUENCE_";
-  static const std::string SEQUENCE_PREFIX="SEQUENCE_";
+  static const std::string MULTIPLEXED_SEQUENCE_PREFIX = "AREA_MULTIPLEXED_SEQUENCE_";
+  static const std::string SEQUENCE_PREFIX = "SEQUENCE_";
 
   /*********************************************************************************************************************/
-  /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for multiplexd 2D registers
+  /** Implementation of the NDRegisterAccessor for NumericAddressedBackends for
+   * multiplexd 2D registers
    */
-  template <class UserType>
+  template<class UserType>
   class NumericAddressedBackendMuxedRegisterAccessor : public SyncNDRegisterAccessor<UserType> {
+   public:
+    NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath& registerPathName, size_t numberOfElements,
+        size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend);
 
-    public:
+    ~NumericAddressedBackendMuxedRegisterAccessor() override { this->shutdown(); }
 
-      NumericAddressedBackendMuxedRegisterAccessor(const RegisterPath &registerPathName,
-          size_t numberOfElements, size_t elementsOffset, boost::shared_ptr<DeviceBackend> _backend );
+    void doReadTransfer() override;
 
-      ~NumericAddressedBackendMuxedRegisterAccessor() override {
-        this->shutdown();
-      }
+    bool doReadTransferNonBlocking() override {
+      doReadTransfer();
+      return true;
+    }
 
-      void doReadTransfer() override;
+    bool doReadTransferLatest() override {
+      doReadTransfer();
+      return true;
+    }
 
-      bool doReadTransferNonBlocking() override {
-        doReadTransfer();
-        return true;
-      }
+    void doPostRead() override;
 
-      bool doReadTransferLatest() override {
-        doReadTransfer();
-        return true;
-      }
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
-      void doPostRead() override;
+    void doPreWrite() override;
 
-      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override;
+    bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
+      auto rhsCasted = boost::dynamic_pointer_cast<const NumericAddressedBackendMuxedRegisterAccessor<UserType>>(other);
+      if(!rhsCasted) return false;
+      if(_ioDevice != rhsCasted->_ioDevice) return false;
+      if(_bar != rhsCasted->_bar) return false;
+      if(_address != rhsCasted->_address) return false;
+      if(_nBytes != rhsCasted->_nBytes) return false;
+      if(_numberOfElements != rhsCasted->_numberOfElements) return false;
+      if(_elementsOffset != rhsCasted->_elementsOffset) return false;
+      if(_converters != rhsCasted->_converters) return false;
+      return true;
+    }
 
-      void doPreWrite() override;
+    bool isReadOnly() const override { return false; }
 
-      bool mayReplaceOther(const boost::shared_ptr<TransferElement const> &other) const override {
-        auto rhsCasted = boost::dynamic_pointer_cast< const NumericAddressedBackendMuxedRegisterAccessor<UserType> >(other);
-        if(!rhsCasted) return false;
-        if(_ioDevice != rhsCasted->_ioDevice) return false;
-        if(_bar != rhsCasted->_bar) return false;
-        if(_address != rhsCasted->_address) return false;
-        if(_nBytes != rhsCasted->_nBytes) return false;
-        if(_numberOfElements != rhsCasted->_numberOfElements) return false;
-        if(_elementsOffset != rhsCasted->_elementsOffset) return false;
-        if(_converters != rhsCasted->_converters) return false;
-        return true;
-      }
+    bool isReadable() const override { return true; }
 
-      bool isReadOnly() const override {
-        return false;
-      }
+    bool isWriteable() const override { return true; }
 
-      bool isReadable() const override {
-        return true;
-      }
+    AccessModeFlags getAccessModeFlags() const override { return {}; }
 
-      bool isWriteable() const override {
-        return true;
-      }
+    VersionNumber getVersionNumber() const override { return currentVersion; }
 
-      AccessModeFlags getAccessModeFlags() const override {
-        return {};
-      }
+   protected:
+    /** One fixed point converter for each sequence. */
+    std::vector<FixedPointConverter> _converters;
 
-      VersionNumber getVersionNumber() const override {
-        return currentVersion;
-      }
+    /** The device from (/to) which to perform the DMA transfer */
+    boost::shared_ptr<NumericAddressedBackend> _ioDevice;
 
-    protected:
+    /** number of data blocks / samples */
+    size_t _nBlocks;
 
-      /** One fixed point converter for each sequence. */
-      std::vector< FixedPointConverter > _converters;
+    std::vector<int32_t> _ioBuffer;
 
-      /** The device from (/to) which to perform the DMA transfer */
-      boost::shared_ptr<NumericAddressedBackend> _ioDevice;
+    std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
 
-      /** number of data blocks / samples */
-      size_t _nBlocks;
+    uint32_t bytesPerBlock;
 
-      std::vector<int32_t> _ioBuffer;
+    /// register and module name
+    std::string _moduleName, _registerName;
+    RegisterPath _registerPathName;
 
-      std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
+    /// register address (after restricting to area of interes)
+    size_t _bar, _address, _nBytes;
 
-      uint32_t bytesPerBlock;
+    /// area of interest
+    size_t _numberOfElements;
+    size_t _elementsOffset;
 
-      /// register and module name
-      std::string _moduleName, _registerName;
-      RegisterPath _registerPathName;
+    /// Version number of last transfer
+    VersionNumber currentVersion;
 
-      /// register address (after restricting to area of interes)
-      size_t _bar, _address, _nBytes;
+    std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
+      return {boost::enable_shared_from_this<TransferElement>::shared_from_this()};
+    }
 
-      /// area of interest
-      size_t _numberOfElements;
-      size_t _elementsOffset;
+    std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
-      /// Version number of last transfer
-      VersionNumber currentVersion;
-
-      std::vector< boost::shared_ptr<TransferElement> > getHardwareAccessingElements() override {
-        return { boost::enable_shared_from_this<TransferElement>::shared_from_this() };
-      }
-
-      std::list< boost::shared_ptr<TransferElement> > getInternalElements() override {
-        return {};
-      }
-
-      void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {}   // LCOV_EXCL_LINE
-
+    void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
   };
 
   /********************************************************************************************************************/
 
-  template <class UserType>
+  template<class UserType>
   NumericAddressedBackendMuxedRegisterAccessor<UserType>::NumericAddressedBackendMuxedRegisterAccessor(
-        const RegisterPath &registerPathName, size_t numberOfElements, size_t elementsOffset,
-        boost::shared_ptr<DeviceBackend> _backend )
+      const RegisterPath& registerPathName, size_t numberOfElements, size_t elementsOffset,
+      boost::shared_ptr<DeviceBackend> _backend)
   : SyncNDRegisterAccessor<UserType>(registerPathName),
-    _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)),
-    _registerPathName(registerPathName),
-    _numberOfElements(numberOfElements),
-    _elementsOffset(elementsOffset)
-  {
+    _ioDevice(boost::dynamic_pointer_cast<NumericAddressedBackend>(_backend)), _registerPathName(registerPathName),
+    _numberOfElements(numberOfElements), _elementsOffset(elementsOffset) {
     try {
-      // re-split register and module after merging names by the last dot (to allow module.register in the register name)
+      // re-split register and module after merging names by the last dot (to
+      // allow module.register in the register name)
       _registerPathName.setAltSeparator(".");
       auto moduleAndRegister = MapFileParser::splitStringAtLastDot(_registerPathName.getWithAltSeparator());
       _moduleName = moduleAndRegister.first;
       _registerName = moduleAndRegister.second;
 
       // build name of area as written in the map file
-      std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX+_registerName;
+      std::string areaName = MULTIPLEXED_SEQUENCE_PREFIX + _registerName;
 
       // Obtain information about the area
       auto registerMapping = _ioDevice->getRegisterMap();
@@ -153,10 +134,10 @@ namespace ChimeraTK {
       registerMapping->getRegisterInfo(areaName, areaInfo, _moduleName);
 
       // Obtain information for each sequence (= channel) in the area:
-      // Create a fixed point converter for each sequence and store the sequence information in a vector
+      // Create a fixed point converter for each sequence and store the sequence
+      // information in a vector
       size_t iSeq = 0;
       while(true) {
-
         // build name of the next sequence as written in the map file
         RegisterInfoMap::RegisterInfo sequenceInfo;
         std::stringstream sequenceNameStream;
@@ -178,21 +159,22 @@ namespace ChimeraTK {
 
         // store sequence info and fixed point converter
         _sequenceInfos.push_back(sequenceInfo);
-        _converters.push_back( FixedPointConverter(registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag) );
+        _converters.push_back(FixedPointConverter(
+            registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag));
       }
 
       // check if no sequences were found
-      if(_converters.empty()){
-        throw ChimeraTK::logic_error( "No sequences found for name \""+_registerName+"\".");
+      if(_converters.empty()) {
+        throw ChimeraTK::logic_error("No sequences found for name \"" + _registerName + "\".");
       }
 
       // compute size of one block in bytes (one sample for all channels)
       bytesPerBlock = 0;
-      for(unsigned int i=0; i<_converters.size(); i++) {
+      for(unsigned int i = 0; i < _converters.size(); i++) {
         uint32_t nbt = _sequenceInfos[i].nBytes;
         bytesPerBlock += nbt;
         if(nbt != 1 && nbt != 2 && nbt != 4) {
-          throw ChimeraTK::logic_error( "Sequence word size must correspond to a primitive type");
+          throw ChimeraTK::logic_error("Sequence word size must correspond to a primitive type");
         }
       }
 
@@ -212,23 +194,24 @@ namespace ChimeraTK {
 
       // compute the address taking into account the selected area of interest
       _bar = areaInfo.bar;
-      _address = areaInfo.address + bytesPerBlock*_elementsOffset;
+      _address = areaInfo.address + bytesPerBlock * _elementsOffset;
       _nBytes = bytesPerBlock * _numberOfElements;
       if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
       if(_nBytes > areaInfo.nBytes) {
-        throw ChimeraTK::logic_error("Requested number of elements exceeds the size of the register (late, redundant "
+        throw ChimeraTK::logic_error("Requested number of elements exceeds the "
+                                     "size of the register (late, redundant "
                                      "safety check)!");
       }
       _nBlocks = _numberOfElements;
 
       // allocate the buffer for the converted data
       NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
-      for(size_t i=0; i<_converters.size(); ++i) {
+      for(size_t i = 0; i < _converters.size(); ++i) {
         NDRegisterAccessor<UserType>::buffer_2D[i].resize(_nBlocks);
       }
 
       // allocate the raw io buffer
-      _ioBuffer.resize(_nBytes/sizeof(int32_t));
+      _ioBuffer.resize(_nBytes / sizeof(int32_t));
     }
     catch(...) {
       this->shutdown();
@@ -238,80 +221,82 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  template <class UserType>
+  template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doReadTransfer() {
-      _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
+    _ioDevice->read(_bar, _address, _ioBuffer.data(), _nBytes);
   }
 
   /********************************************************************************************************************/
 
-  template <class UserType>
+  template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead() {
-      uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
-        for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-          switch(_sequenceInfos[sequenceIndex].nBytes) {
-            case 1: //8 bit variables
-              NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
-                  _converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
-              standOfMyioBuffer++;
-              break;
-            case 2: //16 bit words
-              NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
-                  _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
-              standOfMyioBuffer = standOfMyioBuffer + 2;
-              break;
-            case 4: //32 bit words
-              NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
-                  _converters[sequenceIndex].template toCooked<UserType>(*(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
-              standOfMyioBuffer = standOfMyioBuffer + 4;
-              break;
-          }
+    uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
+    for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
+      for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
+        switch(_sequenceInfos[sequenceIndex].nBytes) {
+          case 1: // 8 bit variables
+            NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
+                _converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
+            standOfMyioBuffer++;
+            break;
+          case 2: // 16 bit words
+            NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
+                _converters[sequenceIndex].template toCooked<UserType>(
+                    *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
+            standOfMyioBuffer = standOfMyioBuffer + 2;
+            break;
+          case 4: // 32 bit words
+            NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
+                _converters[sequenceIndex].template toCooked<UserType>(
+                    *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
+            standOfMyioBuffer = standOfMyioBuffer + 4;
+            break;
         }
       }
-      currentVersion = {};
+    }
+    currentVersion = {};
 
-      SyncNDRegisterAccessor<UserType>::doPostRead();
+    SyncNDRegisterAccessor<UserType>::doPostRead();
   }
 
   /********************************************************************************************************************/
 
-  template <class UserType>
+  template<class UserType>
   bool NumericAddressedBackendMuxedRegisterAccessor<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-      _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
-      currentVersion = versionNumber;
-      return false;
+    _ioDevice->write(_bar, _address, &(_ioBuffer[0]), _nBytes);
+    currentVersion = versionNumber;
+    return false;
   }
 
   /********************************************************************************************************************/
 
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPreWrite() {
-      uint8_t *standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
-      for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
-        for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-          switch(_sequenceInfos[sequenceIndex].nBytes){
-            case 1: //8 bit variables
-              *(standOfMyioBuffer) = _converters[sequenceIndex].toRaw(
-                  NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] );
-              standOfMyioBuffer++;
-              break;
-            case 2: //16 bit variables
-              *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] );
-              standOfMyioBuffer = standOfMyioBuffer + 2;
-              break;
-            case 4: //32 bit variables
-              *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)) = _converters[sequenceIndex].toRaw(
-                  NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] );
-              standOfMyioBuffer = standOfMyioBuffer + 4;
-              break;
-          }
+    uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
+    for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
+      for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
+        switch(_sequenceInfos[sequenceIndex].nBytes) {
+          case 1: // 8 bit variables
+            *(standOfMyioBuffer) =
+                _converters[sequenceIndex].toRaw(NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex]);
+            standOfMyioBuffer++;
+            break;
+          case 2: // 16 bit variables
+            *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)) =
+                _converters[sequenceIndex].toRaw(NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex]);
+            standOfMyioBuffer = standOfMyioBuffer + 2;
+            break;
+          case 4: // 32 bit variables
+            *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)) =
+                _converters[sequenceIndex].toRaw(NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex]);
+            standOfMyioBuffer = standOfMyioBuffer + 4;
+            break;
         }
       }
+    }
   }
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(NumericAddressedBackendMuxedRegisterAccessor);
 
-}  //namespace ChimeraTK
+} // namespace ChimeraTK
 
 #endif // CHIMERA_TK_MEMORY_ADDRESSED_BACKEND_TWO_D_REGISTER_ACCESSOR_H

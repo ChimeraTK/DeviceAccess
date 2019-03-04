@@ -1,28 +1,27 @@
 #include <algorithm>
-#include <sstream>
 #include <functional>
+#include <sstream>
 
-#include <boost/lambda/lambda.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lambda/lambda.hpp>
 
-#include "SharedDummyBackend.h"
+#include "BackendFactory.h"
 #include "Exception.h"
 #include "MapFileParser.h"
+#include "SharedDummyBackend.h"
 #include "parserUtilities.h"
-#include "BackendFactory.h"
 
-//macro to avoid code duplication
-#define TRY_REGISTER_ACCESS(COMMAND)\
-    try{\
-      COMMAND\
-    }catch( std::out_of_range & outOfRangeException ){\
-      std::stringstream errorMessage;\
-      errorMessage << "Invalid address offset " << address \
-      << " in bar " << static_cast<int>(bar) << "."	\
-      << "Caught out_of_range exception: " << outOfRangeException.what();\
-      throw ChimeraTK::logic_error(errorMessage.str());\
-    }
-
+// macro to avoid code duplication
+#define TRY_REGISTER_ACCESS(COMMAND)                                                                                   \
+  try {                                                                                                                \
+    COMMAND                                                                                                            \
+  }                                                                                                                    \
+  catch(std::out_of_range & outOfRangeException) {                                                                     \
+    std::stringstream errorMessage;                                                                                    \
+    errorMessage << "Invalid address offset " << address << " in bar " << static_cast<int>(bar) << "."                 \
+                 << "Caught out_of_range exception: " << outOfRangeException.what();                                   \
+    throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
+  }
 
 namespace ChimeraTK {
   // Valid bar numbers are 0 to 5 , so they must be contained
@@ -32,130 +31,120 @@ namespace ChimeraTK {
   const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
   SharedDummyBackend::SharedDummyBackend(std::string instanceId, std::string mapFileName)
-  : NumericAddressedBackend(mapFileName),
-    _mapFile(mapFileName),
-    _registerMapping(_registerMap),
-    _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
-    sharedMemoryManager(*this, instanceId, mapFileName)
-  {
-    // Note: Opposed to the other dummies, _registerMap is computed in the base class ctor
-    //       because we rely on a fixed init-order for the boost::interprocess members
+  : NumericAddressedBackend(mapFileName), _mapFile(mapFileName), _registerMapping(_registerMap),
+    _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()), sharedMemoryManager(*this, instanceId, mapFileName) {
+    // Note: Opposed to the other dummies, _registerMap is computed in the base
+    // class ctor
+    //       because we rely on a fixed init-order for the boost::interprocess
+    //       members
     setupBarContents();
   }
 
-  //Nothing to clean up, all objects clean up for themselves when
-  //they go out of scope.
-  SharedDummyBackend::~SharedDummyBackend(){
-  }
+  // Nothing to clean up, all objects clean up for themselves when
+  // they go out of scope.
+  SharedDummyBackend::~SharedDummyBackend() {}
 
   // Construct a segment for each bar and set required size
-  void SharedDummyBackend::setupBarContents(){
-
-    for (std::map< uint8_t, size_t >::const_iterator barSizeInBytesIter
-           = _barSizesInBytes.begin();
-         barSizeInBytesIter != _barSizesInBytes.end();
-         ++barSizeInBytesIter){
-
+  void SharedDummyBackend::setupBarContents() {
+    for(std::map<uint8_t, size_t>::const_iterator barSizeInBytesIter = _barSizesInBytes.begin();
+        barSizeInBytesIter != _barSizesInBytes.end();
+        ++barSizeInBytesIter) {
       std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(barSizeInBytesIter->first);
 
-      size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1)/sizeof(int32_t);
+      size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1) / sizeof(int32_t);
 
-      try{
+      try {
         std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
         _barContents[barSizeInBytesIter->first] = sharedMemoryManager.findOrConstructVector(barName, barSizeInWords);
       }
-      catch(boost::interprocess::bad_alloc &e){
+      catch(boost::interprocess::bad_alloc& e) {
         // Clean up
         sharedMemoryManager.~SharedMemoryManager();
 
         std::string errMsg{"Could not allocate shared memory while constructing registers. "
-                           "Please file a bug report at https://github.com/ChimeraTK/DeviceAccess."};
+                           "Please file a bug report at "
+                           "https://github.com/ChimeraTK/DeviceAccess."};
         throw ChimeraTK::logic_error(errMsg);
       }
     } /* for(barSizesInBytesIter) */
   }
 
-  std::map< uint8_t, size_t > SharedDummyBackend::getBarSizesInBytesFromRegisterMapping() const{
-    std::map< uint8_t, size_t > barSizesInBytes;
-    for (RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-        mappingElementIter !=  _registerMapping->end(); ++mappingElementIter ) {
-      barSizesInBytes[mappingElementIter->bar] =
-          std::max( barSizesInBytes[mappingElementIter->bar],
-              static_cast<size_t> (mappingElementIter->address +
-                  mappingElementIter->nBytes ) );
+  std::map<uint8_t, size_t> SharedDummyBackend::getBarSizesInBytesFromRegisterMapping() const {
+    std::map<uint8_t, size_t> barSizesInBytes;
+    for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
+        mappingElementIter != _registerMapping->end();
+        ++mappingElementIter) {
+      barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
+          static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
     }
     return barSizesInBytes;
   }
 
-  void SharedDummyBackend::open()
-  {
-    if (_opened){
+  void SharedDummyBackend::open() {
+    if(_opened) {
       throw ChimeraTK::logic_error("Device is already open.");
     }
-    _opened=true;
+    _opened = true;
   }
 
-  void SharedDummyBackend::close(){
-    if (!_opened){
+  void SharedDummyBackend::close() {
+    if(!_opened) {
       throw ChimeraTK::logic_error("Device is already closed.");
     }
-    _opened=false;
+    _opened = false;
   }
 
-  void SharedDummyBackend::read(uint8_t bar, uint32_t address, int32_t* data,  size_t sizeInBytes){
-    if (!_opened){
+  void SharedDummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
+    if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
-    checkSizeIsMultipleOfWordSize( sizeInBytes );
-    unsigned int wordBaseIndex = address/sizeof(int32_t);
+    checkSizeIsMultipleOfWordSize(sizeInBytes);
+    unsigned int wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
 
-    for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
-      TRY_REGISTER_ACCESS( data[wordIndex] = _barContents[bar]->at(wordBaseIndex+wordIndex); );
+    for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
+      TRY_REGISTER_ACCESS(data[wordIndex] = _barContents[bar]->at(wordBaseIndex + wordIndex););
     }
   }
 
-  void SharedDummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data,  size_t sizeInBytes){
-    if (!_opened){
+  void SharedDummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
+    if(!_opened) {
       throw ChimeraTK::logic_error("Device is closed.");
     }
-    checkSizeIsMultipleOfWordSize( sizeInBytes );
-    unsigned int wordBaseIndex = address/sizeof(int32_t);
+    checkSizeIsMultipleOfWordSize(sizeInBytes);
+    unsigned int wordBaseIndex = address / sizeof(int32_t);
 
     std::lock_guard<boost::interprocess::named_mutex> lock(sharedMemoryManager.interprocessMutex);
 
-    for (unsigned int wordIndex = 0; wordIndex < sizeInBytes/sizeof(int32_t); ++wordIndex){
-      TRY_REGISTER_ACCESS( _barContents[bar]->at(wordBaseIndex+wordIndex) = data[wordIndex]; );
+    for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
+      TRY_REGISTER_ACCESS(_barContents[bar]->at(wordBaseIndex + wordIndex) = data[wordIndex];);
     }
   }
 
-  std::string SharedDummyBackend::readDeviceInfo(){
+  std::string SharedDummyBackend::readDeviceInfo() {
     std::stringstream info;
     info << "SharedDummyBackend with mapping file " << _registerMapping->getMapFileName();
     return info.str();
   }
 
-
-  size_t SharedDummyBackend::getTotalRegisterSizeInBytes() const{
+  size_t SharedDummyBackend::getTotalRegisterSizeInBytes() const {
     size_t totalRegSize = 0;
-    for(auto &pair : _barSizesInBytes) {
+    for(auto& pair : _barSizesInBytes) {
       totalRegSize += pair.second;
     }
     return totalRegSize;
   }
 
-
-
-  void SharedDummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes){
-    if (sizeInBytes % sizeof(int32_t) ){
+  void SharedDummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes) {
+    if(sizeInBytes % sizeof(int32_t)) {
       throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
     }
   }
 
   boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string address,
-      std::map<std::string,std::string> parameters) {
-
+      std::map<std::string, std::string>
+          parameters) {
     std::string mapFileName = parameters["map"];
     if(mapFileName == "") {
       throw ChimeraTK::logic_error("No map file name given.");
@@ -169,15 +158,14 @@ namespace ChimeraTK {
   }
 
   std::string SharedDummyBackend::convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
-    std::string dmapDir = parserUtilities::extractDirectory( BackendFactory::getInstance().getDMapFilePath());
+    std::string dmapDir = parserUtilities::extractDirectory(BackendFactory::getInstance().getDMapFilePath());
     std::string absPathToDmapDir = parserUtilities::convertToAbsolutePath(dmapDir);
     // the map file is relative to the dmap file location. Convert the relative
     // mapfilename to an absolute path
     boost::filesystem::path absPathToMapFile{parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName)};
-    // Possible ./, ../ elements are removed, as the path may be constructed differently
-    // in different client applications
+    // Possible ./, ../ elements are removed, as the path may be constructed
+    // differently in different client applications
     return boost::filesystem::canonical(absPathToMapFile).string();
   }
-
 
 } // Namespace ChimeraTK

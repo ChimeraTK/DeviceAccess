@@ -6,13 +6,10 @@
 
 namespace ChimeraTK {
 
-  DeviceBackendImpl::DeviceBackendImpl()
-  : _opened(false), _connected(true)
-  {}
+  DeviceBackendImpl::DeviceBackendImpl() : _opened(false), _connected(true) {}
 
   /********************************************************************************************************************/
 
-  DeviceBackendImpl::~DeviceBackendImpl() {
-  }
+  DeviceBackendImpl::~DeviceBackendImpl() {}
 
 } /* namespace ChimeraTK */

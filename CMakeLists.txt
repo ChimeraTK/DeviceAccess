@@ -72,15 +72,22 @@ foreach(subdir ${subdirs})
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/include/ DESTINATION include/ChimeraTK)
 endforeach()
 
+include(CheckLibraryExists)
+find_package(Threads)
+
+check_library_exists(rt shm_open "sys/mman.h" HAVE_SHMOPEN_RT)
+if(HAVE_SHMOPEN_RT)
+    set(RT_LIBRARIES "-lrt")
+else()
+    set(RT_LIBRARIES "")
+endif()
+
 # add the library
 add_library( ${PROJECT_NAME} SHARED ${SOURCE} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 link_directories(${Boost_LIBRARY_DIRS})
-target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES})
-if(UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME} rt pthread)
-endif()
+target_link_libraries(${PROJECT_NAME}  ${LibXML++_LDFLAGS} ${Boost_LIBRARIES} ${LibXML++_LIBRARIES} ${glib_LIBRARIES} ${RT_LIBRARIES} Threads::Threads)
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -111,21 +118,7 @@ endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
-# Doxygen documentation
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-
-  add_custom_target(doc ${DOC_DEPENDENCY}
-                    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
-  # note the / after ${CMAKE_BINARY_DIR}/doc/. This causes the directory to be renamed to the destination, not copied into
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}
-          COMPONENT doc)
-else()
-  message("Doxygen not found, documentation cannot be build.")
-endif()
+include(cmake/enable_doxygen_documentation.cmake)
 
 # Keep the testing section at the end. It will include boost test, which will modify the Boost_LIBRARIES variable.
 # We don't want to link client applications to the boost testing library. This might give trouble.

@@ -8,7 +8,7 @@
  * (plus a .dmap file)
  */
 
-int main(){
+int main() {
   /*
    * Before you use a device you have to tell DeviceAccess
    * which dmap file to use.
@@ -30,8 +30,8 @@ int main(){
    *
    * The example device has a temperature controller with a set value.
    */
-   ChimeraTK::ScalarRegisterAccessor<float> temperatureSetPoint
-        = myDevice.getScalarRegisterAccessor<float>("TEMPERATURE_CONTROLLER/SET_POINT");
+  ChimeraTK::ScalarRegisterAccessor<float> temperatureSetPoint =
+      myDevice.getScalarRegisterAccessor<float>("TEMPERATURE_CONTROLLER/SET_POINT");
 
   /*
    * To get the value from the device call read.

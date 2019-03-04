@@ -1,33 +1,35 @@
 #include "IEEE754_SingleConverter.h"
 
-namespace ChimeraTK{
+namespace ChimeraTK {
   template<>
-  std::string IEEE754_SingleConverter::toCooked<std::string>(uint32_t rawValue) const{
-    //Step 1 as in the normal template: reinterpret cast
-    void * warningAvoider = &rawValue;
-    float genericRepresentation = *(reinterpret_cast<float *>(warningAvoider));
+  std::string IEEE754_SingleConverter::toCooked<std::string>(uint32_t rawValue) const {
+    // Step 1 as in the normal template: reinterpret cast
+    void* warningAvoider = &rawValue;
+    float genericRepresentation = *(reinterpret_cast<float*>(warningAvoider));
 
-    //Step 2: convert to string
+    // Step 2: convert to string
     return std::to_string(genericRepresentation);
   }
-    
+
   template<>
-  uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const{
+  uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const {
     // step 1: convert string to float
     float genericRepresentation;
-    try{
+    try {
       genericRepresentation = std::stof(cookedValue);
-    }catch(std::exception &e){
-      //FIXME: VariableName
-      // Note: We cannot do out of range limitations because we don't know if too large or too small
-      throw ChimeraTK::logic_error( e.what() );
+    }
+    catch(std::exception& e) {
+      // FIXME: VariableName
+      // Note: We cannot do out of range limitations because we don't know if too
+      // large or too small
+      throw ChimeraTK::logic_error(e.what());
     }
 
     // step 2 as in the normal template: reinterpret cast
-    void * warningAvoider = &genericRepresentation;
-    int32_t rawValue = *(reinterpret_cast<int32_t *>(warningAvoider));
+    void* warningAvoider = &genericRepresentation;
+    int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
 
     return rawValue;
   }
 
-}// namespace ChimeraTK
+} // namespace ChimeraTK
