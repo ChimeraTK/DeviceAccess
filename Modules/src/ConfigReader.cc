@@ -214,7 +214,7 @@ namespace ChimeraTK {
           const xmlpp::Element* valueElement = dynamic_cast<const xmlpp::Element*>(valueChild);
           if(!valueElement) continue; // ignore comments etc.
           if(valueElement->get_name() != "value") {
-            parsingError("Expected 'value' tag instead of: " + root->get_name());
+            parsingError("Expected 'value' tag instead of: " + valueElement->get_name());
           }
           valueFound = true;
           auto index = valueElement->get_attribute("i");
