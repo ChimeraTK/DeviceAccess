@@ -258,15 +258,46 @@ namespace ChimeraTK {
     // reset flag to check if the registerBackedType() function was called
     called_registerBackendType = false;
 
-    // open the plugin library. RTLD_LAZY is enough since all symbols are loaded when needed
-    void *hndl = dlopen(soFile.c_str(), RTLD_LAZY);
-    if(hndl == nullptr){
+    /**
+     * dlmopen will load the plugin into in it own nampespace and this
+     * resolves the issue if a plugin is compiled with different
+     * version of a libraray and the application using the plugin is
+     * compiled with different version of libarary.
+     * If a plugin does not provide the external creator function yet,
+     * it will be loaded using dlopen which can lead to crash if
+     * aforementioned situation exist.
+     */
+    auto handle = dlmopen(LM_ID_NEWLM, soFile.c_str(), RTLD_LAZY);
+    if(handle == nullptr){
       throw ChimeraTK::logic_error(dlerror());
+    }
+
+    //should be removed so ignoring
+    //std::vector<std::string> *paramNames = reinterpret_cast<std::vector<std::string>*>(dlsym(handle, "ChimeraTK_DeviceAccess_sdmParameterNames"));
+
+    //required for issue #28
+    //std::string *version = reinterpret_cast<std::string*>(dlsym(handle, "ChimeraTK_DeviceAccess_version"));
+
+    auto *creator_func = reinterpret_cast<boost::shared_ptr<ChimeraTK::DeviceBackend>(*)(std::string, std::map<std::string, std::string>)>(dlsym(handle, "ChimeraTK_DeviceAccess_createBackend"));
+
+    if (creator_func!= nullptr){
+      std::string *backend_name = reinterpret_cast<std::string*>(dlsym(handle, "backend_name"));
+      assert (backend_name != nullptr);
+      registerBackendType(*backend_name,creator_func, {"map"});
+    }
+    else{
+      dlclose(handle);
+      handle = dlopen(soFile.c_str(), RTLD_LAZY);
+      std::cout<<"You are still using dlopen to load your plugin"
+               <<"Please update your plugin to use dlmopen"<<std::endl;
+      if(handle == nullptr){
+        throw ChimeraTK::logic_error(dlerror());
+      }
     }
 
     // if no backend was registered, close the library and throw an exception
     if(!called_registerBackendType) {
-      dlclose(hndl);
+      dlclose(handle);
       throw ChimeraTK::logic_error("'"+soFile+"' is not a valid DeviceAccess plugin, it does not register any backends!");
     }
 
