@@ -660,223 +660,263 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 
 template<typename UserType>
 void Application::typedMakeConnection(VariableNetwork& network) {
-  bool connectionMade = false; // to check the logic...
+  try {                          // catch exceptions to add information about the failed network
+    bool connectionMade = false; // to check the logic...
 
-  size_t nNodes = network.countConsumingNodes() + 1;
-  auto feeder = network.getFeedingNode();
-  auto consumers = network.getConsumingNodes();
-  bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
-  bool useFeederTrigger = network.getTriggerType() == VariableNetwork::TriggerType::feeder;
-  bool constantFeeder = feeder.getType() == NodeType::Constant;
+    size_t nNodes = network.countConsumingNodes() + 1;
+    auto feeder = network.getFeedingNode();
+    auto consumers = network.getConsumingNodes();
+    bool useExternalTrigger = network.getTriggerType() == VariableNetwork::TriggerType::external;
+    bool useFeederTrigger = network.getTriggerType() == VariableNetwork::TriggerType::feeder;
+    bool constantFeeder = feeder.getType() == NodeType::Constant;
 
-  // 1st case: the feeder requires a fixed implementation
-  if(feeder.hasImplementation() && !constantFeeder) {
-    // Create feeding implementation. Note: though the implementation is derived
-    // from the feeder, it will be used as the implementation of the (or one of
-    // the) consumer. Logically, implementations are always pairs of
-    // implementations (sender and receiver), but in this case the feeder
-    // already has a fixed implementation pair. So our feedingImpl will contain
-    // the consumer-end of the implementation pair. This is the reason why the
-    // functions createProcessScalar() and createDeviceAccessor() get the
-    // VariableDirection::consuming.
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
-    if(feeder.getType() == NodeType::Device) {
-      feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
-          {VariableDirection::consuming, false}, feeder.getMode(), feeder.getNumberOfElements());
-    }
-    else if(feeder.getType() == NodeType::ControlSystem) {
-      feedingImpl = createProcessVariable<UserType>(feeder);
-    }
-    else {
-      throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
-    }
-
-    // if we just have two nodes, directly connect them
-    if(nNodes == 2 && !useExternalTrigger) {
-      auto consumer = consumers.front();
-      if(consumer.getType() == NodeType::Application) {
-        consumer.setAppAccessorImplementation(feedingImpl);
-        connectionMade = true;
+    // 1st case: the feeder requires a fixed implementation
+    if(feeder.hasImplementation() && !constantFeeder) {
+      // Create feeding implementation. Note: though the implementation is derived
+      // from the feeder, it will be used as the implementation of the (or one of
+      // the) consumer. Logically, implementations are always pairs of
+      // implementations (sender and receiver), but in this case the feeder
+      // already has a fixed implementation pair. So our feedingImpl will contain
+      // the consumer-end of the implementation pair. This is the reason why the
+      // functions createProcessScalar() and createDeviceAccessor() get the
+      // VariableDirection::consuming.
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
+      if(feeder.getType() == NodeType::Device) {
+        feedingImpl = createDeviceVariable<UserType>(feeder.getDeviceAlias(), feeder.getRegisterName(),
+            {VariableDirection::consuming, false}, feeder.getMode(), feeder.getNumberOfElements());
       }
-      else if(consumer.getType() == NodeType::Device) {
-        auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-        // connect the Device with e.g. a ControlSystem node via a
-        // ThreadedFanOut
-        auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
-        fanOut->addSlave(consumingImpl, consumer);
-        internalModuleList.push_back(fanOut);
-        connectionMade = true;
-      }
-      else if(consumer.getType() == NodeType::ControlSystem) {
-        auto consumingImpl = createProcessVariable<UserType>(consumer);
-        // connect the ControlSystem with e.g. a Device node via an
-        // ThreadedFanOut
-        auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
-        fanOut->addSlave(consumingImpl, consumer);
-        internalModuleList.push_back(fanOut);
-        connectionMade = true;
-      }
-      else if(consumer.getType() == NodeType::TriggerReceiver) {
-        consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(feedingImpl);
-        connectionMade = true;
+      else if(feeder.getType() == NodeType::ControlSystem) {
+        feedingImpl = createProcessVariable<UserType>(feeder);
       }
       else {
         throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
       }
-    }
-    else { /* !(nNodes == 2 && !useExternalTrigger) */
 
-      // create the right FanOut type
-      boost::shared_ptr<FanOut<UserType>> fanOut;
-      boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
-      if(useExternalTrigger) {
-        // if external trigger is enabled, use externally triggered threaded
-        // FanOut
-        auto triggerNode = feeder.getExternalTrigger();
-        auto triggerFanOut = triggerMap[triggerNode.getUniqueId()];
-        if(!triggerFanOut) {
-          triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl());
-          triggerMap[triggerNode.getUniqueId()] = triggerFanOut;
-          internalModuleList.push_back(triggerFanOut);
+      // if we just have two nodes, directly connect them
+      if(nNodes == 2 && !useExternalTrigger) {
+        auto consumer = consumers.front();
+        if(consumer.getType() == NodeType::Application) {
+          consumer.setAppAccessorImplementation(feedingImpl);
+          connectionMade = true;
         }
-        fanOut = triggerFanOut->addNetwork(feedingImpl);
-      }
-      else if(useFeederTrigger) {
-        // if the trigger is provided by the pushing feeder, use the treaded
-        // version of the FanOut to distribute new values immediately to all
-        // consumers. Depending on whether we have a return channel or not, pick
-        // the right implementation of the FanOut
-        boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
-        if(!feeder.getDirection().withReturn) {
-          threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+        else if(consumer.getType() == NodeType::Device) {
+          auto consumingImpl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+          // connect the Device with e.g. a ControlSystem node via a
+          // ThreadedFanOut
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+          fanOut->addSlave(consumingImpl, consumer);
+          internalModuleList.push_back(fanOut);
+          connectionMade = true;
+        }
+        else if(consumer.getType() == NodeType::ControlSystem) {
+          auto consumingImpl = createProcessVariable<UserType>(consumer);
+          // connect the ControlSystem with e.g. a Device node via an
+          // ThreadedFanOut
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+          fanOut->addSlave(consumingImpl, consumer);
+          internalModuleList.push_back(fanOut);
+          connectionMade = true;
+        }
+        else if(consumer.getType() == NodeType::TriggerReceiver) {
+          consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(feedingImpl);
+          connectionMade = true;
         }
         else {
-          threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl);
+          throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
         }
-        internalModuleList.push_back(threadedFanOut);
-        fanOut = threadedFanOut;
       }
-      else {
-        assert(network.hasApplicationConsumer()); // checkConnections should
-                                                  // catch this
-        consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl);
-        fanOut = consumingFanOut;
-      }
+      else { /* !(nNodes == 2 && !useExternalTrigger) */
 
-      // In case we have one or more trigger receivers among our consumers, we
-      // produce exactly one application variable for it. We never need more,
-      // since the distribution is done with a TriggerFanOut.
-      bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
-      auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
-
-      // add all consumers to the FanOut
-      for(auto& consumer : consumers) {
-        if(consumer.getType() == NodeType::Application) {
-          if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
-            consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
-            consumingFanOut.reset();
+        // create the right FanOut type
+        boost::shared_ptr<FanOut<UserType>> fanOut;
+        boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
+        if(useExternalTrigger) {
+          // if external trigger is enabled, use externally triggered threaded
+          // FanOut
+          auto triggerNode = feeder.getExternalTrigger();
+          auto triggerFanOut = triggerMap[triggerNode.getUniqueId()];
+          if(!triggerFanOut) {
+            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl());
+            triggerMap[triggerNode.getUniqueId()] = triggerFanOut;
+            internalModuleList.push_back(triggerFanOut);
+          }
+          fanOut = triggerFanOut->addNetwork(feedingImpl);
+        }
+        else if(useFeederTrigger) {
+          // if the trigger is provided by the pushing feeder, use the treaded
+          // version of the FanOut to distribute new values immediately to all
+          // consumers. Depending on whether we have a return channel or not, pick
+          // the right implementation of the FanOut
+          boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
+          if(!feeder.getDirection().withReturn) {
+            threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
           }
           else {
+            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl);
+          }
+          internalModuleList.push_back(threadedFanOut);
+          fanOut = threadedFanOut;
+        }
+        else {
+          assert(network.hasApplicationConsumer()); // checkConnections should
+                                                    // catch this
+          consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl);
+          fanOut = consumingFanOut;
+        }
+
+        // In case we have one or more trigger receivers among our consumers, we
+        // produce exactly one application variable for it. We never need more,
+        // since the distribution is done with a TriggerFanOut.
+        bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
+        auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
+
+        // add all consumers to the FanOut
+        for(auto& consumer : consumers) {
+          if(consumer.getType() == NodeType::Application) {
+            if(consumingFanOut && consumer.getMode() == UpdateMode::poll) {
+              consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
+              consumingFanOut.reset();
+            }
+            else {
+              auto impls = createApplicationVariable<UserType>(consumer);
+              fanOut->addSlave(impls.first, consumer);
+              consumer.setAppAccessorImplementation<UserType>(impls.second);
+            }
+          }
+          else if(consumer.getType() == NodeType::ControlSystem) {
+            auto impl = createProcessVariable<UserType>(consumer);
+            fanOut->addSlave(impl, consumer);
+          }
+          else if(consumer.getType() == NodeType::Device) {
+            auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+                {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+            fanOut->addSlave(impl, consumer);
+          }
+          else if(consumer.getType() == NodeType::TriggerReceiver) {
+            if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first, consumer);
+            usedTriggerReceiver = true;
+            consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
+          }
+          else {
+            throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
+          }
+        }
+        connectionMade = true;
+      }
+    }
+    // 2nd case: the feeder does not require a fixed implementation
+    else if(!constantFeeder) { /* !feeder.hasImplementation() */
+      // we should be left with an application feeder node
+      if(feeder.getType() != NodeType::Application) {
+        throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
+      }
+      assert(!useExternalTrigger);
+      // if we just have two nodes, directly connect them
+      if(nNodes == 2) {
+        auto consumer = consumers.front();
+        if(consumer.getType() == NodeType::Application) {
+          auto impls = createApplicationVariable<UserType>(feeder, consumer);
+          feeder.setAppAccessorImplementation<UserType>(impls.first);
+          consumer.setAppAccessorImplementation<UserType>(impls.second);
+          connectionMade = true;
+        }
+        else if(consumer.getType() == NodeType::ControlSystem) {
+          auto impl = createProcessVariable<UserType>(consumer);
+          feeder.setAppAccessorImplementation<UserType>(impl);
+          connectionMade = true;
+        }
+        else if(consumer.getType() == NodeType::Device) {
+          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+          feeder.setAppAccessorImplementation<UserType>(impl);
+          connectionMade = true;
+        }
+        else if(consumer.getType() == NodeType::TriggerReceiver) {
+          auto impls = createApplicationVariable<UserType>(feeder, consumer);
+          feeder.setAppAccessorImplementation<UserType>(impls.first);
+          consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
+          connectionMade = true;
+        }
+        else if(consumer.getType() == NodeType::Constant) {
+          auto impl = consumer.getConstAccessor<UserType>();
+          feeder.setAppAccessorImplementation<UserType>(impl);
+          connectionMade = true;
+        }
+        else {
+          throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
+        }
+      }
+      else {
+        // create FanOut and use it as the feeder implementation
+        auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
+            feeder.getDescription(), feeder.getNumberOfElements(), feeder.getDirection().withReturn);
+        feeder.setAppAccessorImplementation<UserType>(fanOut);
+
+        // In case we have one or more trigger receivers among our consumers, we
+        // produce exactly one application variable for it. We never need more,
+        // since the distribution is done with a TriggerFanOut.
+        bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
+        auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
+
+        for(auto& consumer : consumers) {
+          if(consumer.getType() == NodeType::Application) {
             auto impls = createApplicationVariable<UserType>(consumer);
             fanOut->addSlave(impls.first, consumer);
             consumer.setAppAccessorImplementation<UserType>(impls.second);
           }
+          else if(consumer.getType() == NodeType::ControlSystem) {
+            auto impl = createProcessVariable<UserType>(consumer);
+            fanOut->addSlave(impl, consumer);
+          }
+          else if(consumer.getType() == NodeType::Device) {
+            auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
+                {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
+            fanOut->addSlave(impl, consumer);
+          }
+          else if(consumer.getType() == NodeType::TriggerReceiver) {
+            if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first, consumer);
+            usedTriggerReceiver = true;
+            consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
+          }
+          else {
+            throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
+          }
         }
-        else if(consumer.getType() == NodeType::ControlSystem) {
-          auto impl = createProcessVariable<UserType>(consumer);
-          fanOut->addSlave(impl, consumer);
-        }
-        else if(consumer.getType() == NodeType::Device) {
-          auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-              {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-          fanOut->addSlave(impl, consumer);
-        }
-        else if(consumer.getType() == NodeType::TriggerReceiver) {
-          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first, consumer);
-          usedTriggerReceiver = true;
-          consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
-        }
-        else {
-          throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
-        }
-      }
-      connectionMade = true;
-    }
-  }
-  // 2nd case: the feeder does not require a fixed implementation
-  else if(!constantFeeder) { /* !feeder.hasImplementation() */
-    // we should be left with an application feeder node
-    if(feeder.getType() != NodeType::Application) {
-      throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
-    }
-    assert(!useExternalTrigger);
-    // if we just have two nodes, directly connect them
-    if(nNodes == 2) {
-      auto consumer = consumers.front();
-      if(consumer.getType() == NodeType::Application) {
-        auto impls = createApplicationVariable<UserType>(feeder, consumer);
-        feeder.setAppAccessorImplementation<UserType>(impls.first);
-        consumer.setAppAccessorImplementation<UserType>(impls.second);
         connectionMade = true;
-      }
-      else if(consumer.getType() == NodeType::ControlSystem) {
-        auto impl = createProcessVariable<UserType>(consumer);
-        feeder.setAppAccessorImplementation<UserType>(impl);
-        connectionMade = true;
-      }
-      else if(consumer.getType() == NodeType::Device) {
-        auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-        feeder.setAppAccessorImplementation<UserType>(impl);
-        connectionMade = true;
-      }
-      else if(consumer.getType() == NodeType::TriggerReceiver) {
-        auto impls = createApplicationVariable<UserType>(feeder, consumer);
-        feeder.setAppAccessorImplementation<UserType>(impls.first);
-        consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(impls.second);
-        connectionMade = true;
-      }
-      else if(consumer.getType() == NodeType::Constant) {
-        auto impl = consumer.getConstAccessor<UserType>();
-        feeder.setAppAccessorImplementation<UserType>(impl);
-        connectionMade = true;
-      }
-      else {
-        throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
       }
     }
-    else {
-      // create FanOut and use it as the feeder implementation
-      auto fanOut = boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(),
-          feeder.getDescription(), feeder.getNumberOfElements(), feeder.getDirection().withReturn);
-      feeder.setAppAccessorImplementation<UserType>(fanOut);
-
-      // In case we have one or more trigger receivers among our consumers, we
-      // produce exactly one application variable for it. We never need more,
-      // since the distribution is done with a TriggerFanOut.
-      bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
-      auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
+    else { /* constantFeeder */
+      assert(feeder.getType() == NodeType::Constant);
+      auto feedingImpl = feeder.getConstAccessor<UserType>();
+      assert(feedingImpl != nullptr);
 
       for(auto& consumer : consumers) {
         if(consumer.getType() == NodeType::Application) {
-          auto impls = createApplicationVariable<UserType>(consumer);
-          fanOut->addSlave(impls.first, consumer);
-          consumer.setAppAccessorImplementation<UserType>(impls.second);
+          if(testableMode) {
+            auto varId = getNextVariableId();
+            auto pvarDec =
+                boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
+            testableMode_names[varId] = "Constant";
+            consumer.setAppAccessorImplementation<UserType>(pvarDec);
+          }
+          else {
+            consumer.setAppAccessorImplementation<UserType>(feedingImpl);
+          }
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           auto impl = createProcessVariable<UserType>(consumer);
-          fanOut->addSlave(impl, consumer);
+          impl->accessChannel(0) = feedingImpl->accessChannel(0);
+          impl->write();
         }
         else if(consumer.getType() == NodeType::Device) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-          fanOut->addSlave(impl, consumer);
+          impl->accessChannel(0) = feedingImpl->accessChannel(0);
+          impl->write();
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
-          if(!usedTriggerReceiver) fanOut->addSlave(triggerConnection.first, consumer);
-          usedTriggerReceiver = true;
-          consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
+          throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
         }
         else {
           throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
@@ -884,50 +924,19 @@ void Application::typedMakeConnection(VariableNetwork& network) {
       }
       connectionMade = true;
     }
-  }
-  else { /* constantFeeder */
-    assert(feeder.getType() == NodeType::Constant);
-    auto feedingImpl = feeder.getConstAccessor<UserType>();
-    assert(feedingImpl != nullptr);
 
-    for(auto& consumer : consumers) {
-      if(consumer.getType() == NodeType::Application) {
-        if(testableMode) {
-          auto varId = getNextVariableId();
-          auto pvarDec =
-              boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
-          testableMode_names[varId] = "Constant";
-          consumer.setAppAccessorImplementation<UserType>(pvarDec);
-        }
-        else {
-          consumer.setAppAccessorImplementation<UserType>(feedingImpl);
-        }
-      }
-      else if(consumer.getType() == NodeType::ControlSystem) {
-        auto impl = createProcessVariable<UserType>(consumer);
-        impl->accessChannel(0) = feedingImpl->accessChannel(0);
-        impl->write();
-      }
-      else if(consumer.getType() == NodeType::Device) {
-        auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
-            {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
-        impl->accessChannel(0) = feedingImpl->accessChannel(0);
-        impl->write();
-      }
-      else if(consumer.getType() == NodeType::TriggerReceiver) {
-        throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
-      }
-      else {
-        throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
-      }
-    }
-    connectionMade = true;
+    if(!connectionMade) {                                                     // LCOV_EXCL_LINE (assert-like)
+      throw ChimeraTK::logic_error(                                           // LCOV_EXCL_LINE (assert-like)
+          "The variable network cannot be handled. Implementation missing!"); // LCOV_EXCL_LINE (assert-like)
+    }                                                                         // LCOV_EXCL_LINE (assert-like)
   }
-
-  if(!connectionMade) {                                                     // LCOV_EXCL_LINE (assert-like)
-    throw ChimeraTK::logic_error(                                           // LCOV_EXCL_LINE (assert-like)
-        "The variable network cannot be handled. Implementation missing!"); // LCOV_EXCL_LINE (assert-like)
-  }                                                                         // LCOV_EXCL_LINE (assert-like)
+  catch(ChimeraTK::logic_error& e) {
+    std::stringstream ss;
+    ss << "ChimeraTK::logic_error thrown in Application::typedMakeConnection() for network:" << std::endl;
+    network.dump("", ss);
+    ss << e.what();
+    throw ChimeraTK::logic_error(ss.str());
+  }
 }
 
 /*********************************************************************************************************************/
