@@ -108,16 +108,16 @@ namespace ChimeraTK {
       if(parameters["address"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target address register "
                                      "name must be specified in the device "
-                                     "descriptor for type '3regs'.");
+                                     "descriptor for type '2regs'.");
       }
       if(parameters["data"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target data register "
                                      "name must be specified in the device "
-                                     "descriptor for type '3regs'.");
+                                     "descriptor for type '2regs'.");
       }
       if(parameters["sleep"].empty()) {
         throw ChimeraTK::logic_error("SubdeviceBackend: Target sleep time must be specified in the device "
-                                     "descriptor for type '3regs'.");
+                                     "descriptor for type '2regs'.");
       }
       targetAddress = parameters["address"];
       targetData = parameters["data"];
@@ -253,10 +253,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_impl(
-      const RegisterPath& registerPathName,
-      size_t numberOfWords,
-      size_t wordOffsetInRegister,
-      AccessModeFlags flags) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     if(type == Type::area) {
       return getRegisterAccessor_area<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
@@ -270,10 +267,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_area(
-      const RegisterPath& registerPathName,
-      size_t numberOfWords,
-      size_t wordOffsetInRegister,
-      AccessModeFlags flags) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     assert(type == Type::area);
 
     // obtain register info
