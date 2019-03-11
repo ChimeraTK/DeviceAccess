@@ -79,52 +79,21 @@
 #define CALL_VIRTUAL_FUNCTION_TEMPLATE(functionName, templateArgument, ...)                                            \
   boost::fusion::at_key<templateArgument>(functionName##_vtable.table)(__VA_ARGS__)
 
-/** Helper macros, do not use! */
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_1 _1
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_2 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_1, _2
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_3 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_2, _3
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_4 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_3, _4
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_5 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_4, _5
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_6 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_5, _6
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_7 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_6, _7
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_8 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_7, _8
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_9 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_8, _9
-#define DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_10 DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_9, _10
-
-/** Define the filler class used inside the
- * FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE macro to fill the vtable of a virtual
- * function template defined with DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this
- * macro inside the derived class. */
-#define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(className, functionName, numberOfArguments)                     \
-  class functionName##_vtable_filler {                                                                                 \
-   public:                                                                                                             \
-    functionName##_vtable_filler(className* _object) : object(_object) {}                                              \
-    template<typename PAIR>                                                                                            \
-    void operator()(PAIR& pair) const {                                                                                \
-      pair.second = boost::bind(&className::functionName<typename PAIR::first_type>, object,                           \
-          DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_##numberOfArguments);                                                   \
-    }                                                                                                                  \
-                                                                                                                       \
-   private:                                                                                                            \
-    className* object;                                                                                                 \
-  }
-
 /** Fill the vtable of a virtual function template defined with
  * DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the constructor of
  * the derived class. */
 #define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName)                                                            \
-  boost::fusion::for_each(this->functionName##_vtable.table, functionName##_vtable_filler(this))
-
-/** Fill the vtable of a virtual function template defined with
- * DEFINE_VIRTUAL_FUNCTION_TEMPLATE. Use this macro inside the constructor of
- * the derived class. This version does not require to use the
- *  DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER macro! */
-#define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_STANDALONE(functionName, numberOfArguments)                              \
-  typedef std::remove_reference<decltype(*this)>::type ClassName;                                                      \
   for_each(this->functionName##_vtable.table, [this](auto& pair) {                                                     \
-    typedef typename std::remove_reference<decltype(pair)>::type::first_type UserType;                                 \
-    pair.second = boost::bind(                                                                                         \
-        &ClassName::functionName<UserType>, this, DEFINE_TEMPLATE_VTABLE_FILLER_HELPER_##numberOfArguments);           \
-  });
+    typedef typename std::remove_reference<decltype(pair)>::type::first_type VTableFillerUserType;                     \
+    pair.second = [this](auto... args) { return this->functionName<VTableFillerUserType>(args...); };                  \
+  })
+
+/** Compatibility only, do not use */
+#define FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_STANDALONE(functionName, numberOfArguments)                              \
+  FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(functionName)
+
+/** Compatibility, do not use. */
+#define DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_FILLER(className, functionName, numberOfArguments)                     \
+  class UslessVTableFillerClass##functionName {}
 
 #endif /* CHIMERA_TK_VIRTUAL_FUNCTION_TEMPLATE_H */
