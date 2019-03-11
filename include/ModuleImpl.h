@@ -13,6 +13,8 @@
 
 namespace ChimeraTK {
 
+  class ConfigReader;
+
   /**
    *  Some common implementations of a few functions in Module used by most
    * modules (but the VirtualModule).
@@ -48,6 +50,14 @@ namespace ChimeraTK {
     void connectTo(const Module& target, VariableNetworkNode trigger = {}) const override;
 
     const Module& virtualise() const override;
+
+    /** Obtain the ConfigReader instance of the application. If no or multiple ConfigReader instances are found, a
+     *  ChimeraTK::logic_error is thrown.
+     *  Note: This function is expensive. It should be called only during the constructor of the ApplicationModule and
+     *  the obtained configuration values should be stored for later use in member variables.
+     *  Beware that the ConfigReader instance can obly be found if it has been constructed before calling this function.
+     *  Hence, the Application should have the ConfigReader as its first member. */
+    ConfigReader& appConfig() const;
 
    protected:
     /// Cached return value of virtualise(). Caching is required since

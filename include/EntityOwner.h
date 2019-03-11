@@ -184,7 +184,7 @@ namespace ChimeraTK {
     virtual ModuleType getModuleType() const = 0;
 
     /** Return the current version number which has been received with the last
-     * pusy-type read operation. */
+     * push-type read operation. */
     virtual VersionNumber getCurrentVersionNumber() const = 0;
 
     /** Set the current version number. This function is called by the push-type
