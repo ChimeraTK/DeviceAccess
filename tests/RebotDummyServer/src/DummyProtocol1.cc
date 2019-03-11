@@ -4,7 +4,7 @@
 
 namespace ChimeraTK {
 
-  DummyProtocol1::DummyProtocol1(RebotDummySession& parent)
+  DummyProtocol1::DummyProtocol1(RebotDummyServer& parent)
   : DummyProtocol0(parent), _nextAddressInWords(0), _nWordsLeft(0) {}
 
   void DummyProtocol1::multiWordRead(std::vector<uint32_t>& buffer) { _parent.readRegisterAndSendData(buffer); }
@@ -12,9 +12,9 @@ namespace ChimeraTK {
   void DummyProtocol1::hello(std::vector<uint32_t>& /*buffer*/) {
     // currently there is no check that the buffer is correct
     // from protocol 2 magic work will be checked, and maybe client version
-
-    _parent.write({
-        RebotDummySession::HELLO, RebotDummySession::REBOT_MAGIC_WORD, protocolVersion()});
+    std::vector<uint32_t> outputBuffer = {
+        RebotDummyServer::HELLO, RebotDummyServer::REBOT_MAGIC_WORD, protocolVersion()};
+    boost::asio::write(*(_parent._currentClientConnection), boost::asio::buffer(outputBuffer));
   }
 
   uint32_t DummyProtocol1::multiWordWrite(std::vector<uint32_t>& buffer) {
@@ -29,14 +29,14 @@ namespace ChimeraTK {
 
       _parent._registerSpace.write(
           BAR, addressInBytes, reinterpret_cast<int32_t*>(&(buffer.at(3))), 4 * nWordsInThisBuffer);
-      return RebotDummySession::INSIDE_MULTI_WORD_WRITE;
+      return RebotDummyServer::INSIDE_MULTI_WORD_WRITE;
     }
     else { // all words in this buffer
 
       _parent._registerSpace.write(BAR, addressInBytes, reinterpret_cast<int32_t*>(&(buffer.at(3))), 4 * nWordsTotal);
 
-      _parent.sendSingleWord(RebotDummySession::WRITE_SUCCESS_INDICATION);
-      return RebotDummySession::ACCEPT_NEW_COMMAND;
+      _parent.sendSingleWord(RebotDummyServer::WRITE_SUCCESS_INDICATION);
+      return RebotDummyServer::ACCEPT_NEW_COMMAND;
     }
   }
 
@@ -50,7 +50,7 @@ namespace ChimeraTK {
       _nWordsLeft -= nWordsInThisBuffer;
       _nextAddressInWords += nWordsInThisBuffer;
 
-      return RebotDummySession::INSIDE_MULTI_WORD_WRITE;
+      return RebotDummyServer::INSIDE_MULTI_WORD_WRITE;
     }
     else { // all words in this buffer
 
@@ -60,8 +60,8 @@ namespace ChimeraTK {
       _nextAddressInWords = 0;
       _nWordsLeft = 0;
 
-      _parent.sendSingleWord(RebotDummySession::WRITE_SUCCESS_INDICATION);
-      return RebotDummySession::ACCEPT_NEW_COMMAND;
+      _parent.sendSingleWord(RebotDummyServer::WRITE_SUCCESS_INDICATION);
+      return RebotDummyServer::ACCEPT_NEW_COMMAND;
     }
   }
 

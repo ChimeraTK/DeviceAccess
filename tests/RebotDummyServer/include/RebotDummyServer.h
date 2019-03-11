@@ -3,9 +3,6 @@
 
 #include "DummyBackend.h"
 #include "DummyProtocolImplementor.h"
-
-#include <memory>
-
 #include <atomic>
 #include <boost/asio.hpp>
 #include <string>
@@ -15,7 +12,6 @@ namespace ip = boost::asio::ip;
 namespace ChimeraTK {
   using namespace ChimeraTK;
 }
-
 namespace ChimeraTK {
   using namespace ChimeraTK;
 
@@ -25,15 +21,15 @@ namespace ChimeraTK {
    * starts a blocking Rebot server on localhost:port. where port is the
    * portNumber specified during object creation.
    */
-  class RebotDummySession : public std::enable_shared_from_this<RebotDummySession> {
+  class RebotDummyServer {
     // everything is public so all protocol implementors can reach it. They are
     // only called from within the server
-  public:
-    RebotDummySession(ip::tcp::socket socket, std::string mapFile, unsigned int protocolVersion);
+   public:
+    RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion);
     void start();
     // stop is thread safe to stop a server which is executed in another thread
     void stop();
-    virtual ~RebotDummySession();
+    virtual ~RebotDummyServer();
 
     // The following stuff is only intended for the protocol implementors and the
     // server itself
@@ -64,43 +60,22 @@ namespace ChimeraTK {
     std::atomic<uint32_t> _helloCount; // in protocol version 1 we have to send
                                        // hello instead of heartbeat
     std::atomic<bool> _dont_answer;    // flag to cause an error condition
-    std::vector<uint32_t> _dataBuffer;
 
     DummyBackend _registerSpace;
     unsigned int _serverPort;
     unsigned int _protocolVersion;
-    ip::tcp::socket _currentClientConnection;
+    boost::asio::io_service _io;
+    ip::tcp::endpoint _serverEndpoint;
+    ip::tcp::acceptor _connectionAcceptor;
+    boost::shared_ptr<ip::tcp::socket> _currentClientConnection;
     std::unique_ptr<DummyProtocolImplementor> _protocolImplementor;
 
     void processReceivedPackage(std::vector<uint32_t>& buffer);
     void writeWordToRequestedAddress(std::vector<uint32_t>& buffer);
     void readRegisterAndSendData(std::vector<uint32_t>& buffer);
-
-    // most commands have a single word as response. Avoid code duplication.
+    void handleAcceptedConnection(boost::shared_ptr<ip::tcp::socket>&);
+    // most commands have a singe work as response. Avoid code duplication.
     void sendSingleWord(int32_t response);
-    void acceptHandler(const boost::system::error_code &error);
-    void doRead();
-    void doWrite();
-    void write(std::vector<uint32_t> data);
-  };
-
-  class RebotDummyServer {
-  public:
-    RebotDummyServer(unsigned int portNumber, std::string mapFile, unsigned int protocolVersion);
-
-    void start();
-    void stop();
-    boost::asio::io_service& service() { return _io; }
-    std::shared_ptr<RebotDummySession> session() { return _currentSession.lock(); }
-
-  private:
-    void do_accept();
-    std::string _mapFile;
-    unsigned int _protocolVersion;
-    boost::asio::io_service _io;
-    ip::tcp::acceptor _connectionAcceptor;
-    std::weak_ptr<RebotDummySession> _currentSession;
-    ip::tcp::socket _socket;
   };
 
 } /* namespace ChimeraTK */
