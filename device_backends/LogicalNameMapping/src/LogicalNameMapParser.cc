@@ -16,10 +16,8 @@
 namespace ChimeraTK {
 
   template<typename T>
-  T LogicalNameMapParser::getValueFromXmlSubnode(const xmlpp::Node* node,
-      const std::string& subnodeName,
-      bool hasDefault,
-      T defaultValue) {
+  T LogicalNameMapParser::getValueFromXmlSubnode(
+      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, T defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {
@@ -99,8 +97,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  std::vector<T> LogicalNameMapParser::getValueVectorFromXmlSubnode(const xmlpp::Node* node,
-      const std::string& subnodeName) {
+  std::vector<T> LogicalNameMapParser::getValueVectorFromXmlSubnode(
+      const xmlpp::Node* node, const std::string& subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() < 1) {
       parsingError(
@@ -298,6 +296,52 @@ namespace ChimeraTK {
       }
       RegisterPath registerName = currentPath / std::string(nameAttr->get_value());
       info->name = registerName;
+
+      // iterate over childs of the register to find plugins
+      for(const auto& child : element->get_children()) {
+        // cast into element, ignore if not an element (e.g. comment)
+        const xmlpp::Element* childElement = dynamic_cast<const xmlpp::Element*>(child);
+        if(!childElement) continue;
+        if(childElement->get_name() != "plugin") continue; // look only for plugins
+
+        // get name of plugin
+        auto pluginNameAttr = childElement->get_attribute("name");
+        if(!pluginNameAttr) {
+          parsingError("Missing name attribute of 'plugin' tag.");
+        }
+        std::string pluginName = pluginNameAttr->get_value();
+
+        // collect parameters
+        std::map<std::string, std::string> parameters;
+        for(const auto& paramchild : childElement->get_children()) {
+          // cast into element, ignore if not an element (e.g. comment)
+          const xmlpp::Element* paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
+          if(!paramElement) continue;
+          if(paramElement->get_name() != "parameter") {
+            parsingError("Unexpected element '" + paramElement->get_name() + "' inside plugin tag.");
+          }
+
+          // get name of parameter
+          auto parameterNameAttr = paramElement->get_attribute("name");
+          if(!pluginNameAttr) {
+            parsingError("Missing name attribute of 'parameter' tag.");
+          }
+          std::string parameterName = parameterNameAttr->get_value();
+
+          // get value of parameter and store in map
+          parameters[parameterName] =
+              getValueFromXmlSubnode<std::string>(childElement, "parameter[@name='" + parameterName + "']");
+        }
+
+        // create instance of plugin and add to the list in the register info
+        info->plugins.push_back(LNMBackend::makePlugin(info, pluginName, parameters));
+      }
+
+      // only one plugin is allowed at the moment
+      if(info->plugins.size() > 1) {
+        throw ChimeraTK::logic_error(
+            "LogicalNameMappingBackend: Multiple accessor plugins are not allowed for the same register.");
+      }
 
       // add register to catalogue
       _catalogue.addRegister(info);

@@ -8,10 +8,16 @@
 #ifndef CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
 #define CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
 
+#include <boost/shared_ptr.hpp>
+
 #include "ForwardDeclarations.h"
 #include "RegisterInfo.h"
 
 namespace ChimeraTK {
+
+  namespace LNMBackend {
+    class AccessorPlugin;
+  }
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
   class LNMBackendRegisterInfo : public RegisterInfo {
@@ -82,9 +88,8 @@ namespace ChimeraTK {
     /** Supported AccessMode flags. Might be derived from the target register */
     AccessModeFlags supportedFlags;
 
-   protected:
-    friend class LogicalNameMapParser;
-    friend class LogicalNameMappingBackend;
+    /** List of accessor plugins enabled for this register */
+    std::vector<boost::shared_ptr<LNMBackend::AccessorPlugin>> plugins;
 
     DataDescriptor _dataDescriptor;
   };

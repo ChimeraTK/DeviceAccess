@@ -393,8 +393,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRegister) {
   // reading via const_reverse_iterator
   index = 1024;
   for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin();
-      it != acc_const.rend();
-      ++it) {
+      it != acc_const.rend(); ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -467,8 +466,7 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForRange) {
   // reading via const_reverse_iterator
   index = 20;
   for(ChimeraTK::BufferingRegisterAccessor<int32_t>::const_reverse_iterator it = acc_const.rbegin();
-      it != acc_const.rend();
-      ++it) {
+      it != acc_const.rend(); ++it) {
     --index;
     BOOST_CHECK(*it == -876543210 + 42 * index);
   }
@@ -769,6 +767,54 @@ BOOST_AUTO_TEST_CASE(testParameters) {
   device.open("PARAMS0");
 
   BOOST_CHECK_EQUAL(device.read<int>("SingleWordWithParams"), 42);
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
+  BackendFactory::getInstance().setDMapFilePath("logicalnamemap.dmap");
+  ChimeraTK::Device device, target;
+
+  device.open("LMAP0");
+  target.open("PCIE2");
+
+  auto wordUser = target.getScalarRegisterAccessor<int32_t>("BOARD.WORD_USER");
+  auto wordUserScaled = device.getScalarRegisterAccessor<double>("SingleWord_Scaled");
+
+  wordUser = 2;
+  wordUser.write();
+  wordUserScaled.read();
+  BOOST_CHECK_CLOSE(double(wordUserScaled), 2 * 4.2, 0.001);
+
+  wordUser = 3;
+  wordUser.write();
+  wordUserScaled.read();
+  BOOST_CHECK_CLOSE(double(wordUserScaled), 3 * 4.2, 0.001);
+
+  wordUserScaled = 10 / 4.2;
+  wordUserScaled.write();
+  wordUser.read();
+  BOOST_CHECK_EQUAL(int(wordUser), 10);
+
+  wordUserScaled = 5.4 / 4.2; // rounding down
+  wordUserScaled.write();
+  wordUser.read();
+  BOOST_CHECK_EQUAL(int(wordUser), 5);
+
+  wordUserScaled = 3.6 / 4.2; // rounding up
+  wordUserScaled.write();
+  wordUser.read();
+  BOOST_CHECK_EQUAL(int(wordUser), 4);
+
+  wordUserScaled = -5.4 / 4.2; // rounding down
+  wordUserScaled.write();
+  wordUser.read();
+  BOOST_CHECK_EQUAL(int(wordUser), -5);
+
+  wordUserScaled = -3.6 / 4.2; // rounding up
+  wordUserScaled.write();
+  wordUser.read();
+  BOOST_CHECK_EQUAL(int(wordUser), -4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
