@@ -75,15 +75,17 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> LogicalNameMappingBackend::getRegisterAccessor_impl(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+      size_t omitPlugins) {
     // check if accessor plugin present
     auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
-    if(info->plugins.size() == 0) {
+    if(info->plugins.size() <= omitPlugins) {
       // no plugin: directly return the accessor
       return getRegisterAccessor_internal<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
     else {
-      return info->plugins.front()->getAccessor<UserType>(*this, numberOfWords, wordOffsetInRegister, flags);
+      return info->plugins[omitPlugins]->getAccessor<UserType>(
+          *this, numberOfWords, wordOffsetInRegister, flags, omitPlugins);
     }
   }
 

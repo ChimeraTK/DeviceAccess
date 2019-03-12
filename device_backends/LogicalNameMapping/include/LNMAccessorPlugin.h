@@ -17,12 +17,12 @@ namespace ChimeraTK { namespace LNMBackend {
      *  accessor to change the its behaviour. */
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor(LogicalNameMappingBackend& backend,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) const {
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) const {
       return CALL_VIRTUAL_FUNCTION_TEMPLATE(
-          getAccessor_impl, UserType, backend, numberOfWords, wordOffsetInRegister, flags);
+          getAccessor_impl, UserType, backend, numberOfWords, wordOffsetInRegister, flags, pluginIndex);
     }
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl,
-        boost::shared_ptr<NDRegisterAccessor<T>>(LogicalNameMappingBackend&, size_t, size_t, AccessModeFlags));
+        boost::shared_ptr<NDRegisterAccessor<T>>(LogicalNameMappingBackend&, size_t, size_t, AccessModeFlags, size_t));
 
     boost::shared_ptr<LNMBackendRegisterInfo> _info;
   };
@@ -44,7 +44,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor_impl(LogicalNameMappingBackend& backend,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) const;
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) const;
 
     double _factor;
   };

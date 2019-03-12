@@ -337,12 +337,6 @@ namespace ChimeraTK {
         info->plugins.push_back(LNMBackend::makePlugin(info, pluginName, parameters));
       }
 
-      // only one plugin is allowed at the moment
-      if(info->plugins.size() > 1) {
-        throw ChimeraTK::logic_error(
-            "LogicalNameMappingBackend: Multiple accessor plugins are not allowed for the same register.");
-      }
-
       // add register to catalogue
       _catalogue.addRegister(info);
     }

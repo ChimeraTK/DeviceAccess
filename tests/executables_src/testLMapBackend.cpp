@@ -778,6 +778,7 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   device.open("LMAP0");
   target.open("PCIE2");
 
+  // test scalar register with multiply plugin
   auto wordUser = target.getScalarRegisterAccessor<int32_t>("BOARD.WORD_USER");
   auto wordUserScaled = device.getScalarRegisterAccessor<double>("SingleWord_Scaled");
 
@@ -815,6 +816,24 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   wordUserScaled.write();
   wordUser.read();
   BOOST_CHECK_EQUAL(int(wordUser), -4);
+
+  // test scalar register with two multiply plugins
+  auto wordUserScaledTwice = device.getScalarRegisterAccessor<double>("SingleWord_Scaled_Twice");
+
+  wordUser = 2;
+  wordUser.write();
+  wordUserScaledTwice.read();
+  BOOST_CHECK_CLOSE(double(wordUserScaledTwice), 2 * 6, 0.001);
+
+  wordUser = 3;
+  wordUser.write();
+  wordUserScaledTwice.read();
+  BOOST_CHECK_CLOSE(double(wordUserScaledTwice), 3 * 6, 0.001);
+
+  wordUserScaledTwice = 10. / 6.;
+  wordUserScaledTwice.write();
+  wordUser.read();
+  BOOST_CHECK_EQUAL(int(wordUser), 10);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

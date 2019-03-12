@@ -114,9 +114,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MultiplierPlugin::getAccessor_impl(LogicalNameMappingBackend& backend,
-      size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) const {
-    auto accessor = backend.getRegisterAccessor_internal<double>(
-        _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags);
+      size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) const {
+    auto accessor = backend.getRegisterAccessor_impl<double>(
+        _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
     return boost::make_shared<MultiplierPluginDecorator<UserType>>(accessor, _factor);
   }
 
