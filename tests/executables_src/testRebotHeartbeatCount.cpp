@@ -29,12 +29,11 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
 
   boost::thread serverThread(boost::bind(&RebotDummyServer::start, boost::ref(rebotServer)));
 
-  BOOST_CHECK(rebotServer._helloCount == 0);
-
   Device d;
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+  auto session = rebotServer.session();
 
-  BOOST_CHECK(rebotServer._helloCount == 1);
+  BOOST_CHECK_EQUAL(session->_helloCount, 1);
 
   // startup of the sleeping: get the lock, then tell the application it can try
   // to get the lock The app will continue once we free the lock
@@ -47,11 +46,11 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 2500));
   }
 
-  BOOST_CHECK(rebotServer._helloCount == 1);
+  BOOST_CHECK_EQUAL(session->_helloCount, 1);
 
   for(uint32_t i = 1; i < 5; ++i) {
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 5000 + 10000));
-    BOOST_CHECK(rebotServer._helloCount == i + 1);
+    BOOST_CHECK_EQUAL(session->_helloCount, i + 1);
   }
 
   for(uint32_t i = 1; i < 5; ++i) {
@@ -59,11 +58,11 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 2500 + 30000));
   }
 
-  BOOST_CHECK(rebotServer._helloCount == 5);
+  BOOST_CHECK_EQUAL(session->_helloCount, 5);
 
   for(uint32_t i = 1; i < 5; ++i) {
     testable_rebot_sleep::advance_until(boost::chrono::milliseconds(i * 5000 + 40000));
-    BOOST_CHECK(rebotServer._helloCount == i + 5);
+    BOOST_CHECK_EQUAL(session->_helloCount, i + 5);
   }
 
   // ****************
@@ -85,6 +84,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   // testable_rebot_sleep::advance_until(boost::chrono::milliseconds(65000));
   // std::cout << "If we are here everything is fine " << std::endl;
   //
+  session.reset();
 
   BOOST_CHECK(d.isOpened() == true);
   d.close();
