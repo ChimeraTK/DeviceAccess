@@ -34,9 +34,7 @@ namespace ChimeraTK { namespace LNMBackend {
     /** The constructor of the plugin should also accept a second argument:
      *   const std::map<std::string, std::string>& parameters
      *  Since the parameters are not used in the base class, they do not need to be passed on. */
-    AccessorPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info) : _info(info) {
-      FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
-    }
+    AccessorPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info);
 
     virtual ~AccessorPlugin() {}
 
@@ -48,38 +46,19 @@ namespace ChimeraTK { namespace LNMBackend {
 
     /**
      *  This function should be overridden by the plugin (yes, this is possible due to the CRTP). It allows the plugin
-     *  to decorate the accessor to change the its behaviour. If getTargetDataType() is overridden
+     *  to decorate the accessor to change the its behaviour.
      *
-     *  Arguments:
-     *   - backend: reference to the LogicalNameMappingBackend to obtain the accessor for.
-     *   - numberOfWords, wordOffsetInRegister, flags: arguments to be passed on to
-     *
+     *  Note: Even if getTargetDataType() is overridden, the function will be instantiated for all target types, but
+     *        if will be only called for those getTargetDataType() returns.
     */
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
-      static_assert(std::is_same<UserType, TargetType>(),
-          "LogicalNameMapper AccessorPlugin: When overriding getTargetDataType(), also decorateAccessor() must be "
-          "overridden!");
-      return target;
-    }
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
 
     /** This function is called by the backend. Do not override in implementations. */
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor_impl(LogicalNameMappingBackend& backend,
-        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) const {
-      boost::shared_ptr<NDRegisterAccessor<UserType>> decorated;
-
-      // obtain desired target type from plugin implementation
-      auto type = getTargetDataType(typeid(UserType));
-      callForType(type, [&](auto T) {
-        // obtain target accessor with desired type
-        auto target = backend.getRegisterAccessor_impl<decltype(T)>(
-            _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-        decorated = static_cast<const Derived*>(this)->decorateAccessor<UserType>(target);
-      });
-      return decorated;
-    }
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags, size_t pluginIndex) const;
 
     /** RegisterInfo describing the the target register for which this plugin instance should work. */
     boost::shared_ptr<LNMBackendRegisterInfo> _info;
@@ -92,7 +71,7 @@ namespace ChimeraTK { namespace LNMBackend {
       const std::string& name, const std::map<std::string, std::string>& parameters);
 
   /********************************************************************************************************************/
-  /* Known plugins are defined below                                                                                  */
+  /* Known plugins are defined below (implementations must go to .cc file)                                            */
   /********************************************************************************************************************/
 
   class MultiplierPlugin : public AccessorPlugin<MultiplierPlugin> {
