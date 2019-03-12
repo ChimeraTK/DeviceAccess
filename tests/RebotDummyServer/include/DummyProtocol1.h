@@ -5,11 +5,11 @@
 
 namespace ChimeraTK {
 
-  class RebotDummyServer;
+  class RebotDummySession;
 
   /// Only put commands which don't exist in all versions, or behave differently
   struct DummyProtocol1 : public DummyProtocol0 {
-    DummyProtocol1(RebotDummyServer& parent);
+    DummyProtocol1(RebotDummySession& parent);
 
     /// The multi word read is not limited in the size any more
     virtual void multiWordRead(std::vector<uint32_t>& buffer);
@@ -21,7 +21,7 @@ namespace ChimeraTK {
     /// First protocol version that implements hello
     virtual void hello(std::vector<uint32_t>& buffer);
 
-    virtual uint32_t protocolVersion() { return 1; }
+    uint32_t protocolVersion() const override { return 1; }
 
     // part of the multi word write across many packets
     uint32_t _nextAddressInWords;

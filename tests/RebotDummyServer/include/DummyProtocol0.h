@@ -5,11 +5,11 @@
 
 namespace ChimeraTK {
 
-  class RebotDummyServer;
+  class RebotDummySession;
 
   /// Only put commands which don't exist in all versions, or behave differently
   struct DummyProtocol0 : public DummyProtocolImplementor {
-    DummyProtocol0(RebotDummyServer& parent);
+    DummyProtocol0(RebotDummySession& parent);
 
     virtual void singleWordWrite(std::vector<uint32_t>& buffer) override;
     virtual void multiWordRead(std::vector<uint32_t>& buffer) override;
@@ -19,9 +19,9 @@ namespace ChimeraTK {
     virtual void hello(std::vector<uint32_t>& buffer) override;
     virtual void ping(std::vector<uint32_t>& buffer) override;
 
-    virtual uint32_t protocolVersion() override { return 0; }
+    uint32_t protocolVersion() const override { return 0; }
 
-    RebotDummyServer& _parent;
+    RebotDummySession& _parent;
   };
 
 } //  namespace ChimeraTK
