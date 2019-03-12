@@ -1,6 +1,6 @@
-PCIE2     sdm://./dummy=mtcadummy.map mtcadummy.map
-PCIE3     sdm://./dummy=muxedDataAcessor.map muxedDataAcessor.map
-DUMMYD0   sdm://./dummy=mtcadummy_withoutModules.map mtcadummy_withoutModules.map
-DUMMYD1   sdm://./dummy=goodMapFile.map goodMapFile.map
-LMAP0     sdm://./logicalNameMap valid.xlmap
+PCIE2     (dummy?map=mtcadummy.map)
+PCIE3     (dummy?map=muxedDataAcessor.map)
+DUMMYD0   (dummy?map=mtcadummy_withoutModules.map)
+DUMMYD1   (dummy?map=goodMapFile.map)
+LMAP0     (logicalNameMap?map=valid.xlmap)
 PARAMS0   (logicalNameMap?map=withParams.xlmap&ParamA=LMAP0&ParamB=Constant)
