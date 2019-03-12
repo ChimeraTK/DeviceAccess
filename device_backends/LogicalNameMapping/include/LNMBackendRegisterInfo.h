@@ -16,7 +16,7 @@
 namespace ChimeraTK {
 
   namespace LNMBackend {
-    class AccessorPlugin;
+    class AccessorPluginBase;
   }
 
   /** RegisterInfo structure for the LogicalNameMappingBackend */
@@ -89,7 +89,7 @@ namespace ChimeraTK {
     AccessModeFlags supportedFlags;
 
     /** List of accessor plugins enabled for this register */
-    std::vector<boost::shared_ptr<LNMBackend::AccessorPlugin>> plugins;
+    std::vector<boost::shared_ptr<LNMBackend::AccessorPluginBase>> plugins;
 
     DataDescriptor _dataDescriptor;
   };
