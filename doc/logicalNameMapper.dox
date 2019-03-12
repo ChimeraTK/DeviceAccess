@@ -8,7 +8,7 @@ Special features like mathematical conversions can be enabled on a per-register 
 number of plugins can be enabled for each register. Each plugin takes a list of parameters, which depend on the type of
 the plugin.
 
-In the xlmap file, plugins can be specified by adding one ore more <code><plugin></code> tags, e.g.:
+In the xlmap file, plugins can be specified by adding one ore more <code>&lt;plugin&gt;</code> tags, e.g.:
 \code{.xml}
 <redirectedRegister name="SingleWord_Scaled_Twice">
     <targetDevice>PCIE2</targetDevice>
