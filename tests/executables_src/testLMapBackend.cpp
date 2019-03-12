@@ -834,6 +834,23 @@ BOOST_AUTO_TEST_CASE(testAccessorPlugins) {
   wordUserScaledTwice.write();
   wordUser.read();
   BOOST_CHECK_EQUAL(int(wordUser), 10);
+
+  // test array register with multiply plugin
+  auto area = target.getOneDRegisterAccessor<int32_t>("ADC.AREA_DMAABLE");
+  auto areaScaled = device.getOneDRegisterAccessor<double>("FullArea_Scaled");
+
+  BOOST_CHECK_EQUAL(area.getNElements(), 1024);
+  BOOST_CHECK_EQUAL(areaScaled.getNElements(), 1024);
+
+  for(int i = 0; i < 1024; ++i) area[i] = 100 + i;
+  area.write();
+  areaScaled.read();
+  for(int i = 0; i < 1024; ++i) BOOST_CHECK_CLOSE(areaScaled[i], (100 + i) * 0.5, 0.001);
+
+  for(int i = 0; i < 1024; ++i) areaScaled[i] = (-100 + i) / 0.5;
+  areaScaled.write();
+  area.read();
+  for(int i = 0; i < 1024; ++i) BOOST_CHECK_EQUAL(area[i], -100 + i);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
