@@ -1,7 +1,7 @@
 /**
 \mainpage ChimeraTK-DeviceAccess
 
-ChimeraTK-DeviceAccess is a device access library which provides an interface for 
+ChimeraTK-DeviceAccess is a device access library which provides an interface for
 for register based devices. Registers are identified by a name and usually accessed though an \c accessor object.
 
 All read and write functions are synchronous, so the functions
@@ -9,14 +9,14 @@ are blocking until the data transfer is complete.
 
 \section first_steps First steps
 
-There are some tutorial examples available in the example directory. All examples 
+There are some tutorial examples available in the example directory. All examples
 are complete and fully functional.
 
 \li \ref basic_example
 \li \ref accessor1d
 \li \ref accessor2d
 \li \ref numeric_addresses
-\li Logical name mapping
+\li \ref lmap
 \li Transfer groups
 \li Automatic data conversion and raw data access
 \li \ref custom_backends
@@ -30,21 +30,21 @@ To use the ChimeraTK::Device class you need a so called "device map" file (dmap 
 It is created manually and contains information which devices are used in your
 application. More information can be found on the page about \ref dmap.
 
-For the beinning all you need is the alias which identifies the device. In the 
+For the beinning all you need is the alias which identifies the device. In the
 \c example.dmap file there is just one entry: MY_DEVICE
 
 Registers are accessed by so called \c accessors. The accessors contain a buffer
 which stores the data which is read from or written to the hardware using
-\c read() and \c write() functions. When not reading or writing you can 
+\c read() and \c write() functions. When not reading or writing you can
 efficiently access or modify the content at will, because it is modifying the
 internal buffer and not talking to the hardware.
-  
+
 In this basic example are using a register which holds one value.
 A single value is a scalar, so we are using the ScalarRegisterAccessor.
 Like all accessors, it is templated to a simple (user) data type and automatically
 does a data conversion to this type, if needed.
 The ScalarRegisterAccessor behaves just like the simple data type it represents,
-so you can just assign to it, add, subtact, multiply or divide it, print it, ... 
+so you can just assign to it, add, subtact, multiply or divide it, print it, ...
 Usually you don't allocate a variable and copy the accessor content to it (which
 would be really inefficient in case of large data arrays), but just use the accessor.
 

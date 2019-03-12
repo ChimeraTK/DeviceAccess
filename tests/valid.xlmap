@@ -44,10 +44,26 @@
     <redirectedRegister name="SingleWord_Scaled">
         <targetDevice>PCIE2</targetDevice>
         <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">4.2</parameter>
+        </plugin>
+    </redirectedRegister>
+    <redirectedRegister name="SingleWord_Scaled_Twice">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">2</parameter>
+        </plugin>
+        <plugin name="multiply">
+          <parameter name="factor">3</parameter>
+        </plugin>
     </redirectedRegister>
     <redirectedRegister name="FullArea_Scaled">
         <targetDevice>PCIE2</targetDevice>
         <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">0.5</parameter>
+        </plugin>
     </redirectedRegister>
     <module name="MyModule">
       <module name="SomeSubmodule"> 

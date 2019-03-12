@@ -57,8 +57,7 @@ namespace ChimeraTK {
   extern template class TemplateClass<uint64_t>;                                                                       \
   extern template class TemplateClass<float>;                                                                          \
   extern template class TemplateClass<double>;                                                                         \
-  extern template class TemplateClass<std::string> // the last semicolon is
-                                                   // added by the user
+  extern template class TemplateClass<std::string> // the last semicolon is added by the user
 
 #define INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(TemplateClass)                                                   \
   template class TemplateClass<int8_t>;                                                                                \
@@ -71,8 +70,7 @@ namespace ChimeraTK {
   template class TemplateClass<uint64_t>;                                                                              \
   template class TemplateClass<float>;                                                                                 \
   template class TemplateClass<double>;                                                                                \
-  template class TemplateClass<std::string> // the last semicolon is added by
-                                            // the user
+  template class TemplateClass<std::string> // the last semicolon is added by the user
 
 /** Macro to declare a template class with multiple template parameters for all
  *  supported user types. The variadic arguments are the additional template
@@ -207,6 +205,46 @@ namespace ChimeraTK {
      */
     inline DataType(TheType const& value = none) : _value(value) {}
 
+    /** Construct DataType from std::type_info. If the type is not known, 'none' is returned. */
+    inline DataType(const std::type_info& info) {
+      if(info == typeid(int8_t)) {
+        _value = int8;
+      }
+      else if(info == typeid(uint8_t)) {
+        _value = uint8;
+      }
+      else if(info == typeid(int16_t)) {
+        _value = int16;
+      }
+      else if(info == typeid(uint16_t)) {
+        _value = uint16;
+      }
+      else if(info == typeid(int32_t)) {
+        _value = int32;
+      }
+      else if(info == typeid(uint32_t)) {
+        _value = uint32;
+      }
+      else if(info == typeid(int64_t)) {
+        _value = int64;
+      }
+      else if(info == typeid(uint64_t)) {
+        _value = uint64;
+      }
+      else if(info == typeid(float)) {
+        _value = float32;
+      }
+      else if(info == typeid(double)) {
+        _value = float64;
+      }
+      else if(info == typeid(std::string)) {
+        _value = string;
+      }
+      else {
+        _value = none;
+      }
+    }
+
    protected:
     TheType _value;
   };
@@ -298,48 +336,37 @@ namespace ChimeraTK {
   void callForType(const DataType& type, LAMBDATYPE lambda) {
     switch(DataType::TheType(type)) {
       case DataType::int8: {
-        int8_t x;
-        lambda(x);
+        lambda(int8_t());
       } break;
       case DataType::uint8: {
-        uint8_t x;
-        lambda(x);
+        lambda(uint8_t());
       } break;
       case DataType::int16: {
-        int16_t x;
-        lambda(x);
+        lambda(int16_t());
       } break;
       case DataType::uint16: {
-        uint16_t x;
-        lambda(x);
+        lambda(uint16_t());
       } break;
       case DataType::int32: {
-        int32_t x;
-        lambda(x);
+        lambda(int32_t());
       } break;
       case DataType::uint32: {
-        uint32_t x;
-        lambda(x);
+        lambda(uint32_t());
       } break;
       case DataType::int64: {
-        int64_t x;
-        lambda(x);
+        lambda(int64_t());
       } break;
       case DataType::uint64: {
-        uint64_t x;
-        lambda(x);
+        lambda(uint64_t());
       } break;
       case DataType::float32: {
-        float x;
-        lambda(x);
+        lambda(float());
       } break;
       case DataType::float64: {
-        double x;
-        lambda(x);
+        lambda(double());
       } break;
       case DataType::string: {
-        std::string x;
-        lambda(x);
+        lambda(std::string());
       } break;
       case DataType::none:
         class myBadCast : public std::bad_cast {

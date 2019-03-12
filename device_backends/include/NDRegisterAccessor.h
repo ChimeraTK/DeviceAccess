@@ -26,8 +26,7 @@ namespace ChimeraTK {
    public:
     /** Creates an NDRegisterAccessor with the specified name (passed on to the
      *  transfer element). */
-    NDRegisterAccessor(std::string const& name,
-        std::string const& unit = std::string(TransferElement::unitNotSet),
+    NDRegisterAccessor(std::string const& name, std::string const& unit = std::string(TransferElement::unitNotSet),
         std::string const& description = std::string())
     : TransferElement(name, unit, description) {
       TransferElement::makeUniqueId();
@@ -116,9 +115,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   template<typename COOKED_TYPE>
-  void NDRegisterAccessor<UserType>::setAsCooked_impl(unsigned int /*channel*/,
-      unsigned int /*sample*/,
-      COOKED_TYPE /*value*/) {
+  void NDRegisterAccessor<UserType>::setAsCooked_impl(
+      unsigned int /*channel*/, unsigned int /*sample*/, COOKED_TYPE /*value*/) {
     throw ChimeraTK::logic_error("Setting as cooked is not available for this accessor");
   }
 

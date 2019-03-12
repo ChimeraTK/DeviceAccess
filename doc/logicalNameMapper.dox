@@ -1,0 +1,39 @@
+/**
+\page lmap Logical Name Mapping Backend
+
+This page is still incomplete and will be extended in future.
+
+\section plugins Accessor plugins
+Special features like mathematical conversions can be enabled on a per-register basis by using accessor plugins. Any
+number of plugins can be enabled for each register. Each plugin takes a list of parameters, which depend on the type of
+the plugin.
+
+In the xlmap file, plugins can be specified by adding one ore more <code>&lt;plugin&gt;</code> tags, e.g.:
+\code{.xml}
+<redirectedRegister name="SingleWord_Scaled_Twice">
+    <targetDevice>PCIE2</targetDevice>
+    <targetRegister>BOARD.WORD_USER</targetRegister>
+    <plugin name="multiply">
+      <parameter name="factor">2</parameter>
+    </plugin>
+    <plugin name="multiply">
+      <parameter name="factor">3</parameter>
+    </plugin>
+</redirectedRegister>
+\endcode
+This will enable two instances of the <code>multiply</code> plugin.
+
+\subsection plugins_reference List of plugins
+The following plugins can be enabled. It is not possible to extend the Logical Name Mapping Backend with plugins through
+runtime loading or linking, all plugins have to be shipped with the DeviceAccess library.
+
+\subsubsection plugins_reference_multiply multiply
+The <code>multiply</code> plugin multiplies the value of the register with the given factor. Note that the
+multiplication is done for both reading and writing. Hence if this plugin is used e.g. to convert a raw value into a
+physical value, the register should be used in one direction only. The plugin will internally always read the value as
+a 64 bit floating point, so the result may not be bit exact. The target register must be numeric.
+
+Parameters:
+- <code>factor</code>: Factor to multiply the value with. Will be interpreted as a (floating-point) number.
+
+*/
