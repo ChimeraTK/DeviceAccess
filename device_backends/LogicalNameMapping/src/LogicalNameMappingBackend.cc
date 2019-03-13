@@ -191,4 +191,23 @@ namespace ChimeraTK {
     return _catalogue_mutable;
   }
 
+  /********************************************************************************************************************/
+  // Instantiate templated members - this is required for some gcc versions like the one on Ubuntu 18.04
+
+  template<typename UserType>
+  class InstantiateLogicalNameMappingBackendFunctions {
+    LogicalNameMappingBackend* p{nullptr};
+
+    void getRegisterAccessor_impl(const RegisterPath& registerPathName, size_t numberOfWords,
+        size_t wordOffsetInRegister, AccessModeFlags flags, size_t omitPlugins) {
+      p->getRegisterAccessor_impl<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags, omitPlugins);
+    }
+
+    void getRegisterAccessor_internal(const RegisterPath& registerPathName, size_t numberOfWords,
+        size_t wordOffsetInRegister, AccessModeFlags flags) {
+      p->getRegisterAccessor_internal<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
+    }
+  };
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(InstantiateLogicalNameMappingBackendFunctions);
+
 } // namespace ChimeraTK
