@@ -50,7 +50,7 @@ struct TestApplication : public ctk::Application {
 
   ctk::ControlSystemModule cs;
 
-  ctk::DeviceModule dev{"Dummy0"};
+  ctk::DeviceModule dev{this, "Dummy0"};
 };
 
 /*********************************************************************************************************************/
@@ -66,7 +66,7 @@ struct TestApplicationConnectTo : ctk::Application {
 
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 
-  ctk::DeviceModule dev{"(dummy?map=test3.map)"};
+  ctk::DeviceModule dev{this, "(dummy?map=test3.map)"};
   ctk::ControlSystemModule cs;
 };
 TestApplicationConnectTo::~TestApplicationConnectTo() {

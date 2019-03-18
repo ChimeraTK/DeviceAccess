@@ -1,6 +1,6 @@
 #include <future>
 
-#define BOOST_TEST_MODULE testExceptionTest
+#define BOOST_TEST_MODULE testExceptionHandling
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
@@ -27,9 +27,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-
   void defineConnections() {} // the setup is done in the tests
 
   ctk::DeviceModule dev{this, "(ExceptionDummy?map=test.map)"};
@@ -38,7 +35,7 @@ struct TestApplication : public ctk::Application {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testThinkOfAName) {
+BOOST_AUTO_TEST_CASE(testDeviceModuleReportExceptionFunction) {
   TestApplication app;
   boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test.map)"));

@@ -72,7 +72,7 @@ struct TestApplication : public ctk::Application {
   TestModule<T> testModule{this, "TestModule", "The test module"};
   ctk::ControlSystemModule cs;
 
-  ctk::DeviceModule dev{"Dummy0"};
+  ctk::DeviceModule dev{this, "Dummy0"};
 };
 
 /*********************************************************************************************************************/
@@ -87,7 +87,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
   app.testModule.feeder >> app.cs("myFeeder");
   app.initialise();
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
   BOOST_CHECK(myFeeder->getUnit() == "MV/m");
@@ -120,7 +119,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromCS, T, test_types) {
   app.cs("myConsumer") >> app.testModule.consumer;
   app.initialise();
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
   BOOST_CHECK(myConsumer->getName() == "/myConsumer");
   BOOST_CHECK(myConsumer->getUnit() == "");
@@ -153,7 +151,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMultiplePublications, T, test_types) {
   app.initialise();
   app.run(); // make the connections and start the FanOut threads
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 4);
   auto myFeeder0 = pvManagers.first->getProcessArray<T>("/myFeeder0");
   auto myFeeder1 = pvManagers.first->getProcessArray<T>("/myFeeder1");
   auto myFeeder2 = pvManagers.first->getProcessArray<T>("/myFeeder2");
@@ -252,7 +249,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMultipleRePublications, T, test_types) {
   app.initialise();
   app.run(); // make the connections and start the FanOut threads
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 4);
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
   auto myConsumer_copy1 = pvManagers.first->getProcessArray<T>("/myConsumer_copy1");
   auto myConsumer_copy2 = pvManagers.first->getProcessArray<T>("/myConsumer_copy2");
@@ -342,7 +338,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoCS, T, test_types) {
   app.initialise();
   app.run();
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);
   auto mySender = pvManagers.first->getProcessArray<T>("/mySender");
   BOOST_CHECK(mySender->getName() == "/mySender");
   auto myReceiver = pvManagers.first->getProcessArray<T>("/myReceiver");

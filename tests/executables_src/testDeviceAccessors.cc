@@ -21,6 +21,7 @@
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
+#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -72,8 +73,7 @@ struct TestApplication : public ctk::Application {
   void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
-  ctk::DeviceModule devMymodule{"Dummy0", "MyModule"};
-  ctk::DeviceModule dev{"Dummy0"};
+  ctk::DeviceModule dev{this, "Dummy0"};
 
   // note: direct device-to-controlsystem connections are tested in
   // testControlSystemAccessors!
@@ -89,8 +89,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.devMymodule("actuator");
-  app.initialise();
+  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
+  ctk::TestFacility test;
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -119,8 +119,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.devMymodule("actuator") >> app.devMymodule("readBack");
-  app.initialise();
+  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["MyModule"]("readBack");
+  ctk::TestFacility test;
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
   TestApplication<T> app;
 
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
-  app.initialise();
+  ctk::TestFacility test;
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
 
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
       app.testModule.consumingPush2;
-  app.initialise();
+  ctk::TestFacility test;
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
   BOOST_CHECK_EQUAL(nDeviceFeeders, 2);
 
   // the optimisation to test takes place here
-  app.initialise();
+  ctk::TestFacility test;
 
   // check we are left with just one network fed by the device
   nDeviceFeeders = 0;
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
   TestApplication<T> app;
 
   ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
-  app.initialise();
+  ctk::TestFacility test;
   app.run();
 
   ChimeraTK::Device dev;
@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
   TestApplication<T> app;
 
   ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >> app.dev("/MyModule/readBack");
-  app.initialise();
+  ctk::TestFacility test;
   app.run();
 
   ChimeraTK::Device dev;
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDeviceModuleSubscriptOp, T, test_types) {
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
-  app.initialise();
+  ctk::TestFacility test;
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleVirtuallise) {
 
   app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
 
-  app.initialise();
+  ctk::TestFacility test;
 
   BOOST_CHECK(&(app.dev.virtualise()) == &(app.dev));
 }

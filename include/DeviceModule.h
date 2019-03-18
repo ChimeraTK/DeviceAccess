@@ -50,17 +50,41 @@
 
 namespace ChimeraTK {
   class Application;
+
+  /*********************************************************************************************************************/
+
+  namespace detail {
+    struct DeviceModuleProxy : Module {
+      DeviceModuleProxy(const DeviceModule& owner, const std::string& registerNamePrefix);
+      DeviceModuleProxy(DeviceModuleProxy&& other);
+      DeviceModuleProxy() {}
+
+      VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
+          const std::type_info& valueType = typeid(AnyType), size_t nElements = 0) const;
+      VariableNetworkNode operator()(const std::string& registerName, const std::type_info& valueType,
+          size_t nElements = 0, UpdateMode mode = UpdateMode::poll) const;
+      VariableNetworkNode operator()(const std::string& variableName) const override;
+      Module& operator[](const std::string& moduleName) const override;
+
+      const Module& virtualise() const override;
+      void connectTo(const Module& target, VariableNetworkNode trigger = {}) const override;
+      ModuleType getModuleType() const override { return ModuleType::Device; }
+
+      DeviceModuleProxy& operator=(DeviceModuleProxy&& other);
+
+     private:
+      const DeviceModule* _myowner;
+      std::string _registerNamePrefix;
+    };
+  } // namespace detail
+
+  /*********************************************************************************************************************/
+
   class DeviceModule : public Module {
    public:
     /** Constructor: The device represented by this DeviceModule is identified by
-     * either the device alias found in the DMAP file or directly an URI. The
-     * given optional prefix will be prepended to all register names
-     *  (separated by a slash). */
-
-    DeviceModule(
-        Application* application, const std::string& deviceAliasOrURI, const std::string& registerNamePrefix = "");
-
-    DeviceModule(const std::string& deviceAliasOrURI, const std::string& registerNamePrefix = "");
+     * either the device alias found in the DMAP file or directly an URI. */
+    DeviceModule(Application* application, const std::string& deviceAliasOrURI);
 
     /** Default constructor: create dysfunctional device module */
     DeviceModule() {}
@@ -76,7 +100,7 @@ namespace ChimeraTK {
       Module::operator=(std::move(other));
       deviceAliasOrURI = std::move(other.deviceAliasOrURI);
       registerNamePrefix = std::move(other.registerNamePrefix);
-      subModules = std::move(other.subModules);
+      proxies = std::move(other.proxies);
       deviceError = std::move(other.deviceError);
       return *this;
     }
@@ -132,10 +156,10 @@ namespace ChimeraTK {
     std::string deviceAliasOrURI;
     ChimeraTK::RegisterPath registerNamePrefix;
 
-    // List of sub modules accessed through the operator[]. This is mutable since
+    // List of proxies accessed through the operator[]. This is mutable since
     // it is little more than a cache and thus does not change the logical state
     // of this module
-    mutable std::map<std::string, DeviceModule> subModules;
+    mutable std::map<std::string, detail::DeviceModuleProxy> proxies;
     /** A  VariableGroup for exception status and message. It can be protected, as
      * it is automatically connected to the control system in
      * DeviceModule::defineConnections() */
@@ -163,6 +187,8 @@ namespace ChimeraTK {
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      *  The function is running an endless loop inside its own thread (moduleThread). */
     void handleException();
+
+    friend class Application;
   };
 
 } /* namespace ChimeraTK */

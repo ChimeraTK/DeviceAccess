@@ -74,9 +74,9 @@ struct ExampleApp : public ctk::Application {
 
   Automation automation{this, "automation", "..."};
   TableGeneration tableGeneration{this, "tableGeneration", "..."};
-  ctk::DeviceModule dev{"Device"};
-  ctk::DeviceModule timer{"Timer"};
-  ctk::ControlSystemModule cs{"MyLocation"};
+  ctk::DeviceModule dev{this, "Device"};
+  ctk::DeviceModule timer{this, "Timer"};
+  ctk::ControlSystemModule cs;
 
   void defineConnections();
 };

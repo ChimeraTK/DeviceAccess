@@ -48,8 +48,8 @@ struct ExampleApp : public ctk::Application {
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
-  ctk::DeviceModule heater{"oven", "heater"};
-  ctk::ControlSystemModule cs{"Bakery"};
+  ctk::DeviceModule oven{this, "oven"};
+  ctk::ControlSystemModule cs;
 
   void defineConnections();
 };
@@ -65,6 +65,6 @@ void ExampleApp::defineConnections() {
     timer.tick >> automation.trigger;
   }
 
-  controller.findTag("DEV").connectTo(heater, timer.tick);
+  controller.findTag("DEV").connectTo(oven["heater"], timer.tick);
   findTag("CS").connectTo(cs);
 }

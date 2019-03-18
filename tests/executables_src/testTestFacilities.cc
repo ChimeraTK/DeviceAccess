@@ -42,7 +42,7 @@ namespace ctk = ChimeraTK;
 // list of user types the accessors are tested with
 typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
 
-constexpr char dummySdm[] = "sdm://./dummy=test.map";
+constexpr char dummySdm[] = "(dummy?map=test.map)";
 
 /*********************************************************************************************************************/
 /* the BlockingReadTestModule blockingly reads its input in the main loop and
@@ -205,8 +205,8 @@ struct TestApplication : public ctk::Application {
                                       // the tests to catch exceptions etc.
   void defineConnections() {}         // setup is done in the tests
 
-  ctk::ControlSystemModule cs{""};
-  ctk::DeviceModule dev{dummySdm, ""};
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule dev{this, dummySdm};
   BlockingReadTestModule<T> blockingReadTestModule{this, "blockingReadTestModule", "Module for testing blocking read"};
   AsyncReadTestModule<T> asyncReadTestModule{this, "asyncReadTestModule", "Module for testing async read"};
   ReadAnyTestModule<T> readAnyTestModule{this, "readAnyTestModule", "Module for testing readAny()"};
@@ -222,7 +222,7 @@ struct PollingTestApplication : public ctk::Application {
 
   void defineConnections() {} // setup is done in the tests
 
-  ctk::ControlSystemModule cs{""};
+  ctk::ControlSystemModule cs;
   PollingReadModule<T> pollingReadModule{this, "pollingReadModule", "Module for testing poll-type transfers"};
 };
 

@@ -28,6 +28,7 @@
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
+#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -110,8 +111,8 @@ struct TestApplication : public ctk::Application {
   void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
-  ctk::DeviceModule dev{"Dummy0"};
-  ctk::DeviceModule dev2{dummySdm};
+  ctk::DeviceModule dev{this, "Dummy0"};
+  ctk::DeviceModule dev2{this, dummySdm};
   ctk::ControlSystemModule cs;
 };
 
@@ -128,10 +129,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToApp, T, test_types) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev("/MyModule/actuator");
+  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
 
-  app.dev("/MyModule/readBack")[app.testModule.theTrigger] >> app.testModule.consumingPush;
+  app.dev["MyModule"]("readBack")[app.testModule.theTrigger] >> app.testModule.consumingPush;
   app.initialise();
   app.run();
 
@@ -191,7 +194,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToCS, T, test_types) {
   app.initialise();
   app.run();
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
 
   // single theaded test only, since the receiving process scalar does not
@@ -241,7 +243,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
   app.initialise();
   app.run();
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 2);
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
   auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
 
@@ -283,6 +284,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
 
   ChimeraTK::Device dev;
   dev.open(dummySdm);

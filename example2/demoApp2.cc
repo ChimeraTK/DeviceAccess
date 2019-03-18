@@ -28,8 +28,8 @@ struct ExampleApp : public ctk::Application {
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
-  ctk::DeviceModule heater{"oven", "heater"};
-  ctk::ControlSystemModule cs{"Bakery"};
+  ctk::DeviceModule oven{this, "oven"};
+  ctk::ControlSystemModule cs;
 
   void defineConnections();
 };
@@ -38,6 +38,6 @@ static ExampleApp theExampleApp;
 void ExampleApp::defineConnections() {
   ChimeraTK::setDMapFilePath("example2.dmap");
 
-  controller.findTag("DEV").connectTo(heater, timer.tick);
+  controller.findTag("DEV").connectTo(oven["heater"], timer.tick);
   controller.findTag("CS").connectTo(cs);
 }

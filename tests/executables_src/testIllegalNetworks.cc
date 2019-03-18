@@ -62,7 +62,7 @@ struct TestApplication : public ctk::Application {
   void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
-  ctk::DeviceModule dev{"Dummy0"};
+  ctk::DeviceModule dev{this, "Dummy0"};
 };
 
 /*********************************************************************************************************************/

@@ -10,6 +10,10 @@
 
 namespace ChimeraTK {
 
+  ControlSystemModule::ControlSystemModule() : Module(nullptr, "<ControlSystem>", "") {}
+
+  /*********************************************************************************************************************/
+
   ControlSystemModule::ControlSystemModule(const std::string& _variableNamePrefix)
   : Module(nullptr,
         _variableNamePrefix.empty() ? "<ControlSystem>" :
@@ -19,9 +23,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode ControlSystemModule::operator()(const std::string& variableName,
-      const std::type_info& valueType,
-      size_t nElements) const {
+  VariableNetworkNode ControlSystemModule::operator()(
+      const std::string& variableName, const std::type_info& valueType, size_t nElements) const {
     assert(variableName.find_first_of("/") == std::string::npos);
     if(variables.count(variableName) == 0) {
       variables[variableName] = {

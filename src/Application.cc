@@ -30,6 +30,7 @@
 #include "VariableNetworkNode.h"
 #include "Visitor.h"
 #include "XMLGeneratorVisitor.h"
+#include "ExceptionHandlingDecorator.h"
 
 using namespace ChimeraTK;
 
@@ -321,11 +322,21 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   ChimeraTK::AccessModeFlags flags{};
   if(mode == UpdateMode::push && direction.dir == VariableDirection::consuming) flags = {AccessMode::wait_for_new_data};
 
-  // obatin the register accessor from the device
+  // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
-  // return accessor
-  return accessor;
+  // find the right DeviceModule for this alias name - required for exception handling
+  DeviceModule* devmod = nullptr;
+  for(auto& dm : deviceModuleList) {
+    if(dm->deviceAliasOrURI == deviceAlias) {
+      devmod = dm;
+      break;
+    }
+  }
+  assert(devmod != nullptr);
+
+  // decorate the accessor with a ExceptionHandlingDecorator and return it
+  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod);
 }
 
 /*********************************************************************************************************************/

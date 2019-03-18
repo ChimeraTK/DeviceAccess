@@ -14,23 +14,54 @@
 
 namespace ChimeraTK {
 
-  DeviceModule::DeviceModule(const std::string& _deviceAliasOrURI, const std::string& _registerNamePrefix)
-  : Module(nullptr,
-        _registerNamePrefix.empty() ? "<Device:" + _deviceAliasOrURI + ">" :
-                                      _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/") + 1),
-        ""),
-    deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(_registerNamePrefix) {}
+  /*********************************************************************************************************************/
+
+  namespace detail {
+    DeviceModuleProxy::DeviceModuleProxy(const DeviceModule& owner, const std::string& registerNamePrefix)
+    : Module(nullptr, registerNamePrefix.substr(registerNamePrefix.find_last_of("/") + 1), ""), _myowner(&owner),
+      _registerNamePrefix(registerNamePrefix) {}
+
+    DeviceModuleProxy::DeviceModuleProxy(DeviceModuleProxy&& other)
+    : Module(std::move(other)), _myowner(std::move(other._myowner)),
+      _registerNamePrefix(std::move(other._registerNamePrefix)) {}
+
+    VariableNetworkNode DeviceModuleProxy::operator()(
+        const std::string& registerName, UpdateMode mode, const std::type_info& valueType, size_t nElements) const {
+      return (*_myowner)(_registerNamePrefix + "/" + registerName, mode, valueType, nElements);
+    }
+
+    VariableNetworkNode DeviceModuleProxy::operator()(
+        const std::string& registerName, const std::type_info& valueType, size_t nElements, UpdateMode mode) const {
+      return (*_myowner)(_registerNamePrefix + "/" + registerName, valueType, nElements, mode);
+    }
+    VariableNetworkNode DeviceModuleProxy::operator()(const std::string& variableName) const {
+      return (*_myowner)(_registerNamePrefix + "/" + variableName);
+    }
+
+    Module& DeviceModuleProxy::operator[](const std::string& moduleName) const {
+      return (*_myowner)[_registerNamePrefix + "/" + moduleName];
+    }
+
+    const Module& DeviceModuleProxy::virtualise() const { return _myowner->virtualise()[_registerNamePrefix]; }
+
+    void DeviceModuleProxy::connectTo(const Module& target, VariableNetworkNode trigger) const {
+      virtualise().connectTo(target, trigger);
+    }
+
+    DeviceModuleProxy& DeviceModuleProxy::operator=(DeviceModuleProxy&& other) {
+      _name = std::move(other._name);
+      _myowner = std::move(other._myowner);
+      _registerNamePrefix = std::move(other._registerNamePrefix);
+      return *this;
+    }
+
+  }; // namespace detail
 
   /*********************************************************************************************************************/
 
-  DeviceModule::DeviceModule(Application* application,
-      const std::string& _deviceAliasOrURI,
-      const std::string& _registerNamePrefix)
-  : Module(nullptr,
-        _registerNamePrefix.empty() ? "<Device:" + _deviceAliasOrURI + ">" :
-                                      _registerNamePrefix.substr(_registerNamePrefix.find_last_of("/") + 1),
-        ""),
-    deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(_registerNamePrefix) {
+  DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI)
+  : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
+    registerNamePrefix("") {
     application->registerDeviceModule(this);
   }
 
@@ -40,10 +71,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode DeviceModule::operator()(const std::string& registerName,
-      UpdateMode mode,
-      const std::type_info& valueType,
-      size_t nElements) const {
+  VariableNetworkNode DeviceModule::operator()(
+      const std::string& registerName, UpdateMode mode, const std::type_info& valueType, size_t nElements) const {
     return {registerName, deviceAliasOrURI, registerNamePrefix / registerName, mode,
         {VariableDirection::invalid, false}, valueType, nElements};
   }
@@ -51,10 +80,10 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   Module& DeviceModule::operator[](const std::string& moduleName) const {
-    if(subModules.count(moduleName) == 0) {
-      subModules[moduleName] = {deviceAliasOrURI, registerNamePrefix / moduleName};
+    if(proxies.find(moduleName) == proxies.end()) {
+      proxies[moduleName] = {*this, moduleName};
     }
-    return subModules[moduleName];
+    return proxies[moduleName];
   }
 
   /*********************************************************************************************************************/
@@ -240,10 +269,20 @@ namespace ChimeraTK {
     assert(!moduleThread.joinable());
   }
 
+  /*********************************************************************************************************************/
+
   void DeviceModule::defineConnections() {
-    std::string prefix = "Devices/" + deviceAliasOrURI + "/";
-    ControlSystemModule cs(prefix);
-    deviceError.connectTo(cs);
+    // replace all slashes in the deviceAliasOrURI, because URIs might contain slashes and they are not allowed in
+    // module names
+    std::string deviceAliasOrURI_withoutSlashes = deviceAliasOrURI;
+    size_t i = 0;
+    while((i = deviceAliasOrURI_withoutSlashes.find_first_of('/', i)) != std::string::npos) {
+      deviceAliasOrURI_withoutSlashes[i] = '_';
+    }
+
+    // Connect deviceError module to the control system
+    ControlSystemModule cs;
+    deviceError.connectTo(cs["Devices"][deviceAliasOrURI_withoutSlashes]);
   }
 
 } // namespace ChimeraTK

@@ -9,8 +9,8 @@ struct ExampleApp : public ctk::Application {
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
-  ctk::DeviceModule dev{"oven"};
-  ctk::ControlSystemModule cs{"Bakery"};
+  ctk::DeviceModule dev{this, "oven"};
+  ctk::ControlSystemModule cs;
 
   void defineConnections();
 };
