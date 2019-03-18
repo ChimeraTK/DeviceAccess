@@ -13,7 +13,7 @@
 
 namespace ChimeraTK {
 
-  class ConfigReader;
+  struct ConfigReader;
 
   /**
    *  Some common implementations of a few functions in Module used by most

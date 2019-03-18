@@ -195,6 +195,7 @@ namespace ChimeraTK {
     }
 
     void registerDeviceModule(DeviceModule* deviceModule);
+
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -391,7 +392,7 @@ namespace ChimeraTK {
                                    "caused by "
                                    "incorrect ownership of variables/accessors or VariableGroups.");
     }
-    void setCurrentVersionNumber(VersionNumber) {
+    void setCurrentVersionNumber(VersionNumber) override {
       throw ChimeraTK::logic_error("setCurrentVersionNumber() called on the application. This is probably "
                                    "caused by "
                                    "incorrect ownership of variables/accessors or VariableGroups.");

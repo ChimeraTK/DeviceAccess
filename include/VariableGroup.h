@@ -17,7 +17,7 @@
 namespace ChimeraTK {
 
   class ApplicationModule;
-  class ConfigReader;
+  struct ConfigReader;
 
   class VariableGroup : public ModuleImpl {
    public:
