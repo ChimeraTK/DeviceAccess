@@ -136,7 +136,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDev, T, test_types) {
   ChimeraTK::Device dev;
   dev.open("Dummy0");
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
 
@@ -167,7 +166,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
   ChimeraTK::Device dev;
   dev.open("Dummy0");
 
-  BOOST_CHECK_EQUAL(pvManagers.first->getAllProcessVariables().size(), 1);
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
 
