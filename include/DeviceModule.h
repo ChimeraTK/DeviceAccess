@@ -86,10 +86,8 @@ namespace ChimeraTK {
      *  function to connect the register with another variable. */
     VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
         const std::type_info& valueType = typeid(AnyType), size_t nElements = 0) const;
-    VariableNetworkNode operator()(const std::string& registerName,
-        const std::type_info& valueType,
-        size_t nElements = 0,
-        UpdateMode mode = UpdateMode::poll) const {
+    VariableNetworkNode operator()(const std::string& registerName, const std::type_info& valueType,
+        size_t nElements = 0, UpdateMode mode = UpdateMode::poll) const {
       return operator()(registerName, mode, valueType, nElements);
     }
     VariableNetworkNode operator()(const std::string& variableName) const override {
@@ -109,6 +107,7 @@ namespace ChimeraTK {
      * device. This function shall not be called by the user, all exception
      *  handling is done internally by ApplicationCore. */
     void reportException(std::string errMsg);
+
     void run() override;
 
     void terminate() override;
@@ -161,10 +160,8 @@ namespace ChimeraTK {
      * state has been resolved by the moduleThread. */
     std::condition_variable errorCondVar;
 
-    /** This functions tries to open the device and set the deviceError. Once done
-     * it notifies the waiting thread(s).
-     *  The function is running an endless loop inside its own thread
-     * (moduleThread). */
+    /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
+     *  The function is running an endless loop inside its own thread (moduleThread). */
     void handleException();
   };
 
