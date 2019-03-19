@@ -9,12 +9,28 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new ExceptionDummy(parameters["map"]));
   }
+
   void open() override {
     if(throwException) {
       throw(ChimeraTK::runtime_error("DummyException: This is a test"));
     }
-    else
-      ChimeraTK::DummyBackend::open();
+    ChimeraTK::DummyBackend::open();
+  }
+
+  void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
+    if(throwException) {
+      if(isOpen()) close();
+      throw(ChimeraTK::runtime_error("DummyException: read throws by request"));
+    }
+    ChimeraTK::DummyBackend::read(bar, address, data, sizeInBytes);
+  }
+
+  void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
+    if(throwException) {
+      if(isOpen()) close();
+      throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
+    }
+    ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
   }
 
   class BackendRegisterer {

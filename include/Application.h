@@ -380,6 +380,7 @@ namespace ChimeraTK {
                                                 // idMap
 
     friend class TestFacility; // needs access to testableMode_variables
+    friend class DeviceModule; // needs access to testableMode_variables
 
     template<typename UserType>
     friend class DebugPrintAccessorDecorator; // needs access to the idMap

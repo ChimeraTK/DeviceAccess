@@ -29,25 +29,39 @@ struct TestApplication : public ctk::Application {
 
   void defineConnections() {} // the setup is done in the tests
 
-  ctk::DeviceModule dev{this, "(ExceptionDummy?map=test.map)"};
+  ctk::DeviceModule dev{this, "(ExceptionDummy?map=test3.map)"};
   ctk::ControlSystemModule cs;
 };
 
 /*********************************************************************************************************************/
-
+#if 0
+// ************************************************************************************************
+// Note: This test partially tests implementation details. It probably should be removed.
+// ************************************************************************************************
 BOOST_AUTO_TEST_CASE(testDeviceModuleReportExceptionFunction) {
+  std::cout << "testDeviceModuleReportExceptionFunction" << std::endl;
+
   TestApplication app;
   boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test.map)"));
+      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test3.map)"));
 
-  app.dev.connectTo(app.cs);
+  app.dev.connectTo(app.cs, app.cs["MyModule"]("actuator"));
   ctk::TestFacility test;
-  app.initialise();
-  app.run();
-  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=test.map)/message");
-  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=test.map)/status");
+  test.runApplication();
+
+  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=test3.map)/message");
+  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=test3.map)/status");
+  auto trigger = test.getScalar<int>("/MyModule/actuator");
 
   // initially there should be no error set
+  message.readLatest();
+  status.readLatest();
+  BOOST_CHECK(static_cast<std::string>(message) == "");
+  BOOST_CHECK(status.readLatest() == 0);
+
+  trigger.write();
+  test.stepApplication();
+
   message.readLatest();
   status.readLatest();
   BOOST_CHECK(static_cast<std::string>(message) == "");
@@ -70,12 +84,15 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleReportExceptionFunction) {
   std::atomic<bool> reportExceptionFinished;
   reportExceptionFinished = false;
   std::thread reportThread([&] { // need to launch in background, reportException() blocks
+    app.testableModeLock("");
     app.dev.reportException("Some fancy exception text");
     reportExceptionFinished = true;
   });
 
   // check the error status and that reportException() is still blocking
-  sleep(2);
+  trigger.write();
+  test.stepApplication();
+
   message.readLatest();
   status.readLatest();
   BOOST_CHECK_EQUAL(static_cast<std::string>(message),
@@ -86,6 +103,8 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleReportExceptionFunction) {
 
   // allow to reopen the device successfully, wait until this has hapopened
   backend->throwException = false;
+  trigger.write();
+  test.stepApplication();
   reportThread.join();
 
   // the device should now be open again
@@ -96,4 +115,50 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleReportExceptionFunction) {
   status.readLatest();
   BOOST_CHECK(static_cast<std::string>(message) == "");
   BOOST_CHECK(status.readLatest() == 0);
+}
+#endif
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testExceptionHandling) {
+  std::cout << "testExceptionHandling" << std::endl;
+  TestApplication app;
+  boost::shared_ptr<ExceptionDummy> backend = boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test3.map)"));
+
+  app.dev.connectTo(app.cs, app.cs["MyModule"]("actuator"));
+  ctk::TestFacility test;
+  test.runApplication();
+
+  auto message = test.getScalar<std::string>("/Devices/(ExceptionDummy?map=test3.map)/message");
+  auto status = test.getScalar<int>("/Devices/(ExceptionDummy?map=test3.map)/status");
+  auto trigger = test.getScalar<int>("/MyModule/actuator");
+
+  // initially there should be no error set
+  message.readLatest();
+  status.readLatest();
+  BOOST_CHECK(static_cast<std::string>(message) == "");
+  BOOST_CHECK(status.readLatest() == 0);
+
+  // repeat test a couple of times to make sure it works not only once
+  for(size_t i = 0; i < 10; ++i) {
+    // enable exception throwing in test device
+    backend->throwException = true;
+    trigger.write();
+    test.stepApplication();
+    message.readLatest();
+    status.readLatest();
+    BOOST_CHECK(static_cast<std::string>(message) != "");
+    BOOST_CHECK(status == 1);
+    BOOST_CHECK(!backend->isOpen());
+
+    // Now "cure" the device problem
+    backend->throwException = false;
+    trigger.write();
+    test.stepApplication();
+    message.readLatest();
+    status.readLatest();
+    BOOST_CHECK(static_cast<std::string>(message) == "");
+    BOOST_CHECK(status == 0);
+    BOOST_CHECK(backend->isOpen());
+  }
 }

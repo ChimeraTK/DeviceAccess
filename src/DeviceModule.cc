@@ -61,7 +61,7 @@ namespace ChimeraTK {
 
   DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI)
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
-    registerNamePrefix("") {
+    registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);
   }
 
@@ -197,10 +197,26 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::reportException(std::string errMsg) {
+    // In testable mode, we need to increase the testableMode_counter before releasing the testableModeLock, but we have
+    // to release the testableModeLock lock before obtaining the errorMutex, which in turn has to be obtained before
+    // writing to the errorQueue. Otherwise deadlocks might occur (with race conditions).
+    if(owner->isTestableModeEnabled()) {
+      assert(owner->testableModeTestLock());
+      ++owner->testableMode_counter;
+    }
+    owner->testableModeUnlock("reportException");
     std::unique_lock<std::mutex> lk(errorMutex);
-    errorQueue.push(errMsg);
+  retry:
+    bool success = errorQueue.push(errMsg);
+    if(!success) {
+      // retry error reporting until the message has been sent. It has to be successful since testableMode_counter
+      // has been increased already
+      goto retry;
+    }
     errorCondVar.wait(lk);
+    // release errorMutex before obtaining testableModeLock to prevent deadlocks
     lk.unlock();
+    owner->testableModeLock("reportException");
   }
   /*********************************************************************************************************************/
 
@@ -208,11 +224,15 @@ namespace ChimeraTK {
     Application::registerThread("DM_" + getName());
     Device d;
     std::string error;
+    owner->testableModeLock("Startup");
 
     try {
       while(true) {
+        owner->testableModeUnlock("Wait for exception");
         errorQueue.pop_wait(error);
         boost::this_thread::interruption_point();
+        owner->testableModeLock("Process exception");
+        if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
         std::lock_guard<std::mutex> lk(errorMutex);
         deviceError.status = 1;
         deviceError.message = error;
@@ -232,7 +252,15 @@ namespace ChimeraTK {
             deviceError.setCurrentVersionNumber({});
             deviceError.writeAll();
           }
+
+          // empty exception reporting queue
+          while(errorQueue.pop()) {
+            if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
+          }
+
+          owner->testableModeUnlock("Wait for recovery");
           usleep(500000);
+          owner->testableModeLock("Try recovery");
         }
         deviceError.status = 0;
         deviceError.message = "";
@@ -263,7 +291,7 @@ namespace ChimeraTK {
   void DeviceModule::terminate() {
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
-      reportException("ExitOnNone");
+      errorQueue.push("terminate");
       moduleThread.join();
     }
     assert(!moduleThread.joinable());

@@ -188,6 +188,8 @@ namespace ChimeraTK {
      *  The function is running an endless loop inside its own thread (moduleThread). */
     void handleException();
 
+    Application* owner;
+
     friend class Application;
   };
 
