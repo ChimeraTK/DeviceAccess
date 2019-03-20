@@ -445,7 +445,7 @@ struct Deeper : ctk::ApplicationModule {
       using ctk::VariableGroup ::VariableGroup;
       ctk::ScalarPollInput<T> tests{this, "tests", "MV/m", "Description"};
     } need{this, "need", ""};
-    ctk::ScalarOutput<T> also{this, "also", "MV/m", "Description"};
+    ctk::ScalarOutput<T> also{this, "also", "MV/m", "Description", {"ALSO"}};
   } hierarchies{this, "hierarchies", ""};
 
   void mainLoop() {}
@@ -475,7 +475,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
 
   TestApplication2<int> app;
   app.testModule.connectTo(app.dev["MyModule"]);
-  app.deeper.hierarchies.connectTo(app.dev["Deeper"]["hierarchies"]);
+  app.deeper.hierarchies.need.connectTo(app.dev["Deeper"]["hierarchies"]["need"]);
+  app.deeper.hierarchies.findTag("ALSO").connectTo(app.dev["Deeper"]["hierarchies"]);
 
   ctk::TestFacility test;
   test.runApplication();
