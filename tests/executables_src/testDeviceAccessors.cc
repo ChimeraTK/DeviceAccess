@@ -436,6 +436,22 @@ struct TestModule2 : public ctk::ApplicationModule {
 };
 
 template<typename T>
+struct Deeper : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  struct Hierarchies : ctk::VariableGroup {
+    using ctk::VariableGroup ::VariableGroup;
+    struct Need : ctk::VariableGroup {
+      using ctk::VariableGroup ::VariableGroup;
+      ctk::ScalarPollInput<T> tests{this, "tests", "MV/m", "Description"};
+    } need{this, "need", ""};
+    ctk::ScalarOutput<T> also{this, "also", "MV/m", "Description"};
+  } hierarchies{this, "hierarchies", ""};
+
+  void mainLoop() {}
+};
+
+template<typename T>
 struct TestApplication2 : public ctk::Application {
   TestApplication2() : Application("testSuite") {}
   ~TestApplication2() { shutdown(); }
@@ -448,6 +464,7 @@ struct TestApplication2 : public ctk::Application {
   void defineConnections() {}         // the setup is done in the tests
 
   TestModule2<T> testModule{this, "MyModule", "The test module"};
+  Deeper<T> deeper{this, "Deeper", ""};
   ctk::DeviceModule dev{this, "Dummy0"};
 };
 
@@ -458,6 +475,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
 
   TestApplication2<int> app;
   app.testModule.connectTo(app.dev["MyModule"]);
+  app.deeper.hierarchies.connectTo(app.dev["Deeper"]["hierarchies"]);
 
   ctk::TestFacility test;
   test.runApplication();
@@ -466,6 +484,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
   dev.open("Dummy0");
   auto actuator = dev.getScalarRegisterAccessor<T>("MyModule/actuator");
   auto readback = dev.getScalarRegisterAccessor<T>("MyModule/readBack");
+  auto tests = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/need/tests");
+  auto also = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/also");
 
   app.testModule.actuator = 42;
   app.testModule.actuator.write();
@@ -486,6 +506,26 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
   readback.write();
   app.testModule.readback.read();
   BOOST_CHECK_EQUAL(T(app.testModule.readback), 66);
+
+  tests = 120;
+  tests.write();
+  app.deeper.hierarchies.need.tests.read();
+  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 120);
+
+  tests = 66;
+  tests.write();
+  app.deeper.hierarchies.need.tests.read();
+  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 66);
+
+  app.deeper.hierarchies.also = 42;
+  app.deeper.hierarchies.also.write();
+  also.read();
+  BOOST_CHECK_EQUAL(T(also), 42);
+
+  app.deeper.hierarchies.also = 12;
+  app.deeper.hierarchies.also.write();
+  also.read();
+  BOOST_CHECK_EQUAL(T(also), 12);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
@@ -503,6 +543,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
   dev.open("Dummy0");
   auto actuator = dev.getScalarRegisterAccessor<T>("MyModule/actuator");
   auto readback = dev.getScalarRegisterAccessor<T>("MyModule/readBack");
+  auto tests = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/need/tests");
+  auto also = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/also");
 
   app.testModule.actuator = 42;
   app.testModule.actuator.write();
@@ -523,4 +565,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
   readback.write();
   app.testModule.readback.read();
   BOOST_CHECK_EQUAL(T(app.testModule.readback), 66);
+
+  tests = 120;
+  tests.write();
+  app.deeper.hierarchies.need.tests.read();
+  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 120);
+
+  tests = 66;
+  tests.write();
+  app.deeper.hierarchies.need.tests.read();
+  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 66);
+
+  app.deeper.hierarchies.also = 42;
+  app.deeper.hierarchies.also.write();
+  also.read();
+  BOOST_CHECK_EQUAL(T(also), 42);
+
+  app.deeper.hierarchies.also = 12;
+  app.deeper.hierarchies.also.write();
+  also.read();
+  BOOST_CHECK_EQUAL(T(also), 12);
 }
