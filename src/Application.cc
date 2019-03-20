@@ -1119,3 +1119,8 @@ std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
 void Application::registerDeviceModule(DeviceModule* deviceModule) {
   deviceModuleList.push_back(deviceModule);
 }
+
+/*********************************************************************************************************************/
+void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
+  deviceModuleList.remove(deviceModule);
+}

@@ -195,6 +195,7 @@ namespace ChimeraTK {
     }
 
     void registerDeviceModule(DeviceModule* deviceModule);
+    void unregisterDeviceModule(DeviceModule* deviceModule);
 
    protected:
     friend class Module;

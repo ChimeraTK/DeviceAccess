@@ -39,7 +39,7 @@ namespace ChimeraTK {
     }
 
     Module& DeviceModuleProxy::operator[](const std::string& moduleName) const {
-      return (*_myowner)[_registerNamePrefix + "/" + moduleName];
+      return _myowner->getProxy(_registerNamePrefix + "/" + moduleName);
     }
 
     const Module& DeviceModuleProxy::virtualise() const {
@@ -69,7 +69,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  DeviceModule::~DeviceModule() { assert(!moduleThread.joinable()); }
+  DeviceModule::~DeviceModule() {
+    assert(!moduleThread.joinable());
+    owner->unregisterDeviceModule(this);
+  }
 
   /*********************************************************************************************************************/
 
@@ -82,10 +85,17 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   Module& DeviceModule::operator[](const std::string& moduleName) const {
-    if(proxies.find(moduleName) == proxies.end()) {
-      proxies[moduleName] = {*this, moduleName};
+    assert(moduleName.find_first_of("/") == std::string::npos);
+    return getProxy(moduleName);
+  }
+
+  /*********************************************************************************************************************/
+
+  detail::DeviceModuleProxy& DeviceModule::getProxy(const std::string& fullName) const {
+    if(proxies.find(fullName) == proxies.end()) {
+      proxies[fullName] = {*this, fullName};
     }
-    return proxies[moduleName];
+    return proxies[fullName];
   }
 
   /*********************************************************************************************************************/

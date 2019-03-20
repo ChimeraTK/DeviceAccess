@@ -50,6 +50,7 @@
 
 namespace ChimeraTK {
   class Application;
+  class DeviceModule;
 
   /*********************************************************************************************************************/
 
@@ -73,6 +74,7 @@ namespace ChimeraTK {
       DeviceModuleProxy& operator=(DeviceModuleProxy&& other);
 
      private:
+      friend class ChimeraTK::DeviceModule;
       const DeviceModule* _myowner;
       std::string _registerNamePrefix;
     };
@@ -97,11 +99,15 @@ namespace ChimeraTK {
 
     /** Move assignment */
     DeviceModule& operator=(DeviceModule&& other) {
+      assert(!moduleThread.joinable());
       Module::operator=(std::move(other));
       deviceAliasOrURI = std::move(other.deviceAliasOrURI);
       registerNamePrefix = std::move(other.registerNamePrefix);
-      proxies = std::move(other.proxies);
       deviceError = std::move(other.deviceError);
+      owner = other.owner;
+      proxies = std::move(other.proxies);
+      for(auto& proxy : proxies) proxy.second._myowner = this;
+      owner->registerDeviceModule(this);
       return *this;
     }
 
@@ -160,6 +166,10 @@ namespace ChimeraTK {
     // it is little more than a cache and thus does not change the logical state
     // of this module
     mutable std::map<std::string, detail::DeviceModuleProxy> proxies;
+
+    // create or return a proxy for a submodule (full hierarchy)
+    detail::DeviceModuleProxy& getProxy(const std::string& fullName) const;
+
     /** A  VariableGroup for exception status and message. It can be protected, as
      * it is automatically connected to the control system in
      * DeviceModule::defineConnections() */
