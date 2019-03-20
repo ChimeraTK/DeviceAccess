@@ -191,6 +191,7 @@ namespace ChimeraTK {
     Application* owner;
 
     friend class Application;
+    friend class detail::DeviceModuleProxy;
   };
 
 } /* namespace ChimeraTK */

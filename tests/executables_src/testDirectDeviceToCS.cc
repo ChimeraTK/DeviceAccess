@@ -62,7 +62,7 @@ struct TestApplicationConnectTo : ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() { dev.connectTo(cs, trigger.tick); }
+  void defineConnections() {}
 
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 
@@ -190,6 +190,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   dev.open("(dummy?map=test3.map)");
 
   TestApplicationConnectTo app;
+  app.dev.connectTo(app.cs, app.trigger.tick);
 
   ctk::TestFacility test;
   auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
@@ -225,6 +226,48 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   testDirectRegister(test, csint8, devint8, [] {});
   testDirectRegister(test, csuint8, devuint8, [] {});
   testDirectRegister(test, csfloat, devfloat, [] {}, false);
+  testDirectRegister(test, csDeep1, devDeep1, [] {});
+  testDirectRegister(test, csDeep2, devDeep2, [] {});
+}
+
+/*********************************************************************************************************************/
+/* test connectTo */
+
+BOOST_AUTO_TEST_CASE(testConnectToSubHierarchies) {
+  std::cout << "testConnectToSubHierarchies" << std::endl;
+
+  ctk::Device dev;
+  dev.open("(dummy?map=test3.map)");
+
+  TestApplicationConnectTo app;
+  app.dev["Deep"]["Hierarchies"].connectTo(app.cs, app.trigger.tick);
+  app.dev["Integers"].connectTo(app.cs["Ints"], app.trigger.tick);
+
+  ctk::TestFacility test;
+  auto devint32 = dev.getScalarRegisterAccessor<int32_t>("/Integers/signed32");
+  auto devuint32 = dev.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
+  auto devint16 = dev.getScalarRegisterAccessor<int16_t>("/Integers/signed16");
+  auto devuint16 = dev.getScalarRegisterAccessor<uint16_t>("/Integers/unsigned16");
+  auto devint8 = dev.getScalarRegisterAccessor<int8_t>("/Integers/signed8");
+  auto devuint8 = dev.getScalarRegisterAccessor<uint8_t>("/Integers/unsigned8");
+  auto devDeep1 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
+  auto devDeep2 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Another/test");
+  auto csint32 = test.getScalar<int32_t>("/Ints/signed32");
+  auto csuint32 = test.getScalar<uint32_t>("/Ints/unsigned32");
+  auto csint16 = test.getScalar<int16_t>("/Ints/signed16");
+  auto csuint16 = test.getScalar<uint16_t>("/Ints/unsigned16");
+  auto csint8 = test.getScalar<int8_t>("/Ints/signed8");
+  auto csuint8 = test.getScalar<uint8_t>("/Ints/unsigned8");
+  auto csDeep1 = test.getScalar<int32_t>("/Need/Tests/As/well");
+  auto csDeep2 = test.getScalar<int32_t>("/Need/Another/test");
+  test.runApplication();
+
+  testDirectRegister(test, csint32, devint32, [] {});
+  testDirectRegister(test, csuint32, devuint32, [] {});
+  testDirectRegister(test, csint16, devint16, [] {});
+  testDirectRegister(test, csuint16, devuint16, [] {});
+  testDirectRegister(test, csint8, devint8, [] {});
+  testDirectRegister(test, csuint8, devuint8, [] {});
   testDirectRegister(test, csDeep1, devDeep1, [] {});
   testDirectRegister(test, csDeep2, devDeep2, [] {});
 }

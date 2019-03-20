@@ -42,10 +42,12 @@ namespace ChimeraTK {
       return (*_myowner)[_registerNamePrefix + "/" + moduleName];
     }
 
-    const Module& DeviceModuleProxy::virtualise() const { return _myowner->virtualise()[_registerNamePrefix]; }
+    const Module& DeviceModuleProxy::virtualise() const {
+      return _myowner->virtualise().submodule(_registerNamePrefix);
+    }
 
     void DeviceModuleProxy::connectTo(const Module& target, VariableNetworkNode trigger) const {
-      virtualise().connectTo(target, trigger);
+      _myowner->virtualiseFromCatalog().submodule(_registerNamePrefix).connectTo(target, trigger);
     }
 
     DeviceModuleProxy& DeviceModuleProxy::operator=(DeviceModuleProxy&& other) {

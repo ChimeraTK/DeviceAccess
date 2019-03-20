@@ -113,4 +113,16 @@ namespace ChimeraTK {
     }
   }
 
+  /*********************************************************************************************************************/
+
+  Module& Module::submodule(const std::string& moduleName) const {
+    size_t slash = moduleName.find_first_of("/");
+    // no slash found: call subscript operator
+    if(slash == std::string::npos) return (*this)[moduleName];
+    // slash found: split module name at slash
+    std::string upperModuleName = moduleName.substr(0, slash);
+    std::string remainingModuleNames = moduleName.substr(slash + 1);
+    return (*this)[upperModuleName].submodule(remainingModuleNames);
+  }
+
 } /* namespace ChimeraTK */
