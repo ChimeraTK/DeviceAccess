@@ -421,3 +421,106 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleVirtuallise) {
 
   BOOST_CHECK(&(app.dev.virtualise()) == &(app.dev));
 }
+
+/*********************************************************************************************************************/
+/* test connectTo() */
+
+template<typename T>
+struct TestModule2 : public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarOutput<T> actuator{this, "actuator", "MV/m", "Description"};
+  ctk::ScalarPollInput<T> readback{this, "readBack", "MV/m", "Description"};
+
+  void mainLoop() {}
+};
+
+template<typename T>
+struct TestApplication2 : public ctk::Application {
+  TestApplication2() : Application("testSuite") {}
+  ~TestApplication2() { shutdown(); }
+
+  using Application::deviceMap;       // expose the device map for the tests
+  using Application::makeConnections; // we call makeConnections() manually in
+                                      // the tests to catch exceptions etc.
+  using Application::networkList;     // expose network list to check merging
+                                      // networks
+  void defineConnections() {}         // the setup is done in the tests
+
+  TestModule2<T> testModule{this, "MyModule", "The test module"};
+  ctk::DeviceModule dev{this, "Dummy0"};
+};
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
+  std::cout << "testConnectTo" << std::endl;
+
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication2<int> app;
+  app.testModule.connectTo(app.dev["MyModule"]);
+
+  ctk::TestFacility test;
+  test.runApplication();
+
+  ctk::Device dev;
+  dev.open("Dummy0");
+  auto actuator = dev.getScalarRegisterAccessor<T>("MyModule/actuator");
+  auto readback = dev.getScalarRegisterAccessor<T>("MyModule/readBack");
+
+  app.testModule.actuator = 42;
+  app.testModule.actuator.write();
+  actuator.read();
+  BOOST_CHECK_EQUAL(T(actuator), 42);
+
+  app.testModule.actuator = 12;
+  app.testModule.actuator.write();
+  actuator.read();
+  BOOST_CHECK_EQUAL(T(actuator), 12);
+
+  readback = 120;
+  readback.write();
+  app.testModule.readback.read();
+  BOOST_CHECK_EQUAL(T(app.testModule.readback), 120);
+
+  readback = 66;
+  readback.write();
+  app.testModule.readback.read();
+  BOOST_CHECK_EQUAL(T(app.testModule.readback), 66);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
+  std::cout << "testConnectTo2" << std::endl;
+
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication2<int> app;
+  app.findTag(".*").connectTo(app.dev);
+
+  ctk::TestFacility test;
+  test.runApplication();
+
+  ctk::Device dev;
+  dev.open("Dummy0");
+  auto actuator = dev.getScalarRegisterAccessor<T>("MyModule/actuator");
+  auto readback = dev.getScalarRegisterAccessor<T>("MyModule/readBack");
+
+  app.testModule.actuator = 42;
+  app.testModule.actuator.write();
+  actuator.read();
+  BOOST_CHECK_EQUAL(T(actuator), 42);
+
+  app.testModule.actuator = 12;
+  app.testModule.actuator.write();
+  actuator.read();
+  BOOST_CHECK_EQUAL(T(actuator), 12);
+
+  readback = 120;
+  readback.write();
+  app.testModule.readback.read();
+  BOOST_CHECK_EQUAL(T(app.testModule.readback), 120);
+
+  readback = 66;
+  readback.write();
+  app.testModule.readback.read();
+  BOOST_CHECK_EQUAL(T(app.testModule.readback), 66);
+}
