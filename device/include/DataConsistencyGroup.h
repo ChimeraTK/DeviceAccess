@@ -39,9 +39,6 @@ namespace ChimeraTK {
      *  reached. It returns false if an TransferElementID was updated, that was not added to this Group. */
     bool update(TransferElementID transferelementid);
 
-    /** This is not implementet yet.*/
-    void getLatestConsistentState();
-
    private:
     /// A set of TransferElementID, that were updatet with update();
     std::unordered_set<TransferElementID> consistentElements;
@@ -115,12 +112,6 @@ namespace ChimeraTK {
       return true;
     }
     return false;
-  }
-
-  /********************************************************************************************************************/
-
-  inline void DataConsistencyGroup::getLatestConsistentState() {
-    throw ChimeraTK::logic_error("DataConsistencyGroup::getLatestConsistentState() is not implemented jet.");
   }
 
 } // namespace ChimeraTK
