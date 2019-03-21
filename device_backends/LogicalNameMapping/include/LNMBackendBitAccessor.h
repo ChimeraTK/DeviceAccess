@@ -77,9 +77,9 @@ namespace ChimeraTK {
       return _accessor->doWriteTransfer(versionNumber);
     }
 
-    bool doReadTransferNonBlocking() override { return doReadTransferNonBlocking(); }
+    bool doReadTransferNonBlocking() override { return _accessor->doReadTransferNonBlocking(); }
 
-    bool doReadTransferLatest() override { return doReadTransferLatest(); }
+    bool doReadTransferLatest() override { return _accessor->doReadTransferLatest(); }
 
     void doPreRead() override { _accessor->preRead(); }
 
