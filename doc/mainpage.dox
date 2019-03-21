@@ -18,6 +18,7 @@ are complete and fully functional.
 \li \ref numeric_addresses
 \li \ref lmap
 \li Transfer groups
+\li \ref dataConsistencyGroup
 \li Automatic data conversion and raw data access
 \li \ref custom_backends
 \li \ref dmap

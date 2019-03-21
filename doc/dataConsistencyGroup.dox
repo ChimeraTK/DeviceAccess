@@ -1,0 +1,26 @@
+/**
+\page dataConsistencyGroup Data Consistency Group
+
+This is a group of register accesses similar to the ReadAnyGroup
+that ensures that the data consistency of multiple variables matches.
+The consistency is verified using an algorithm based on the VersionNumber of the register accesses.
+
+You can use the constractor or the add function to add variables that you want to be consistent.
+
+To check the consistency, you have to transfer the TransferElementID of changed variable
+by calling the DataConsistencyGroup::update() function. If the VersinNumber of all variables are consistent,
+this function returns true.
+If you trnasfer an TransferElementID that does not consist to this group, it will be irgnored and
+this function returns false.
+
+The same TransferElement can be part of multiple DataConsistencyGroups at the same time.
+
+\include dataConsistencyGroup.cpp
+
+*/
+
+/**
+\example dataConsistencyGroup.cpp
+
+An example how to use the DataConsistencyGroup
+*/
