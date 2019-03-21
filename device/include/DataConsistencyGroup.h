@@ -31,7 +31,7 @@ namespace ChimeraTK {
     DataConsistencyGroup(ITERATOR first, ITERATOR last);
 
     /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
-     *  must be must be readable. */
+     *  must be must be readable, and it must have AccessMode::wait_for_new_data. */
     void add(TransferElementAbstractor element);
     void add(boost::shared_ptr<TransferElement> element);
 

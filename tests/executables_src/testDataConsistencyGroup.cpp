@@ -143,6 +143,7 @@ BOOST_AUTO_TEST_CASE(testException) {
   dev.open("(dummy?map=registerAccess.map)");
   auto acc = dev.getScalarRegisterAccessor<int>("BOARD.WORD_FIRMWARE");
   DataConsistencyGroup dcgroup;
+  // accessors without wait_for_new_data cannot be added.
   BOOST_CHECK_THROW(dcgroup.add(acc), ChimeraTK::logic_error);
 }
 
