@@ -14,42 +14,32 @@
 #include <iostream> //weg damit
 
 namespace ChimeraTK {
-  /** Group several registers (= TransferElement) which ensures data consistency
-         * across multiple variables through an algorithm which matches the VersionNumber.
-         * This group does not read on its own. It should work together with a ReadAnyGroup.
-         * You should wait for changed variable and transfer it to this group
-         * by calling ChimeraTK::DataConsistencyGroup::update. If a consistent state is reached,
-         * this function returns true.
-         *  */
+  /** Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
+   *  algorithm which matches the VersionNumber. This group does not read on its own. It should work together with a
+   *  ReadAnyGroup. You should wait for changed variable and transfer it to this group by calling
+   *  ChimeraTK::DataConsistencyGroup::update. If a consistent state is reached, this function returns true. */
   class DataConsistencyGroup {
    public:
-    /** Construct empty group. Elements can later be added using the add()
-                        * function. */
+    /** Construct empty group. Elements can later be added using the add() function. */
     DataConsistencyGroup();
 
-    /** Construct this group with elements from the list using the add()
-                        * function. */
+    /** Construct this group with elements from the list using the add() function. */
     DataConsistencyGroup(std::initializer_list<TransferElementAbstractor> list);
     DataConsistencyGroup(std::initializer_list<boost::shared_ptr<TransferElement>> list);
 
     template<typename ITERATOR>
     DataConsistencyGroup(ITERATOR first, ITERATOR last);
 
-    /** Add register to group.
-                         *  The same TransferElement can be part of multiple DataConsistencyGroups.
-                         *
-                         *  The register must be must be readable. */
+    /** Add register to group. The same TransferElement can be part of multiple DataConsistencyGroups. The register
+     *  must be must be readable. */
     void add(TransferElementAbstractor element);
     void add(boost::shared_ptr<TransferElement> element);
 
-    /**
-                         * This function updates consistentElements, a set of TransferElementID.
-                         * It returns true, if a consistent state is reached.
-                         * It returns false if an TransferElementID was updated, that was not added to this Group.*/
+    /** This function updates consistentElements, a set of TransferElementID. It returns true, if a consistent state is
+     *  reached. It returns false if an TransferElementID was updated, that was not added to this Group. */
     bool update(TransferElementID transferelementid);
 
-    /**
-                         * This is not implementet jet.*/
+    /** This is not implementet yet.*/
     void getLatestConsistentState();
 
    private:
