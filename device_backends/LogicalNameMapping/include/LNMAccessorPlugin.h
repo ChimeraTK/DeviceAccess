@@ -50,7 +50,7 @@ namespace ChimeraTK { namespace LNMBackend {
      *
      *  Note: Even if getTargetDataType() is overridden, the function will be instantiated for all target types, but
      *        if will be only called for those getTargetDataType() returns.
-    */
+     */
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
@@ -74,6 +74,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /* Known plugins are defined below (implementations must go to .cc file)                                            */
   /********************************************************************************************************************/
 
+  /** Multiplier Plugin: Multiply register's data with a constant factor */
   class MultiplierPlugin : public AccessorPlugin<MultiplierPlugin> {
    public:
     MultiplierPlugin(
@@ -86,6 +87,20 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
 
     double _factor;
+  };
+
+  /** Math Plugin: Apply mathematical formula to register's data. The formula is parsed by the exprtk library. */
+  class MathPlugin : public AccessorPlugin<MathPlugin> {
+   public:
+    MathPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
+
+    virtual DataType getTargetDataType(DataType) const { return DataType::float64; }
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+
+    std::map<std::string, std::string> _parameters;
   };
 
 }} // namespace ChimeraTK::LNMBackend
