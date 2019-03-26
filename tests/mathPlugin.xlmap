@@ -1,13 +1,23 @@
 <logicalNameMap>
-    <redirectedRegister name="SimpleScalarRead">
-        <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
-        <targetRegister>BOARD.WORD_USER</targetRegister>
-        <plugin name="math">
-          <parameter name="formula">return [x/7 + 13];</parameter>
-        </plugin>
+    <variable name="SimpleScalar">
+      <type>integer</type>
+      <value>0</value>
+    </variable>
+
+    <redirectedRegister name="SimpleScalarReadWrite">
+      <targetDevice>this</targetDevice>
+      <targetRegister>SimpleScalar</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">x/7 + 13</parameter>
+      </plugin>
     </redirectedRegister>
-    <redirectedRegister name="FullArea">
-        <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
-        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+
+    <redirectedRegister name="ReturnedScalarReadWrite">
+      <targetDevice>this</targetDevice>
+      <targetRegister>SimpleScalar</targetRegister>
+      <plugin name="math">
+        <parameter name="formula">return [ x/7 + 13 ];</parameter>
+      </plugin>
     </redirectedRegister>
+
 </logicalNameMap>
