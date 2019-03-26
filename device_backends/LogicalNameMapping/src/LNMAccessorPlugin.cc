@@ -318,10 +318,10 @@ namespace ChimeraTK { namespace LNMBackend {
             "': The expression did not return a numeric result.");
       }
       exprtk::type_store<double>::type_view<double> view(result);
-      if(view.size() != _target->getNumberOfChannels()) {
+      if(view.size() != _target->getNumberOfSamples()) {
         throw ChimeraTK::logic_error("LogicalNameMapping MathPlugin for register '" + this->getName() +
             "': The expression returns " + std::to_string(view.size()) + " elements but " +
-            std::to_string(_target->getNumberOfChannels()) + " expected for write operations.");
+            std::to_string(_target->getNumberOfSamples()) + " expected for write operations.");
       }
       for(size_t k = 0; k < view.size(); ++k) {
         _target->accessData(0, k) = view[k];
