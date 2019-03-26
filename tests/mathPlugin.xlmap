@@ -38,4 +38,45 @@
       <parameter name="formula">return [ x/7 + 13 ];</parameter>
     </plugin>
   </redirectedRegister>
+
+  <redirectedRegister name="BrokenFormula">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">this doesnt make sense</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="WrongReturnSizeInArray">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">var r[3]; return [r];</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ReturnScalarDespiteArray">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">1</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ReturnString">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">return ['This is a string'];</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ReturnMultipleValues">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleArray</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">return [1, 2];</parameter>
+    </plugin>
+  </redirectedRegister>
+
 </logicalNameMap>

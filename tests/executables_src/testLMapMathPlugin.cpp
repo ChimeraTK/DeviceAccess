@@ -104,7 +104,32 @@ BOOST_AUTO_TEST_CASE(testReadWriteArray) {
 
 /********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testExceptions) {}
+BOOST_AUTO_TEST_CASE(testExceptions) {
+  // missing parameter "formula"
+  ChimeraTK::Device device;
+  BOOST_CHECK_THROW(device.open("(logicalNameMap?map=mathPlugin-broken.xlmap)"), ChimeraTK::logic_error);
+
+  // open device with map file which parses
+  device.open("(logicalNameMap?map=mathPlugin.xlmap)");
+
+  BOOST_CHECK_THROW(device.getOneDRegisterAccessor<double>("BrokenFormula"), ChimeraTK::logic_error);
+
+  auto acc1 = device.getOneDRegisterAccessor<double>("WrongReturnSizeInArray");
+  BOOST_CHECK_THROW(acc1.read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc1.write(), ChimeraTK::logic_error);
+
+  auto acc2 = device.getOneDRegisterAccessor<double>("ReturnScalarDespiteArray");
+  BOOST_CHECK_THROW(acc2.read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc2.write(), ChimeraTK::logic_error);
+
+  auto acc3 = device.getOneDRegisterAccessor<double>("ReturnString");
+  BOOST_CHECK_THROW(acc3.read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc3.write(), ChimeraTK::logic_error);
+
+  auto acc4 = device.getOneDRegisterAccessor<double>("ReturnMultipleValues");
+  BOOST_CHECK_THROW(acc4.read(), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(acc4.write(), ChimeraTK::logic_error);
+}
 
 /********************************************************************************************************************/
 
