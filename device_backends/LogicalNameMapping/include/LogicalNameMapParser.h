@@ -75,6 +75,10 @@ namespace ChimeraTK {
     std::map<std::string, std::string> _parameters;
   };
 
+  template<>
+  std::string LogicalNameMapParser::getValueFromXmlSubnode<std::string>(
+      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, std::string defaultValue);
+
 } // namespace ChimeraTK
 
 #endif /* CHIMERA_TK_LOGICAL_NAME_MAP_PARSER_H */
