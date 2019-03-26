@@ -15,9 +15,9 @@
 
 namespace ChimeraTK {
 
-  template<typename T>
-  T LogicalNameMapParser::getValueFromXmlSubnode(
-      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, T defaultValue) {
+  template<>
+  std::string LogicalNameMapParser::getValueFromXmlSubnode<std::string>(
+      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, std::string defaultValue) {
     auto list = node->find(subnodeName);
     if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {
@@ -26,13 +26,13 @@ namespace ChimeraTK {
     }
     auto childList = list[0]->get_children();
 
-    std::stringstream buf;
+    std::string value;
     for(auto& child : childList) {
       // check for plain text
       const xmlpp::TextNode* textNode = dynamic_cast<xmlpp::TextNode*>(child);
       if(textNode) {
         // put to stream buffer
-        buf << textNode->get_content();
+        value += textNode->get_content();
         continue;
       }
 
@@ -51,7 +51,7 @@ namespace ChimeraTK {
           // fetch the value of the target constant
           if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
             // put to stream buffer
-            buf << reg_casted->value_int[0];
+            value = std::to_string(reg_casted->value_int[0]);
             continue;
           }
           else {
@@ -73,7 +73,7 @@ namespace ChimeraTK {
             parsingError("Parameter '" + parName + "' could not be resolved.");
           }
           // put to stream buffer
-          buf << _parameters[parName];
+          value += _parameters[parName];
           continue;
         }
         else {
@@ -82,15 +82,24 @@ namespace ChimeraTK {
       }
 
       // neither found: throw error
-      parsingError("Node '" + subnodeName +
-          "' should contain only text, references or parameters. "
-          "Instead child '" +
+      parsingError("Node '" + subnodeName + "' should contain only text, references or parameters. Instead child '" +
           child->get_name() + "' was found.");
     }
+    return value;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  T LogicalNameMapParser::getValueFromXmlSubnode(
+      const xmlpp::Node* node, const std::string& subnodeName, bool hasDefault, T defaultValue) {
+    // obtain result as string an put into stream
+    std::stringstream stream;
+    stream << getValueFromXmlSubnode<std::string>(node, subnodeName, hasDefault, std::to_string(defaultValue));
 
     // interpret stream as value of type T and return it
     T value;
-    buf >> value;
+    stream >> value;
     return value;
   }
 
