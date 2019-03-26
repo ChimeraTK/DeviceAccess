@@ -1,0 +1,13 @@
+<logicalNameMap>
+  <variable name="SimpleScalar">
+    <type>integer</type>
+    <value>0</value>
+  </variable>
+
+  <redirectedRegister name="SimpleScalarReadWrite">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleScalar</targetRegister>
+    <plugin name="math">
+    </plugin>
+  </redirectedRegister>
+</logicalNameMap>
