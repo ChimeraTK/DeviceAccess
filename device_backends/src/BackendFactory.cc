@@ -267,9 +267,8 @@ namespace ChimeraTK {
     // if no backend was registered, close the library and throw an exception
     if(!called_registerBackendType) {
       dlclose(hndl);
-      throw ChimeraTK::logic_error("'" + soFile +
-          "' is not a valid DeviceAccess plugin, it "
-          "does not register any backends!");
+      throw ChimeraTK::logic_error(
+          "'" + soFile + "' is not a valid DeviceAccess plugin, it does not register any backends!");
     }
   }
 
