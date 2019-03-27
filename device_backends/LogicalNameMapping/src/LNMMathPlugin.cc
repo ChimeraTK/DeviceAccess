@@ -31,7 +31,7 @@ namespace ChimeraTK { namespace LNMBackend {
   struct MathPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, double> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, double>::buffer_2D;
 
-    MathPluginDecorator(LogicalNameMappingBackend& backend,
+    MathPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
         const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
         const std::map<std::string, std::string>& parameters);
 
@@ -58,7 +58,7 @@ namespace ChimeraTK { namespace LNMBackend {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  MathPluginDecorator<UserType>::MathPluginDecorator(LogicalNameMappingBackend& backend,
+  MathPluginDecorator<UserType>::MathPluginDecorator(boost::shared_ptr<LogicalNameMappingBackend>& backend,
       const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<double>>& target,
       const std::map<std::string, std::string>& parameters)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType, double>(target) {
@@ -85,7 +85,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // iterate parameters, add all but 'formula' parameter as a variable
     for(auto& parpair : parameters) {
       if(parpair.first == "formula") continue;
-      auto acc = backend.getRegisterAccessor<double>(parpair.second, 0, 0, {});
+      auto acc = backend->getRegisterAccessor<double>(parpair.second, 0, 0, {});
       if(acc->getNumberOfChannels() != 1) {
         throw ChimeraTK::logic_error(
             "The LogicalNameMapper MathPlugin supports only scalar or 1D array registers. Register name: '" +
@@ -232,8 +232,9 @@ namespace ChimeraTK { namespace LNMBackend {
   /** Helper class to implement MultiplierPlugin::decorateAccessor (can later be realised with if constexpr) */
   template<typename UserType, typename TargetType>
   struct MathPlugin_Helper {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(LogicalNameMappingBackend&,
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>&, const std::map<std::string, std::string>&) {
+    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>&, boost::shared_ptr<NDRegisterAccessor<TargetType>>&,
+        const std::map<std::string, std::string>&) {
       assert(false); // only specialisation is valid
       return {};
     }
@@ -243,8 +244,9 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType>
   struct MathPlugin_Helper<UserType, double> {
-    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(LogicalNameMappingBackend& backend,
-        boost::shared_ptr<NDRegisterAccessor<double>>& target, const std::map<std::string, std::string>& parameters) {
+    static boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend, boost::shared_ptr<NDRegisterAccessor<double>>& target,
+        const std::map<std::string, std::string>& parameters) {
       return boost::make_shared<MathPluginDecorator<UserType>>(backend, target, parameters);
     }
   };
@@ -253,7 +255,8 @@ namespace ChimeraTK { namespace LNMBackend {
 
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> MathPlugin::decorateAccessor(
-      LogicalNameMappingBackend& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      boost::shared_ptr<LogicalNameMappingBackend>& backend,
+      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
     return MathPlugin_Helper<UserType, TargetType>::decorateAccessor(backend, target, _parameters);
   }
 

@@ -85,7 +85,8 @@ namespace ChimeraTK {
     }
     else {
       return info->plugins[omitPlugins]->getAccessor<UserType>(
-          *this, numberOfWords, wordOffsetInRegister, flags, omitPlugins);
+          boost::static_pointer_cast<LogicalNameMappingBackend>(shared_from_this()), numberOfWords,
+          wordOffsetInRegister, flags, omitPlugins);
     }
   }
 
