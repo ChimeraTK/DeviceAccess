@@ -104,6 +104,45 @@ BOOST_AUTO_TEST_CASE(testReadWriteArray) {
 
 /********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testParameters) {
+  ChimeraTK::Device device;
+  device.open("(logicalNameMap?map=mathPlugin.xlmap)");
+
+  auto accTarget = device.getScalarRegisterAccessor<int>("SimpleScalar");
+  auto scalarPar = device.getScalarRegisterAccessor<int>("ScalarParameter");
+  auto arrayPar = device.getOneDRegisterAccessor<int>("SimpleArray");
+  auto accMath = device.getScalarRegisterAccessor<double>("ScalarWithParameters");
+
+  accTarget = 42;
+  accTarget.write();
+  scalarPar = 6;
+  scalarPar.write();
+  arrayPar = {2, 3, 4, 5, 6, 7};
+  arrayPar.write();
+  accMath.read();
+  BOOST_CHECK_CLOSE(double(accMath), 42. / 6. + (2 + 3 + 4 + 5 + 6 + 7), 0.00001);
+
+  scalarPar = 7;
+  scalarPar.write();
+  arrayPar = {1, -1, 1, -1, 1, -1};
+  arrayPar.write();
+  accMath.read();
+  BOOST_CHECK_CLOSE(double(accMath), 42. / 7., 0.00001);
+
+  accMath = 56;
+  accMath.write();
+  accTarget.read();
+  BOOST_CHECK_EQUAL(int(accTarget), 8);
+
+  scalarPar = 4;
+  scalarPar.write();
+  accMath.write();
+  accTarget.read();
+  BOOST_CHECK_EQUAL(int(accTarget), 14);
+}
+
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testExceptions) {
   // missing parameter "formula"
   ChimeraTK::Device device;

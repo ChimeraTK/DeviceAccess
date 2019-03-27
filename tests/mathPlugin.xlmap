@@ -4,6 +4,11 @@
     <value>0</value>
   </variable>
 
+  <variable name="ScalarParameter">
+    <type>integer</type>
+    <value>0</value>
+  </variable>
+
   <redirectedRegister name="SimpleScalarReadWrite">
     <targetDevice>this</targetDevice>
     <targetRegister>SimpleScalar</targetRegister>
@@ -17,6 +22,16 @@
     <targetRegister>SimpleScalar</targetRegister>
     <plugin name="math">
       <parameter name="formula">return [ x/7 + 13 ];</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="ScalarWithParameters">
+    <targetDevice>this</targetDevice>
+    <targetRegister>SimpleScalar</targetRegister>
+    <plugin name="math">
+      <parameter name="formula">x/scalarPar + sum(arrayPar)</parameter>
+      <parameter name="scalarPar">ScalarParameter</parameter>
+      <parameter name="arrayPar">SimpleArray</parameter>
     </plugin>
   </redirectedRegister>
 

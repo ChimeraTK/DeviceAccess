@@ -47,8 +47,11 @@ the number of elements returned by the formula must be equal to the number of el
 
 Parameters:
 - <code>formula</code>: The formula to apply to the data.
+- Any additional parameter value will be interpreted as a register name of the logical name mapper device. The register
+  value will be made available to the formula by the name of the parameter. Everytime the formula is evaluated, the
+  registers will be read, so the current values are provided.
 
-Examples:
+Examples for formulae:
 - <code>x/7 + 13</code>
 
   This will only work for scalar registers
@@ -58,5 +61,20 @@ Examples:
   Can be used for both scalars and arrays. In case of an array, the formula will be
   applied to each element of the array, since exprtk supports processing of arrays (or vectors as they call it in their
   documentation).
+
+- Full example with parameters:
+\code{.xml}
+  <plugin name="math">
+    <parameter name="formula">x*factor + offset</parameter>
+    <parameter name="factor">/Calibration/factor</parameter>
+    <parameter name="offset">/Calibration/offset</parameter>
+  </plugin>
+\endcode
+  The registers <code>/Calibration/factor</code> and <code>/Calibration/offset</code> need to be specified in the same
+  xlmap file. They wil be read each time the formula is evaluated (because the plugin register is read or written).
+  Parameter registers can be scalar or 1D arrays.
+
+  Hint: If the parameter register is a variable, it can be written by the application. This allows e.g. the use of
+  calibration value otherwise not known to the device.
 
 */

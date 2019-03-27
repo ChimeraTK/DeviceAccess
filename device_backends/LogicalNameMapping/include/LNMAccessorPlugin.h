@@ -53,7 +53,7 @@ namespace ChimeraTK { namespace LNMBackend {
      */
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        LogicalNameMappingBackend& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
 
     /** This function is called by the backend. Do not override in implementations. */
     template<typename UserType>
@@ -112,7 +112,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        LogicalNameMappingBackend& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
 
     double _factor;
   };
@@ -126,7 +126,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
-        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+        LogicalNameMappingBackend& backend, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
 
     std::map<std::string, std::string> _parameters;
   };
@@ -145,7 +145,7 @@ namespace ChimeraTK { namespace LNMBackend {
   template<typename Derived>
   template<typename UserType, typename TargetType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
-      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+      LogicalNameMappingBackend&, boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
     static_assert(std::is_same<UserType, TargetType>(),
         "LogicalNameMapper AccessorPlugin: When overriding getTargetDataType(), also decorateAccessor() must be "
         "overridden!");
@@ -167,7 +167,7 @@ namespace ChimeraTK { namespace LNMBackend {
       // obtain target accessor with desired type
       auto target = backend.getRegisterAccessor_impl<decltype(T)>(
           _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
-      decorated = static_cast<const Derived*>(this)->template decorateAccessor<UserType>(target);
+      decorated = static_cast<const Derived*>(this)->template decorateAccessor<UserType>(backend, target);
     });
     return decorated;
   }
