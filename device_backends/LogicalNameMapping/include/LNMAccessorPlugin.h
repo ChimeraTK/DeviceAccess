@@ -71,7 +71,35 @@ namespace ChimeraTK { namespace LNMBackend {
       const std::string& name, const std::map<std::string, std::string>& parameters);
 
   /********************************************************************************************************************/
-  /* Known plugins are defined below (implementations must go to .cc file)                                            */
+
+  /** Helper function for implementations based on double data type: Convert a double value into the UserType, even if
+   *  it is a string. */
+  template<typename UserType>
+  UserType doubleToUserType(double value) {
+    return UserType(value);
+  }
+
+  template<>
+  inline std::string doubleToUserType<std::string>(double value) {
+    return std::to_string(value);
+  }
+
+  /********************************************************************************************************************/
+
+  /** Helper function for implementations based on double data type: Convert a UserType value into double, even if
+   *  it is a string. */
+  template<typename UserType>
+  double userTypeToDouble(const UserType& value) {
+    return double(value);
+  }
+
+  template<>
+  inline double userTypeToDouble<std::string>(const std::string& value) {
+    return std::stod(value);
+  }
+
+  /********************************************************************************************************************/
+  /* Known plugins are defined below (implementations should go to a separate .cc file)                               */
   /********************************************************************************************************************/
 
   /** Multiplier Plugin: Multiply register's data with a constant factor */
@@ -102,6 +130,47 @@ namespace ChimeraTK { namespace LNMBackend {
 
     std::map<std::string, std::string> _parameters;
   };
+
+  /********************************************************************************************************************/
+  /* Implementations follow here                                                                                      */
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  AccessorPlugin<Derived>::AccessorPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info) : _info(info) {
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  template<typename UserType, typename TargetType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::decorateAccessor(
+      boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const {
+    static_assert(std::is_same<UserType, TargetType>(),
+        "LogicalNameMapper AccessorPlugin: When overriding getTargetDataType(), also decorateAccessor() must be "
+        "overridden!");
+    return target;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  template<typename UserType>
+  boost::shared_ptr<NDRegisterAccessor<UserType>> AccessorPlugin<Derived>::getAccessor_impl(
+      LogicalNameMappingBackend& backend, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
+      size_t pluginIndex) const {
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorated;
+
+    // obtain desired target type from plugin implementation
+    auto type = getTargetDataType(typeid(UserType));
+    callForType(type, [&](auto T) {
+      // obtain target accessor with desired type
+      auto target = backend.getRegisterAccessor_impl<decltype(T)>(
+          _info->getRegisterName(), numberOfWords, wordOffsetInRegister, flags, pluginIndex + 1);
+      decorated = static_cast<const Derived*>(this)->template decorateAccessor<UserType>(target);
+    });
+    return decorated;
+  }
 
 }} // namespace ChimeraTK::LNMBackend
 
