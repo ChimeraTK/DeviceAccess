@@ -280,6 +280,9 @@ namespace ChimeraTK {
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
         info->nDimensions = 0;
         info->nChannels = 1;
+        info->writeable = false;
+        info->readable = true;
+        info->_dataDescriptor = {RegisterInfo::FundamentalType::numeric, true, false, 1, 0};
       }
       else if(type == "variable") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
@@ -290,9 +293,11 @@ namespace ChimeraTK {
         info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        ;
         info->nDimensions = 0;
         info->nChannels = 1;
+        info->writeable = true;
+        info->readable = true;
+        info->_dataDescriptor = {RegisterInfo::FundamentalType::numeric, true, false, 1, 0};
       }
       else {
         parsingError("Wrong logical register type: " + type);
