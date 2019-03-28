@@ -14,24 +14,7 @@
 namespace ChimeraTK {
 
   /**
-   *  Backend to map logical register names onto real hardware registers. It reads
-   * the logical name map from an xml file and will open internally additional
-   * Devices as they are reference in that file.
-   *
-   *  The map file should be specified by the "map" parameter in the CDD, i.e.:
-   *    (logicalNameMap?map=path/to/mapfile.xlmap)
-   *
-   *  Additional parameters can be passed through the CDD, which are available
-   * inside the xlmap file via &gt;par&lt;&gt;/par&lt; tags, e.g. when using the
-   * following CDD:
-   *
-   *     (logicalNameMap?map=path/to/mapfile.xlmap&myParam=HelloWorld)
-   *
-   *  the tag:
-   *
-   *     &gt;par&lt;myParam&gt;/par&lt;
-   *
-   *  inside the xlmap file
+   * Backend to map logical register names onto real hardware registers. See \ref lmap for details.
    */
   class LogicalNameMappingBackend : public DeviceBackendImpl {
    public:
