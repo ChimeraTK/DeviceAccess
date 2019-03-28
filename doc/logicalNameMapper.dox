@@ -81,4 +81,19 @@ Examples for formulae:
 The <code>forceReadOnly</code> plugin changes the access mode of a register to read-only. The target register has to be
 writeable. This plugin accepts no parameters.
 
+\subsubsection plugins_reference_monostable_trigger monostableTrigger
+The <code>monostableTrigger</code> implements a monostable behaviour triggered by a write transaction. The target
+register has to be an integral scalar and has to be writeable. The resulting logical register will be write only with
+the type RegisterInfo::FundamentalType::nodata, i.e. the data written to the register will be discarded. Instead, the
+"active" value will be written, and after a delay the "inactive" value.
+
+Parameters:
+- <code>milliseconds</code>: Delay in milliseconds.
+- <code>active</code>: The active value to be written before the delay, as unsigned 32 bit integer. Optional, defaults
+  to 1
+- <code>inactive</code>: The inactive value to be written after the delay, as unsigned 32 bit integer. Optional,
+  defaults to 0
+
+Note that writing to the logical register will block for the full duration of the two target write transfers including
+the delay.
 */
