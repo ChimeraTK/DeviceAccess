@@ -18,6 +18,9 @@ namespace ChimeraTK { namespace LNMBackend {
     else if(name == "math") {
       return boost::make_shared<MathPlugin>(info, parameters);
     }
+    else if(name == "monostableTrigger") {
+      return boost::make_shared<MonostableTriggerPlugin>(info, parameters);
+    }
     else {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
     }

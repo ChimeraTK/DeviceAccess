@@ -37,8 +37,12 @@ namespace ChimeraTK { namespace LNMBackend {
      *  Since the parameters are not used in the base class, they do not need to be passed on. */
     AccessorPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info);
 
+   private:
+    // we make our destructor private and add Derived as a friend to enforce the correct CRTP
     virtual ~AccessorPlugin() {}
+    friend Derived;
 
+   public:
     /** Return the data type for which the target accessor shall be obtained. By default the same type as the requested
      *  data type by the user is used. By overriding this function, plugins can change this. E.g. plugins implementing
      *  numeric calculations will typically always request their target accessor with UserType=double, so they should
@@ -134,6 +138,24 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
 
     std::map<std::string, std::string> _parameters;
+  };
+
+  /** Monostable Trigger Plugin: Write value to target which falls back to another value after defined time. */
+  class MonostableTriggerPlugin : public AccessorPlugin<MonostableTriggerPlugin> {
+   public:
+    MonostableTriggerPlugin(
+        boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
+
+    virtual DataType getTargetDataType(DataType) const { return DataType::uint32; }
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+
+    double _milliseconds;
+    uint32_t _active{1};
+    uint32_t _inactive{0};
   };
 
   /********************************************************************************************************************/
