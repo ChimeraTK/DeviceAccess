@@ -38,10 +38,12 @@ namespace ChimeraTK {
 
   void LogicalNameMappingBackend::open() {
     parse();
+
     // open all referenced devices
     for(auto device = _devices.begin(); device != _devices.end(); ++device) {
       if(!device->second->isOpen()) device->second->open();
     }
+
     // flag as opened
     _opened = true;
     catalogueCompleted = false;
@@ -186,6 +188,14 @@ namespace ChimeraTK {
         info_cast.nChannels = target_info->getNumberOfChannels();
       }
       if((int)info_cast.length == 0) info_cast.length = target_info->getNumberOfElements();
+    }
+
+    // update catalogue info by plugins
+    for(auto& info : _catalogue_mutable) {
+      LNMBackendRegisterInfo& info_cast = static_cast<LNMBackendRegisterInfo&>(info);
+      for(auto& plugin : info_cast.plugins) {
+        plugin->updateRegisterInfo();
+      }
     }
 
     catalogueCompleted = true;

@@ -33,6 +33,14 @@ namespace ChimeraTK { namespace LNMBackend {
 
   /********************************************************************************************************************/
 
+  void MonostableTriggerPlugin::updateRegisterInfo() {
+    // Change register info to write-only and data type nodata
+    _info->readable = false;
+    _info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(RegisterInfo::FundamentalType::nodata);
+  }
+
+  /********************************************************************************************************************/
+
   template<typename UserType>
   struct MonostableTriggerPluginDecorator : ChimeraTK::NDRegisterAccessorDecorator<UserType, uint32_t> {
     using ChimeraTK::NDRegisterAccessorDecorator<UserType, uint32_t>::buffer_2D;

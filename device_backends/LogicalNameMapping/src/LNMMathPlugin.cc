@@ -17,10 +17,14 @@ namespace ChimeraTK { namespace LNMBackend {
     if(parameters.find("formula") == parameters.end()) {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MultiplierPlugin: Missing parameter 'formula'.");
     }
+  }
 
+  /********************************************************************************************************************/
+
+  void MathPlugin::updateRegisterInfo() {
     // Change data type to non-integral
-    auto d = info->_dataDescriptor;
-    info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(d.fundamentalType(), false, false,
+    auto d = _info->_dataDescriptor;
+    _info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(d.fundamentalType(), false, false,
         std::numeric_limits<double>::max_digits10, -std::numeric_limits<double>::min_exponent10, d.rawDataType(),
         d.transportLayerDataType());
   }

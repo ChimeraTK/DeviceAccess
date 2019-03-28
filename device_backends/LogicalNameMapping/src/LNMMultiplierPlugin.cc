@@ -18,11 +18,15 @@ namespace ChimeraTK { namespace LNMBackend {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend MultiplierPlugin: Missing parameter 'factor'.");
     }
     _factor = std::stod(parameters.at("factor"));
+  }
 
+  /********************************************************************************************************************/
+
+  void MultiplierPlugin::updateRegisterInfo() {
     // Change data type to non-integral, if we are multiplying with a non-integer factor
     if(std::abs(_factor - std::round(_factor)) <= std::numeric_limits<double>::epsilon()) {
-      auto d = info->_dataDescriptor;
-      info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(d.fundamentalType(), false, false,
+      auto d = _info->_dataDescriptor;
+      _info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(d.fundamentalType(), false, false,
           std::numeric_limits<double>::max_digits10, -std::numeric_limits<double>::min_exponent10, d.rawDataType(),
           d.transportLayerDataType());
     }

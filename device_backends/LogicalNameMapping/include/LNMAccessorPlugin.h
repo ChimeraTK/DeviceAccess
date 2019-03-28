@@ -10,6 +10,8 @@ namespace ChimeraTK { namespace LNMBackend {
    *  plugins, the class AccessorPlugin should be implemented, not this one. */
   class AccessorPluginBase {
    public:
+    virtual ~AccessorPluginBase() {}
+
     /** Called by the backend when obtaining a register accessor. */
     template<typename UserType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> getAccessor(boost::shared_ptr<LogicalNameMappingBackend> backend,
@@ -20,6 +22,18 @@ namespace ChimeraTK { namespace LNMBackend {
     DEFINE_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getAccessor_impl,
         boost::shared_ptr<NDRegisterAccessor<T>>(
             boost::shared_ptr<LogicalNameMappingBackend>, size_t, size_t, AccessModeFlags, size_t));
+
+    /**
+     *  Update the register info if needed. This function is called by the backend after the LNMBackendRegisterInfo has
+     *  been filled with all information from the target backend. If plugins intend to change the catalogue information,
+     *  they need to do it in this function. This function is only called if the RegisterCatalogue is obtained from the
+     *  device, so do not rely on this function to be called.
+     *
+     *  Note: in principle it is fine to do nothing in this function, if no catalogue change is required. This function
+     *  intentionally has no empty default implementation, because it might otherwise easy to overlook that the register
+     *  info must be updated here instead of the constructor.
+     */
+    virtual void updateRegisterInfo() = 0;
   };
 
   /** Base class for plugins that modify the behaviour of accessors in the logical name mapping backend. Plugins need to
@@ -43,10 +57,12 @@ namespace ChimeraTK { namespace LNMBackend {
     friend Derived;
 
    public:
-    /** Return the data type for which the target accessor shall be obtained. By default the same type as the requested
+    /**
+     *  Return the data type for which the target accessor shall be obtained. By default the same type as the requested
      *  data type by the user is used. By overriding this function, plugins can change this. E.g. plugins implementing
      *  numeric calculations will typically always request their target accessor with UserType=double, so they should
-     *  always return DataType::float64 here. */
+     *  always return DataType::float64 here.
+     */
     virtual DataType getTargetDataType(DataType userType) const { return userType; }
 
     /**
@@ -115,7 +131,8 @@ namespace ChimeraTK { namespace LNMBackend {
     MultiplierPlugin(
         boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
 
-    virtual DataType getTargetDataType(DataType) const { return DataType::float64; }
+    void updateRegisterInfo() override;
+    DataType getTargetDataType(DataType) const override { return DataType::float64; }
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
@@ -130,7 +147,8 @@ namespace ChimeraTK { namespace LNMBackend {
    public:
     MathPlugin(boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
 
-    virtual DataType getTargetDataType(DataType) const { return DataType::float64; }
+    void updateRegisterInfo() override;
+    DataType getTargetDataType(DataType) const override { return DataType::float64; }
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
@@ -146,7 +164,8 @@ namespace ChimeraTK { namespace LNMBackend {
     MonostableTriggerPlugin(
         boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
 
-    virtual DataType getTargetDataType(DataType) const { return DataType::uint32; }
+    void updateRegisterInfo() override;
+    DataType getTargetDataType(DataType) const { return DataType::uint32; }
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
@@ -163,6 +182,8 @@ namespace ChimeraTK { namespace LNMBackend {
    public:
     ForceReadOnlyPlugin(
         boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
+
+    void updateRegisterInfo() override;
 
     template<typename UserType, typename TargetType>
     boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(

@@ -19,9 +19,14 @@ BOOST_AUTO_TEST_CASE(test) {
   ChimeraTK::Device device;
   device.open("(logicalNameMap?map=forceReadOnlyPlugin.xlmap)");
 
+  auto cat = device.getRegisterCatalogue();
+  auto info = cat.getRegister("test");
+  BOOST_CHECK(!info->isWriteable());
+  BOOST_CHECK(info->isReadable());
+
   auto acc = device.getScalarRegisterAccessor<double>("test");
-  BOOST_CHECK(acc.isReadable());
   BOOST_CHECK(!acc.isWriteable());
+  BOOST_CHECK(acc.isReadable());
 
   BOOST_CHECK_THROW(acc.write(), ChimeraTK::logic_error);
   BOOST_CHECK_NO_THROW(acc.read());

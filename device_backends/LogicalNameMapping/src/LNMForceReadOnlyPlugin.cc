@@ -12,9 +12,13 @@ namespace ChimeraTK { namespace LNMBackend {
 
   ForceReadOnlyPlugin::ForceReadOnlyPlugin(
       boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>&)
-  : AccessorPlugin(info) {
+  : AccessorPlugin(info) {}
+
+  /********************************************************************************************************************/
+
+  void ForceReadOnlyPlugin::updateRegisterInfo() {
     // Change register info to read-only
-    info->writeable = false;
+    _info->writeable = false;
   }
 
   /********************************************************************************************************************/
