@@ -5,26 +5,30 @@
  *      Author: Martin Hierholzer
  */
 
-#include "Application.h"
 #include "ControlSystemModule.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
-  ControlSystemModule::ControlSystemModule(const std::string& _variableNamePrefix)
-    : Module(nullptr,
-             _variableNamePrefix.empty() ? "<ControlSystem>"
-               : _variableNamePrefix.substr(_variableNamePrefix.find_last_of("/")+1),
-             ""),
-    variableNamePrefix(_variableNamePrefix)
-  {}
+  ControlSystemModule::ControlSystemModule() : Module(nullptr, "<ControlSystem>", "") {}
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode ControlSystemModule::operator()(const std::string& variableName, const std::type_info &valueType,
-                                                      size_t nElements) const {
+  ControlSystemModule::ControlSystemModule(const std::string& _variableNamePrefix)
+  : Module(nullptr,
+        _variableNamePrefix.empty() ? "<ControlSystem>" :
+                                      _variableNamePrefix.substr(_variableNamePrefix.find_last_of("/") + 1),
+        ""),
+    variableNamePrefix(_variableNamePrefix) {}
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode ControlSystemModule::operator()(
+      const std::string& variableName, const std::type_info& valueType, size_t nElements) const {
     assert(variableName.find_first_of("/") == std::string::npos);
     if(variables.count(variableName) == 0) {
-      variables[variableName] = {variableNamePrefix/variableName, {VariableDirection::invalid, false}, valueType, nElements};
+      variables[variableName] = {
+          variableNamePrefix / variableName, {VariableDirection::invalid, false}, valueType, nElements};
     }
     return variables[variableName];
   }
@@ -34,22 +38,20 @@ namespace ChimeraTK {
   Module& ControlSystemModule::operator[](const std::string& moduleName) const {
     assert(moduleName.find_first_of("/") == std::string::npos);
     if(subModules.count(moduleName) == 0) {
-      subModules[moduleName] = {variableNamePrefix/moduleName};
+      subModules[moduleName] = {variableNamePrefix / moduleName};
     }
     return subModules[moduleName];
   }
 
   /*********************************************************************************************************************/
 
-  const Module& ControlSystemModule::virtualise() const {
-    return *this;
-  }
+  const Module& ControlSystemModule::virtualise() const { return *this; }
 
   /*********************************************************************************************************************/
 
   std::list<VariableNetworkNode> ControlSystemModule::getAccessorList() const {
     std::list<VariableNetworkNode> list;
-    for(auto &v : variables) list.push_back(v.second);
+    for(auto& v : variables) list.push_back(v.second);
     return list;
   }
 
@@ -57,10 +59,10 @@ namespace ChimeraTK {
 
   std::list<Module*> ControlSystemModule::getSubmoduleList() const {
     std::list<Module*> list;
-    for(auto &m : subModules) list.push_back(&m.second);
+    for(auto& m : subModules) list.push_back(&m.second);
     return list;
   }
 
   /*********************************************************************************************************************/
 
-}
+} // namespace ChimeraTK

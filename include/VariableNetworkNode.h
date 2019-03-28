@@ -8,9 +8,9 @@
 #ifndef CHIMERATK_VARIABLE_NETWORK_NODE_H
 #define CHIMERATK_VARIABLE_NETWORK_NODE_H
 
-#include <unordered_set>
-#include <unordered_map>
 #include <iostream>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <assert.h>
 
@@ -18,10 +18,10 @@
 
 #include <ChimeraTK/NDRegisterAccessorAbstractor.h>
 
-#include "Flags.h"
 #include "ConstantAccessor.h"
-#include "Visitor.h"
+#include "Flags.h"
 #include "VersionNumberUpdatingRegisterDecorator.h"
+#include "Visitor.h"
 
 namespace ChimeraTK {
 
@@ -35,147 +35,155 @@ namespace ChimeraTK {
 
   /** Class describing a node of a variable network */
   class VariableNetworkNode {
+   public:
+    /** Copy-constructor: Just copy the pointer to the data storage object */
+    VariableNetworkNode(const VariableNetworkNode& other);
 
-    public:
+    /** Copy by assignment operator: Just copy the pointer to the data storage
+     * object */
+    VariableNetworkNode& operator=(const VariableNetworkNode& rightHandSide);
 
-      /** Copy-constructor: Just copy the pointer to the data storage object */
-      VariableNetworkNode(const VariableNetworkNode &other);
+    /** Constructor for an Application node */
+    VariableNetworkNode(EntityOwner* owner, ChimeraTK::TransferElementAbstractor* accessorBridge,
+        const std::string& name, VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
+        const std::string& description, const std::type_info* valueType,
+        const std::unordered_set<std::string>& tags = {});
 
-      /** Copy by assignment operator: Just copy the pointer to the data storage object */
-      VariableNetworkNode& operator=(const VariableNetworkNode &rightHandSide);
+    /** Constructor for a Device node */
+    VariableNetworkNode(const std::string& name, const std::string& deviceAlias, const std::string& registerName,
+        UpdateMode mode, VariableDirection direction, const std::type_info& valTyp = typeid(AnyType),
+        size_t nElements = 0);
 
-      /** Constructor for an Application node */
-      VariableNetworkNode(EntityOwner *owner, ChimeraTK::TransferElementAbstractor *accessorBridge, const std::string &name,
-          VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode,
-          const std::string &description, const std::type_info* valueType,
-          const std::unordered_set<std::string> &tags={});
+    /** Constructor for a ControlSystem node */
+    VariableNetworkNode(std::string publicName, VariableDirection direction,
+        const std::type_info& valTyp = typeid(AnyType), size_t nElements = 0);
 
-      /** Constructor for a Device node */
-      VariableNetworkNode(const std::string &name, const std::string &deviceAlias, const std::string &registerName,
-          UpdateMode mode, VariableDirection direction, const std::type_info &valTyp=typeid(AnyType), size_t nElements=0);
+    /** Constructor for a TriggerReceiver node triggering the data transfer of
+     * another network. The additional dummy argument is only there to
+     * discriminate the signature from the copy constructor and will be ignored.
+     */
+    VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
 
-      /** Constructor for a ControlSystem node */
-      VariableNetworkNode(std::string publicName, VariableDirection direction,
-          const std::type_info &valTyp=typeid(AnyType), size_t nElements=0);
+    /** Constructor to wrap a VariableNetworkNode_data pointer */
+    VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> pdata);
 
-      /** Constructor for a TriggerReceiver node triggering the data transfer of another network. The additional dummy
-       *  argument is only there to discriminate the signature from the copy constructor and will be ignored. */
-      VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
+    /** Default constructor for an invalid node */
+    VariableNetworkNode();
 
-      /** Constructor to wrap a VariableNetworkNode_data pointer */
-      VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> pdata);
+    /** Factory function for a constant (a constructor cannot be templated) */
+    template<typename UserType>
+    static VariableNetworkNode makeConstant(bool makeFeeder, UserType value = 0, size_t length = 1);
 
-      /** Default constructor for an invalid node */
-      VariableNetworkNode();
+    /** Change meta data (name, unit, description and optionally tags). This
+     * function may only be used on Application-type nodes. If the optional
+     * argument tags is omitted, the tags will not be changed. To clear the
+     *  tags, an empty set can be passed. */
+    void setMetaData(const std::string& name, const std::string& unit, const std::string& description);
+    void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
+        const std::unordered_set<std::string>& tags);
 
-      /** Factory function for a constant (a constructor cannot be templated) */
-      template<typename UserType>
-      static VariableNetworkNode makeConstant(bool makeFeeder, UserType value=0, size_t length=1);
+    /** Set the owner network of this node. If an owner network is already set, an
+     * assertion will be raised */
+    void setOwner(VariableNetwork* network);
 
-      /** Change meta data (name, unit, description and optionally tags). This function may only be used on
-       *  Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
-       *  tags, an empty set can be passed. */
-      void setMetaData(const std::string &name, const std::string &unit, const std::string &description);
-      void setMetaData(const std::string &name, const std::string &unit, const std::string &description,
-                       const std::unordered_set<std::string> &tags);
+    /** Clear the owner network of this node. */
+    void clearOwner();
 
-      /** Set the owner network of this node. If an owner network is already set, an assertion will be raised */
-      void setOwner(VariableNetwork *network);
+    /** Set the value type for this node. Only possible of the current value type
+     * is undecided (i.e. AnyType). */
+    void setValueType(const std::type_info& newType) const;
 
-      /** Clear the owner network of this node. */
-      void clearOwner();
+    /** Set the direction for this node. Only possible if current direction is
+     * VariableDirection::feeding and the node type is NodeType::ControlSystem. */
+    void setDirection(VariableDirection newDirection) const;
 
-      /** Set the value type for this node. Only possible of the current value type is undecided (i.e. AnyType). */
-      void setValueType(const std::type_info& newType) const;
+    /** Function checking if the node requires a fixed implementation */
+    bool hasImplementation() const;
 
-      /** Set the direction for this node. Only possible if current direction is VariableDirection::feeding and the
-       *  node type is NodeType::ControlSystem. */
-      void setDirection(VariableDirection newDirection) const;
+    /** Compare two nodes */
+    bool operator==(const VariableNetworkNode& other) const;
+    bool operator!=(const VariableNetworkNode& other) const;
+    bool operator<(const VariableNetworkNode& other) const;
 
-      /** Function checking if the node requires a fixed implementation */
-      bool hasImplementation() const;
+    /** Connect two nodes */
+    VariableNetworkNode operator>>(VariableNetworkNode other);
 
-      /** Compare two nodes */
-      bool operator==(const VariableNetworkNode& other) const;
-      bool operator!=(const VariableNetworkNode& other) const;
-      bool operator<(const VariableNetworkNode& other) const;
+    /** Add a trigger */
+    VariableNetworkNode operator[](VariableNetworkNode trigger);
 
-      /** Connect two nodes */
-      VariableNetworkNode operator>>(VariableNetworkNode other);
+    /** Check for presence of an external trigger */
+    bool hasExternalTrigger() const;
 
-      /** Add a trigger */
-      VariableNetworkNode operator[](VariableNetworkNode trigger);
+    /** Return the external trigger node. if no external trigger is present, an
+     * assertion will be raised. */
+    VariableNetworkNode getExternalTrigger();
 
-      /** Check for presence of an external trigger */
-      bool hasExternalTrigger() const;
+    /** Print node information to std::cout */
+    void dump(std::ostream& stream = std::cout) const;
 
-      /** Return the external trigger node. if no external trigger is present, an assertion will be raised. */
-      VariableNetworkNode getExternalTrigger();
+    /** Check if the node already has an owner */
+    bool hasOwner() const;
 
-      /** Print node information to std::cout */
-      void dump(std::ostream& stream=std::cout) const;
+    /** Add a tag. This function may only be used on Application-type nodes. Valid
+     * names for tags only contain
+     *  alpha-numeric characters (i.e. no spaces and no special characters). @todo
+     * enforce this!*/
+    void addTag(const std::string& tag);
 
-      /** Check if the node already has an owner */
-      bool hasOwner() const;
+    /** Getter for the properties */
+    NodeType getType() const;
+    UpdateMode getMode() const;
+    VariableDirection getDirection() const;
+    const std::type_info& getValueType() const;
+    std::string getName() const;
+    std::string getQualifiedName() const;
+    const std::string& getUnit() const;
+    const std::string& getDescription() const;
+    VariableNetwork& getOwner() const;
+    VariableNetworkNode getNodeToTrigger();
+    const std::string& getPublicName() const;
+    const std::string& getDeviceAlias() const;
+    const std::string& getRegisterName() const;
+    const std::unordered_set<std::string>& getTags() const;
+    void setNumberOfElements(size_t nElements);
+    size_t getNumberOfElements() const;
+    ChimeraTK::TransferElementAbstractor& getAppAccessorNoType();
 
-      /** Add a tag. This function may only be used on Application-type nodes. Valid names for tags only contain
-       *  alpha-numeric characters (i.e. no spaces and no special characters). @todo enforce this!*/
-      void addTag(const std::string &tag);
+    void setPublicName(const std::string& name) const;
 
-      /** Getter for the properties */
-      NodeType getType() const;
-      UpdateMode getMode() const;
-      VariableDirection getDirection() const;
-      const std::type_info& getValueType() const;
-      std::string getName() const;
-      std::string getQualifiedName() const;
-      const std::string& getUnit() const;
-      const std::string& getDescription() const;
-      VariableNetwork& getOwner() const;
-      VariableNetworkNode getNodeToTrigger();
-      const std::string& getPublicName() const;
-      const std::string& getDeviceAlias() const;
-      const std::string& getRegisterName() const;
-      const std::unordered_set<std::string>& getTags() const;
-      void setNumberOfElements(size_t nElements);
-      size_t getNumberOfElements() const;
-      ChimeraTK::TransferElementAbstractor& getAppAccessorNoType();
+    template<typename UserType>
+    ChimeraTK::NDRegisterAccessorAbstractor<UserType>& getAppAccessor() const;
 
-      void setPublicName(const std::string& name) const;
+    template<typename UserType>
+    void setAppAccessorImplementation(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl) const;
 
-      template<typename UserType>
-      ChimeraTK::NDRegisterAccessorAbstractor<UserType>& getAppAccessor() const;
+    template<typename UserType>
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getConstAccessor() const;
 
-      template<typename UserType>
-      void setAppAccessorImplementation(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl) const;
+    /** Return the unique ID of this node (will change every time the application
+     * is started). */
+    const void* getUniqueId() const { return pdata.get(); }
 
+    /** Change pointer to the accessor. May only be used for application nodes. */
+    void setAppAccessorPointer(ChimeraTK::TransferElementAbstractor* accessor);
 
-      template<typename UserType>
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getConstAccessor() const;
+    EntityOwner* getOwningModule() const;
 
-      /** Return the unique ID of this node (will change every time the application is started). */
-      const void* getUniqueId() const { return pdata.get(); }
+    void setOwningModule(EntityOwner* newOwner) const;
 
-      /** Change pointer to the accessor. May only be used for application nodes. */
-      void setAppAccessorPointer(ChimeraTK::TransferElementAbstractor *accessor);
+    void accept(Visitor<VariableNetworkNode>& visitor) const;
 
-      EntityOwner* getOwningModule() const;
+    // protected:  @todo make protected again (with proper interface extension)
 
-      void setOwningModule(EntityOwner *newOwner) const;
-
-      void accept(Visitor<VariableNetworkNode> &visitor) const;
-
-    //protected:  @todo make protected again (with proper interface extension)
-
-      boost::shared_ptr<VariableNetworkNode_data> pdata;
+    boost::shared_ptr<VariableNetworkNode_data> pdata;
   };
 
   /*********************************************************************************************************************/
 
-  /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to the same instance of the data
-    *  structure and thus stay consistent all the time. */
+  /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to
+   * the same instance of the data structure and thus stay consistent all the
+   * time. */
   struct VariableNetworkNode_data {
-
     VariableNetworkNode_data() {}
 
     /** Type of the node (Application, Device, ControlSystem, Trigger) */
@@ -187,30 +195,32 @@ namespace ChimeraTK {
     /** Node direction: feeding or consuming */
     VariableDirection direction{VariableDirection::invalid, false};
 
-    /** Value type of this node. If the type_info is the typeid of AnyType, the actual type can be decided when making
-      *  the connections. */
+    /** Value type of this node. If the type_info is the typeid of AnyType, the
+     * actual type can be decided when making the connections. */
     const std::type_info* valueType{&typeid(AnyType)};
 
-    /** Engineering unit. If equal to ChimeraTK::TransferElement::unitNotSet, no unit has been defined (and any unit is allowed). */
+    /** Engineering unit. If equal to ChimeraTK::TransferElement::unitNotSet, no
+     * unit has been defined (and any unit is allowed). */
     std::string unit{ChimeraTK::TransferElement::unitNotSet};
 
     /** Description */
     std::string description{""};
 
     /** The network this node belongs to */
-    VariableNetwork *network{nullptr};
+    VariableNetwork* network{nullptr};
 
     /** Pointer to implementation if type == Constant */
     boost::shared_ptr<ChimeraTK::TransferElement> constNode;
 
     /** Pointer to implementation if type == Application */
-    ChimeraTK::TransferElementAbstractor *appNode{nullptr};
+    ChimeraTK::TransferElementAbstractor* appNode{nullptr};
 
     /** Pointer to network which should be triggered by this node */
     VariableNetworkNode nodeToTrigger{nullptr};
 
-    /** Pointer to the network providing the external trigger. May only be used for feeding nodes with an
-      *  update mode poll. When enabled, the update mode will be converted into push. */
+    /** Pointer to the network providing the external trigger. May only be used
+     * for feeding nodes with an update mode poll. When enabled, the update mode
+     * will be converted into push. */
     VariableNetworkNode externalTrigger{nullptr};
 
     /** Public name if type == ControlSystem */
@@ -230,17 +240,17 @@ namespace ChimeraTK {
     /** Set of tags  if type == Application */
     std::unordered_set<std::string> tags;
 
-    /** Map to store triggered versions of this node. The map key is the trigger node and the value is the node
-     *  with the respective trigger added. */
+    /** Map to store triggered versions of this node. The map key is the trigger
+     * node and the value is the node with the respective trigger added. */
     std::map<VariableNetworkNode, VariableNetworkNode> nodeWithTrigger;
 
     /** Pointer to the module owning this node */
-    EntityOwner *owningModule{nullptr};
-
+    EntityOwner* owningModule{nullptr};
   };
 
   /*********************************************************************************************************************/
-  /*** Implementations *************************************************************************************************/
+  /*** Implementations
+   * *************************************************************************************************/
   /*********************************************************************************************************************/
 
   template<typename UserType>

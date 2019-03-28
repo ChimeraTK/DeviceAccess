@@ -4,15 +4,15 @@
 
 namespace ChimeraTK {
 
-VariableNetworkNodeDumpingVisitor::VariableNetworkNodeDumpingVisitor(std::ostream &stream, const std::string& separator)
-    : Visitor<ChimeraTK::VariableNetworkNode> ()
-    , PushableStream(stream)
-    , _separator(separator) {}
+  VariableNetworkNodeDumpingVisitor::VariableNetworkNodeDumpingVisitor(
+      std::ostream& stream, const std::string& separator)
+  : Visitor<ChimeraTK::VariableNetworkNode>(), PushableStream(stream), _separator(separator) {}
 
-void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
+  void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
     if(t.getType() == NodeType::Application) stream() << " type = Application ('" << t.getQualifiedName() << "')";
     if(t.getType() == NodeType::ControlSystem) stream() << " type = ControlSystem ('" << t.getPublicName() << "')";
-    if(t.getType() == NodeType::Device) stream() << " type = Device (" << t.getDeviceAlias() << ": " << t.getRegisterName() << ")";
+    if(t.getType() == NodeType::Device)
+      stream() << " type = Device (" << t.getDeviceAlias() << ": " << t.getRegisterName() << ")";
     if(t.getType() == NodeType::TriggerReceiver) stream() << " type = TriggerReceiver";
     if(t.getType() == NodeType::Constant) stream() << " type = Constant";
     if(t.getType() == NodeType::invalid) stream() << " type = **invalid**";
@@ -32,8 +32,8 @@ void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
 
     stream() << "tags: [";
     bool first = true;
-    for(auto &tag : t.getTags()) {
-      if (!first) stream() << ",";
+    for(auto& tag : t.getTags()) {
+      if(!first) stream() << ",";
       stream() << tag;
       first = false;
     }
@@ -41,6 +41,6 @@ void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
     stream() << _separator;
 
     stream() << std::endl;
-}
+  }
 
 } // namespace ChimeraTK

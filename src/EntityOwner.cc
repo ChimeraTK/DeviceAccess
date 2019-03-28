@@ -6,34 +6,42 @@
  */
 
 #include <cassert>
-#include <regex>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <regex>
 
 #include "EntityOwner.h"
 #include "Module.h"
 #include "ModuleGraphVisitor.h"
 #include "VirtualModule.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
-  EntityOwner::EntityOwner(const std::string &name, const std::string &description,
-                           bool eliminateHierarchy, const std::unordered_set<std::string> &tags)
-  : _name(name), _description(description), _eliminateHierarchy(eliminateHierarchy), _tags(tags)
-  {}
+  EntityOwner::EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy,
+      const std::unordered_set<std::string>& tags)
+  : _name(name), _description(description), _tags(tags) {
+    if(eliminateHierarchy) _hierarchyModifier = HierarchyModifier::hideThis;
+  }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
+
+  EntityOwner::EntityOwner(const std::string& name, const std::string& description, HierarchyModifier hierarchyModifier,
+      const std::unordered_set<std::string>& tags)
+  : _name(name), _description(description), _hierarchyModifier(hierarchyModifier), _tags(tags) {}
+
+  /*********************************************************************************************************************/
 
   EntityOwner::~EntityOwner() {}
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  EntityOwner& EntityOwner::operator=(EntityOwner &&other) {
+  EntityOwner& EntityOwner::operator=(EntityOwner&& other) {
     _name = std::move(other._name);
     _description = std::move(other._description);
     accessorList = std::move(other.accessorList);
     moduleList = std::move(other.moduleList);
-    _eliminateHierarchy = other._eliminateHierarchy;
+    _hierarchyModifier = other._hierarchyModifier;
     _tags = std::move(other._tags);
     for(auto mod : moduleList) {
       mod->setOwner(this);
@@ -44,20 +52,19 @@ namespace ChimeraTK {
     return *this;
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  void EntityOwner::registerModule(Module *module, bool addTags) {
-    if(addTags) for(auto &tag : _tags) module->addTag(tag);
+  void EntityOwner::registerModule(Module* module, bool addTags) {
+    if(addTags)
+      for(auto& tag : _tags) module->addTag(tag);
     moduleList.push_back(module);
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  void EntityOwner::unregisterModule(Module *module) {
-    moduleList.remove(module);
-  }
+  void EntityOwner::unregisterModule(Module* module) { moduleList.remove(module); }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   std::list<VariableNetworkNode> EntityOwner::getAccessorListRecursive() {
     // add accessors of this instance itself
@@ -71,7 +78,7 @@ namespace ChimeraTK {
     return list;
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   std::list<Module*> EntityOwner::getSubmoduleListRecursive() {
     // add modules of this instance itself
@@ -85,37 +92,51 @@ namespace ChimeraTK {
     return list;
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  VirtualModule EntityOwner::findTag(const std::string &tag) const {
-
+  VirtualModule EntityOwner::findTag(const std::string& tag) const {
     // create new module to return
     VirtualModule module{_name, _description, getModuleType()};
 
     // add everything matching the tag to the virtual module and return it
-    findTagAndAppendToModule(module, tag, false, true);
+    if(this == &Application::getInstance()) {
+      // if this module is the top-level application, we need special treatment for HierarchyModifier::moveThisToRoot
+      findTagAndAppendToModule(module, tag, false, true, false, module);
+    }
+    else {
+      // Not the top-level module: Things that are moved to the top-level are simply discarded
+      VirtualModule discard("discarded", "", ModuleType::Invalid);
+      findTagAndAppendToModule(module, tag, false, true, false, discard);
+    }
+
     return module;
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  VirtualModule EntityOwner::excludeTag(const std::string &tag) const {
-
+  VirtualModule EntityOwner::excludeTag(const std::string& tag) const {
     // create new module to return
     VirtualModule module{_name, _description, getModuleType()};
 
     // add everything matching the tag to the virtual module and return it
-    findTagAndAppendToModule(module, tag, false, true, true);
+    if(this == &Application::getInstance()) {
+      // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
+      findTagAndAppendToModule(module, tag, false, true, true, module);
+    }
+    else {
+      // Not the top-level module: Things that are moved to the top-level are simply discarded
+      VirtualModule discard("discarded", "", ModuleType::Invalid);
+      findTagAndAppendToModule(module, tag, false, true, true, discard);
+    }
     return module;
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  void EntityOwner::findTagAndAppendToModule(VirtualModule &module, const std::string &tag, bool eliminateAllHierarchies,
-                                             bool eliminateFirstHierarchy, bool negate) const {
-
+  void EntityOwner::findTagAndAppendToModule(VirtualModule& module, const std::string& tag,
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
     VirtualModule nextmodule{_name, _description, getModuleType()};
-    VirtualModule *moduleToAddTo;
+    VirtualModule* moduleToAddTo;
 
     bool needToAddSubModule = false;
     if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
@@ -130,79 +151,83 @@ namespace ChimeraTK {
     std::regex expr(tag);
     for(auto node : getAccessorList()) {
       bool addNode = false;
-      for(auto &nodeTag : node.getTags()) {
+      for(auto& nodeTag : node.getTags()) {
         if(std::regex_match(nodeTag, expr)) {
           addNode = true;
           break;
         }
       }
-      if(node.getTags().size() == 0) if(std::regex_match("", expr)) addNode = true;     // check if empty tag matches, if no tag applied to node
+      if(node.getTags().size() == 0)
+        if(std::regex_match("", expr)) addNode = true; // check if empty tag matches, if no tag applied to node
       if(negate) addNode = !addNode;
       if(addNode) moduleToAddTo->registerAccessor(node);
     }
 
     // iterate through submodules
     for(auto submodule : getSubmoduleList()) {
-      // check if submodule already exists by this name and its hierarchy should not be eliminated
+      // check if submodule already exists by this name and its hierarchy should
+      // not be eliminated
       if(!moduleToAddTo->getEliminateHierarchy() && moduleToAddTo->hasSubmodule(submodule->getName())) {
         // exists: add to the existing module
-        auto *existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
+        auto* existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
         assert(existingSubModule != nullptr);
-        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate);
+        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate, root);
       }
       else {
         // does not yet exist: add as new submodule to the current module
-        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate);
+        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root);
       }
     }
 
     if(needToAddSubModule) {
-      if( nextmodule.getAccessorList().size() > 0 || nextmodule.getSubmoduleList().size() > 0 ) {
-        module.addSubModule(nextmodule);
+      if(nextmodule.getAccessorList().size() > 0 || nextmodule.getSubmoduleList().size() > 0) {
+        if(_hierarchyModifier != HierarchyModifier::moveToRoot) {
+          module.addSubModule(nextmodule);
+        }
+        else {
+          root.addSubModule(nextmodule);
+        }
       }
     }
-
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  bool EntityOwner::hasSubmodule(const std::string &name) const {
+  bool EntityOwner::hasSubmodule(const std::string& name) const {
     for(auto submodule : getSubmoduleList()) {
       if(submodule->getName() == name) return true;
     }
     return false;
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  Module* EntityOwner::getSubmodule(const std::string &name) const {
+  Module* EntityOwner::getSubmodule(const std::string& name) const {
     for(auto submodule : getSubmoduleList()) {
       if(submodule->getName() == name) return submodule;
     }
-    throw ChimeraTK::logic_error("Submodule '"+name+"' not found in module '"+getName()+"'!");
+    throw ChimeraTK::logic_error("Submodule '" + name + "' not found in module '" + getName() + "'!");
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  void EntityOwner::dump(const std::string &prefix) const {
-
+  void EntityOwner::dump(const std::string& prefix) const {
     if(prefix == "") {
       std::cout << "==== Hierarchy dump of module '" << _name << "':" << std::endl;
     }
 
-    for(auto &node : getAccessorList()) {
+    for(auto& node : getAccessorList()) {
       std::cout << prefix << "+ ";
       node.dump();
     }
 
-    for(auto &submodule : getSubmoduleList()) {
+    for(auto& submodule : getSubmoduleList()) {
       std::cout << prefix << "| " << submodule->getName() << std::endl;
-      submodule->dump(prefix+"| ");
+      submodule->dump(prefix + "| ");
     }
-
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   void EntityOwner::dumpGraph(const std::string& fileName) const {
     std::fstream file(fileName, std::ios_base::out);
@@ -210,7 +235,7 @@ namespace ChimeraTK {
     v.dispatch(*this);
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   void EntityOwner::dumpModuleGraph(const std::string& fileName) const {
     std::fstream file(fileName, std::ios_base::out);
@@ -218,19 +243,19 @@ namespace ChimeraTK {
     v.dispatch(*this);
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  void EntityOwner::addTag(const std::string &tag) {
-    for(auto &node : getAccessorList()) node.addTag(tag);
-    for(auto &submodule : getSubmoduleList()) submodule->addTag(tag);
+  void EntityOwner::addTag(const std::string& tag) {
+    for(auto& node : getAccessorList()) node.addTag(tag);
+    for(auto& submodule : getSubmoduleList()) submodule->addTag(tag);
     _tags.insert(tag);
   }
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
   VirtualModule EntityOwner::flatten() {
     VirtualModule nextmodule{_name, _description, getModuleType()};
-    for(auto &node : getAccessorListRecursive()) {
+    for(auto& node : getAccessorListRecursive()) {
       nextmodule.registerAccessor(node);
     }
     return nextmodule;

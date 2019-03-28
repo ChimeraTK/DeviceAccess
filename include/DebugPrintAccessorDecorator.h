@@ -14,66 +14,64 @@
 
 namespace ChimeraTK {
 
-  /** Decorator of the NDRegisterAccessor which facilitates tests of the application */
+  /** Decorator of the NDRegisterAccessor which facilitates tests of the
+   * application */
   template<typename UserType>
   class DebugPrintAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
-    public:
-      DebugPrintAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
-                                     const std::string &fullyQualifiedName)
-      : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor),
-        _fullyQualifiedName(fullyQualifiedName)
-      {
-        std::cout << "Enable debug output for variable '" << _fullyQualifiedName << "'." << std::endl;
-      }
+   public:
+    DebugPrintAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
+        const std::string& fullyQualifiedName)
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _fullyQualifiedName(fullyQualifiedName) {
+      std::cout << "Enable debug output for variable '" << _fullyQualifiedName << "'." << std::endl;
+    }
 
-      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber={}) override {
-        std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
-        return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
-      }
+    bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+      std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
+    }
 
-      void doReadTransfer() override {
-        std::cout << "doReadTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
-      }
+    void doReadTransfer() override {
+      std::cout << "doReadTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
+    }
 
-      bool doReadTransferNonBlocking() override {
-        std::cout << "doReadTransferNonBlocking() called on '" << _fullyQualifiedName << "'." << std::endl;
-        return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
-      }
+    bool doReadTransferNonBlocking() override {
+      std::cout << "doReadTransferNonBlocking() called on '" << _fullyQualifiedName << "'." << std::endl;
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
+    }
 
-      bool doReadTransferLatest() override {
-        std::cout << "doReadTransferLatest() called on '" << _fullyQualifiedName << "'." << std::endl;
-        return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
-      }
+    bool doReadTransferLatest() override {
+      std::cout << "doReadTransferLatest() called on '" << _fullyQualifiedName << "'." << std::endl;
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
+    }
 
-      TransferFuture doReadTransferAsync() override {
-        std::cout << "doReadTransferAsync() called on '" << _fullyQualifiedName << std::endl;
-        return ChimeraTK::NDRegisterAccessorDecorator<UserType>::readAsync();
-      }
+    TransferFuture doReadTransferAsync() override {
+      std::cout << "doReadTransferAsync() called on '" << _fullyQualifiedName << std::endl;
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::readAsync();
+    }
 
-      void doPreRead() override {
-        std::cout << "preRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead();
-      }
+    void doPreRead() override {
+      std::cout << "preRead() called on '" << _fullyQualifiedName << "'." << std::endl;
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead();
+    }
 
-      void doPostRead() override {
-        std::cout << "postRead() called on '" << _fullyQualifiedName << "'." << std::endl;
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
-      }
+    void doPostRead() override {
+      std::cout << "postRead() called on '" << _fullyQualifiedName << "'." << std::endl;
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
+    }
 
-      void doPreWrite() override {
-        std::cout << "preWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
-      }
+    void doPreWrite() override {
+      std::cout << "preWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
+    }
 
-      void doPostWrite() override {
-        std::cout << "postWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
-        ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite();
-      }
+    void doPostWrite() override {
+      std::cout << "postWrite() called on '" << _fullyQualifiedName << "'." << std::endl;
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite();
+    }
 
-    protected:
-
-      std::string _fullyQualifiedName;
+   protected:
+    std::string _fullyQualifiedName;
   };
 
 } /* namespace ChimeraTK */

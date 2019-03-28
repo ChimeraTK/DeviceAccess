@@ -5,19 +5,19 @@
  *      Author: Martin Hierholzer
  */
 
-#include <future>
 #include <chrono>
+#include <future>
 
 #define BOOST_TEST_MODULE testVariableGroup
 
+#include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/test_case_template.hpp>
-#include <boost/mpl/list.hpp>
 #include <boost/thread.hpp>
 
 #include "Application.h"
-#include "ScalarAccessor.h"
 #include "ApplicationModule.h"
+#include "ScalarAccessor.h"
 #include "VariableGroup.h"
 
 using namespace boost::unit_test_framework;
@@ -54,19 +54,20 @@ struct TestModule : public ctk::ApplicationModule {
 /* dummy application */
 
 struct TestApplication : public ctk::Application {
-    TestApplication() : Application("testSuite") {}
-    ~TestApplication() { shutdown(); }
+  TestApplication() : Application("testSuite") {}
+  ~TestApplication() { shutdown(); }
 
-    using Application::makeConnections;     // we call makeConnections() manually in the tests to catch exceptions etc.
-    void defineConnections() {}             // the setup is done in the tests
+  using Application::makeConnections; // we call makeConnections() manually in
+                                      // the tests to catch exceptions etc.
+  void defineConnections() {}         // the setup is done in the tests
 
-    TestModule testModule{this, "testModule", "The test module"};
+  TestModule testModule{this, "testModule", "The test module"};
 };
 
 /*********************************************************************************************************************/
 /* test module-wide read/write operations */
 
-BOOST_AUTO_TEST_CASE( testModuleReadWrite ) {
+BOOST_AUTO_TEST_CASE(testModuleReadWrite) {
   std::cout << "*** testModuleReadWrite" << std::endl;
 
   TestApplication app;
@@ -203,14 +204,16 @@ BOOST_AUTO_TEST_CASE( testModuleReadWrite ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
-
 }
 
 /*********************************************************************************************************************/
-/* test trigger by app variable when connecting a polled device register to an app variable */
+/* test trigger by app variable when connecting a polled device register to an
+ * app variable */
 
-BOOST_AUTO_TEST_CASE( testReadAny ) {
-  std::cout << "*********************************************************************************************************************" << std::endl;
+BOOST_AUTO_TEST_CASE(testReadAny) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
   std::cout << "==> testReadAny" << std::endl;
 
   TestApplication app;
@@ -286,8 +289,9 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
 
-  // launch readAny() asynchronously and make sure it does not yet receive anything
-  auto futureRead = std::async(std::launch::async, [&group]{ group.readAny(); });
+  // launch readAny() asynchronously and make sure it does not yet receive
+  // anything
+  auto futureRead = std::async(std::launch::async, [&group] { group.readAny(); });
   BOOST_CHECK(futureRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
@@ -309,8 +313,9 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
 
-  // launch another readAny() asynchronously and make sure it does not yet receive anything
-  auto futureRead2 = std::async(std::launch::async, [&group]{ group.readAny(); });
+  // launch another readAny() asynchronously and make sure it does not yet
+  // receive anything
+  auto futureRead2 = std::async(std::launch::async, [&group] { group.readAny(); });
   BOOST_CHECK(futureRead2.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
@@ -350,7 +355,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
 
   // two changes at a time
-  auto futureRead3 = std::async(std::launch::async, [&group]{ group.readAny(); });
+  auto futureRead3 = std::async(std::launch::async, [&group] { group.readAny(); });
   BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 123);
@@ -365,7 +370,7 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   app.testModule.feedingPush3.write();
 
   BOOST_CHECK(futureRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  auto futureRead4 = std::async(std::launch::async, [&group]{ group.readAny(); });
+  auto futureRead4 = std::async(std::launch::async, [&group] { group.readAny(); });
   BOOST_CHECK(futureRead4.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 3);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 234);
@@ -373,5 +378,4 @@ BOOST_AUTO_TEST_CASE( testReadAny ) {
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 66);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 77);
   BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 88);
-
 }

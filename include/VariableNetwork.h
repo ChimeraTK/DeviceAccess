@@ -8,11 +8,11 @@
 #ifndef CHIMERATK_VARIABLE_NETWORK_H
 #define CHIMERATK_VARIABLE_NETWORK_H
 
+#include <boost/mpl/for_each.hpp>
+#include <iostream>
 #include <list>
 #include <string>
-#include <iostream>
 #include <typeinfo>
-#include <boost/mpl/for_each.hpp>
 
 #include <ChimeraTK/ControlSystemAdapter/ProcessVariable.h>
 
@@ -26,141 +26,145 @@ namespace ChimeraTK {
 
   /** This class describes a network of variables all connected to each other. */
   class VariableNetwork {
+    VariableNetwork(const VariableNetwork& other) = delete;      // non construction-copyable
+    VariableNetwork& operator=(const VariableNetwork&) = delete; // non copyable
 
-      VariableNetwork( const VariableNetwork& other ) = delete;         // non construction-copyable
-      VariableNetwork& operator=( const VariableNetwork& ) = delete;    // non copyable
+   public:
+    VariableNetwork() {}
 
-    public:
+    /** Define trigger types. The trigger decides when values are fed into the
+     * network and distributed to the consumers. */
+    enum class TriggerType {
+      feeder,          ///< The feeder has an UpdateMode::push and thus decides when new
+                       ///< values are fed
+      pollingConsumer, ///< If there is exacly one consumer with UpdateMode::poll,
+                       ///< it will trigger the feeding
+      external,        ///< another variable network can trigger the feeding of this
+                       ///< network
+      none             ///< no trigger has yet been selected
+    };
 
-      VariableNetwork() {}
+    /** Add an node to the network. The node must not yet be part of any network.
+     */
+    void addNode(VariableNetworkNode& a);
 
-      /** Define trigger types. The trigger decides when values are fed into the network and distributed to the consumers. */
-      enum class TriggerType {
-          feeder,           ///< The feeder has an UpdateMode::push and thus decides when new values are fed
-          pollingConsumer,  ///< If there is exacly one consumer with UpdateMode::poll, it will trigger the feeding
-          external,         ///< another variable network can trigger the feeding of this network
-          none              ///< no trigger has yet been selected
-      };
+    /** Add a trigger receiver node. The node must not yet be part of any network.
+     */
+    void addNodeToTrigger(VariableNetworkNode& nodeToTrigger);
 
-      /** Add an node to the network. The node must not yet be part of any network. */
-      void addNode(VariableNetworkNode &a);
+    /** Remove a node from the network. The node must be part of the given
+     * network. */
+    void removeNode(VariableNetworkNode& a);
 
-      /** Add a trigger receiver node. The node must not yet be part of any network. */
-      void addNodeToTrigger(VariableNetworkNode& nodeToTrigger);
+    /** Remove a trigger receiver node from the network. The node must be part of
+     * the given network. */
+    void removeNodeToTrigger(const VariableNetworkNode& nodeToNoLongerTrigger);
 
-      /** Remove a node from the network. The node must be part of the given network. */
-      void removeNode(VariableNetworkNode &a);
+    /** Check if the network already has a feeding node connected to it. */
+    bool hasFeedingNode() const;
 
-      /** Remove a trigger receiver node from the network. The node must be part of the given network. */
-      void removeNodeToTrigger(const VariableNetworkNode &nodeToNoLongerTrigger);
+    /** Count the number of consuming nodes in the network */
+    size_t countConsumingNodes() const;
 
-      /** Check if the network already has a feeding node connected to it. */
-      bool hasFeedingNode() const;
+    /** Obtain the type info of the UserType. If the network type has not yet been
+     * determined (i.e. if no output accessor has been assigned yet), the typeid
+     * of void will be returned. */
+    const std::type_info& getValueType() const { return *valueType; }
 
-      /** Count the number of consuming nodes in the network */
-      size_t countConsumingNodes() const;
+    /** Return the feeding node */
+    VariableNetworkNode getFeedingNode() const;
 
-      /** Obtain the type info of the UserType. If the network type has not yet been determined (i.e. if no output
-       *  accessor has been assigned yet), the typeid of void will be returned. */
-      const std::type_info& getValueType() const {
-        return *valueType;
-      }
+    /** Return list of consuming nodes */
+    std::list<VariableNetworkNode> getConsumingNodes() const;
 
-      /** Return the feeding node */
-      VariableNetworkNode getFeedingNode() const;
+    /** Check whether the network has a consuming application node */
+    bool hasApplicationConsumer() const;
 
-      /** Return list of consuming nodes */
-      std::list<VariableNetworkNode> getConsumingNodes() const;
+    /** Dump the network structure to std::cout. The optional linePrefix will be
+     * prepended to all lines. */
+    void dump(const std::string& linePrefix = "", std::ostream& stream = std::cout) const;
 
-      /** Check whether the network has a consuming application node */
-      bool hasApplicationConsumer() const;
+    void accept(Visitor<VariableNetwork>& visitor) const;
 
-      /** Dump the network structure to std::cout. The optional linePrefix will be prepended to all lines. */
-      void dump(const std::string& linePrefix="", std::ostream& stream=std::cout) const;
+    /** Compare two networks */
+    bool operator==(const VariableNetwork& other) const {
+      if(other.valueType != valueType) return false;
+      if(other.nodeList != nodeList) return false;
+      return true;
+    }
+    bool operator!=(const VariableNetwork& other) const { return !operator==(other); }
 
-      void accept(Visitor<VariableNetwork> &visitor) const;
+    /** Return the trigger type. This function will also do some checking if the
+     * network confguration is valid under the aspect of the trigger type. The
+     * optional argument is only internally used to prevent endless recursive
+     * calls if getTriggerType() is called inside dump(). */
+    TriggerType getTriggerType(bool verboseExceptions = true) const;
 
-      /** Compare two networks */
-      bool operator==(const VariableNetwork &other) const {
-        if(other.valueType != valueType) return false;
-        if(other.nodeList != nodeList) return false;
-        return true;
-      }
-      bool operator!=(const VariableNetwork &other) const {
-        return !operator==(other);
-      }
+    /** Return the enginerring unit */
+    const std::string& getUnit() const { return engineeringUnit; }
 
-      /** Return the trigger type. This function will also do some checking if the network confguration is valid under
-       *  the aspect of the trigger type.
-       *  The optional argument is only internally used to prevent endless recursive calls if getTriggerType() is
-       *  called inside dump(). */
-      TriggerType getTriggerType(bool verboseExceptions=true) const;
+    /** Return the description */
+    const std::string& getDescription() const { return description; }
 
-      /** Return the enginerring unit */
-      const std::string& getUnit() const { return engineeringUnit; }
+    /** Return the network providing the external trigger to this network, if
+     * TriggerType::external. If the network has another trigger type, an
+     * exception will be thrown. */
+    // VariableNetwork& getExternalTrigger();
 
-      /** Return the description */
-      const std::string& getDescription() const { return description; }
+    /** Add an accessor belonging to another node as an external trigger to this
+     * network. Whenever the VariableNetwork of the given node will be fed with a
+     * new value, feeding of this network will be triggered as well. */
+    // void addTrigger(VariableNetworkNode trigger);
 
-      /** Return the network providing the external trigger to this network, if TriggerType::external. If the network
-       *  has another trigger type, an exception will be thrown. */
-      //VariableNetwork& getExternalTrigger();
+    /** Check if the network is legally configured */
+    void check() const;
 
-      /** Add an accessor belonging to another node as an external trigger to this network. Whenever the
-       *  VariableNetwork of the given node will be fed with a new value, feeding of this network will be
-       *  triggered as well. */
-      //void addTrigger(VariableNetworkNode trigger);
+    /** Check the flag if the network connections has been created already */
+    bool isCreated() const { return flagIsCreated; }
 
-      /** Check if the network is legally configured */
-      void check() const;
+    /** Set the flag that the network connections are created */
+    void markCreated() { flagIsCreated = true; }
 
-      /** Check the flag if the network connections has been created already */
-      bool isCreated() const { return flagIsCreated; }
+    /** Assign a ProcessVariable as implementation for the external trigger */
+    void setExternalTriggerImpl(boost::shared_ptr<ChimeraTK::ProcessVariable> impl) { externalTriggerImpl = impl; }
 
-      /** Set the flag that the network connections are created */
-      void markCreated() { flagIsCreated = true; }
+    /** */
+    boost::shared_ptr<ChimeraTK::ProcessVariable> getExternalTriggerImpl() const { return externalTriggerImpl; }
 
-      /** Assign a ProcessVariable as implementation for the external trigger */
-      void setExternalTriggerImpl(boost::shared_ptr< ChimeraTK::ProcessVariable > impl) {
-        externalTriggerImpl = impl;
-      }
+    /** Merge with another VaraibleNetwork. The other network will become invalid
+     * and gets removed from the
+     *  application. If merging is not possible, false is returned and no change
+     * is made. */
+    bool merge(VariableNetwork& other);
 
-      /** */
-      boost::shared_ptr< ChimeraTK::ProcessVariable > getExternalTriggerImpl() const {
-        return externalTriggerImpl;
-      }
+   protected:
+    /** List of nodes in the network */
+    std::list<VariableNetworkNode> nodeList;
 
-      /** Merge with another VaraibleNetwork. The other network will become invalid and gets removed from the
-       *  application. If merging is not possible, false is returned and no change is made. */
-      bool merge(VariableNetwork &other);
+    /** The network value type id. Since in C++, std::type_info is non-copyable
+     * and typeid() returns a reference to
+     *  an object with static storage duration, we have to (and can safely) store
+     * a pointer here. */
+    const std::type_info* valueType{&typeid(AnyType)};
 
-    protected:
+    /** Engineering unit */
+    std::string engineeringUnit{ChimeraTK::TransferElement::unitNotSet};
 
-      /** List of nodes in the network */
-      std::list<VariableNetworkNode> nodeList;
+    /** User-provided description */
+    std::string description;
 
-      /** The network value type id. Since in C++, std::type_info is non-copyable and typeid() returns a reference to
-       *  an object with static storage duration, we have to (and can safely) store a pointer here. */
-      const std::type_info* valueType{&typeid(AnyType)};
+    /** Flag if an external trigger has been added to this network */
+    // bool hasExternalTrigger{false};
 
-      /** Engineering unit */
-      std::string engineeringUnit{ChimeraTK::TransferElement::unitNotSet};
+    /** Pointer to the network providing the external trigger */
+    // VariableNetwork *externalTrigger{nullptr};
 
-      /** User-provided description */
-      std::string description;
+    /** Pointer to ProcessVariable providing the trigger (if external trigger is
+     * enabled) */
+    boost::shared_ptr<ChimeraTK::ProcessVariable> externalTriggerImpl;
 
-      /** Flag if an external trigger has been added to this network */
-      //bool hasExternalTrigger{false};
-
-      /** Pointer to the network providing the external trigger */
-      //VariableNetwork *externalTrigger{nullptr};
-
-      /** Pointer to ProcessVariable providing the trigger (if external trigger is enabled) */
-      boost::shared_ptr< ChimeraTK::ProcessVariable > externalTriggerImpl;
-
-      /** Flag if the network connections have been created already */
-      bool flagIsCreated{false};
-
+    /** Flag if the network connections have been created already */
+    bool flagIsCreated{false};
   };
 
 } /* namespace ChimeraTK */

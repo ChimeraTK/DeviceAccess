@@ -1,4 +1,6 @@
 # both registers have the same address, so whatever we write to actuator we can read back from readBack
 /MyModule/actuator                0x00000001    0x00000000    0x00000004
 /MyModule/readBack                0x00000001    0x00000000    0x00000004
-
+# Additional registers for test with deep hierarchies
+/Deeper/hierarchies/need/tests    0x00000001    0x00000004    0x00000004
+/Deeper/hierarchies/also          0x00000001    0x00000008    0x00000004
