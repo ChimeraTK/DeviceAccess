@@ -21,6 +21,9 @@ namespace ChimeraTK { namespace LNMBackend {
     else if(name == "monostableTrigger") {
       return boost::make_shared<MonostableTriggerPlugin>(info, parameters);
     }
+    else if(name == "forceReadOnly") {
+      return boost::make_shared<ForceReadOnlyPlugin>(info, parameters);
+    }
     else {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
     }

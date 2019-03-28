@@ -158,6 +158,18 @@ namespace ChimeraTK { namespace LNMBackend {
     uint32_t _inactive{0};
   };
 
+  /** ForceReadOnly Plugin: Forces a register to be read only. */
+  class ForceReadOnlyPlugin : public AccessorPlugin<ForceReadOnlyPlugin> {
+   public:
+    ForceReadOnlyPlugin(
+        boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+  };
+
   /********************************************************************************************************************/
   /* Implementations follow here                                                                                      */
   /********************************************************************************************************************/

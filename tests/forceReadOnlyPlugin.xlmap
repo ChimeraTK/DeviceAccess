@@ -1,0 +1,9 @@
+<logicalNameMap>
+
+  <redirectedRegister name="test">
+    <targetDevice>(dummy?map=mtcadummy.map)</targetDevice>
+    <targetRegister>ADC.WORD_ADC_ENA</targetRegister>
+    <plugin name="forceReadOnly"/>
+  </redirectedRegister>
+
+</logicalNameMap>

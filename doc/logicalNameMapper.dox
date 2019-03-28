@@ -77,4 +77,8 @@ Examples for formulae:
   Hint: If the parameter register is a variable, it can be written by the application. This allows e.g. the use of
   calibration value otherwise not known to the device.
 
+\subsubsection plugins_reference_force_read_only forceReadOnly
+The <code>forceReadOnly</code> plugin changes the access mode of a register to read-only. The target register has to be
+writeable. This plugin accepts no parameters.
+
 */
