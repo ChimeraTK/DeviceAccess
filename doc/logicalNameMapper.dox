@@ -1,7 +1,77 @@
 /**
 \page lmap Logical Name Mapping Backend
 
+Backend to map logical register names onto real hardware registers. It reads the logical name map from an xml file and
+will open internally additional Devices as they are reference in that file.
+
 This page is still incomplete and will be extended in future.
+
+\section cdd CDD syntax
+
+The map file should be specified by the "map" parameter in the CDD, i.e.:
+<code>(logicalNameMap?map=path/to/mapfile.xlmap)</code>
+
+Additional parameters can be passed through the CDD, which are available inside the xlmap file via
+<code>&lt;par&gt;&lt;/par&gt;</code> tags, e.g. when using the CDD
+<code>(logicalNameMap?map=path/to/mapfile.xlmap&myParam=HelloWorld)</code> the tag
+<code>&lt;par&gt;myParam&lt;/par&gt;</code> inside the xlmap file would be replaced with <code>HelloWorld</code>.
+
+\section map Map file syntax
+This section is incomplete.
+
+Example with most features:
+\code{.xml}
+<logicalNameMap>
+    <redirectedRegister name="SingleWord">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="FullArea">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="PartOfArea">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>ADC.AREA_DMAABLE</targetRegister>
+        <targetStartIndex>10</targetStartIndex>
+        <numberOfElements>20</numberOfElements>
+    </redirectedRegister>
+    <redirectedChannel name="Channel3">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel>3</targetChannel>
+    </redirectedChannel>
+    <constant name="Constant">
+        <type>integer</type>
+        <value>42</value>
+    </constant>
+    <redirectedRegister name="SingleWord_Scaled">
+        <targetDevice>PCIE2</targetDevice>
+        <targetRegister>BOARD.WORD_USER</targetRegister>
+        <plugin name="multiply">
+          <parameter name="factor">4.2</parameter>
+        </plugin>
+    </redirectedRegister>
+    <module name="MyModule">
+      <module name="SomeSubmodule">
+        <variable name="Variable">
+          <type>integer</type>
+          <value>2</value>
+        </variable>
+      </module>
+      <redirectedChannel name="ConfigurableChannel">
+        <targetDevice>PCIE3</targetDevice>
+        <targetRegister>TEST.NODMA</targetRegister>
+        <targetChannel><ref>/Constant</ref></targetChannel>
+      </redirectedChannel>
+    </module>
+    <redirectedBit name="Bit0ofVar">
+      <targetDevice>this</targetDevice>
+      <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+      <targetBit>0</targetBit>
+    </redirectedBit>
+</logicalNameMap>
+\endcode
 
 \section plugins Accessor plugins
 Special features like mathematical conversions can be enabled on a per-register basis by using accessor plugins. Any
