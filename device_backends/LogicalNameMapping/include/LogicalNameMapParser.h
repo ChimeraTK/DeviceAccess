@@ -53,7 +53,7 @@ namespace ChimeraTK {
     void parseElement(RegisterPath currentPath, const xmlpp::Element* element);
 
     /** throw a parsing error with more information */
-    [[noreturn]] void parsingError(const std::string& message);
+    [[noreturn]] void parsingError(const xmlpp::Node* node, const std::string& message);
 
     /** Build a Value object for a given subnode. */
     template<typename ValueType>
