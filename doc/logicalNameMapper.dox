@@ -73,6 +73,16 @@ Example with most features:
 </logicalNameMap>
 \endcode
 
+\subsection internal_redirect Self-referencing redirects
+It is possible to redirect registers to other registers in the same xlmap file using the special device <code>this</code>:
+\code{.xml}
+<redirectedBit name="Bit0ofVar">
+  <targetDevice>this</targetDevice>
+  <targetRegister>/MyModule/SomeSubmodule/Variable</targetRegister>
+  <targetBit>0</targetBit>
+</redirectedBit>
+\endcode
+
 \section plugins Accessor plugins
 Special features like mathematical conversions can be enabled on a per-register basis by using accessor plugins. Any
 number of plugins can be enabled for each register. Each plugin takes a list of parameters, which depend on the type of
@@ -116,7 +126,8 @@ makes only sense if the register is used in a single direction. The shape of the
 the number of elements returned by the formula must be equal to the number of elements of the target register.
 
 Parameters:
-- <code>formula</code>: The formula to apply to the data.
+- <code>formula</code>: The formula to apply to the data. Within the formula, the parameter <code>x</code> can be used
+  to reference the current register value.
 - Any additional parameter value will be interpreted as a register name of the logical name mapper device. The register
   value will be made available to the formula by the name of the parameter. Everytime the formula is evaluated, the
   registers will be read, so the current values are provided.
