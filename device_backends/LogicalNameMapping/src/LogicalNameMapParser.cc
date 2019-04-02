@@ -299,7 +299,7 @@ namespace ChimeraTK {
         info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        info->nDimensions = 0;
+        info->nDimensions = info->length > 1 ? 1 : 0;
         info->nChannels = 1;
         info->writeable = false;
         info->readable = true;
@@ -314,7 +314,7 @@ namespace ChimeraTK {
         info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        info->nDimensions = 0;
+        info->nDimensions = info->length > 1 ? 1 : 0;
         info->nChannels = 1;
         info->writeable = true;
         info->readable = true;
