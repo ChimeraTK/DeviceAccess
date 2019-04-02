@@ -192,6 +192,9 @@ namespace ChimeraTK {
       else if(dd.fundamentalType() == RegisterInfo::FundamentalType::string) {
         valTyp = &typeid(std::string);
       }
+      else if(dd.fundamentalType() == RegisterInfo::FundamentalType::nodata) {
+        valTyp = &typeid(int32_t);
+      }
 
       auto name = std::string(reg.getRegisterName()).substr(prefixLength);
       auto lastSlash = name.find_last_of("/");
