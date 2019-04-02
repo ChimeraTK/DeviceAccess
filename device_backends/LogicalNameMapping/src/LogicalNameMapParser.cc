@@ -185,6 +185,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMapParser::parseFile(const std::string& fileName) {
+    _fileName = fileName;
+
     // parse the file into a DOM structure
     xmlpp::DomParser parser;
     try {
