@@ -4,6 +4,61 @@
 
 namespace ChimeraTK {
 
+
+static std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string &fileName);
+
+template <typename List>
+void prefix(std::string s, List& varList){
+    for(auto &var: varList){
+        var.name = s + var.name;
+    }
+}
+
+struct Variable {
+  std::string name;
+  std::string type;
+  std::string value;
+};
+
+struct Array {
+  std::string name;
+  std::string type;
+  std::map<size_t, std::string> values;
+};
+
+using VariableList = std::vector<Variable>;
+using ArrayList = std::vector<Array>;
+
+class ConfigParser {
+  std::string fileName_{};
+  std::unique_ptr<xmlpp::DomParser> parser_{};
+  std::unique_ptr<VariableList> variableList_{};
+  std::unique_ptr<ArrayList> arrayList_{};
+
+public:
+  ConfigParser(const std::string &fileName)
+      : fileName_(fileName), parser_(createDomParser(fileName)) {}
+
+  std::unique_ptr<VariableList> getVariableList();
+  std::unique_ptr<ArrayList> getArrayList();
+
+private:
+  std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> parse();
+  xmlpp::Element *getRootNode(xmlpp::DomParser &parser);
+  void error(const std::string &message);
+  bool isVariable(const xmlpp::Element *element);
+  bool isArray(const xmlpp::Element *element);
+  bool isModule(const xmlpp::Element *element);
+  Variable parseVariable(const xmlpp::Element *element);
+  Array parseArray(const xmlpp::Element *element);
+  std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>
+  parseModule(const xmlpp::Element *element);
+
+  void validateValueNode(const xmlpp::Element *valueElement);
+  std::map<size_t, std::string> gettArrayValues(const xmlpp::Element * element);
+};
+
+
   /*********************************************************************************************************************/
 
   /** Functor to fill variableMap */
@@ -160,94 +215,43 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
-      const std::unordered_set<std::string>& tags)
+  ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName, const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", false, tags),
     _fileName(fileName) {
-    // parse the file into a DOM structure
-    xmlpp::DomParser parser;
-    try {
-      parser.parse_file(fileName);
-    }
-    catch(xmlpp::exception& e) { /// @todo change exception!
-      throw ChimeraTK::logic_error("ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
-    }
 
-    // get root element
-    const auto root = parser.get_document()->get_root_node();
-    if(root->get_name() != "configuration") {
-      parsingError("Expected 'configuration' tag instead of: " + root->get_name());
-    }
-
-    // parsing loop
-    for(const auto& child : root->get_children()) {
-      // cast into element, ignore if not an element (e.g. comment)
-      const xmlpp::Element* element = dynamic_cast<const xmlpp::Element*>(child);
-      if(!element) continue;
-      if(element->get_name() != "variable") {
-        parsingError("Expected 'variable' tag instead of: " + root->get_name());
-      }
-
-      // obtain attributes from the element
-      auto name = element->get_attribute("name");
-      if(!name) parsingError("Missing attribute 'name' for the 'variable' tag.");
-      auto type = element->get_attribute("type");
-      if(!type) parsingError("Missing attribute 'type' for the 'variable' tag.");
-
-      // scalar value: obtain value from attribute
-      auto value = element->get_attribute("value");
-      if(value) {
-        // create accessor and store value in map using the functor
+      auto fillVariableMap = [this](const Variable &var) {
         bool processed{false};
-        boost::fusion::for_each(
-            variableMap.table, FunctorFill(this, type->get_value(), name->get_value(), value->get_value(), processed));
-        if(!processed)
-          parsingError("Incorrect value '" + type->get_value() + "' for attribute 'type' of the 'variable' tag.");
-      }
-      // array value: obtain values from child elements
-      else {
-        bool valueFound = false;
-        std::map<size_t, std::string> values;
-        for(const auto& valueChild : child->get_children()) {
-          // obtain value child element and extract index and value from
-          // attributes
-          const xmlpp::Element* valueElement = dynamic_cast<const xmlpp::Element*>(valueChild);
-          if(!valueElement) continue; // ignore comments etc.
-          if(valueElement->get_name() != "value") {
-            parsingError("Expected 'value' tag instead of: " + valueElement->get_name());
-          }
-          valueFound = true;
-          auto index = valueElement->get_attribute("i");
-          if(!index) parsingError("Missing attribute 'index' for the 'value' tag.");
-          auto value = valueElement->get_attribute("v");
-          if(!value) parsingError("Missing attribute 'value' for the 'value' tag.");
+        boost::fusion::for_each(variableMap.table,
+                                FunctorFill(this, var.type,
+                                            var.name,
+                                            var.value,
+                                            processed));
+        if (!processed)
+          parsingError("Incorrect value '" + var.type + "' for attribute 'type' of the 'variable' tag.");
+      };
 
-          // get index as number and store value as a string
-          size_t intIndex;
-          try {
-            intIndex = std::stoi(index->get_value());
-          }
-          catch(std::exception& e) {
-            parsingError(
-                "Cannot parse string '" + std::string(index->get_value()) + "' as an index number: " + e.what());
-          }
-          values[intIndex] = value->get_value();
-        }
-
-        // make sure there is at least one value
-        if(!valueFound) {
-          parsingError("Each variable must have a value, either specified as an "
-                       "attribute or as child tags.");
-        }
-
+      auto fillArrayMap = [this](const ChimeraTK::Array &arr) {
         // create accessor and store array value in map using functor
         bool processed{false};
-        boost::fusion::for_each(
-            variableMap.table, ArrayFunctorFill(this, type->get_value(), name->get_value(), values, processed));
-        if(!processed)
-          parsingError("Incorrect value '" + type->get_value() + "' for attribute 'type' of the 'variable' tag.");
+        boost::fusion::for_each(arrayMap.table,
+                                ArrayFunctorFill(this, arr.type,
+                                                 arr.name,
+                                                 arr.values,
+                                                 processed));
+        if (!processed)
+          parsingError("Incorrect value '" + arr.type + "' for attribute 'type' of the 'variable' tag.");
+      };
+
+      auto parser = ConfigParser(fileName);
+      auto v = parser.getVariableList();
+      auto a = parser.getArrayList();
+
+      for(const auto &var: *v){
+       fillVariableMap(var);
       }
-    }
+      for(const auto &arr: *a){
+       fillArrayMap(arr)   ;
+      }
   }
 
   /********************************************************************************************************************/
@@ -311,4 +315,177 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+std::unique_ptr<VariableList> ConfigParser::getVariableList() {
+  if (variableList_ == nullptr) {
+    std::tie(variableList_, arrayList_) = parse();
+  }
+  return std::move(variableList_);
+}
+
+std::unique_ptr<ArrayList> ConfigParser::getArrayList() {
+  if (arrayList_ != nullptr) {
+    std::tie(variableList_, arrayList_) = parse();
+  }
+  return std::move(arrayList_);
+}
+
+std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> ConfigParser::parse(){
+    const auto root = getRootNode(*parser_);
+    if(root->get_name() != "configuration") {
+      error("Expected 'configuration' tag instead of: " + root->get_name());
+    }
+    const xmlpp::Element *element = dynamic_cast<const xmlpp::Element *>(root);
+    return parseModule(element);
+}
+
+std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>
+ConfigParser::parseModule(const xmlpp::Element * element) {
+  auto module_name = (element->get_name() == "configuration")?
+                     "":
+                     element->get_name() + "/";
+  auto v = std::make_unique<VariableList>();
+  auto a = std::make_unique<ArrayList>();
+
+  for (const auto &child : element->get_children()) {
+    element = dynamic_cast<const xmlpp::Element *>(child);
+    if (!element) {
+      continue; // ignore if not an element (e.g. comment)
+    }
+    else if (isVariable(element)) {
+      v->push_back(parseVariable(element));
+    }
+    else if (isArray(element)) {
+      a->push_back(parseArray(element));
+    }
+    else if (isModule(element)) {
+      std::unique_ptr<VariableList>tmp_var;
+      std::unique_ptr<ArrayList>tmp_arr;
+      std::tie(tmp_var, tmp_arr) = parseModule(element);
+      v->insert(v->end(), tmp_var->begin(), tmp_var->end());
+      a->insert(a->end(), tmp_arr->begin(), tmp_arr->end());
+    }
+    else {
+      error("Unknown tag: " + element->get_name());
+    }
+  }
+  prefix(module_name, *v);
+  prefix(module_name, *a);
+  return std::pair<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{std::move(v), std::move(a)};
+}
+
+xmlpp::Element* ConfigParser::getRootNode(xmlpp::DomParser& parser){
+    auto root = parser.get_document()->get_root_node();
+    if(root->get_name() != "configuration") {
+      error("Expected 'configuration' tag instead of: " + root->get_name());
+    }
+    return root;
+}
+
+void ConfigParser::error(const std::string &message) {
+  throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + fileName_ + "': " + message);
+}
+
+bool ConfigParser::isVariable(const xmlpp::Element *element) {
+  if ((element->get_name() == "variable") && element->get_attribute("value")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool ConfigParser::isArray(const xmlpp::Element *element) {
+  if ((element->get_name() == "variable") && !element->get_attribute("value")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool ConfigParser::isModule(const xmlpp::Element *element) {
+  if (element->get_name() == "module") {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+Variable ConfigParser::parseVariable(const xmlpp::Element *element) {
+
+  // validate variable node
+  if (!element->get_attribute("name")) {
+    error("Missing attribute 'name' for the 'variable' tag.");
+  } else if (!element->get_attribute("type")) {
+    error("Missing attribute 'type' for the 'variable' tag.");
+  }
+
+  auto name = element->get_attribute("name")->get_value();
+  auto type = element->get_attribute("type")->get_value();
+  auto value = element->get_attribute("value")->get_value();
+  return Variable{name, type, value};
+}
+
+Array ConfigParser::parseArray(const xmlpp::Element *element) {
+
+  // validate array node
+  if (!element->get_attribute("name")) {
+    error("Missing attribute 'name' for the 'variable' tag.");
+  } else if (!element->get_attribute("type")) {
+    error("Missing attribute 'type' for the 'variable' tag.");
+  }
+
+  auto name = element->get_attribute("name")->get_value();
+  auto type = element->get_attribute("type")->get_value();
+  std::map<size_t, std::string> values = gettArrayValues(element);
+  return Array{name, type, values};
+}
+
+std::map<size_t, std::string> ConfigParser::gettArrayValues(const xmlpp::Element * element) {
+  bool valueFound = false;
+  std::map<size_t, std::string> values;
+
+  for (const auto &valueChild : element->get_children()) {
+    const xmlpp::Element *valueElement = dynamic_cast<const xmlpp::Element *>(valueChild);
+    if (!valueElement)
+      continue; // ignore comments etc.
+    validateValueNode(valueElement);
+    valueFound = true;
+
+    auto index = valueElement->get_attribute("i");
+    auto value = valueElement->get_attribute("v");
+
+    // get index as number and store value as a string
+    size_t intIndex;
+    try {
+      intIndex = std::stoi(index->get_value());
+    } catch (std::exception &e) {
+      error("Cannot parse string '" + std::string(index->get_value()) + "' as an index number: " + e.what());
+    }
+    values[intIndex] = value->get_value();
+  }
+  // make sure there is at least one value
+  if (!valueFound) {
+    error("Each variable must have a value, either specified as an attribute or as child tags.");
+  }
+  return values;
+}
+
+void ConfigParser::validateValueNode(const xmlpp::Element* valueElement){
+    if (valueElement->get_name() != "value") {
+      error("Expected 'value' tag instead of: " + valueElement->get_name());
+    }
+    if(!valueElement->get_attribute("i")){
+      error("Missing attribute 'index' for the 'value' tag.");
+    }
+    if(!valueElement->get_attribute("v")){
+      error("Missing attribute 'value' for the 'value' tag.");
+    }
+}
+
+std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string &fileName){
+  try {
+    return std::make_unique<xmlpp::DomParser>(fileName);
+  } catch (xmlpp::exception &e) { /// @todo change exception!
+    throw ChimeraTK::logic_error( "ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
+  }
+}
 } // namespace ChimeraTK
