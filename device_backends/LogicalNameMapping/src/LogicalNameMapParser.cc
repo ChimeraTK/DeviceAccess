@@ -21,7 +21,7 @@ namespace ChimeraTK {
     auto list = node->find(subnodeName);
     if(list.size() < 1 && hasDefault) return defaultValue;
     if(list.size() != 1) {
-      parsingError(
+      parsingError(node,
           "Expected exactly one subnode of the type '" + subnodeName + "' below node '" + node->get_name() + "'.");
     }
     auto childList = list[0]->get_children();
@@ -43,7 +43,7 @@ namespace ChimeraTK {
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
           if(!_catalogue.hasRegister(regName)) {
-            parsingError("Reference to constant '" + regName + "' could not be resolved.");
+            parsingError(child, "Reference to constant '" + regName + "' could not be resolved.");
           }
           auto reg = _catalogue.getRegister(regName);
           auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
@@ -55,11 +55,11 @@ namespace ChimeraTK {
             continue;
           }
           else {
-            parsingError("Reference to '" + regName + "' does not refer to a constant.");
+            parsingError(child, "Reference to '" + regName + "' does not refer to a constant.");
           }
         }
         else {
-          parsingError("The <ref> node must contain only text.");
+          parsingError(child, "The <ref> node must contain only text.");
         }
       }
 
@@ -70,19 +70,19 @@ namespace ChimeraTK {
         if(parNameNode && childChildList.size() == 1) {
           std::string parName = parNameNode->get_content();
           if(_parameters.find(parName) == _parameters.end()) {
-            parsingError("Parameter '" + parName + "' could not be resolved.");
+            parsingError(child, "Parameter '" + parName + "' could not be resolved.");
           }
           // put to stream buffer
           value += _parameters[parName];
           continue;
         }
         else {
-          parsingError("The <par> node must contain only text.");
+          parsingError(child, "The <par> node must contain only text.");
         }
       }
 
       // neither found: throw error
-      parsingError("Node '" + subnodeName + "' should contain only text, references or parameters. Instead child '" +
+      parsingError(node, "Node '" + subnodeName + "' should contain only text, references or parameters. Instead child '" +
           child->get_name() + "' was found.");
     }
     return value;
@@ -110,7 +110,7 @@ namespace ChimeraTK {
       const xmlpp::Node* node, const std::string& subnodeName) {
     auto list = node->find(subnodeName);
     if(list.size() < 1) {
-      parsingError(
+      parsingError(node,
           "Expected at least one subnode of the type '" + subnodeName + "' below node '" + node->get_name() + "'.");
     }
 
@@ -131,7 +131,7 @@ namespace ChimeraTK {
       // get content
       auto childList = childElement->get_children();
       if(childList.size() != 1) {
-        parsingError("Node '" + subnodeName +
+        parsingError(childElement, "Node '" + subnodeName +
             "' should contain only text or exactly one reference, "
             "instead multiple childs "
             "were found.");
@@ -152,7 +152,7 @@ namespace ChimeraTK {
         if(refNameNode && childChildList.size() == 1) {
           std::string regName = refNameNode->get_content();
           if(!_catalogue.hasRegister(regName)) {
-            parsingError("Reference to constant '" + regName + "' could not be resolved.");
+            parsingError(childList.front(), "Reference to constant '" + regName + "' could not be resolved.");
           }
           auto reg = _catalogue.getRegister(regName);
           auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
@@ -166,16 +166,35 @@ namespace ChimeraTK {
             continue;
           }
           else {
-            parsingError("Reference to '" + regName + "' does not refer to a constant.");
+            parsingError(childList.front(), "Reference to '" + regName + "' does not refer to a constant.");
           }
         }
         else {
-          parsingError("The <ref> node must contain only text.");
+          parsingError(childList.front(), "The <ref> node must contain only text.");
+        }
+      }
+
+      if (childList.front()->get_name() == "par") {
+        auto childChildList = childList.front()->get_children();
+        const xmlpp::TextNode* parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
+        if(parNameNode && childChildList.size() == 1) {
+          std::string parName = parNameNode->get_content();
+          if(_parameters.find(parName) == _parameters.end()) {
+            parsingError(childList.front(), "Parameter '" + parName + "' could not be resolved.");
+          }
+          // put to stream buffer
+          std::stringstream buf;
+          buf << _parameters[parName];
+          buf >> valueVector[index];
+          continue;
+        }
+        else {
+          parsingError(childList.front(), "The <par> node must contain only text.");
         }
       }
 
       // neither found: throw error
-      parsingError("Node '" + subnodeName + "' should contain only text or exactly one reference, instead child '" +
+      parsingError(node, "Node '" + subnodeName + "' should contain only text or exactly one reference, instead child '" +
           childList.front()->get_name() + "' was found.");
     }
 
@@ -185,6 +204,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void LogicalNameMapParser::parseFile(const std::string& fileName) {
+    _fileName = fileName;
+
     // parse the file into a DOM structure
     xmlpp::DomParser parser;
     try {
@@ -197,7 +218,7 @@ namespace ChimeraTK {
     // get root element
     const auto root = parser.get_document()->get_root_node();
     if(root->get_name() != "logicalNameMap") {
-      parsingError("Expected 'logicalNameMap' tag instead of: " + root->get_name());
+      parsingError(root, "Expected 'logicalNameMap' tag instead of: " + root->get_name());
     }
 
     // parsing loop
@@ -217,7 +238,7 @@ namespace ChimeraTK {
       // obtain name of the module
       auto nameAttr = element->get_attribute("name");
       if(!nameAttr) {
-        parsingError("Missing name attribute of 'module' tag.");
+        parsingError(element, "Missing name attribute of 'module' tag.");
       }
       std::string moduleName = nameAttr->get_value();
 
@@ -272,13 +293,13 @@ namespace ChimeraTK {
       else if(type == "constant") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
         if(constantType != "integer") {
-          parsingError("Type '" + constantType + "' is not valid for a constant");
+          parsingError(element, "Type '" + constantType + "' is not valid for a constant");
         }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
         info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        info->nDimensions = 0;
+        info->nDimensions = info->length > 1 ? 1 : 0;
         info->nChannels = 1;
         info->writeable = false;
         info->readable = true;
@@ -287,26 +308,26 @@ namespace ChimeraTK {
       else if(type == "variable") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
         if(constantType != "integer") {
-          parsingError("Type '" + constantType + "' is not valid for a variable");
+          parsingError(element, "Type '" + constantType + "' is not valid for a variable");
         }
         info->targetType = LNMBackendRegisterInfo::TargetType::INT_VARIABLE;
         info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
-        info->nDimensions = 0;
+        info->nDimensions = info->length > 1 ? 1 : 0;
         info->nChannels = 1;
         info->writeable = true;
         info->readable = true;
         info->_dataDescriptor = {RegisterInfo::FundamentalType::numeric, true, false, 1, 0};
       }
       else {
-        parsingError("Wrong logical register type: " + type);
+        parsingError(element, "Wrong logical register type: " + type);
       }
 
       // obtain name of logical register
       auto nameAttr = element->get_attribute("name");
       if(!nameAttr) {
-        parsingError("Missing name attribute of '" + type + "' tag.");
+        parsingError(element, "Missing name attribute of '" + type + "' tag.");
       }
       RegisterPath registerName = currentPath / std::string(nameAttr->get_value());
       info->name = registerName;
@@ -321,7 +342,7 @@ namespace ChimeraTK {
         // get name of plugin
         auto pluginNameAttr = childElement->get_attribute("name");
         if(!pluginNameAttr) {
-          parsingError("Missing name attribute of 'plugin' tag.");
+          parsingError(childElement, "Missing name attribute of 'plugin' tag.");
         }
         std::string pluginName = pluginNameAttr->get_value();
 
@@ -332,13 +353,13 @@ namespace ChimeraTK {
           const xmlpp::Element* paramElement = dynamic_cast<const xmlpp::Element*>(paramchild);
           if(!paramElement) continue;
           if(paramElement->get_name() != "parameter") {
-            parsingError("Unexpected element '" + paramElement->get_name() + "' inside plugin tag.");
+            parsingError(paramElement, "Unexpected element '" + paramElement->get_name() + "' inside plugin tag.");
           }
 
           // get name of parameter
           auto parameterNameAttr = paramElement->get_attribute("name");
           if(!pluginNameAttr) {
-            parsingError("Missing name attribute of 'parameter' tag.");
+            parsingError(paramElement, "Missing name attribute of 'parameter' tag.");
           }
           std::string parameterName = parameterNameAttr->get_value();
 
@@ -370,8 +391,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMapParser::parsingError(const std::string& message) {
-    throw ChimeraTK::logic_error("Error parsing the xlmap file '" + _fileName + "': " + message);
+  void LogicalNameMapParser::parsingError(const xmlpp::Node *node, const std::string& message) {
+    throw ChimeraTK::logic_error("Error parsing the xlmap file '" + _fileName + "'(" +
+                                 std::to_string(node->get_line()) + ") : " + message);
   }
 
 } // namespace ChimeraTK
