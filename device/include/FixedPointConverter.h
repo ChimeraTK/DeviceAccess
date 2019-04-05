@@ -131,6 +131,10 @@ namespace ChimeraTK {
     /// minimum cooked values (depending on user type)
     userTypeMap _minCookedValues;
 
+    /// conversion branch for toCooked(). This allows to use a fast case statement instead of a complicated if in the
+    /// time critical section
+    FixedUserTypeMap<int> conversionBranch_toCooked;
+
     /// helper constant to avoid the "comparison always false" warning. will be
     /// always 0
     const static int zero;
@@ -144,6 +148,20 @@ namespace ChimeraTK {
       void operator()(Pair) const {
         // obtain UserType from given fusion::pair type
         typedef typename Pair::first_type UserType;
+
+        // compute conversion branches. Needs to be done before the subsequent calls to toCooked()!
+        if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 1;
+        }
+        else if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 2;
+        }
+        else if(!_fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 3;
+        }
+        else if(_fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 4;
+        }
 
         // compute minimum and maximum values in cooked representation
         try {
@@ -174,29 +192,12 @@ namespace ChimeraTK {
       typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
     };
 
-    /** helper function to test if UserTyped value is negativ without triggering a
+    /** helper function to test if UserTyped value is negative without triggering a
      * compiler warning for unsigned user types */
     template<typename UserType, typename std::enable_if<std::is_signed<UserType>{}, int>::type = 0>
     bool isNegativeUserType(UserType value) const;
     template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type = 0>
     bool isNegativeUserType(UserType value) const;
-
-    /** Internal exceptions to overload the what() function of the boost
-     * exceptions in order to fill in the variable name. We derrive from the
-     * original exception so we do not break the signature in case existing code
-     * is catching the exception. These exceptions are not part of the external
-     * interface and cannot be caught explicitly because they are private. Catch
-     * boost::numeric::bad_numeric_cast and derrivatives if you want to do error
-     * handling.
-     */
-    template<class BOOST_EXCEPTION_T>
-    struct FPC_OverflowException : public BOOST_EXCEPTION_T {
-      FPC_OverflowException(std::string variableName)
-      : errorMessage("Exception during fixed point conversion in " + variableName + ": " + BOOST_EXCEPTION_T().what()) {
-      }
-      std::string errorMessage;
-      virtual const char* what() const throw() override { return errorMessage.c_str(); }
-    };
   };
 
   /**********************************************************************************************************************/
@@ -204,69 +205,58 @@ namespace ChimeraTK {
   UserType FixedPointConverter::toCooked(uint32_t rawValue) const {
     UserType cooked;
 
-    // extract sign and leave positive raw number
+    // force unused leading bits to 0 for positive or 1 for negative numbers
     bool isNegative = (rawValue & _signBitMask);
-    if(isNegative) rawValue = ~rawValue; // bit inversion flips the sign, but will be off by 1!
-
-    // leading, out of range bits are ignored. Just crop them.
-    rawValue &= _usedBitsMask;
-
-    // Handle integer and floating-point types differently.
-    // This if-statement is likely to be optimised out at compile-time.
-    if(std::numeric_limits<UserType>::is_integer && _fractionalBits == 0) {
-      // cast into target type while checking against over/underflow
-      // as we flipped the sign above, we won't get a negative_overflow, thus
-      // catch the exception and re-throw the right one
-      try {
-        cooked = boost::numeric_cast<UserType>(rawValue);
-      }
-      catch(boost::numeric::positive_overflow&) {
-        if(!isNegative) {
-          throw FPC_OverflowException<boost::numeric::positive_overflow>(_variableName);
-        }
-        else {
-          throw FPC_OverflowException<boost::numeric::negative_overflow>(_variableName);
-        }
-      }
-
-      // handle the sign
-      if(isNegative) {
-        // This if-statement also is likely to be optimised out at compile-time.
-        if(std::numeric_limits<UserType>::is_signed) {
-          cooked = -cooked - 1;
-        }
-        else {
-          cooked = 0;
-          throw FPC_OverflowException<boost::numeric::negative_overflow>(_variableName);
-        }
-      }
+    if(!isNegative) {
+      rawValue &= _usedBitsMask;
     }
     else {
-      // convert into double and scale to handle fractional bits
-      double d_cooked = _fractionalBitsCoefficient * static_cast<double>(rawValue);
-
-      // Handle the sign. Since we inverted the rawValue to get a positive value,
-      // it was off by 1 before scaling
-      if(isNegative) d_cooked = -d_cooked - _fractionalBitsCoefficient;
-
-      // Convert into target type. This conversion takes care of proper rounding
-      // when needed (and only then), and will throw
-      // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
-      // if the target range is exceeded.
-      typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
-          boost::numeric::def_overflow_handler, Round<double>>
-          converter;
-      try {
-        cooked = converter::convert(d_cooked);
-      }
-      catch(boost::numeric::positive_overflow&) {
-        throw FPC_OverflowException<boost::numeric::positive_overflow>(_variableName);
-      }
-      catch(boost::numeric::negative_overflow&) {
-        throw FPC_OverflowException<boost::numeric::negative_overflow>(_variableName);
-      }
+      rawValue |= _unusedBitsMask;
     }
 
+    // Handle integer and floating-point types differently.
+    switch(boost::fusion::at_key<UserType>(conversionBranch_toCooked.table)) {
+      case 1: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
+        cooked = boost::numeric_cast<UserType>(rawValue);
+        break;
+      }
+      case 2: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned
+        cooked = boost::numeric_cast<UserType>(*(reinterpret_cast<int32_t*>(&rawValue)));
+        break;
+      }
+      case 3: { // !_fpc->_isSigned
+        // convert into double and scale to handle fractional bits
+        double d_cooked = _fractionalBitsCoefficient * static_cast<double>(rawValue);
+
+        // Convert into target type. This conversion takes care of proper rounding
+        // when needed (and only then), and will throw
+        // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
+        // if the target range is exceeded.
+        typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
+            boost::numeric::def_overflow_handler, Round<double>>
+            converter;
+        cooked = converter::convert(d_cooked);
+        break;
+      }
+      case 4: { // _fpc->_isSigned
+        // convert into double and scale to handle fractional bits
+        double d_cooked = _fractionalBitsCoefficient * static_cast<double>(*(reinterpret_cast<int32_t*>(&rawValue)));
+
+        // Convert into target type. This conversion takes care of proper rounding
+        // when needed (and only then), and will throw
+        // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
+        // if the target range is exceeded.
+        typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
+            boost::numeric::def_overflow_handler, Round<double>>
+            converter;
+        cooked = converter::convert(d_cooked);
+        break;
+      }
+      default: {
+        std::cerr << "Fixed point converter configuration is corrupt." << std::endl;
+        std::terminate();
+      }
+    }
     return cooked;
   }
 

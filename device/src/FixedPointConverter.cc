@@ -5,10 +5,8 @@ namespace ChimeraTK {
 
   const int FixedPointConverter::zero = 0;
 
-  FixedPointConverter::FixedPointConverter(std::string variableName,
-      unsigned int nBits,
-      int fractionalBits,
-      bool isSignedFlag)
+  FixedPointConverter::FixedPointConverter(
+      std::string variableName, unsigned int nBits, int fractionalBits, bool isSignedFlag)
   : _variableName(variableName), _nBits(nBits), _fractionalBits(fractionalBits), _isSigned(isSignedFlag),
     _fractionalBitsCoefficient(pow(2., -fractionalBits)), _inverseFractionalBitsCoefficient(pow(2., fractionalBits)) {
     reconfigure(nBits, fractionalBits, isSignedFlag);

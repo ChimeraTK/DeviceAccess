@@ -14,8 +14,7 @@
 
 namespace ChimeraTK {
 
-  /** Map of UserType to value of the UserType. Used e.g. by the
-   * FixedPointConverter to store coefficients etc. in
+  /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */
   typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
       boost::fusion::pair<int16_t, int16_t>, boost::fusion::pair<uint16_t, uint16_t>,
@@ -23,6 +22,19 @@ namespace ChimeraTK {
       boost::fusion::pair<int64_t, int64_t>, boost::fusion::pair<uint64_t, uint64_t>, boost::fusion::pair<float, float>,
       boost::fusion::pair<double, double>, boost::fusion::pair<std::string, std::string>>
       userTypeMap;
+
+  /** Map of UserType to a value of a single type (same for evey user type) */
+  template<typename TargetType>
+  class FixedUserTypeMap {
+   public:
+    boost::fusion::map<boost::fusion::pair<int8_t, TargetType>, boost::fusion::pair<uint8_t, TargetType>,
+        boost::fusion::pair<int16_t, TargetType>, boost::fusion::pair<uint16_t, TargetType>,
+        boost::fusion::pair<int32_t, TargetType>, boost::fusion::pair<uint32_t, TargetType>,
+        boost::fusion::pair<int64_t, TargetType>, boost::fusion::pair<uint64_t, TargetType>,
+        boost::fusion::pair<float, TargetType>, boost::fusion::pair<double, TargetType>,
+        boost::fusion::pair<std::string, TargetType>>
+        table;
+  };
 
   /** Map of UserType to a class template with the UserType as template argument.
    * Used e.g. by the VirtualFunctionTemplate macros to implement the vtable. */
