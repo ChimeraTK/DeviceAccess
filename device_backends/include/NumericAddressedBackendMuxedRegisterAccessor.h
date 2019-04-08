@@ -80,6 +80,7 @@ namespace ChimeraTK {
     size_t _nBlocks;
 
     std::vector<int32_t> _ioBuffer;
+    std::vector<std::vector<int32_t>> _demuxedBuffer;
 
     std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
 
@@ -106,6 +107,8 @@ namespace ChimeraTK {
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override { return {}; }
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> /*newElement*/) override {} // LCOV_EXCL_LINE
+
+    using NDRegisterAccessor<UserType>::buffer_2D;
   };
 
   /********************************************************************************************************************/
@@ -206,8 +209,10 @@ namespace ChimeraTK {
 
       // allocate the buffer for the converted data
       NDRegisterAccessor<UserType>::buffer_2D.resize(_converters.size());
+      _demuxedBuffer.resize(_converters.size());
       for(size_t i = 0; i < _converters.size(); ++i) {
         NDRegisterAccessor<UserType>::buffer_2D[i].resize(_nBlocks);
+        _demuxedBuffer[i].resize(_nBlocks);
       }
 
       // allocate the raw io buffer
@@ -235,25 +240,28 @@ namespace ChimeraTK {
       for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
         switch(_sequenceInfos[sequenceIndex].nBytes) {
           case 1: // 8 bit variables
-            NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
-                _converters[sequenceIndex].template toCooked<UserType>(*(standOfMyioBuffer));
+            _demuxedBuffer[sequenceIndex][blockIndex] = *(standOfMyioBuffer);
             standOfMyioBuffer++;
             break;
           case 2: // 16 bit words
-            NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
-                _converters[sequenceIndex].template toCooked<UserType>(
-                    *(reinterpret_cast<uint16_t*>(standOfMyioBuffer)));
+            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<uint16_t*>(standOfMyioBuffer));
             standOfMyioBuffer = standOfMyioBuffer + 2;
             break;
           case 4: // 32 bit words
-            NDRegisterAccessor<UserType>::buffer_2D[sequenceIndex][blockIndex] =
-                _converters[sequenceIndex].template toCooked<UserType>(
-                    *(reinterpret_cast<uint32_t*>(standOfMyioBuffer)));
+            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<uint32_t*>(standOfMyioBuffer));
             standOfMyioBuffer = standOfMyioBuffer + 4;
             break;
         }
       }
     }
+
+    for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
+      for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
+        buffer_2D[sequenceIndex][blockIndex] =
+            _converters[sequenceIndex].template toCooked<UserType>(_demuxedBuffer[sequenceIndex][blockIndex]);
+      }
+    }
+
     currentVersion = {};
 
     SyncNDRegisterAccessor<UserType>::doPostRead();
