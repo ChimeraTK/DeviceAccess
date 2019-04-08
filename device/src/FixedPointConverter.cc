@@ -87,6 +87,18 @@ namespace ChimeraTK {
   /**********************************************************************************************************************/
 
   template<>
+  void FixedPointConverter::vectorToCooked<std::string>(
+      const std::vector<uint32_t>& rawValues, std::vector<std::string>& cookedValues) const {
+    std::vector<double> doubleValues(cookedValues.size());
+    vectorToCooked(rawValues, doubleValues);
+    for(size_t i = 0; i < cookedValues.size(); ++i) {
+      cookedValues[i] = std::to_string(doubleValues[i]);
+    }
+  }
+
+  /**********************************************************************************************************************/
+
+  template<>
   uint32_t FixedPointConverter::toRaw<std::string>(std::string cookedValue) const {
     if(_fractionalBits == 0) { // use integer conversion
       if(_isSigned) {

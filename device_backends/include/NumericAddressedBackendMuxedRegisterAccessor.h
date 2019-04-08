@@ -80,7 +80,7 @@ namespace ChimeraTK {
     size_t _nBlocks;
 
     std::vector<int32_t> _ioBuffer;
-    std::vector<std::vector<int32_t>> _demuxedBuffer;
+    std::vector<std::vector<uint32_t>> _demuxedBuffer;
 
     std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
 
@@ -256,10 +256,7 @@ namespace ChimeraTK {
     }
 
     for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-      for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
-        buffer_2D[sequenceIndex][blockIndex] =
-            _converters[sequenceIndex].template toCooked<UserType>(_demuxedBuffer[sequenceIndex][blockIndex]);
-      }
+      _converters[sequenceIndex].vectorToCooked(_demuxedBuffer[sequenceIndex], buffer_2D[sequenceIndex]);
     }
 
     currentVersion = {};
