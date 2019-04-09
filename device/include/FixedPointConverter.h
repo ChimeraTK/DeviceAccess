@@ -1,6 +1,7 @@
 #ifndef CHIMERA_TK_FIXED_POINT_CONVERTER_H
 #define CHIMERA_TK_FIXED_POINT_CONVERTER_H
 
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -57,6 +58,14 @@ namespace ChimeraTK {
      */
     template<typename UserType>
     uint32_t toRaw(UserType cookedValue) const;
+
+    /**
+     *  Conversion function from fixed-point values to type T. This function is similar like toCooked() but processes an
+     *  entire vector. The two vectors passed must be of equal size (i.e. cookedValues must already be properly
+     *  allocated).
+     */
+    template<typename UserType>
+    void vectorToCooked(const std::vector<uint32_t>& rawValues, std::vector<UserType>& cookedValues) const;
 
     /** Read back the number of bits the converter is using. */
     unsigned int getNBits() { return _nBits; }
@@ -176,21 +185,23 @@ namespace ChimeraTK {
     bool isNegativeUserType(UserType value) const;
     template<typename UserType, typename std::enable_if<!std::is_signed<UserType>{}, int>::type = 0>
     bool isNegativeUserType(UserType value) const;
+
+    // helper function: force unused leading bits to 0 for positive or 1 for negative numbers
+    void padUnusedBits(uint32_t& rawValue) const {
+      if(!(rawValue & _signBitMask)) {
+        rawValue &= _usedBitsMask;
+      }
+      else {
+        rawValue |= _unusedBitsMask;
+      }
+    }
   };
 
   /**********************************************************************************************************************/
   template<typename UserType>
   UserType FixedPointConverter::toCooked(uint32_t rawValue) const {
     UserType cooked;
-
-    // force unused leading bits to 0 for positive or 1 for negative numbers
-    bool isNegative = (rawValue & _signBitMask);
-    if(!isNegative) {
-      rawValue &= _usedBitsMask;
-    }
-    else {
-      rawValue |= _unusedBitsMask;
-    }
+    padUnusedBits(rawValue);
 
     // Handle integer and floating-point types differently.
     switch(boost::fusion::at_key<UserType>(conversionBranch_toCooked.table)) {
@@ -239,6 +250,75 @@ namespace ChimeraTK {
   }
 
   /**********************************************************************************************************************/
+
+  template<typename UserType>
+  void FixedPointConverter::vectorToCooked(
+      const std::vector<uint32_t>& rawValues, std::vector<UserType>& cookedValues) const {
+    assert(rawValues.size() == cookedValues.size());
+
+    // Handle integer and floating-point types differently.
+    switch(boost::fusion::at_key<UserType>(conversionBranch_toCooked.table)) {
+      case 1: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
+        for(size_t i = 0; i < rawValues.size(); ++i) {
+          auto rawValue = rawValues[i];
+          padUnusedBits(rawValue);
+          cookedValues[i] = boost::numeric_cast<UserType>(rawValue);
+        }
+        break;
+      }
+      case 2: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned
+        for(size_t i = 0; i < rawValues.size(); ++i) {
+          auto rawValue = rawValues[i];
+          padUnusedBits(rawValue);
+          cookedValues[i] = boost::numeric_cast<UserType>(*(reinterpret_cast<int32_t*>(&rawValue)));
+        }
+        break;
+      }
+      case 3: { // !_fpc->_isSigned
+        for(size_t i = 0; i < rawValues.size(); ++i) {
+          auto rawValue = rawValues[i];
+          padUnusedBits(rawValue);
+          // convert into double and scale to handle fractional bits
+          double d_cooked = _fractionalBitsCoefficient * static_cast<double>(rawValue);
+
+          // Convert into target type. This conversion takes care of proper rounding
+          // when needed (and only then), and will throw
+          // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
+          // if the target range is exceeded.
+          typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
+              boost::numeric::def_overflow_handler, Round<double>>
+              converter;
+          cookedValues[i] = converter::convert(d_cooked);
+        }
+        break;
+      }
+      case 4: { // _fpc->_isSigned
+        for(size_t i = 0; i < rawValues.size(); ++i) {
+          auto rawValue = rawValues[i];
+          padUnusedBits(rawValue);
+          // convert into double and scale to handle fractional bits
+          double d_cooked = _fractionalBitsCoefficient * static_cast<double>(*(reinterpret_cast<int32_t*>(&rawValue)));
+
+          // Convert into target type. This conversion takes care of proper rounding
+          // when needed (and only then), and will throw
+          // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
+          // if the target range is exceeded.
+          typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
+              boost::numeric::def_overflow_handler, Round<double>>
+              converter;
+          cookedValues[i] = converter::convert(d_cooked);
+        }
+        break;
+      }
+      default: {
+        std::cerr << "Fixed point converter configuration is corrupt." << std::endl;
+        std::terminate();
+      }
+    }
+  }
+
+  /**********************************************************************************************************************/
+
   template<typename UserType>
   uint32_t FixedPointConverter::toRaw(UserType cookedValue) const {
     // Do a range check first. The later overflow check in the conversion is not
@@ -321,6 +401,11 @@ namespace ChimeraTK {
   /**********************************************************************************************************************/
   template<>
   std::string FixedPointConverter::toCooked<std::string>(uint32_t rawValue) const;
+
+  /**********************************************************************************************************************/
+  template<>
+  void FixedPointConverter::vectorToCooked<std::string>(
+      const std::vector<uint32_t>& rawValues, std::vector<std::string>& cookedValues) const;
 
   /**********************************************************************************************************************/
   template<>
