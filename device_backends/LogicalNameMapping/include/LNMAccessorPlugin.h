@@ -94,34 +94,6 @@ namespace ChimeraTK { namespace LNMBackend {
       const std::string& name, const std::map<std::string, std::string>& parameters);
 
   /********************************************************************************************************************/
-
-  /** Helper function for implementations based on double data type: Convert a double value into the UserType, even if
-   *  it is a string. */
-  template<typename UserType>
-  UserType doubleToUserType(double value) {
-    return UserType(value);
-  }
-
-  template<>
-  inline std::string doubleToUserType<std::string>(double value) {
-    return std::to_string(value);
-  }
-
-  /********************************************************************************************************************/
-
-  /** Helper function for implementations based on double data type: Convert a UserType value into double, even if
-   *  it is a string. */
-  template<typename UserType>
-  double userTypeToDouble(const UserType& value) {
-    return double(value);
-  }
-
-  template<>
-  inline double userTypeToDouble<std::string>(const std::string& value) {
-    return std::stod(value);
-  }
-
-  /********************************************************************************************************************/
   /* Known plugins are defined below (implementations should go to a separate .cc file)                               */
   /********************************************************************************************************************/
 

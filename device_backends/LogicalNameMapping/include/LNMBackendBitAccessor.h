@@ -59,7 +59,7 @@ namespace ChimeraTK {
         // allocate and initialise the buffer
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
-        NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(false);
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] = intToUserType<UserType>(false);
         // set the bit mask
         _bitMask = 1 << _info.bit;
       }
@@ -86,10 +86,10 @@ namespace ChimeraTK {
     void doPostRead() override {
       _accessor->postRead();
       if(_accessor->accessData(0) & _bitMask) {
-        NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(true);
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] = intToUserType<UserType>(true);
       }
       else {
-        NDRegisterAccessor<UserType>::buffer_2D[0][0] = _fixedPointConverter.toCooked<UserType>(false);
+        NDRegisterAccessor<UserType>::buffer_2D[0][0] = intToUserType<UserType>(false);
       }
     }
 

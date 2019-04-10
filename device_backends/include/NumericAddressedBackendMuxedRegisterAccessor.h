@@ -80,7 +80,7 @@ namespace ChimeraTK {
     size_t _nBlocks;
 
     std::vector<int32_t> _ioBuffer;
-    std::vector<std::vector<uint32_t>> _demuxedBuffer;
+    std::vector<std::vector<int32_t>> _demuxedBuffer;
 
     std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
 
@@ -235,7 +235,7 @@ namespace ChimeraTK {
 
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead() {
-    uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
+    int8_t* standOfMyioBuffer = reinterpret_cast<int8_t*>(&_ioBuffer[0]);
     for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
       for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
         switch(_sequenceInfos[sequenceIndex].nBytes) {
@@ -244,11 +244,11 @@ namespace ChimeraTK {
             standOfMyioBuffer++;
             break;
           case 2: // 16 bit words
-            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<uint16_t*>(standOfMyioBuffer));
+            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<int16_t*>(standOfMyioBuffer));
             standOfMyioBuffer = standOfMyioBuffer + 2;
             break;
           case 4: // 32 bit words
-            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<uint32_t*>(standOfMyioBuffer));
+            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<int32_t*>(standOfMyioBuffer));
             standOfMyioBuffer = standOfMyioBuffer + 4;
             break;
         }
@@ -256,7 +256,8 @@ namespace ChimeraTK {
     }
 
     for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-      _converters[sequenceIndex].vectorToCooked(_demuxedBuffer[sequenceIndex], buffer_2D[sequenceIndex]);
+      _converters[sequenceIndex].vectorToCooked<UserType>(
+          _demuxedBuffer[sequenceIndex].begin(), _demuxedBuffer[sequenceIndex].end(), buffer_2D[sequenceIndex].begin());
     }
 
     currentVersion = {};

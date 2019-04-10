@@ -72,10 +72,7 @@ namespace ChimeraTK {
     template<typename UserType, typename DataConverterType, bool isRaw>
     void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPostRead() {
       auto itsrc = _rawAccessor->begin(_startAddress);
-      for(auto itdst = _buffer_2D[0].begin(); itdst != _buffer_2D[0].end(); ++itdst) {
-        *itdst = _dataConverter.template toCooked<UserType>(*itsrc);
-        ++itsrc;
-      }
+      _dataConverter.template vectorToCooked<UserType>(itsrc, itsrc + _buffer_2D[0].size(), _buffer_2D[0].begin());
     }
 
     template<typename UserType, typename DataConverterType, bool isRaw>
@@ -328,7 +325,8 @@ namespace ChimeraTK {
      */
     template<typename RawT, typename CookedT>
     struct dataConverterTemplateSpecialisationHelper {
-      static CookedT toCooked(DataConverterType&, RawT&) {
+      static CookedT vectorToCooked(DataConverterType&, const typename std::vector<RawT>::const_iterator&,
+          const typename std::vector<RawT>::const_iterator&, const typename std::vector<CookedT>::iterator&) {
         throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");
       }
       static RawT toRaw(DataConverterType&, CookedT&) {
@@ -337,8 +335,11 @@ namespace ChimeraTK {
     };
     template<typename CookedT>
     struct dataConverterTemplateSpecialisationHelper<int32_t, CookedT> {
-      static CookedT toCooked(DataConverterType& dataConverter, int32_t& rawValue) {
-        return dataConverter.template toCooked<CookedT>(rawValue);
+      static void vectorToCooked(DataConverterType& dataConverter,
+          const typename std::vector<int32_t>::const_iterator& start,
+          const typename std::vector<int32_t>::const_iterator& end,
+          const typename std::vector<CookedT>::iterator& cooked) {
+        dataConverter.template vectorToCooked<CookedT>(start, end, cooked);
       }
       static int32_t toRaw(DataConverterType& dataConverter, CookedT& value) { return dataConverter.toRaw(value); }
     };
@@ -351,8 +352,11 @@ namespace ChimeraTK {
   COOKED_TYPE NumericAddressedBackendRegisterAccessor<UserType, DataConverterType, isRaw>::getAsCooked_impl(
       unsigned int channel, unsigned int sample) {
     if(isRaw) {
-      return dataConverterTemplateSpecialisationHelper<UserType, COOKED_TYPE>::toCooked(
-          _dataConverter, NDRegisterAccessor<UserType>::buffer_2D[channel][sample]);
+      std::vector<COOKED_TYPE> cookedData(1);
+      dataConverterTemplateSpecialisationHelper<UserType, COOKED_TYPE>::vectorToCooked(_dataConverter,
+          NDRegisterAccessor<UserType>::buffer_2D[channel].begin() + sample,
+          NDRegisterAccessor<UserType>::buffer_2D[channel].begin() + sample + 1, cookedData.begin());
+      return cookedData[0];
     }
     else {
       throw ChimeraTK::logic_error("Getting as cooked is only available for raw accessors!");

@@ -25,44 +25,44 @@ namespace ChimeraTK {
     template<typename T>
     class DummyRegisterElement {
      public:
-      DummyRegisterElement(FixedPointConverter* _fpc, int _nbytes, uint32_t* _buffer)
+      DummyRegisterElement(FixedPointConverter* _fpc, int _nbytes, int32_t* _buffer)
       : fpcptr(_fpc), nbytes(_nbytes), buffer(_buffer) {}
 
       /// Implicit type conversion to user type T.
       /// This covers already a lot of operations like arithmetics and comparison
-      inline operator T() const { return fpcptr->template toCooked<T>(*buffer); }
+      inline operator T() const { return fpcptr->template scalarToCooked<T>(*buffer); }
 
       /// assignment operator
       inline DummyRegisterElement<T> operator=(T rhs) {
-        uint32_t raw = fpcptr->toRaw(rhs);
+        int32_t raw = fpcptr->toRaw(rhs);
         memcpy(buffer, &raw, nbytes);
         return *this;
       }
 
       /// pre-increment operator
       inline DummyRegisterElement<T> operator++() {
-        T v = fpcptr->template toCooked<T>(*buffer);
-        return operator=(v + 1);
+        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+        return operator=(cooked + 1);
       }
 
       /// pre-decrement operator
       inline DummyRegisterElement<T> operator--() {
-        T v = fpcptr->template toCooked<T>(*buffer);
-        return operator=(v - 1);
+        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+        return operator=(cooked - 1);
       }
 
       /// post-increment operator
       inline T operator++(int) {
-        T v = fpcptr->template toCooked<T>(*buffer);
-        operator=(v + 1);
-        return v;
+        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+        operator=(cooked + 1);
+        return cooked;
       }
 
       /// post-decrement operator
       inline T operator--(int) {
-        T v = fpcptr->template toCooked<T>(*buffer);
-        operator=(v - 1);
-        return v;
+        T cooked = fpcptr->template scalarToCooked<T>(*buffer);
+        operator=(cooked - 1);
+        return cooked;
       }
 
      protected:
@@ -76,7 +76,7 @@ namespace ChimeraTK {
       int nbytes;
 
       /// raw buffer of this element
-      uint32_t* buffer;
+      int32_t* buffer;
     };
 
     /*********************************************************************************************************************/
@@ -85,13 +85,13 @@ namespace ChimeraTK {
     template<typename T>
     class DummyRegisterSequence {
      public:
-      DummyRegisterSequence(FixedPointConverter* _fpc, int _nbytes, int _pitch, uint32_t* _buffer)
+      DummyRegisterSequence(FixedPointConverter* _fpc, int _nbytes, int _pitch, int32_t* _buffer)
       : fpcptr(_fpc), nbytes(_nbytes), pitch(_pitch), buffer(_buffer) {}
 
       /// Get or set register content by [] operator.
       inline DummyRegisterElement<T> operator[](unsigned int sample) {
         char* basePtr = reinterpret_cast<char*>(buffer);
-        return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<uint32_t*>(basePtr + pitch * sample));
+        return DummyRegisterElement<T>(fpcptr, nbytes, reinterpret_cast<int32_t*>(basePtr + pitch * sample));
       }
 
      protected:
@@ -105,7 +105,7 @@ namespace ChimeraTK {
       int pitch;
 
       /// reference to the raw buffer (first word of the sequence)
-      uint32_t* buffer;
+      int32_t* buffer;
 
      private:
       /** prevent copying by operator=, since it will be confusing */
@@ -165,7 +165,7 @@ namespace ChimeraTK {
           module + "/" + name, registerInfo.width, registerInfo.nFractionalBits, registerInfo.signedFlag);
       // initialise the base DummyRegisterElement
       proxies::DummyRegisterElement<T>::fpcptr = &fpc;
-      proxies::DummyRegisterElement<T>::nbytes = sizeof(uint32_t);
+      proxies::DummyRegisterElement<T>::nbytes = sizeof(int32_t);
       proxies::DummyRegisterElement<T>::buffer = getElement(0);
     }
 
@@ -186,14 +186,13 @@ namespace ChimeraTK {
     FixedPointConverter fpc;
 
     /// return element
-    inline uint32_t* getElement(unsigned int index) {
-      return reinterpret_cast<uint32_t*>(
-          &(_dev->_barContents[registerInfo.bar][registerInfo.address / sizeof(uint32_t) + index]));
+    inline int32_t* getElement(unsigned int index) {
+      return &(_dev->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t) + index]);
     }
 
     /// return a proxy object
     inline proxies::DummyRegisterElement<T> getProxy(int index) {
-      return proxies::DummyRegisterElement<T>(&fpc, sizeof(uint32_t), getElement(index));
+      return proxies::DummyRegisterElement<T>(&fpc, sizeof(int32_t), getElement(index));
     }
 
    private:
@@ -266,7 +265,7 @@ namespace ChimeraTK {
     /// will give you the 988th sample of the 4th channel.
     inline proxies::DummyRegisterSequence<T> operator[](unsigned int sequence) {
       int8_t* basePtr = reinterpret_cast<int8_t*>(_dev->_barContents[registerInfo.bar].data());
-      uint32_t* seq = reinterpret_cast<uint32_t*>(basePtr + offsets[sequence]);
+      int32_t* seq = reinterpret_cast<int32_t*>(basePtr + offsets[sequence]);
       return proxies::DummyRegisterSequence<T>(&(fpc[sequence]), nbytes[sequence], pitch, seq);
     }
 

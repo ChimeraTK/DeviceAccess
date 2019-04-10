@@ -1,10 +1,11 @@
 #ifndef CHIMERATK_IEEE754_SINGLE_CONVERTER_H
 #define CHIMERATK_IEEE754_SINGLE_CONVERTER_H
 
-#include "Exception.h"
+#include <float.h> // for float limits
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <float.h> // for float limits
+#include "Exception.h"
+#include "SupportedUserTypes.h"
 
 namespace ChimeraTK {
 
@@ -27,8 +28,30 @@ namespace ChimeraTK {
    * constructor. Converter for IEEE754 single precision (32bit) floating point.
    */
   struct IEEE754_SingleConverter {
+    template<typename CookedType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
+    void vectorToCooked(
+        const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, const COOKED_ITERATOR& cooked_begin) const {
+      static_assert(std::is_same<typename std::iterator_traits<RAW_ITERATOR>::value_type, int32_t>::value,
+          "RAW_ITERATOR template argument must be an iterator with value type equal to int32_t.");
+      static_assert(std::is_same<typename std::iterator_traits<COOKED_ITERATOR>::value_type, CookedType>::value,
+          "COOKED_ITERATOR template argument must be an iterator with value type equal to the CookedType template "
+          "argument.");
+      vectorToCooked_impl<CookedType, RAW_ITERATOR, COOKED_ITERATOR>::impl(raw_begin, raw_end, cooked_begin);
+    }
+
+    template<typename CookedType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
+    struct vectorToCooked_impl {
+      static void impl(const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, COOKED_ITERATOR cooked_begin);
+    };
+
+    /** Inefficient convenience function for converting a single value to cooked */
     template<typename CookedType>
-    CookedType toCooked(uint32_t rawValue) const;
+    CookedType scalarToCooked(int32_t raw) const {
+      CookedType cooked;
+      vectorToCooked<CookedType>(
+          raw_iterator<int32_t>(&raw), raw_iterator<int32_t>((&raw) + 1), raw_iterator<CookedType>(&cooked));
+      return cooked;
+    }
 
     template<typename CookedType>
     uint32_t toRaw(CookedType cookedValue) const;
@@ -39,27 +62,17 @@ namespace ChimeraTK {
     bool operator!=(const IEEE754_SingleConverter& /*other*/) const { return false; }
   };
 
-  template<typename CookedType>
-  CookedType IEEE754_SingleConverter::toCooked(uint32_t rawValue) const {
-    // Step 1: convert the raw data to the "generic" representation in the CPU:
-    // float
-    void* warningAvoider = &rawValue;
-    float genericRepresentation = *(reinterpret_cast<float*>(warningAvoider));
+  template<typename CookedType, typename RAW_ITERATOR, typename COOKED_ITERATOR>
+  void IEEE754_SingleConverter::vectorToCooked_impl<CookedType, RAW_ITERATOR, COOKED_ITERATOR>::impl(
+      const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, COOKED_ITERATOR cooked_begin) {
+    for(auto it = raw_begin; it != raw_end; ++it) {
+      // Step 1: convert the raw data to the "generic" representation in the CPU: float
+      float genericRepresentation = *(reinterpret_cast<const float*>(&(*it)));
 
-    // Step 2: convert the float to the cooked type
-    CookedType cooked;
-
-    try {
-      cooked = RoundingRangeCheckingDataConverter<float, CookedType>::converter::convert(genericRepresentation);
+      // Step 2: convert the float to the cooked type
+      *cooked_begin = RoundingRangeCheckingDataConverter<float, CookedType>::converter::convert(genericRepresentation);
+      ++cooked_begin;
     }
-    catch(boost::numeric::positive_overflow&) {
-      throw ChimeraTK::logic_error("positive overflow"); //+_variableName);
-    }
-    catch(boost::numeric::negative_overflow&) {
-      throw ChimeraTK::logic_error("negative overflow"); //+_variableName);
-    }
-
-    return cooked;
   }
 
   template<typename CookedType>
@@ -84,8 +97,19 @@ namespace ChimeraTK {
     return rawValue;
   }
 
-  template<>
-  std::string IEEE754_SingleConverter::toCooked<std::string>(uint32_t rawValue) const;
+  template<typename RAW_ITERATOR, typename COOKED_ITERATOR>
+  struct IEEE754_SingleConverter::vectorToCooked_impl<std::string, RAW_ITERATOR, COOKED_ITERATOR> {
+    static void impl(const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, COOKED_ITERATOR cooked_begin) {
+      for(auto it = raw_begin; it != raw_end; ++it) {
+        // Step 1: convert the raw data to the "generic" representation in the CPU: float
+        float genericRepresentation = *(reinterpret_cast<const float*>(&(*it)));
+
+        // Step 2: convert the float to the cooked type
+        *cooked_begin = std::to_string(genericRepresentation);
+        ++cooked_begin;
+      }
+    }
+  };
 
   template<>
   uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const;

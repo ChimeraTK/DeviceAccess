@@ -9,10 +9,93 @@
 #ifndef CHIMERA_TK_SUPPORTED_USER_TYPES_H
 #define CHIMERA_TK_SUPPORTED_USER_TYPES_H
 
+#include <iterator>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
+  /** Helper function for implementations based on double data type: Convert a double value into the UserType, even if
+   *  it is a string. */
+  template<typename UserType>
+  UserType doubleToUserType(double value) {
+    return UserType(value);
+  }
+
+  template<>
+  inline std::string doubleToUserType<std::string>(double value) {
+    return std::to_string(value);
+  }
+
+  /********************************************************************************************************************/
+
+  /** Helper function for implementations based on double data type: Convert a UserType value into double, even if
+   *  it is a string. */
+  template<typename UserType>
+  double userTypeToDouble(const UserType& value) {
+    return double(value);
+  }
+
+  template<>
+  inline double userTypeToDouble<std::string>(const std::string& value) {
+    return std::stod(value);
+  }
+
+  /********************************************************************************************************************/
+
+  /** Helper function for implementations based on int data type: Convert an int value into the UserType, even if
+   *  it is a string. */
+  template<typename UserType>
+  UserType intToUserType(int value) {
+    return UserType(value);
+  }
+
+  template<>
+  inline std::string intToUserType<std::string>(int value) {
+    return std::to_string(value);
+  }
+
+  /********************************************************************************************************************/
+
+  /** Helper function for implementations based on double data type: Convert a UserType value into int, even if
+   *  it is a string. */
+  template<typename UserType>
+  int userTypeToInt(const UserType& value) {
+    return int(value);
+  }
+
+  template<>
+  inline int userTypeToInt<std::string>(const std::string& value) {
+    return std::stod(value);
+  }
+
+  /********************************************************************************************************************/
+
+  /** A random-access iterator which can be created from raw C pointers */
+  template<typename DATA_TYPE>
+  struct raw_iterator : std::iterator<std::random_access_iterator_tag, DATA_TYPE> {
+    explicit raw_iterator(DATA_TYPE* begin) : _ptr(begin) {}
+    raw_iterator& operator++() {
+      ++_ptr;
+      return *this;
+    }
+    raw_iterator operator++(int) {
+      raw_iterator retval = *this;
+      ++(*this);
+      return retval;
+    }
+    bool operator==(raw_iterator other) const { return _ptr == other._ptr; }
+    bool operator!=(raw_iterator other) const { return !(*this == other); }
+    size_t operator-(raw_iterator other) const { return _ptr - other._ptr; }
+    DATA_TYPE& operator*() const { return *_ptr; }
+
+   private:
+    DATA_TYPE* _ptr;
+  };
+
+  /********************************************************************************************************************/
 
   /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */

@@ -177,9 +177,8 @@ namespace ChimeraTK {
     void doPostRead() override {
       _target->postRead();
       for(size_t i = 0; i < this->buffer_2D.size(); ++i) {
-        for(size_t j = 0; j < this->buffer_2D[i].size(); ++j) {
-          buffer_2D[i][j] = _fixedPointConverter.toCooked<UserType>(_target->accessChannel(i)[j]);
-        }
+        _fixedPointConverter.template vectorToCooked<UserType>(
+            _target->accessChannel(i).begin(), _target->accessChannel(i).end(), buffer_2D[i].begin());
       }
     }
 
@@ -222,7 +221,12 @@ namespace ChimeraTK {
 
     template<typename COOKED_TYPE>
     COOKED_TYPE getAsCooked_impl(unsigned int channel, unsigned int sample) {
-      return _fixedPointConverter.toCooked<COOKED_TYPE>(buffer_2D[channel][sample]);
+      std::vector<int32_t> rawVector(1);
+      std::vector<COOKED_TYPE> cookedVector(1);
+      rawVector[0] = buffer_2D[channel][sample];
+      _fixedPointConverter.template vectorToCooked<COOKED_TYPE>(
+          rawVector.begin(), rawVector.end(), cookedVector.begin());
+      return cookedVector[0];
     }
 
     template<typename COOKED_TYPE>

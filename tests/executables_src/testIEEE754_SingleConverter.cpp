@@ -15,17 +15,17 @@ BOOST_AUTO_TEST_CASE(test_toCooked_3_25) {
   void* warningAvoider = &testValue;
   int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
 
-  BOOST_CHECK_CLOSE(converter.toCooked<float>(rawValue), 3.25, 0.0001);
-  BOOST_CHECK_CLOSE(converter.toCooked<double>(rawValue), 3.25, 0.0001);
-  BOOST_CHECK_EQUAL(converter.toCooked<int8_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<uint8_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<int16_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<uint16_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<int32_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<uint32_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<int64_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<uint64_t>(rawValue), 3);
-  BOOST_CHECK_EQUAL(converter.toCooked<std::string>(rawValue), std::to_string(testValue));
+  BOOST_CHECK_CLOSE(converter.scalarToCooked<float>(rawValue), 3.25, 0.0001);
+  BOOST_CHECK_CLOSE(converter.scalarToCooked<double>(rawValue), 3.25, 0.0001);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int8_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint8_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int16_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint16_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int32_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint32_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint64_t>(rawValue), 3);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
 }
 
 BOOST_AUTO_TEST_CASE(test_toCooked_60k) {
@@ -37,19 +37,17 @@ BOOST_AUTO_TEST_CASE(test_toCooked_60k) {
   void* warningAvoider = &testValue;
   int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
 
-  BOOST_CHECK_CLOSE(converter.toCooked<float>(rawValue), 60000.7, 0.0001);
-  BOOST_CHECK_CLOSE(converter.toCooked<double>(rawValue), 60000.7, 0.0001);
-  BOOST_CHECK_THROW(converter.toCooked<int8_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(converter.toCooked<uint8_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(converter.toCooked<int16_t>(rawValue),
-      ChimeraTK::logic_error); // +- 32k
-  BOOST_CHECK_EQUAL(converter.toCooked<uint16_t>(rawValue),
-      60001); // unsigned 16 bit is up to 65k
-  BOOST_CHECK_EQUAL(converter.toCooked<int32_t>(rawValue), 60001);
-  BOOST_CHECK_EQUAL(converter.toCooked<uint32_t>(rawValue), 60001);
-  BOOST_CHECK_EQUAL(converter.toCooked<int64_t>(rawValue), 60001);
-  BOOST_CHECK_EQUAL(converter.toCooked<uint64_t>(rawValue), 60001);
-  BOOST_CHECK_EQUAL(converter.toCooked<std::string>(rawValue), std::to_string(testValue));
+  BOOST_CHECK_CLOSE(converter.scalarToCooked<float>(rawValue), 60000.7, 0.0001);
+  BOOST_CHECK_CLOSE(converter.scalarToCooked<double>(rawValue), 60000.7, 0.0001);
+  BOOST_CHECK_THROW(converter.scalarToCooked<int8_t>(rawValue), boost::numeric::positive_overflow);
+  BOOST_CHECK_THROW(converter.scalarToCooked<uint8_t>(rawValue), boost::numeric::positive_overflow);
+  BOOST_CHECK_THROW(converter.scalarToCooked<int16_t>(rawValue), boost::numeric::positive_overflow); // +- 32k
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint16_t>(rawValue), 60001); // unsigned 16 bit is up to 65k
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int32_t>(rawValue), 60001);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint32_t>(rawValue), 60001);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), 60001);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<uint64_t>(rawValue), 60001);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
 }
 
 BOOST_AUTO_TEST_CASE(test_toCooked_minus240) {
@@ -59,17 +57,17 @@ BOOST_AUTO_TEST_CASE(test_toCooked_minus240) {
   void* warningAvoider = &testValue;
   int32_t rawValue = *(reinterpret_cast<int32_t*>(warningAvoider));
 
-  BOOST_CHECK_CLOSE(converter.toCooked<float>(rawValue), -240.6, 0.0001);
-  BOOST_CHECK_CLOSE(converter.toCooked<double>(rawValue), -240.6, 0.0001);
-  BOOST_CHECK_THROW(converter.toCooked<int8_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(converter.toCooked<uint8_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_EQUAL(converter.toCooked<int16_t>(rawValue), -241);
-  BOOST_CHECK_THROW(converter.toCooked<uint16_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_EQUAL(converter.toCooked<int32_t>(rawValue), -241);
-  BOOST_CHECK_THROW(converter.toCooked<uint32_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_EQUAL(converter.toCooked<int64_t>(rawValue), -241);
-  BOOST_CHECK_THROW(converter.toCooked<uint64_t>(rawValue), ChimeraTK::logic_error);
-  BOOST_CHECK_EQUAL(converter.toCooked<std::string>(rawValue), std::to_string(testValue));
+  BOOST_CHECK_CLOSE(converter.scalarToCooked<float>(rawValue), -240.6, 0.0001);
+  BOOST_CHECK_CLOSE(converter.scalarToCooked<double>(rawValue), -240.6, 0.0001);
+  BOOST_CHECK_THROW(converter.scalarToCooked<int8_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_THROW(converter.scalarToCooked<uint8_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int16_t>(rawValue), -241);
+  BOOST_CHECK_THROW(converter.scalarToCooked<uint16_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int32_t>(rawValue), -241);
+  BOOST_CHECK_THROW(converter.scalarToCooked<uint32_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<int64_t>(rawValue), -241);
+  BOOST_CHECK_THROW(converter.scalarToCooked<uint64_t>(rawValue), boost::numeric::negative_overflow);
+  BOOST_CHECK_EQUAL(converter.scalarToCooked<std::string>(rawValue), std::to_string(testValue));
 }
 
 void checkAsRaw(int32_t rawValue, float expectedValue) {

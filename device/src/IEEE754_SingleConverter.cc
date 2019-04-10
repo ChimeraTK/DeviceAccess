@@ -1,15 +1,6 @@
 #include "IEEE754_SingleConverter.h"
 
 namespace ChimeraTK {
-  template<>
-  std::string IEEE754_SingleConverter::toCooked<std::string>(uint32_t rawValue) const {
-    // Step 1 as in the normal template: reinterpret cast
-    void* warningAvoider = &rawValue;
-    float genericRepresentation = *(reinterpret_cast<float*>(warningAvoider));
-
-    // Step 2: convert to string
-    return std::to_string(genericRepresentation);
-  }
 
   template<>
   uint32_t IEEE754_SingleConverter::toRaw(std::string cookedValue) const {

@@ -70,7 +70,7 @@ void checkToCookedOverflowNeg(FixedPointConverter const& converter, uint32_t inp
 
   bool hasThrown = false;
   try {
-    converter.template toCooked<T>(input);
+    converter.scalarToCooked<T>(input);
   }
   catch(boost::numeric::negative_overflow& e) {
     // Although we do not check the content of the what() message, we execute it
@@ -90,7 +90,7 @@ void checkToCookedOverflowPos(FixedPointConverter const& converter, uint32_t inp
 
   bool hasThrown = false;
   try {
-    converter.template toCooked<T>(input);
+    converter.scalarToCooked<T>(input);
   }
   catch(boost::numeric::positive_overflow& e) {
     std::cout << "Caught exception where it was expected: " << e.what() << std::endl;
@@ -107,11 +107,11 @@ void checkToCooked(FixedPointConverter const& converter, uint32_t input, T expec
 
   BOOST_TEST_CHECKPOINT(message.str());
 
-  T result = converter.template toCooked<T>(input);
+  T output = converter.scalarToCooked<T>(input);
 
-  message << std::hex << ", output 0x" << result << std::dec;
+  message << std::hex << ", output 0x" << output << std::dec;
 
-  BOOST_CHECK_MESSAGE(result == expectedValue, message.str());
+  BOOST_CHECK_MESSAGE(output == expectedValue, message.str());
 }
 
 template<typename T>
