@@ -12,8 +12,80 @@
 #include <iterator>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
+  /** Helper classes for the conversion functions below */
+  namespace detail {
+    template<typename UserType, typename NUMERIC>
+    struct numericToUserType_impl {
+      static UserType impl(NUMERIC value);
+    };
+
+    template<typename NUMERIC>
+    struct numericToUserType_impl<std::string, NUMERIC> {
+      static std::string impl(NUMERIC value);
+    };
+
+    template<typename UserType, typename NUMERIC>
+    struct userTypeToNumeric_impl {
+      static NUMERIC impl(UserType value);
+    };
+
+    template<typename NUMERIC>
+    struct userTypeToNumeric_impl<std::string, NUMERIC> {
+      static NUMERIC impl(const std::string& value);
+    };
+
+    template<class S>
+    struct Round {
+      static S nearbyint(S s) { return std::round(s); }
+      typedef boost::mpl::integral_c<std::float_round_style, std::round_to_nearest> round_style;
+    };
+  } // namespace detail
+
+  /********************************************************************************************************************/
+
+  /** Helper function to convert numeric data into any UserType (even if it is a string etc.). The conversion is done
+   *  with proper rounding and range checking. It will throw boost::numeric::positive_overflow resp.
+   *  boost::numeric::negative_overflow if the data is out of range. */
+  template<typename UserType, typename NUMERIC>
+  UserType numericToUserType(NUMERIC value) {
+    return detail::numericToUserType_impl<UserType, NUMERIC>::impl(value);
+  }
+
+  /********************************************************************************************************************/
+
+  /** Helper function to convert numeric data into any UserType (even if it is a string etc.). The conversion is done
+   *  with proper rounding and range checking. It will throw boost::numeric::positive_overflow resp.
+   *  boost::numeric::negative_overflow if the data is out of range. */
+  template<typename UserType, typename NUMERIC>
+  NUMERIC userTypeToNumeric(UserType value) {
+    return detail::userTypeToNumeric_impl<UserType, NUMERIC>::impl(value);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename NUMERIC>
+  UserType detail::numericToUserType_impl<UserType, NUMERIC>::impl(NUMERIC value) {
+    typedef boost::numeric::converter<UserType, NUMERIC, boost::numeric::conversion_traits<UserType, NUMERIC>,
+        boost::numeric::def_overflow_handler, Round<NUMERIC>>
+        converter;
+    return converter::convert(value);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, typename NUMERIC>
+  NUMERIC detail::userTypeToNumeric_impl<UserType, NUMERIC>::impl(UserType value) {
+    typedef boost::numeric::converter<NUMERIC, UserType, boost::numeric::conversion_traits<NUMERIC, UserType>,
+        boost::numeric::def_overflow_handler, Round<UserType>>
+        converter;
+    return converter::convert(value);
+  }
 
   /********************************************************************************************************************/
 

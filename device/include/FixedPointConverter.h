@@ -163,6 +163,12 @@ namespace ChimeraTK {
         else if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 2;
         }
+        else if(_fpc->_nBits == 16 && !_fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 5;
+        }
+        else if(_fpc->_nBits == 16 && _fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 6;
+        }
         else if(!_fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 3;
         }
@@ -241,22 +247,31 @@ namespace ChimeraTK {
         }
         break;
       }
+      case 5: { // _fpc->_nBits == 16 && !_fpc->_isSigned
+        for(auto it = raw_begin; it != raw_end; ++it) {
+          *cooked_begin = fpc._fractionalBitsCoefficient *
+              numericToUserType<UserType>(*(reinterpret_cast<const uint16_t*>(&(*it))));
+          ++cooked_begin;
+        }
+        break;
+      }
+      case 6: { //  _fpc->_nBits == 16 && _fpc->_isSigned
+        for(auto it = raw_begin; it != raw_end; ++it) {
+          *cooked_begin =
+              numericToUserType<UserType>(fpc._fractionalBitsCoefficient * *(reinterpret_cast<const int16_t*>(&(*it))));
+          ++cooked_begin;
+        }
+        break;
+      }
       case 3: { // !_fpc->_isSigned
         for(auto it = raw_begin; it != raw_end; ++it) {
           auto rawValue = *it;
           fpc.padUnusedBits(rawValue);
           // convert into double and scale to handle fractional bits
           double d_cooked =
-              fpc._fractionalBitsCoefficient * static_cast<double>(*(reinterpret_cast<uint32_t*>(&rawValue)));
+              static_cast<double>(fpc._fractionalBitsCoefficient * *(reinterpret_cast<uint32_t*>(&rawValue)));
 
-          // Convert into target type. This conversion takes care of proper rounding
-          // when needed (and only then), and will throw
-          // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
-          // if the target range is exceeded.
-          typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
-              boost::numeric::def_overflow_handler, Round<double>>
-              converter;
-          *cooked_begin = converter::convert(d_cooked);
+          *cooked_begin = numericToUserType<UserType>(d_cooked);
           ++cooked_begin;
         }
         break;
@@ -268,14 +283,7 @@ namespace ChimeraTK {
           // convert into double and scale to handle fractional bits
           double d_cooked = fpc._fractionalBitsCoefficient * static_cast<double>(rawValue);
 
-          // Convert into target type. This conversion takes care of proper rounding
-          // when needed (and only then), and will throw
-          // boost::numeric::positive_overflow resp. boost::numeric::negative_overflow
-          // if the target range is exceeded.
-          typedef boost::numeric::converter<UserType, double, boost::numeric::conversion_traits<UserType, double>,
-              boost::numeric::def_overflow_handler, Round<double>>
-              converter;
-          *cooked_begin = converter::convert(d_cooked);
+          *cooked_begin = numericToUserType<UserType>(d_cooked);
           ++cooked_begin;
         }
         break;
