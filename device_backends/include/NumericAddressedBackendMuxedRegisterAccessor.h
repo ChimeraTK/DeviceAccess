@@ -233,31 +233,42 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  namespace detail {
+
+    /** Iteration on a raw buffer with a given pitch (increment from one element to the next) in bytes */
+    template<typename DATA_TYPE>
+    struct pitched_iterator : std::iterator<std::random_access_iterator_tag, DATA_TYPE> {
+      pitched_iterator(void* begin, size_t pitch) : _ptr(reinterpret_cast<uint8_t*>(begin)), _pitch(pitch) {}
+      pitched_iterator& operator++() {
+        _ptr += _pitch;
+        return *this;
+      }
+      pitched_iterator operator++(int) {
+        pitched_iterator retval = *this;
+        ++(*this);
+        return retval;
+      }
+      pitched_iterator operator+(size_t n) { return pitched_iterator(_ptr + n * _pitch, _pitch); }
+      bool operator==(pitched_iterator other) const { return _ptr == other._ptr; }
+      bool operator!=(pitched_iterator other) const { return !(*this == other); }
+      size_t operator-(pitched_iterator other) const { return _ptr - other._ptr; }
+      DATA_TYPE& operator*() const { return *reinterpret_cast<DATA_TYPE*>(_ptr); }
+
+     private:
+      uint8_t* _ptr;
+      const size_t _pitch;
+    };
+
+  } // namespace detail
+
   template<class UserType>
   void NumericAddressedBackendMuxedRegisterAccessor<UserType>::doPostRead() {
-    int8_t* standOfMyioBuffer = reinterpret_cast<int8_t*>(&_ioBuffer[0]);
-    for(size_t blockIndex = 0; blockIndex < _nBlocks; ++blockIndex) {
-      for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-        switch(_sequenceInfos[sequenceIndex].nBytes) {
-          case 1: // 8 bit variables
-            _demuxedBuffer[sequenceIndex][blockIndex] = *(standOfMyioBuffer);
-            standOfMyioBuffer++;
-            break;
-          case 2: // 16 bit words
-            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<int16_t*>(standOfMyioBuffer));
-            standOfMyioBuffer = standOfMyioBuffer + 2;
-            break;
-          case 4: // 32 bit words
-            _demuxedBuffer[sequenceIndex][blockIndex] = *(reinterpret_cast<int32_t*>(standOfMyioBuffer));
-            standOfMyioBuffer = standOfMyioBuffer + 4;
-            break;
-        }
-      }
-    }
-
+    uint8_t* standOfMyioBuffer = reinterpret_cast<uint8_t*>(&_ioBuffer[0]);
     for(size_t sequenceIndex = 0; sequenceIndex < _converters.size(); ++sequenceIndex) {
-      _converters[sequenceIndex].vectorToCooked<UserType>(
-          _demuxedBuffer[sequenceIndex].begin(), _demuxedBuffer[sequenceIndex].end(), buffer_2D[sequenceIndex].begin());
+      auto start = detail::pitched_iterator<int32_t>(standOfMyioBuffer, bytesPerBlock);
+      auto end = detail::pitched_iterator<int32_t>(standOfMyioBuffer, bytesPerBlock) + _nBlocks;
+      _converters[sequenceIndex].template vectorToCooked<UserType>(start, end, buffer_2D[sequenceIndex].begin());
+      standOfMyioBuffer += _sequenceInfos[sequenceIndex].nBytes;
     }
 
     currentVersion = {};
