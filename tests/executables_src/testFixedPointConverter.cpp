@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus12) {
 
 BOOST_AUTO_TEST_CASE(testInt32_fractionMinus1) {
   FixedPointConverter converter("Variable32minus1signed", 32,
-      -1); // 32 bits, -12 fractional bits, signed
+      -1); // 32 bits, -1 fractional bits, signed
 
   checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xAAAAAAAA) * 2);
   checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x55555555) * 2);
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE(testInt32_fractionMinus1) {
 
 BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus1) {
   FixedPointConverter converter("Variable32minus1unsigned", 32, -1,
-      false); // 32 bits, -12 fractional bits, not signed
+      false); // 32 bits, -1 fractional bits, not signed
 
   checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAAAAAA) * 2);
   checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x55555555) * 2);
@@ -568,6 +568,78 @@ BOOST_AUTO_TEST_CASE(testUInt32_fractionMinus1) {
   checkToRaw(converter, (int)0xAAAAAAAA, 0);
   checkToRaw(converter, (unsigned int)0x55555555, 0x2AAAAAAB);
   checkToRaw(converter, (unsigned int)0xAAAAAAAA, 0x55555555);
+  checkToRaw(converter, (short)0x5555, 0x00002AAB);
+  checkToRaw(converter, (short)0xAAAA, 0);
+  checkToRaw(converter, (unsigned short)0x5555, 0x00002AAB);
+  checkToRaw(converter, (unsigned short)0xAAAA, 0x00005555);
+}
+
+BOOST_AUTO_TEST_CASE(testInt16_fractionMinus1) {
+  FixedPointConverter converter("Variable16minus1signed", 16, -1); // 16 bits, -1 fractional bits, signed
+
+  checkToCooked(converter, 0xAAAAAAAA, SIGNED_HEX_TO_DOUBLE(0xFFFFAAAA) * 2);
+  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x5555) * 2);
+  checkToCookedOverflowNeg<int16_t>(converter, 0xAAAAAAAA);
+  checkToCookedOverflowPos<int16_t>(converter, 0x55555555);
+  checkToCooked(converter, 0x22222202, (int)0x4404);
+  checkToCookedOverflowNeg<unsigned int>(converter, 0xAAAA);
+  checkToCooked(converter, 0x55555555, (unsigned int)0xAAAA);
+  checkToCooked(converter, 0x22222202, (unsigned int)0x4404);
+  checkToCooked(converter, 0x00007FFF, (unsigned int)0xFFFE);
+  checkToCooked(converter, 0xAAAAAAAA, (int64_t)0xFFFFFFFFFFFF5554);
+
+  checkToRaw(converter, 0.25, 0);
+  checkToRaw(converter, -0.25, 0);
+  checkToRaw(converter, 0.75, 0);
+  checkToRaw(converter, -0.75, 0);
+
+  // bit pattern of 3 is 11, where the last digit is rounded up, and afterwards
+  // one bit is shifted. So the actual value is 4
+  checkToRaw(converter, 3.25, 0x2);
+  checkToRaw(converter, -3.25, 0xFFFE); // (-2)
+  checkToRaw(converter, 5.75, 0x3);
+  checkToRaw(converter, -5.75, 0xFFFD); // (-3)
+
+  checkToRaw(converter, (int)0x5554, 0x2AAA);
+  checkToRaw(converter, (int)0x5555, 0x2AAB);
+  checkToRaw(converter, (int)0x5556, 0x2AAB);
+  checkToRaw(converter, (int)0xFFFFAAAA, 0xD555);
+  checkToRaw(converter, (unsigned int)0x5555, 0x2AAB);
+  checkToRaw(converter, (unsigned int)0xAAAA, 0x5555);
+  checkToRaw(converter, (short)0x5555, 0x00002AAB);
+  checkToRaw(converter, (short)0xAAAA, 0xD555);
+  checkToRaw(converter, (unsigned short)0x5555, 0x00002AAB);
+  checkToRaw(converter, (unsigned short)0xAAAA, 0x00005555);
+  checkToRaw(converter, static_cast<int64_t>(static_cast<int32_t>(0xFFFFAAAA)), 0xD555);
+  checkToRaw(converter, static_cast<uint64_t>(0xAAAA), 0x5555);
+}
+
+BOOST_AUTO_TEST_CASE(testUInt16_fractionMinus1) {
+  FixedPointConverter converter("Variable16minus1unsigned", 16, -1, false); // 16 bits, -1 fractional bits, not signed
+
+  checkToCooked(converter, 0xAAAAAAAA, HEX_TO_DOUBLE(0xAAAA) * 2);
+  checkToCooked(converter, 0x55555555, HEX_TO_DOUBLE(0x5555) * 2);
+  checkToCooked(converter, 0x55555555, SIGNED_HEX_TO_DOUBLE(0x5555) * 2);
+  checkToCooked(converter, 0x22222202, (int)0x4404);
+  checkToCooked(converter, 0x55555555, (unsigned int)0xAAAA);
+  checkToCooked(converter, 0x22222202, (unsigned int)0x4404);
+
+  checkToRaw(converter, 0.25, 0);
+  checkToRaw(converter, -0.25, 0);
+  checkToRaw(converter, 0.75, 0);
+  checkToRaw(converter, -0.75, 0);
+
+  // bit pattern of 3 is 11, where the last digit is rounded up, and afterwards
+  // one bit is shifted. So the actual value is 4
+  checkToRaw(converter, 3.25, 0x2);
+  checkToRaw(converter, -3.25, 0);
+  checkToRaw(converter, 5.75, 0x3);
+  checkToRaw(converter, -5.75, 0);
+
+  checkToRaw(converter, (int)0x5555, 0x2AAB);
+  checkToRaw(converter, (int)0xFFFFAAAA, 0);
+  checkToRaw(converter, (unsigned int)0x5555, 0x2AAB);
+  checkToRaw(converter, (unsigned int)0xAAAA, 0x5555);
   checkToRaw(converter, (short)0x5555, 0x00002AAB);
   checkToRaw(converter, (short)0xAAAA, 0);
   checkToRaw(converter, (unsigned short)0x5555, 0x00002AAB);
