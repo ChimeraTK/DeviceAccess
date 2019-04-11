@@ -1,6 +1,7 @@
 #include <libxml++/libxml++.h>
 
 #include "ConfigReader.h"
+#include<iostream>
 
 namespace ChimeraTK {
 
@@ -13,6 +14,9 @@ void prefix(std::string s, List& varList){
         var.name = s + var.name;
     }
 }
+
+std::string parent(std::string flattened_name);
+std::string leaf(std::string flattened_name);
 
 struct Variable {
   std::string name;
@@ -58,62 +62,78 @@ private:
   std::map<size_t, std::string> gettArrayValues(const xmlpp::Element * element);
 };
 
+class ModuleList {
+  std::unordered_map<std::string, ChimeraTK::VariableGroup> map_;
+  ChimeraTK::Module* owner_;
 
-  /*********************************************************************************************************************/
+public:
+  ModuleList(ChimeraTK::Module* o):owner_(o){}
+  ChimeraTK::Module *lookup(std::string flattened_module_name);
+  ChimeraTK::Module *get(std::string flattened_name);
+};
 
-  /** Functor to fill variableMap */
-  struct FunctorFill {
-    FunctorFill(ConfigReader* owner, const std::string& type, const std::string& name, const std::string& value,
-        bool& processed)
-    : _owner(owner), _type(type), _name(name), _value(value), _processed(processed) {}
+/*********************************************************************************************************************/
 
-    template<typename PAIR>
-    void operator()(PAIR&) const {
-      // extract the user type from the pair
-      typedef typename PAIR::first_type T;
+/** Functor to fill variableMap */
+struct FunctorFill {
+  FunctorFill(ConfigReader *owner, const std::string &type,
+              const std::string &name, const std::string &value,
+              bool &processed)
+      : _owner(owner), _type(type), _name(name), _value(value),
+        _processed(processed) {}
 
-      // skip this type, if not matching the type string in the config file
-      if(_type != boost::fusion::at_key<T>(_owner->typeMap)) return;
+  template <typename PAIR> void operator()(PAIR &) const {
+    // extract the user type from the pair
+    typedef typename PAIR::first_type T;
 
-      _owner->createVar<T>(_name, _value);
-      _processed = true;
-    }
+    // skip this type, if not matching the type string in the config file
+    if (_type != boost::fusion::at_key<T>(_owner->typeMap))
+      return;
 
-    ConfigReader* _owner;
-    const std::string &_type, &_name, &_value;
-    bool& _processed; // must be a non-const reference, since we want to return
-                      // this to the caller
+    _owner->createVar<T>(_name, _value);
+    _processed = true;
+  }
 
-    typedef boost::fusion::pair<std::string, ConfigReader::Var<std::string>> StringPair;
+  ConfigReader *_owner;
+  const std::string &_type, &_name, &_value;
+  bool &_processed; // must be a non-const reference, since we want to return
+                    // this to the caller
+
+  typedef boost::fusion::pair<std::string, ConfigReader::Var<std::string>>
+      StringPair;
   };
 
   /*********************************************************************************************************************/
 
   /** Functor to fill variableMap for arrays */
   struct ArrayFunctorFill {
-    ArrayFunctorFill(ConfigReader* owner, const std::string& type, const std::string& name,
-        const std::map<size_t, std::string>& values, bool& processed)
-    : _owner(owner), _type(type), _name(name), _values(values), _processed(processed) {}
+    ArrayFunctorFill(ConfigReader *owner, const std::string &type,
+                     const std::string &name,
+                     const std::map<size_t, std::string> &values,
+                     bool &processed)
+        : _owner(owner), _type(type), _name(name), _values(values),
+          _processed(processed) {}
 
-    template<typename PAIR>
-    void operator()(PAIR&) const {
+    template <typename PAIR> void operator()(PAIR &) const {
       // extract the user type from the pair
       typedef typename PAIR::first_type T;
 
       // skip this type, if not matching the type string in the config file
-      if(_type != boost::fusion::at_key<T>(_owner->typeMap)) return;
+      if (_type != boost::fusion::at_key<T>(_owner->typeMap))
+        return;
 
       _owner->createArray<T>(_name, _values);
       _processed = true;
     }
 
-    ConfigReader* _owner;
+    ConfigReader *_owner;
     const std::string &_type, &_name;
-    const std::map<size_t, std::string>& _values;
-    bool& _processed; // must be a non-const reference, since we want to return
+    const std::map<size_t, std::string> &_values;
+    bool &_processed; // must be a non-const reference, since we want to return
                       // this to the caller
 
-    typedef boost::fusion::pair<std::string, ConfigReader::Var<std::string>> StringPair;
+    typedef boost::fusion::pair<std::string, ConfigReader::Var<std::string>>
+        StringPair;
   };
 
   /*********************************************************************************************************************/
@@ -134,8 +154,11 @@ private:
     }
 
     // place the variable onto the vector
+    auto moduleName = parent(name);
+    auto varName = leaf(name);
+    auto varOwner = _moduleList->lookup(moduleName);
     std::map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(this, name, convertedValue)));
+    theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
   }
 
   /*********************************************************************************************************************/
@@ -143,9 +166,11 @@ private:
   template<>
   void ConfigReader::createVar<std::string>(const std::string& name, const std::string& value) {
     // place the variable onto the vector
-    std::map<std::string, ConfigReader::Var<std::string>>& theMap =
-        boost::fusion::at_key<std::string>(variableMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Var<std::string>(this, name, value)));
+    auto moduleName = parent(name);
+    auto varName = leaf(name);
+    auto varOwner = _moduleList->lookup(moduleName);
+    std::map<std::string, ConfigReader::Var<std::string>>& theMap = boost::fusion::at_key<std::string>(variableMap.table);
+    theMap.emplace(std::make_pair(name, ConfigReader::Var<std::string>(varOwner, varName, value)));
   }
 
   /*********************************************************************************************************************/
@@ -183,8 +208,12 @@ private:
     }
 
     // place the variable onto the vector
+    auto module_name = parent(name);
+    auto array_name = leaf(name);
+    auto arrayOwner = _moduleList->lookup(module_name);
+
     std::map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Array<T>(this, name, Tvalues)));
+    theMap.emplace(std::make_pair( name, ConfigReader::Array<T>(arrayOwner, array_name, Tvalues)));
   }
 
   /*********************************************************************************************************************/
@@ -208,16 +237,19 @@ private:
     }
 
     // place the variable onto the vector
-    std::map<std::string, ConfigReader::Array<std::string>>& theMap =
-        boost::fusion::at_key<std::string>(arrayMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Array<std::string>(this, name, Tvalues)));
+    auto module_name = parent(name);
+    auto array_name = leaf(name);
+    auto arrayOwner = _moduleList->lookup(module_name);
+
+    std::map<std::string, ConfigReader::Array<std::string>>& theMap = boost::fusion::at_key<std::string>(arrayMap.table);
+    theMap.emplace(std::make_pair( name, ConfigReader::Array<std::string>(arrayOwner, array_name, Tvalues)));
   }
 
   /*********************************************************************************************************************/
 
   ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName, const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", false, tags),
-    _fileName(fileName) {
+    _fileName(fileName), _moduleList(std::make_unique<ModuleList>(this)) {
 
       auto fillVariableMap = [this](const Variable &var) {
         bool processed{false};
@@ -254,6 +286,7 @@ private:
       }
   }
 
+  ConfigReader::~ConfigReader() = default;
   /********************************************************************************************************************/
 
   void ConfigReader::parsingError(const std::string& message) {
@@ -315,6 +348,37 @@ private:
 
   /*********************************************************************************************************************/
 
+  ChimeraTK::Module *ModuleList::lookup(std::string flattened_module_name) {
+    return get(flattened_module_name);
+  }
+
+  ChimeraTK::Module *ModuleList::get(std::string flattened_name) {
+    if (flattened_name == "") {
+      return owner_;
+    }
+    auto e = map_.find(flattened_name);
+
+    if (e == map_.end()) {
+      auto module_name = leaf(flattened_name);
+      auto owner = get(parent(flattened_name));
+
+      map_[flattened_name] = ChimeraTK::VariableGroup(owner, module_name, "");
+      return &map_[flattened_name];
+    }
+    return &e->second;
+  }
+
+  std::string parent(std::string flattened_name) {
+    auto pos = flattened_name.find_last_of('/');
+    pos = (pos == std::string::npos) ? 0 : pos;
+    return flattened_name.substr(0, pos);
+  }
+
+  std::string leaf(std::string flattened_name) {
+    auto pos = flattened_name.find_last_of('/');
+    return flattened_name.substr(pos + 1, flattened_name.size());
+  }
+
 std::unique_ptr<VariableList> ConfigParser::getVariableList() {
   if (variableList_ == nullptr) {
     std::tie(variableList_, arrayList_) = parse();
@@ -340,9 +404,10 @@ std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> ConfigPars
 
 std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>
 ConfigParser::parseModule(const xmlpp::Element * element) {
-  auto module_name = (element->get_name() == "configuration")?
-                     "":
-                     element->get_name() + "/";
+  auto module_name = (element->get_name() == "configuration")
+                         ? ""
+                         : element->get_attribute("name")->get_value() + "/";
+
   auto v = std::make_unique<VariableList>();
   auto a = std::make_unique<ArrayList>();
 

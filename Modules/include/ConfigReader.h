@@ -13,6 +13,7 @@ namespace ChimeraTK {
   struct ArrayFunctorFill;
   struct FunctorSetValues;
   struct FunctorSetValuesArray;
+  class ModuleList;
 
   /** Generic module to read an XML config file and provide the defined values as
    *  constant variables. The config file should look like this:
@@ -45,6 +46,7 @@ namespace ChimeraTK {
     ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags = {});
 
+    ~ConfigReader() override;
     void mainLoop() override {}
     void prepare() override;
 
@@ -56,8 +58,11 @@ namespace ChimeraTK {
     const T& get(const std::string& variableName) const;
 
    protected:
+
     /** File name */
     std::string _fileName;
+
+    std::unique_ptr<ModuleList> _moduleList;
 
     /** throw a parsing error with more information */
     void parsingError(const std::string& message);
@@ -117,6 +122,7 @@ namespace ChimeraTK {
     const T& get_impl(const std::string& variableName, T*) const;
     template<typename T>
     const std::vector<T>& get_impl(const std::string& variableName, std::vector<T>*) const;
+
 
     friend struct FunctorFill;
     friend struct ArrayFunctorFill;
