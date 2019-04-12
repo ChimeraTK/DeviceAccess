@@ -163,6 +163,12 @@ namespace ChimeraTK {
         else if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 2;
         }
+        else if(_fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && !_fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 9;
+        }
+        else if(_fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 10;
+        }
         else if(_fpc->_nBits == 16 && _fpc->_fractionalBits < 0 && _fpc->_fractionalBits > -16 && !_fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 7;
         }
@@ -250,7 +256,19 @@ namespace ChimeraTK {
         });
         break;
       }
-      case 7: { // _fpc->_nBits == 16 && _fpc->_fractionalBits < 0  && _fpc->_fractionalBits > -16&& !_fpc->_isSigned
+      case 9: { // _fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
+        std::transform(raw_begin, raw_end, cooked_begin, [](const auto& rawValue) {
+          return numericToUserType<UserType>(*(reinterpret_cast<const uint16_t*>(&rawValue)));
+        });
+        break;
+      }
+      case 10: { //  _fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && _fpc->_isSigned
+        std::transform(raw_begin, raw_end, cooked_begin, [](const auto& rawValue) {
+          return numericToUserType<UserType>(*(reinterpret_cast<const int16_t*>(&rawValue)));
+        });
+        break;
+      }
+      case 7: { // _fpc->_nBits == 16 && _fpc->_fractionalBits < 0  && _fpc->_fractionalBits > -16 && !_fpc->_isSigned
         const uint32_t f = fpc._fractionalBitsCoefficient;
         std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
           return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
