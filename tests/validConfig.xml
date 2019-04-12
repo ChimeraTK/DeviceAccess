@@ -38,13 +38,38 @@
     <value i="6" v="Hallo7"/>
     <value i="7" v="Hallo8"/>
   </variable>
-  <module name="emptymodule"/>
   <module name="module1">
+    <variable name="varString" type="string" value="My dear mister singing club!"/>
+    <variable name="var16" type="int16" value="-567"/>
     <variable name="var16u" type="uint16" value="678"/>
     <variable name="var32" type="int32" value="-345678"/>
     <variable name="var32u" type="uint32" value="234567"/>
     <module name="submodule">
       <variable name="var32u" type="uint32" value="234567"/>
+      <variable name="stringArray" type="string">
+        <value i="0" v="Hallo1"/>
+        <value i="1" v="Hallo2"/>
+        <value i="2" v="Hallo3"/>
+        <value i="3" v="Hallo4"/>
+        <value i="4" v="Hallo5"/>
+        <value i="5" v="Hallo6"/>
+        <value i="6" v="Hallo7"/>
+        <value i="7" v="Hallo8"/>
+      </variable>
+      <variable name="intArray" type="int32">
+        <!-- Values are intentionally out-of-order -->
+        <value i="0" v="10"/>
+        <value i="1" v="9"/>
+        <value i="2" v="8"/>
+        <value i="7" v="3"/>
+        <value i="8" v="2"/>
+        <value i="9" v="1"/>
+        <value i="3" v="7"/>
+        <value i="4" v="6"/>
+        <!-- Just a random comment -->
+        <value i="5" v="5"/>
+        <value i="6" v="4"/>
+      </variable>
     </module>
   </module>
   <!-- Just a random comment -->

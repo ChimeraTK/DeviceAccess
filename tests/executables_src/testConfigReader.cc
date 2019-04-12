@@ -47,11 +47,23 @@ struct TestModule : ctk::ApplicationModule {
   ctk::ArrayPushInput<int32_t> intArray{this, "intArray", "MV/m", 10, "Desc"};
   ctk::ArrayPushInput<std::string> stringArray{this, "stringArray", "", 8, "Desc"};
 
-  ctk::ScalarPushInput<int16_t> m1_var16{this, "module1/var16", "MV/m", "Desc"};
-  ctk::ScalarPushInput<uint16_t> m1_var16u{this, "module1/var16u", "MV/m", "Desc"};
-  ctk::ScalarPushInput<int32_t> m1_var32{this, "module1/var32", "MV/m", "Desc"};
-  ctk::ScalarPushInput<uint32_t> m1_var32u{this, "module1/var32u", "MV/m", "Desc"};
-  ctk::ScalarPushInput<uint32_t> m1_sub_var32u{this, "module1/submodule/var32u", "MV/m", "Desc"};
+  struct Module1 : ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<int16_t> var16{this, "var16", "MV/m", "Desc"};
+    ctk::ScalarPushInput<uint16_t> var16u{this, "var16u", "MV/m", "Desc"};
+    ctk::ScalarPushInput<int32_t> var32{this, "var32", "MV/m", "Desc"};
+    ctk::ScalarPushInput<uint32_t> var32u{this, "var32u", "MV/m", "Desc"};
+    ctk::ScalarPushInput<std::string> varString{this, "varString", "MV/m", "Desc"};
+
+    struct SubModule : ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarPushInput<uint32_t> var32u{this, "var32u", "MV/m", "Desc"};
+      ctk::ArrayPushInput<int32_t> intArray{this, "intArray", "MV/m", 10, "Desc"};
+      ctk::ArrayPushInput<std::string> stringArray{this, "stringArray", "", 8, "Desc"};
+    } submodule{this, "submodule", ""};
+
+  } module1{this, "module1", ""};
+
 
   std::atomic<bool> done{false};
 
@@ -75,11 +87,17 @@ struct TestModule : ctk::ApplicationModule {
     BOOST_CHECK_EQUAL(stringArray.getNElements(), 8);
     for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(stringArray[i], "Hallo" + std::to_string(i + 1));
 
-    BOOST_CHECK_EQUAL((int16_t)m1_var16, -567);
-    BOOST_CHECK_EQUAL((uint16_t)m1_var16u, 678);
-    BOOST_CHECK_EQUAL((int32_t)m1_var32, -345678);
-    BOOST_CHECK_EQUAL((uint32_t)m1_var32u, 234567);
-    BOOST_CHECK_EQUAL((uint32_t)m1_sub_var32u, 234567);
+    BOOST_CHECK_EQUAL((int16_t)module1.var16, -567);
+    BOOST_CHECK_EQUAL((uint16_t)module1.var16u, 678);
+    BOOST_CHECK_EQUAL((int32_t)module1.var32, -345678);
+    BOOST_CHECK_EQUAL((uint32_t)module1.var32u, 234567);
+    BOOST_CHECK_EQUAL((uint32_t)module1.submodule.var32u, 234567);
+
+    BOOST_CHECK_EQUAL(module1.submodule.intArray.getNElements(), 10);
+    for(size_t i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(module1.submodule.intArray[i], 10 - i);
+
+    BOOST_CHECK_EQUAL(module1.submodule.stringArray.getNElements(), 8);
+    for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(module1.submodule.stringArray[i], "Hallo" + std::to_string(i + 1));
 
     // no further update shall be received
     usleep(1000000); // 1 second
@@ -95,6 +113,14 @@ struct TestModule : ctk::ApplicationModule {
     BOOST_CHECK(!varDouble.readNonBlocking());
     BOOST_CHECK(!varString.readNonBlocking());
     BOOST_CHECK(!intArray.readNonBlocking());
+
+    BOOST_CHECK(!module1.var16.readNonBlocking());
+    BOOST_CHECK(!module1.var16u.readNonBlocking());
+    BOOST_CHECK(!module1.var32.readNonBlocking());
+    BOOST_CHECK(!module1.var32u.readNonBlocking());
+    BOOST_CHECK(!module1.submodule.var32u.readNonBlocking());
+    BOOST_CHECK(!module1.submodule.intArray.readNonBlocking());
+    BOOST_CHECK(!module1.submodule.stringArray.readNonBlocking());
 
     // inform main thread that we are done
     done = true;
@@ -176,6 +202,14 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   BOOST_CHECK_EQUAL(app.config.get<int32_t>("module1/var32"), -345678);
   BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/var32u"), 234567);
   BOOST_CHECK_EQUAL(app.config.get<uint32_t>("module1/submodule/var32u"), 234567);
+
+  arrayValue = app.config.get<std::vector<int>>("module1/submodule/intArray");
+  BOOST_CHECK_EQUAL(arrayValue.size(), 10);
+  for(size_t i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(arrayValue[i], 10 - i);
+
+  arrayValueString = app.config.get<std::vector<std::string>>("module1/submodule/stringArray");
+  BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
+  for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
 
   app.config.connectTo(app.testModule);
 
