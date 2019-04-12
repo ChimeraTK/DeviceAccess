@@ -236,78 +236,63 @@ namespace ChimeraTK {
     // Handle integer and floating-point types differently.
     switch(boost::fusion::at_key<UserType>(fpc.conversionBranch_toCooked.table)) {
       case 1: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          auto rawValue = *it;
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](auto rawValue) {
           fpc.padUnusedBits(rawValue);
-          *cooked_begin = boost::numeric_cast<UserType>(*(reinterpret_cast<uint32_t*>(&rawValue)));
-          ++cooked_begin;
-        }
+          return boost::numeric_cast<UserType>(*(reinterpret_cast<uint32_t*>(&rawValue)));
+        });
         break;
       }
       case 2: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          auto rawValue = *it;
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc](auto rawValue) {
           fpc.padUnusedBits(rawValue);
-          *cooked_begin = boost::numeric_cast<UserType>(rawValue);
-          ++cooked_begin;
-        }
+          auto ttt = boost::numeric_cast<UserType>(rawValue);
+          return ttt;
+        });
         break;
       }
       case 7: { // _fpc->_nBits == 16 && _fpc->_fractionalBits < 0  && _fpc->_fractionalBits > -16&& !_fpc->_isSigned
         const uint32_t f = fpc._fractionalBitsCoefficient;
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          *cooked_begin = numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&(*it))));
-          ++cooked_begin;
-        }
+        std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
+          return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
+        });
         break;
       }
       case 8: { //  _fpc->_nBits == 16 && _fpc->_fractionalBits < 0 && _fpc->_fractionalBits > -16 && _fpc->_isSigned
         const int32_t f = fpc._fractionalBitsCoefficient;
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          *cooked_begin = numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&(*it))));
-          ++cooked_begin;
-        }
+        std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
+          return numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&rawValue)));
+        });
         break;
       }
       case 5: { // _fpc->_nBits == 16 && !_fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          *cooked_begin = numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&(*it))));
-          ++cooked_begin;
-        }
+        std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
+          return numericToUserType<UserType>(f * *(reinterpret_cast<const uint16_t*>(&rawValue)));
+        });
         break;
       }
       case 6: { //  _fpc->_nBits == 16 && _fpc->_isSigned
         const auto f = fpc._fractionalBitsCoefficient;
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          *cooked_begin = numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&(*it))));
-          ++cooked_begin;
-        }
+        std::transform(raw_begin, raw_end, cooked_begin, [f](const auto& rawValue) {
+          return numericToUserType<UserType>(f * *(reinterpret_cast<const int16_t*>(&rawValue)));
+        });
         break;
       }
       case 3: { // !_fpc->_isSigned
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          auto rawValue = *it;
+        const auto f = fpc._fractionalBitsCoefficient;
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](auto rawValue) {
           fpc.padUnusedBits(rawValue);
-          // convert into double and scale to handle fractional bits
-          double d_cooked =
-              static_cast<double>(fpc._fractionalBitsCoefficient * *(reinterpret_cast<uint32_t*>(&rawValue)));
-
-          *cooked_begin = numericToUserType<UserType>(d_cooked);
-          ++cooked_begin;
-        }
+          return numericToUserType<UserType>(f * *(reinterpret_cast<uint32_t*>(&rawValue)));
+        });
         break;
       }
       case 4: { // _fpc->_isSigned
-        for(auto it = raw_begin; it != raw_end; ++it) {
-          auto rawValue = *it;
+        const auto f = fpc._fractionalBitsCoefficient;
+        std::transform(raw_begin, raw_end, cooked_begin, [&fpc, f](auto rawValue) {
           fpc.padUnusedBits(rawValue);
-          // convert into double and scale to handle fractional bits
-          double d_cooked = fpc._fractionalBitsCoefficient * static_cast<double>(rawValue);
-
-          *cooked_begin = numericToUserType<UserType>(d_cooked);
-          ++cooked_begin;
-        }
+          auto ttt = numericToUserType<UserType>(f * rawValue);
+          return ttt;
+        });
         break;
       }
       default: {
