@@ -108,7 +108,7 @@ namespace ChimeraTK {
     void doPostRead() override {
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         auto& v = _info->value_int[i + _wordOffsetInRegister];
-        NDRegisterAccessor<UserType>::buffer_2D[0][i] = intToUserType<UserType>(v);
+        NDRegisterAccessor<UserType>::buffer_2D[0][i] = numericToUserType<UserType>(v);
       }
       currentVersion = {};
     }

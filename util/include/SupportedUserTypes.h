@@ -10,6 +10,7 @@
 #define CHIMERA_TK_SUPPORTED_USER_TYPES_H
 
 #include <iterator>
+#include <sstream>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>
 #include <boost/numeric/conversion/cast.hpp>
@@ -28,6 +29,16 @@ namespace ChimeraTK {
     template<typename NUMERIC>
     struct numericToUserType_impl<std::string, NUMERIC> {
       static std::string impl(NUMERIC value);
+    };
+
+    template<typename NUMERIC>
+    struct numericToUserType_impl<double, NUMERIC> {
+      static double impl(NUMERIC value);
+    };
+
+    template<typename NUMERIC>
+    struct numericToUserType_impl<float, NUMERIC> {
+      static float impl(NUMERIC value);
     };
 
     template<typename UserType, typename NUMERIC>
@@ -62,7 +73,7 @@ namespace ChimeraTK {
   /** Helper function to convert numeric data into any UserType (even if it is a string etc.). The conversion is done
    *  with proper rounding and range checking. It will throw boost::numeric::positive_overflow resp.
    *  boost::numeric::negative_overflow if the data is out of range. */
-  template<typename UserType, typename NUMERIC>
+  template<typename NUMERIC, typename UserType>
   NUMERIC userTypeToNumeric(UserType value) {
     return detail::userTypeToNumeric_impl<UserType, NUMERIC>::impl(value);
   }
@@ -89,58 +100,33 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Helper function for implementations based on double data type: Convert a double value into the UserType, even if
-   *  it is a string. */
-  template<typename UserType>
-  UserType doubleToUserType(double value) {
-    return UserType(value);
+  template<typename NUMERIC>
+  inline double detail::numericToUserType_impl<double, NUMERIC>::impl(NUMERIC value) {
+    return static_cast<double>(value);
   }
 
-  template<>
-  inline std::string doubleToUserType<std::string>(double value) {
+  /********************************************************************************************************************/
+
+  template<typename NUMERIC>
+  inline float detail::numericToUserType_impl<float, NUMERIC>::impl(NUMERIC value) {
+    return static_cast<float>(value);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename NUMERIC>
+  std::string detail::numericToUserType_impl<std::string, NUMERIC>::impl(NUMERIC value) {
     return std::to_string(value);
   }
 
   /********************************************************************************************************************/
 
-  /** Helper function for implementations based on double data type: Convert a UserType value into double, even if
-   *  it is a string. */
-  template<typename UserType>
-  double userTypeToDouble(const UserType& value) {
-    return double(value);
-  }
-
-  template<>
-  inline double userTypeToDouble<std::string>(const std::string& value) {
-    return std::stod(value);
-  }
-
-  /********************************************************************************************************************/
-
-  /** Helper function for implementations based on int data type: Convert an int value into the UserType, even if
-   *  it is a string. */
-  template<typename UserType>
-  UserType intToUserType(int value) {
-    return UserType(value);
-  }
-
-  template<>
-  inline std::string intToUserType<std::string>(int value) {
-    return std::to_string(value);
-  }
-
-  /********************************************************************************************************************/
-
-  /** Helper function for implementations based on double data type: Convert a UserType value into int, even if
-   *  it is a string. */
-  template<typename UserType>
-  int userTypeToInt(const UserType& value) {
-    return int(value);
-  }
-
-  template<>
-  inline int userTypeToInt<std::string>(const std::string& value) {
-    return std::stod(value);
+  template<typename NUMERIC>
+  NUMERIC detail::userTypeToNumeric_impl<std::string, NUMERIC>::impl(const std::string& value) {
+    NUMERIC v;
+    std::stringstream ss(value);
+    ss >> v;
+    return v;
   }
 
   /********************************************************************************************************************/

@@ -63,7 +63,7 @@ namespace ChimeraTK { namespace LNMBackend {
     _target->postRead();
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
-        buffer_2D[i][k] = doubleToUserType<UserType>(_target->accessData(i, k) * _factor);
+        buffer_2D[i][k] = numericToUserType<UserType>(_target->accessData(i, k) * _factor);
       }
     }
   }
@@ -72,7 +72,7 @@ namespace ChimeraTK { namespace LNMBackend {
   void MultiplierPluginDecorator<UserType>::doPreWrite() {
     for(size_t i = 0; i < _target->getNumberOfChannels(); ++i) {
       for(size_t k = 0; k < _target->getNumberOfSamples(); ++k) {
-        _target->accessData(i, k) = userTypeToDouble(buffer_2D[i][k]) * _factor;
+        _target->accessData(i, k) = userTypeToNumeric<double>(buffer_2D[i][k]) * _factor;
       }
     }
     _target->preWrite();

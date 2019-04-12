@@ -136,7 +136,7 @@ namespace ChimeraTK { namespace LNMBackend {
             "': The expression returns a scalar but " + std::to_string(buffer_2D[0].size()) +
             " expected for read operations.");
       }
-      buffer_2D[0][0] = doubleToUserType<UserType>(valueWhenNotUsingReturn);
+      buffer_2D[0][0] = numericToUserType<UserType>(valueWhenNotUsingReturn);
     }
     else if(results.count() == 1) {
       // return statement has been used to return exactly one value (note: this value might be an array)
@@ -158,7 +158,7 @@ namespace ChimeraTK { namespace LNMBackend {
 
       // convert and copy data into user buffer
       for(size_t k = 0; k < view.size(); ++k) {
-        buffer_2D[0][k] = doubleToUserType<UserType>(view[k]);
+        buffer_2D[0][k] = numericToUserType<UserType>(view[k]);
       }
     }
     else {
@@ -176,7 +176,7 @@ namespace ChimeraTK { namespace LNMBackend {
     // but it is safe to overwrite the buffer and we can avoid the need for an additional permanent buffer which might
     // not even be used if the register is never written).
     for(size_t k = 0; k < buffer_2D[0].size(); ++k) {
-      _target->accessData(0, k) = userTypeToDouble(buffer_2D[0][k]);
+      _target->accessData(0, k) = userTypeToNumeric<double>(buffer_2D[0][k]);
     }
 
     // inform the value view of the new data pointer - the buffer might have been swapped
