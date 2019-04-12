@@ -55,7 +55,7 @@ namespace ChimeraTK {
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
   retry:
     try {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::readAsync();
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
     }
     catch(ChimeraTK::runtime_error& e) {
       dm.reportException(e.what());
