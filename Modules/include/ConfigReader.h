@@ -1,3 +1,72 @@
+/*!
+ * \page configreader ConfigReader Module
+ *
+ * This Module provides the following features:
+ * - Read values from an xml config file to have them available at
+ *   server initialization.
+ * - Expose above values as process variables; these may connect
+ *   to other Application core modules if needed.
+ *
+ * \section usage Example usage
+ * - A server application using the config reader may look like:
+ *  \code
+ *  namespace ctk = ChimeratK
+ *
+ *  struct Server : public ctk::Application {
+ *    Server() : Application("testserver") {}
+ *    ~Server() { shutdown(); }
+ *
+ *    ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
+ *    TestModule testModule{this, "TestModule", "The test module"};
+ *
+ *    void Server::defineConnections() override;
+ *
+ *  };
+ *  \endcode
+ *
+ * - Values from validConfig.xml can be accessed at server startup:
+ * \code
+ * Server::Server(){
+ *  auto config_var = config.get<int8_t>("module1/var8");
+ *  auto config_arr = config.get<std::vector<int8>>("module1/submodule/intArray");
+ *  // ...
+ * }
+ * \endcode
+ *
+ * - Configuration may be published as Process Variables to other modules:
+ * \code
+ * void Server::defineConnections() {
+ *   config.connectTo(testModule);
+ * }
+ * \endcode
+ *
+ * \section xmlstructure XML file structure
+ * - A valid configuration file may look like:
+ *   \verbatim
+     <configuration>
+       <variable name="var8" type="int8" value="-123"/>
+       <module name="module1">
+         <variable name="var8" type="int8" value="-123"/>
+         <module name="submodule">
+             <variable name="intArray" type="int32">
+             <value i="0" v="10"/>
+             <value i="1" v="9"/>
+             <value i="2" v="8"/>
+             <value i="7" v="3"/>
+             <value i="8" v="2"/>
+             <value i="9" v="1"/>
+             <value i="3" v="7"/>
+             <value i="4" v="6"/>
+             <value i="5" v="5"/>
+             <value i="6" v="4"/>
+          </variable>
+         </module>
+       </module>
+     </configuration>
+     \endverbatim
+ *
+ * */
+
 #ifndef CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 #define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
