@@ -2,6 +2,7 @@
 #define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
 #include <map>
+#include<unordered_map>
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
@@ -13,6 +14,7 @@ namespace ChimeraTK {
   struct ArrayFunctorFill;
   struct FunctorSetValues;
   struct FunctorSetValuesArray;
+  class ModuleList;
 
   /** Generic module to read an XML config file and provide the defined values as
    *  constant variables. The config file should look like this:
@@ -45,6 +47,7 @@ namespace ChimeraTK {
     ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags = {});
 
+    ~ConfigReader() override;
     void mainLoop() override {}
     void prepare() override;
 
@@ -56,8 +59,12 @@ namespace ChimeraTK {
     const T& get(const std::string& variableName) const;
 
    protected:
+
     /** File name */
     std::string _fileName;
+    
+    /** List to hold VariableNodes corresponding to xml modules **/
+    std::unique_ptr<ModuleList> _moduleList;
 
     /** throw a parsing error with more information */
     void parsingError(const std::string& message);
@@ -93,7 +100,7 @@ namespace ChimeraTK {
     /** Define type for map of std::string to Var, so we can put it into the
      * TemplateUserTypeMap */
     template<typename T>
-    using MapOfVar = std::map<std::string, Var<T>>;
+    using MapOfVar = std::unordered_map<std::string, Var<T>>;
 
     /** Type-depending map of vectors of variables */
     ChimeraTK::TemplateUserTypeMap<MapOfVar> variableMap;
@@ -101,7 +108,7 @@ namespace ChimeraTK {
     /** Define type for map of std::string to Array, so we can put it into the
      * TemplateUserTypeMap */
     template<typename T>
-    using MapOfArray = std::map<std::string, Array<T>>;
+    using MapOfArray = std::unordered_map<std::string, Array<T>>;
 
     /** Type-depending map of vectors of arrays */
     ChimeraTK::TemplateUserTypeMap<MapOfArray> arrayMap;
@@ -117,6 +124,7 @@ namespace ChimeraTK {
     const T& get_impl(const std::string& variableName, T*) const;
     template<typename T>
     const std::vector<T>& get_impl(const std::string& variableName, std::vector<T>*) const;
+
 
     friend struct FunctorFill;
     friend struct ArrayFunctorFill;
