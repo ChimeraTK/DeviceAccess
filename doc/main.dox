@@ -3,4 +3,5 @@
 * Module documentation:
 * - \subpage loggingdoc
 * - \subpage historydoc
+* - \subpage configreader
 */

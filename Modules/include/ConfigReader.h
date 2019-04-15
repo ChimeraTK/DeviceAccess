@@ -2,10 +2,8 @@
  * \page configreader ConfigReader Module
  *
  * This Module provides the following features:
- * - Read values from an xml config file to have them available at
- *   server initialization.
- * - Expose above values as process variables; these may connect
- *   to other Application core modules if needed.
+ * - read values from an xml config file to have them available at server initialization,
+ * - expose above values as process variables; these may connect to other ApplicationCore modules if needed.
  *
  * \section usage Example usage
  * - A server application using the config reader may look like:
@@ -26,14 +24,14 @@
  *
  * - Values from validConfig.xml can be accessed at server startup:
  * \code
- * Server::Server(){
+ * Server::Server() {
  *  auto config_var = config.get<int8_t>("module1/var8");
  *  auto config_arr = config.get<std::vector<int8>>("module1/submodule/intArray");
  *  // ...
  * }
  * \endcode
  *
- * - Configuration may be published as Process Variables to other modules:
+ * - Configuration may be published as process variables to other application modules, the control system or devices:
  * \code
  * void Server::defineConnections() {
  *   config.connectTo(testModule);
@@ -71,7 +69,7 @@
 #define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
 #include <map>
-#include<unordered_map>
+#include <unordered_map>
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
@@ -128,10 +126,9 @@ namespace ChimeraTK {
     const T& get(const std::string& variableName) const;
 
    protected:
-
     /** File name */
     std::string _fileName;
-    
+
     /** List to hold VariableNodes corresponding to xml modules **/
     std::unique_ptr<ModuleList> _moduleList;
 
@@ -193,7 +190,6 @@ namespace ChimeraTK {
     const T& get_impl(const std::string& variableName, T*) const;
     template<typename T>
     const std::vector<T>& get_impl(const std::string& variableName, std::vector<T>*) const;
-
 
     friend struct FunctorFill;
     friend struct ArrayFunctorFill;
