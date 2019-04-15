@@ -61,7 +61,8 @@ namespace ChimeraTK {
 
     /** File name */
     std::string _fileName;
-
+    
+    /** List to hold VariableNodes corresponding to xml modules **/
     std::unique_ptr<ModuleList> _moduleList;
 
     /** throw a parsing error with more information */

@@ -5,18 +5,14 @@
 
 namespace ChimeraTK {
 
-
-static std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string &fileName);
-
-template <typename List>
-void prefix(std::string s, List& varList){
-    for(auto &var: varList){
-        var.name = s + var.name;
-    }
+template <typename Element> static Element prefix(std::string s, Element e) {
+  e.name = s + e.name;
+  return e;
 }
 
-std::string parent(std::string flattened_name);
-std::string leaf(std::string flattened_name);
+static std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string &fileName);
+static std::string branch(std::string flattened_name);
+static std::string leaf(std::string flattened_name);
 
 struct Variable {
   std::string name;
@@ -55,8 +51,7 @@ private:
   bool isModule(const xmlpp::Element *element);
   Variable parseVariable(const xmlpp::Element *element);
   Array parseArray(const xmlpp::Element *element);
-  std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>
-  parseModule(const xmlpp::Element *element);
+  void parseModule(const xmlpp::Element *element, std::string parent_name);
 
   void validateValueNode(const xmlpp::Element *valueElement);
   std::map<size_t, std::string> gettArrayValues(const xmlpp::Element * element);
@@ -79,8 +74,9 @@ struct FunctorFill {
   FunctorFill(ConfigReader *owner, const std::string &type,
               const std::string &name, const std::string &value,
               bool &processed)
-      : _owner(owner), _type(type), _name(name), _value(value),
-        _processed(processed) {}
+      : _owner(owner), _type(type), _name(name), _value(value), _processed(processed) {
+        _processed = false;
+      }
 
   template <typename PAIR> void operator()(PAIR &) const {
     // extract the user type from the pair
@@ -98,9 +94,6 @@ struct FunctorFill {
   const std::string &_type, &_name, &_value;
   bool &_processed; // must be a non-const reference, since we want to return
                     // this to the caller
-
-  typedef boost::fusion::pair<std::string, ConfigReader::Var<std::string>>
-      StringPair;
   };
 
   /*********************************************************************************************************************/
@@ -111,8 +104,9 @@ struct FunctorFill {
                      const std::string &name,
                      const std::map<size_t, std::string> &values,
                      bool &processed)
-        : _owner(owner), _type(type), _name(name), _values(values),
-          _processed(processed) {}
+        : _owner(owner), _type(type), _name(name), _values(values),_processed(processed) {
+	  _processed = false;
+	}
 
     template <typename PAIR> void operator()(PAIR &) const {
       // extract the user type from the pair
@@ -131,9 +125,6 @@ struct FunctorFill {
     const std::map<size_t, std::string> &_values;
     bool &_processed; // must be a non-const reference, since we want to return
                       // this to the caller
-
-    typedef boost::fusion::pair<std::string, ConfigReader::Var<std::string>>
-        StringPair;
   };
 
   /*********************************************************************************************************************/
@@ -153,10 +144,12 @@ struct FunctorFill {
       stream >> convertedValue;
     }
 
-    // place the variable onto the vector
-    auto moduleName = parent(name);
+
+    auto moduleName = branch(name);
     auto varName = leaf(name);
     auto varOwner = _moduleList->lookup(moduleName);
+    
+    // place the variable onto the vector
     std::map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
   }
@@ -165,10 +158,12 @@ struct FunctorFill {
 
   template<>
   void ConfigReader::createVar<std::string>(const std::string& name, const std::string& value) {
-    // place the variable onto the vector
-    auto moduleName = parent(name);
+
+    auto moduleName = branch(name);
     auto varName = leaf(name);
     auto varOwner = _moduleList->lookup(moduleName);
+    
+    // place the variable onto the vector
     std::map<std::string, ConfigReader::Var<std::string>>& theMap = boost::fusion::at_key<std::string>(variableMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Var<std::string>(varOwner, varName, value)));
   }
@@ -207,13 +202,14 @@ struct FunctorFill {
       Tvalues.push_back(convertedValue);
     }
 
-    // place the variable onto the vector
-    auto module_name = parent(name);
-    auto array_name = leaf(name);
-    auto arrayOwner = _moduleList->lookup(module_name);
 
+    auto moduleName = branch(name);
+    auto arrayName = leaf(name);
+    auto arrayOwner = _moduleList->lookup(moduleName);
+    
+    // place the variable onto the vector
     std::map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
-    theMap.emplace(std::make_pair( name, ConfigReader::Array<T>(arrayOwner, array_name, Tvalues)));
+    theMap.emplace(std::make_pair( name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues)));
   }
 
   /*********************************************************************************************************************/
@@ -236,13 +232,14 @@ struct FunctorFill {
       Tvalues.push_back(it->second);
     }
 
-    // place the variable onto the vector
-    auto module_name = parent(name);
-    auto array_name = leaf(name);
-    auto arrayOwner = _moduleList->lookup(module_name);
 
+    auto moduleName = branch(name);
+    auto arrayName = leaf(name);
+    auto arrayOwner = _moduleList->lookup(moduleName);
+
+    // place the variable onto the vector
     std::map<std::string, ConfigReader::Array<std::string>>& theMap = boost::fusion::at_key<std::string>(arrayMap.table);
-    theMap.emplace(std::make_pair( name, ConfigReader::Array<std::string>(arrayOwner, array_name, Tvalues)));
+    theMap.emplace(std::make_pair( name, ConfigReader::Array<std::string>(arrayOwner, arrayName, Tvalues)));
   }
 
   /*********************************************************************************************************************/
@@ -286,6 +283,7 @@ struct FunctorFill {
       }
   }
 
+  // workaround for std::unique_ptr static assert.
   ConfigReader::~ConfigReader() = default;
   /********************************************************************************************************************/
 
@@ -352,15 +350,16 @@ struct FunctorFill {
     return get(flattened_module_name);
   }
 
+/*********************************************************************************************************************/
+
   ChimeraTK::Module *ModuleList::get(std::string flattened_name) {
     if (flattened_name == "") {
       return owner_;
     }
     auto e = map_.find(flattened_name);
-
     if (e == map_.end()) {
       auto module_name = leaf(flattened_name);
-      auto owner = get(parent(flattened_name));
+      auto owner = get(branch(flattened_name));
 
       map_[flattened_name] = ChimeraTK::VariableGroup(owner, module_name, "");
       return &map_[flattened_name];
@@ -368,23 +367,16 @@ struct FunctorFill {
     return &e->second;
   }
 
-  std::string parent(std::string flattened_name) {
-    auto pos = flattened_name.find_last_of('/');
-    pos = (pos == std::string::npos) ? 0 : pos;
-    return flattened_name.substr(0, pos);
-  }
+/*********************************************************************************************************************/
 
-  std::string leaf(std::string flattened_name) {
-    auto pos = flattened_name.find_last_of('/');
-    return flattened_name.substr(pos + 1, flattened_name.size());
-  }
-
-std::unique_ptr<VariableList> ConfigParser::getVariableList() {
+  std::unique_ptr<VariableList> ConfigParser::getVariableList() {
   if (variableList_ == nullptr) {
     std::tie(variableList_, arrayList_) = parse();
   }
   return std::move(variableList_);
 }
+
+/*********************************************************************************************************************/
 
 std::unique_ptr<ArrayList> ConfigParser::getArrayList() {
   if (arrayList_ != nullptr) {
@@ -393,23 +385,35 @@ std::unique_ptr<ArrayList> ConfigParser::getArrayList() {
   return std::move(arrayList_);
 }
 
-std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> ConfigParser::parse(){
-    const auto root = getRootNode(*parser_);
-    if(root->get_name() != "configuration") {
-      error("Expected 'configuration' tag instead of: " + root->get_name());
-    }
-    const xmlpp::Element *element = dynamic_cast<const xmlpp::Element *>(root);
-    return parseModule(element);
-}
+/*********************************************************************************************************************/
 
 std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>
-ConfigParser::parseModule(const xmlpp::Element * element) {
-  auto module_name = (element->get_name() == "configuration")
+ConfigParser::parse() {
+  const auto root = getRootNode(*parser_);
+  if (root->get_name() != "configuration") {
+    error("Expected 'configuration' tag instead of: " + root->get_name());
+  }
+
+  //start with clean lists: parseModule accumulates elements into these.
+  variableList_ = std::make_unique<VariableList>();
+  arrayList_ = std::make_unique<ArrayList>();
+
+  const xmlpp::Element *element = dynamic_cast<const xmlpp::Element *>(root);
+  std::string parent_module_name = "";
+  parseModule(element, parent_module_name);
+
+  return std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{std::move(variableList_), std::move(arrayList_)};
+}
+
+/*********************************************************************************************************************/
+
+void ConfigParser::parseModule(const xmlpp::Element * element,  std::string parent_name) {
+  auto module_name = (element->get_name() ==
+                      "configuration") // root node gets special treatment
                          ? ""
                          : element->get_attribute("name")->get_value() + "/";
 
-  auto v = std::make_unique<VariableList>();
-  auto a = std::make_unique<ArrayList>();
+  parent_name+=module_name;
 
   for (const auto &child : element->get_children()) {
     element = dynamic_cast<const xmlpp::Element *>(child);
@@ -417,26 +421,39 @@ ConfigParser::parseModule(const xmlpp::Element * element) {
       continue; // ignore if not an element (e.g. comment)
     }
     else if (isVariable(element)) {
-      v->push_back(parseVariable(element));
+      variableList_->emplace_back(prefix(parent_name, parseVariable(element)));
     }
     else if (isArray(element)) {
-      a->push_back(parseArray(element));
+      arrayList_->emplace_back(prefix(parent_name, parseArray(element)));
     }
     else if (isModule(element)) {
-      std::unique_ptr<VariableList>tmp_var;
-      std::unique_ptr<ArrayList>tmp_arr;
-      std::tie(tmp_var, tmp_arr) = parseModule(element);
-      v->insert(v->end(), tmp_var->begin(), tmp_var->end());
-      a->insert(a->end(), tmp_arr->begin(), tmp_arr->end());
+     parseModule(element, parent_name);
     }
     else {
       error("Unknown tag: " + element->get_name());
     }
   }
-  prefix(module_name, *v);
-  prefix(module_name, *a);
-  return std::pair<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{std::move(v), std::move(a)};
 }
+
+/*********************************************************************************************************************/
+
+Variable ConfigParser::parseVariable(const xmlpp::Element *element) {
+  auto name = element->get_attribute("name")->get_value();
+  auto type = element->get_attribute("type")->get_value();
+  auto value = element->get_attribute("value")->get_value();
+  return Variable{name, type, value};
+}
+
+/*********************************************************************************************************************/
+
+Array ConfigParser::parseArray(const xmlpp::Element *element) {
+  auto name = element->get_attribute("name")->get_value();
+  auto type = element->get_attribute("type")->get_value();
+  std::map<size_t, std::string> values = gettArrayValues(element);
+  return Array{name, type, values};
+}
+
+/*********************************************************************************************************************/
 
 xmlpp::Element* ConfigParser::getRootNode(xmlpp::DomParser& parser){
     auto root = parser.get_document()->get_root_node();
@@ -446,63 +463,60 @@ xmlpp::Element* ConfigParser::getRootNode(xmlpp::DomParser& parser){
     return root;
 }
 
+/*********************************************************************************************************************/
+
 void ConfigParser::error(const std::string &message) {
   throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + fileName_ + "': " + message);
 }
 
+/*********************************************************************************************************************/
+
 bool ConfigParser::isVariable(const xmlpp::Element *element) {
   if ((element->get_name() == "variable") && element->get_attribute("value")) {
+
+    // validate variable node
+    if (!element->get_attribute("name")) {
+      error("Missing attribute 'name' for the 'variable' tag.");
+    } else if (!element->get_attribute("type")) {
+      error("Missing attribute 'type' for the 'variable' tag.");
+    }
     return true;
   } else {
     return false;
   }
 }
+
+/*********************************************************************************************************************/
 
 bool ConfigParser::isArray(const xmlpp::Element *element) {
   if ((element->get_name() == "variable") && !element->get_attribute("value")) {
+
+    // validate array node
+    if (!element->get_attribute("name")) {
+      error("Missing attribute 'name' for the 'variable' tag.");
+    } else if (!element->get_attribute("type")) {
+      error("Missing attribute 'type' for the 'variable' tag.");
+    }
     return true;
   } else {
     return false;
   }
 }
+
+/*********************************************************************************************************************/
 
 bool ConfigParser::isModule(const xmlpp::Element *element) {
   if (element->get_name() == "module") {
+    if (!element->get_attribute("name")) {
+      error("Missing attribute 'name' for the 'module' tag.");
+    }
     return true;
   } else {
     return false;
   }
 }
 
-Variable ConfigParser::parseVariable(const xmlpp::Element *element) {
-
-  // validate variable node
-  if (!element->get_attribute("name")) {
-    error("Missing attribute 'name' for the 'variable' tag.");
-  } else if (!element->get_attribute("type")) {
-    error("Missing attribute 'type' for the 'variable' tag.");
-  }
-
-  auto name = element->get_attribute("name")->get_value();
-  auto type = element->get_attribute("type")->get_value();
-  auto value = element->get_attribute("value")->get_value();
-  return Variable{name, type, value};
-}
-
-Array ConfigParser::parseArray(const xmlpp::Element *element) {
-
-  // validate array node
-  if (!element->get_attribute("name")) {
-    error("Missing attribute 'name' for the 'variable' tag.");
-  } else if (!element->get_attribute("type")) {
-    error("Missing attribute 'type' for the 'variable' tag.");
-  }
-
-  auto name = element->get_attribute("name")->get_value();
-  auto type = element->get_attribute("type")->get_value();
-  std::map<size_t, std::string> values = gettArrayValues(element);
-  return Array{name, type, values};
-}
+/*********************************************************************************************************************/
 
 std::map<size_t, std::string> ConfigParser::gettArrayValues(const xmlpp::Element * element) {
   bool valueFound = false;
@@ -534,6 +548,8 @@ std::map<size_t, std::string> ConfigParser::gettArrayValues(const xmlpp::Element
   return values;
 }
 
+/*********************************************************************************************************************/
+
 void ConfigParser::validateValueNode(const xmlpp::Element* valueElement){
     if (valueElement->get_name() != "value") {
       error("Expected 'value' tag instead of: " + valueElement->get_name());
@@ -546,6 +562,8 @@ void ConfigParser::validateValueNode(const xmlpp::Element* valueElement){
     }
 }
 
+/*********************************************************************************************************************/
+
 std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string &fileName){
   try {
     return std::make_unique<xmlpp::DomParser>(fileName);
@@ -553,4 +571,22 @@ std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string &fileName){
     throw ChimeraTK::logic_error( "ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
   }
 }
+
+/*********************************************************************************************************************/
+
+std::string branch(std::string flattened_name) {
+  auto pos = flattened_name.find_last_of('/');
+  pos = (pos == std::string::npos) ? 0 : pos;
+  return flattened_name.substr(0, pos);
+}
+
+
+/*********************************************************************************************************************/
+std::string leaf(std::string flattened_name) {
+  auto pos = flattened_name.find_last_of('/');
+  return flattened_name.substr(pos + 1, flattened_name.size());
+}
+
+/*********************************************************************************************************************/
+
 } // namespace ChimeraTK
