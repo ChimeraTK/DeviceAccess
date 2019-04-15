@@ -150,7 +150,7 @@ struct FunctorFill {
     auto varOwner = _moduleList->lookup(moduleName);
     
     // place the variable onto the vector
-    std::map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
+    std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
   }
 
@@ -164,7 +164,7 @@ struct FunctorFill {
     auto varOwner = _moduleList->lookup(moduleName);
     
     // place the variable onto the vector
-    std::map<std::string, ConfigReader::Var<std::string>>& theMap = boost::fusion::at_key<std::string>(variableMap.table);
+    std::unordered_map<std::string, ConfigReader::Var<std::string>>& theMap = boost::fusion::at_key<std::string>(variableMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Var<std::string>(varOwner, varName, value)));
   }
 
@@ -208,7 +208,7 @@ struct FunctorFill {
     auto arrayOwner = _moduleList->lookup(moduleName);
     
     // place the variable onto the vector
-    std::map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
+    std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
     theMap.emplace(std::make_pair( name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues)));
   }
 
@@ -238,7 +238,7 @@ struct FunctorFill {
     auto arrayOwner = _moduleList->lookup(moduleName);
 
     // place the variable onto the vector
-    std::map<std::string, ConfigReader::Array<std::string>>& theMap = boost::fusion::at_key<std::string>(arrayMap.table);
+    std::unordered_map<std::string, ConfigReader::Array<std::string>>& theMap = boost::fusion::at_key<std::string>(arrayMap.table);
     theMap.emplace(std::make_pair( name, ConfigReader::Array<std::string>(arrayOwner, arrayName, Tvalues)));
   }
 
@@ -301,7 +301,7 @@ struct FunctorFill {
     void operator()(PAIR&) const {
       // get user type and vector
       typedef typename PAIR::first_type T;
-      std::map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(_owner->variableMap.table);
+      std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(_owner->variableMap.table);
 
       // iterate vector and set values
       for(auto& pair : theMap) {
@@ -324,7 +324,7 @@ struct FunctorFill {
     void operator()(PAIR&) const {
       // get user type and vector
       typedef typename PAIR::first_type T;
-      std::map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(_owner->arrayMap.table);
+      std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(_owner->arrayMap.table);
 
       // iterate vector and set values
       for(auto& pair : theMap) {

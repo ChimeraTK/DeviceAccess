@@ -2,6 +2,7 @@
 #define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
 #include <map>
+#include<unordered_map>
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
@@ -99,7 +100,7 @@ namespace ChimeraTK {
     /** Define type for map of std::string to Var, so we can put it into the
      * TemplateUserTypeMap */
     template<typename T>
-    using MapOfVar = std::map<std::string, Var<T>>;
+    using MapOfVar = std::unordered_map<std::string, Var<T>>;
 
     /** Type-depending map of vectors of variables */
     ChimeraTK::TemplateUserTypeMap<MapOfVar> variableMap;
@@ -107,7 +108,7 @@ namespace ChimeraTK {
     /** Define type for map of std::string to Array, so we can put it into the
      * TemplateUserTypeMap */
     template<typename T>
-    using MapOfArray = std::map<std::string, Array<T>>;
+    using MapOfArray = std::unordered_map<std::string, Array<T>>;
 
     /** Type-depending map of vectors of arrays */
     ChimeraTK::TemplateUserTypeMap<MapOfArray> arrayMap;
