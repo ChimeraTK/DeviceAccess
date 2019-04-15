@@ -244,15 +244,14 @@ namespace ChimeraTK {
       case 1: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned
         std::transform(raw_begin, raw_end, cooked_begin, [&fpc](auto rawValue) {
           fpc.padUnusedBits(rawValue);
-          return boost::numeric_cast<UserType>(*(reinterpret_cast<uint32_t*>(&rawValue)));
+          return numericToUserType<UserType>(*(reinterpret_cast<uint32_t*>(&rawValue)));
         });
         break;
       }
       case 2: { // std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned
         std::transform(raw_begin, raw_end, cooked_begin, [&fpc](auto rawValue) {
           fpc.padUnusedBits(rawValue);
-          auto ttt = boost::numeric_cast<UserType>(rawValue);
-          return ttt;
+          return numericToUserType<UserType>(rawValue);
         });
         break;
       }
