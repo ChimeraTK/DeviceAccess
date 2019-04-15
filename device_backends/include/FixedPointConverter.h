@@ -157,17 +157,17 @@ namespace ChimeraTK {
         typedef typename Pair::first_type UserType;
 
         // compute conversion branches. Needs to be done before the subsequent calls to toCooked()!
-        if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned) {
-          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 1;
-        }
-        else if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
-          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 2;
-        }
-        else if(_fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && !_fpc->_isSigned) {
+        if(_fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && !_fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 9;
         }
         else if(_fpc->_nBits == 16 && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 10;
+        }
+        else if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && !_fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 1;
+        }
+        else if(std::numeric_limits<UserType>::is_integer && _fpc->_fractionalBits == 0 && _fpc->_isSigned) {
+          boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 2;
         }
         else if(_fpc->_nBits == 16 && _fpc->_fractionalBits < 0 && _fpc->_fractionalBits > -16 && !_fpc->_isSigned) {
           boost::fusion::at_key<UserType>(_fpc->conversionBranch_toCooked.table) = 7;
