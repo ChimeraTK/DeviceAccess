@@ -13,9 +13,18 @@ using ChimeraTK::numeric_address::BAR;
 
 namespace ChimeraTK {
 
-  Device::~Device() {
-    // Do NOT close the Backend here. Another device might be using the same
-    // backend.
+  /********************************************************************************************************************/
+
+Device::Device(const std::string &aliasName) {
+  BackendFactory &factoryInstance = BackendFactory::getInstance();
+  _deviceBackendPointer = factoryInstance.createBackend(aliasName);
+}
+
+  /********************************************************************************************************************/
+
+Device::~Device() {
+  // Do NOT close the Backend here. Another device might be using the same
+  // backend.
   }
 
   /********************************************************************************************************************/
