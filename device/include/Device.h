@@ -49,7 +49,10 @@ namespace ChimeraTK {
   class Device {
    public:
 
-    /** Create a placeholder instance.
+    /** Create device instance without associating a backend yet.
+     *
+     * A backend has to be explicitly associated using open method which
+     * has the alias or CDD as argument.
      *
      * Usage:
      * \code
@@ -60,8 +63,9 @@ namespace ChimeraTK {
     Device()=default;
 
     /**
-     * \brief Initialize and register device with the framework without
-     *        implicitly opening it.
+     * \brief Initialize device and accociate a backend.
+     *
+     * The device is not opened yet.
      *
      * Usage:
      * \code
