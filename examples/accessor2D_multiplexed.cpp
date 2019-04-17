@@ -4,8 +4,9 @@
 
 int main() {
   ChimeraTK::setDMapFilePath("example.dmap");
-  ChimeraTK::Device myDevice;
-  myDevice.open("MY_DEVICE");
+
+  ChimeraTK::Device myDevice("MY_DEVICE");
+  myDevice.open();
 
   /*
    * We populate the memory region with multiple multiplexed sequences

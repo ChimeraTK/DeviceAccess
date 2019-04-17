@@ -13,15 +13,15 @@
  */
 
 int main() {
-  ChimeraTK::Device myDevice;
   /*
    * If you have the mtcadummy driver installed you can also use a pci device:
-   * myDevice.open("(pci:pcieunidummys6");
+   * myDevice("(pci:pcieunidummys6)");
    *
    * Note: The dummy always needs a map file to know the size of the address
    * space to emulate.
    */
-  myDevice.open("(dummy?map=my_device.map)");
+  ChimeraTK::Device myDevice("(dummy?map=my_device.map)");
+  myDevice.open();
 
   /*
    * Here, the register is accessed by its numeric address through a special

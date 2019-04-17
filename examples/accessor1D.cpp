@@ -4,8 +4,9 @@
 
 int main() {
   ChimeraTK::setDMapFilePath("example.dmap");
-  ChimeraTK::Device myDevice;
-  myDevice.open("MY_DEVICE");
+
+  ChimeraTK::Device myDevice("MY_DEVICE");
+  myDevice.open();
 
   /*
    * The device contains a register called CLOCKS in the BOARD section.
