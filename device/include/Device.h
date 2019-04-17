@@ -48,6 +48,31 @@ namespace ChimeraTK {
    */
   class Device {
    public:
+
+    /** Create a placeholder instance.
+     *
+     * Usage:
+     * \code
+     *   Device d();
+     *   d.open("(pci:pciedevs5?map=mps_v00.07.map)");
+     * \endcode
+     */
+    Device()=default;
+
+    /**
+     * \brief Initialize and register device with the framework without
+     *        implicitly opening it.
+     *
+     * Usage:
+     * \code
+     *   Device d("(pci:pciedevs5?map=mps_v00.07.map)");
+     *   d.open();
+     * \endcode
+     *
+     * \param aliasName The ChimeraTK device descriptor for the device.
+     */
+    Device(const std::string &aliasName);
+
     /** Destructor */
     virtual ~Device();
 
