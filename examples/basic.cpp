@@ -19,8 +19,8 @@ int main() {
    * Create a device. Make sure a device alias is present
    * in the dmap file.
    */
-  ChimeraTK::Device myDevice;
-  myDevice.open("MY_DEVICE");
+  ChimeraTK::Device myDevice("MY_DEVICE");
+  myDevice.open();
 
   /*
    * Registers are defined by a path, which consists of a hierarchy of
