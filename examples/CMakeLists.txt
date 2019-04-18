@@ -21,7 +21,7 @@ cmake_minimum_required(VERSION 3.5)
 
 # Search for the DeviceAccess library, set the include path and the
 # required compiler flags.
-FIND_PACKAGE(ChimeraTK-DeviceAccess 01.00 REQUIRED)
+FIND_PACKAGE(ChimeraTK-DeviceAccess 01.02 REQUIRED)
 include_directories(SYSTEM ${ChimeraTK-DeviceAccess_INCLUDE_DIRS})
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-DeviceAccess_CXX_FLAGS}")
 
