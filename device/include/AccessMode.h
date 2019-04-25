@@ -10,6 +10,8 @@
 
 #include <map>
 #include <set>
+#include <sstream>
+#include <vector>
 
 #include "Exception.h"
 
@@ -80,8 +82,29 @@ namespace ChimeraTK {
     /** Add the given flag to the set */
     void add(const AccessMode flag) { _flags.insert(flag); }
 
+    /** Get a comma seperated list of all flag strings contained in the class */
+    std::string serialize() {
+      std::string list{};
+      for (auto &f : _flags) {
+        list += getString(f) + ",";
+      }
+      list.pop_back(); // remove trailing ','
+      return list;
+    };
+
     /** Get a string representation of the given flag */
     static const std::string& getString(const AccessMode flag) { return getStringMap().at(flag); }
+
+    /** Get an AcessModeFlags object from a comma seperated list of flag strings */
+    static const AccessModeFlags deSerialize(std::string listOfflags){
+        std::vector<std::string> names = split(listOfflags);
+        std::set<AccessMode> flagList;
+        for(auto flagName: names){
+            flagList.insert(getAccessMode(flagName));
+        }
+        return {flagList};
+    };
+
 
    private:
     /* set of flags */
@@ -89,10 +112,30 @@ namespace ChimeraTK {
 
     /** return the string map */
     static const std::map<AccessMode, std::string>& getStringMap() {
-      static std::map<AccessMode, std::string> m;
-      m[AccessMode::raw] = "raw";
-      m[AccessMode::wait_for_new_data] = "wait_for_new_data";
+      static std::map<AccessMode, std::string> m = {
+          {AccessMode::raw, "raw"},
+          {AccessMode::wait_for_new_data, "wait_for_new_data"}};
       return m;
+    }
+
+    static AccessMode getAccessMode(const std::string& flagName) {
+      static std::map<std::string, AccessMode> reverse_m;
+      for (auto &m : getStringMap()) {
+        reverse_m[m.second] = m.first;
+      }
+      return reverse_m.at(flagName);
+    }
+
+    static std::vector<std::string> split(const std::string &s){
+        std::vector<std::string> list;
+        std::string tmp;
+        char delimiter = ',';
+
+        std::istringstream stream(s);
+        while(getline(stream, tmp, delimiter)){
+            list.push_back(tmp);
+        }
+        return list;
     }
   };
 
