@@ -24,6 +24,9 @@ namespace ChimeraTK { namespace LNMBackend {
     else if(name == "forceReadOnly") {
       return boost::make_shared<ForceReadOnlyPlugin>(info, parameters);
     }
+    else if(name == "forcePollingRead") {
+      return boost::make_shared<ForcePollingReadPlugin>(info, parameters);
+    }
     else {
       throw ChimeraTK::logic_error("LogicalNameMappingBackend: Unknown plugin type '" + name + "'.");
     }

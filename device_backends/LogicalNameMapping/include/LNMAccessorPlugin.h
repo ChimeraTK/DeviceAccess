@@ -163,6 +163,20 @@ namespace ChimeraTK { namespace LNMBackend {
         boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
   };
 
+  /** ForcePollingRead Plugin: Forces a register to not allow setting the AccessMode::wait_for_new_data flag. */
+  class ForcePollingReadPlugin : public AccessorPlugin<ForcePollingReadPlugin> {
+   public:
+    ForcePollingReadPlugin(
+        boost::shared_ptr<LNMBackendRegisterInfo> info, const std::map<std::string, std::string>& parameters);
+
+    void updateRegisterInfo() override;
+
+    template<typename UserType, typename TargetType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> decorateAccessor(
+        boost::shared_ptr<LogicalNameMappingBackend>& backend,
+        boost::shared_ptr<NDRegisterAccessor<TargetType>>& target) const;
+  };
+
   /********************************************************************************************************************/
   /* Implementations follow here                                                                                      */
   /********************************************************************************************************************/
