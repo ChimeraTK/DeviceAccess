@@ -137,8 +137,26 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
 
   // Connect the whole devices into the control system, and use the control system variable /Device1/MyModule/actuator as trigger for both files.
   // The variable becomes a control system to application variable and writing to it through the test facility is generating the triggers.
-  app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
+
+  // works:
   app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
+  app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
+
+  // fails: dev2 hangs
+  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
+  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
+
+  // fails: exception not caught
+  //  app.dev1.connectTo(app.cs["Device1"], app.cs["Device2]["MyModule"]("actuator"));
+  //  app.dev2.connectTo(app.cs["Device2"], app.cs["Device2]["MyModule"]("actuator"));
+
+  // fails: exception not caught
+  // app.dev2.connectTo(app.cs["Device2"], app.cs["Device2]["MyModule"]("actuator"));
+  //  app.dev1.connectTo(app.cs["Device1"], app.cs["Device2]["MyModule"]("actuator"));
+
+  // fails: exception not caught
+  //app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
+  //app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
 
   ctk::TestFacility test;
   test.runApplication();
@@ -148,10 +166,10 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   auto message1 = test.getScalar<std::string>(std::string("/Devices/")+ExceptionDummyCDD1+"/message");
   auto status1 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD1+"/status");
   auto readback1 = test.getScalar<int>("/Device1/MyModule/readBack");
-//  auto message2 = test.getScalar<std::string>(std::string("/Devices/")+ExceptionDummyCDD2+"/message");
-//  auto status2 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD2+"/status");
-//  auto value2 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD2+"/FixedPoint/value");
+  auto message2 = test.getScalar<std::string>(std::string("/Devices/")+ExceptionDummyCDD2+"/message");
+  auto status2 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD2+"/status");
   auto readback2 = test.getScalar<int>("/Device2/MyModule/readBack");
+
   auto trigger = test.getScalar<int>("Device1/MyModule/actuator");
 
   readbackDummy1=42;
@@ -183,9 +201,12 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
     BOOST_CHECK_EQUAL(status1, 1);
     BOOST_CHECK(!dummyBackend1->isOpen());
     BOOST_CHECK( !readback1.readNonBlocking() ); // no new data for broken device
+    //the second device must still be functional
+    BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
+    BOOST_CHECK_EQUAL(status2, 0);
+    BOOST_CHECK(dummyBackend2->isOpen());
     BOOST_CHECK( readback2.readNonBlocking() ); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 20+i);
-    //the second device must still be functional
 
     readbackDummy1=30+i;
     readbackDummy2=40+i;
@@ -199,9 +220,15 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
     BOOST_CHECK(dummyBackend1->isOpen());
-    BOOST_CHECK( readback1.readNonBlocking() ); // there is something new in the queue
-    BOOST_CHECK( readback2.readNonBlocking() ); // device 2 still works
+    BOOST_CHECK( readback1.readLatest() ); // there is something new in the queue
     BOOST_CHECK_EQUAL(readback1, 30+i);
+    BOOST_CHECK( !readback1.readNonBlocking() ); // there is nothing else in the queue
+    BOOST_CHECK_EQUAL(readback1, 30+i);
+    // device2
+    BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
+    BOOST_CHECK_EQUAL(status2, 0);
+    BOOST_CHECK(dummyBackend2->isOpen());
+    BOOST_CHECK( readback2.readLatest() ); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 40+i);
   }
 }
