@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   ctk::TestFacility test;
   test.runApplication();
 
-  app.cs.dump();
+  app.dumpConnections();
 
   auto message1 = test.getScalar<std::string>(std::string("/Devices/")+ExceptionDummyCDD1+"/message");
   auto status1 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD1+"/status");

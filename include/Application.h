@@ -286,7 +286,7 @@ namespace ChimeraTK {
     std::list<VariableNetworkNode> constantList;
 
     /** Map of trigger consumers to their corresponding TriggerFanOuts. Note: the
-     * key is the unique ID of the trigger consuming node. */
+     * key is the ID (address) of the externalTiggerImpl. */
     std::map<const void*, boost::shared_ptr<TriggerFanOut>> triggerMap;
 
     /** Create a new, empty network */

@@ -745,11 +745,13 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         if(useExternalTrigger) {
           // if external trigger is enabled, use externally triggered threaded
           // FanOut
-          auto triggerNode = feeder.getExternalTrigger();
-          auto triggerFanOut = triggerMap[triggerNode.getUniqueId()];
+          void * triggerImplId = network.getExternalTriggerImpl().get();
+          auto triggerFanOut = triggerMap[triggerImplId];
+          std::cout << "triggerImpl ID is " << triggerImplId << std::endl;
           if(!triggerFanOut) {
+            std::cout << "creating new trigger fan out" << std::endl;
             triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl());
-            triggerMap[triggerNode.getUniqueId()] = triggerFanOut;
+            triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
           fanOut = triggerFanOut->addNetwork(feedingImpl);
@@ -814,13 +816,15 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
             auto connectionID = std::make_pair(feeder.getUniqueId(), deviceAlias);
             auto triggerConnection = triggerConnections[ connectionID ];
+            std::cout << "Fixed impl: got device alias as trigger target: \"" << deviceAlias << "\"" << std::endl;
             if (!triggerConnection.first){ // triggerConnection.first is is a shared prt. It evaluates false if default constructed.
               // create a new process variable pair and set the sender/feeder to the fan out
               triggerConnection = createApplicationVariable<UserType>(feeder);
               triggerConnections[ connectionID ] = triggerConnection;
               fanOut->addSlave(triggerConnection.first, consumer);
-
+              std::cout << "added new trigger consumer " << consumer.getUniqueId()<< std::endl;
             }
+            std::cout << "Fixed Impl: setting trigger for consumer ID " << consumer.getUniqueId() << " Trigger ID " << consumer.getNodeToTrigger().getUniqueId() << std::endl;
             consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
           }
           else {
@@ -906,6 +910,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           else if(consumer.getType() == NodeType::TriggerReceiver) {
             std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
+            std::cout << "Not fixed impl: got device alias as trigger target: \"" << deviceAlias << "\"" << std::endl;
             auto connectionID = std::make_pair(feeder.getUniqueId(), deviceAlias);
             auto triggerConnection = triggerConnections[ connectionID ];
             if (!triggerConnection.first){ // triggerConnection.first is is a shared prt. It evaluates false if default constructed.
