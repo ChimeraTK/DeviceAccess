@@ -16,9 +16,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetwork::hasFeedingNode() const {
-    auto n = std::count_if(nodeList.begin(), nodeList.end(), [](const VariableNetworkNode node) {
-      return node.getDirection().dir == VariableDirection::feeding;
-    });
+    auto n = std::count_if(nodeList.begin(), nodeList.end(),
+        [](const VariableNetworkNode node) { return node.getDirection().dir == VariableDirection::feeding; });
     assert(n < 2);
     return n == 1;
   }
@@ -77,11 +76,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::removeNode(VariableNetworkNode& a) {
-    auto nNodes = nodeList.size();
-    nodeList.remove(a);
     a.clearOwner();
-    (void)nNodes;
-    assert(nodeList.size() != nNodes);
+    nodeList.remove(a); // this must be done last, since it will destroy the node if it was the last reference.
   }
 
   /*********************************************************************************************************************/
@@ -90,8 +86,8 @@ namespace ChimeraTK {
     for(auto& node : nodeList) {
       if(node.getType() != NodeType::TriggerReceiver) continue;
       if(node.getNodeToTrigger() == nodeToNoLongerTrigger) {
-        removeNode(node);
-        break;
+        removeNode(node); // Note: node may have been destroyed at this point.
+        break;            // we must leave the loop, since we invalidated the iterators
       }
     }
   }
@@ -282,9 +278,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode VariableNetwork::getFeedingNode() const {
-    auto iter = std::find_if(nodeList.begin(), nodeList.end(), [](const VariableNetworkNode n) {
-      return n.getDirection().dir == VariableDirection::feeding;
-    });
+    auto iter = std::find_if(nodeList.begin(), nodeList.end(),
+        [](const VariableNetworkNode n) { return n.getDirection().dir == VariableDirection::feeding; });
     if(iter == nodeList.end()) {
       std::stringstream msg;
       msg << "No feeding node in this network!" << std::endl;
