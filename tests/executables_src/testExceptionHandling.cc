@@ -208,6 +208,20 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
     BOOST_CHECK( readback2.readNonBlocking() ); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 20+i);
 
+    /* FIXME: Even in the "working" scenario this completely hang the test:
+
+    // even with device 1 failing the second one must process the data, so send a new trigger
+    // before fixing dev1
+    readbackDummy2=120+i;
+    trigger.write();
+    test.stepApplication();
+    BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
+    BOOST_CHECK_EQUAL(status2, 0);
+    BOOST_CHECK(dummyBackend2->isOpen());
+    BOOST_CHECK( readback2.readNonBlocking() ); // device 2 still works
+    BOOST_CHECK_EQUAL(readback2, 120+i);
+    \FIXME */
+    
     readbackDummy1=30+i;
     readbackDummy2=40+i;
 
