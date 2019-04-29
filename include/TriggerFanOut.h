@@ -16,6 +16,7 @@
 #include "FeedingFanOut.h"
 #include "InternalModule.h"
 #include "Profiler.h"
+#include "DeviceModule.h"
 
 namespace ChimeraTK {
 
@@ -23,8 +24,8 @@ namespace ChimeraTK {
    * and distributes each of them to any number of slaves. */
   class TriggerFanOut : public InternalModule {
    public:
-    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl)
-    : externalTrigger(externalTriggerImpl) {}
+    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule)
+    : externalTrigger(externalTriggerImpl), dm(deviceModule) {}
 
     ~TriggerFanOut() { deactivate(); }
 
@@ -69,8 +70,17 @@ namespace ChimeraTK {
         externalTrigger->read();
         Profiler::startMeasurement();
         boost::this_thread::interruption_point();
-        // receive data
-        transferGroup.read();
+        // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
+        // inside a TransferGroup, if the exception is thrown inside doReadTransfer() (as it is directly called on the
+        // lowest-level TransferElements inside the group).
+      retry:
+        try {
+          transferGroup.read();
+        }
+        catch(ChimeraTK::runtime_error& e) {
+          dm.reportException(e.what());
+          goto retry;
+        }
         // send the data to the consumers
         auto version = externalTrigger->getVersionNumber();
         boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
@@ -117,6 +127,9 @@ namespace ChimeraTK {
 
     /** Thread handling the synchronisation, if needed */
     boost::thread _thread;
+
+    /** The DeviceModule of the feeder. Required for exception handling */
+    DeviceModule& dm;
   };
 
 } /* namespace ChimeraTK */

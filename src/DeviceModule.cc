@@ -233,6 +233,7 @@ namespace ChimeraTK {
     lk.unlock();
     owner->testableModeLock("reportException");
   }
+
   /*********************************************************************************************************************/
 
   void DeviceModule::handleException() {
@@ -249,34 +250,24 @@ namespace ChimeraTK {
         owner->testableModeLock("Process exception");
         if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
         std::lock_guard<std::mutex> lk(errorMutex);
+
+        // report exception to the control system
         deviceError.status = 1;
         deviceError.message = error;
         deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
-        while(true) {
-          boost::this_thread::interruption_point();
-          try {
-            d.open(deviceAliasOrURI);
-            if(d.isOpened()) {
-              break;
-            }
-          }
-          catch(std::exception& ex) {
-            deviceError.status = 1;
-            deviceError.message = ex.what();
-            deviceError.setCurrentVersionNumber({});
-            deviceError.writeAll();
-          }
 
-          // empty exception reporting queue
-          while(errorQueue.pop()) {
-            if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
-          }
+        // wait some time until retrying
+        owner->testableModeUnlock("Wait for recovery");
+        usleep(500000);
+        owner->testableModeLock("Try recovery");
 
-          owner->testableModeUnlock("Wait for recovery");
-          usleep(500000);
-          owner->testableModeLock("Try recovery");
+        // empty exception reporting queue
+        while(errorQueue.pop()) {
+          if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
         }
+
+        // reset exception state and try again
         deviceError.status = 0;
         deviceError.message = "";
         deviceError.setCurrentVersionNumber({});
