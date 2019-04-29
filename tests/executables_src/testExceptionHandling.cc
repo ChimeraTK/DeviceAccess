@@ -66,24 +66,24 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   // The variable becomes a control system to application variable and writing to it through the test facility is generating the triggers.
 
   // works:
-  app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
-  app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
+  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
+  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
 
-  // fails: dev2 hangs
+  // fails: dev2 hangs - works now
   //app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
   //app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
 
-  // fails: exception not caught
-  //  app.dev1.connectTo(app.cs["Device1"], app.cs["Device2]["MyModule"]("actuator"));
-  //  app.dev2.connectTo(app.cs["Device2"], app.cs["Device2]["MyModule"]("actuator"));
+  // fails: exception not caught - works now
+  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device2"]["MyModule"]("actuator"));
+  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device2"]["MyModule"]("actuator"));
+
+  // fails: exception not caught - works now
+  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device2"]["MyModule"]("actuator"));
+  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device2"]["MyModule"]("actuator"));
 
   // fails: exception not caught
-  // app.dev2.connectTo(app.cs["Device2"], app.cs["Device2]["MyModule"]("actuator"));
-  //  app.dev1.connectTo(app.cs["Device1"], app.cs["Device2]["MyModule"]("actuator"));
-
-  // fails: exception not caught
-  //app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
-  //app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
+  app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
+  app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
 
   // Do not enable testable mode. The testable mode would block in the wrong place, as the trigger for reading variables
   // of a device in the error state is not being processed until the error state is cleared. We want to test that the
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   auto status2 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD2 + "/status");
   auto readback2 = test.getScalar<int>("/Device2/MyModule/readBack");
 
-  auto trigger = test.getScalar<int>("Device1/MyModule/actuator");
+  auto trigger = test.getScalar<int>("trigger");
 
   readbackDummy1 = 42;
   readbackDummy2 = 52;
