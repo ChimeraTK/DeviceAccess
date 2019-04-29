@@ -744,15 +744,16 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         if(useExternalTrigger) {
           // if external trigger is enabled, use externally triggered threaded
           // FanOut. Create one per external trigger impl.
-          void * triggerImplId = network.getExternalTriggerImpl().get();
+          void* triggerImplId = network.getExternalTriggerImpl().get();
           auto triggerFanOut = triggerMap[triggerImplId];
           if(!triggerFanOut) {
-            std::cout << "creating new trigger fan out for triggerImplId " <<triggerImplId<< std::endl;
+            std::cout << "creating new trigger fan out for triggerImplId " << triggerImplId << std::endl;
             triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl());
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
-          std::cout << "Adding feeder with ID " << feeder.getUniqueId() << " to triggerNode for triggerImpl ID " << triggerImplId << std::endl;
+          std::cout << "Adding feeder with ID " << feeder.getUniqueId() << " to triggerNode for triggerImpl ID "
+                    << triggerImplId << std::endl;
           fanOut = triggerFanOut->addNetwork(feedingImpl);
         }
         else if(useFeederTrigger) {
@@ -780,14 +781,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         // In case we have one or more trigger receivers among our consumers, we
         // produce one consuming application variable for each device. Later this will create a TriggerFanOut for
         // each trigger consimer, i.e. one per device so one blocking device does not affect the others.
-
-//        bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
-//        auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
-        /** Map of trigger IDs to their corresponding TriggerFanOuts. The
-         * key is the pair if unique ID of the triggering node and the unique ID of the target device alias. */
-        std::map< std::pair<const void*, std::string>, std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> > triggerConnections;
-
+        /** Map of deviceAliases to their corresponding TriggerFanOuts. */
+        std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
 
         // add all consumers to the FanOut
         for(auto& consumer : consumers) {
@@ -813,18 +808,21 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           else if(consumer.getType() == NodeType::TriggerReceiver) {
             std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
-            auto connectionID = std::make_pair(feeder.getUniqueId(), deviceAlias);
-            auto triggerConnection = triggerConnections[ connectionID ];
-            if (!triggerConnection.first){ // triggerConnection.first is is a shared prt. It evaluates false if default constructed.
+            auto triggerFanOut = triggerFanOuts[deviceAlias];
+            if(!triggerFanOut) { // triggerFanOut is a shared pointer, which evaluates false if default constructed.
               // create a new process variable pair and set the sender/feeder to the fan out
-              std::cout << "Creating new PV pair for Trigger ID " <<  feeder.getUniqueId() << ", device alias: \"" << deviceAlias << "\"" << std::endl;
-              triggerConnection = createApplicationVariable<UserType>(feeder);
-              triggerConnections[ connectionID ] = triggerConnection;
+              std::cout << "Creating new PV pair for Trigger ID " << feeder.getUniqueId() << ", device alias: \""
+                        << deviceAlias << "\"" << std::endl;
+              auto triggerConnection = createApplicationVariable<UserType>(feeder);
+              triggerFanOut = triggerConnection.second;
+              triggerFanOuts[deviceAlias] = triggerFanOut;
               fanOut->addSlave(triggerConnection.first, consumer);
-              std::cout << "added new trigger consumer as slave to fan out in trigger network, TriggerReceiverID " << consumer.getUniqueId() << std::endl;
+              std::cout << "added new trigger consumer as slave to fan out in trigger network, TriggerReceiverID "
+                        << consumer.getUniqueId() << std::endl;
             }
-            std::cout << "Fixed Impl: setting external trigger impl " << triggerConnection.second.get() <<" for TriggerReceiver " << consumer.getUniqueId() << std::endl;
-            consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
+            std::cout << "Fixed Impl: setting external trigger impl " << triggerFanOut.get() << " for TriggerReceiver "
+                      << consumer.getUniqueId() << std::endl;
+            consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerFanOut);
           }
           else {
             throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
@@ -885,12 +883,14 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         // produce one consuming application variable for each device. Later this will create a TriggerFanOut for
         // each trigger consimer, i.e. one per device so one blocking device does not affect the others.
 
-//        bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
-//        auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
+        //        bool usedTriggerReceiver{false}; // flag if we already have a trigger receiver
+        //        auto triggerConnection = createApplicationVariable<UserType>(feeder); // will get destroyed if not used
         /** Map of trigger IDs to their corresponding TriggerFanOuts. The
          * key is the pair if unique ID of the triggering node and the unique ID of the target device alias. */
-        std::map< std::pair<const void*, std::string>, std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> > triggerConnections;
+        std::map<std::pair<const void*, std::string>,
+            std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
+                boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>>
+            triggerConnections;
 
         for(auto& consumer : consumers) {
           if(consumer.getType() == NodeType::Application) {
@@ -911,11 +911,12 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             std::string deviceAlias = consumer.getNodeToTrigger().getOwner().getFeedingNode().getDeviceAlias();
             std::cout << "Not fixed impl: got device alias as trigger target: \"" << deviceAlias << "\"" << std::endl;
             auto connectionID = std::make_pair(feeder.getUniqueId(), deviceAlias);
-            auto triggerConnection = triggerConnections[ connectionID ];
-            if (!triggerConnection.first){ // triggerConnection.first is is a shared prt. It evaluates false if default constructed.
+            auto triggerConnection = triggerConnections[connectionID];
+            if(!triggerConnection
+                    .first) { // triggerConnection.first is is a shared prt. It evaluates false if default constructed.
               // create a new process variable pair and set the sender/feeder to the fan out
               triggerConnection = createApplicationVariable<UserType>(feeder);
-              triggerConnections[ connectionID ] = triggerConnection;
+              triggerConnections[connectionID] = triggerConnection;
               fanOut->addSlave(triggerConnection.first, consumer);
             }
             consumer.getNodeToTrigger().getOwner().setExternalTriggerImpl(triggerConnection.second);
