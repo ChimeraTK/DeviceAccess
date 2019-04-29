@@ -162,18 +162,19 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   test.runApplication();
 
   app.dumpConnections();
+  //  app.debugTestableMode();
 
-  auto message1 = test.getScalar<std::string>(std::string("/Devices/")+ExceptionDummyCDD1+"/message");
-  auto status1 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD1+"/status");
+  auto message1 = test.getScalar<std::string>(std::string("/Devices/") + ExceptionDummyCDD1 + "/message");
+  auto status1 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");
   auto readback1 = test.getScalar<int>("/Device1/MyModule/readBack");
-  auto message2 = test.getScalar<std::string>(std::string("/Devices/")+ExceptionDummyCDD2+"/message");
-  auto status2 = test.getScalar<int>(std::string("/Devices/")+ExceptionDummyCDD2+"/status");
+  auto message2 = test.getScalar<std::string>(std::string("/Devices/") + ExceptionDummyCDD2 + "/message");
+  auto status2 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD2 + "/status");
   auto readback2 = test.getScalar<int>("/Device2/MyModule/readBack");
 
   auto trigger = test.getScalar<int>("Device1/MyModule/actuator");
 
-  readbackDummy1=42;
-  readbackDummy2=52;
+  readbackDummy1 = 42;
+  readbackDummy2 = 52;
 
   // initially there should be no error set
   trigger.write();
@@ -184,65 +185,60 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   readback2.readLatest();
   BOOST_CHECK(static_cast<std::string>(message1) == "");
   BOOST_CHECK(status1 == 0);
-  BOOST_CHECK_EQUAL(readback1, 42) ;
-  BOOST_CHECK_EQUAL(readback2, 52) ;
+  BOOST_CHECK_EQUAL(readback1, 42);
+  BOOST_CHECK_EQUAL(readback2, 52);
 
   // repeat test a couple of times to make sure it works not only once
   for(size_t i = 0; i < 10; ++i) {
     // enable exception throwing in test device
-    readbackDummy1=10+i;
-    readbackDummy2=20+i;
-    dummyBackend1->throwException = true;
+    readbackDummy1 = 10 + i;
+    readbackDummy2 = 20 + i;
+    dummyBackend1->throwExceptionOpen = true;
+    dummyBackend1->throwExceptionRead = true;
     trigger.write();
     test.stepApplication();
     message1.readLatest();
     status1.readLatest();
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
-    BOOST_CHECK(!dummyBackend1->isOpen());
-    BOOST_CHECK( !readback1.readNonBlocking() ); // no new data for broken device
+    BOOST_CHECK(!readback1.readNonBlocking()); // no new data for broken device
     //the second device must still be functional
     BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
     BOOST_CHECK_EQUAL(status2, 0);
-    BOOST_CHECK(dummyBackend2->isOpen());
-    BOOST_CHECK( readback2.readNonBlocking() ); // device 2 still works
-    BOOST_CHECK_EQUAL(readback2, 20+i);
-
-    /* FIXME: Even in the "working" scenario this completely hang the test:
-
+    BOOST_CHECK(readback2.readNonBlocking()); // device 2 still works
+    BOOST_CHECK_EQUAL(readback2, 20 + i);
+    /*
     // even with device 1 failing the second one must process the data, so send a new trigger
     // before fixing dev1
-    readbackDummy2=120+i;
+    readbackDummy2 = 120 + i;
     trigger.write();
     test.stepApplication();
     BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
     BOOST_CHECK_EQUAL(status2, 0);
     BOOST_CHECK(dummyBackend2->isOpen());
-    BOOST_CHECK( readback2.readNonBlocking() ); // device 2 still works
-    BOOST_CHECK_EQUAL(readback2, 120+i);
-    \FIXME */
-    
-    readbackDummy1=30+i;
-    readbackDummy2=40+i;
+    BOOST_CHECK(readback2.readNonBlocking()); // device 2 still works
+    BOOST_CHECK_EQUAL(readback2, 120 + i);
+*/
+    readbackDummy1 = 30 + i;
+    readbackDummy2 = 40 + i;
 
     // Now "cure" the device problem
-    dummyBackend1->throwException = false;
+    dummyBackend1->throwExceptionOpen = false;
+    dummyBackend1->throwExceptionRead = false;
     trigger.write();
     test.stepApplication();
     message1.readLatest();
     status1.readLatest();
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
-    BOOST_CHECK(dummyBackend1->isOpen());
-    BOOST_CHECK( readback1.readLatest() ); // there is something new in the queue
-    BOOST_CHECK_EQUAL(readback1, 30+i);
-    BOOST_CHECK( !readback1.readNonBlocking() ); // there is nothing else in the queue
-    BOOST_CHECK_EQUAL(readback1, 30+i);
+    BOOST_CHECK(readback1.readLatest()); // there is something new in the queue
+    BOOST_CHECK_EQUAL(readback1, 30 + i);
+    BOOST_CHECK(!readback1.readNonBlocking()); // there is nothing else in the queue
+    BOOST_CHECK_EQUAL(readback1, 30 + i);
     // device2
     BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
     BOOST_CHECK_EQUAL(status2, 0);
-    BOOST_CHECK(dummyBackend2->isOpen());
-    BOOST_CHECK( readback2.readLatest() ); // device 2 still works
-    BOOST_CHECK_EQUAL(readback2, 40+i);
+    BOOST_CHECK(readback2.readLatest()); // device 2 still works
+    BOOST_CHECK_EQUAL(readback2, 40 + i);
   }
 }
