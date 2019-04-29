@@ -62,26 +62,9 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   ChimeraTK::DummyRegisterAccessor<int> readbackDummy1(dummyBackend1.get(), "MyModule", "readBack");
   ChimeraTK::DummyRegisterAccessor<int> readbackDummy2(dummyBackend2.get(), "MyModule", "readBack");
 
-  // Connect the whole devices into the control system, and use the control system variable /Device1/MyModule/actuator as trigger for both files.
-  // The variable becomes a control system to application variable and writing to it through the test facility is generating the triggers.
-
-  // works:
-  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
-  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
-
-  // fails: dev2 hangs - works now
-  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device1"]["MyModule"]("actuator"));
-  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device1"]["MyModule"]("actuator"));
-
-  // fails: exception not caught - works now
-  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device2"]["MyModule"]("actuator"));
-  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device2"]["MyModule"]("actuator"));
-
-  // fails: exception not caught - works now
-  //app.dev2.connectTo(app.cs["Device2"], app.cs["Device2"]["MyModule"]("actuator"));
-  //app.dev1.connectTo(app.cs["Device1"], app.cs["Device2"]["MyModule"]("actuator"));
-
-  // fails: exception not caught
+  // Connect the whole devices into the control system, and use the control system variable /trigger as trigger for
+  // both devices. The variable becomes a control system to application variable and writing to it through the test
+  // facility is generating the triggers.
   app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
   app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
 
