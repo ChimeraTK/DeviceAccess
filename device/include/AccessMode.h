@@ -88,7 +88,9 @@ namespace ChimeraTK {
       for (auto &f : _flags) {
         list += getString(f) + ",";
       }
-      list.pop_back(); // remove trailing ','
+      if(!list.empty()){
+        list.pop_back(); // remove trailing ','
+      }
       return list;
     };
 
@@ -96,7 +98,7 @@ namespace ChimeraTK {
     static const std::string& getString(const AccessMode flag) { return getStringMap().at(flag); }
 
     /** Get an AcessModeFlags object from a comma seperated list of flag strings */
-    static const AccessModeFlags deSerialize(std::string listOfflags){
+    static const AccessModeFlags deserialize(std::string listOfflags){
         std::vector<std::string> names = split(listOfflags);
         std::set<AccessMode> flagList;
         for(auto flagName: names){
@@ -104,7 +106,6 @@ namespace ChimeraTK {
         }
         return {flagList};
     };
-
 
    private:
     /* set of flags */
@@ -123,7 +124,11 @@ namespace ChimeraTK {
       for (auto &m : getStringMap()) {
         reverse_m[m.second] = m.first;
       }
-      return reverse_m.at(flagName);
+      try {
+        return reverse_m.at(flagName);
+      } catch (std::out_of_range &e){
+          throw logic_error("Unknown flag string: " + flagName);
+      }
     }
 
     static std::vector<std::string> split(const std::string &s){
