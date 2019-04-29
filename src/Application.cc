@@ -748,7 +748,20 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto triggerFanOut = triggerMap[triggerImplId];
           if(!triggerFanOut) {
             std::cout << "creating new trigger fan out for triggerImplId " << triggerImplId << std::endl;
-            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl());
+
+            // find the right DeviceModule for this alias name - required for exception handling
+            DeviceModule* devmod = nullptr;
+            std::string deviceAlias = feeder.getDeviceAlias();
+            for(auto& dm : deviceModuleList) {
+              if(dm->deviceAliasOrURI == deviceAlias) {
+                devmod = dm;
+                break;
+              }
+            }
+            assert(devmod != nullptr);
+
+            // create the trigger fan out and store it in the map and the internalModuleList
+            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod);
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
