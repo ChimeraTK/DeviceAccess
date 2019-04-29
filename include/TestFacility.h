@@ -26,11 +26,11 @@ namespace ChimeraTK {
      * the instance of the TestFacility must not be created before the application
      * (i.e. usually not before the main() routine). The application will
      *  automatically be put into the testable mode and initialised. */
-    TestFacility() {
+    explicit TestFacility(bool enableTestableMode = true) {
       auto pvManagers = createPVManager();
       pvManager = pvManagers.first;
       Application::getInstance().setPVManager(pvManagers.second);
-      Application::getInstance().enableTestableMode();
+      if(enableTestableMode) Application::getInstance().enableTestableMode();
       Application::getInstance().initialise();
     }
 
