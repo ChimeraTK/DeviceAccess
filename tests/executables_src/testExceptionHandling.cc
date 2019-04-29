@@ -25,6 +25,17 @@ namespace ctk = ChimeraTK;
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 constexpr char ExceptionDummyCDD2[] = "(ExceptionDummy:2?map=test3.map)";
 
+#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
+  {                                                                                                                    \
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
+    while(!(condition)) {                                                                                              \
+      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
+      BOOST_CHECK(!timeout_reached);                                                                                   \
+      if(timeout_reached) break;                                                                                       \
+      usleep(1000);                                                                                                    \
+    }                                                                                                                  \
+  }
+
 /* dummy application */
 
 struct TestApplication : public ctk::Application {
@@ -158,11 +169,13 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
   //app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
   //app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
 
-  ctk::TestFacility test;
+  // Do not enable testable mode. The testable mode would block in the wrong place, as the trigger for reading variables
+  // of a device in the error state is not being processed until the error state is cleared. We want to test that the
+  // second device still works while the first device is in error state, which would be impossible with testable mode
+  // enabled. As a consequence, our test logic has to work with timeouts (CHECK_TIMEOUT) etc. instead of the
+  // deterministic stepApplication().
+  ctk::TestFacility test(false);
   test.runApplication();
-
-  app.dumpConnections();
-  //  app.debugTestableMode();
 
   auto message1 = test.getScalar<std::string>(std::string("/Devices/") + ExceptionDummyCDD1 + "/message");
   auto status1 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");
@@ -178,11 +191,10 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
 
   // initially there should be no error set
   trigger.write();
-  test.stepApplication();
-  message1.readLatest();
-  status1.readLatest();
-  readback1.readLatest();
-  readback2.readLatest();
+  BOOST_CHECK(!message1.readLatest());
+  BOOST_CHECK(!status1.readLatest());
+  CHECK_TIMEOUT(readback1.readLatest(), 1000);
+  CHECK_TIMEOUT(readback2.readLatest(), 1000);
   BOOST_CHECK(static_cast<std::string>(message1) == "");
   BOOST_CHECK(status1 == 0);
   BOOST_CHECK_EQUAL(readback1, 42);
@@ -193,52 +205,49 @@ BOOST_AUTO_TEST_CASE(testExceptionHandling) {
     // enable exception throwing in test device
     readbackDummy1 = 10 + i;
     readbackDummy2 = 20 + i;
-    dummyBackend1->throwExceptionOpen = true;
     dummyBackend1->throwExceptionRead = true;
     trigger.write();
-    test.stepApplication();
-    message1.readLatest();
-    status1.readLatest();
+    CHECK_TIMEOUT(message1.readLatest(), 1000);
+    CHECK_TIMEOUT(status1.readLatest(), 1000);
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
     BOOST_CHECK(!readback1.readNonBlocking()); // no new data for broken device
     //the second device must still be functional
-    BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
-    BOOST_CHECK_EQUAL(status2, 0);
-    BOOST_CHECK(readback2.readNonBlocking()); // device 2 still works
+    BOOST_CHECK(!message2.readNonBlocking());
+    BOOST_CHECK(!status2.readNonBlocking());
+    CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 20 + i);
-    /*
+
     // even with device 1 failing the second one must process the data, so send a new trigger
     // before fixing dev1
     readbackDummy2 = 120 + i;
     trigger.write();
-    test.stepApplication();
-    BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
-    BOOST_CHECK_EQUAL(status2, 0);
-    BOOST_CHECK(dummyBackend2->isOpen());
-    BOOST_CHECK(readback2.readNonBlocking()); // device 2 still works
+    CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 120 + i);
-*/
+
     readbackDummy1 = 30 + i;
     readbackDummy2 = 40 + i;
 
     // Now "cure" the device problem
-    dummyBackend1->throwExceptionOpen = false;
     dummyBackend1->throwExceptionRead = false;
     trigger.write();
-    test.stepApplication();
-    message1.readLatest();
-    status1.readLatest();
+    CHECK_TIMEOUT(message1.readLatest(), 1000);
+    CHECK_TIMEOUT(status1.readLatest(), 1000);
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
-    BOOST_CHECK(readback1.readLatest()); // there is something new in the queue
     BOOST_CHECK_EQUAL(readback1, 30 + i);
-    BOOST_CHECK(!readback1.readNonBlocking()); // there is nothing else in the queue
+    // there are two more copies in the queue, since the two triggers received during the error state is still
+    // processed after recovery
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
     BOOST_CHECK_EQUAL(readback1, 30 + i);
+    CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
+    BOOST_CHECK_EQUAL(readback1, 30 + i);
+    BOOST_CHECK(!readback1.readNonBlocking()); // now the queue should be empty
     // device2
-    BOOST_CHECK_EQUAL(static_cast<std::string>(message2), "");
-    BOOST_CHECK_EQUAL(status2, 0);
-    BOOST_CHECK(readback2.readLatest()); // device 2 still works
+    BOOST_CHECK(!message2.readNonBlocking());
+    BOOST_CHECK(!status2.readNonBlocking());
+    CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 40 + i);
   }
 }
