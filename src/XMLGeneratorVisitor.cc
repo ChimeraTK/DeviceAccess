@@ -96,6 +96,12 @@ namespace ChimeraTK {
     else if(type == typeid(uint32_t)) {
       dataTypeName = "uint32";
     }
+    else if(type == typeid(int64_t)) {
+      dataTypeName = "int64";
+    }
+    else if(type == typeid(uint64_t)) {
+      dataTypeName = "uint64";
+    }
     else if(type == typeid(float)) {
       dataTypeName = "float";
     }
