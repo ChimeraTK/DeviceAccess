@@ -47,6 +47,7 @@
 #include "VirtualModule.h"
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
+#include <ChimeraTK/Device.h>
 
 namespace ChimeraTK {
   class Application;
@@ -87,7 +88,6 @@ namespace ChimeraTK {
     /** Constructor: The device represented by this DeviceModule is identified by
      * either the device alias found in the DMAP file or directly an URI. */
     DeviceModule(Application* application, const std::string& deviceAliasOrURI);
-
     /** Default constructor: create dysfunctional device module */
     DeviceModule() {}
 
@@ -101,6 +101,7 @@ namespace ChimeraTK {
     DeviceModule& operator=(DeviceModule&& other) {
       assert(!moduleThread.joinable());
       Module::operator=(std::move(other));
+      device = std::move(other.device);
       deviceAliasOrURI = std::move(other.deviceAliasOrURI);
       registerNamePrefix = std::move(other.registerNamePrefix);
       deviceError = std::move(other.deviceError);
@@ -110,7 +111,6 @@ namespace ChimeraTK {
       owner->registerDeviceModule(this);
       return *this;
     }
-
     /** The subscript operator returns a VariableNetworkNode which can be used in
      * the Application::initialise()
      *  function to connect the register with another variable. */
@@ -151,6 +151,8 @@ namespace ChimeraTK {
     VersionNumber currentVersionNumber;
     /** This function connects DeviceError VariableGroup to ContolSystem*/
     void defineConnections() override;
+
+    Device device;
 
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the

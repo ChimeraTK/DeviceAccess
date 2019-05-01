@@ -311,10 +311,9 @@ template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(
     const std::string& deviceAlias, const std::string& registerName, VariableDirection direction, UpdateMode mode,
     size_t nElements) {
-  // open device if needed
+  // Device opens in DeviceModule
   if(deviceMap.count(deviceAlias) == 0) {
     deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
-    if(!deviceMap[deviceAlias]->isOpen()) deviceMap[deviceAlias]->open();
   }
 
   // use wait_for_new_data mode if push update mode was requested
