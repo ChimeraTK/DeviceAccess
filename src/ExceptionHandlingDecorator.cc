@@ -8,7 +8,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
@@ -24,7 +24,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
@@ -40,7 +40,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
@@ -56,7 +56,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
@@ -72,7 +72,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
@@ -88,7 +88,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead();
@@ -104,7 +104,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
@@ -120,7 +120,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
@@ -136,7 +136,7 @@ namespace ChimeraTK {
   retry:
     try {
       if(!dm.device.isOpened()){
-        dm.reportException("Device not open");
+        usleep(500000);
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite();
