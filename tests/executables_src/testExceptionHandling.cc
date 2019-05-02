@@ -50,7 +50,6 @@ struct TestApplication : public ctk::Application {
 };
 
 /*********************************************************************************************************************/
-#ifdef _0
 BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   std::cout << "testExceptionHandlingRead" << std::endl;
   TestApplication app;
@@ -231,7 +230,6 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     BOOST_CHECK_EQUAL(status1, 0);
   }
 }
-#endif
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
@@ -249,8 +247,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   // both devices. The variable becomes a control system to application variable and writing to it through the test
   // facility is generating the triggers.
   app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
-  //app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
-  app.dev2.connectTo(app.cs["Device2"], app.cs("trigger2", typeid(int), 1));
+  app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
 
   // Do not enable testable mode. The testable mode would block in the wrong place, as the trigger for reading variables
   // of a device in the error state is not being processed until the error state is cleared. We want to test that the
@@ -269,21 +266,32 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   auto readback2 = test.getScalar<int>("/Device2/MyModule/readBack");
 
   auto trigger = test.getScalar<int>("trigger");
-  auto trigger2 = test.getScalar<int>("trigger2");
  
   readbackDummy1 = 100;
   trigger.write();
-  CHECK_TIMEOUT(status1.readLatest(), 2000);
-  //CHECK_TIMEOUT(message1.readLatest(), 2000);
-  //CHECK_TIMEOUT(readback1.readNonBlocking(), 2000);
-  //BOOST_CHECK_THROW(readback1.readNonBlocking(), ChimeraTK::runtime_error);
+  //device 1 is in Error state
+  CHECK_TIMEOUT(message1.readLatest(), 1000);
+  CHECK_TIMEOUT(status1.readLatest(), 1000);
+  BOOST_CHECK_EQUAL(status1, 1);
+  BOOST_CHECK(!readback1.readNonBlocking());
 
   // even with device 1 failing the second one must process the data, so send a new trigger
   // before fixing dev1
   readbackDummy2 = 120;
-  trigger2.write();
-  CHECK_TIMEOUT(readback2.readNonBlocking(), 2000); // device 2 still works
+  trigger.write();
+  CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
   BOOST_CHECK_EQUAL(readback2, 120);
+  //Device was never in error state, so no update for Error status.
+  CHECK_TIMEOUT(!message2.readLatest(), 1000);
+  CHECK_TIMEOUT(!status2.readLatest(), 1000);
 
+  //fix device 1
   dummyBackend1->throwExceptionOpen = false;
+  usleep(1000000);
+  //device 1 is fixed
+  CHECK_TIMEOUT(message1.readLatest(), 1000);
+  CHECK_TIMEOUT(status1.readLatest(), 1000);
+  BOOST_CHECK_EQUAL(status1, 0);
+  BOOST_CHECK(readback1.readNonBlocking());
+  BOOST_CHECK_EQUAL(readback1, 100);
 }
