@@ -237,19 +237,28 @@ namespace ChimeraTK {
     Application::registerThread("DM_" + getName());
     std::string error;
     owner->testableModeLock("Startup");
-    while(!device.isOpened()) {
-     try{
-        boost::this_thread::interruption_point();
-        usleep(500000);
-        device.open();
-      }
-      catch(...) {
-        std::cout<<"error opening device"<<std::endl;
-        //reportException("error opening device");
-        //throw;
-      }
-    }
     try {
+      while(!device.isOpened()) {
+        try {
+          boost::this_thread::interruption_point();
+          usleep(500000);
+          device.open();
+          if (deviceError.status != 0){
+            deviceError.status = 0;
+            deviceError.message = "";
+            deviceError.setCurrentVersionNumber({});
+            deviceError.writeAll();
+          }
+        }
+        catch(ChimeraTK::runtime_error& e) {
+          if (deviceError.status != 1){
+            deviceError.status = 1;
+            deviceError.message = error;
+            deviceError.setCurrentVersionNumber({});
+            deviceError.writeAll();
+          }
+        }
+      }
       while(true) {
         owner->testableModeUnlock("Wait for exception");
         errorQueue.pop_wait(error);
