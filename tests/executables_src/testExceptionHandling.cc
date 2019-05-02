@@ -268,12 +268,15 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   auto trigger = test.getScalar<int>("trigger");
  
   readbackDummy1 = 100;
+  readbackDummy2 = 110;
   trigger.write();
   //device 1 is in Error state
   CHECK_TIMEOUT(message1.readLatest(), 1000);
   CHECK_TIMEOUT(status1.readLatest(), 1000);
   BOOST_CHECK_EQUAL(status1, 1);
   BOOST_CHECK(!readback1.readNonBlocking());
+  CHECK_TIMEOUT(readback2.readNonBlocking(), 1000);
+  BOOST_CHECK_EQUAL(readback2, 110);
 
   // even with device 1 failing the second one must process the data, so send a new trigger
   // before fixing dev1
@@ -281,17 +284,16 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   trigger.write();
   CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
   BOOST_CHECK_EQUAL(readback2, 120);
-  //Device was never in error state, so no update for Error status.
+  //Device is not in error state.
   CHECK_TIMEOUT(!message2.readLatest(), 1000);
   CHECK_TIMEOUT(!status2.readLatest(), 1000);
 
   //fix device 1
   dummyBackend1->throwExceptionOpen = false;
-  usleep(1000000);
   //device 1 is fixed
   CHECK_TIMEOUT(message1.readLatest(), 1000);
   CHECK_TIMEOUT(status1.readLatest(), 1000);
   BOOST_CHECK_EQUAL(status1, 0);
-  BOOST_CHECK(readback1.readNonBlocking());
+  CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
   BOOST_CHECK_EQUAL(readback1, 100);
 }
