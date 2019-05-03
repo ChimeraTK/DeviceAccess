@@ -92,7 +92,7 @@ if(TESTING_IS_ENABLED)
     add_executable(${executableName} ${testExecutableSrcFile} )
     # do not link against the boost unit test library, the tests are not written for it!
     target_link_libraries(${executableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
-    set_target_properties(${executableName} PROPERTIES LINK_FLAGS "${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
+    set_target_properties(${executableName} PROPERTIES LINK_FLAGS "-Wl,-rpath,${PROJECT_BINARY_DIR} ${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
     add_test(${executableName} ${executableName})
   endforeach( testExecutableSrcFile )
 
@@ -190,8 +190,8 @@ if(DEMO_IS_ENABLED)
 
   # copy config files for 2nd example with automation
   FILE( COPY ${CMAKE_SOURCE_DIR}/example3/demoApp3.conf DESTINATION ${PROJECT_BINARY_DIR})
-  
-  
+
+
   #add_executable(exceptionTestApp exception_test/exceptionTestApp.cc exception_test/ExceptionDevice.cc example/TimerDummyDevice.cc)
   #set_target_properties(exceptionTestApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
   #set_target_properties(exceptionTestApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
@@ -204,8 +204,8 @@ if(DEMO_IS_ENABLED)
   #                              ${HDF5_LIBRARIES})
 
   #FILE( COPY ${CMAKE_SOURCE_DIR}/exception_test/exceptionTestApp.conf DESTINATION ${PROJECT_BINARY_DIR})
-  
-  
+
+
 endif(DEMO_IS_ENABLED)
 
 # C++ library
