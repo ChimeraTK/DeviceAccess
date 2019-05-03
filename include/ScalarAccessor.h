@@ -116,8 +116,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Convenience class for input scalar accessors with return channel ("write
-   * back") and UpdateMode::push */
+  /** Convenience class for input scalar accessors with return channel ("write back") and UpdateMode::push. */
   template<typename UserType>
   struct ScalarPushInputWB : public ScalarAccessor<UserType> {
     ScalarPushInputWB(Module* owner, const std::string& name, std::string unit, const std::string& description,
@@ -130,8 +129,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Convenience class for output scalar accessors with return channel ("read
-   * back") (always UpdateMode::push) */
+  /** Convenience class for output scalar accessors with return channel ("read back") (always UpdateMode::push) */
   template<typename UserType>
   struct ScalarOutputPushRB : public ScalarAccessor<UserType> {
     ScalarOutputPushRB(Module* owner, const std::string& name, std::string unit, const std::string& description,
