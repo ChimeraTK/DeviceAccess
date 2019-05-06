@@ -141,8 +141,12 @@ namespace ChimeraTK {
     MapFileParser parser;
     _registerMap = parser.parse(parameters["map"]);
     _catalogue = _registerMap->getRegisterCatalogue();
+  }
 
-    // obtain target backend
+  /*******************************************************************************************************************/
+
+  void SubdeviceBackend::obtainTargetBackend() {
+    if(targetDevice != nullptr) return;
     BackendFactory& factoryInstance = BackendFactory::getInstance();
     targetDevice = factoryInstance.createBackend(targetAlias);
   }
@@ -150,6 +154,7 @@ namespace ChimeraTK {
   /*******************************************************************************************************************/
 
   void SubdeviceBackend::open() {
+    obtainTargetBackend();
     // open target backend
     if(!targetDevice->isOpen()) { // createBackend may return an already opened
                                   // instance for some backends
@@ -161,6 +166,7 @@ namespace ChimeraTK {
   /*******************************************************************************************************************/
 
   void SubdeviceBackend::close() {
+    obtainTargetBackend();
     targetDevice->close();
     _opened = false;
   }
@@ -260,6 +266,7 @@ namespace ChimeraTK {
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> SubdeviceBackend::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+    obtainTargetBackend();
     if(type == Type::area) {
       return getRegisterAccessor_area<UserType>(registerPathName, numberOfWords, wordOffsetInRegister, flags);
     }
