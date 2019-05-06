@@ -90,8 +90,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
-  ctk::TestFacility test;
 
+  ctk::TestFacility test;
+  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -121,9 +122,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["MyModule"]("readBack");
   ctk::TestFacility test;
-
+  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
+
   auto regac = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
   auto regrb = dev.getScalarRegisterAccessor<int>("/MyModule/readBack");
 
@@ -159,7 +161,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
 
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   ctk::TestFacility test;
-
+  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -200,7 +202,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
       app.testModule.consumingPush2;
   ctk::TestFacility test;
-
+  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -387,7 +389,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDeviceModuleSubscriptOp, T, test_types) {
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
   ctk::TestFacility test;
-
+  app.run();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");

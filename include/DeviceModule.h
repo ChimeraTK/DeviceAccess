@@ -138,6 +138,8 @@ namespace ChimeraTK {
      *  handling is done internally by ApplicationCore. */
     void reportException(std::string errMsg);
 
+    void prepare() override;
+
     void run() override;
 
     void terminate() override;
@@ -152,7 +154,7 @@ namespace ChimeraTK {
     /** This function connects DeviceError VariableGroup to ContolSystem*/
     void defineConnections() override;
 
-    Device device;
+    mutable Device device;
 
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
@@ -205,6 +207,8 @@ namespace ChimeraTK {
     std::list<boost::shared_ptr<TransferElement>> writeAfterOpen;
 
     Application* owner;
+
+    mutable bool deviceIsInitialized = false;
 
     friend class Application;
     friend class detail::DeviceModuleProxy;
