@@ -948,7 +948,17 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
-          impl->write();
+          // find the right DeviceModule for this alias name
+          DeviceModule* devmod = nullptr;
+          for(auto& dm : deviceModuleList) {
+            if(dm->deviceAliasOrURI == consumer.getDeviceAlias()) {
+              devmod = dm;
+              break;
+            }
+          }
+          assert(devmod != nullptr);
+          // register feeder to be written after the device has been opened
+          devmod->writeAfterOpen.push_back(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");

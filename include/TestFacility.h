@@ -15,6 +15,7 @@
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 
 #include "Application.h"
+#include "DeviceModule.h"
 #include "TestableModeAccessorDecorator.h"
 
 namespace ChimeraTK {
@@ -40,6 +41,16 @@ namespace ChimeraTK {
     void runApplication() const {
       Application::getInstance().run();
       Application::registerThread("TestThread");
+      Application::testableModeUnlock("waitDevicesToOpen");
+      while(true) {
+        boost::this_thread::yield();
+        bool allOpened = true;
+        for(auto dm : Application::getInstance().deviceModuleList) {
+          if(!dm->device.isOpened()) allOpened = false;
+        }
+        if(allOpened) break;
+      }
+      Application::testableModeLock("waitDevicesToOpen");
     }
 
     /** Perform a "step" of the application. This runs the application until all

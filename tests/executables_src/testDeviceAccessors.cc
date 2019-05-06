@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
 
   ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
   ctk::TestFacility test;
-  app.run();
+  test.runApplication();
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
 
   ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >> app.dev("/MyModule/readBack");
   ctk::TestFacility test;
-  app.run();
+  test.runApplication();
 
   ChimeraTK::Device dev;
   dev.open("Dummy0");

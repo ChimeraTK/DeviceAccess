@@ -63,11 +63,10 @@ namespace ChimeraTK {
 
   DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI)
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), device(_deviceAliasOrURI),
-    deviceAliasOrURI(_deviceAliasOrURI),registerNamePrefix(""), owner(application) {
+    deviceAliasOrURI(_deviceAliasOrURI), registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);
   }
 
- 
   /*********************************************************************************************************************/
 
   DeviceModule::~DeviceModule() {
@@ -243,15 +242,18 @@ namespace ChimeraTK {
           boost::this_thread::interruption_point();
           usleep(500000);
           device.open();
-          if (deviceError.status != 0){
+          if(deviceError.status != 0) {
             deviceError.status = 0;
             deviceError.message = "";
             deviceError.setCurrentVersionNumber({});
             deviceError.writeAll();
           }
+          for(auto& te : writeAfterOpen) {
+            te->write();
+          }
         }
         catch(ChimeraTK::runtime_error& e) {
-          if (deviceError.status != 1){
+          if(deviceError.status != 1) {
             deviceError.status = 1;
             deviceError.message = error;
             deviceError.setCurrentVersionNumber({});

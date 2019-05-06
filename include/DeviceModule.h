@@ -200,6 +200,10 @@ namespace ChimeraTK {
      *  The function is running an endless loop inside its own thread (moduleThread). */
     void handleException();
 
+    /** List of TransferElements to be written after the device has been opened. This is used to write constant feeders
+     *  to the device. */
+    std::list<boost::shared_ptr<TransferElement>> writeAfterOpen;
+
     Application* owner;
 
     friend class Application;
