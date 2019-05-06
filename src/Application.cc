@@ -152,10 +152,17 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
   }
+  for(auto& deviceModule : deviceModuleList) {
+    deviceModule->prepare();
+  }
 
   // start the necessary threads for the FanOuts etc.
   for(auto& internalModule : internalModuleList) {
     internalModule->activate();
+  }
+
+  for(auto& deviceModule : deviceModuleList) {
+    deviceModule->run();
   }
 
   // read all input variables once, to set the startup value e.g. coming from
@@ -171,9 +178,6 @@ void Application::run() {
   // start the threads for the modules
   for(auto& module : getSubmoduleListRecursive()) {
     module->run();
-  }
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->run();
   }
 }
 
@@ -948,7 +952,6 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
-          impl->write();
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
