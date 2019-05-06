@@ -165,11 +165,19 @@ void Application::run() {
     deviceModule->run();
   }
 
-  // read all input variables once, to set the startup value e.g. coming from
-  // the config file (without triggering an action inside the application)
+  // Read all non-device variables once, to set the startup value from the persistency layer
+  // (without triggering an action inside the application)
+  // Note: this will read all application variables directly connected to either the control system or to another
+  // application module, e.g. the ConfigReader (which will provide initial values as well).
+  // Device variables are excluded for two reasons: Firstly, the device might be in an exception state when launching
+  // the application, so reading the variable would block until the device is properly opened. Secondly, some strange
+  // devices might cause side-effects when registers are read, and there would be no way to prevent these automatic
+  // reads from happening. If an application requires having an initial value from the device, it can simply issue
+  // a readLatest() at the beginning of its mainLoop() function.
   for(auto& module : getSubmoduleListRecursive()) {
     for(auto& variable : module->getAccessorList()) {
-      if(variable.getDirection().dir == VariableDirection::consuming) {
+      if(variable.getDirection().dir == VariableDirection::consuming &&
+          variable.getOwner().getFeedingNode().getType() != NodeType::Device) {
         variable.getAppAccessorNoType().readLatest();
       }
     }
