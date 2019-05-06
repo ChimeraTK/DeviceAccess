@@ -141,14 +141,16 @@ namespace ChimeraTK {
     MapFileParser parser;
     _registerMap = parser.parse(parameters["map"]);
     _catalogue = _registerMap->getRegisterCatalogue();
+
+    // obtain target backend
+    BackendFactory& factoryInstance = BackendFactory::getInstance();
+    targetDevice = factoryInstance.createBackend(targetAlias);
   }
 
   /*******************************************************************************************************************/
 
   void SubdeviceBackend::open() {
     // open target backend
-    BackendFactory& factoryInstance = BackendFactory::getInstance();
-    targetDevice = factoryInstance.createBackend(targetAlias);
     if(!targetDevice->isOpen()) { // createBackend may return an already opened
                                   // instance for some backends
       targetDevice->open();
