@@ -20,7 +20,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMappingBackend::parse() {
+  void LogicalNameMappingBackend::parse() const {
     // don't run, if already parsed
     if(hasParsed) return;
 
@@ -149,6 +149,7 @@ namespace ChimeraTK {
 
   const RegisterCatalogue& LogicalNameMappingBackend::getRegisterCatalogue() const {
     if(catalogueCompleted) return _catalogue_mutable;
+    parse();
 
     // fill in information to the catalogue from the target devices
     for(auto& info : _catalogue_mutable) {

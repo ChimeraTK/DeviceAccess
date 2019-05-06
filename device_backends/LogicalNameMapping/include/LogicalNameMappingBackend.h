@@ -42,7 +42,7 @@ namespace ChimeraTK {
         const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     /// parse the logical map file, if not yet done
-    void parse();
+    void parse() const;
 
     /// flag if already parsed
     bool hasParsed;
@@ -51,7 +51,7 @@ namespace ChimeraTK {
     std::string _lmapFileName;
 
     /// map of target devices
-    std::map<std::string, boost::shared_ptr<DeviceBackend>> _devices;
+    mutable std::map<std::string, boost::shared_ptr<DeviceBackend>> _devices;
 
     /// map of parameters passed through the CDD
     std::map<std::string, std::string> _parameters;
