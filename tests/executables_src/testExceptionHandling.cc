@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   // deterministic stepApplication().
   ctk::TestFacility test(false);
   dummyBackend1->throwExceptionOpen = true;
-  test.runApplication();
+  app.run(); // don't use TestFacility::runApplication() here as it blocks until all devices are open...
 
   auto message1 = test.getScalar<std::string>(std::string("/Devices/") + ExceptionDummyCDD1 + "/message");
   auto status1 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   auto readback2 = test.getScalar<int>("/Device2/MyModule/readBack");
 
   auto trigger = test.getScalar<int>("trigger");
- 
+
   readbackDummy1 = 100;
   readbackDummy2 = 110;
   trigger.write();
