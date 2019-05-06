@@ -7,6 +7,10 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -19,6 +23,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doReadTransfer() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -31,6 +39,10 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -43,6 +55,10 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doReadTransferLatest() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -55,6 +71,10 @@ namespace ChimeraTK {
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -67,6 +87,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPreRead() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -79,6 +103,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostRead() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -91,6 +119,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
     }
     catch(ChimeraTK::runtime_error& e) {
@@ -103,6 +135,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostWrite() {
   retry:
     try {
+      if(!dm.device.isOpened()){
+        usleep(500000);
+        goto retry;
+      }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite();
     }
     catch(ChimeraTK::runtime_error& e) {

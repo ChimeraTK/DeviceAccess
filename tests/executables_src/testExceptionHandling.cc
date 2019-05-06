@@ -50,7 +50,6 @@ struct TestApplication : public ctk::Application {
 };
 
 /*********************************************************************************************************************/
-
 BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   std::cout << "testExceptionHandlingRead" << std::endl;
   TestApplication app;
@@ -230,4 +229,71 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingWrite) {
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
   }
+}
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
+  std::cout << "testExceptionHandlingOpen" << std::endl;
+  TestApplication app;
+  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+  boost::shared_ptr<ExceptionDummy> dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>(
+      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+
+  ChimeraTK::DummyRegisterAccessor<int> readbackDummy1(dummyBackend1.get(), "MyModule", "readBack");
+  ChimeraTK::DummyRegisterAccessor<int> readbackDummy2(dummyBackend2.get(), "MyModule", "readBack");
+
+  // Connect the whole devices into the control system, and use the control system variable /trigger as trigger for
+  // both devices. The variable becomes a control system to application variable and writing to it through the test
+  // facility is generating the triggers.
+  app.dev1.connectTo(app.cs["Device1"], app.cs("trigger", typeid(int), 1));
+  app.dev2.connectTo(app.cs["Device2"], app.cs("trigger"));
+
+  // Do not enable testable mode. The testable mode would block in the wrong place, as the trigger for reading variables
+  // of a device in the error state is not being processed until the error state is cleared. We want to test that the
+  // second device still works while the first device is in error state, which would be impossible with testable mode
+  // enabled. As a consequence, our test logic has to work with timeouts (CHECK_TIMEOUT) etc. instead of the
+  // deterministic stepApplication().
+  ctk::TestFacility test(false);
+  dummyBackend1->throwExceptionOpen = true;
+  app.run(); // don't use TestFacility::runApplication() here as it blocks until all devices are open...
+
+  auto message1 = test.getScalar<std::string>(std::string("/Devices/") + ExceptionDummyCDD1 + "/message");
+  auto status1 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");
+  auto readback1 = test.getScalar<int>("/Device1/MyModule/readBack");
+  auto message2 = test.getScalar<std::string>(std::string("/Devices/") + ExceptionDummyCDD2 + "/message");
+  auto status2 = test.getScalar<int>(std::string("/Devices/") + ExceptionDummyCDD2 + "/status");
+  auto readback2 = test.getScalar<int>("/Device2/MyModule/readBack");
+
+  auto trigger = test.getScalar<int>("trigger");
+
+  readbackDummy1 = 100;
+  readbackDummy2 = 110;
+  trigger.write();
+  //device 1 is in Error state
+  CHECK_TIMEOUT(message1.readLatest(), 1000);
+  CHECK_TIMEOUT(status1.readLatest(), 1000);
+  BOOST_CHECK_EQUAL(status1, 1);
+  BOOST_CHECK(!readback1.readNonBlocking());
+  CHECK_TIMEOUT(readback2.readNonBlocking(), 1000);
+  BOOST_CHECK_EQUAL(readback2, 110);
+
+  // even with device 1 failing the second one must process the data, so send a new trigger
+  // before fixing dev1
+  readbackDummy2 = 120;
+  trigger.write();
+  CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
+  BOOST_CHECK_EQUAL(readback2, 120);
+  //Device is not in error state.
+  CHECK_TIMEOUT(!message2.readLatest(), 1000);
+  CHECK_TIMEOUT(!status2.readLatest(), 1000);
+
+  //fix device 1
+  dummyBackend1->throwExceptionOpen = false;
+  //device 1 is fixed
+  CHECK_TIMEOUT(message1.readLatest(), 1000);
+  CHECK_TIMEOUT(status1.readLatest(), 1000);
+  BOOST_CHECK_EQUAL(status1, 0);
+  CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
+  BOOST_CHECK_EQUAL(readback1, 100);
 }

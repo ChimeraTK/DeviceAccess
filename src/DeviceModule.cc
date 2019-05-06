@@ -5,7 +5,7 @@
  *      Author: Martin Hierholzer
  */
 
-#include <ChimeraTK/Device.h>
+//#include <ChimeraTK/Device.h>
 #include <ChimeraTK/DeviceBackend.h>
 
 #include "Application.h"
@@ -116,12 +116,12 @@ namespace ChimeraTK {
 
     virtualisedModuleFromCatalog = VirtualModule(deviceAliasOrURI, "Device module", ModuleType::Device);
 
+    if (!deviceIsInitialized){
+      device = Device(deviceAliasOrURI);
+      deviceIsInitialized = true;
+    }
     // obtain register catalogue
-    Device d;
-    d.open(deviceAliasOrURI); /// @todo: do not actually open the device (needs
-                              /// extension of DeviceAccess)!
-    auto catalog = d.getRegisterCatalogue();
-
+    auto catalog = device.getRegisterCatalogue();
     // iterate catalogue, create VariableNetworkNode for all registers starting
     // with the registerNamePrefix
     size_t prefixLength = registerNamePrefix.length();
@@ -238,11 +238,33 @@ namespace ChimeraTK {
 
   void DeviceModule::handleException() {
     Application::registerThread("DM_" + getName());
-    Device d;
     std::string error;
     owner->testableModeLock("Startup");
-
     try {
+      while(!device.isOpened()) {
+        try {
+          boost::this_thread::interruption_point();
+          usleep(500000);
+          device.open();
+          if(deviceError.status != 0) {
+            deviceError.status = 0;
+            deviceError.message = "";
+            deviceError.setCurrentVersionNumber({});
+            deviceError.writeAll();
+          }
+          for(auto& te : writeAfterOpen) {
+            te->write();
+          }
+        }
+        catch(ChimeraTK::runtime_error& e) {
+          if(deviceError.status != 1) {
+            deviceError.status = 1;
+            deviceError.message = error;
+            deviceError.setCurrentVersionNumber({});
+            deviceError.writeAll();
+          }
+        }
+      }
       while(true) {
         owner->testableModeUnlock("Wait for exception");
         errorQueue.pop_wait(error);
@@ -250,7 +272,6 @@ namespace ChimeraTK {
         owner->testableModeLock("Process exception");
         if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
         std::lock_guard<std::mutex> lk(errorMutex);
-
         // report exception to the control system
         deviceError.status = 1;
         deviceError.message = error;
@@ -283,6 +304,17 @@ namespace ChimeraTK {
       throw;
     }
   }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::prepare() {
+     if (!deviceIsInitialized){
+      device = Device(deviceAliasOrURI);
+      deviceIsInitialized = true;
+    }
+  }
+
+  /*********************************************************************************************************************/
 
   /*********************************************************************************************************************/
 

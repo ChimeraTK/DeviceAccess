@@ -152,17 +152,32 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
   }
+  for(auto& deviceModule : deviceModuleList) {
+    deviceModule->prepare();
+  }
 
   // start the necessary threads for the FanOuts etc.
   for(auto& internalModule : internalModuleList) {
     internalModule->activate();
   }
 
-  // read all input variables once, to set the startup value e.g. coming from
-  // the config file (without triggering an action inside the application)
+  for(auto& deviceModule : deviceModuleList) {
+    deviceModule->run();
+  }
+
+  // Read all non-device variables once, to set the startup value from the persistency layer
+  // (without triggering an action inside the application)
+  // Note: this will read all application variables directly connected to either the control system or to another
+  // application module, e.g. the ConfigReader (which will provide initial values as well).
+  // Device variables are excluded for two reasons: Firstly, the device might be in an exception state when launching
+  // the application, so reading the variable would block until the device is properly opened. Secondly, some strange
+  // devices might cause side-effects when registers are read, and there would be no way to prevent these automatic
+  // reads from happening. If an application requires having an initial value from the device, it can simply issue
+  // a readLatest() at the beginning of its mainLoop() function.
   for(auto& module : getSubmoduleListRecursive()) {
     for(auto& variable : module->getAccessorList()) {
-      if(variable.getDirection().dir == VariableDirection::consuming) {
+      if(variable.getDirection().dir == VariableDirection::consuming &&
+          variable.getOwner().getFeedingNode().getType() != NodeType::Device) {
         variable.getAppAccessorNoType().readLatest();
       }
     }
@@ -171,9 +186,6 @@ void Application::run() {
   // start the threads for the modules
   for(auto& module : getSubmoduleListRecursive()) {
     module->run();
-  }
-  for(auto& deviceModule : deviceModuleList) {
-    deviceModule->run();
   }
 }
 
@@ -311,10 +323,9 @@ template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(
     const std::string& deviceAlias, const std::string& registerName, VariableDirection direction, UpdateMode mode,
     size_t nElements) {
-  // open device if needed
+  // Device opens in DeviceModule
   if(deviceMap.count(deviceAlias) == 0) {
     deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
-    if(!deviceMap[deviceAlias]->isOpen()) deviceMap[deviceAlias]->open();
   }
 
   // use wait_for_new_data mode if push update mode was requested
@@ -949,7 +960,17 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto impl = createDeviceVariable<UserType>(consumer.getDeviceAlias(), consumer.getRegisterName(),
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
-          impl->write();
+          // find the right DeviceModule for this alias name
+          DeviceModule* devmod = nullptr;
+          for(auto& dm : deviceModuleList) {
+            if(dm->deviceAliasOrURI == consumer.getDeviceAlias()) {
+              devmod = dm;
+              break;
+            }
+          }
+          assert(devmod != nullptr);
+          // register feeder to be written after the device has been opened
+          devmod->writeAfterOpen.push_back(impl);
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
