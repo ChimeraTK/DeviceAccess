@@ -62,8 +62,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI)
-  : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), device(_deviceAliasOrURI),
-    deviceAliasOrURI(_deviceAliasOrURI),registerNamePrefix(""), owner(application) {
+  : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
+    registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);
   }
 
@@ -117,6 +117,10 @@ namespace ChimeraTK {
 
     virtualisedModuleFromCatalog = VirtualModule(deviceAliasOrURI, "Device module", ModuleType::Device);
 
+    if (!deviceIsInitialized){
+      device = Device(deviceAliasOrURI);
+      deviceIsInitialized = true;
+    }
     // obtain register catalogue
     auto catalog = device.getRegisterCatalogue();
     // iterate catalogue, create VariableNetworkNode for all registers starting
@@ -298,6 +302,17 @@ namespace ChimeraTK {
       throw;
     }
   }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::prepare() {
+     if (!deviceIsInitialized){
+      device = Device(deviceAliasOrURI);
+      deviceIsInitialized = true;
+    }
+  }
+
+  /*********************************************************************************************************************/
 
   /*********************************************************************************************************************/
 
