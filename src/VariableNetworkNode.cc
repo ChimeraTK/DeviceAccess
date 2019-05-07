@@ -63,10 +63,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(std::string pubName,
-      VariableDirection dir,
-      const std::type_info& valTyp,
-      size_t nElements)
+  VariableNetworkNode::VariableNetworkNode(
+      std::string pubName, VariableDirection dir, const std::type_info& valTyp, size_t nElements)
   : pdata(boost::make_shared<VariableNetworkNode_data>()) {
     pdata->name = pubName;
     pdata->type = NodeType::ControlSystem;
@@ -192,10 +190,9 @@ namespace ChimeraTK {
     if(pdata->direction.dir == VariableDirection::invalid) pdata->direction = {VariableDirection::feeding, false};
     assert(pdata->direction.dir == VariableDirection::feeding);
 
-    // force direction of the triggering node to be feeding
+    // set direction of the triggering node to be feeding, if not yet defined
     if(trigger.pdata->direction.dir == VariableDirection::invalid)
       trigger.pdata->direction = {VariableDirection::feeding, false};
-    assert(trigger.pdata->direction.dir == VariableDirection::feeding);
 
     // check if already existing in map
     if(pdata->nodeWithTrigger.count(trigger) > 0) {
@@ -339,9 +336,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(const std::string& name,
-      const std::string& unit,
-      const std::string& description) {
+  void VariableNetworkNode::setMetaData(
+      const std::string& name, const std::string& unit, const std::string& description) {
     if(getType() != NodeType::Application) {
       throw ChimeraTK::logic_error("Calling VariableNetworkNode::updateMetaData() is not allowed for "
                                    "non-application type nodes.");
