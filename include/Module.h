@@ -49,10 +49,9 @@ namespace ChimeraTK {
     /** Move assignment operator */
     Module& operator=(Module&& other);
 
-    /** Prepare the execution of the module. This function is called before any
-     * module is started (including internal
-     *  modules like FanOuts) and before the initial values of the variables are
-     * pushed into the queues. */
+    /** Prepare the execution of the module. This function is called before any module is started (including internal
+     *  modules like FanOuts) and before the initial values of the variables are pushed into the queues. Reading and
+     *  writing variables at this point may result in undefined behaviour. */
     virtual void prepare(){};
 
     /** Execute the module. */
