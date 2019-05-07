@@ -7,8 +7,10 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
@@ -23,8 +25,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doReadTransfer() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransfer();
@@ -39,8 +43,10 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking();
@@ -55,8 +61,10 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doReadTransferLatest() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferLatest();
@@ -71,8 +79,10 @@ namespace ChimeraTK {
   TransferFuture ExceptionHandlingDecorator<UserType>::doReadTransferAsync() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferAsync();
@@ -87,8 +97,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPreRead() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead();
@@ -103,8 +115,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostRead() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead();
@@ -119,8 +133,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite();
@@ -135,8 +151,10 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPostWrite() {
   retry:
     try {
-      if(!dm.device.isOpened()){
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
         usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
         goto retry;
       }
       ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite();
