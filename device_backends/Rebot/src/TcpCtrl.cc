@@ -15,6 +15,10 @@ namespace ChimeraTK {
 
   TcpCtrl::~TcpCtrl() {}
 
+  bool TcpCtrl::isConnected(){
+    return _socket->is_open();
+  }
+
   void TcpCtrl::openConnection() {
     try {
       // Use boost resolver for DNS name resolution when server address is a

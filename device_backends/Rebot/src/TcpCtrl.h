@@ -43,6 +43,7 @@ namespace ChimeraTK {
     int getPort();
     /// Sets port in an object. Can be done when connection is closed.
     void setPort(int port);
+    bool isConnected();
 
    private:
     /*!

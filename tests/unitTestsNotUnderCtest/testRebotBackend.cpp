@@ -113,7 +113,7 @@ void RebotTestClass::testConnection() { // BAckend test
   // create connection with good ip and port see that there are no exceptions
   ChimeraTK::RebotBackend rebotBackend(_rebotServer.ip, _rebotServer.port);
   ChimeraTK::RebotBackend secondConnectionToServer(_rebotServer.ip, _rebotServer.port);
-  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
+  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), false);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 
   BOOST_CHECK_NO_THROW(rebotBackend.open());
@@ -124,7 +124,7 @@ void RebotTestClass::testConnection() { // BAckend test
   // ChimeraTK::RebotBackendException);
 
   BOOST_CHECK_NO_THROW(rebotBackend.close());
-  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
+  BOOST_CHECK_EQUAL(rebotBackend.isConnected(), false);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 }
 

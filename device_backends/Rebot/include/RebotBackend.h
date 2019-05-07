@@ -57,6 +57,7 @@ namespace ChimeraTK {
     /// The function opens the connection to the device
     void open() override;
     void close() override;
+    bool isConnected() override;
     void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
     void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
     std::string readDeviceInfo() override { return std::string("RebotDevice"); }
@@ -71,6 +72,7 @@ namespace ChimeraTK {
     uint32_t getServerProtocolVersion();
     std::vector<uint32_t> frameClientHello();
     uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
+    std::unique_ptr<RebotProtocolImplementor> getProtocolImplementor();
 
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;

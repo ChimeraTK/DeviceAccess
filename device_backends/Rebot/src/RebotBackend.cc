@@ -7,7 +7,6 @@
 #include <sstream>
 
 namespace ChimeraTK {
-
   RebotBackend::RebotBackend(std::string boardAddr, int port, std::string mapFileName)
   : NumericAddressedBackend(mapFileName), _boardAddr(boardAddr), _port(port),
     _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
@@ -31,23 +30,18 @@ namespace ChimeraTK {
     _heartbeatThread.join();
   }
 
+  bool RebotBackend::isConnected() {
+      return _tcpCommunicator->isConnected();
+  }
+
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
+    // connect()
+    /***********************************************************************************/
     _tcpCommunicator->openConnection();
-    auto serverVersion = getServerProtocolVersion();
-    if(serverVersion == 0) {
-      _protocolImplementor.reset(new RebotProtocol0(_tcpCommunicator));
-    }
-    else if(serverVersion == 1) {
-      _protocolImplementor.reset(new RebotProtocol1(_tcpCommunicator));
-    }
-    else {
-      _tcpCommunicator->closeConnection();
-      std::stringstream errorMessage;
-      errorMessage << "Server protocol version " << serverVersion << " not supported!";
-      throw ChimeraTK::runtime_error(errorMessage.str());
-    }
+    _protocolImplementor = getProtocolImplementor();
+    /***********************************************************************************/
 
     _opened = true;
   }
@@ -56,7 +50,14 @@ namespace ChimeraTK {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
     if(!isOpen()) {
-      throw ChimeraTK::logic_error("Device is closed");
+      throw ChimeraTK::logic_error("Device not opened");
+    }
+    if(isConnected() == false){
+       // reconnect
+       _tcpCommunicator->openConnection();
+      if (_protocolImplementor == nullptr) {
+          _protocolImplementor = getProtocolImplementor();
+        }
     }
 
     _lastSendTime = testable_rebot_sleep::now();
@@ -66,10 +67,17 @@ namespace ChimeraTK {
   void RebotBackend::write(uint8_t /*bar*/, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
-    if(!isOpen()) {
-      throw ChimeraTK::logic_error("Device is closed");
+    if (!isOpen()) {
+      throw ChimeraTK::logic_error("Device not opened");
     }
 
+    if (isConnected() == false) {
+      // reconnect
+      _tcpCommunicator->openConnection();
+      if (_protocolImplementor == nullptr) {
+          _protocolImplementor = getProtocolImplementor();
+        }
+    }
     _lastSendTime = testable_rebot_sleep::now();
     _protocolImplementor->write(addressInBytes, data, sizeInBytes);
   }
@@ -77,6 +85,7 @@ namespace ChimeraTK {
   void RebotBackend::close() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
+    // close + disconnect
     _opened = false;
     _tcpCommunicator->closeConnection();
     _protocolImplementor.reset(0);
@@ -162,11 +171,33 @@ namespace ChimeraTK {
         testable_rebot_sleep::sleep_until(_lastSendTime + boost::chrono::milliseconds(_connectionTimeout / 2 + 1));
       }
       catch(ChimeraTK::runtime_error& e) {
-        std::cerr << "RebotBackend: Sending heartbeat failed. Caught exception: " << e.what() << std::endl;
-        std::cerr << "Closing connection." << std::endl;
-        close();
+        // disconnect
+        _tcpCommunicator->closeConnection();
+        _protocolImplementor.reset(nullptr);
+
+        std::stringstream message;
+        message << "RebotBackend: Sending heartbeat failed. Caught exception: " << e.what() << std::endl;
+        message << "Closing connection." << std::endl;
+        throw ChimeraTK::runtime_error(message.str());
       }
     } // while true
+  }
+
+  std::unique_ptr<RebotProtocolImplementor> RebotBackend::getProtocolImplementor(){
+    auto serverVersion = getServerProtocolVersion();
+    if(serverVersion == 0) {
+      return std::make_unique<RebotProtocol0>(_tcpCommunicator);
+    }
+    else if(serverVersion == 1) {
+      return std::make_unique<RebotProtocol1>(_tcpCommunicator);
+    }
+    else {
+      _tcpCommunicator->closeConnection();
+      std::stringstream errorMessage;
+      errorMessage << "Server protocol version " << serverVersion << " not supported!";
+      // there is no recovery possible in this case; so logic error
+      throw ChimeraTK::logic_error(errorMessage.str());
+    }
   }
 
 } // namespace ChimeraTK
