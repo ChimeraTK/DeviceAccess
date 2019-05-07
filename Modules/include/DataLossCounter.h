@@ -14,10 +14,11 @@ namespace ChimeraTK {
    * read the data loss counter once per trigger and update the output statistics
    * variables.
    */
+  template<typename TRIGGERTYPE = int32_t>
   struct DataLossCounter : ApplicationModule {
     using ApplicationModule::ApplicationModule;
 
-    ScalarPushInput<int32_t> trigger{this, "trigger", "", "Trigger input"};
+    ScalarPushInput<TRIGGERTYPE> trigger{this, "trigger", "", "Trigger input"};
 
     ScalarOutput<uint64_t> lostDataInLastTrigger{this, "lostDataInLastTrigger", "",
         "Number of data transfers during "
