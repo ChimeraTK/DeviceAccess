@@ -11,9 +11,13 @@
 namespace ChimeraTK {
 
   namespace detail {
+    template<typename TRIGGERTYPE>
     struct AccessorAttacher;
+    template<typename TRIGGERTYPE>
     struct H5storage;
+    template<typename TRIGGERTYPE>
     struct DataSpaceCreator;
+    template<typename TRIGGERTYPE>
     struct DataWriter;
   } // namespace detail
 
@@ -23,7 +27,9 @@ namespace ChimeraTK {
    * control system. Any ChimeraTK::Module can act as a data source. Which
    * variables should be logged can be selected through EntityOwner::findTag().
    */
-  struct MicroDAQ : public ApplicationModule {
+  template<typename TRIGGERTYPE = int32_t>
+  class MicroDAQ : public ApplicationModule {
+   public:
     /**
      *  Constructor. decimationFactor and decimationThreshold are configuration
      * constants which determine how the data reduction is working. Arrays with a
@@ -40,7 +46,7 @@ namespace ChimeraTK {
      * initialisation. */
     MicroDAQ() : decimationFactor_(0), decimationThreshold_(0) {}
 
-    ScalarPushInput<int> trigger{this, "trigger", "",
+    ScalarPushInput<TRIGGERTYPE> trigger{this, "trigger", "",
         "When written, the MicroDAQ write snapshot of all variables "
         "to the file",
         {"MicroDAQ.CONFIG"}};
@@ -92,11 +98,13 @@ namespace ChimeraTK {
     /** Parameters for the data decimation */
     uint32_t decimationFactor_, decimationThreshold_;
 
-    friend struct detail::AccessorAttacher;
-    friend struct detail::H5storage;
-    friend struct detail::DataSpaceCreator;
-    friend struct detail::DataWriter;
+    friend struct detail::AccessorAttacher<TRIGGERTYPE>;
+    friend struct detail::H5storage<TRIGGERTYPE>;
+    friend struct detail::DataSpaceCreator<TRIGGERTYPE>;
+    friend struct detail::DataWriter<TRIGGERTYPE>;
   };
+
+  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MicroDAQ);
 
 } // namespace ChimeraTK
 

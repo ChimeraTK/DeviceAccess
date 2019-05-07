@@ -15,8 +15,9 @@ namespace ChimeraTK {
 
     /** Callable class for use with  boost::fusion::for_each: Attach the given
      * accessor to the MicroDAQ with proper handling of the UserType. */
+    template<typename TRIGGERTYPE>
     struct AccessorAttacher {
-      AccessorAttacher(VariableNetworkNode& feeder, MicroDAQ* owner, const std::string& name)
+      AccessorAttacher(VariableNetworkNode& feeder, MicroDAQ<TRIGGERTYPE>* owner, const std::string& name)
       : _feeder(feeder), _owner(owner), _name(name) {}
 
       template<typename PAIR>
@@ -29,7 +30,7 @@ namespace ChimeraTK {
       }
 
       VariableNetworkNode& _feeder;
-      MicroDAQ* _owner;
+      MicroDAQ<TRIGGERTYPE>* _owner;
       const std::string& _name;
     };
 
@@ -37,7 +38,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void MicroDAQ::addSource(const Module& source, const RegisterPath& namePrefix) {
+  template<typename TRIGGERTYPE>
+  void MicroDAQ<TRIGGERTYPE>::addSource(const Module& source, const RegisterPath& namePrefix) {
     // for simplification, first create a VirtualModule containing the correct
     // hierarchy structure (obeying eliminate hierarchy etc.)
     auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
@@ -64,7 +66,8 @@ namespace ChimeraTK {
 
     // add all accessors on this hierarchy level
     for(auto& acc : dynamicModel.getAccessorList()) {
-      boost::fusion::for_each(accessorListMap.table, detail::AccessorAttacher(acc, this, namePrefix / acc.getName()));
+      boost::fusion::for_each(
+          accessorListMap.table, detail::AccessorAttacher<TRIGGERTYPE>(acc, this, namePrefix / acc.getName()));
     }
 
     // recurse into submodules
@@ -75,8 +78,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  template<typename TRIGGERTYPE>
   template<typename UserType>
-  VariableNetworkNode MicroDAQ::getAccessor(const std::string& variableName) {
+  VariableNetworkNode MicroDAQ<TRIGGERTYPE>::getAccessor(const std::string& variableName) {
     // check if variable name already registered
     for(auto& name : overallVariableList) {
       if(name == variableName) {
@@ -103,8 +107,9 @@ namespace ChimeraTK {
 
   namespace detail {
 
+    template<typename TRIGGERTYPE>
     struct H5storage {
-      H5storage(MicroDAQ* owner) : _owner(owner) {}
+      H5storage(MicroDAQ<TRIGGERTYPE>* owner) : _owner(owner) {}
 
       H5::H5File outFile;
       std::string currentGroupName;
@@ -132,13 +137,14 @@ namespace ChimeraTK {
       void processTrigger();
       void writeData();
 
-      MicroDAQ* _owner;
+      MicroDAQ<TRIGGERTYPE>* _owner;
     };
 
     /*********************************************************************************************************************/
 
+    template<typename TRIGGERTYPE>
     struct DataSpaceCreator {
-      DataSpaceCreator(H5storage& storage) : _storage(storage) {}
+      DataSpaceCreator(H5storage<TRIGGERTYPE>& storage) : _storage(storage) {}
 
       template<typename PAIR>
       void operator()(PAIR& pair) const {
@@ -174,21 +180,22 @@ namespace ChimeraTK {
         }
       }
 
-      H5storage& _storage;
+      H5storage<TRIGGERTYPE>& _storage;
     };
 
   } // namespace detail
 
   /*********************************************************************************************************************/
 
-  void MicroDAQ::mainLoop() {
+  template<typename TRIGGERTYPE>
+  void MicroDAQ<TRIGGERTYPE>::mainLoop() {
     std::cout << "Initialising MicroDAQ system...";
 
     // storage object
-    detail::H5storage storage(this);
+    detail::H5storage<TRIGGERTYPE> storage(this);
 
     // create the data spaces
-    boost::fusion::for_each(accessorListMap.table, detail::DataSpaceCreator(storage));
+    boost::fusion::for_each(accessorListMap.table, detail::DataSpaceCreator<TRIGGERTYPE>(storage));
 
     // sort group list and make unique to make sure lower levels get created first
     storage.groupList.sort();
@@ -207,7 +214,8 @@ namespace ChimeraTK {
 
   namespace detail {
 
-    void H5storage::processTrigger() {
+    template<typename TRIGGERTYPE>
+    void H5storage<TRIGGERTYPE>::processTrigger() {
       // update configuration variables
       _owner->enable.readLatest();
       _owner->nMaxFiles.readLatest();
@@ -287,8 +295,9 @@ namespace ChimeraTK {
 
     /*********************************************************************************************************************/
 
+    template<typename TRIGGERTYPE>
     struct DataWriter {
-      DataWriter(detail::H5storage& storage) : _storage(storage) {}
+      DataWriter(detail::H5storage<TRIGGERTYPE>& storage) : _storage(storage) {}
 
       template<typename PAIR>
       void operator()(PAIR& pair) const {
@@ -325,19 +334,20 @@ namespace ChimeraTK {
       void write2hdf(ArrayPollInput<UserType>& accessor, std::string& name, size_t decimationFactor,
           H5::DataSpace& dataSpace) const;
 
-      H5storage& _storage;
+      H5storage<TRIGGERTYPE>& _storage;
     };
 
     /*********************************************************************************************************************/
 
+    template<typename TRIGGERTYPE>
     template<typename UserType>
-    void DataWriter::write2hdf(ArrayPollInput<UserType>& accessor, std::string& dataSetName, size_t decimationFactor,
-        H5::DataSpace& dataSpace) const {
+    void DataWriter<TRIGGERTYPE>::write2hdf(ArrayPollInput<UserType>& accessor, std::string& dataSetName,
+        size_t decimationFactor, H5::DataSpace& dataSpace) const {
       // prepare decimated buffer
       size_t n = accessor.getNElements() / decimationFactor;
       std::vector<float> buffer(n);
       for(size_t i = 0; i < n; ++i) {
-        buffer[i] = accessor[i * decimationFactor];
+        buffer[i] = userTypeToNumeric<float>(accessor[i * decimationFactor]);
       }
 
       // write data from internal buffer to data set in HDF5 file
@@ -347,17 +357,8 @@ namespace ChimeraTK {
 
     /*********************************************************************************************************************/
 
-    template<>
-    void DataWriter::write2hdf<std::string>(
-        ArrayPollInput<std::string>& accessor, std::string& dataSetName, size_t, H5::DataSpace& dataSpace) const {
-      // write data from internal buffer to data set in HDF5 file
-      H5::DataSet dataset = _storage.outFile.createDataSet(dataSetName, H5::PredType::C_S1, dataSpace);
-      dataset.write(accessor[0].c_str(), H5::PredType::NATIVE_FLOAT);
-    }
-
-    /*********************************************************************************************************************/
-
-    void H5storage::writeData() {
+    template<typename TRIGGERTYPE>
+    void H5storage<TRIGGERTYPE>::writeData() {
       // format current time
       struct timeval tv;
       gettimeofday(&tv, nullptr);
@@ -384,11 +385,13 @@ namespace ChimeraTK {
       _owner->readAllLatest();
 
       // write all data to file
-      boost::fusion::for_each(_owner->accessorListMap.table, DataWriter(*this));
+      boost::fusion::for_each(_owner->accessorListMap.table, DataWriter<TRIGGERTYPE>(*this));
     }
 
     /*********************************************************************************************************************/
 
   } // namespace detail
+
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MicroDAQ);
 
 } // namespace ChimeraTK
