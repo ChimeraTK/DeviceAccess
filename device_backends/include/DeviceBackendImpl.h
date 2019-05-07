@@ -2,6 +2,7 @@
 #define CHIMERA_TK_DEVICE_BACKEND_IMPL_H
 
 #include <list>
+#include <atomic>
 
 #include "DeviceBackend.h"
 #include "Exception.h"
@@ -60,7 +61,7 @@ namespace ChimeraTK {
     RegisterCatalogue _catalogue;
 
     /** flag if device is opened */
-    bool _opened;
+    std::atomic<bool> _opened;
 
     /** flag if device is connected. */
     bool _connected;
