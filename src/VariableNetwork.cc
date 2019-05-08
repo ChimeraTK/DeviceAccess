@@ -279,7 +279,7 @@ namespace ChimeraTK {
 
   VariableNetworkNode VariableNetwork::getFeedingNode() const {
     auto iter = std::find_if(nodeList.begin(), nodeList.end(),
-        [](const VariableNetworkNode n) { return n.getDirection().dir == VariableDirection::feeding; });
+        [](const VariableNetworkNode &n) { return n.getDirection().dir == VariableDirection::feeding; });
     if(iter == nodeList.end()) {
       std::stringstream msg;
       msg << "No feeding node in this network!" << std::endl;
