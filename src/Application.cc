@@ -607,10 +607,7 @@ void Application::optimiseConnections() {
       // if trigger present, remove corresponding trigger receiver node from the
       // trigger network
       if(feeder1.hasExternalTrigger()) {
-        for(auto& itTrig : networkList) {
-          if(itTrig.getFeedingNode() != feeder1.getExternalTrigger()) continue;
-          itTrig.removeNodeToTrigger(it1->getFeedingNode());
-        }
+        feeder1.getExternalTrigger().getOwner().removeNodeToTrigger(it1->getFeedingNode());
       }
 
       // schedule the outer loop network for deletion and stop processing it
