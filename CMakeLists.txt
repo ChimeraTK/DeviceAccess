@@ -11,7 +11,7 @@ set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 # Find the ControlSystemAdapter
-add_dependency(ChimeraTK-ControlSystemAdapter 01.01 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 01.03 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
