@@ -36,7 +36,7 @@ ENDIF()
 FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
-add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.08)
+add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10)
 IF(ChimeraTK-ControlSystemAdapter-DoocsAdapter_FOUND)
   set(DEMO_IS_ENABLED "true")
   ENABLE_TESTING()
