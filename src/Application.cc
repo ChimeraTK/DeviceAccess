@@ -227,6 +227,11 @@ void Application::generateXML() {
   // warnings
   processUnconnectedNodes();
 
+  // create connections for exception handling
+  for(auto& devModule : deviceModuleList) {
+    devModule->defineConnections();
+  }
+
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
   finaliseNetworks();
