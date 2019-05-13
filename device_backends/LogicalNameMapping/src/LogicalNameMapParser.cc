@@ -49,9 +49,13 @@ namespace ChimeraTK {
           auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
           assert(reg_casted != nullptr); // this is our own catalogue
           // fetch the value of the target constant
-          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
+          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
             // put to stream buffer
-            value = std::to_string(reg_casted->value_int[0]);
+            callForType(reg_casted->valueType, [&](auto arg) {
+              std::stringstream buf;
+              buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table)[0];
+              value = buf.str();
+            });
             continue;
           }
           else {
@@ -82,8 +86,9 @@ namespace ChimeraTK {
       }
 
       // neither found: throw error
-      parsingError(node, "Node '" + subnodeName + "' should contain only text, references or parameters. Instead child '" +
-          child->get_name() + "' was found.");
+      parsingError(node,
+          "Node '" + subnodeName + "' should contain only text, references or parameters. Instead child '" +
+              child->get_name() + "' was found.");
     }
     return value;
   }
@@ -131,10 +136,11 @@ namespace ChimeraTK {
       // get content
       auto childList = childElement->get_children();
       if(childList.size() != 1) {
-        parsingError(childElement, "Node '" + subnodeName +
-            "' should contain only text or exactly one reference, "
-            "instead multiple childs "
-            "were found.");
+        parsingError(childElement,
+            "Node '" + subnodeName +
+                "' should contain only text or exactly one reference, "
+                "instead multiple childs "
+                "were found.");
       }
 
       // check for plain text
@@ -158,10 +164,11 @@ namespace ChimeraTK {
           auto reg_casted = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(reg);
           assert(reg_casted != nullptr); // this is our own catalogue
           // fetch the value of the target constant
-          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT) {
+          if(reg_casted->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT) {
             // convert via string
             std::stringstream buf;
-            buf << reg_casted->value_int[0];
+            callForType(reg_casted->valueType,
+                [&](auto arg) { buf << boost::fusion::at_key<decltype(arg)>(reg_casted->valueTable.table)[0]; });
             buf >> valueVector[index];
             continue;
           }
@@ -174,7 +181,7 @@ namespace ChimeraTK {
         }
       }
 
-      if (childList.front()->get_name() == "par") {
+      if(childList.front()->get_name() == "par") {
         auto childChildList = childList.front()->get_children();
         const xmlpp::TextNode* parNameNode = dynamic_cast<xmlpp::TextNode*>(childChildList.front());
         if(parNameNode && childChildList.size() == 1) {
@@ -194,8 +201,9 @@ namespace ChimeraTK {
       }
 
       // neither found: throw error
-      parsingError(node, "Node '" + subnodeName + "' should contain only text or exactly one reference, instead child '" +
-          childList.front()->get_name() + "' was found.");
+      parsingError(node,
+          "Node '" + subnodeName + "' should contain only text or exactly one reference, instead child '" +
+              childList.front()->get_name() + "' was found.");
     }
 
     return valueVector;
@@ -292,11 +300,13 @@ namespace ChimeraTK {
       }
       else if(type == "constant") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
-        if(constantType != "integer") {
-          parsingError(element, "Type '" + constantType + "' is not valid for a constant");
-        }
-        info->targetType = LNMBackendRegisterInfo::TargetType::INT_CONSTANT;
-        info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
+        if(constantType == "integer") constantType = "int32";
+        info->targetType = LNMBackendRegisterInfo::TargetType::CONSTANT;
+        info->valueType = DataType(constantType);
+        callForType(info->valueType, [&](auto arg) {
+          boost::fusion::at_key<decltype(arg)>(info->valueTable.table) =
+              this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value");
+        });
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
         info->nDimensions = info->length > 1 ? 1 : 0;
@@ -307,11 +317,13 @@ namespace ChimeraTK {
       }
       else if(type == "variable") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
-        if(constantType != "integer") {
-          parsingError(element, "Type '" + constantType + "' is not valid for a variable");
-        }
-        info->targetType = LNMBackendRegisterInfo::TargetType::INT_VARIABLE;
-        info->value_int = getValueVectorFromXmlSubnode<int>(element, "value");
+        if(constantType == "integer") constantType = "int32";
+        info->targetType = LNMBackendRegisterInfo::TargetType::VARIABLE;
+        info->valueType = DataType(constantType);
+        callForType(info->valueType, [&](auto arg) {
+          boost::fusion::at_key<decltype(arg)>(info->valueTable.table) =
+              this->getValueVectorFromXmlSubnode<decltype(arg)>(element, "value");
+        });
         info->firstIndex = 0;
         info->length = getValueFromXmlSubnode<unsigned int>(element, "numberOfElements", true, 1);
         info->nDimensions = info->length > 1 ? 1 : 0;
@@ -391,9 +403,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void LogicalNameMapParser::parsingError(const xmlpp::Node *node, const std::string& message) {
-    throw ChimeraTK::logic_error("Error parsing the xlmap file '" + _fileName + "'(" +
-                                 std::to_string(node->get_line()) + ") : " + message);
+  void LogicalNameMapParser::parsingError(const xmlpp::Node* node, const std::string& message) {
+    throw ChimeraTK::logic_error(
+        "Error parsing the xlmap file '" + _fileName + "'(" + std::to_string(node->get_line()) + ") : " + message);
   }
 
 } // namespace ChimeraTK

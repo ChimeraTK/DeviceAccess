@@ -23,7 +23,7 @@ namespace ChimeraTK {
   class LNMBackendRegisterInfo : public RegisterInfo {
    public:
     /** Potential target types */
-    enum TargetType { INVALID, REGISTER, CHANNEL, BIT, INT_CONSTANT, INT_VARIABLE };
+    enum TargetType { INVALID, REGISTER, CHANNEL, BIT, CONSTANT, VARIABLE };
 
     /** constuctor: initialise values */
     LNMBackendRegisterInfo() : targetType(TargetType::INVALID), supportedFlags({}) {}
@@ -74,8 +74,16 @@ namespace ChimeraTK {
     /** The number of channels of the logical register */
     unsigned int nChannels;
 
-    /** The integer value of a INT_CONSTANT or INT_VARIABLE */
-    std::vector<int> value_int;
+    /** Data type of CONSTANT or VARIABLE type. */
+    DataType valueType;
+
+    /** Hold values of CONSTANT or VARIABLE types in a type-dependent table. Only the entry matching the valueType
+     *  is actually valid.
+     *  Note: We cannot directly put the std::vector in a TemplateUserTypeMap, since it has more than one template
+     *  arguments (with defaults). */
+    template<typename T>
+    using myVector = std::vector<T>;
+    TemplateUserTypeMap<myVector> valueTable;
 
     /** Flag if the register is readable. Might be derived from the target
      * register */

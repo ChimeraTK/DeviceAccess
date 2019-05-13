@@ -71,12 +71,14 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(info->channel == 4);
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Constant"));
-  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT);
-  BOOST_CHECK(info->value_int[0] == 42);
+  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT);
+  BOOST_CHECK(info->valueType == ChimeraTK::DataType::int32);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[0] == 42);
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("/MyModule/SomeSubmodule/Variable"));
-  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE);
-  BOOST_CHECK(info->value_int[0] == 2);
+  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::VARIABLE);
+  BOOST_CHECK(info->valueType == ChimeraTK::DataType::int32);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[0] == 2);
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("MyModule/ConfigurableChannel"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::CHANNEL);
   BOOST_CHECK(info->deviceName == "PCIE3");
@@ -89,14 +91,15 @@ BOOST_AUTO_TEST_CASE(testParseFile) {
   BOOST_CHECK(targetDevices.count("PCIE3") == 1);
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("ArrayConstant"));
-  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT);
+  BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT);
+  BOOST_CHECK(info->valueType == ChimeraTK::DataType::int32);
   BOOST_CHECK(info->length == 5);
-  BOOST_CHECK(info->value_int.size() == 5);
-  BOOST_CHECK(info->value_int[0] == 1111);
-  BOOST_CHECK(info->value_int[1] == 2222);
-  BOOST_CHECK(info->value_int[2] == 3333);
-  BOOST_CHECK(info->value_int[3] == 4444);
-  BOOST_CHECK(info->value_int[4] == 5555);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table).size() == 5);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[0] == 1111);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[1] == 2222);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[2] == 3333);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[3] == 4444);
+  BOOST_CHECK(boost::fusion::at_key<int32_t>(info->valueTable.table)[4] == 5555);
 
   info = boost::dynamic_pointer_cast<LNMBackendRegisterInfo>(catalogue.getRegister("Bit0ofVar"));
   BOOST_CHECK(info->targetType == LNMBackendRegisterInfo::TargetType::BIT);

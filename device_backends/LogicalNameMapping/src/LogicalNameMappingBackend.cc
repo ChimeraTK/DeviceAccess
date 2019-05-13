@@ -131,8 +131,8 @@ namespace ChimeraTK {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendBitAccessor<UserType>(
           shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
     }
-    else if(info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT ||
-        info->targetType == LNMBackendRegisterInfo::TargetType::INT_VARIABLE) {
+    else if(info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT ||
+        info->targetType == LNMBackendRegisterInfo::TargetType::VARIABLE) {
       ptr = boost::shared_ptr<NDRegisterAccessor<UserType>>(new LNMBackendVariableAccessor<UserType>(
           shared_from_this(), registerPathName, numberOfWords, wordOffsetInRegister, flags));
     }

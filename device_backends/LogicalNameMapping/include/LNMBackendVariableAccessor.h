@@ -57,8 +57,8 @@ namespace ChimeraTK {
                     << std::endl;
         }
         // check for incorrect usage of this accessor
-        if(_info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT &&
-            _info->targetType != LNMBackendRegisterInfo::TargetType::INT_VARIABLE) {
+        if(_info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT &&
+            _info->targetType != LNMBackendRegisterInfo::TargetType::VARIABLE) {
           throw ChimeraTK::logic_error("LNMBackendVariableAccessor used for "
                                        "wrong register type."); // LCOV_EXCL_LINE
                                                                 // (impossible to
@@ -88,8 +88,10 @@ namespace ChimeraTK {
                                      "is not possible.");
       }
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
-        auto& v = _info->value_int[i + _wordOffsetInRegister];
-        v = _fixedPointConverter.toRaw(NDRegisterAccessor<UserType>::buffer_2D[0][i]);
+        callForType(_info->valueType, [&, this](auto arg) {
+          boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister] =
+              userTypeToUserType<decltype(arg)>(this->buffer_2D[0][i]);
+        });
       }
       currentVersion = versionNumber;
       return false;
@@ -99,16 +101,18 @@ namespace ChimeraTK {
       return false; // never replace, since it does not optimise anything
     }
 
-    bool isReadOnly() const override { return _info->targetType == LNMBackendRegisterInfo::TargetType::INT_CONSTANT; }
+    bool isReadOnly() const override { return _info->targetType == LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
     bool isReadable() const override { return true; }
 
-    bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::INT_CONSTANT; }
+    bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
     void doPostRead() override {
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
-        auto& v = _info->value_int[i + _wordOffsetInRegister];
-        NDRegisterAccessor<UserType>::buffer_2D[0][i] = numericToUserType<UserType>(v);
+        callForType(_info->valueType, [&, this](auto arg) {
+          this->buffer_2D[0][i] = userTypeToUserType<UserType>(
+              boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister]);
+        });
       }
       currentVersion = {};
     }

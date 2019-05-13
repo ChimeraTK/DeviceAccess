@@ -51,6 +51,21 @@ namespace ChimeraTK {
       static NUMERIC impl(const std::string& value);
     };
 
+    template<typename UserTypeReturn, typename UserTypeParameter>
+    struct userTypeToUserType_impl {
+      static UserTypeReturn impl(UserTypeParameter value);
+    };
+
+    template<>
+    struct userTypeToUserType_impl<std::string, std::string> {
+      static std::string impl(std::string value) { return value; }
+    };
+
+    template<typename UserTypeReturn>
+    struct userTypeToUserType_impl<UserTypeReturn, std::string> {
+      static UserTypeReturn impl(std::string value);
+    };
+
     template<class S>
     struct Round {
       static S nearbyint(S s) { return std::round(s); }
@@ -127,6 +142,31 @@ namespace ChimeraTK {
     std::stringstream ss(value);
     ss >> v;
     return v;
+  }
+
+  /********************************************************************************************************************/
+
+  /** Helper function to convert any UserType data into any other UserType (even if it is a string etc.). The conversion
+   *  is done with proper rounding and range checking for numeric types. It will throw boost::numeric::positive_overflow
+   *  resp. boost::numeric::negative_overflow if the data is out of range. */
+  template<typename UserTypeReturn, typename UserTypeParameter>
+  UserTypeReturn userTypeToUserType(UserTypeParameter value) {
+    return detail::userTypeToUserType_impl<UserTypeReturn, UserTypeParameter>::impl(value);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserTypeReturn, typename UserTypeParameter>
+  inline UserTypeReturn detail::userTypeToUserType_impl<UserTypeReturn, UserTypeParameter>::impl(
+      UserTypeParameter value) {
+    return numericToUserType<UserTypeReturn>(value);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserTypeReturn>
+  inline UserTypeReturn detail::userTypeToUserType_impl<UserTypeReturn, std::string>::impl(std::string value) {
+    return userTypeToNumeric<UserTypeReturn>(value);
   }
 
   /********************************************************************************************************************/
@@ -395,6 +435,76 @@ namespace ChimeraTK {
       }
       else {
         _value = none;
+      }
+    }
+
+    /** Construct DataType from std::string. */
+    inline DataType(const std::string& typeName) {
+      if(typeName == "int8") {
+        _value = int8;
+      }
+      else if(typeName == "uint8") {
+        _value = uint8;
+      }
+      else if(typeName == "int16") {
+        _value = int16;
+      }
+      else if(typeName == "uint16") {
+        _value = uint16;
+      }
+      else if(typeName == "int32") {
+        _value = int32;
+      }
+      else if(typeName == "uint32") {
+        _value = uint32;
+      }
+      else if(typeName == "int64") {
+        _value = int64;
+      }
+      else if(typeName == "uint64") {
+        _value = uint64;
+      }
+      else if(typeName == "float32") {
+        _value = float32;
+      }
+      else if(typeName == "float64") {
+        _value = float64;
+      }
+      else if(typeName == "string") {
+        _value = string;
+      }
+      else {
+        _value = none;
+      }
+    }
+
+    /** Return string representation of the data type */
+    inline bool getAsString() const {
+      switch(_value) {
+        case int8:
+          return "int8";
+        case uint8:
+          return "uint8";
+        case int16:
+          return "int16";
+        case uint16:
+          return "uint16";
+        case int32:
+          return "int32";
+        case uint32:
+          return "uint32";
+        case int64:
+          return "in64";
+        case uint64:
+          return "uin64";
+        case float32:
+          return "float32";
+        case float64:
+          return "float64";
+        case string:
+          return "string";
+        default:
+          return false;
       }
     }
 
