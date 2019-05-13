@@ -117,6 +117,10 @@ namespace ChimeraTK {
           size_t nDigits = 0, size_t nFractionalDigits = 0, DataType rawDataType = DataType::none,
           DataType transportLayerDataType_ = DataType::none);
 
+      /** Construct from DataType object - the DataDescriptor will then describe the passed DataType (with no raw
+       *  type). */
+      explicit DataDescriptor(DataType type);
+
      private:
       /** The fundamental data type */
       FundamentalType _fundamentalType;
@@ -226,6 +230,23 @@ namespace ChimeraTK {
       DataType transportLayerDataType_)
   : _fundamentalType(fundamentalType_), _rawDataType(rawDataType_), _transportLayerDataType(transportLayerDataType_),
     _isIntegral(isIntegral_), _isSigned(isSigned_), _nDigits(nDigits_), _nFractionalDigits(nFractionalDigits_) {}
+
+  /*******************************************************************************************************************/
+
+  inline RegisterInfo::DataDescriptor::DataDescriptor(DataType type) {
+    if(type.isNumeric()) {
+      _fundamentalType = FundamentalType::numeric;
+    }
+    else {
+      _fundamentalType = FundamentalType::string;
+    }
+    _isIntegral = type.isIntegral();
+    _isSigned = type.isSigned();
+    _nDigits = 0; /// @todo FIXME fill properly!
+    _nFractionalDigits = 0;
+  }
+
+  /*******************************************************************************************************************/
 
 } /* namespace ChimeraTK */
 

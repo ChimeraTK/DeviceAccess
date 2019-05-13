@@ -313,7 +313,7 @@ namespace ChimeraTK {
         info->nChannels = 1;
         info->writeable = false;
         info->readable = true;
-        info->_dataDescriptor = {RegisterInfo::FundamentalType::numeric, true, false, 1, 0};
+        info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(info->valueType);
       }
       else if(type == "variable") {
         std::string constantType = getValueFromXmlSubnode<std::string>(element, "type");
@@ -330,7 +330,7 @@ namespace ChimeraTK {
         info->nChannels = 1;
         info->writeable = true;
         info->readable = true;
-        info->_dataDescriptor = {RegisterInfo::FundamentalType::numeric, true, false, 1, 0};
+        info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(info->valueType);
       }
       else {
         parsingError(element, "Wrong logical register type: " + type);
