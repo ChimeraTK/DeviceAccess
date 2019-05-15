@@ -191,20 +191,20 @@ if(DEMO_IS_ENABLED)
   # copy config files for 2nd example with automation
   FILE( COPY ${CMAKE_SOURCE_DIR}/example3/demoApp3.conf DESTINATION ${PROJECT_BINARY_DIR})
 
+  # status monitor example.
+  add_executable(demoStatusMonitorApp example_status_monitor/demoStatusMonitor.cc)
+  set_target_properties(demoStatusMonitorApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+  set_target_properties(demoStatusMonitorApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  target_link_libraries(demoStatusMonitorApp ${PROJECT_NAME}
+                                ${Boost_LIBRARIES}
+                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
+                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
+                                ${LibXML++_LIBRARIES}
+                                ${glib_LIBRARIES}
+                                ${HDF5_LIBRARIES})
 
-  #add_executable(exceptionTestApp exception_test/exceptionTestApp.cc exception_test/ExceptionDevice.cc example/TimerDummyDevice.cc)
-  #set_target_properties(exceptionTestApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-  #set_target_properties(exceptionTestApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  #target_link_libraries(exceptionTestApp ${PROJECT_NAME}
-  #                              ${Boost_LIBRARIES}
-  #                              ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-  #                              ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
-  #                              ${LibXML++_LIBRARIES}
-  #                              ${glib_LIBRARIES}
-  #                              ${HDF5_LIBRARIES})
-
-  #FILE( COPY ${CMAKE_SOURCE_DIR}/exception_test/exceptionTestApp.conf DESTINATION ${PROJECT_BINARY_DIR})
-
+  # copy config files for demoStatusMonitorApp example
+  FILE( COPY ${CMAKE_SOURCE_DIR}/example_status_monitor/demoStatusMonitorApp.conf DESTINATION ${PROJECT_BINARY_DIR})
 
 endif(DEMO_IS_ENABLED)
 
