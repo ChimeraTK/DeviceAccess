@@ -24,7 +24,7 @@ struct TestApplication : public ctk::Application {
 
   void defineConnections() {} // the setup is done in the tests
   ctk::ControlSystemModule cs;
-  T monitor{this, "monitor","",true,"watch"};
+  T monitor{this, "MONITOR","",ChimeraTK::HierarchyModifier::none,"WATCH","STATUS",{"CS"}};
 };
 
 /*********************************************************************************************************************/
@@ -38,22 +38,22 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto warning = test.getScalar<double_t>(std::string("/threshold/warning_level"));
+  auto warning = test.getScalar<double_t>(std::string("/MAX_MONITOR.WARNING.THRESHOLD"));
   warning = 45;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<double_t>(std::string("/threshold/error_level"));
+  auto error = test.getScalar<double_t>(std::string("/MAX_MONITOR.ERROR.THRESHOLD"));
   error = 50;
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/watch"));
+  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
   watch = 40;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
   status.readLatest();
 
   //should be in OK state.
@@ -127,22 +127,22 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto warning = test.getScalar<double_t>(std::string("/threshold/warning_level"));
+  auto warning = test.getScalar<double_t>(std::string("MIN_MONITOR.WARNING.THRESHOLD"));
   warning = 50;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<double_t>(std::string("/threshold/error_level"));
+  auto error = test.getScalar<double_t>(std::string("MIN_MONITOR.ERROR.THRESHOLD"));
   error = 45;
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/watch"));
+  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
   watch = 55;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
   status.readLatest();
 
   //should be in OK state.
@@ -216,32 +216,32 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.runApplication();
   //app.dumpConnections();
   
-  auto warningUpperLimit = test.getScalar<double_t>(std::string("/threshold/warning_upper_limit"));
+  auto warningUpperLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.WARNING.UPPER_LIMIT"));
   warningUpperLimit = 50;
   warningUpperLimit.write();
   test.stepApplication();
   
-  auto warningLowerLimit = test.getScalar<double_t>(std::string("/threshold/warning_lower_limit"));
+  auto warningLowerLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.WARNING.LOWER_LIMIT"));
   warningLowerLimit = 41;
   warningLowerLimit.write();
   test.stepApplication();
   
-  auto errorUpperLimit = test.getScalar<double_t>(std::string("/threshold/error_upper_limit"));
+  auto errorUpperLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.ERROR.UPPER_LIMIT"));
   errorUpperLimit = 60;
   errorUpperLimit.write();
   test.stepApplication();
   
-  auto errorLowerLimit = test.getScalar<double_t>(std::string("/threshold/error_lower_limit"));
+  auto errorLowerLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.ERROR.LOWER_LIMIT"));
   errorLowerLimit = 51;
   errorLowerLimit.write();
   test.stepApplication();
   
-  auto watch = test.getScalar<double_t>(std::string("/watch"));
+  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
   watch = 40;
   watch.write();
   test.stepApplication();
   
-  auto status = test.getScalar<uint16_t>(std::string("/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
   status.readLatest();
   
   //should be in OK state.
@@ -327,7 +327,6 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
 }
 
-
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testExactMonitor) {
@@ -339,17 +338,17 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto requiredValue = test.getScalar<double_t>(std::string("/required_value"));
+  auto requiredValue = test.getScalar<double_t>(std::string("/EXACT_MONITOR.REQUIRED_VALUE"));
   requiredValue = 40;
   requiredValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/watch"));
+  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
   watch = 40;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
   status.readLatest();
 
   //should be in OK state.
@@ -398,17 +397,17 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto stateValue = test.getScalar<int>(std::string("/on"));
+  auto stateValue = test.getScalar<int>(std::string("/STATE_MONITOR.ON"));
   stateValue = 1;
   stateValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/watch"));
+  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
   watch = 1;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
   status.readLatest();
   //should be in OK state.
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
