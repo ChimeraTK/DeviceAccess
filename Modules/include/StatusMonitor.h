@@ -3,42 +3,64 @@ namespace ChimeraTK {
    
   enum States { OFF, OK, WARNING, ERROR };
   
-  struct StatusMonitor : public ChimeraTK::ApplicationModule {
+  struct StatusMonitor : public ApplicationModule {
     
-    /*StatusMonitor(EntityOwner* owner, const std::string& name, 
-        const std::string& description, ChimeraTK::HierarchyModifier modifier,
+     StatusMonitor(EntityOwner* owner, const std::string& name, 
+        const std::string& description, HierarchyModifier modifier,
         const std::string& input,
         const std::string& output,
-        const std::unordered_set<std::string>& inputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {},
-        const std::unordered_set<std::string>& outputTags = {});*/
+        const std::unordered_set<std::string>& tags)
+        : ApplicationModule(owner, name, description, modifier),
+          _parameterTags(tags), watch(this, input, "", "", tags),
+          status(this, output,"","",tags){}
+    
+    
+    StatusMonitor(EntityOwner* owner, const std::string& name, 
+        const std::string& description, HierarchyModifier modifier,
+        const std::string& input,
+        const std::unordered_set<std::string>& inputTags,
+        const std::string& output,
+        const std::unordered_set<std::string>& outputTags,
+        const std::unordered_set<std::string>& parameterTags)
+         : ApplicationModule(owner, name, description, modifier),
+          _parameterTags(parameterTags), watch(this, input, "", "", inputTags),
+          status(this, output,"","",outputTags){}
         
     StatusMonitor(EntityOwner* owner, const std::string& name, 
-        const std::string& description, ChimeraTK::HierarchyModifier modifier,
+        const std::string& description, HierarchyModifier modifier,
+        const std::string& input,
+        const std::unordered_set<std::string>& inputTags,
+        const std::string& output,
+        const std::unordered_set<std::string>& parameterTags)
+         : ApplicationModule(owner, name, description, modifier),
+          _parameterTags(parameterTags), watch(this, input, "", "", inputTags),
+          status(this, output,"","",{}){}
+   
+   StatusMonitor(EntityOwner* owner, const std::string& name, 
+        const std::string& description, HierarchyModifier modifier,
         const std::string& input,
         const std::string& output,
-        const std::unordered_set<std::string>& _defaultTags);
+        const std::unordered_set<std::string>& inputTags,
+        const std::unordered_set<std::string>& outputTags)
+         : ApplicationModule(owner, name, description, modifier),
+          _parameterTags({}), watch(this, input, "", "", inputTags),
+          status(this, output,"","",outputTags){}             
         
     ~StatusMonitor() override {}
     void prepare() override {}
-    std::string _input;
-    std::string _output;
-    std::unordered_set<std::string> _defaultTags;
-    std::unordered_set<std::string> _inputTags;
     std::unordered_set<std::string> _parameterTags;
-    std::unordered_set<std::string> _outputTags;
-   ChimeraTK::ScalarPushInput<double_t> watch;
-   ChimeraTK::ScalarOutput<uint16_t> status; 
+    ScalarPushInput<double_t> watch;
+    ScalarOutput<uint16_t> status; 
     
   };
   
   
-  struct MaxMonitor : public ChimeraTK::StatusMonitor {
+  struct MaxMonitor : public StatusMonitor {
 
     using StatusMonitor::StatusMonitor;
-
-    ChimeraTK::ScalarPushInput<double_t> warning{this, "MAX_MONITOR.WARNING.THRESHOLD", "","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> error{this,"MAX_MONITOR.ERROR.THRESHOLD","","",_parameterTags};
+          
+    ScalarPushInput<double_t> warning{this, "MAX_MONITOR.WARNING.THRESHOLD", "","",_parameterTags};
+    ScalarPushInput<double_t> error{this,"MAX_MONITOR.ERROR.THRESHOLD","","",_parameterTags};
     
     void mainLoop() {
     
@@ -60,11 +82,11 @@ namespace ChimeraTK {
     }
   };
   
-  struct MinMonitor : public ChimeraTK::StatusMonitor {
+  struct MinMonitor : public StatusMonitor {
     using StatusMonitor::StatusMonitor;
     
-    ChimeraTK::ScalarPushInput<double_t> warning{this, "MIN_MONITOR.WARNING.THRESHOLD", "","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> error{this,"MIN_MONITOR.ERROR.THRESHOLD","","",_parameterTags};
+    ScalarPushInput<double_t> warning{this, "MIN_MONITOR.WARNING.THRESHOLD", "","",_parameterTags};
+    ScalarPushInput<double_t> error{this,"MIN_MONITOR.ERROR.THRESHOLD","","",_parameterTags};
     void mainLoop() {
       ReadAnyGroup group{watch, warning, error};
       while(true){
@@ -84,13 +106,13 @@ namespace ChimeraTK {
     }
   };
   
-  struct RangeMonitor : public ChimeraTK::StatusMonitor {
+  struct RangeMonitor : public StatusMonitor {
     using StatusMonitor::StatusMonitor;
     
-    ChimeraTK::ScalarPushInput<double_t> warningUpperLimit{this, "RANGE_MONITOR.WARNING.UPPER_LIMIT", "","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> warningLowerLimit{this, "RANGE_MONITOR.WARNING.LOWER_LIMIT", "","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> errorUpperLimit{this,"RANGE_MONITOR.ERROR.UPPER_LIMIT","","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> errorLowerLimit{this,"RANGE_MONITOR.ERROR.LOWER_LIMIT","","",_parameterTags};
+    ScalarPushInput<double_t> warningUpperLimit{this, "RANGE_MONITOR.WARNING.UPPER_LIMIT", "","",_parameterTags};
+    ScalarPushInput<double_t> warningLowerLimit{this, "RANGE_MONITOR.WARNING.LOWER_LIMIT", "","",_parameterTags};
+    ScalarPushInput<double_t> errorUpperLimit{this,"RANGE_MONITOR.ERROR.UPPER_LIMIT","","",_parameterTags};
+    ScalarPushInput<double_t> errorLowerLimit{this,"RANGE_MONITOR.ERROR.LOWER_LIMIT","","",_parameterTags};
      
     void mainLoop() {
       
@@ -123,12 +145,10 @@ namespace ChimeraTK {
     }
   };
   
-  struct ExactMonitor : public ChimeraTK::StatusMonitor {
+  struct ExactMonitor : public StatusMonitor {
     using StatusMonitor::StatusMonitor;
     
-    ChimeraTK::ScalarPushInput<double_t> requiredValue{this, "EXACT_MONITOR.REQUIRED_VALUE", "","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> watch{this, _input, "", "", _inputTags}; 
-    ChimeraTK::ScalarOutput<uint16_t> status {this, _output,"","", _outputTags};
+    ScalarPushInput<double_t> requiredValue{this, "EXACT_MONITOR.REQUIRED_VALUE", "","",_parameterTags};
     void mainLoop() {
       ReadAnyGroup group{watch, requiredValue};
       while(true){
@@ -145,12 +165,10 @@ namespace ChimeraTK {
     }
   };
   
-  struct StateMonitor : public ChimeraTK::StatusMonitor {
+  struct StateMonitor : public StatusMonitor {
     using StatusMonitor::StatusMonitor;
     
-    ChimeraTK::ScalarPushInput<int> state{this, "STATE_MONITOR.ON", "","",_parameterTags};
-    ChimeraTK::ScalarPushInput<double_t> watch{this, _input, "", "", _inputTags}; 
-    ChimeraTK::ScalarOutput<uint16_t> status {this, _output,"","", _outputTags};
+    ScalarPushInput<int> state{this, "STATE_MONITOR.ON", "","",_parameterTags};
     void mainLoop() {
       ReadAnyGroup group{watch, state};
       while(true){
