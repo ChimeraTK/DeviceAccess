@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto stateValue = test.getScalar<int>(std::string("/STATE_MONITOR.ON"));
+  auto stateValue = test.getScalar<int>(std::string("/STATE_MONITOR.STATE"));
   stateValue = 1;
   stateValue.write();
   test.stepApplication();
