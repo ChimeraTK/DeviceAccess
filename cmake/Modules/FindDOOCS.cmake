@@ -65,6 +65,13 @@ if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";ddaq;")
   set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSddaq timinginfo daqevstat DAQFSM TTF2XML xerces-c BM TTF2evutl)
 endif()
 
+if (";${DOOCS_FIND_COMPONENTS};" MATCHES ";daqreader;")
+  FIND_PATH(DOOCS_DIR_SERVER libDOOCSdaqreader.so
+    ${DOOCS_DIR}
+  )
+  set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DAQReader TTF2evutl TTF2XML lzo2 DAQsvrutil)
+endif()
+
 set(DOOCS_LIBRARIES ${DOOCS_LIBRARIES} DOOCSapi nsl dl pthread m rt ldap gul)
 
 # now set the required variables based on the determined DOOCS_DIR
