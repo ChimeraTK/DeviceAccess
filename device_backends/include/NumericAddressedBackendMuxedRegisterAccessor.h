@@ -193,6 +193,7 @@ namespace ChimeraTK {
         }
 
         // store sequence info and fixed point converter
+        if(sequenceInfo.width > sequenceInfo.nBytes * 8) sequenceInfo.width = sequenceInfo.nBytes * 8;
         _sequenceInfos.push_back(sequenceInfo);
         _converters.push_back(FixedPointConverter(
             registerPathName, sequenceInfo.width, sequenceInfo.nFractionalBits, sequenceInfo.signedFlag));

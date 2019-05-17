@@ -92,22 +92,22 @@ namespace ChimeraTK {
 
       AccessModeFlags getSupportedAccessModes() const override { return {AccessMode::raw}; }
 
-      const std::string name;        /**< Name of register */
-      const uint32_t nElements;      /**< Number of elements in register */
-      const uint32_t nChannels;      /**< Number of channels/sequences */
-      const bool is2DMultiplexed;    /**< Flag if register is a 2D multiplexed
+      std::string name;        /**< Name of register */
+      uint32_t nElements;      /**< Number of elements in register */
+      uint32_t nChannels;      /**< Number of channels/sequences */
+      bool is2DMultiplexed;    /**< Flag if register is a 2D multiplexed
                                         register (otherwise it is 1D or scalar) */
-      const uint32_t address;        /**< Relative address in bytes from beginning  of
+      uint32_t address;        /**< Relative address in bytes from beginning  of
                                         the bar(Base Address Range)*/
-      const uint32_t nBytes;         /**< Size of register expressed in bytes */
-      const uint32_t bar;            /**< Number of bar with register */
-      const uint32_t width;          /**< Number of significant bits in the register */
-      const int32_t nFractionalBits; /**< Number of fractional bits */
-      const bool signedFlag;         /**< Signed/Unsigned flag */
-      const std::string module;      /**< Name of the module this register is in*/
-      const Access registerAccess;   /**< Data access direction: Read, write or read
+      uint32_t nBytes;         /**< Size of register expressed in bytes */
+      uint32_t bar;            /**< Number of bar with register */
+      uint32_t width;          /**< Number of significant bits in the register */
+      int32_t nFractionalBits; /**< Number of fractional bits */
+      bool signedFlag;         /**< Signed/Unsigned flag */
+      std::string module;      /**< Name of the module this register is in*/
+      Access registerAccess;   /**< Data access direction: Read, write or read
                                         and write */
-      const Type dataType;           /**< Data type (fixpoint, floating point)*/
+      Type dataType;           /**< Data type (fixpoint, floating point)*/
 
       friend std::ostream& operator<<(std::ostream& os, const RegisterInfo& registerInfo);
 

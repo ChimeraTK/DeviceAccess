@@ -10,14 +10,14 @@ TEST.SEQUENCE_INT_2 1 8 4 0
 # of 4 bytes (32 bits) in order to work with the librabry and the drivers.
 # The other words are not directly readably, they will cause I/O errors.
 TEST.AREA_MULTIPLEXED_SEQUENCE_CHAR       4           0x40            16          0
-TEST.SEQUENCE_CHAR_0                      1           0x40            1           0       8       0           1
-TEST.SEQUENCE_CHAR_1                      1           0x41            1           0       8       0           1
-TEST.SEQUENCE_CHAR_2                      1           0x42            1           0       8       0           1
+TEST.SEQUENCE_CHAR_0                      1           0x40            1           0
+TEST.SEQUENCE_CHAR_1                      1           0x41            1           0
+TEST.SEQUENCE_CHAR_2                      1           0x42            1           0
 
 TEST.AREA_MULTIPLEXED_SEQUENCE_SHORT      8           0x50            32          0
-TEST.SEQUENCE_SHORT_0                     1           0x50            2           0      16       0           1
-TEST.SEQUENCE_SHORT_1                     1           0x52            2           0      16       0           1
-TEST.SEQUENCE_SHORT_2                     1           0x54            2           0      16       0           1
+TEST.SEQUENCE_SHORT_0                     1           0x50            2           0
+TEST.SEQUENCE_SHORT_1                     1           0x52            2           0
+TEST.SEQUENCE_SHORT_2                     1           0x54            2           0
 
 # The sequences with one, two and three fractional bits, signed 8 bit
 TEST.AREA_MULTIPLEXED_SEQUENCE_FRAC_INT 15 0 60 1
