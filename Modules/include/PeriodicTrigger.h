@@ -49,6 +49,7 @@ namespace ChimeraTK {
         boost::this_thread::interruption_point();
         std::this_thread::sleep_until(t);
 
+        setCurrentVersionNumber({});
         tick++;
         tick.write();
       }
