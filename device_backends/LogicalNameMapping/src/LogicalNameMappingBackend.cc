@@ -46,6 +46,8 @@ namespace ChimeraTK {
 
     // flag as opened
     _opened = true;
+
+    // make sure to update the catalogue from target devices in case they change their catalogue upon open
     catalogueCompleted = false;
   }
 
@@ -79,6 +81,7 @@ namespace ChimeraTK {
   boost::shared_ptr<NDRegisterAccessor<UserType>> LogicalNameMappingBackend::getRegisterAccessor_impl(
       const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags,
       size_t omitPlugins) {
+    parse();
     // check if accessor plugin present
     auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(_catalogue_mutable.getRegister(registerPathName));
     if(info->plugins.size() <= omitPlugins) {
