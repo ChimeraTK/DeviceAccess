@@ -103,7 +103,7 @@ namespace ChimeraTK {
           auto feeder = network.first;
           auto fanOut = network.second;
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
-          bool dataLoss = fanOut->write(_version);
+          bool dataLoss = fanOut->writeDestructively(_version);
           if(dataLoss) Application::incrementDataLossCounter();
           // no need to swap back since we don't need the data
         }

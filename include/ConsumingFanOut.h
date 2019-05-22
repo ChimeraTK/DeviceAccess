@@ -33,7 +33,7 @@ namespace ChimeraTK {
         if(slave->getNumberOfSamples() != 0) {
           slave->accessChannel(0) = buffer_2D[0];
         }
-        slave->write();
+        slave->writeDestructively();
       }
     }
 

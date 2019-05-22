@@ -62,7 +62,7 @@ namespace ChimeraTK {
           if(slave->getNumberOfSamples() != 0) {
             slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
           }
-          bool dataLoss = slave->write(version);
+          bool dataLoss = slave->writeDestructively(version);
           if(dataLoss) Application::incrementDataLossCounter();
         }
       }
@@ -85,8 +85,8 @@ namespace ChimeraTK {
       _returnChannelSlave = returnChannelSlave;
     }
 
-    void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave,
-        VariableNetworkNode& consumer) override {
+    void addSlave(
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& consumer) override {
       FanOut<UserType>::addSlave(slave, consumer);
       if(consumer.getDirection().withReturn) {
         assert(_returnChannelSlave == nullptr);
@@ -109,7 +109,7 @@ namespace ChimeraTK {
         // if the update came through the return channel, return it to the feeder
         if(var == _returnChannelSlave->getId()) {
           FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
-          FanOut<UserType>::impl->write(_returnChannelSlave->getVersionNumber());
+          FanOut<UserType>::impl->writeDestructively(_returnChannelSlave->getVersionNumber());
         }
         // send out copies to slaves
         auto version = FanOut<UserType>::impl->getVersionNumber();
@@ -120,7 +120,7 @@ namespace ChimeraTK {
           if(slave->getNumberOfSamples() != 0) {
             slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
           }
-          bool dataLoss = slave->write(version);
+          bool dataLoss = slave->writeDestructively(version);
           if(dataLoss) Application::incrementDataLossCounter();
         }
       }

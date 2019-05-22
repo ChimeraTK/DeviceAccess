@@ -100,7 +100,7 @@ namespace ChimeraTK {
         if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
           slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
         }
-        slave->write(_returnSlave->getVersionNumber());
+        slave->writeDestructively(_returnSlave->getVersionNumber());
       }
     }
 
@@ -130,7 +130,7 @@ namespace ChimeraTK {
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
       bool dataLost = false;
       for(auto& slave : FanOut<UserType>::slaves) {
-        bool ret = slave->doWriteTransfer(versionNumber);
+        bool ret = slave->doWriteTransferDestructively(versionNumber);
         if(ret) dataLost = true;
       }
       return dataLost;

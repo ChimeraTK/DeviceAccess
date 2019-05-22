@@ -383,7 +383,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 
   // create the ProcessArray for the proper UserType
   auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(),
-      node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(), {}, false, 3, flags);
+      node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(), {}, 3, flags);
   assert(pvar->getName() != "");
 
   // create variable ID
@@ -446,7 +446,7 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
     assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
   if(!node.getDirection().withReturn) {
     pvarPair = createSynchronizedProcessArray<UserType>(
-        nElements, name, node.getUnit(), node.getDescription(), {}, 3, false, {}, flags);
+        nElements, name, node.getUnit(), node.getDescription(), {}, 3, {}, flags);
   }
   else {
     pvarPair = createBidirectionalSynchronizedProcessArray<UserType>(
