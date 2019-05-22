@@ -90,9 +90,8 @@ namespace ChimeraTK {
   class NDRegisterAccessorDecorator : public detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType> {
    public:
     NDRegisterAccessorDecorator(const boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>>& target)
-    : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(target->getName(),
-          target->getUnit(),
-          target->getDescription()) {
+    : detail::NDRegisterAccessorDecoratorImpl<UserType, TargetUserType>(
+          target->getName(), target->getUnit(), target->getDescription()) {
       _target = target;
 
       // set ID to match the decorated accessor
@@ -105,6 +104,10 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
       return _target->doWriteTransfer(versionNumber);
+    }
+
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+      return _target->doWriteTransferDestructively(versionNumber);
     }
 
     void doReadTransfer() override { _target->doReadTransfer(); }
@@ -157,16 +160,15 @@ namespace ChimeraTK {
      * instance here. */
     template<typename T>
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> createCopyDecorator(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>>
-            target);
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> target);
 
   } // namespace detail
 
 } // namespace ChimeraTK
 
 template<typename UserType, typename TargetUserType>
-void ChimeraTK::NDRegisterAccessorDecorator<UserType,
-    TargetUserType>::replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement> newElement) {
+void ChimeraTK::NDRegisterAccessorDecorator<UserType, TargetUserType>::replaceTransferElement(
+    boost::shared_ptr<ChimeraTK::TransferElement> newElement) {
   auto casted = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<TargetUserType>>(newElement);
   if(casted && newElement->mayReplaceOther(_target)) {
     if(_target != newElement) {
