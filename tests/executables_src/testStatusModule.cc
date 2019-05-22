@@ -31,7 +31,7 @@ struct TestApplication : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   std::cout << "testMaxMonitor" << std::endl;
-  TestApplication<ctk::MaxMonitor> app;
+  TestApplication<ctk::MaxMonitor<double_t> > app;
 
   app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
@@ -39,17 +39,17 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   //app.dumpConnections();
 
   auto warning = test.getScalar<double_t>(std::string("/MAX_MONITOR.WARNING.THRESHOLD"));
-  warning = 45;
+  warning = 45.1;
   warning.write();
   test.stepApplication();
 
   auto error = test.getScalar<double_t>(std::string("/MAX_MONITOR.ERROR.THRESHOLD"));
-  error = 50;
+  error = 50.1;
   error.write();
   test.stepApplication();
 
   auto watch = test.getScalar<double_t>(std::string("/WATCH"));
-  watch = 40;
+  watch = 40.1;
   watch.write();
   test.stepApplication();
 
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
 
   //set watch value exceeding warning level
-  watch = 46;
+  watch = 46.1;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
 
   //set watch value exceeding error level
-  watch = 51;
+  watch = 51.1;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
 
   //increase error value greater than watch
-  error = 60;
+  error = 60.1;
   error.write();
   test.stepApplication();
   status.readLatest();
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
 
   //increase warning value greater than watch
-  warning = 55;
+  warning = 55.1;
   warning.write();
   test.stepApplication();
   status.readLatest();
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
 
   //set watch value exceeding error level
-  watch = 65;
+  watch = 65.1;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
 
   //decrease watch value lower than error level but still greater than warning level
-  watch = 58;
+  watch = 58.1;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
 
   //decrease watch value lower than warning level
-  watch = 54;
+  watch = 54.1;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -120,24 +120,24 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 BOOST_AUTO_TEST_CASE(testMinMonitor) {
   std::cout << "testMinMonitor" << std::endl;
 
-  TestApplication<ctk::MinMonitor> app;
+  TestApplication<ctk::MinMonitor<uint>> app;
 
   app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto warning = test.getScalar<double_t>(std::string("MIN_MONITOR.WARNING.THRESHOLD"));
+  auto warning = test.getScalar<uint>(std::string("MIN_MONITOR.WARNING.THRESHOLD"));
   warning = 50;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<double_t>(std::string("MIN_MONITOR.ERROR.THRESHOLD"));
+  auto error = test.getScalar<uint>(std::string("MIN_MONITOR.ERROR.THRESHOLD"));
   error = 45;
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
+  auto watch = test.getScalar<uint>(std::string("/WATCH"));
   watch = 55;
   watch.write();
   test.stepApplication();
@@ -209,34 +209,34 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
 
 BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   std::cout << "testRangeMonitor" << std::endl;
-  TestApplication<ctk::RangeMonitor> app;
+  TestApplication<ctk::RangeMonitor<int>> app;
   
   app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
   
-  auto warningUpperLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.WARNING.UPPER_LIMIT"));
+  auto warningUpperLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.WARNING.UPPER_LIMIT"));
   warningUpperLimit = 50;
   warningUpperLimit.write();
   test.stepApplication();
   
-  auto warningLowerLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.WARNING.LOWER_LIMIT"));
+  auto warningLowerLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.WARNING.LOWER_LIMIT"));
   warningLowerLimit = 41;
   warningLowerLimit.write();
   test.stepApplication();
   
-  auto errorUpperLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.ERROR.UPPER_LIMIT"));
+  auto errorUpperLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.ERROR.UPPER_LIMIT"));
   errorUpperLimit = 60;
   errorUpperLimit.write();
   test.stepApplication();
   
-  auto errorLowerLimit = test.getScalar<double_t>(std::string("/RANGE_MONITOR.ERROR.LOWER_LIMIT"));
+  auto errorLowerLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.ERROR.LOWER_LIMIT"));
   errorLowerLimit = 51;
   errorLowerLimit.write();
   test.stepApplication();
   
-  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
+  auto watch = test.getScalar<int>(std::string("/WATCH"));
   watch = 40;
   watch.write();
   test.stepApplication();
@@ -331,20 +331,20 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 
 BOOST_AUTO_TEST_CASE(testExactMonitor) {
   std::cout << "testExactMonitor" << std::endl;
-  TestApplication<ctk::ExactMonitor> app;
+  TestApplication<ctk::ExactMonitor<float>> app;
 
   app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto requiredValue = test.getScalar<double_t>(std::string("/EXACT_MONITOR.REQUIRED_VALUE"));
-  requiredValue = 40;
+  auto requiredValue = test.getScalar<float>(std::string("/EXACT_MONITOR.REQUIRED_VALUE"));
+  requiredValue = 40.9;
   requiredValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
-  watch = 40;
+  auto watch = test.getScalar<float>(std::string("/WATCH"));
+  watch = 40.9;
   watch.write();
   test.stepApplication();
 
@@ -355,14 +355,14 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
 
   //set watch value different than required value
-  watch = 41;
+  watch = 41.4;
   watch.write();
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
 
-  watch = 40;
+  watch = 40.9;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
 
   //set requiredValue value different than watch value
-  requiredValue = 41;
+  requiredValue = 41.3;
   requiredValue.write();
   test.stepApplication();
   status.readLatest();
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
 
   //set requiredValue value equals to watch value
-  requiredValue = 40;
+  requiredValue = 40.9;
   requiredValue.write();
   test.stepApplication();
   status.readLatest();
@@ -390,19 +390,19 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
 
 BOOST_AUTO_TEST_CASE(testStateMonitor) {
   std::cout << "testStateMonitor" << std::endl;
-  TestApplication<ctk::StateMonitor> app;
+  TestApplication<ctk::StateMonitor<uint8_t>> app;
 
   app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto stateValue = test.getScalar<int>(std::string("/STATE_MONITOR.STATE"));
+  auto stateValue = test.getScalar<uint8_t>(std::string("/STATE_MONITOR.STATE"));
   stateValue = 1;
   stateValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
+  auto watch = test.getScalar<uint8_t>(std::string("/WATCH"));
   watch = 1;
   watch.write();
   test.stepApplication();

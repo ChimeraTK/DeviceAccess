@@ -97,11 +97,11 @@ struct ExampleApp : public ctk::Application {
   Simulation simulation{this, "SIMULATION", "",ChimeraTK::HierarchyModifier::none,{"CS"}};
   ctk::ControlSystemModule cs;
 /**Create MaxMonitor with exact variable names as in simulation.*/
-  ctk::MaxMonitor maxMonitor{this, "SIMULATION","",ChimeraTK::HierarchyModifier::none,"TEMPERATURE","MAX_STATUS",{"CS"}};
+  ctk::MaxMonitor<double_t> maxMonitor{this, "SIMULATION","",ChimeraTK::HierarchyModifier::none,"TEMPERATURE","MAX_STATUS",{"CS"}};
 /**Create MinMonitor with exact variable names as in simulation.*/
-  ctk::MinMonitor minMonitor{this, "SIMULATION","",ChimeraTK::HierarchyModifier::none,"TEMPERATURE","MIN_STATUS",{"CS"}};
+  ctk::MinMonitor<double_t> minMonitor{this, "SIMULATION","",ChimeraTK::HierarchyModifier::none,"TEMPERATURE","MIN_STATUS",{"CS"}};
 /**Create RangeMonitor with exact variable names as in simulation.*/
-  ctk::RangeMonitor rangeMonitor{this, "SIMULATION","",ChimeraTK::HierarchyModifier::none,"TEMPERATURE","RANGE_STATUS",{"CS"}};
+  ctk::RangeMonitor<double_t> rangeMonitor{this, "SIMULATION","",ChimeraTK::HierarchyModifier::none,"TEMPERATURE","RANGE_STATUS",{"CS"}};
   void defineConnections();
 };
 ExampleApp theExampleApp;

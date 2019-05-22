@@ -2,7 +2,7 @@
  * \author Nadeem Shehzad (DESY)
  * \date 15.05.2019
  * \page statusmonitordoc Status Monitor
- * \section Introduction
+ *
  *
  * To monitor a status of a varaible in an appplicaiton this group of
  * modules provides different possiblites.
@@ -13,7 +13,7 @@
  *  - ExactMonitor to monitor a value which should be exactly same as required value.
  *  - StateMonitor to monitor On/Off state.
  * Depending upon the value and condition on of the four states are reported.
- * -  OFF, OK, WARNING, ERROR.
+ *  -  OFF, OK, WARNING, ERROR.
  *
  * Checkout demoStatusMonitor.cc under status_monitor_example to see in
  * detail how it works.
@@ -28,14 +28,13 @@ namespace ChimeraTK {
 
 /** There are four states that can be reported*/
   enum States { OFF, OK, WARNING, ERROR };
-  
+  template <typename T>
   struct StatusMonitor : public ApplicationModule {
 
 /** Number of convience constructors for ease of use.
  * The input and output variable names can be given by user which
  * should be mapped with the variables of module to be watched.
 */
-
      StatusMonitor(EntityOwner* owner, const std::string& name, 
         const std::string& description, HierarchyModifier modifier,
         const std::string& input,
@@ -83,68 +82,68 @@ namespace ChimeraTK {
 /**Tags for parameters. This makes it easier to connect them to e.g, to control system*/
     std::unordered_set<std::string> _parameterTags;
 /**Input value that should be monitored*/
-//TODO we might need to template this?
-    ScalarPushInput<double_t> watch;
+    ScalarPushInput<T> watch;
 /**One of four possible states to be reported*/
     ScalarOutput<uint16_t> status; 
   };
   
-
 /** Module for status monitoring depending on a maximum threshold value*/
-  struct MaxMonitor : public StatusMonitor {
+  template <typename T>
+  struct MaxMonitor : public StatusMonitor<T> {
 
-    using StatusMonitor::StatusMonitor;
+    using StatusMonitor<T>::StatusMonitor;
 /** WARNING state to be reported if threshold is crossed*/
-    ScalarPushInput<double_t> warning{this, "MAX_MONITOR.WARNING.THRESHOLD", "","",_parameterTags};
+    ScalarPushInput<T> warning{this, "MAX_MONITOR.WARNING.THRESHOLD", "","", StatusMonitor<T>::_parameterTags};
 /** ERROR state to be reported if threshold is crossed*/
-    ScalarPushInput<double_t> error{this,"MAX_MONITOR.ERROR.THRESHOLD","","",_parameterTags};
+    ScalarPushInput<T> error{this,"MAX_MONITOR.ERROR.THRESHOLD","","",StatusMonitor<T>::_parameterTags};
 
 /**This is where state evaluation is done*/
     void mainLoop() {
 /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{watch, warning, error};
+      ReadAnyGroup group{StatusMonitor<T>::watch, warning, error};
       while(true){
         group.readAny();
-        if (watch > error){
-          status = ERROR;
+        if (StatusMonitor<T>::watch > error){
+          StatusMonitor<T>::status = ERROR;
         }
-        else if (watch > warning){
-          status = WARNING;
+        else if (StatusMonitor<T>::watch > warning){
+          StatusMonitor<T>::status = WARNING;
         }
         else{ 
-          status = OK;
+          StatusMonitor<T>::status = OK;
         }
-        status.write();
+        StatusMonitor<T>::status.write();
         usleep(500);
       }
     }
   };
 
 /** Module for status monitoring depending on a minimum threshold value*/
-  struct MinMonitor : public StatusMonitor {
-    using StatusMonitor::StatusMonitor;
+  template <typename T>
+  struct MinMonitor : public StatusMonitor<T> {
+    using StatusMonitor<T>::StatusMonitor;
 
 /** WARNING state to be reported if threshold is crossed*/
-    ScalarPushInput<double_t> warning{this, "MIN_MONITOR.WARNING.THRESHOLD", "","",_parameterTags};
+    ScalarPushInput<T> warning{this, "MIN_MONITOR.WARNING.THRESHOLD", "","",StatusMonitor<T>::_parameterTags};
 /** ERROR state to be reported if threshold is crossed*/
-    ScalarPushInput<double_t> error{this,"MIN_MONITOR.ERROR.THRESHOLD","","",_parameterTags};
+    ScalarPushInput<T> error{this,"MIN_MONITOR.ERROR.THRESHOLD","","",StatusMonitor<T>::_parameterTags};
 
 /**This is where state evaluation is done*/
     void mainLoop() {
 /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{watch, warning, error};
+      ReadAnyGroup group{StatusMonitor<T>::watch, warning, error};
       while(true){
         group.readAny();
-        if (watch < error){
-          status = ERROR;
+        if (StatusMonitor<T>::watch < error){
+          StatusMonitor<T>::status = ERROR;
         }
-        else if (watch < warning){
-          status = WARNING;
+        else if (StatusMonitor<T>::watch < warning){
+          StatusMonitor<T>::status = WARNING;
         }
         else{ 
-          status = OK;
+          StatusMonitor<T>::status = OK;
         }
-        status.write();
+        StatusMonitor<T>::status.write();
         usleep(500);
       }
     }
@@ -157,29 +156,30 @@ namespace ChimeraTK {
  * IMPORTANT: This module does not check for ill logic, so make sure to
  * set the ranges correctly to issue warning or error.
  */
-  struct RangeMonitor : public StatusMonitor {
-    using StatusMonitor::StatusMonitor;
+  template <typename T>
+  struct RangeMonitor : public StatusMonitor<T> {
+    using StatusMonitor<T>::StatusMonitor;
 
 /** WARNING state to be reported if value is in between the upper and
  * lower limit including the start and end of thresholds.
  */
-    ScalarPushInput<double_t> warningUpperLimit{this, "RANGE_MONITOR.WARNING.UPPER_LIMIT", "","",_parameterTags};
-    ScalarPushInput<double_t> warningLowerLimit{this, "RANGE_MONITOR.WARNING.LOWER_LIMIT", "","",_parameterTags};
+    ScalarPushInput<T> warningUpperLimit{this, "RANGE_MONITOR.WARNING.UPPER_LIMIT", "","",StatusMonitor<T>::_parameterTags};
+    ScalarPushInput<T> warningLowerLimit{this, "RANGE_MONITOR.WARNING.LOWER_LIMIT", "","",StatusMonitor<T>::_parameterTags};
 /** ERROR state to be reported if value is in between the upper and 
  * lower limit including the start and end of thresholds.
  */    
-    ScalarPushInput<double_t> errorUpperLimit{this,"RANGE_MONITOR.ERROR.UPPER_LIMIT","","",_parameterTags};
-    ScalarPushInput<double_t> errorLowerLimit{this,"RANGE_MONITOR.ERROR.LOWER_LIMIT","","",_parameterTags};
+    ScalarPushInput<T> errorUpperLimit{this,"RANGE_MONITOR.ERROR.UPPER_LIMIT","","",StatusMonitor<T>::_parameterTags};
+    ScalarPushInput<T> errorLowerLimit{this,"RANGE_MONITOR.ERROR.LOWER_LIMIT","","",StatusMonitor<T>::_parameterTags};
      
 /**This is where state evaluation is done*/
     void mainLoop() {
 /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{watch, warningUpperLimit, warningLowerLimit,
+      ReadAnyGroup group{StatusMonitor<T>::watch, warningUpperLimit, warningLowerLimit,
         errorUpperLimit, errorLowerLimit};
       while(true){
         group.readAny();
-        double_t warningUpperLimitCorrected = warningUpperLimit;
-        double_t errorUpperLimitCorrected = errorUpperLimit;
+        T warningUpperLimitCorrected = warningUpperLimit;
+        T errorUpperLimitCorrected = errorUpperLimit;
 /** The only sanity check done in this module is if the upper limit 
  * is less then lower limit*/                
         if (warningUpperLimitCorrected < warningLowerLimit){
@@ -188,16 +188,16 @@ namespace ChimeraTK {
         if (errorUpperLimitCorrected < errorLowerLimit){
           errorUpperLimitCorrected = errorLowerLimit;
         }
-        if (watch <= errorUpperLimitCorrected && watch >= errorLowerLimit){
-          status = ERROR;
+        if (StatusMonitor<T>::watch <= errorUpperLimitCorrected && StatusMonitor<T>::watch >= errorLowerLimit){
+          StatusMonitor<T>::status = ERROR;
         }
-        else if (watch <= warningUpperLimitCorrected && watch >= warningLowerLimit){
-          status = WARNING;
+        else if (StatusMonitor<T>::watch <= warningUpperLimitCorrected && StatusMonitor<T>::watch >= warningLowerLimit){
+          StatusMonitor<T>::status = WARNING;
         }
         else{ 
-          status = OK;
+          StatusMonitor<T>::status = OK;
         }
-        status.write();
+        StatusMonitor<T>::status.write();
         usleep(500);
       }
     }
@@ -206,24 +206,25 @@ namespace ChimeraTK {
 /** Module for status monitoring of an exact value.
  * If value monitored is not exactly the same. an error state will be
  * reported.*/  
-  struct ExactMonitor : public StatusMonitor {
-    using StatusMonitor::StatusMonitor;
+  template <typename T>
+  struct ExactMonitor : public StatusMonitor<T> {
+    using StatusMonitor<T>::StatusMonitor;
 /**ERROR state if value is not equal to requiredValue*/
-    ScalarPushInput<double_t> requiredValue{this, "EXACT_MONITOR.REQUIRED_VALUE", "","",_parameterTags};
+    ScalarPushInput<T> requiredValue{this, "EXACT_MONITOR.REQUIRED_VALUE", "","",StatusMonitor<T>::_parameterTags};
 
 /**This is where state evaluation is done*/
     void mainLoop() {
 /** If there is a change either in value monitored or in requiredValue, the status is re-evaluated*/
-      ReadAnyGroup group{watch, requiredValue};
+      ReadAnyGroup group{StatusMonitor<T>::watch, requiredValue};
       while(true){
         group.readAny();
-        if (watch != requiredValue){
-          status = ERROR;
+        if (StatusMonitor<T>::watch != requiredValue){
+          StatusMonitor<T>::status = ERROR;
         }
         else{ 
-          status = OK;
+          StatusMonitor<T>::status = OK;
         }
-        status.write();
+        StatusMonitor<T>::status.write();
         usleep(500);
       }
     }
@@ -233,31 +234,31 @@ namespace ChimeraTK {
  * If value monitored is different then desired state (on/off) an error
  * will be reported, otherwise OFF(0) or OK(1) depending on state.
  */
-  struct StateMonitor : public StatusMonitor {
-    using StatusMonitor::StatusMonitor;
+  template <typename T>
+  struct StateMonitor : public StatusMonitor<T> {
+    using StatusMonitor<T>::StatusMonitor;
     
-    ScalarPushInput<int> state{this, "STATE_MONITOR.STATE", "","",_parameterTags};
+    ScalarPushInput<T> state{this, "STATE_MONITOR.STATE", "","",StatusMonitor<T>::_parameterTags};
 
 /**This is where state evaluation is done*/
     void mainLoop() {
 /** If there is a change either in value monitored or in state, the status is re-evaluated*/
-      ReadAnyGroup group{watch, state};
+      ReadAnyGroup group{StatusMonitor<T>::watch, state};
       while(true){
         group.readAny();
-        if (watch != state){
-          status = ERROR;
+        if (StatusMonitor<T>::watch != state){
+          StatusMonitor<T>::status = ERROR;
         }
         else if (state == OK || state == OFF) {
-          status = state;
+          StatusMonitor<T>::status = state;
         }
         else {
           //no correct value
-          status = ERROR;
+          StatusMonitor<T>::status = ERROR;
         }
-        status.write();
+        StatusMonitor<T>::status.write();
         usleep(500);
       }
     }
   };
- 
 }
