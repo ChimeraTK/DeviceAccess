@@ -43,8 +43,7 @@ namespace ChimeraTK {
   class TransferElement : public boost::enable_shared_from_this<TransferElement> {
    public:
     /** Creates a transfer element with the specified name. */
-    TransferElement(std::string const& name = std::string(),
-        std::string const& unit = std::string(unitNotSet),
+    TransferElement(std::string const& name = std::string(), std::string const& unit = std::string(unitNotSet),
         std::string const& description = std::string())
     : _name(name), _unit(unit), _description(description), isInTransferGroup(false) {}
 
@@ -201,6 +200,23 @@ namespace ChimeraTK {
       this->writeTransactionInProgress = false;
       preWrite();
       bool ret = doWriteTransfer(versionNumber);
+      postWrite();
+      return ret;
+    }
+
+    /** Just like write(), but allows the implementation to destroy the content of the user buffer in the
+     *  process. This is an optional optimisation, hence there is a default implementation which just calls the normal
+     *  doWriteTransfer(). In any case, the application must expect the user buffer of the TransferElement to contain
+     *  undefined data after calling this function. */
+    bool writeDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
+      if(TransferElement::isInTransferGroup) {
+        throw ChimeraTK::logic_error("Calling read() or write() on an accessor "
+                                     "which is part of a TransferGroup "
+                                     "is not allowed.");
+      }
+      this->writeTransactionInProgress = false;
+      preWrite();
+      bool ret = doWriteTransferDestructively(versionNumber);
       postWrite();
       return ret;
     }
@@ -371,6 +387,15 @@ namespace ChimeraTK {
      *  Calling this function after preWrite() and followed by postWrite() is
      * exactly equivalent to a call to write(). */
     virtual bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) = 0;
+
+    /**
+     * Just like doWriteTransfer(), but allows the implementation to destroy the content of the user buffer in the
+     * process. This is an optional optimisation, hence there is a default implementation which just calls the normal
+     * doWriteTransfer().
+     */
+    virtual bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) {
+      return doWriteTransfer(versionNumber);
+    }
 
     /**
      *  Check whether the TransferElement can be used in places where the
