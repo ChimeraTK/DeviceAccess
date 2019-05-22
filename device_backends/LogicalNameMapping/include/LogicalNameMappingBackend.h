@@ -45,7 +45,7 @@ namespace ChimeraTK {
     void parse() const;
 
     /// flag if already parsed
-    bool hasParsed;
+    mutable bool hasParsed;
 
     /// name of the logical map file
     std::string _lmapFileName;

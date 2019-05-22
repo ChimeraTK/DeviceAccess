@@ -23,6 +23,7 @@ namespace ChimeraTK {
   void LogicalNameMappingBackend::parse() const {
     // don't run, if already parsed
     if(hasParsed) return;
+    hasParsed = false;
 
     // parse the map fle
     LogicalNameMapParser parser = LogicalNameMapParser(_lmapFileName, _parameters);
