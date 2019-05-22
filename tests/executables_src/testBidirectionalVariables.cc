@@ -97,7 +97,6 @@ struct TestApplication : public ctk::Application {
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
-  ctk::ExperimentalFeatures::enable();
   std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
   TestApplication app;
@@ -151,7 +150,6 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRealisticExample) {
-  ctk::ExperimentalFeatures::enable();
   std::cout << "*** testRealisticExample" << std::endl;
 
   TestApplication app;
