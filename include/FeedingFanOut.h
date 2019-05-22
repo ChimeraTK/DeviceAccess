@@ -129,6 +129,23 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
       bool dataLost = false;
+      bool isFirst = true;
+      for(auto& slave : FanOut<UserType>::slaves) {
+        bool ret;
+        if(isFirst) {
+          isFirst = false;
+          ret = slave->doWriteTransfer(versionNumber);
+        }
+        else {
+          ret = slave->doWriteTransferDestructively(versionNumber);
+        }
+        if(ret) dataLost = true;
+      }
+      return dataLost;
+    }
+
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+      bool dataLost = false;
       for(auto& slave : FanOut<UserType>::slaves) {
         bool ret = slave->doWriteTransferDestructively(versionNumber);
         if(ret) dataLost = true;
