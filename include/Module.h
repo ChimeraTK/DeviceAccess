@@ -80,6 +80,9 @@ namespace ChimeraTK {
     /** Just call write() on all writable variables in the group. */
     void writeAll();
 
+    /** Just call writeDestructively() on all writable variables in the group. */
+    void writeAllDestructively();
+
     /** Function call operator: Return VariableNetworkNode of the given variable
      * name */
     virtual VariableNetworkNode operator()(const std::string& variableName) const = 0;

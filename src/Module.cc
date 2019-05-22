@@ -115,6 +115,17 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void Module::writeAllDestructively() {
+    auto versionNumber = getCurrentVersionNumber();
+    auto accessorList = getAccessorListRecursive();
+    for(auto accessor : accessorList) {
+      if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+      accessor.getAppAccessorNoType().writeDestructively(versionNumber);
+    }
+  }
+
+  /*********************************************************************************************************************/
+
   Module& Module::submodule(const std::string& moduleName) const {
     size_t slash = moduleName.find_first_of("/");
     // no slash found: call subscript operator
