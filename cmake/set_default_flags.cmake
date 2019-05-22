@@ -4,6 +4,9 @@
 # Set default compiler flags for C++, including the flags for thelatest C++ standard (see
 # enable_latest_cxx_support.cmake)
 #
+# It will also append ${PROJECT_NAME}_CXX_FLAGS to the CMAKE_CXX_FLAGS, so it is a good idea to set any project
+# specific flags before calling this macro.
+#
 #######################################################################################################################
 
 #######################################################################################################################
@@ -18,7 +21,7 @@
 #
 #######################################################################################################################
 
-include(enable_latest_cxx_support.cmake)
+include(cmake/enable_latest_cxx_support.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${PROJECT_NAME}_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
