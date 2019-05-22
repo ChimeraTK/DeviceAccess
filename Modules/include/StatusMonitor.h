@@ -23,7 +23,7 @@
  * Each module monitors an input variable and depending upon the
  * conditions reports four different states.
 */
-#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include "ApplicationCore.h"
 namespace ChimeraTK {
 
 /** There are four states that can be reported*/
