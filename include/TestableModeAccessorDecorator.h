@@ -73,6 +73,36 @@ namespace ChimeraTK {
       return dataLost;
     }
 
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+      if(!_handleWrite) return _target->doWriteTransferDestructively(versionNumber);
+
+      bool dataLost = false;
+      if(!Application::testableModeTestLock()) {
+        // may happen if first write in thread is done before first blocking read
+        Application::testableModeLock("write " + this->getName());
+      }
+      dataLost = _target->doWriteTransferDestructively(versionNumber);
+      if(!dataLost) {
+        ++Application::getInstance().testableMode_counter;
+        ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
+        if(Application::getInstance().enableDebugTestableMode) {
+          std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+                    << "]: testableMode_counter "
+                       "increased, now at value "
+                    << Application::getInstance().testableMode_counter << std::endl;
+        }
+      }
+      else {
+        if(Application::getInstance().enableDebugTestableMode) {
+          std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+                    << "]: testableMode_counter not "
+                       "increased due to lost data"
+                    << std::endl;
+        }
+      }
+      return dataLost;
+    }
+
     void doReadTransfer() override {
       if(_handleRead) releaseLock();
       _target->doReadTransfer();

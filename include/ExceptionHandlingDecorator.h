@@ -24,6 +24,8 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
+
     void doReadTransfer() override;
 
     bool doReadTransferNonBlocking() override;

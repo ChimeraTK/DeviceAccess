@@ -19,8 +19,8 @@ namespace ChimeraTK {
   template<typename UserType>
   class DebugPrintAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
-    DebugPrintAccessorDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
-        const std::string& fullyQualifiedName)
+    DebugPrintAccessorDecorator(
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const std::string& fullyQualifiedName)
     : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _fullyQualifiedName(fullyQualifiedName) {
       std::cout << "Enable debug output for variable '" << _fullyQualifiedName << "'." << std::endl;
     }
@@ -28,6 +28,11 @@ namespace ChimeraTK {
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
       std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
+    }
+
+    bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override {
+      std::cout << "doWriteTransferDestructively() called on '" << _fullyQualifiedName << "'." << std::endl;
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
     }
 
     void doReadTransfer() override {

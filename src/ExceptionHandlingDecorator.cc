@@ -22,6 +22,24 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
+  bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+  retry:
+    try {
+      if(!dm.device.isOpened()) {
+        Application::getInstance().testableModeUnlock("waitForDeviceOpen");
+        usleep(500000);
+        Application::getInstance().testableModeLock("waitForDeviceOpen");
+        goto retry;
+      }
+      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
+    }
+    catch(ChimeraTK::runtime_error& e) {
+      dm.reportException(e.what());
+      goto retry;
+    }
+  }
+
+  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doReadTransfer() {
   retry:
     try {
