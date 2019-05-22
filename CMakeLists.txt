@@ -6,25 +6,13 @@ set(${PROJECT_NAME}_MINOR_VERSION 03)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
-# Set the build type to Release if none is specified
-# Force it into Release if "None" is specified (needed to overrule dkpg_buildpackage)
-if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif()
-
-# add support for latest C++ standard to compiler flags
-include(cmake/enable_latest_cxx_support.cmake)
-
 # C++ compiler flags needed to compile this project and against this project
 # The -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR flag is only needed for
 # libxml++ 2.6.
 set(${PROJECT_NAME}_CXX_FLAGS "${${PROJECT_NAME}_CXX_FLAGS} -DFUSION_MAX_MAP_SIZE=30 -DFUSION_MAX_VECTOR_SIZE=30 -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR")
 
-# set C++ compiler flags for compiling this project
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${PROJECT_NAME}_CXX_FLAGS} -O3 -g -Wall -Wextra -Wshadow -pedantic -Wuninitialized")
-
-# use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
+include(cmake/set_default_build_to_release.cmake)
+include(cmake/set_default_flags.cmake)
 
 # use -DSUPPRESS_AUTO_DOC_BUILD=true to suppress to create the doc with every
 # build. The 'make doc' target will still exist
