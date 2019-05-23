@@ -4,6 +4,7 @@
 namespace ChimeraTK { namespace detail {
 
   std::string encodeDotNodeName(std::string name) {
+    std::replace(name.begin(), name.end(), '-', 'm'); // minus
     std::replace(name.begin(), name.end(), ':', 'c'); // colon
     std::replace(name.begin(), name.end(), '/', 's'); // slash
     std::replace(name.begin(), name.end(), '.', 'd'); // dot
