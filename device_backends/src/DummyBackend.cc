@@ -90,9 +90,8 @@ namespace ChimeraTK {
     }
     checkSizeIsMultipleOfWordSize(sizeInBytes);
     unsigned int wordBaseIndex = address / sizeof(int32_t);
-    for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
-      TRY_REGISTER_ACCESS(data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex););
-    }
+    TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t);
+                            ++wordIndex) { data[wordIndex] = _barContents[bar].at(wordBaseIndex + wordIndex); });
   }
 
   void DummyBackend::write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) {
@@ -103,12 +102,12 @@ namespace ChimeraTK {
       }
       checkSizeIsMultipleOfWordSize(sizeInBytes);
       unsigned int wordBaseIndex = address / sizeof(int32_t);
-      for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
+      TRY_REGISTER_ACCESS(for(unsigned int wordIndex = 0; wordIndex < sizeInBytes / sizeof(int32_t); ++wordIndex) {
         if(isReadOnly(bar, address + wordIndex * sizeof(int32_t))) {
           continue;
         }
-        TRY_REGISTER_ACCESS(_barContents[bar].at(wordBaseIndex + wordIndex) = data[wordIndex];);
-      }
+        _barContents[bar].at(wordBaseIndex + wordIndex) = data[wordIndex];
+      });
     }
     // we call the callback functions after releasing the mutex in order to
     // avoid the risk of deadlocks.
