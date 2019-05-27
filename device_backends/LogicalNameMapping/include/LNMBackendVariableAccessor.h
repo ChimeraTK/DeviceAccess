@@ -87,6 +87,7 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("Writing to constant-type registers of logical name mapping devices "
                                      "is not possible.");
       }
+      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {
           boost::fusion::at_key<decltype(arg)>(_info->valueTable.table)[i + _wordOffsetInRegister] =
@@ -108,6 +109,7 @@ namespace ChimeraTK {
     bool isWriteable() const override { return _info->targetType != LNMBackendRegisterInfo::TargetType::CONSTANT; }
 
     void doPostRead() override {
+      std::lock_guard<std::mutex> lock(_info->valueTable_mutex);
       for(size_t i = 0; i < NDRegisterAccessor<UserType>::buffer_2D[0].size(); ++i) {
         callForType(_info->valueType, [&, this](auto arg) {
           this->buffer_2D[0][i] = userTypeToUserType<UserType>(

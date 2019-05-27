@@ -8,6 +8,8 @@
 #ifndef CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
 #define CHIMERA_TK_LNM_BACKEND_REGISTER_INFO_H
 
+#include <mutex>
+
 #include <boost/shared_ptr.hpp>
 
 #include "ForwardDeclarations.h"
@@ -84,6 +86,9 @@ namespace ChimeraTK {
     template<typename T>
     using myVector = std::vector<T>;
     TemplateUserTypeMap<myVector> valueTable;
+
+    /** Mutex one needs to hold while accessing valueTable */
+    std::mutex valueTable_mutex;
 
     /** Flag if the register is readable. Might be derived from the target
      * register */
