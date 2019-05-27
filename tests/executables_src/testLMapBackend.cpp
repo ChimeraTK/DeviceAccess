@@ -5,6 +5,7 @@ using namespace boost::unit_test_framework;
 
 #include "BufferingRegisterAccessor.h"
 #include "Device.h"
+#include "TransferGroup.h"
 
 using namespace ChimeraTK;
 
@@ -741,6 +742,123 @@ BOOST_AUTO_TEST_CASE(testRegisterAccessorForBit) {
 
   bit3 = "1";
   bit3.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL(static_cast<int>(bitField), 14);
+
+  // Test with TransferGroup
+  TransferGroup group;
+  group.addAccessor(bit0);
+  group.addAccessor(bit1);
+  group.addAccessor(bit2);
+  group.addAccessor(bit3);
+
+  bitField = 0;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 0);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 1;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 1);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 2;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 0);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 1);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 3;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 1);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 1);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 4;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 0);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 1);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 8;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 0);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "1");
+
+  bitField = 15;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 1);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 1);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 1);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "1");
+
+  bitField = 16;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 0);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 17;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 1);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bitField = 1;
+  bitField.write();
+
+  group.read();
+  BOOST_CHECK_EQUAL(static_cast<uint8_t>(bit0), 1);
+  BOOST_CHECK_EQUAL(static_cast<uint16_t>(bit1), 0);
+  BOOST_CHECK_EQUAL(static_cast<int32_t>(bit2), 0);
+  BOOST_CHECK_EQUAL(static_cast<std::string>(bit3), "0");
+
+  bit2 = 1;
+  group.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL(static_cast<int>(bitField), 5);
+
+  bit1 = 1;
+  group.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL(static_cast<int>(bitField), 7);
+
+  bit0 = 0;
+  group.write();
+  bitField.read();
+  BOOST_CHECK_EQUAL(static_cast<int>(bitField), 6);
+
+  bit3 = "1";
+  group.write();
   bitField.read();
   BOOST_CHECK_EQUAL(static_cast<int>(bitField), 14);
 

@@ -52,8 +52,17 @@ namespace ChimeraTK {
         else {
           targetDevice = dev;
         }
-        _accessor = targetDevice->getRegisterAccessor<uint64_t>(
-            RegisterPath(_info.registerName), numberOfWords, wordOffsetInRegister, false);
+        auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
+        auto it = map.find(RegisterPath(_info.registerName));
+        if(it == map.end()) {
+          _accessor = targetDevice->getRegisterAccessor<uint64_t>(
+              RegisterPath(_info.registerName), numberOfWords, wordOffsetInRegister, false);
+          map[RegisterPath(_info.registerName)].accessor = _accessor;
+        }
+        else {
+          _accessor = map[RegisterPath(_info.registerName)].accessor;
+        }
+        _mutex = &map[RegisterPath(_info.registerName)].mutex;
         // allocate and initialise the buffer
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
@@ -69,19 +78,33 @@ namespace ChimeraTK {
 
     ~LNMBackendBitAccessor() override { this->shutdown(); }
 
-    void doReadTransfer() override { _accessor->doReadTransfer(); }
+    void doReadTransfer() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      _accessor->doReadTransfer();
+    }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override {
+      std::lock_guard<std::mutex> lock(*_mutex);
       return _accessor->doWriteTransfer(versionNumber);
     }
 
-    bool doReadTransferNonBlocking() override { return _accessor->doReadTransferNonBlocking(); }
+    bool doReadTransferNonBlocking() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->doReadTransferNonBlocking();
+    }
 
-    bool doReadTransferLatest() override { return _accessor->doReadTransferLatest(); }
+    bool doReadTransferLatest() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->doReadTransferLatest();
+    }
 
-    void doPreRead() override { _accessor->preRead(); }
+    void doPreRead() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      _accessor->preRead();
+    }
 
     void doPostRead() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
       _accessor->postRead();
       if(_accessor->accessData(0) & _bitMask) {
         NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(true);
@@ -92,7 +115,7 @@ namespace ChimeraTK {
     }
 
     void doPreWrite() override {
-      _accessor->readLatest();
+      std::lock_guard<std::mutex> lock(*_mutex);
       if(!_fixedPointConverter.toRaw<UserType>(NDRegisterAccessor<UserType>::buffer_2D[0][0])) {
         _accessor->accessData(0) &= ~(_bitMask);
       }
@@ -102,7 +125,10 @@ namespace ChimeraTK {
       _accessor->preWrite();
     }
 
-    void doPostWrite() override { _accessor->postWrite(); }
+    void doPostWrite() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      _accessor->postWrite();
+    }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const LNMBackendBitAccessor<UserType>>(other);
@@ -112,19 +138,38 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool isReadOnly() const override { return _accessor->isReadOnly(); }
+    bool isReadOnly() const override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->isReadOnly();
+    }
 
-    bool isReadable() const override { return _accessor->isReadable(); }
+    bool isReadable() const override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->isReadable();
+    }
 
-    bool isWriteable() const override { return _accessor->isWriteable(); }
+    bool isWriteable() const override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->isWriteable();
+    }
 
-    AccessModeFlags getAccessModeFlags() const override { return _accessor->getAccessModeFlags(); }
+    AccessModeFlags getAccessModeFlags() const override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->getAccessModeFlags();
+    }
 
-    VersionNumber getVersionNumber() const override { return _accessor->getVersionNumber(); }
+    VersionNumber getVersionNumber() const override {
+      std::lock_guard<std::mutex> lock(*_mutex);
+      return _accessor->getVersionNumber();
+    }
 
    protected:
     /// pointer to underlying accessor
     boost::shared_ptr<NDRegisterAccessor<uint64_t>> _accessor;
+
+    /// mutex to be held while using _accessor. This mutex lives in the targetAccessorMap of the
+    /// LogicalNameMappingBackend. Since we have a shared pointer to that backend, this pointer is always valid.
+    std::mutex* _mutex;
 
     /// register and module name
     RegisterPath _registerPathName;
@@ -145,16 +190,19 @@ namespace ChimeraTK {
     size_t _bitMask;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
       return _accessor->getHardwareAccessingElements();
     }
 
     std::list<boost::shared_ptr<TransferElement>> getInternalElements() override {
+      std::lock_guard<std::mutex> lock(*_mutex);
       auto result = _accessor->getInternalElements();
       result.push_front(_accessor);
       return result;
     }
 
     void replaceTransferElement(boost::shared_ptr<TransferElement> newElement) override {
+      std::lock_guard<std::mutex> lock(*_mutex);
       auto casted = boost::dynamic_pointer_cast<NDRegisterAccessor<uint64_t>>(newElement);
       if(casted && _accessor->mayReplaceOther(newElement)) {
         _accessor = casted;

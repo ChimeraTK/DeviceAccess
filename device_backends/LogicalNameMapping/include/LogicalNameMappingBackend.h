@@ -8,6 +8,8 @@
 #ifndef CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
 #define CHIMERA_TK_LOGICAL_NAME_MAPPING_BACKEND_H
 
+#include <mutex>
+
 #include "DeviceBackendImpl.h"
 #include "LNMBackendRegisterInfo.h"
 
@@ -63,6 +65,20 @@ namespace ChimeraTK {
     /** Flag whether the catalogue has already been filled with extra information
      * from the target backends */
     mutable bool catalogueCompleted{false};
+
+    /** Struct holding shared accessors together with a mutex for thread safety. See sharedAccessorMap data member. */
+    template<typename UserType>
+    struct SharedAccessor {
+      boost::shared_ptr<NDRegisterAccessor<UserType>> accessor;
+      std::mutex mutex;
+    };
+
+    /** Map of target accessors which are potentially shared across our accessors. An example is the target accessors of
+     *  LNMBackendBitAccessor. Multiple instances of LNMBackendBitAccessor referring to different bits of the same
+     *  register share their target accessor. This sharing is governed by this map. */
+    template<typename UserType>
+    using SharedAccessorMap = std::map<std::string, SharedAccessor<UserType>>;
+    TemplateUserTypeMap<SharedAccessorMap> sharedAccessorMap;
 
     template<typename T>
     friend class LNMBackendRegisterAccessor;
