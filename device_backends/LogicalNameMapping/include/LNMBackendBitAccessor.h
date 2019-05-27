@@ -67,7 +67,7 @@ namespace ChimeraTK {
       }
     }
 
-    virtual ~LNMBackendBitAccessor() { this->shutdown(); };
+    ~LNMBackendBitAccessor() override { this->shutdown(); }
 
     void doReadTransfer() override { _accessor->doReadTransfer(); }
 
