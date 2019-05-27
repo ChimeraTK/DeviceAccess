@@ -40,10 +40,8 @@ namespace ChimeraTK {
             _dev->getRegisterCatalogue().getRegister(_registerPathName)));
         // check for incorrect usage of this accessor
         if(_info.targetType != LNMBackendRegisterInfo::TargetType::BIT) {
-          throw ChimeraTK::logic_error("LNMBackendBitAccessor used for wrong "
-                                       "register type."); // LCOV_EXCL_LINE
-                                                          // (impossible to
-                                                          // test...)
+          throw ChimeraTK::logic_error(
+              "LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
         }
         // get target device and accessor
         std::string devName = _info.deviceName;
