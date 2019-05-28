@@ -36,15 +36,15 @@ namespace ChimeraTK {
         }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // copy the register info and create the internal accessors, if needed
-        _info = *(boost::static_pointer_cast<LNMBackendRegisterInfo>(
-            _dev->getRegisterCatalogue().getRegister(_registerPathName)));
+        auto info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
+            _dev->getRegisterCatalogue().getRegister(_registerPathName));
         // check for incorrect usage of this accessor
-        if(_info.targetType != LNMBackendRegisterInfo::TargetType::BIT) {
+        if(info->targetType != LNMBackendRegisterInfo::TargetType::BIT) {
           throw ChimeraTK::logic_error(
               "LNMBackendBitAccessor used for wrong register type."); // LCOV_EXCL_LINE (impossible to test...)
         }
         // get target device and accessor
-        std::string devName = _info.deviceName;
+        std::string devName = info->deviceName;
         boost::shared_ptr<DeviceBackend> targetDevice;
         if(devName != "this") {
           targetDevice = _dev->_devices[devName];
@@ -53,22 +53,22 @@ namespace ChimeraTK {
           targetDevice = dev;
         }
         auto& map = boost::fusion::at_key<uint64_t>(_dev->sharedAccessorMap.table);
-        auto it = map.find(RegisterPath(_info.registerName));
+        auto it = map.find(RegisterPath(info->registerName));
         if(it == map.end()) {
           _accessor = targetDevice->getRegisterAccessor<uint64_t>(
-              RegisterPath(_info.registerName), numberOfWords, wordOffsetInRegister, false);
-          map[RegisterPath(_info.registerName)].accessor = _accessor;
+              RegisterPath(info->registerName), numberOfWords, wordOffsetInRegister, false);
+          map[RegisterPath(info->registerName)].accessor = _accessor;
         }
         else {
-          _accessor = map[RegisterPath(_info.registerName)].accessor;
+          _accessor = map[RegisterPath(info->registerName)].accessor;
         }
-        _mutex = &map[RegisterPath(_info.registerName)].mutex;
+        _mutex = &map[RegisterPath(info->registerName)].mutex;
         // allocate and initialise the buffer
         NDRegisterAccessor<UserType>::buffer_2D.resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0].resize(1);
         NDRegisterAccessor<UserType>::buffer_2D[0][0] = numericToUserType<UserType>(false);
         // set the bit mask
-        _bitMask = 1 << _info.bit;
+        _bitMask = 1 << info->bit;
       }
       catch(...) {
         this->shutdown();
@@ -176,10 +176,6 @@ namespace ChimeraTK {
 
     /// backend device
     boost::shared_ptr<LogicalNameMappingBackend> _dev;
-
-    /// register information. We hold a copy of the RegisterInfo, since it might
-    /// contain register accessors which may not be owned by the backend
-    LNMBackendRegisterInfo _info;
 
     /// fixed point converter to handle type conversions from our "raw" type int
     /// to the requested user type. Note: no actual fixed point conversion is

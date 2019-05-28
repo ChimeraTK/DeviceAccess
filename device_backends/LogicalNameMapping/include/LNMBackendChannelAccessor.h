@@ -34,17 +34,17 @@ namespace ChimeraTK {
         }
         _dev = boost::dynamic_pointer_cast<LogicalNameMappingBackend>(dev);
         // copy the register info and create the internal accessors, if needed
-        _info = *(boost::static_pointer_cast<LNMBackendRegisterInfo>(
-            _dev->getRegisterCatalogue().getRegister(_registerPathName)));
+        _info = boost::static_pointer_cast<LNMBackendRegisterInfo>(
+            _dev->getRegisterCatalogue().getRegister(_registerPathName));
         // check for incorrect usage of this accessor
-        if(_info.targetType != LNMBackendRegisterInfo::TargetType::CHANNEL) {
+        if(_info->targetType != LNMBackendRegisterInfo::TargetType::CHANNEL) {
           throw ChimeraTK::logic_error("LNMBackendChannelAccessor used for wrong "
                                        "register type."); // LCOV_EXCL_LINE
                                                           // (impossible to
                                                           // test...)
         }
         // get target device and accessor
-        std::string devName = _info.deviceName;
+        std::string devName = _info->deviceName;
         boost::shared_ptr<DeviceBackend> targetDevice;
         if(devName != "this") {
           targetDevice = _dev->_devices[devName];
@@ -53,11 +53,11 @@ namespace ChimeraTK {
           targetDevice = dev;
         }
         _accessor = targetDevice->getRegisterAccessor<UserType>(
-            RegisterPath(_info.registerName), numberOfWords, wordOffsetInRegister, false);
+            RegisterPath(_info->registerName), numberOfWords, wordOffsetInRegister, false);
         // verify channel number
-        if(_info.channel >= _accessor->getNumberOfChannels()) {
+        if(_info->channel >= _accessor->getNumberOfChannels()) {
           throw ChimeraTK::logic_error("LNMBackendChannelAccessor: Requested channel number " +
-              std::to_string(_info.channel) +
+              std::to_string(_info->channel) +
               " exceeds number of channels of target register,"
               " in accesor for register '" +
               registerPathName + "'.");
@@ -72,7 +72,7 @@ namespace ChimeraTK {
       }
     }
 
-    virtual ~LNMBackendChannelAccessor() { this->shutdown(); };
+    ~LNMBackendChannelAccessor() override { this->shutdown(); }
 
     void doReadTransfer() override { _accessor->doReadTransfer(); }
 
@@ -95,8 +95,8 @@ namespace ChimeraTK {
 
     void doPostRead() override {
       _accessor->postRead();
-      _accessor->accessChannel(_info.channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
-    };
+      _accessor->accessChannel(_info->channel).swap(NDRegisterAccessor<UserType>::buffer_2D[0]);
+    }
 
     bool mayReplaceOther(const boost::shared_ptr<TransferElement const>& other) const override {
       auto rhsCasted = boost::dynamic_pointer_cast<const LNMBackendChannelAccessor<UserType>>(other);
@@ -126,9 +126,8 @@ namespace ChimeraTK {
     /// backend device
     boost::shared_ptr<LogicalNameMappingBackend> _dev;
 
-    /// register information. We hold a copy of the RegisterInfo, since it might
-    /// contain register accessors which may not be owned by the backend
-    LNMBackendRegisterInfo _info;
+    /// register information
+    boost::shared_ptr<LNMBackendRegisterInfo> _info;
 
     std::vector<boost::shared_ptr<TransferElement>> getHardwareAccessingElements() override {
       return _accessor->getHardwareAccessingElements();
