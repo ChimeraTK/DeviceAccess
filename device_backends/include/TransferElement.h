@@ -97,7 +97,7 @@ namespace ChimeraTK {
 
     /** Return current validity of the data. Will always return DataValidity::ok if the
      * backend does not support it */
-    virtual DataValidity dataValidity() { return DataValidity::ok; }
+    virtual DataValidity dataValidity() const { return DataValidity::ok; }
 
     /** Read the data from the device. If AccessMode::wait_for_new_data was set,
      * this function will block until new data has arrived. Otherwise it still
