@@ -33,7 +33,7 @@ ENDIF()
 # Find BOOST filesystem
 # Note: we need to search this after looking for the unit_test_framework, since we must not link against the
 #       unit_test_framework library (use header-only)
-FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS filesystem date_time REQUIRED)
 
 # optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
 add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10)
