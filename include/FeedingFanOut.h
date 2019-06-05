@@ -185,6 +185,10 @@ namespace ChimeraTK {
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getReturnSlave() { return _returnSlave; }
 
+    void setDataValidity(DataValidity valid = DataValidity::ok) override { validity = valid; }
+
+    DataValidity dataValidity() const override { return validity; }
+
    protected:
     /// Flag whether this FeedingFanOut has a return channel. Is specified in the
     /// constructor
@@ -196,6 +200,9 @@ namespace ChimeraTK {
 
     /// The slave with return channel
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
+
+    /// DataValidity to attach to the data
+    DataValidity validity;
   };
 
 } /* namespace ChimeraTK */
