@@ -250,11 +250,94 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
   test.stepApplication();
   Ao1.read();
   Ao2.read();
+  Bi1.read();
+  Bo1.read();
+  Bo2.read();
   BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK_EQUAL(int(Ao1), 1);
   BOOST_CHECK_EQUAL(Ao2[0], 0);
   BOOST_CHECK_EQUAL(Ao2[1], 0);
+  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(Bo1), 1);
+  BOOST_CHECK_EQUAL(Bo2[0], 0);
+  BOOST_CHECK_EQUAL(Bo2[1], 0);
+  BOOST_CHECK(Bi1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(Bi1), 1);
+
+  // send fault flag on a second variable
+  Ai2[0] = 2;
+  Ai2[1] = 3;
+  Ai2.setDataValidity(ctk::DataValidity::faulty);
+  Ai2.write();
+  test.stepApplication();
+  Ao1.read();
+  Ao2.read();
+  Bi2.read();
+  Bo1.read();
+  Bo2.read();
+  BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(Ao1), 1);
+  BOOST_CHECK_EQUAL(Ao2[0], 2);
+  BOOST_CHECK_EQUAL(Ao2[1], 3);
+  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(Bo1), 1);
+  BOOST_CHECK_EQUAL(Bo2[0], 2);
+  BOOST_CHECK_EQUAL(Bo2[1], 3);
+  BOOST_CHECK(Bi2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(Bi2[0], 2);
+  BOOST_CHECK_EQUAL(Bi2[1], 3);
+
+  // clear fault flag on a second variable
+  Ai2[0] = 4;
+  Ai2[1] = 5;
+  Ai2.setDataValidity(ctk::DataValidity::ok);
+  Ai2.write();
+  test.stepApplication();
+  Ao1.read();
+  Ao2.read();
+  Bi2.read();
+  Bo1.read();
+  Bo2.read();
+  BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(Ao1), 1);
+  BOOST_CHECK_EQUAL(Ao2[0], 4);
+  BOOST_CHECK_EQUAL(Ao2[1], 5);
+  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(Bo1), 1);
+  BOOST_CHECK_EQUAL(Bo2[0], 4);
+  BOOST_CHECK_EQUAL(Bo2[1], 5);
+  BOOST_CHECK(Bi2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(Bi2[0], 4);
+  BOOST_CHECK_EQUAL(Bi2[1], 5);
+
+  // clear fault flag on a first variable
+  Ai1 = 6;
+  Ai1.setDataValidity(ctk::DataValidity::ok);
+  Ai1.write();
+  test.stepApplication();
+  Ao1.read();
+  Ao2.read();
+  Bi1.read();
+  Bo1.read();
+  Bo2.read();
+  BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(Ao1), 6);
+  BOOST_CHECK_EQUAL(Ao2[0], 4);
+  BOOST_CHECK_EQUAL(Ao2[1], 5);
+  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(Bo1), 6);
+  BOOST_CHECK_EQUAL(Bo2[0], 4);
+  BOOST_CHECK_EQUAL(Bo2[1], 5);
+  BOOST_CHECK(Bi1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(Bi1), 6);
 }
 
 /*********************************************************************************************************************/
