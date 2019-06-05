@@ -119,6 +119,7 @@ namespace ChimeraTK {
             slave->accessChannel(0) = FanOut<UserType>::slaves.front()->accessChannel(0);
           }
         }
+        slave->setDataValidity(this->dataValidity());
       }
       // pre write may only be called on the target accessors after we have filled
       // them all, otherwise the first accessor might take us the data away...
@@ -184,6 +185,10 @@ namespace ChimeraTK {
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getReturnSlave() { return _returnSlave; }
 
+    void setDataValidity(DataValidity valid = DataValidity::ok) override { validity = valid; }
+
+    DataValidity dataValidity() const override { return validity; }
+
    protected:
     /// Flag whether this FeedingFanOut has a return channel. Is specified in the
     /// constructor
@@ -195,6 +200,9 @@ namespace ChimeraTK {
 
     /// The slave with return channel
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
+
+    /// DataValidity to attach to the data
+    DataValidity validity;
   };
 
 } /* namespace ChimeraTK */

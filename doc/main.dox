@@ -1,7 +1,9 @@
 /**
-* \mainpage
-* Module documentation:
-* - \subpage loggingdoc
-* - \subpage historydoc
-* - \subpage configreader
+\mainpage
+\subpage exceptionHandling
+
+Module documentation:
+- \subpage loggingdoc
+- \subpage historydoc
+- \subpage configreader
 */

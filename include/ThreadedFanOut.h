@@ -55,6 +55,7 @@ namespace ChimeraTK {
         FanOut<UserType>::impl->read();
         Profiler::startMeasurement();
         boost::this_thread::interruption_point();
+        auto validity = FanOut<UserType>::impl->dataValidity();
         // send out copies to slaves
         auto version = FanOut<UserType>::impl->getVersionNumber();
         for(auto& slave : FanOut<UserType>::slaves) {
@@ -62,6 +63,7 @@ namespace ChimeraTK {
           if(slave->getNumberOfSamples() != 0) {
             slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
           }
+          slave->setDataValidity(validity);
           bool dataLoss = slave->writeDestructively(version);
           if(dataLoss) Application::incrementDataLossCounter();
         }
