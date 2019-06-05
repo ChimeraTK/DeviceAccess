@@ -57,7 +57,7 @@ namespace ChimeraTK {
       return *this;
     }
 
-  }; // namespace detail
+  } // namespace detail
 
   /*********************************************************************************************************************/
 
@@ -116,7 +116,7 @@ namespace ChimeraTK {
 
     virtualisedModuleFromCatalog = VirtualModule(deviceAliasOrURI, "Device module", ModuleType::Device);
 
-    if (!deviceIsInitialized){
+    if(!deviceIsInitialized) {
       device = Device(deviceAliasOrURI);
       deviceIsInitialized = true;
     }
@@ -308,7 +308,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::prepare() {
-     if (!deviceIsInitialized){
+    if(!deviceIsInitialized) {
       device = Device(deviceAliasOrURI);
       deviceIsInitialized = true;
     }
