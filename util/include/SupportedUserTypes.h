@@ -171,30 +171,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** A random-access iterator which can be created from raw C pointers */
-  template<typename DATA_TYPE>
-  struct raw_iterator : std::iterator<std::random_access_iterator_tag, DATA_TYPE> {
-    explicit raw_iterator(DATA_TYPE* begin) : _ptr(begin) {}
-    raw_iterator& operator++() {
-      ++_ptr;
-      return *this;
-    }
-    raw_iterator operator++(int) {
-      raw_iterator retval = *this;
-      ++(*this);
-      return retval;
-    }
-    bool operator==(raw_iterator other) const { return _ptr == other._ptr; }
-    bool operator!=(raw_iterator other) const { return !(*this == other); }
-    size_t operator-(raw_iterator other) const { return _ptr - other._ptr; }
-    DATA_TYPE& operator*() const { return *_ptr; }
-
-   private:
-    DATA_TYPE* _ptr;
-  };
-
-  /********************************************************************************************************************/
-
   /** Map of UserType to value of the UserType. Used e.g. by the FixedPointConverter to store coefficients etc. in
    *  dependence of the UserType. */
   typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,

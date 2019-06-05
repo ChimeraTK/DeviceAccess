@@ -49,7 +49,7 @@ namespace ChimeraTK {
     template<typename CookedType>
     CookedType scalarToCooked(int32_t const& raw) const {
       CookedType cooked;
-      vectorToCooked<CookedType>(&raw, (&raw) + 1, raw_iterator<CookedType>(&cooked));
+      vectorToCooked<CookedType>(&raw, (&raw) + 1, &cooked);
       return cooked;
     }
 

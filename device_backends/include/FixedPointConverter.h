@@ -80,10 +80,9 @@ namespace ChimeraTK {
 
     /** Inefficient convenience function for converting a single value to cooked */
     template<typename UserType>
-    UserType scalarToCooked(int32_t raw) const {
+    UserType scalarToCooked(int32_t const& raw) const {
       UserType cooked;
-      vectorToCooked<UserType>(
-          raw_iterator<int32_t>(&raw), raw_iterator<int32_t>((&raw) + 1), raw_iterator<UserType>(&cooked));
+      vectorToCooked<UserType>(&raw, (&raw) + 1, &cooked);
       return cooked;
     }
 
