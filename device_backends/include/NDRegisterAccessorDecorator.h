@@ -42,6 +42,12 @@ namespace ChimeraTK {
 
       ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
 
+      ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
+
+      void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
+        _target->setDataValidity(validity);
+      }
+
      protected:
       /// The accessor to be decorated
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<TargetUserType>> _target;
@@ -72,6 +78,12 @@ namespace ChimeraTK {
       void interrupt() override { _target->interrupt(); }
 
       ChimeraTK::VersionNumber getVersionNumber() const override { return _target->getVersionNumber(); }
+
+      ChimeraTK::DataValidity dataValidity() const override { return _target->dataValidity(); }
+
+      void setDataValidity(ChimeraTK::DataValidity validity = ChimeraTK::DataValidity::ok) override {
+        _target->setDataValidity(validity);
+      }
 
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
