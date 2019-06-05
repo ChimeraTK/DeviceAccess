@@ -67,7 +67,7 @@ namespace ChimeraTK {
     for(auto it = raw_begin; it != raw_end; ++it) {
       // Step 1: convert the raw data to the "generic" representation in the CPU: float
       float genericRepresentation;
-      memcpy(&genericRepresentation, *it, sizeof(float));
+      memcpy(&genericRepresentation, &(*it), sizeof(float));
 
       // Step 2: convert the float to the cooked type
       *cooked_begin = RoundingRangeCheckingDataConverter<float, CookedType>::converter::convert(genericRepresentation);
