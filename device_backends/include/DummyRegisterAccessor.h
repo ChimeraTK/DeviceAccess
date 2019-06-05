@@ -168,6 +168,8 @@ namespace ChimeraTK {
       proxies::DummyRegisterElement<T>::nbytes = sizeof(int32_t);
       proxies::DummyRegisterElement<T>::buffer = getElement(0);
     }
+    // declare that we want the default copy constructor. Needed because we have a custom = operator
+    DummyRegisterAccessor(const DummyRegisterAccessor&) = default;
 
     /// Get or set register content by [] operator.
     inline proxies::DummyRegisterElement<T> operator[](unsigned int index) { return getProxy(index); }
@@ -312,6 +314,8 @@ namespace ChimeraTK {
       _backend->_registerMapping->getRegisterInfo(name, registerInfo, module);
       buffer = &(_backend->_barContents[registerInfo.bar][registerInfo.address / sizeof(int32_t)]);
     }
+    // declare that we want the default copy constructor. Needed because we have a custom = operator
+    DummyRegisterRawAccessor(const DummyRegisterRawAccessor&) = default;
 
     DummyRegisterRawAccessor operator=(int32_t rhs) {
       buffer[0] = rhs;

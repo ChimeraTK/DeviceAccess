@@ -119,6 +119,9 @@ namespace ChimeraTK {
           uint32_t nChannels_ = 1, bool is2DMultiplexed_ = false, Access dataAccess_ = Access::READWRITE,
           Type dataType_ = Type::FIXED_POINT);
 
+      // We can use the default copy constructor, but have to declare that because we have an explicit assignment operator
+      RegisterInfo(const RegisterInfo&) = default;
+
       // Copy assignment
       RegisterInfo& operator=(const RegisterInfo& other) {
         // Copy assignment is implemented to in-place destroy and then in-place

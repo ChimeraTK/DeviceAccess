@@ -26,6 +26,8 @@ namespace ChimeraTK {
     RegisterPath(const RegisterPath& _path) : path(_path.path), separator_alt(_path.separator_alt) {
       removeExtraSeparators();
     }
+    // we can use the default assignment operator but have to declare this because we have an explicit copy constructor
+    RegisterPath& operator=(const RegisterPath& _path) = default;
     RegisterPath(const char* _path) : path(std::string(separator) + _path) { removeExtraSeparators(); }
 
     /** type conversion operators into std::string */
