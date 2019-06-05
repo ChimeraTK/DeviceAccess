@@ -191,6 +191,21 @@ namespace ChimeraTK {
      * input accessors in their read functions. */
     virtual void setCurrentVersionNumber(VersionNumber versionNumber) = 0;
 
+    /** Return the data validity flag. If any This function will be called by all output accessors in their write
+     *  functions. */
+    virtual DataValidity getDataValidity() const = 0;
+
+    /** Set the data validity flag to fault and increment the fault counter. This function will be called by all input
+     *  accessors when receiving the a faulty update if the previous update was ok. The caller of this function must
+     *  ensure that calls to this function are paired to a subsequent call to decrementDataFaultCounter(). */
+    virtual void incrementDataFaultCounter() = 0;
+
+    /** Decrement the fault counter and set the data validity flag to ok if the counter has reached 0. This function
+     *  will be called by all input accessors when receiving the an ok update if the previous update was faulty. The
+     *  caller of this function must ensure that calles to this function are paired to a previous call to
+     *  incrementDataFaultCounter(). */
+    virtual void decrementDataFaultCounter() = 0;
+
    protected:
     /** Add the part of the tree structure matching the given tag to a
      * VirtualModule. Users normally will use findTag() instead. "tag" is

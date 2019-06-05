@@ -71,6 +71,17 @@ namespace ChimeraTK {
 
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
+    DataValidity getDataValidity() const override {
+      return faultCounter == 0 ? DataValidity::ok : DataValidity::faulty;
+    }
+
+    void incrementDataFaultCounter() override { ++faultCounter; }
+
+    void decrementDataFaultCounter() override {
+      assert(faultCounter > 0);
+      --faultCounter;
+    }
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */
@@ -86,6 +97,9 @@ namespace ChimeraTK {
     /** Version number of last push-type read operation - will be passed on to any
      * write operations */
     VersionNumber currentVersionNumber;
+
+    /** Fault counter. If non-zero, getDataValidity() returns a fault, otherwise ok. */
+    size_t faultCounter{0};
   };
 
 } /* namespace ChimeraTK */

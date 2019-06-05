@@ -299,6 +299,9 @@ namespace ChimeraTK {
      * name from the DMAP file */
     std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> deviceMap;
 
+    /** List of DeviceModules */
+    std::list<DeviceModule*> deviceModuleList;
+
     /** Flag if connections should be made in testable mode (i.e. the
      * TestableModeAccessorDecorator is put around all push-type input accessors
      * etc.). */
@@ -391,15 +394,24 @@ namespace ChimeraTK {
 
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
-                                   "caused by "
-                                   "incorrect ownership of variables/accessors or VariableGroups.");
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
     void setCurrentVersionNumber(VersionNumber) override {
       throw ChimeraTK::logic_error("setCurrentVersionNumber() called on the application. This is probably "
-                                   "caused by "
-                                   "incorrect ownership of variables/accessors or VariableGroups.");
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    std::list<DeviceModule*> deviceModuleList;
+    DataValidity getDataValidity() const override {
+      throw ChimeraTK::logic_error("getDataValidity() called on the application. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+    void incrementDataFaultCounter() override {
+      throw ChimeraTK::logic_error("incrementDataFaultCounter() called on the application. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+    void decrementDataFaultCounter() override {
+      throw ChimeraTK::logic_error("decrementDataFaultCounter() called on the application. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
   };
 
 } /* namespace ChimeraTK */

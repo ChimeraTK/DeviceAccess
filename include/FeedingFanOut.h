@@ -119,6 +119,7 @@ namespace ChimeraTK {
             slave->accessChannel(0) = FanOut<UserType>::slaves.front()->accessChannel(0);
           }
         }
+        slave->setDataValidity(this->dataValidity());
       }
       // pre write may only be called on the target accessors after we have filled
       // them all, otherwise the first accessor might take us the data away...

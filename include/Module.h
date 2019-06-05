@@ -148,6 +148,10 @@ namespace ChimeraTK {
     VersionNumber getCurrentVersionNumber() const override { return _owner->getCurrentVersionNumber(); }
     void setCurrentVersionNumber(VersionNumber version) override { _owner->setCurrentVersionNumber(version); }
 
+    DataValidity getDataValidity() const override { return _owner->getDataValidity(); }
+    void incrementDataFaultCounter() override { _owner->incrementDataFaultCounter(); }
+    void decrementDataFaultCounter() override { _owner->decrementDataFaultCounter(); }
+
    protected:
     /** Owner of this instance */
     EntityOwner* _owner{nullptr};
