@@ -280,6 +280,14 @@ namespace ChimeraTK {
      * potentially blocking. */
     void transferFutureWaitCallback() { _impl->transferFutureWaitCallback(); }
 
+    /** Set the current DataValidity for this TransferElement. Will do nothing if the
+     * backend does not support it */
+    void setDataValidity(DataValidity valid = DataValidity::ok) { _impl->setDataValidity(valid); }
+
+    /** Return current validity of the data. Will always return DataValidity::ok if the
+     * backend does not support it */
+    DataValidity dataValidity() const { return _impl->dataValidity(); }
+
    protected:
     /** Untyped pointer to implementation */
     boost::shared_ptr<TransferElement> _impl;
