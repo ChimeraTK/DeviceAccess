@@ -46,10 +46,9 @@ namespace ChimeraTK {
 
     /** Inefficient convenience function for converting a single value to cooked */
     template<typename CookedType>
-    CookedType scalarToCooked(int32_t raw) const {
+    CookedType scalarToCooked(int32_t const& raw) const {
       CookedType cooked;
-      vectorToCooked<CookedType>(
-          raw_iterator<int32_t>(&raw), raw_iterator<int32_t>((&raw) + 1), raw_iterator<CookedType>(&cooked));
+      vectorToCooked<CookedType>(&raw, (&raw) + 1, raw_iterator<CookedType>(&cooked));
       return cooked;
     }
 
@@ -67,7 +66,8 @@ namespace ChimeraTK {
       const RAW_ITERATOR& raw_begin, const RAW_ITERATOR& raw_end, COOKED_ITERATOR cooked_begin) {
     for(auto it = raw_begin; it != raw_end; ++it) {
       // Step 1: convert the raw data to the "generic" representation in the CPU: float
-      float genericRepresentation = *(reinterpret_cast<const float*>(&(*it)));
+      float genericRepresentation;
+      memcpy(&genericRepresentation, *it, sizeof(float));
 
       // Step 2: convert the float to the cooked type
       *cooked_begin = RoundingRangeCheckingDataConverter<float, CookedType>::converter::convert(genericRepresentation);
