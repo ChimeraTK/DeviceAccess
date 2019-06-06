@@ -125,6 +125,16 @@ namespace ChimeraTK {
 
     mutable Device device;
 
+    DataValidity getDataValidity() const override { return DataValidity::ok; }
+    void incrementDataFaultCounter() override {
+      throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+    void decrementDataFaultCounter() override {
+      throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
