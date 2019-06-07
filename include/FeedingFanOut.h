@@ -202,7 +202,7 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
 
     /// DataValidity to attach to the data
-    DataValidity validity;
+    DataValidity validity{DataValidity::ok};
   };
 
 } /* namespace ChimeraTK */
