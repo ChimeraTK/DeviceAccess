@@ -92,15 +92,15 @@ namespace ChimeraTK {
     overallVariableList.push_back(variableName);
 
     // add accessor and name to lists
-    auto& accessorList = boost::fusion::at_key<UserType>(accessorListMap.table);
+    auto& tmpAccessorList = boost::fusion::at_key<UserType>(accessorListMap.table);
     auto& nameList = boost::fusion::at_key<UserType>(nameListMap.table);
     auto dirName = variableName.substr(0, variableName.find_last_of("/"));
     auto baseName = variableName.substr(variableName.find_last_of("/") + 1);
-    accessorList.emplace_back(&groupMap[dirName], baseName, "", 0, "");
+    tmpAccessorList.emplace_back(&groupMap[dirName], baseName, "", 0, "");
     nameList.push_back(variableName);
 
     // return the accessor
-    return accessorList.back();
+    return tmpAccessorList.back();
   }
 
   /*********************************************************************************************************************/

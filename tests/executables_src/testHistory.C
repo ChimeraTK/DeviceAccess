@@ -146,12 +146,12 @@ BOOST_AUTO_TEST_CASE( testHistory_double) {
 BOOST_AUTO_TEST_CASE( testHistory_floatArray) {
   testAppArray<float> app;
   ChimeraTK::TestFacility tf;
-  auto i = tf.getArray<float>("in");
+  auto arr = tf.getArray<float>("in");
   tf.runApplication();
-  i[0] = 42.;
-  i[1] = 43.;
-  i[2] = 44.;
-  i.write();
+  arr[0] = 42.;
+  arr[1] = 43.;
+  arr[2] = 44.;
+  arr.write();
   tf.stepApplication();
   BOOST_CHECK_EQUAL(tf.readArray<float>("out")[0], 42.0);
   BOOST_CHECK_EQUAL(tf.readArray<float>("out")[1], 43.0);
@@ -164,10 +164,10 @@ BOOST_AUTO_TEST_CASE( testHistory_floatArray) {
       v_ref.begin(), v_ref.end());
   }
 
-  i[0] = 1.0;
-  i[1] = 2.0;
-  i[2] = 3.0;
-  i.write();
+  arr[0] = 1.0;
+  arr[1] = 2.0;
+  arr[2] = 3.0;
+  arr.write();
   tf.stepApplication();
   for(size_t i = 0; i < 3; i++){
     *(v_ref.end()-2) = 42.0 + i;
@@ -183,12 +183,12 @@ BOOST_AUTO_TEST_CASE( testHistory_floatArray) {
 BOOST_AUTO_TEST_CASE( testHistory_doubleArray) {
   testAppArray<double> app;
   ChimeraTK::TestFacility tf;
-  auto i = tf.getArray<double>("in");
+  auto arr = tf.getArray<double>("in");
   tf.runApplication();
-  i[0] = 42.;
-  i[1] = 43.;
-  i[2] = 44.;
-  i.write();
+  arr[0] = 42.;
+  arr[1] = 43.;
+  arr[2] = 44.;
+  arr.write();
   tf.stepApplication();
   BOOST_CHECK_EQUAL(tf.readArray<double>("out")[0], 42.0);
   BOOST_CHECK_EQUAL(tf.readArray<double>("out")[1], 43.0);
@@ -201,10 +201,10 @@ BOOST_AUTO_TEST_CASE( testHistory_doubleArray) {
       v_ref.begin(), v_ref.end());
   }
 
-  i[0] = 1.0;
-  i[1] = 2.0;
-  i[2] = 3.0;
-  i.write();
+  arr[0] = 1.0;
+  arr[1] = 2.0;
+  arr[2] = 3.0;
+  arr.write();
   tf.stepApplication();
   for(size_t i = 0; i < 3; i++){
     *(v_ref.end()-2) = 42.0 + i;

@@ -73,11 +73,11 @@ namespace ChimeraTK { namespace history {
     _overallVariableList.push_back(variableName);
 
     // add accessor and name to lists
-    auto& accessorList = boost::fusion::at_key<UserType>(_accessorListMap.table);
+    auto& tmpList = boost::fusion::at_key<UserType>(_accessorListMap.table);
     auto& nameList = boost::fusion::at_key<UserType>(_nameListMap.table);
     auto dirName = variableName.substr(0, variableName.find_last_of("/"));
     auto baseName = variableName.substr(variableName.find_last_of("/") + 1);
-    accessorList.emplace_back(std::piecewise_construct,
+    tmpList.emplace_back(std::piecewise_construct,
         std::forward_as_tuple(ArrayPushInput<UserType>{
             &groupMap[dirName],
             baseName + "_in",
@@ -89,19 +89,19 @@ namespace ChimeraTK { namespace history {
     for(size_t i = 0; i < nElements; i++) {
       if(nElements == 1) {
         // in case of a scalar history only use the variableName
-        accessorList.back().second.emplace_back(
+        tmpList.back().second.emplace_back(
             ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {"CS", getName()}});
       }
       else {
         // in case of an array history append the index to the variableName
-        accessorList.back().second.emplace_back(ArrayOutput<UserType>{
+        tmpList.back().second.emplace_back(ArrayOutput<UserType>{
             &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {"CS", getName()}});
       }
     }
     nameList.push_back(variableName);
 
     // return the accessor
-    return accessorList.back().first;
+    return tmpList.back().first;
   }
 
   struct Update {
