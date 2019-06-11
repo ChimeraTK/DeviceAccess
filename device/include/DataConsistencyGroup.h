@@ -11,7 +11,6 @@
 #include <unordered_set>
 #include "TransferElementAbstractor.h"
 #include "VersionNumber.h"
-#include <iostream> //weg damit
 
 namespace ChimeraTK {
   /** Group several registers (= TransferElement) which ensures data consistency across multiple variables through an
