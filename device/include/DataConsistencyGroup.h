@@ -38,6 +38,15 @@ namespace ChimeraTK {
      *  reached. It returns false if an TransferElementID was updated, that was not added to this Group. */
     bool update(TransferElementID transferelementid);
 
+    /** Enum describing the matching mode of a DataConsistencyGroup. */
+    enum class MatchingMode {
+      none, ///< No matching, effectively disable the DataConsitencyGroup. update() will always return true.
+      exact ///< Require an exact match of the VersionNumber of all current values of the group's members.
+    };
+
+    /** Change the matching mode. The default mode is MatchingMode::exact. */
+    void setMatchingMode(MatchingMode newMode) { mode = newMode; }
+
    private:
     /// A set of TransferElementID, that were updatet with update();
     std::unordered_set<TransferElementID> consistentElements;
@@ -49,6 +58,9 @@ namespace ChimeraTK {
 
     /// Vector of push-type elements in this group, there are only push type elemenst, like in ReadAnyGroup
     std::map<TransferElementID, TransferElementAbstractor> push_elements;
+
+    /// the matching mode used in update()
+    MatchingMode mode{MatchingMode::exact};
   };
 
   /********************************************************************************************************************/
@@ -96,6 +108,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   inline bool DataConsistencyGroup::update(TransferElementID transferElementID) {
+    // if matching mode is none, always return true
+    if(mode == MatchingMode::none) return true;
+    assert(mode == MatchingMode::exact);
+
     // ignore transferElementID does not belong to DataConsistencyGroup
     if(push_elements.find(transferElementID) == push_elements.end()) {
       return false;
