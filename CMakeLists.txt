@@ -6,12 +6,12 @@ include(cmake/add_dependency.cmake)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
-set(${PROJECT_NAME}_MINOR_VERSION 05)
+set(${PROJECT_NAME}_MINOR_VERSION 06)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 # Find the ControlSystemAdapter
-add_dependency(ChimeraTK-ControlSystemAdapter 01.04 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 01.05 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
