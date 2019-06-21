@@ -47,6 +47,9 @@ namespace ChimeraTK {
     /** Change the matching mode. The default mode is MatchingMode::exact. */
     void setMatchingMode(MatchingMode newMode) { mode = newMode; }
 
+    /** Return the current matching mode. */
+    MatchingMode getMatchingMode() const { return mode; };
+
    private:
     /// A set of TransferElementID, that were updatet with update();
     std::unordered_set<TransferElementID> consistentElements;
