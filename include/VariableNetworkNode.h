@@ -20,7 +20,7 @@
 
 #include "ConstantAccessor.h"
 #include "Flags.h"
-#include "VersionNumberUpdatingRegisterDecorator.h"
+#include "MetaDataPropagatingRegisterDecorator.h"
 #include "Visitor.h"
 
 namespace ChimeraTK {
@@ -295,7 +295,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
-    auto decorated = boost::make_shared<VersionNumberUpdatingRegisterDecorator<UserType>>(impl, getOwningModule());
+    auto decorated = boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule());
     getAppAccessor<UserType>().replace(decorated);
   }
 

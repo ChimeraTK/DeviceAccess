@@ -1,10 +1,10 @@
-#include "VersionNumberUpdatingRegisterDecorator.h"
+#include "MetaDataPropagatingRegisterDecorator.h"
 #include "EntityOwner.h"
 
 namespace ChimeraTK {
 
   template<typename T>
-  void VersionNumberUpdatingRegisterDecorator<T>::doPostRead() {
+  void MetaDataPropagatingRegisterDecorator<T>::doPostRead() {
     NDRegisterAccessorDecorator<T, T>::doPostRead();
 
     // update the version number
@@ -26,11 +26,11 @@ namespace ChimeraTK {
   }
 
   template<typename T>
-  void VersionNumberUpdatingRegisterDecorator<T>::doPreWrite() {
+  void MetaDataPropagatingRegisterDecorator<T>::doPreWrite() {
     ChimeraTK::NDRegisterAccessorDecorator<T>::setDataValidity(_owner->getDataValidity());
     NDRegisterAccessorDecorator<T, T>::doPreWrite();
   }
 
 } // namespace ChimeraTK
 
-INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ChimeraTK::VersionNumberUpdatingRegisterDecorator);
+INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ChimeraTK::MetaDataPropagatingRegisterDecorator);
