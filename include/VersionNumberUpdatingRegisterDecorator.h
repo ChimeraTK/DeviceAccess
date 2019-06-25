@@ -19,6 +19,19 @@ namespace ChimeraTK {
     VersionNumberUpdatingRegisterDecorator(const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner)
     : NDRegisterAccessorDecorator<T, T>(target), _owner(owner) {}
 
+    bool doReadTransferNonBlocking() override {
+      isNonblockingRead = true;
+      return NDRegisterAccessorDecorator<T, T>::doReadTransferNonBlocking();
+    }
+    bool doReadTransferLatest() override {
+      isNonblockingRead = true;
+      return NDRegisterAccessorDecorator<T, T>::doReadTransferLatest();
+    }
+    void doPreRead() override {
+      isNonblockingRead = false;
+      NDRegisterAccessorDecorator<T, T>::doPreRead();
+    }
+
     void doPostRead() override;
     void doPreWrite() override;
 
@@ -27,6 +40,8 @@ namespace ChimeraTK {
 
     /** value of validity flag from last read operation */
     DataValidity lastValidity{DataValidity::ok};
+
+    bool isNonblockingRead{false};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(VersionNumberUpdatingRegisterDecorator);

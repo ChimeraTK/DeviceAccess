@@ -8,7 +8,9 @@ namespace ChimeraTK {
     NDRegisterAccessorDecorator<T, T>::doPostRead();
 
     // update the version number
-    _owner->setCurrentVersionNumber(this->getVersionNumber());
+    if(!isNonblockingRead) {
+      _owner->setCurrentVersionNumber(this->getVersionNumber());
+    }
 
     // Check if the data validity flag changed. If yes, propagate this information to the owning module.
     auto valid = ChimeraTK::NDRegisterAccessorDecorator<T>::dataValidity();
