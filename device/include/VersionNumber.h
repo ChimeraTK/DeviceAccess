@@ -36,6 +36,10 @@ namespace ChimeraTK {
       return *this;
     }
 
+    /** Generate new unique version number with a given time stamp. */
+    explicit VersionNumber(std::chrono::system_clock::time_point timestamp)
+    : _value(nextVersionNumber()), _time(timestamp) {}
+
     /** Return the time stamp associated with this version number */
     std::chrono::time_point<std::chrono::system_clock> getTime() const { return _time; }
 
