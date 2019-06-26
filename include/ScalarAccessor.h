@@ -52,10 +52,18 @@ namespace ChimeraTK {
     }
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
+    bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
 
     bool write() {
       auto versionNumber = this->getOwner()->getCurrentVersionNumber();
       bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::write(versionNumber);
+      if(dataLoss) Application::incrementDataLossCounter();
+      return dataLoss;
+    }
+
+    bool writeDestructively() {
+      auto versionNumber = this->getOwner()->getCurrentVersionNumber();
+      bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::writeDestructively(versionNumber);
       if(dataLoss) Application::incrementDataLossCounter();
       return dataLoss;
     }
