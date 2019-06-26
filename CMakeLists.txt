@@ -108,26 +108,26 @@ endif(TESTING_IS_ENABLED)
 # build example
 if(DEMO_IS_ENABLED)
 
-  add_executable(demoApp example/demoApp.cc example/TimerDummyDevice.cc example/DemoDummyDevice.cc)
-  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(demoApp ${PROJECT_NAME}
-                                ${Boost_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
-                                ${LibXML++_LIBRARIES}
-                                ${glib_LIBRARIES}
-                                ${HDF5_LIBRARIES})
-
-  add_executable(demoApp-xmlGenerator example/demoApp.cc)
-  set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS} -DGENERATE_XML")
-  set_target_properties(demoApp-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
-  target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME}
-                                             ${Boost_LIBRARIES}
-                                             ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                             ${LibXML++_LIBRARIES}
-                                             ${glib_LIBRARIES}
-                                             ${HDF5_LIBRARIES})
+#  add_executable(demoApp example/demoApp.cc example/TimerDummyDevice.cc example/DemoDummyDevice.cc)
+#  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
+#  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+#  target_link_libraries(demoApp ${PROJECT_NAME}
+#                                ${Boost_LIBRARIES}
+#                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
+#                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
+#                                ${LibXML++_LIBRARIES}
+#                                ${glib_LIBRARIES}
+#                                ${HDF5_LIBRARIES})
+#
+#  add_executable(demoApp-xmlGenerator example/demoApp.cc)
+#  set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS} -DGENERATE_XML")
+#  set_target_properties(demoApp-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
+#  target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME}
+#                                             ${Boost_LIBRARIES}
+#                                             ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
+#                                             ${LibXML++_LIBRARIES}
+#                                             ${glib_LIBRARIES}
+#                                             ${HDF5_LIBRARIES})
 
 #  add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator
 #                                    COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator

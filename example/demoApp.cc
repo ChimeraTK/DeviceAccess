@@ -7,8 +7,8 @@
 
 #include <iostream>
 
-#include "ApplicationCore.h"
-#include "EnableXMLGenerator.h"
+#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 
 namespace ctk = ChimeraTK;
 
