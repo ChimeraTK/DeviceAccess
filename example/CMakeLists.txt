@@ -28,16 +28,28 @@ AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} demo_sources)
 message("flags ${ChimeraTK-ApplicationCore_LINK_FLAGS}")
 message("libs ${ChimeraTK-ApplicationCore_LIBRARIES}")
 
-foreach( EXE ${PROJECT_NAME} ${PROJECT_NAME}-xmlGenerator)
-  add_executable(${EXE} ${demo_sources})
-  set_target_properties(${EXE} PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(${EXE} ${ChimeraTK-ApplicationCore_LIBRARIES})
-endforeach()
+# The server proper. It depends on application core and the control system adapter implementation.
+add_executable(${PROJECT_NAME} ${demo_sources})
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} )
 
-set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "${ChimeraTK-ApplicationCore_CXX_FLAGS} -DGENERATE_XML")
+# We compile the same sources with the GENERATE_XML flag to get an xml generator
+# This one does not depent on a  control system adapter implementation.
+add_executable(${PROJECT_NAME}-xmlGenerator ${demo_sources})
+set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
+target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} )
 
-target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES})
-
-# copy config files
+# copy the (test) config files to the build directory for tests
 FILE( COPY dummy.dmap DemoDummy.map demoApp.conf
       DESTINATION ${PROJECT_BINARY_DIR})
+
+# Installation:
+# FIXME: For doocs we need a special treatment when installing to /export/doocs/server (don't install to bin subdirectory, but a directory named like the server)
+if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
+  install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION ${PROJECT_NAME})
+else()
+  install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION bin)
+endif()
+# Do not install the config. It is only a test config.
+# The real config will come from a config generator and usually depends on the instance.
