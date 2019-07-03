@@ -133,29 +133,6 @@ if(DEMO_IS_ENABLED)
 #                                    COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator
 #                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
-  # copy config files
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/dummy.dmap DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/DemoDummy.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example/demoApp.conf DESTINATION ${PROJECT_BINARY_DIR})
-
-
-  # second example
-  add_executable(demoApp2 example2/demoApp2.cc)
-  set_target_properties(demoApp2 PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoApp2 PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(demoApp2 ${PROJECT_NAME}
-                                ${Boost_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
-                                ${LibXML++_LIBRARIES}
-                                ${glib_LIBRARIES}
-                                ${HDF5_LIBRARIES})
-
-  # copy config files for 2nd example
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example2/example2.dmap DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example2/demoApp2.conf DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example2/oven.map DESTINATION ${PROJECT_BINARY_DIR})
-
   # second example with automation etc.
   add_executable(demoApp2a example2a/demoApp2a.cc)
   set_target_properties(demoApp2a PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
