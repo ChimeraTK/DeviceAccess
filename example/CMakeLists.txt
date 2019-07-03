@@ -2,7 +2,11 @@
 # *installed* application core library. It is not included from the main CMakeLists.txt
 # which is used to build ApplicationCore itself.
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-SET(PROJECT_NAME demoApp)
+#The regex matches everthing that is not a / until the end of the string (i.e. everyting after the last slash, if any)
+string(REGEX MATCH "[^/]*$" PROJECT_BASE_NAME ${CMAKE_SOURCE_DIR})
+message("REGEX MATCH is ${PROJECT_BASE_NAME}")
+
+SET(PROJECT_NAME demo_${PROJECT_BASE_NAME})
 
 # Use the project template to get the settings required for an application core project
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
@@ -31,12 +35,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-Applica
 # This one does not depent on a control system adapter implementation.
 add_executable(${PROJECT_NAME}-xmlGenerator ${demo_sources})
 set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} )
+set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS}")
+target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES})
 
 # copy the (test) config files to the build directory for tests
-FILE( COPY dummy.dmap DemoDummy.map demoApp.conf
-      DESTINATION ${PROJECT_BINARY_DIR})
+FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
 
 # Tests:
 # There are no dedicated tests for this demo. But we run the xml generator to
