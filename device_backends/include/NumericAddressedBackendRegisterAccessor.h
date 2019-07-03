@@ -16,6 +16,9 @@
 
 namespace ChimeraTK {
 
+  // Forward declarations
+  class DummyBackend;
+
   namespace detail {
     /** This function is external to allow template specialisation. */
     template<typename ConverterT>
@@ -40,11 +43,12 @@ namespace ChimeraTK {
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
       DataConverterType& _dataConverter;
+      const bool& _isNotWriteable;
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<UserType>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
-          DataConverterType& dataConverter)
-      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _dataConverter(dataConverter) {}
+          DataConverterType& dataConverter, const bool& isNotWriteable)
+      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _dataConverter(dataConverter), _isNotWriteable(isNotWriteable) {}
 
       void doPostRead();
       void doPreWrite();
@@ -58,11 +62,12 @@ namespace ChimeraTK {
       std::vector<std::vector<int32_t>>& _buffer_2D;
       boost::shared_ptr<NumericAddressedLowLevelTransferElement>& _rawAccessor;
       size_t& _startAddress;
+      const bool& _isNotWriteable;
 
       NumericAddressedPrePostActionsImplementor(std::vector<std::vector<int32_t>>& buffer,
           boost::shared_ptr<NumericAddressedLowLevelTransferElement>& rawAccessor, size_t& startAddress,
-          DataConverterType&)
-      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress) {}
+          DataConverterType&, const bool& isNotWriteable)
+      : _buffer_2D(buffer), _rawAccessor(rawAccessor), _startAddress(startAddress), _isNotWriteable(isNotWriteable) {}
 
       void doPostRead();
       void doPreWrite();
@@ -77,6 +82,12 @@ namespace ChimeraTK {
 
     template<typename UserType, typename DataConverterType, bool isRaw>
     void NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw>::doPreWrite() {
+      if(_isNotWriteable){
+        throw ChimeraTK::logic_error(
+                  "NumericAddressedBackend: "
+                  "Writeing to a non-writeable register is not allowed"
+                  /*"(Register name: " + _registerPathName + ")*/".");
+      }
       auto itsrc = _rawAccessor->begin(_startAddress);
       for(auto itdst = _buffer_2D[0].begin(); itdst != _buffer_2D[0].end(); ++itdst) {
         *itsrc = _dataConverter.template toRaw<UserType>(*itdst);
@@ -129,7 +140,7 @@ namespace ChimeraTK {
         size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags)
     : SyncNDRegisterAccessor<UserType>(registerPathName), _dataConverter(registerPathName),
       _registerPathName(registerPathName), _numberOfWords(numberOfWords),
-      _prePostActionsImplementor(NDRegisterAccessor<UserType>::buffer_2D, _rawAccessor, _startAddress, _dataConverter) {
+      _prePostActionsImplementor(NDRegisterAccessor<UserType>::buffer_2D, _rawAccessor, _startAddress, _dataConverter, _isNotWriteable) {
       try {
         // check for unknown flags
         flags.checkForUnknownFlags({AccessMode::raw});
@@ -159,6 +170,9 @@ namespace ChimeraTK {
         if(wordOffsetInRegister >= _registerInfo->getNumberOfElements()) {
           throw ChimeraTK::logic_error("Requested offset exceeds the size of the register'" + _registerPathName + "'!");
         }
+
+        // Cache writeability
+        _isNotWriteable = (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
 
         // create low-level transfer element handling the actual data transfer to
         // the hardware with raw data
@@ -248,7 +262,7 @@ namespace ChimeraTK {
     }
 
     bool isWriteable() const override {
-      return (_registerInfo->registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) != 0;
+      return !_isNotWriteable;
     }
 
     template<typename COOKED_TYPE>
@@ -290,6 +304,9 @@ namespace ChimeraTK {
 
     /** number of 4-byte words to access */
     size_t _numberOfWords;
+
+    /** cache for negated writeable status to avoid repeated evaluation */
+    bool _isNotWriteable;
 
     detail::NumericAddressedPrePostActionsImplementor<UserType, DataConverterType, isRaw> _prePostActionsImplementor;
 
@@ -343,6 +360,12 @@ namespace ChimeraTK {
       }
       static int32_t toRaw(DataConverterType& dataConverter, CookedT& value) { return dataConverter.toRaw(value); }
     };
+
+  private:
+   friend class DummyBackend;
+   void makeWriteable(){
+     _isNotWriteable = false;
+   };
   };
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

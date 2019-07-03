@@ -6,10 +6,14 @@
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 
+#include "Device.h"
 #include "BackendFactory.h"
 #include "DummyBackend.h"
 #include "Exception.h"
 #include "parserUtilities.h"
+
+//FIXME Remove
+#include <regex>
 
 using namespace boost::unit_test_framework;
 namespace ChimeraTK {
@@ -23,6 +27,8 @@ using namespace ChimeraTK;
 #define USER_REGISTER_STRING "WORD_USER"
 #define CLOCK_MUX_REGISTER_STRING "WORD_CLK_MUX"
 #define CLOCK_RESET_REGISTER_STRING "WORD_CLK_RST"
+#define READ_ONLY_REGISTER_STRING "WORD_READ_ONLY"
+
 #define EXISTING_DEVICE "DUMMYD0"
 #define NON_EXISTING_DEVICE "DUMMY9"
 
@@ -60,6 +66,7 @@ class DummyBackendTest {
   void testWriteCallbackFunctions();
   void testIsWriteRangeOverlap();
   void testWriteRegisterWithoutCallback();
+  void testWriteToReadOnlyRegister();
 
   /// Test that all registers, read-only flags and callback functions are
   /// removed
@@ -102,6 +109,9 @@ class DummyBackendTestSuite : public test_suite {
         BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteCallbackFunctions, dummyBackendTest);
     test_case* writeRegisterWithoutCallbackTestCase =
         BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteRegisterWithoutCallback, dummyBackendTest);
+
+    test_case* testWriteToReadOnlyRegisterTestCase =
+        BOOST_CLASS_TEST_CASE(&DummyBackendTest::testWriteToReadOnlyRegister, dummyBackendTest);
 
     test_case* createBackendTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testCreateBackend, dummyBackendTest);
     test_case* openTestCase = BOOST_CLASS_TEST_CASE(&DummyBackendTest::testOpen, dummyBackendTest);
@@ -146,6 +156,7 @@ class DummyBackendTestSuite : public test_suite {
     add(readOnlyTestCase);
     add(writeCallbackFunctionsTestCase);
     add(writeRegisterWithoutCallbackTestCase);
+    add(testWriteToReadOnlyRegisterTestCase);
     add(testIsWriteRangeOverlap);
     add(testFinalClosing);
     add(createBackendTestCase);
@@ -456,6 +467,47 @@ void DummyBackendTest::testWriteRegisterWithoutCallback() {
   int32_t readbackDataWord;
   dummyBackend->read(0, 40, &readbackDataWord, 4);
   BOOST_CHECK(readbackDataWord == dataWord + 1);
+}
+
+void DummyBackendTest::testWriteToReadOnlyRegister(){
+
+  ChimeraTK::Device dummyDevice;
+  dummyDevice.open("DUMMYD0");
+
+  // Also get pointer to the backend in order to check the catalogue
+  TestableDummyBackend* dummyBackend = getBackendInstance();
+
+  const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
+  auto ro_register    = dummyDevice.getScalarRegisterAccessor<int>(READ_ONLY_REGISTER_STRING);
+  auto ro_register_dw = dummyDevice.getScalarRegisterAccessor<int>(READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX);
+
+  // The suffixed register must not appear in the catalogue
+  BOOST_CHECK(!dummyBackend->_catalogue.hasRegister(READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX));
+
+  // Read-only register and the DUMMY_WRITEABLE companion
+  // should return appropriate read-only and writeable flags
+  BOOST_CHECK(ro_register.isReadOnly());
+  BOOST_CHECK(!ro_register.isWriteable());
+  BOOST_CHECK(!ro_register_dw.isReadOnly());
+  BOOST_CHECK(ro_register_dw.isWriteable());
+
+   // Test writing to the DUMMY_WRITEABLE register and
+  // read back through the real register
+  ro_register_dw = 42;
+  ro_register_dw.write();
+  ro_register.read();
+
+  BOOST_CHECK_EQUAL(ro_register, ro_register_dw);
+
+  // Writeing to read-only register must throw and not effect the content
+  ro_register = 84;
+  BOOST_CHECK_THROW(ro_register.write(), ChimeraTK::logic_error);
+  ro_register.read();
+  BOOST_CHECK_NE(ro_register, 84);
+  BOOST_CHECK_EQUAL(ro_register, ro_register_dw);
+
+  // Don't close the device here because the backend needs to stay open
+  // for the following test cases
 }
 
 void DummyBackendTest::testAddressRange() {

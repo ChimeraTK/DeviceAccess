@@ -15,7 +15,7 @@
 namespace ChimeraTK {
 
   NumericAddressedBackend::NumericAddressedBackend(std::string mapFileName) {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE_STANDALONE(getRegisterAccessor_impl, 4);
+    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     if(mapFileName != "") {
       MapFileParser parser;
       _registerMap = parser.parse(mapFileName);

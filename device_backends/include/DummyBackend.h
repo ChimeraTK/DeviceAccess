@@ -117,6 +117,11 @@ namespace ChimeraTK {
     /// resynchronisation.
     void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
 
+    /// Overload that allows writing to read-only registers from the dummy for testing
+    template<typename UserType>
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
+        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
+
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
     static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>>& getInstanceMap() {

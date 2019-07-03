@@ -72,6 +72,18 @@ BOOST_AUTO_TEST_CASE(testReadWrite) {
   // over the place...
 }
 
+BOOST_AUTO_TEST_CASE(testReadOnly) {
+  Device device;
+  device.open("sdm://./dummy=goodMapFile.map");
+
+  auto accToReadOnly = device.getScalarRegisterAccessor<int>("MODULE1/WORD_USER3");
+
+  BOOST_CHECK(accToReadOnly.isReadOnly());
+  BOOST_CHECK(!accToReadOnly.isWriteable());
+
+  BOOST_CHECK_THROW(accToReadOnly.write(), ChimeraTK::logic_error);
+}
+
 BOOST_AUTO_TEST_CASE(testRawWrite) {
   Device device;
   device.open("sdm://./dummy=goodMapFile.map");

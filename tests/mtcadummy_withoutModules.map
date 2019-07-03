@@ -31,6 +31,9 @@ WORD_SPI_SYNC                     0x00000001    0x00000058    0x00000004    0x00
 WORD_INCOMPLETE_1                 0x00000001    0x00000060    0x00000004    0x00000000       13
 WORD_INCOMPLETE_2                 0x00000001    0x00000064    0x00000004    0x00000000       13         8
 
+# Read only registers to test writing from the dummy backends
+WORD_READ_ONLY                   0x00000001    0x00000068    0x00000004    0x00000000       32         0         0    RO
+
 #Acessing a register outside the addressable range results in a bad address error
 NON_EXISTENT_REGISTER		  0x00000001    0x00000148    0x00000004    0x00000000       32         0         0
 
