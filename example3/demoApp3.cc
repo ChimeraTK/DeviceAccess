@@ -1,10 +1,11 @@
-#include <ApplicationCore.h>
-#include <PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 
 namespace ctk = ChimeraTK;
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp") {}
+  ExampleApp() : Application("exampleApp3") {}
   ~ExampleApp() { shutdown(); }
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
