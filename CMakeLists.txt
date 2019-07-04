@@ -115,20 +115,6 @@ endif(TESTING_IS_ENABLED)
 # build example
 if(DEMO_IS_ENABLED)
 
-  # status monitor example.
-  add_executable(demoStatusMonitorApp example_status_monitor/demoStatusMonitor.cc)
-  set_target_properties(demoStatusMonitorApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoStatusMonitorApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(demoStatusMonitorApp ${PROJECT_NAME}
-                                ${Boost_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
-                                ${LibXML++_LIBRARIES}
-                                ${glib_LIBRARIES}
-                                ${HDF5_LIBRARIES})
-
-  # copy config files for demoStatusMonitorApp example
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example_status_monitor/demoStatusMonitorApp.conf DESTINATION ${PROJECT_BINARY_DIR})
 
 endif(DEMO_IS_ENABLED)
 

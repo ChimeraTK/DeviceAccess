@@ -1,7 +1,9 @@
 /**Example to simulate the working and usage of StatusMonitor*/
 
-#include "ApplicationCore.h"
-#include "StatusMonitor.h"
+#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/StatusMonitor.h>
+#include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
+
 namespace ctk = ChimeraTK;
 struct Simulation : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -106,7 +108,7 @@ struct ExampleApp : public ctk::Application {
 };
 ExampleApp theExampleApp;
 void ExampleApp::defineConnections() {
-  ChimeraTK::setDMapFilePath("dummy.dmap");
+  // Usually you set the dmap file here. This example does not have one.
 
 /**Find and map all the variable with CS tag automatically.*/
   findTag("CS").connectTo(cs);
