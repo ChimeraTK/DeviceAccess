@@ -1,5 +1,6 @@
-#include <ApplicationCore.h>
-#include <PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 
 namespace ctk = ChimeraTK;
 
@@ -21,7 +22,7 @@ struct Controller : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp") {}
+  ExampleApp() : Application("demoApp2") {}
   ~ExampleApp() { shutdown(); }
 
   Controller controller{this, "Controller", "The Controller"};
