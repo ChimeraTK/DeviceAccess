@@ -115,47 +115,6 @@ endif(TESTING_IS_ENABLED)
 # build example
 if(DEMO_IS_ENABLED)
 
-#  add_executable(demoApp example/demoApp.cc example/TimerDummyDevice.cc example/DemoDummyDevice.cc)
-#  set_target_properties(demoApp PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-#  set_target_properties(demoApp PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-#  target_link_libraries(demoApp ${PROJECT_NAME}
-#                                ${Boost_LIBRARIES}
-#                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-#                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
-#                                ${LibXML++_LIBRARIES}
-#                                ${glib_LIBRARIES}
-#                                ${HDF5_LIBRARIES})
-#
-#  add_executable(demoApp-xmlGenerator example/demoApp.cc)
-#  set_target_properties(demoApp-xmlGenerator PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS} -DGENERATE_XML")
-#  set_target_properties(demoApp-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
-#  target_link_libraries(demoApp-xmlGenerator ${PROJECT_NAME}
-#                                             ${Boost_LIBRARIES}
-#                                             ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-#                                             ${LibXML++_LIBRARIES}
-#                                             ${glib_LIBRARIES}
-#                                             ${HDF5_LIBRARIES})
-
-#  add_custom_target(demoApp-xml ALL DEPENDS demoApp-xmlGenerator
-#                                    COMMAND ${PROJECT_BINARY_DIR}/demoApp-xmlGenerator
-#                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
-  # second example with automation etc.
-  add_executable(demoApp2a example2a/demoApp2a.cc)
-  set_target_properties(demoApp2a PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-  set_target_properties(demoApp2a PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(demoApp2a ${PROJECT_NAME}
-                                ${Boost_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter_LIBRARIES}
-                                ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES}
-                                ${LibXML++_LIBRARIES}
-                                ${glib_LIBRARIES}
-                                ${HDF5_LIBRARIES})
-
-  # copy config files for 2nd example with automation
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example2a/demoApp2a.conf DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/example2a/demoApp2a.xml DESTINATION ${PROJECT_BINARY_DIR})
-
   # 3rd example with automation etc.
   add_executable(demoApp3 example3/demoApp3.cc)
   set_target_properties(demoApp3 PROPERTIES COMPILE_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")

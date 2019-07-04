@@ -1,6 +1,7 @@
-#include <ApplicationCore.h>
-#include <ConfigReader.h>
-#include <PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/ConfigReader.h>
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 
 namespace ctk = ChimeraTK;
 
@@ -38,7 +39,7 @@ struct Automation : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp") {}
+  ExampleApp() : Application("exampleApp2a") {}
   ~ExampleApp() { shutdown(); }
 
   ctk::ConfigReader config{this, "config", "demoApp2a.xml"};
