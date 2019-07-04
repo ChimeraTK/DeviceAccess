@@ -203,23 +203,23 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
       BOOST_CHECK_EQUAL(name, "mySubModule");
 
       for(const auto& subchild : child->get_children()) {
-        auto* element = dynamic_cast<const xmlpp::Element*>(subchild);
-        if(!element) continue;
-        BOOST_CHECK_EQUAL(element->get_name(), "variable");
+        auto* element2 = dynamic_cast<const xmlpp::Element*>(subchild);
+        if(!element2) continue;
+        BOOST_CHECK_EQUAL(element2->get_name(), "variable");
 
         // obtain attributes from the element
-        auto xname = element->get_attribute("name");
-        BOOST_REQUIRE(xname != nullptr);
-        std::string name(xname->get_value());
+        auto xname2 = element2->get_attribute("name");
+        BOOST_REQUIRE(xname2 != nullptr);
+        std::string name2(xname2->get_value());
 
         // obtain values from sub-elements
-        std::string value_type = getValueFromNode(element, "value_type");
-        std::string direction = getValueFromNode(element, "direction");
-        std::string unit = getValueFromNode(element, "unit");
-        std::string description = getValueFromNode(element, "description");
-        std::string numberOfElements = getValueFromNode(element, "numberOfElements");
+        std::string value_type = getValueFromNode(element2, "value_type");
+        std::string direction = getValueFromNode(element2, "direction");
+        std::string unit = getValueFromNode(element2, "unit");
+        std::string description = getValueFromNode(element2, "description");
+        std::string numberOfElements = getValueFromNode(element2, "numberOfElements");
 
-        if(name == "myVarSIn") {
+        if(name2 == "myVarSIn") {
           found_myVarSIn = true;
           BOOST_CHECK_EQUAL(value_type, "string");
           BOOST_CHECK_EQUAL(direction, "control_system_to_application");
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
           BOOST_CHECK_EQUAL(description, "Some pipe module");
           BOOST_CHECK_EQUAL(numberOfElements, "1");
         }
-        else if(name == "myVarSOut") {
+        else if(name2 == "myVarSOut") {
           found_myVarSOut = true;
           BOOST_CHECK_EQUAL(value_type, "string");
           BOOST_CHECK_EQUAL(direction, "application_to_control_system");

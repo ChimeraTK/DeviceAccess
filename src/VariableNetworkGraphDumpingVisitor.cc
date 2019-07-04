@@ -122,12 +122,12 @@ namespace ChimeraTK {
       network.accept(*this);
     }
 
-    for(auto& t : _triggerMap) {
-      stream() << t.second;
+    for(auto& mapElem : _triggerMap) {
+      stream() << mapElem.second;
     }
 
-    for(auto& t : _triggerConnections) {
-      stream() << t;
+    for(auto& c : _triggerConnections) {
+      stream() << c;
     }
 
     stream() << "}\n";

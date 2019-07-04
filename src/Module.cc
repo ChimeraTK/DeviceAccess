@@ -45,11 +45,11 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   ChimeraTK::ReadAnyGroup Module::readAnyGroup() {
-    auto accessorList = getAccessorListRecursive();
+    auto recursiveAccessorList = getAccessorListRecursive();
 
     // put push-type transfer elements into a ReadAnyGroup
     ChimeraTK::ReadAnyGroup group;
-    for(auto& accessor : accessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       group.add(accessor.getAppAccessorNoType());
     }
@@ -61,15 +61,15 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void Module::readAll() {
-    auto accessorList = getAccessorListRecursive();
+    auto recursiveAccessorList = getAccessorListRecursive();
     // first blockingly read all push-type variables
-    for(auto accessor : accessorList) {
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() != UpdateMode::push) continue;
       accessor.getAppAccessorNoType().read();
     }
     // next non-blockingly read the latest values of all poll-type variables
-    for(auto accessor : accessorList) {
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() == UpdateMode::push) continue;
       accessor.getAppAccessorNoType().readLatest();
@@ -79,13 +79,13 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void Module::readAllNonBlocking() {
-    auto accessorList = getAccessorListRecursive();
-    for(auto accessor : accessorList) {
+    auto recursiveAccessorList = getAccessorListRecursive();
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() != UpdateMode::push) continue;
       accessor.getAppAccessorNoType().readNonBlocking();
     }
-    for(auto accessor : accessorList) {
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       if(accessor.getMode() == UpdateMode::push) continue;
       accessor.getAppAccessorNoType().readLatest();
@@ -95,8 +95,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void Module::readAllLatest() {
-    auto accessorList = getAccessorListRecursive();
-    for(auto accessor : accessorList) {
+    auto recursiveAccessorList = getAccessorListRecursive();
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       accessor.getAppAccessorNoType().readLatest();
     }
@@ -106,8 +106,8 @@ namespace ChimeraTK {
 
   void Module::writeAll() {
     auto versionNumber = getCurrentVersionNumber();
-    auto accessorList = getAccessorListRecursive();
-    for(auto accessor : accessorList) {
+    auto recursiveAccessorList = getAccessorListRecursive();
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
       accessor.getAppAccessorNoType().write(versionNumber);
     }
@@ -117,8 +117,8 @@ namespace ChimeraTK {
 
   void Module::writeAllDestructively() {
     auto versionNumber = getCurrentVersionNumber();
-    auto accessorList = getAccessorListRecursive();
-    for(auto accessor : accessorList) {
+    auto recursiveAccessorList = getAccessorListRecursive();
+    for(auto accessor : recursiveAccessorList) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
       accessor.getAppAccessorNoType().writeDestructively(versionNumber);
     }

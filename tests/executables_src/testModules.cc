@@ -81,8 +81,8 @@ struct VectorOfModulesApp : public ctk::Application {
 
   void defineConnections() {
     for(size_t i = 0; i < _nInstances; ++i) {
-      std::string name = "testModule_" + std::to_string(i) + "_instance";
-      vectorOfTestModule.emplace_back(this, name, "Description");
+      std::string moduleName = "testModule_" + std::to_string(i) + "_instance";
+      vectorOfTestModule.emplace_back(this, moduleName, "Description");
     }
   }
 
@@ -98,8 +98,8 @@ struct VectorModule : public ctk::ApplicationModule {
       bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
   : ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
-      std::string name = "testGroup_" + std::to_string(i);
-      vectorOfSomeGroup.emplace_back(this, name, "Description 2");
+      std::string groupName = "testGroup_" + std::to_string(i);
+      vectorOfSomeGroup.emplace_back(this, groupName, "Description 2");
     }
   }
   VectorModule() {}
@@ -132,8 +132,8 @@ struct VectorModuleGroup : public ctk::ModuleGroup {
       bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
   : ctk::ModuleGroup(owner, name, description, eliminateHierarchy, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
-      std::string name = "test_" + std::to_string(i);
-      vectorOfVectorModule.emplace_back(this, name, "Description 3", nInstances);
+      std::string vovModuleName = "test_" + std::to_string(i);
+      vectorOfVectorModule.emplace_back(this, vovModuleName, "Description 3", nInstances);
     }
   }
 
