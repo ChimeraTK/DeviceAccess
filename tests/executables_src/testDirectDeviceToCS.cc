@@ -194,7 +194,9 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
 
   ctk::TestFacility test;
   auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
-  auto devReadback = dev.getScalarRegisterAccessor<int32_t>("/MyModule/readBack");
+  // The direction of 'readback' is "device to application". For this to work it hat to be read only.
+  // In order to write to it in the test, we use the "DUMMY_WRITEABLE" variable.
+  auto devReadback = dev.getScalarRegisterAccessor<int32_t>("/MyModule/readBack.DUMMY_WRITEABLE");
   auto devint32 = dev.getScalarRegisterAccessor<int32_t>("/Integers/signed32");
   auto devuint32 = dev.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
   auto devint16 = dev.getScalarRegisterAccessor<int16_t>("/Integers/signed16");

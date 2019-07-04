@@ -13,6 +13,13 @@ include(cmake/set_version_numbers.cmake)
 # Find the ControlSystemAdapter
 add_dependency(ChimeraTK-ControlSystemAdapter 01.05 REQUIRED)
 
+# The dependency on DeviceAccess, incl. the linker flag already comes with the
+# controlsystem adapter. As we use DeviceAccess directly and need features from
+# a certain version number (which does not necessarily reflect in the CS adapter's
+# version number) we add an extra FIND_PACKAGE (not add_dependency, which
+# would add all the flags again).
+FIND_PACKAGE(ChimeraTK-DeviceAccess 01.08 REQUIRED)
+
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
