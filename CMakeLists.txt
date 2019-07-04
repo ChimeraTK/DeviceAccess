@@ -42,18 +42,6 @@ ENDIF()
 #       unit_test_framework library (use header-only)
 FIND_PACKAGE(Boost COMPONENTS filesystem date_time REQUIRED)
 
-# optional dependency: the ControlSystemAdapter-DoocsAdapter is needed for the example
-add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10)
-IF(ChimeraTK-ControlSystemAdapter-DoocsAdapter_FOUND)
-  set(DEMO_IS_ENABLED "true")
-  ENABLE_TESTING()
-ELSE()
-  message(" The following packages were not found, so the example will be disabled:")
-  IF(NOT ChimeraTK-ControlSystemAdapter-DoocsAdapter_FOUND)
-    message("  * ChimeraTK-ControlSystemAdapter-DoocsAdapter")
-  ENDIF()
-ENDIF()
-
 # requierd dependency: HDF5 library needed for the MicroDAQ system (TODO make optional!)
 FIND_PACKAGE(HDF5 COMPONENTS CXX REQUIRED)
 include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
@@ -111,12 +99,6 @@ if(TESTING_IS_ENABLED)
   FILE( COPY ${CMAKE_SOURCE_DIR}/xmlschema/application.xsd DESTINATION ${PROJECT_BINARY_DIR})
 
 endif(TESTING_IS_ENABLED)
-
-# build example
-if(DEMO_IS_ENABLED)
-
-
-endif(DEMO_IS_ENABLED)
 
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
