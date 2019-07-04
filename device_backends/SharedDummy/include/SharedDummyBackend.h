@@ -17,7 +17,8 @@
 #include <boost/unordered_set.hpp>
 
 #include "Exception.h"
-#include "NumericAddressedBackend.h"
+//#include "NumericAddressedBackend.h"
+#include "DummyBackendBase.h"
 #include "ProcessManagement.h"
 #include "RegisterInfoMap.h"
 
@@ -38,7 +39,7 @@ namespace ChimeraTK {
    *  Accessing applications are required to the same mapping file (matching
    * absolute path) and to be run by the same user.
    */
-  class SharedDummyBackend : public NumericAddressedBackend {
+  class SharedDummyBackend : public DummyBackendBase<SharedDummyBackend> {
    public:
     SharedDummyBackend(std::string instanceId, std::string mapFileName);
     virtual ~SharedDummyBackend();
@@ -58,8 +59,6 @@ namespace ChimeraTK {
    private:
     /** name of the map file */
     std::string _mapFile;
-
-    RegisterInfoMapPointer _registerMapping;
 
     // Bar contents with shared-memory compatible vector type. Plain pointers are
     // used here since this is what we get from the shared memory allocation.
@@ -143,8 +142,8 @@ namespace ChimeraTK {
     // Managed shared memory object
     SharedMemoryManager sharedMemoryManager;
 
+    // Setup register bars in shared memory
     void setupBarContents();
-    std::map<uint8_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
 
     // Helper routines called in init list
     size_t getTotalRegisterSizeInBytes() const;
@@ -153,47 +152,15 @@ namespace ChimeraTK {
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
 
+
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
     static std::map<std::string, boost::shared_ptr<DeviceBackend>>& getInstanceMap() {
       static std::map<std::string, boost::shared_ptr<DeviceBackend>> instanceMap;
       return instanceMap;
     }
-
-    /**
-     * @brief Method looks up and returns an existing instance of class 'T'
-     * corresponding to instanceId, if instanceId is a valid  key in the
-     * internal map. For an instanceId not in the internal map, a new instance
-     * of class T is created, cached and returned. Future calls to
-     * returnInstance with this instanceId, returns this cached instance. If
-     * the instanceId is "" a new instance of class T is created and
-     * returned. This instance will not be cached in the internal memory.
-     *
-     * @param instanceId Used as key for the object instance look up. "" as
-     *                   instanceId will return a new T instance that is not
-     *                   cached.
-     * @param arguments  This is a template argument list. The constructor of
-     *                   the created class T, gets called with the contents of
-     *                   the argument list as parameters.
-     */
-    template<typename T, typename... Args>
-    static boost::shared_ptr<DeviceBackend> returnInstance(const std::string& instanceId, Args&&... arguments) {
-      if(instanceId == "") {
-        // std::forward because template accepts forwarding references
-        // (Args&&) and this can have both lvalue and rvalue references passed
-        // as arguments.
-        return boost::shared_ptr<DeviceBackend>(new T(std::forward<Args>(arguments)...));
-      }
-      // search instance map and create new instanceId, if not found under the
-      // name
-      if(getInstanceMap().find(instanceId) == getInstanceMap().end()) {
-        boost::shared_ptr<DeviceBackend> ptr(new T(std::forward<Args>(arguments)...));
-        getInstanceMap().insert(std::make_pair(instanceId, ptr));
-        return ptr;
-      }
-      // return existing instanceId from the map
-      return boost::shared_ptr<DeviceBackend>(getInstanceMap()[instanceId]);
-    }
+    // DummyBackendBase needs access to getInstanceMap()
+    friend class DummyBackendBase<SharedDummyBackend>;
   };
 
 } // namespace ChimeraTK

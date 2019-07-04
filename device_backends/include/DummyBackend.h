@@ -10,7 +10,7 @@
 #include <boost/function.hpp>
 
 #include "Exception.h"
-#include "NumericAddressedBackend.h"
+#include "DummyBackendBase.h"
 #include "RegisterInfoMap.h"
 
 namespace ChimeraTK {
@@ -42,7 +42,7 @@ namespace ChimeraTK {
    *  case a write operation will just be ignored and no callback
    *  function is executed.
    */
-  class DummyBackend : public NumericAddressedBackend {
+  class DummyBackend : public DummyBackendBase<DummyBackend> {
    public:
     DummyBackend(std::string mapFileName);
     virtual ~DummyBackend();
@@ -96,11 +96,10 @@ namespace ChimeraTK {
     std::map<uint8_t, std::vector<int32_t>> _barContents;
     std::set<uint64_t> _readOnlyAddresses;
     std::multimap<AddressRange, boost::function<void(void)>> _writeCallbackFunctions;
-    RegisterInfoMapPointer _registerMapping;
     std::mutex mutex;
 
     void resizeBarContents();
-    std::map<uint8_t, size_t> getBarSizesInBytesFromRegisterMapping() const;
+
     void runWriteCallbackFunctionsForAddressRange(AddressRange addressRange);
     std::list<boost::function<void(void)>> findCallbackFunctionsForAddressRange(AddressRange addressRange);
     void setReadOnly(uint8_t bar, uint32_t address, size_t sizeInWords);
@@ -110,17 +109,12 @@ namespace ChimeraTK {
     /// returns true if the ranges overlap and at least one of the overlapping
     /// registers can be written
     bool isWriteRangeOverlap(AddressRange firstRange, AddressRange secondRange);
-    static void checkSizeIsMultipleOfWordSize(size_t sizeInBytes);
 
     /// Not write-protected function for internal use only. It does not trigger
     /// the callback function so it can be used inside a callback function for
     /// resynchronisation.
     void writeRegisterWithoutCallback(uint8_t bar, uint32_t address, int32_t data);
 
-    /// Overload that allows writing to read-only registers from the dummy for testing
-    template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags);
 
     /** map of instance names and pointers to allow re-connecting to the same
      * instance with multiple Devices */
@@ -128,6 +122,8 @@ namespace ChimeraTK {
       static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> instanceMap;
       return instanceMap;
     }
+    // DummyBackendBase needs access to getInstanceMap()
+    friend class DummyBackendBase<DummyBackend>;
 
     /// register accessors must be friends to access the map and the registers
     template<typename T>
@@ -137,43 +133,10 @@ namespace ChimeraTK {
     friend class DummyMultiplexedRegisterAccessor;
 
     friend class DummyRegisterRawAccessor;
+    friend class SharedDummyBackend;
 
     static std::string convertPathRelativeToDmapToAbs(std::string const& mapfileName);
 
-    /**
-     * @brief Method looks up and returns an existing instance of class 'T'
-     * corresponding to instanceId, if instanceId is a valid  key in the
-     * internal map. For an instanceId not in the internal map, a new instance
-     * of class T is created, cached and returned. Future calls to
-     * returnInstance with this instanceId, returns this cached instance. If
-     * the instanceId is "" a new instance of class T is created and
-     * returned. This instance will not be cached in the internal memory.
-     *
-     * @param instanceId Used as key for the object instance look up. "" as
-     *                   instanceId will return a new T instance that is not
-     *                   cached.
-     * @param arguments  This is a template argument list. The constructor of
-     *                   the created class T, gets called with the contents of
-     *                   the argument list as parameters.
-     */
-    template<typename T, typename... Args>
-    static boost::shared_ptr<DeviceBackend> returnInstance(const std::string& instanceId, Args&&... arguments) {
-      if(instanceId == "") {
-        // std::forward because template accepts forwarding references
-        // (Args&&) and this can have both lvalue and rvalue references passed
-        // as arguments.
-        return boost::shared_ptr<DeviceBackend>(new T(std::forward<Args>(arguments)...));
-      }
-      // search instance map and create new instanceId, if not found under the
-      // name
-      if(getInstanceMap().find(instanceId) == getInstanceMap().end()) {
-        boost::shared_ptr<DeviceBackend> ptr(new T(std::forward<Args>(arguments)...));
-        getInstanceMap().insert(std::make_pair(instanceId, ptr));
-        return ptr;
-      }
-      // return existing instanceId from the map
-      return boost::shared_ptr<DeviceBackend>(getInstanceMap()[instanceId]);
-    }
   };
 
 } // namespace ChimeraTK

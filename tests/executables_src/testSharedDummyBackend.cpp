@@ -5,6 +5,8 @@
 #include <sys/file.h>
 
 #include "Device.h"
+#include "SharedDummyBackend.h"
+#include "BackendFactory.h"
 #include "ProcessManagement.h"
 #include "Utilities.h"
 
@@ -49,6 +51,27 @@ namespace {
     int fd;
   };
   static TestLocker testLocker;
+
+
+  // Helpers to test the catalogue
+  class TestableSharedDummyBackend : public SharedDummyBackend {
+  public:
+    friend struct TestFixture;
+  };
+
+  struct TestFixture {
+    bool testRegisterNotInCatalogue(const std::string& registerPath){
+
+      // Also get the backend to test the catalogue
+      auto backendInstance = BackendFactory::getInstance().createBackend("SHDMEMDEV");
+
+      auto catalogue
+          = static_cast<TestableSharedDummyBackend*>(backendInstance.get())->getRegisterCatalogue();
+
+      return !catalogue.hasRegister(registerPath);
+    }
+  };
+
 
   BOOST_AUTO_TEST_SUITE(SharedDummyBackendTestSuite)
 
@@ -106,8 +129,56 @@ namespace {
     ChimeraTK::OneDRegisterAccessor<int> processVarsRead = dev.getOneDRegisterAccessor<int>("FEATURE2/AREA2");
     processVarsRead.read();
 
-    BOOST_CHECK((std::vector<int>)processVarsWrite21 == (std::vector<int>)processVarsRead);
+    BOOST_CHECK(static_cast<std::vector<int>>(processVarsWrite21) == static_cast<std::vector<int>>(processVarsRead));
     dev.close();
+  }
+
+  /*********************************************************************************************************************/
+
+  BOOST_FIXTURE_TEST_CASE(testWriteToReadOnly, TestFixture) {
+
+    setDMapFilePath("shareddummyTest.dmap");
+    Device dev;
+    dev.open("SHDMEMDEV");
+
+    ScalarRegisterAccessor<int> roRegisterOne{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_1")};
+    ScalarRegisterAccessor<int> roRegisterTwo_dw{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_2.DUMMY_WRITEABLE")};
+
+    BOOST_CHECK(roRegisterOne.isReadOnly());
+    BOOST_CHECK(!roRegisterOne.isWriteable());
+    BOOST_CHECK(!roRegisterTwo_dw.isReadOnly());
+    BOOST_CHECK(roRegisterTwo_dw.isWriteable());
+
+    BOOST_CHECK(testRegisterNotInCatalogue("WORD_READ_ONLY_2.DUMMY_WRITEABLE"));
+
+    BOOST_CHECK_THROW(roRegisterOne.write(), ChimeraTK::logic_error);
+
+    roRegisterOne    = 0;
+    roRegisterTwo_dw = 25;
+    roRegisterTwo_dw.write();
+
+    // Start second accessing application
+    // This is complementary and has a writeable accessor to WORD_READ_ONLY_1
+    // to which it mirrors the value of the second register
+    BOOST_CHECK(!std::system("./testSharedDummyBackendExt "
+                             "--run_test=SharedDummyBackendTestSuite/testWriteToReadOnly"));
+
+    roRegisterOne.read();
+    BOOST_CHECK_EQUAL(roRegisterTwo_dw, roRegisterOne);
+
+    dev.close();
+  }
+
+  BOOST_FIXTURE_TEST_CASE(testCreateBackend, TestFixture){
+
+    auto backendInst1 = BackendFactory::getInstance().createBackend("SHDMEMDEV");
+    auto backendInst2 = BackendFactory::getInstance().createBackend("SHDMEMDEV");
+    auto backendInst3 = BackendFactory::getInstance().createBackend("SHDMEMDEV2");
+
+    BOOST_CHECK(backendInst1.get() == backendInst2.get());
+    BOOST_CHECK(backendInst3.get() != backendInst2.get());
+
+
   }
 
 } // anonymous namespace

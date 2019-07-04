@@ -168,6 +168,40 @@ namespace {
     }
   }
 
+
+  /**
+   * This test case implements a second application accessing the shared memory
+   * for testing the ".DUMMY_WRITEABLE" feature.
+   *
+   * This is called from the complementary automatic test case.
+   */
+  BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
+
+    setDMapFilePath("shareddummyTest.dmap");
+    Device dev;
+    dev.open("SHDMEMDEV");
+
+    ScalarRegisterAccessor<int> roRegisterOne_dw{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_1.DUMMY_WRITEABLE")};
+    ScalarRegisterAccessor<int> roRegisterTwo{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_2")};
+
+    BOOST_CHECK(!roRegisterOne_dw.isReadOnly());
+    BOOST_CHECK(roRegisterOne_dw.isWriteable());
+    BOOST_CHECK(roRegisterTwo.isReadOnly());
+    BOOST_CHECK(!roRegisterTwo.isWriteable());
+
+    BOOST_CHECK_THROW(roRegisterTwo.write(), ChimeraTK::logic_error);
+
+    // Mirror to the other register
+    roRegisterTwo.read();
+    const int roRegisterTwoValue = roRegisterTwo;
+    roRegisterOne_dw = roRegisterTwoValue;
+    roRegisterOne_dw.write();
+
+    // Check happens in the automativ test case.
+
+    dev.close();
+  }
+
   /**
    * This test is called from the script testing the process ID
    * management. It writes some values to the shared memory and

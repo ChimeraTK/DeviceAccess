@@ -9,7 +9,7 @@
 #include "MapFileParser.h"
 #include "parserUtilities.h"
 #include "DummyRegisterAccessor.h"
-#include "NumericAddressedBackendRegisterAccessor.h"
+//#include "NumericAddressedBackendRegisterAccessor.h"
 
 // macro to avoid code duplication
 #define TRY_REGISTER_ACCESS(COMMAND)                                                                                   \
@@ -32,8 +32,11 @@ namespace ChimeraTK {
   // Suffix to mark writeable references to read-only registers
   static const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
 
-  DummyBackend::DummyBackend(std::string mapFileName) : NumericAddressedBackend(mapFileName), _mapFile(mapFileName) {
-    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
+  DummyBackend::DummyBackend(std::string mapFileName)
+      : DummyBackendBase(mapFileName),
+        _mapFile(mapFileName)
+  {
+//    FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
 
     _registerMap = MapFileParser().parse(_mapFile);
     _registerMapping = _registerMap;
@@ -63,15 +66,15 @@ namespace ChimeraTK {
     }
   }
 
-  std::map<uint8_t, size_t> DummyBackend::getBarSizesInBytesFromRegisterMapping() const {
-    std::map<uint8_t, size_t> barSizesInBytes;
-    for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-        mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
-      barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
-          static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
-    }
-    return barSizesInBytes;
-  }
+//  std::map<uint8_t, size_t> DummyBackend::getBarSizesInBytesFromRegisterMapping() const {
+//    std::map<uint8_t, size_t> barSizesInBytes;
+//    for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
+//        mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
+//      barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
+//          static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
+//    }
+//    return barSizesInBytes;
+//  }
 
   void DummyBackend::close() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -89,54 +92,54 @@ namespace ChimeraTK {
     TRY_REGISTER_ACCESS(_barContents[bar].at(address / sizeof(int32_t)) = data;);
   }
 
-  /// Specific override which allows to create "DUMMY_WRITEABLE" accessors for read-only registers
-  template<typename UserType>
-  boost::shared_ptr<NDRegisterAccessor<UserType>> DummyBackend::getRegisterAccessor_impl(
-      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
+//  /// Specific override which allows to create "DUMMY_WRITEABLE" accessors for read-only registers
+//  template<typename UserType>
+//  boost::shared_ptr<NDRegisterAccessor<UserType>> DummyBackend::getRegisterAccessor_impl(
+//      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
 
-    bool isDummyWriteableAccessor = false;
-    RegisterPath actualRegisterPath{registerPathName};
+//    bool isDummyWriteableAccessor = false;
+//    RegisterPath actualRegisterPath{registerPathName};
 
-    // Check if register name ends on DUMMY_WRITEABLE_SUFFIX,
-    // in that case, set actual path to the "real" register
-    // which exists in the catalogue.
-    const std::string regPathNameStr{registerPathName};
-    std::smatch match;
-    const std::regex re{DUMMY_WRITEABLE_SUFFIX+"$"};
-    std::regex_search(regPathNameStr, match, re);
+//    // Check if register name ends on DUMMY_WRITEABLE_SUFFIX,
+//    // in that case, set actual path to the "real" register
+//    // which exists in the catalogue.
+//    const std::string regPathNameStr{registerPathName};
+//    std::smatch match;
+//    const std::regex re{DUMMY_WRITEABLE_SUFFIX+"$"};
+//    std::regex_search(regPathNameStr, match, re);
 
-    if(!match.empty()){
-        isDummyWriteableAccessor = true;
-        actualRegisterPath = RegisterPath{match.prefix()};
-    }
+//    if(!match.empty()){
+//        isDummyWriteableAccessor = true;
+//        actualRegisterPath = RegisterPath{match.prefix()};
+//    }
 
-    auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
+//    auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
 
-    // Modify writeability of the NumericAddressedBackendRegisterAccessor
-    if(isDummyWriteableAccessor){
+//    // Modify writeability of the NumericAddressedBackendRegisterAccessor
+//    if(isDummyWriteableAccessor){
 
-      const auto info{getRegisterInfo(actualRegisterPath)};
+//      const auto info{getRegisterInfo(actualRegisterPath)};
 
-      if(info->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT){
-        if(flags.has(AccessMode::raw)){
-          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(accessor)->makeWriteable();
-        }
-        else{
-          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(accessor)->makeWriteable();
-        }
-      }
-      else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754){
-        if(flags.has(AccessMode::raw)){
-          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(accessor)->makeWriteable();
-        }
-        else{
-          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(accessor)->makeWriteable();
-        }
-      }
-    }
+//      if(info->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT){
+//        if(flags.has(AccessMode::raw)){
+//          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(accessor)->makeWriteable();
+//        }
+//        else{
+//          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(accessor)->makeWriteable();
+//        }
+//      }
+//      else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754){
+//        if(flags.has(AccessMode::raw)){
+//          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(accessor)->makeWriteable();
+//        }
+//        else{
+//          boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(accessor)->makeWriteable();
+//        }
+//      }
+//    }
 
-    return accessor;
-  }
+//    return accessor;
+//  }
 
   void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -180,11 +183,11 @@ namespace ChimeraTK {
         (static_cast<uint64_t>(registerOffsetInBar));
   }
 
-  void DummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes) {
-    if(sizeInBytes % sizeof(int32_t)) {
-      throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
-    }
-  }
+//  void DummyBackend::checkSizeIsMultipleOfWordSize(size_t sizeInBytes) {
+//    if(sizeInBytes % sizeof(int32_t)) {
+//      throw ChimeraTK::logic_error("Read/write size has to be a multiple of 4");
+//    }
+//  }
 
   void DummyBackend::setReadOnly(uint8_t bar, uint32_t address, size_t sizeInWords) {
     for(size_t i = 0; i < sizeInWords; ++i) {

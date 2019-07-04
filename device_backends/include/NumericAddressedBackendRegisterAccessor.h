@@ -17,7 +17,8 @@
 namespace ChimeraTK {
 
   // Forward declarations
-  class DummyBackend;
+  template<typename DerivedBackendType>
+  class DummyBackendBase;
 
   namespace detail {
     /** This function is external to allow template specialisation. */
@@ -362,7 +363,8 @@ namespace ChimeraTK {
     };
 
   private:
-   friend class DummyBackend;
+   template<typename DerivedBackendType>
+   friend class DummyBackendBase;
    void makeWriteable(){
      _isNotWriteable = false;
    };

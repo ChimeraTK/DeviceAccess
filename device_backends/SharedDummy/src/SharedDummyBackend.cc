@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <functional>
 #include <sstream>
+#include <regex>
 
 #include <boost/filesystem.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -24,19 +25,13 @@
   }
 
 namespace ChimeraTK {
-  // Valid bar numbers are 0 to 5 , so they must be contained
-  // in three bits.
-  const unsigned int BAR_MASK = 0x7;
-  // the bar number is stored in bits 60 to 62
-  const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
   SharedDummyBackend::SharedDummyBackend(std::string instanceId, std::string mapFileName)
-  : NumericAddressedBackend(mapFileName), _mapFile(mapFileName), _registerMapping(_registerMap),
-    _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()), sharedMemoryManager(*this, instanceId, mapFileName) {
-    // Note: Opposed to the other dummies, _registerMap is computed in the base
-    // class ctor
-    //       because we rely on a fixed init-order for the boost::interprocess
-    //       members
+    : DummyBackendBase(mapFileName),
+      _mapFile(mapFileName),
+      _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
+      sharedMemoryManager(*this, instanceId, mapFileName)
+  {
     setupBarContents();
   }
 
@@ -67,17 +62,6 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(errMsg);
       }
     } /* for(barSizesInBytesIter) */
-  }
-
-  std::map<uint8_t, size_t> SharedDummyBackend::getBarSizesInBytesFromRegisterMapping() const {
-    std::map<uint8_t, size_t> barSizesInBytes;
-    for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-        mappingElementIter != _registerMapping->end();
-        ++mappingElementIter) {
-      barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
-          static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
-    }
-    return barSizesInBytes;
   }
 
   void SharedDummyBackend::open() {
