@@ -20,6 +20,7 @@ are complete and fully functional.
 \li Transfer groups
 \li \ref dataConsistencyGroup
 \li Automatic data conversion and raw data access
+\li \ref testing_with_dummy_backends
 \li \ref custom_backends
 \li \ref dmap
 

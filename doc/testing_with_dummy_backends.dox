@@ -1,0 +1,43 @@
+/**
+\page testing_with_dummy_backends Testing applications using the DummyBackends
+
+This page introduces the DummyBackends provided with ChimeraTK-DeviceAccess.
+
+When testing application code, it is often beneficial not to rely on real hardware. ChimeraTK-DeviceAccess provides two backends for this purpose, the
+ChimeraTK::DummyBackend and the ChimeraTK::SharedDummyBackend. The DummyBackend emulates a devices' register space in application memory. The SharedDummyBackend allocates the
+registers in shared memory, so it can be access from multiple processes. E.g., QtHardMon can be used to stimulate and monitor a running application.
+Hence, these backends provide a generic way to test input-/output- operations on the application. Note that it is also possible to write DummyBackends
+for a specific device, as described in \ref custom_backends.
+
+\section  dmap_specify_dummies Specifying the dummies in the device map file
+
+The DummyBackends get registered by the names, "dummy" and "sharedMemoryDummy", so dummy devices have to be defined in the device map file as
+\verbatim
+DUMMYDEVICE       (sdm://./dummy=mymapfile.map)
+SHAREDDUMMYDEVICE (sdm://./sharedMemoryDummy=mymapfile.map)
+\endverbatim
+for the DummyBackend and the SharedDummyBackend, respectively.
+
+\section dummy_backends_write_readonly Writeing to read-only registers
+
+For device registers that are read-only, an attempt to write to these registers will result in a ChimeraTK::logic_error. However, many registers which are normally set by the firmware of the device are read-only in the inferface. This prevents stimulating those registers for tests of the application. The DummyBackends provide a functionality to override this property of the registers. To get write access to these registers a special register accessor pointing to the same address can be created by appending the suffix \c ".DUMMY_WRITEABLE" to the register name:
+
+\code{.cpp}
+  // Get a regular accessor with read-only access
+  auto accessorToRORegister               = myDevice.getScalarRegisterAccessor<int>("MY_MODULE/READ_ONLY_REGISTER");
+
+  // Get a modified accessor with write access to the same register
+  auto accessorToRORegister_madeWriteable = myDevice.getScalarRegisterAccessor<int>("MY_MODULE/READ_ONLY_REGISTER.DUMMY_WRITEABLE");
+\endcode
+
+Note that the special register do not get added to the \c RegisterCatalogue of the backend in order to avoid effects on the application using the same backend instance. Write access to the special register accessor can also be tested programmatically, i.e. using the above accessor:
+
+\code{.cpp}
+  accessorToRORegister_madeWriteable.isReadOnly();   // returns false
+  accessorToRORegister_madeWriteable.isWriteable();  // returns true
+\endcode
+
+Next topic: \ref custom_backends
+
+*/
+
