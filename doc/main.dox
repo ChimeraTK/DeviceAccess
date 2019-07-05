@@ -6,4 +6,12 @@ Module documentation:
 - \subpage loggingdoc
 - \subpage historydoc
 - \subpage configreader
+
+Examples:
+\li \ref example1 
+\li \ref example2
+\li \ref example2a
+\li \ref example3
+\li \ref statusmonitordoc
+
 */

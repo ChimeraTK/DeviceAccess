@@ -1,0 +1,32 @@
+/**
+\page example2 Example 2: Small but complete application with a proportional controller
+
+This example shows how to write an application module and connect it inside an application.
+
+\include example2/demoApp2.cc
+
+Next topic: \ref example2a
+
+*/
+
+/**
+For more info see \ref example2
+\example example2/demoApp2.cc
+*/
+
+/**
+\page example2a Example 2a: Application with automation module
+
+Extends example2 with an automation module that slowly moves the setpoint towards the target value.
+
+\include example2a/demoApp2a.cc
+
+Next topic: \ref example3
+
+*/
+
+/**
+For more info see \ref example2a
+\example example2a/demoApp2a.cc
+*/
+

@@ -1,0 +1,16 @@
+/**
+\page example1 Example 1: Application with two modules and two hardware devices
+
+This example shows two modules of a typical LLRF server: the generation of a the setpoint table and the feed forward table, and an automation module that slowly moves the setpoint to the target value.
+It accesses two devices, where one of them is the hardware trigger (macropulse number).
+
+\include example/demoApp.cc
+
+Next topic: \ref example2
+
+*/
+
+/**
+\ref example1
+\example example/demoApp.cc
+*/

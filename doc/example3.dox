@@ -1,0 +1,17 @@
+/**
+\page example3 Example 3: Minimal device server
+
+This minimal server directly publishes all process variables of a device into the control system.
+The readout is triggered periodically. This example does not implement any ApplicationModules. It
+only uses the DeviceModule, ControlSystemModule and PeriodicTrigger, which come with ApplicationCore.
+
+\include example3/demoApp3.cc
+
+Next topic: \ref statusmonitordoc
+
+*/
+
+/**
+For more info see \ref example3
+\example example3/demoApp3.cc
+*/

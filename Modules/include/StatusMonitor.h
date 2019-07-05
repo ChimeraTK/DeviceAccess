@@ -15,9 +15,15 @@
  * Depending upon the value and condition on of the four states are reported.
  *  -  OFF, OK, WARNING, ERROR.
  *
- * Checkout demoStatusMonitor.cc under status_monitor_example to see in
- * detail how it works.
+ * Checkout the status monitor example to see in detail how it works.
+ * \include demoStatusMonitor.cc
  */
+
+/**
+For more info see \ref statusmonitordoc
+\example demoStatusMonitor.cc
+*/
+
 
 /** Generic modules for status monitoring.
  * Each module monitors an input variable and depending upon the
