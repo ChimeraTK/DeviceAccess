@@ -109,7 +109,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     CHECK_TIMEOUT(status1.readLatest(), 1000);
     BOOST_CHECK(static_cast<std::string>(message1) != "");
     BOOST_CHECK_EQUAL(status1, 1);
-    BOOST_CHECK(!readback1.readNonBlocking()); // no new data for broken device
+    BOOST_CHECK(readback1.readNonBlocking());                                 // we have been signalized new data
+    BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::faulty); // But the fault flag should be set
     // the second device must still be functional
     BOOST_CHECK(!message2.readNonBlocking());
     BOOST_CHECK(!status2.readNonBlocking());
@@ -120,6 +121,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     // before fixing dev1
     readbackDummy2 = 120 + i;
     trigger.write();
+    BOOST_CHECK(!readback1.readNonBlocking());                                // we should not have gotten any new data
+    BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::faulty); // But the fault flag should still be set
     CHECK_TIMEOUT(readback2.readNonBlocking(), 1000); // device 2 still works
     BOOST_CHECK_EQUAL(readback2, 120 + i);
 
@@ -134,6 +137,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
     BOOST_CHECK_EQUAL(static_cast<std::string>(message1), "");
     BOOST_CHECK_EQUAL(status1, 0);
     BOOST_CHECK_EQUAL(readback1, 30 + i);
+    BOOST_CHECK(readback1.dataValidity() == ChimeraTK::DataValidity::ok); // The fault flag should have been cleared
     // there are two more copies in the queue, since the two triggers received during the error state is still
     // processed after recovery
     CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);

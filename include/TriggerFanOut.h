@@ -73,11 +73,18 @@ namespace ChimeraTK {
         // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
         // inside a TransferGroup, if the exception is thrown inside doReadTransfer() (as it is directly called on the
         // lowest-level TransferElements inside the group).
+        auto lastValidity = DataValidity::ok;
       retry:
         try {
           transferGroup.read();
         }
         catch(ChimeraTK::runtime_error& e) {
+          // send the data to the consumers
+          auto version = externalTrigger->getVersionNumber();
+          if(lastValidity == DataValidity::ok) {
+            lastValidity = DataValidity::faulty;
+            boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
+          }
           dm.reportException(e.what());
           goto retry;
         }
@@ -91,7 +98,8 @@ namespace ChimeraTK {
     /** Functor class to send data to the consumers, suitable for
      * boost::fusion::for_each(). */
     struct SendDataToConsumers {
-      SendDataToConsumers(VersionNumber version) : _version(version) {}
+      SendDataToConsumers(VersionNumber version, DataValidity validity = DataValidity::ok)
+      : _version(version), _validity(validity) {}
 
       template<typename PAIR>
       void operator()(PAIR& pair) const {
@@ -102,6 +110,7 @@ namespace ChimeraTK {
         for(auto& network : theMap) {
           auto feeder = network.first;
           auto fanOut = network.second;
+          fanOut->setDataValidity(_validity);
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
           bool dataLoss = fanOut->writeDestructively(_version);
           if(dataLoss) Application::incrementDataLossCounter();
@@ -110,6 +119,7 @@ namespace ChimeraTK {
       }
 
       VersionNumber _version;
+      DataValidity _validity;
     };
 
     /** TransferElement acting as our trigger */

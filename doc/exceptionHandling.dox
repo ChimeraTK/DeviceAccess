@@ -26,5 +26,12 @@ faulty. This flag is propagated through ApplicationModules automatically. If a f
 operation of any input, all subsequent write operations will set the faulty flag as well, until the flag is back to the
 ok state for all inputs.
 
+Note that if the data is distributed through a triggered FanOut (i.e. variables from device is connected to other
+variables through a trigger, the usual way for poll-type variables) the data read from the receiving end of the variable
+cannot be considered valid if the DataValidity is faulty.
+
+Additionaly, a change of to a faulty validity state will signal the availability of new data on those variables, which
+is to be considered invalid.
+
 */
 

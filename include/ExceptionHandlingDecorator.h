@@ -41,8 +41,14 @@ namespace ChimeraTK {
 
     void doPostWrite() override;
 
+    DataValidity dataValidity() const override;
+
+    void setDataValidity(DataValidity validity = DataValidity::ok) override;
+
    protected:
     DeviceModule& dm;
+    DataValidity validity{DataValidity::ok};
+    bool genericTransfer(std::function<bool(void)> callable);
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
