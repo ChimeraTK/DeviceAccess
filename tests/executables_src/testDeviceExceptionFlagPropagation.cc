@@ -40,7 +40,7 @@ struct TestApplication : ctk::Application {
 
     struct : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
-      ctk::ScalarOutput<ctk::PeriodicTrigger::tick_type> tick{this, "tick", "", ""};
+      ctk::ScalarOutput<uint64_t> tick{this, "tick", "", ""};
     } name{this, "name", ""};
 
     void mainLoop() override {}
@@ -53,7 +53,7 @@ struct TestApplication : ctk::Application {
 
     struct : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
-      ctk::ScalarPushInput<ctk::PeriodicTrigger::tick_type> tick{this, "tick", "", ""};
+      ctk::ScalarPushInput<uint64_t> tick{this, "tick", "", ""};
       ctk::ScalarPollInput<int> read{this, "readBack", "", ""};
       ctk::ScalarOutput<int> set{this, "actuator", "", ""};
     } vars{this, "vars", "", ctk::HierarchyModifier::hideThis};
@@ -102,7 +102,6 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
   app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
   app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
   app.name.name.tick >> app.module.vars.tick;
-  // app.trigger.tick >> app.module.vars.tick;
 
   // Open
 
