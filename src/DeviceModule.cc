@@ -61,7 +61,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI)
+  DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI,  std::function<void(DeviceModule *)> /*initialisationHandler*/ )
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
     registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);

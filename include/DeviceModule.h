@@ -55,8 +55,10 @@ namespace ChimeraTK {
   class DeviceModule : public Module {
    public:
     /** Constructor: The device represented by this DeviceModule is identified by
-     * either the device alias found in the DMAP file or directly an URI. */
-    DeviceModule(Application* application, const std::string& deviceAliasOrURI);
+     * either the device alias found in the DMAP file or directly an URI.
+     * A callback function to initialise the device can be registered as an optional argument (see addInitialisationHandler()
+     * for more information.*/
+    DeviceModule(Application* application, const std::string& deviceAliasOrURI, std::function<void(DeviceModule *)> initialisationHandler = nullptr);
     /** Default constructor: create dysfunctional device module */
     DeviceModule() {}
 
