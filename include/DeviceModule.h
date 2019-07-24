@@ -191,6 +191,9 @@ namespace ChimeraTK {
 
     mutable bool deviceIsInitialized = false;
 
+    /* The list of initialisation handler callback functions */
+    std::list< std::function< void(DeviceModule *) > > initialisationHandlers;
+
     friend class Application;
     friend class detail::DeviceModuleProxy;
   };
