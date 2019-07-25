@@ -65,7 +65,9 @@ namespace ChimeraTK {
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
     registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);
-    initialisationHandlers.push_back(initialisationHandler);
+    if (initialisationHandler){
+      initialisationHandlers.push_back(initialisationHandler);
+    }
   }
 
   /*********************************************************************************************************************/
@@ -263,7 +265,7 @@ namespace ChimeraTK {
         catch(ChimeraTK::runtime_error& e) {
           if(deviceError.status != 1) {
             deviceError.status = 1;
-            deviceError.message = error;
+            deviceError.message = e.what();
             deviceError.setCurrentVersionNumber({});
             deviceError.writeAll();
           }
