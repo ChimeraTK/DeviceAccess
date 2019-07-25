@@ -11,7 +11,7 @@
 #include "DeviceModule.h"
 //#include "ScalarAccessor.h"
 #include "TestFacility.h"
-//#include "StatusMonitor.h"
+#include "ExceptionDevice.h"
 
 #include <ChimeraTK/Device.h>
 
@@ -22,6 +22,16 @@ void initialiseReg1(ctk::DeviceModule * dev){
     dev->device.write<int32_t>("/REG1",42);
 }
 
+void initialiseReg2(ctk::DeviceModule * dev){
+    // the initialisation of reg 2 must happen after the initialisation of reg1
+    dev->device.write<int32_t>("/REG2", dev->device.read<int32_t>("/REG1")+5);
+}
+
+void initialiseReg3(ctk::DeviceModule * dev){
+    // the initialisation of reg 3 must happen after the initialisation of reg2
+    dev->device.write<int32_t>("/REG3", dev->device.read<int32_t>("/REG2")+5);
+}
+
 /* dummy application */
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
@@ -29,7 +39,7 @@ struct TestApplication : public ctk::Application {
 
   void defineConnections() {} // the setup is done in the tests
   ctk::ControlSystemModule cs;
-  ctk::DeviceModule dev{this, "(dummy?map=test.map)",&initialiseReg1};
+  ctk::DeviceModule dev{this, "(ExceptionDummy?map=test.map)",&initialiseReg1};
 };
 
 /*********************************************************************************************************************/
@@ -44,79 +54,48 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   //app.dumpConnections();
 
   ctk::Device dummy;
-  dummy.open("(dummy?map=test.map)");
-  BOOST_CHECK_EQUAL(dummy.read<int32_t>("REG1"),42);
+  dummy.open("(ExceptionDummy?map=test.map)");
+  auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
+  reg1.read();
 
-//  auto error = test.getScalar<double_t>(std::string("/MAX_MONITOR.ERROR.THRESHOLD"));
-//  error = 50.1;
-//  error.write();
-//  test.stepApplication();
+  // ********************************************************
+  // REQUIRED TEST 1: After opening the device is initialised
+  // ********************************************************
+  BOOST_CHECK_EQUAL(reg1,42);
 
-//  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
-//  watch = 40.1;
-//  watch.write();
-//  test.stepApplication();
+  reg1=0;
+  reg1.write();
 
-//  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
-//  status.readLatest();
+  // check that accessing an exception triggers a reconnection with re-initialisation
+  auto dummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test.map)"));
+  dummyBackend->throwExceptionWrite=true;
 
-//  //should be in OK state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  // FIXME: Due to a bug it is /REG2/REG2 instead of just /REG2. This will fails once the bug has been solved.
+  auto reg2_cs = test.getScalar<int32_t>("/REG2/REG2");
+  reg2_cs=19;
+  reg2_cs.write();
+  test.stepApplication();
 
-//  //set watch value exceeding warning level
-//  watch = 46.1;
-//  watch.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in WARNING state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/REG2");
+  reg2.read();
 
-//  //set watch value exceeding error level
-//  watch = 51.1;
-//  watch.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in ERROR state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(reg2,0);
+  BOOST_CHECK_EQUAL(reg1,0);
+  dummyBackend->throwExceptionWrite=false; // now the device should work again and be re-initialised
 
-//  //increase error value greater than watch
-//  error = 60.1;
-//  error.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in WARNING state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  reg2_cs=20;
+  reg2_cs.write();
+  test.stepApplication();
 
-//  //increase warning value greater than watch
-//  warning = 55.1;
-//  warning.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in OK state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  reg2.read();
+  BOOST_CHECK_EQUAL(reg2,20);
 
-//  //set watch value exceeding error level
-//  watch = 65.1;
-//  watch.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in ERROR state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  // ****************************************************************
+  // REQUIRED TEST 2: After an exception the device is re-initialised
+  // ****************************************************************
+  reg1.read();
+  BOOST_CHECK_EQUAL(reg1, 42);
 
-//  //decrease watch value lower than error level but still greater than warning level
-//  watch = 58.1;
-//  watch.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in WARNING state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
 
-//  //decrease watch value lower than warning level
-//  watch = 54.1;
-//  watch.write();
-//  test.stepApplication();
-//  status.readLatest();
-//  //should be in OK state.
-//  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
 }
 

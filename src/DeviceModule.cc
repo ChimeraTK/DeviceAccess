@@ -298,6 +298,11 @@ namespace ChimeraTK {
         deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
         errorCondVar.notify_all();
+
+        // re-initialise the device before continuing
+        for (auto& initHandler : initialisationHandlers) {
+          initHandler(this);
+        }
       }
     }
     catch(...) {
