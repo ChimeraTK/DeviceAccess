@@ -360,4 +360,8 @@ namespace ChimeraTK {
     deviceError.connectTo(cs["Devices"][deviceAliasOrURI_withoutSlashes]);
   }
 
+  void DeviceModule::addInitialisationHandler( std::function<void(DeviceModule *)> initialisationHandler ){
+    initialisationHandlers.push_back(initialisationHandler);
+  }
+
 } // namespace ChimeraTK

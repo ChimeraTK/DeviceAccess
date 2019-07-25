@@ -96,6 +96,63 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   reg1.read();
   BOOST_CHECK_EQUAL(reg1, 42);
 
-
 }
 
+BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
+  std::cout << "testMultipleInitialisationHandlers" << std::endl;
+  TestApplication app;
+
+  app.dev.addInitialisationHandler(&initialiseReg2);
+  app.dev.addInitialisationHandler(&initialiseReg3);
+  app.dev.connectTo(app.cs);
+  ctk::TestFacility test;
+  test.runApplication();
+  //app.dumpConnections();
+
+  ctk::Device dummy;
+  dummy.open("(ExceptionDummy?map=test.map)");
+  auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
+  auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/REG2");
+  auto reg3 = dummy.getScalarRegisterAccessor<int32_t>("/REG3");
+  reg1.read();
+  reg2.read();
+  reg3.read();
+
+  // *********************************************************
+  // REQUIRED TEST 4: Handlers are executed in the right order
+  // *********************************************************
+  BOOST_CHECK_EQUAL(reg1,42);
+  BOOST_CHECK_EQUAL(reg2,47); // the initialiser used reg1+5, so order matters
+  BOOST_CHECK_EQUAL(reg3,52); // the initialiser used reg2+5, so order matters
+
+  // check that after an exception the re-initialisation is OK
+  reg1=0; reg1.write();
+  reg2=0; reg2.write();
+  reg3=0; reg3.write();
+
+  // cause an exception
+  auto dummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend("(ExceptionDummy?map=test.map)"));
+  dummyBackend->throwExceptionWrite=true;
+
+  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  reg4_cs=19;
+  reg4_cs.write();
+  test.stepApplication();
+
+  // recover
+  dummyBackend->throwExceptionWrite=false;
+
+  reg4_cs=20;
+  reg4_cs.write();
+  test.stepApplication();
+
+  reg1.read();
+  reg2.read();
+  reg3.read();
+
+  BOOST_CHECK_EQUAL(reg1,42);
+  BOOST_CHECK_EQUAL(reg2,47); // the initialiser used reg1+5, so order matters
+  BOOST_CHECK_EQUAL(reg3,52); // the initialiser used reg2+5, so order matters
+
+
+}

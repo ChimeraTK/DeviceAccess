@@ -137,6 +137,8 @@ namespace ChimeraTK {
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
 
+    void addInitialisationHandler( std::function<void(DeviceModule *)> initialisationHandler );
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
