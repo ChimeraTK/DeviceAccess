@@ -289,22 +289,37 @@ namespace ChimeraTK {
         usleep(500000);
         owner->testableModeLock("Try recovery");
 
+        // FIXME: we have to wait here until the device reports that it is functional again.
+        // Otherwise we spam the error reporting with 2 Hz.
+
         // empty exception reporting queue
         while(errorQueue.pop()) {
           if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
         }
 
-        // reset exception state and try again
+        try {
+          // re-initialise the device before continuing
+          for (auto& initHandler : initialisationHandlers) {
+            initHandler(this);
+          }
+          for(auto& te : writeAfterOpen) {
+            te->write();
+          }
+        } catch (ChimeraTK::runtime_error &e) {
+            // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.
+            // It is sure we will enter it again because we just pushed to it, so if  the device recovers we will notice.
+            reportException(e.what());
+            continue;
+        }
+
+        // We survived the initialisation (if any). It seems the device is working again.
+        // Reset exception state and wait for the next error to be reported.
         deviceError.status = 0;
         deviceError.message = "";
         deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
         errorCondVar.notify_all();
 
-        // re-initialise the device before continuing
-        for (auto& initHandler : initialisationHandlers) {
-          initHandler(this);
-        }
       }
     }
     catch(...) {

@@ -301,3 +301,53 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   CHECK_TIMEOUT(readback1.readNonBlocking(), 1000);
   BOOST_CHECK_EQUAL(readback1, 100);
 }
+
+BOOST_AUTO_TEST_CASE(testConstants){
+    // Constants are registered to the device to be written when opening/recovering
+    // Attention: This test does not test that errors when writing to constants are displayed correctly. It only checks that witing when opeing and recovering works.
+    TestApplication app;
+
+    ctk::VariableNetworkNode::makeConstant<int32_t>(true, 18) >> app.dev1("/MyModule/actuator");
+    app.cs("/PleaseWriteToMe", typeid(int), 1) >>  app.dev1("/Integers/signed32", typeid(int), 1);
+
+    ctk::TestFacility test;
+    test.runApplication();
+
+    ChimeraTK::Device dev;
+    dev.open(ExceptionDummyCDD1);
+
+    // after opening a device the runApplication() might return, but the initialisation might not have happened in the other thread yet. So check with timeout.
+    CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 3000);
+
+
+    // So far this is also tested by testDeviceAccessors. Now cause errors.
+    // Take back the value of the constant which was written to the device before making the device fail for further writes.
+    dev.write<int32_t>("/MyModule/actuator",0);
+    auto dummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+    dummyBackend->throwExceptionWrite=true;
+
+    auto pleaseWriteToMe = test.getScalar<int32_t>("/PleaseWriteToMe");
+    pleaseWriteToMe = 42;
+    pleaseWriteToMe.write();
+    test.stepApplication();
+
+    // Check that the error has been seen
+    auto deviceStatus = test.getScalar<int32_t>(std::string("/Devices/") + ExceptionDummyCDD1 + "/status");
+    deviceStatus.readLatest();
+    BOOST_CHECK(deviceStatus == 1);
+
+    // now cure the error
+    dummyBackend->throwExceptionWrite=false;
+
+    // Write something so we can call stepApplication to wake up the app.
+    pleaseWriteToMe = 43;
+    pleaseWriteToMe.write();
+    test.stepApplication();
+
+    CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 3000);
+}
+
+/// @todo FIXME: Write test that errors during constant writing are handled correctly, incl. correct error messages to the control system
+BOOST_AUTO_TEST_CASE(testConstantWitingErrors){
+
+}
