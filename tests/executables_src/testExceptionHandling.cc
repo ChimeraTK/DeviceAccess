@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(testConstants){
     TestApplication app;
 
     ctk::VariableNetworkNode::makeConstant<int32_t>(true, 18) >> app.dev1("/MyModule/actuator");
-    app.cs("/PleaseWriteToMe", typeid(int), 1) >>  app.dev1("/Integers/signed32", typeid(int), 1);
+    app.cs("PleaseWriteToMe", typeid(int), 1) >>  app.dev1("/Integers/signed32", typeid(int), 1);
 
     ctk::TestFacility test;
     test.runApplication();
