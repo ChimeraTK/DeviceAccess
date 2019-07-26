@@ -3,7 +3,7 @@
 
 #include <functional>
 
-constexpr useconds_t DeviceOpenTimeout = 500000;
+constexpr useconds_t DeviceOpenTimeout = 500;
 
 namespace ChimeraTK {
 
@@ -14,7 +14,7 @@ namespace ChimeraTK {
         if(!dm.device.isOpened()) {
           setDataValidity(DataValidity::faulty);
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
-          usleep(DeviceOpenTimeout);
+          boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
           Application::getInstance().testableModeLock("waitForDeviceOpen");
           continue;
         }
