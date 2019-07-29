@@ -174,12 +174,16 @@ namespace ChimeraTK {
      * moduleThread. */
     cppext::future_queue<std::string> errorQueue{5};
 
-    /** Mutex for errorCondVar */
+    /** Mutex for errorCondVar.
+        Attention: In testable mode this mutex must only be locked when holding the testable mode mutex!*/
     std::mutex errorMutex;
 
     /** This condition variable is used to block reportException() until the error
      * state has been resolved by the moduleThread. */
     std::condition_variable errorCondVar;
+
+    /** The error flag (predicate) for the conditionVariable */
+    bool deviceHasError;
 
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      *  The function is running an endless loop inside its own thread (moduleThread). */

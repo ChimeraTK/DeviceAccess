@@ -306,7 +306,6 @@ BOOST_AUTO_TEST_CASE(testConstants){
     // Constants are registered to the device to be written when opening/recovering
     // Attention: This test does not test that errors when writing to constants are displayed correctly. It only checks that witing when opeing and recovering works.
     TestApplication app;
-
     ctk::VariableNetworkNode::makeConstant<int32_t>(true, 18) >> app.dev1("/MyModule/actuator");
     app.cs("PleaseWriteToMe", typeid(int), 1) >>  app.dev1("/Integers/signed32", typeid(int), 1);
 

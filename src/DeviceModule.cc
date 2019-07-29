@@ -61,11 +61,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI,  std::function<void(DeviceModule *)> initialisationHandler )
+  DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI,
+      std::function<void(DeviceModule*)> initialisationHandler)
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
-    registerNamePrefix(""), owner(application) {
+    registerNamePrefix(""), deviceHasError(false), owner(application) {
     application->registerDeviceModule(this);
-    if (initialisationHandler){
+    if(initialisationHandler) {
       initialisationHandlers.push_back(initialisationHandler);
     }
   }
@@ -215,26 +216,42 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::reportException(std::string errMsg) {
-    // In testable mode, we need to increase the testableMode_counter before releasing the testableModeLock, but we have
-    // to release the testableModeLock lock before obtaining the errorMutex, which in turn has to be obtained before
-    // writing to the errorQueue. Otherwise deadlocks might occur (with race conditions).
-    if(owner->isTestableModeEnabled()) {
-      assert(owner->testableModeTestLock());
-      ++owner->testableMode_counter;
+    try {
+      if(owner->isTestableModeEnabled()) {
+        assert(owner->testableModeTestLock());
+      }
+
+      // The error queue must only be modified when holding both mutexes (error mutex and testable mode mutex), because
+      // the testable mode counter must always be consistent with the content of the queue.
+      // To avoid deadlocks you must always first aquire the testable mode mutex if you need both.
+      // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error predicate),
+      // but then you must not try to aquire the testable mode mutex!
+      std::unique_lock<std::mutex> errorLock(errorMutex);
+
+      if(!deviceHasError) { // only report new errors if the device does not have reported errors already
+        if(errorQueue.push(errMsg)) {
+          if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
+        } // else do nothing. There are plenty of errors reported already: The queue is full.
+        // set the error flag and notify the other threads
+        deviceHasError = true;        
+        errorCondVar.notify_all();
+      }
+
+      //Wait until the error condition has been cleared by the exception handling thread.
+      //We must not hold the testable mode mutex while doing so, otherwise the other thread will never run to fulfill the condition
+      owner->testableModeUnlock("waitForDeviceOK");
+      while(deviceHasError) {
+        errorCondVar.wait(errorLock);
+        boost::this_thread::interruption_point();
+      }
+      errorLock.unlock();
+      owner->testableModeLock("continueAfterException");
     }
-    owner->testableModeUnlock("reportException");
-    std::unique_lock<std::mutex> lk(errorMutex);
-  retry:
-    bool success = errorQueue.push(errMsg);
-    if(!success) {
-      // retry error reporting until the message has been sent. It has to be successful since testableMode_counter
-      // has been increased already
-      goto retry;
+    catch(...) {
+      //catch any to notify the waiting thread(s) (exception handling thread), then re-throw
+      errorCondVar.notify_all();
+      throw;
     }
-    errorCondVar.wait(lk);
-    // release errorMutex before obtaining testableModeLock to prevent deadlocks
-    lk.unlock();
-    owner->testableModeLock("reportException");
   }
 
   /*********************************************************************************************************************/
@@ -255,12 +272,6 @@ namespace ChimeraTK {
             deviceError.setCurrentVersionNumber({});
             deviceError.writeAll();
           }
-          for (auto& initHandler : initialisationHandlers) {
-            initHandler(this);
-          }
-          for(auto& te : writeAfterOpen) {
-            te->write();
-          }
         }
         catch(ChimeraTK::runtime_error& e) {
           if(deviceError.status != 1) {
@@ -271,61 +282,101 @@ namespace ChimeraTK {
           }
         }
       }
+      // The device was successfully opened, try to initialise it
+      try {
+        for(auto& initHandler : initialisationHandlers) {
+          initHandler(this);
+        }
+        for(auto& te : writeAfterOpen) {
+          te->write();
+        }
+      }
+      catch(ChimeraTK::runtime_error& e) {
+        // we just report the exception and let the exception handling loop do the rest
+        std::lock_guard<std::mutex> locakGuard(errorMutex);
+        if (errorQueue.push(e.what())){
+          if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
+        }
+      }
+
       while(true) {
+        // release the testable mode mutex for waiting for the exception.
         owner->testableModeUnlock("Wait for exception");
-        errorQueue.pop_wait(error);
-        boost::this_thread::interruption_point();
+        // Do not modify the queue without holding the testable mode lock, because we also consitenly have to modify the counter protected by that mutex.
+        // Just check the condition variable.
+        std::unique_lock<std::mutex> errorLock(errorMutex);
+        while(!deviceHasError) {
+          errorCondVar.wait(errorLock);             // this releases the mutex while waiting
+          boost::this_thread::interruption_point(); // we need an interruption point in the waiting loop
+        }
+
+        errorLock.unlock(); // We must not hold the error lock when getting the testable mode mutex to avoid deadlocks!
         owner->testableModeLock("Process exception");
+        errorLock.lock(); // we need both locks to modify the queue, so get it again.
+
+        assert(errorQueue.pop(error)); // this if should always be true, otherwise the condition variable logic is wrong
         if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
-        std::lock_guard<std::mutex> lk(errorMutex);
+
         // report exception to the control system
         deviceError.status = 1;
         deviceError.message = error;
         deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
 
-        // wait some time until retrying
+        // wait some time until retrying.
+        // Never sleep when holding a lock
+        errorLock.unlock(); // we must not hold the error lock when not having the testable mode mutex
         owner->testableModeUnlock("Wait for recovery");
         usleep(500000);
         owner->testableModeLock("Try recovery");
+        errorLock.lock();
+        std::cout << "trying initialisation" << std::endl;
 
         // FIXME: we have to wait here until the device reports that it is functional again.
         // Otherwise we spam the error reporting with 2 Hz.
 
-        // empty exception reporting queue
-        while(errorQueue.pop()) {
-          if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
-        }
-
         try {
           // re-initialise the device before continuing
-          for (auto& initHandler : initialisationHandlers) {
+          for(auto& initHandler : initialisationHandlers) {
             initHandler(this);
           }
           for(auto& te : writeAfterOpen) {
             te->write();
           }
-        } catch (ChimeraTK::runtime_error &e) {
-            // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.
-            // It is sure we will enter it again because we just pushed to it, so if  the device recovers we will notice.
-            reportException(e.what());
-            continue;
+        }
+        catch(ChimeraTK::runtime_error& e) {
+          // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.
+          // It is sure we will enter it again because we just pushed to it, so if  the device recovers we will notice.
+          // Do not use reportError, which would just do the mutext business in addition to pushing to the queue, but we already have the mutex.
+          if (errorQueue.push(e.what())){
+            if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
+          }else{
+            std::cout << "Yikes, error reporting queue is full" << std::endl;
+          }
+          continue;
         }
 
         // We survived the initialisation (if any). It seems the device is working again.
+        // Empty exception reporting queue.
+        while(errorQueue.pop()) {
+          if(owner->isTestableModeEnabled()) --owner->testableMode_counter;
+        }
         // Reset exception state and wait for the next error to be reported.
         deviceError.status = 0;
         deviceError.message = "";
         deviceError.setCurrentVersionNumber({});
         deviceError.writeAll();
+
+        deviceHasError = false;
         errorCondVar.notify_all();
 
-      }
+      } // at this point the errorLock goes out of scope and releases the mutex
     }
     catch(...) {
       // before we leave this thread, we might need to notify other waiting
       // threads. boost::this_thread::interruption_point() throws an exception
       // when the thread should be interrupted, so we will end up here
+      //FIXME: This does nothing if the error condition is not resolved because the condition variable will not continue. The other thread goes back to sleep immediately.
       errorCondVar.notify_all();
       throw;
     }
@@ -355,7 +406,7 @@ namespace ChimeraTK {
   void DeviceModule::terminate() {
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
-      errorQueue.push("terminate");
+      errorCondVar.notify_all();
       moduleThread.join();
     }
     assert(!moduleThread.joinable());
@@ -377,7 +428,7 @@ namespace ChimeraTK {
     deviceError.connectTo(cs["Devices"][deviceAliasOrURI_withoutSlashes]);
   }
 
-  void DeviceModule::addInitialisationHandler( std::function<void(DeviceModule *)> initialisationHandler ){
+  void DeviceModule::addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler) {
     initialisationHandlers.push_back(initialisationHandler);
   }
 
