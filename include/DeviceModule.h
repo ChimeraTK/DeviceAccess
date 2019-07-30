@@ -180,7 +180,10 @@ namespace ChimeraTK {
 
     /** This condition variable is used to block reportException() until the error
      * state has been resolved by the moduleThread. */
-    std::condition_variable errorCondVar;
+    std::condition_variable errorIsResolvedCondVar;
+
+    /** This condition variable is used to block the error handling thread until an exception is reported.*/
+    std::condition_variable errorIsReportedCondVar;
 
     /** The error flag (predicate) for the conditionVariable */
     bool deviceHasError;

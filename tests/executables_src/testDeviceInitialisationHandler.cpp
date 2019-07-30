@@ -118,7 +118,6 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
   //app.dumpConnections();
 
   auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status");
-  std::cout << "DeviceStatus is " << deviceStatus << std::endl;
 
   ctk::Device dummy;
   dummy.open(deviceCDD);
@@ -205,33 +204,34 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   BOOST_CHECK_EQUAL(reg2, 0);
   BOOST_CHECK_EQUAL(reg3, 0);
 
-  // recover the error
-  throwInInitialisation = false;
+//  // recover the error
+//  throwInInitialisation = false;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
-  reg4_cs = 19;
-  reg4_cs.write();
-  std::cout << "here goes nothing" << std::endl;
-  test.stepApplication();
-  std::cout << "are we done yet" << std::endl;
+//  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+//  reg4_cs = 19;
+//  reg4_cs.write();
+//  std::cout << "here goes nothing" << std::endl;
+//  test.stepApplication();
+//  std::cout << "are we done yet" << std::endl;
 
-  // initialisation should be correct now
-  reg1.readLatest();
-  reg2.readLatest();
-  reg3.readLatest();
-  auto reg4 = dummy.getScalarRegisterAccessor<int32_t>("/REG4");
-  reg4.readLatest();
+//  // initialisation should be correct now
+//  reg1.readLatest();
+//  reg2.readLatest();
+//  reg3.readLatest();
+//  auto reg4 = dummy.getScalarRegisterAccessor<int32_t>("/REG4");
+//  reg4.readLatest();
 
-  BOOST_CHECK_EQUAL(reg1, 42);
-  BOOST_CHECK_EQUAL(reg2, 47);
-  BOOST_CHECK_EQUAL(reg3, 52);
-  BOOST_CHECK_EQUAL(reg4, 19);
+//  BOOST_CHECK_EQUAL(reg1, 42);
+//  BOOST_CHECK_EQUAL(reg2, 47);
+//  BOOST_CHECK_EQUAL(reg3, 52);
+//  BOOST_CHECK_EQUAL(reg4, 19);
 
-  deviceStatus.readLatest();
-  errorMessage.readLatest();
-  BOOST_CHECK_EQUAL(deviceStatus, 0);
-  BOOST_CHECK_EQUAL(std::string(errorMessage), "");
+//  deviceStatus.readLatest();
+//  errorMessage.readLatest();
+//  BOOST_CHECK_EQUAL(deviceStatus, 0);
+//  BOOST_CHECK_EQUAL(std::string(errorMessage), "");
 
+  throw(std::logic_error("Tests are conceptually broken. Throwing to get out of endless loop."));
   //  // now check that the initialisation error is also reportet when recovering
   //  // Prepare registers to be initialised
   //  reg1=12; reg1.write();
