@@ -16,6 +16,8 @@
 #include <ChimeraTK/Device.h>
 #include <stdlib.h>
 
+#include "check_timeout.h"
+
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
@@ -178,19 +180,20 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
   app.dev.connectTo(app.cs);
-  ctk::TestFacility test;
-  test.runApplication();
+  ctk::TestFacility test(false); // test facility without testable mode
+
+  // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but has not finished error handling yet.
+  // In this special case we cannot make the programme continue, because stepApplication only works if the queues are not empty.
+  // We have to work with timeouts here (until someone comes up with a better idea)
+  app.run();
   //app.dumpConnections();
 
-  auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status");
-  deviceStatus.readLatest();
-  BOOST_CHECK_EQUAL(deviceStatus, 1);
-  auto errorMessage = test.getScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message");
-  errorMessage.readLatest();
-  BOOST_CHECK_EQUAL(std::string(errorMessage), exceptionMessage);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 30000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 3000);
 
-  // check that the execution of init handlers was stopped after the exception:
-  // initialiseReg2 and initialiseReg3 were not executed
+  // Check that the execution of init handlers was stopped after the exception:
+  // initialiseReg2 and initialiseReg3 were not executed. As we already checked with timeout that the
+  // initialisation error has been reported, we know that the data was written to the device and don't need the timeout here.
   ctk::Device dummy;
   dummy.open(deviceCDD);
   auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
@@ -204,27 +207,23 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   BOOST_CHECK_EQUAL(reg2, 0);
   BOOST_CHECK_EQUAL(reg3, 0);
 
-//  // recover the error
-//  throwInInitialisation = false;
+  // recover the error
+  throwInInitialisation = false;
 
-//  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
-//  reg4_cs = 19;
-//  reg4_cs.write();
-//  std::cout << "here goes nothing" << std::endl;
-//  test.stepApplication();
-//  std::cout << "are we done yet" << std::endl;
+  // wait until the device is reported to be OK again (chech with timeout),
+  // then check the initialisation (again, no extra timeout needed because of the logic:
+  // success is only reported after successful init).
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 30000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
 
-//  // initialisation should be correct now
-//  reg1.readLatest();
-//  reg2.readLatest();
-//  reg3.readLatest();
-//  auto reg4 = dummy.getScalarRegisterAccessor<int32_t>("/REG4");
-//  reg4.readLatest();
+  // initialisation should be correct now
+  reg1.readLatest();
+  reg2.readLatest();
+  reg3.readLatest();
 
-//  BOOST_CHECK_EQUAL(reg1, 42);
-//  BOOST_CHECK_EQUAL(reg2, 47);
-//  BOOST_CHECK_EQUAL(reg3, 52);
-//  BOOST_CHECK_EQUAL(reg4, 19);
+  BOOST_CHECK_EQUAL(reg1, 42);
+  BOOST_CHECK_EQUAL(reg2, 47);
+  BOOST_CHECK_EQUAL(reg3, 52);
 
 //  deviceStatus.readLatest();
 //  errorMessage.readLatest();
