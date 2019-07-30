@@ -246,13 +246,16 @@ namespace ChimeraTK {
       errorLock.lock();
       while(deviceHasError) {
         errorIsResolvedCondVar.wait(errorLock);
+        std::cout << "reportException woken up. deviceHasError is " << deviceHasError << std::endl;
         boost::this_thread::interruption_point();
+        std::cout << "Passed the interruption point."  << (deviceHasError?" Going back to sleep, good night...":"") << std::endl;
       }
       errorLock.unlock();
       owner->testableModeLock("continueAfterException");
     }
     catch(...) {
       //catch any to notify the waiting thread(s) (exception handling thread), then re-throw
+      std::cout << "reportException was interrupted" << std::endl;
       errorIsReportedCondVar.notify_all();
       throw;
     }
@@ -305,14 +308,21 @@ namespace ChimeraTK {
       }
 
       while(true) {
+        // We need one interruption point at the beginning of the loop. It is always executed and is not blocked by a lock (except the testable mode lock)
+        boost::this_thread::interruption_point();
+        std::cout << "true is still true, continuing forever" << std::endl;
         // release the testable mode mutex for waiting for the exception.
         owner->testableModeUnlock("Wait for exception");
         // Do not modify the queue without holding the testable mode lock, because we also consitenly have to modify the counter protected by that mutex.
         // Just check the condition variable.
         std::unique_lock<std::mutex> errorLock(errorMutex);
         while(!deviceHasError) {
+          std::cout << "Going to sleep, good night..." << std::endl;
+          boost::this_thread::interruption_point();// Make sure not to start waiting for the condition variable if interruption was requested.
           errorIsReportedCondVar.wait(errorLock);             // this releases the mutex while waiting
+          std::cout << "handleException woken up. deviceHasError is " << deviceHasError << std::endl;
           boost::this_thread::interruption_point(); // we need an interruption point in the waiting loop
+          std::cout << "Passed the interruption point."  << std::endl;
         }
 
         errorLock.unlock(); // We must not hold the error lock when getting the testable mode mutex to avoid deadlocks!
@@ -335,9 +345,11 @@ namespace ChimeraTK {
         // wait some time until retrying.
         // Never sleep when holding a lock
         errorLock.unlock(); // we must not hold the error lock when not having the testable mode mutex
+        std::cout << "giving up testable mode lock, sleeping..." << std::endl;
         owner->testableModeUnlock("Wait for recovery");
         usleep(500000);
         owner->testableModeLock("Try recovery");
+        std::cout << "go back the testable mode lock" << std::endl;
         errorLock.lock();
 
         // FIXME: we have to wait here until the device reports that it is functional again.
@@ -386,6 +398,7 @@ namespace ChimeraTK {
       // before we leave this thread, we might need to notify other waiting
       // threads. boost::this_thread::interruption_point() throws an exception
       // when the thread should be interrupted, so we will end up here
+       std::cout << "handleException was interrupted" << std::endl;
       errorIsResolvedCondVar.notify_all();
       throw;
     }
@@ -413,6 +426,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::terminate() {
+      std::cout << "Terminating DeviceModule" << std::endl;
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
       errorIsReportedCondVar.notify_all(); // the terminating thread will notify the threads waiting for errorIsResolvedCondVar
