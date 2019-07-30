@@ -231,7 +231,6 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 //  BOOST_CHECK_EQUAL(deviceStatus, 0);
 //  BOOST_CHECK_EQUAL(std::string(errorMessage), "");
 
-  throw(std::logic_error("Tests are conceptually broken. Throwing to get out of endless loop."));
   //  // now check that the initialisation error is also reportet when recovering
   //  // Prepare registers to be initialised
   //  reg1=12; reg1.write();
