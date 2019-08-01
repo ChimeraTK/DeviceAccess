@@ -348,6 +348,13 @@ namespace ChimeraTK {
     return false; // no backend is assigned: the device is not opened
   }
 
+  bool Device::isFunctional() const {
+    if(static_cast<bool>(_deviceBackendPointer) != false) {
+      return _deviceBackendPointer->isFunctional();
+    }
+    return false; // no backend is assigned: the device is not opened
+  }
+
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK

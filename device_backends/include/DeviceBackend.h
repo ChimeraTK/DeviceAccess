@@ -41,6 +41,12 @@ namespace ChimeraTK {
      * connected when it is created. */
     virtual bool isConnected() = 0;
 
+    /** Return wether a device is working as intended, usually this means it is opened
+     *  and does not have any errors. The default implementeation in DeviceBackendImpl just reports
+     *  isOpened(). Backends have to overload it to implement reporting errors.
+     */
+    virtual bool isFunctional() const = 0;
+
     /** Return the register catalogue with detailed information on all registers.
      */
     virtual const RegisterCatalogue& getRegisterCatalogue() const = 0;

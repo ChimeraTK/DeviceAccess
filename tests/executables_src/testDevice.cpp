@@ -488,6 +488,33 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer17) {
   BOOST_CHECK((*accessor)->getRegisterInfo().module == "APP0");
 }
 
+struct DysfunctDummy : public ChimeraTK::DummyBackend {
+  using ChimeraTK::DummyBackend::DummyBackend;
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+    return boost::shared_ptr<DeviceBackend>(new DysfunctDummy(parameters["map"]));
+  }
+  bool isFunctional() const override { return false; }
+};
+
+BOOST_AUTO_TEST_CASE(testIsFunctional) {
+  ChimeraTK::Device d;
+  // a disconnected device is not functional
+  BOOST_CHECK(d.isFunctional() == false);
+
+  d.open("DUMMYD1");
+  BOOST_CHECK(d.isFunctional() == true);
+
+  d.close();
+  BOOST_CHECK(d.isFunctional() == false);
+
+  ChimeraTK::BackendFactory::getInstance().registerBackendType("DysfunctDummy", &DysfunctDummy::createInstance);
+  ChimeraTK::Device d2("(DysfunctDummy?map=goodMapFile.map)");
+  d2.open();
+  // A device can be opened but dysfyunctional if there are errors
+  BOOST_CHECK(d2.isOpened() == true);
+  BOOST_CHECK(d2.isFunctional() == false);
+}
+
 #pragma GCC diagnostic pop
 
 BOOST_AUTO_TEST_SUITE_END()

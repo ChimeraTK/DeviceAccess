@@ -165,6 +165,12 @@ namespace ChimeraTK {
     /** Check if the device is currently opened. */
     bool isOpened() const;
 
+    /** Return wether a device is working as intended, usually this means it is opened
+     *  and does not have any errors. If a backend does not implement any error reporting,
+     *  this functions id equivalent to isOpened().
+     */
+    bool isFunctional() const;
+
     /** \brief <b>Inefficient convenience function</b> to read a single-word
      * register without obtaining an accessor.
      *
