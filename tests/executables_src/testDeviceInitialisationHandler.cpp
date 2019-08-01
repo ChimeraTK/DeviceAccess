@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // wait until the device is reported to be OK again (chech with timeout),
   // then check the initialisation (again, no extra timeout needed because of the logic:
   // success is only reported after successful init).
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 30000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 3000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
 
   // initialisation should be correct now
@@ -225,23 +225,41 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   BOOST_CHECK_EQUAL(reg2, 47);
   BOOST_CHECK_EQUAL(reg3, 52);
 
-//  deviceStatus.readLatest();
-//  errorMessage.readLatest();
-//  BOOST_CHECK_EQUAL(deviceStatus, 0);
-//  BOOST_CHECK_EQUAL(std::string(errorMessage), "");
+  std::cout << "initalisation is correct now" << std::endl;
 
-  //  // now check that the initialisation error is also reportet when recovering
-  //  // Prepare registers to be initialised
-  //  reg1=12; reg1.write();
-  //  reg2=13; reg2.write();
-  //  reg3=14; reg3.write();
+    // now check that the initialisation error is also reportet when recovering
+    // Prepare registers to be initialised
+    reg1=12; reg1.write();
+    reg2=13; reg2.write();
+    reg3=14; reg3.write();
 
-  //  // Make initialisation fail when executed, and then cause an error condition
-  //  throwInInitialisation = true;
-  //  auto dummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
-  //  dummyBackend->throwExceptionWrite=true;
+    // Make initialisation fail when executed, and then cause an error condition
+    throwInInitialisation = true;
+    auto dummyBackend = boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+    dummyBackend->throwExceptionWrite=true;
 
-  //  reg4_cs=20;
-  //  reg4_cs.write();
-  //  test.stepApplication();
+    auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+    reg4_cs=20;
+    std::cout << "about to write" << std::endl;
+    reg4_cs.write();
+
+    std::cout << "wrote, which should cause errors" << std::endl;
+
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 3000);
+    // First we see the message from the failing write
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "DummyException: write throws by request", 3000);
+    dummyBackend->throwExceptionWrite=false;
+    // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write exception because write does not throw any more)
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 3000);
+
+    // Now fix the initialisation error and check that the device comes up.
+    throwInInitialisation = false;
+    // Wait until the device is OK again
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
+    // Finally check that the 20 arrives on the device
+    CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 3000);
+
+    std::cout << "all test done, shutting down" << std::endl;
+
 }
