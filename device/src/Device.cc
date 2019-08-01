@@ -15,16 +15,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-Device::Device(const std::string &aliasName) {
-  BackendFactory &factoryInstance = BackendFactory::getInstance();
-  _deviceBackendPointer = factoryInstance.createBackend(aliasName);
-}
+  Device::Device(const std::string& aliasName) {
+    BackendFactory& factoryInstance = BackendFactory::getInstance();
+    _deviceBackendPointer = factoryInstance.createBackend(aliasName);
+  }
 
   /********************************************************************************************************************/
 
-Device::~Device() {
-  // Do NOT close the Backend here. Another device might be using the same
-  // backend.
+  Device::~Device() {
+    // Do NOT close the Backend here. Another device might be using the same
+    // backend.
   }
 
   /********************************************************************************************************************/
@@ -49,8 +49,8 @@ Device::~Device() {
 
   /********************************************************************************************************************/
 
-  boost::shared_ptr<RegisterAccessor> Device::getRegisterAccessor(const std::string& regName,
-      const std::string& module) const {
+  boost::shared_ptr<RegisterAccessor> Device::getRegisterAccessor(
+      const std::string& regName, const std::string& module) const {
     checkPointersAreNotNull();
     return boost::shared_ptr<RegisterAccessor>(
         new RegisterAccessor(_deviceBackendPointer, RegisterPath(module) / regName));

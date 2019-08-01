@@ -87,10 +87,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> DeviceBackend::getRegisterAccessor(
-      const RegisterPath& registerPathName,
-      size_t numberOfWords,
-      size_t wordOffsetInRegister,
-      AccessModeFlags flags) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
     return CALL_VIRTUAL_FUNCTION_TEMPLATE(
         getRegisterAccessor_impl, UserType, registerPathName, numberOfWords, wordOffsetInRegister, flags);
   }
@@ -99,10 +96,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> DeviceBackend::getRegisterAccessor(
-      const RegisterPath& registerPathName,
-      size_t numberOfWords,
-      size_t wordOffsetInRegister,
-      bool enforceRawAccess) {
+      const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, bool enforceRawAccess) {
     if(!enforceRawAccess) {
       return CALL_VIRTUAL_FUNCTION_TEMPLATE(getRegisterAccessor_impl, UserType, registerPathName, numberOfWords,
           wordOffsetInRegister, AccessModeFlags({}));

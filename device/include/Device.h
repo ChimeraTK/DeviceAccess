@@ -48,7 +48,6 @@ namespace ChimeraTK {
    */
   class Device {
    public:
-
     /** Create device instance without associating a backend yet.
      *
      * A backend has to be explicitly associated using open method which
@@ -60,7 +59,7 @@ namespace ChimeraTK {
      *   d.open("(pci:pciedevs5?map=mps_v00.07.map)");
      * \endcode
      */
-    Device()=default;
+    Device() = default;
 
     /**
      * \brief Initialize device and accociate a backend.
@@ -75,7 +74,7 @@ namespace ChimeraTK {
      *
      * \param aliasName The ChimeraTK device descriptor for the device.
      */
-    Device(const std::string &aliasName);
+    Device(const std::string& aliasName);
 
     /** Destructor */
     virtual ~Device();
@@ -220,10 +219,8 @@ namespace ChimeraTK {
      *  argument wordOffsetInRegister allows to skip the first
      * wordOffsetInRegister elements of the register. */
     template<typename UserType>
-    void write(const RegisterPath& registerPathName,
-        const std::vector<UserType>& vector,
-        size_t wordOffsetInRegister = 0,
-        const AccessModeFlags& flags = AccessModeFlags({}));
+    void write(const RegisterPath& registerPathName, const std::vector<UserType>& vector,
+        size_t wordOffsetInRegister = 0, const AccessModeFlags& flags = AccessModeFlags({}));
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -279,9 +276,7 @@ namespace ChimeraTK {
 
     template<typename UserType>
     [[deprecated("Use new signature instead!")]] ScalarRegisterAccessor<UserType> getScalarRegisterAccessor(
-        const RegisterPath& registerPathName,
-        size_t wordOffsetInRegister,
-        bool enforceRawAccess) const;
+        const RegisterPath& registerPathName, size_t wordOffsetInRegister, bool enforceRawAccess) const;
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -306,10 +301,8 @@ namespace ChimeraTK {
     template<typename UserType>
     [[deprecated("Use getScalarRegisterAccessor or getOneDRegisterAccessor "
                  "instead!")]] BufferingRegisterAccessor<UserType>
-        getBufferingRegisterAccessor(const RegisterPath& registerPathName,
-            size_t numberOfWords = 0,
-            size_t wordOffsetInRegister = 0,
-            bool enforceRawAccess = false) const;
+        getBufferingRegisterAccessor(const RegisterPath& registerPathName, size_t numberOfWords = 0,
+            size_t wordOffsetInRegister = 0, bool enforceRawAccess = false) const;
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -429,9 +422,7 @@ namespace ChimeraTK {
      *  @todo Change warning into runtime error after release of version 0.9
      */
     [[deprecated("Open by alias or device identifier string instead!")]] virtual void open(
-        boost::shared_ptr<DeviceBackend>
-            deviceBackend,
-        boost::shared_ptr<ChimeraTK::RegisterInfoMap>& registerMap);
+        boost::shared_ptr<DeviceBackend> deviceBackend, boost::shared_ptr<ChimeraTK::RegisterInfoMap>& registerMap);
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -450,8 +441,7 @@ namespace ChimeraTK {
      */
     template<typename customClass>
     [[deprecated("Use getTwoDRegisterAccessor() instead!")]] boost::shared_ptr<customClass> getCustomAccessor(
-        const std::string& dataRegionName,
-        const std::string& module = std::string()) const;
+        const std::string& dataRegionName, const std::string& module = std::string()) const;
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -475,8 +465,7 @@ namespace ChimeraTK {
      */
     template<typename UserType>
     [[deprecated("Use new signature instead!")]] TwoDRegisterAccessor<UserType> getTwoDRegisterAccessor(
-        const std::string& module,
-        const std::string& registerName) const;
+        const std::string& module, const std::string& registerName) const;
 
     /** \brief <b>DEPRECATED</b>
      *
@@ -550,8 +539,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename customClass>
-  boost::shared_ptr<customClass> Device::getCustomAccessor(const std::string& dataRegionName,
-      const std::string& module) const {
+  boost::shared_ptr<customClass> Device::getCustomAccessor(
+      const std::string& dataRegionName, const std::string& module) const {
     std::cerr << "***************************************************************"
                  "**********************************"
               << std::endl; // LCOV_EXCL_LINE
@@ -571,9 +560,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(const RegisterPath& registerPathName,
-      size_t wordOffsetInRegister,
-      const AccessModeFlags& flags) const {
+  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(
+      const RegisterPath& registerPathName, size_t wordOffsetInRegister, const AccessModeFlags& flags) const {
     checkPointersAreNotNull();
     return ScalarRegisterAccessor<UserType>(
         _deviceBackendPointer->getRegisterAccessor<UserType>(registerPathName, 1, wordOffsetInRegister, flags));
@@ -582,9 +570,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(const RegisterPath& registerPathName,
-      size_t wordOffsetInRegister,
-      bool enforceRawAccess) const {
+  ScalarRegisterAccessor<UserType> Device::getScalarRegisterAccessor(
+      const RegisterPath& registerPathName, size_t wordOffsetInRegister, bool enforceRawAccess) const {
     if(!enforceRawAccess) {
       return getScalarRegisterAccessor<UserType>(registerPathName, wordOffsetInRegister);
     }
@@ -711,16 +698,16 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(const std::string& module,
-      const std::string& registerName) const {
+  BufferingRegisterAccessor<UserType> Device::getBufferingRegisterAccessor(
+      const std::string& module, const std::string& registerName) const {
     return getBufferingRegisterAccessor<UserType>(RegisterPath(module) / registerName);
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(const std::string& module,
-      const std::string& registerName) const {
+  TwoDRegisterAccessor<UserType> Device::getTwoDRegisterAccessor(
+      const std::string& module, const std::string& registerName) const {
     checkPointersAreNotNull();
     return TwoDRegisterAccessor<UserType>(
         _deviceBackendPointer->getRegisterAccessor<UserType>(RegisterPath(module) / registerName, 0, 0, false));
