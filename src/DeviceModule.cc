@@ -347,10 +347,16 @@ namespace ChimeraTK {
         errorLock.unlock(); // we must not hold the error lock when not having the testable mode mutex
         std::cout << "giving up testable mode lock, sleeping..." << std::endl;
         owner->testableModeUnlock("Wait for recovery");
-        usleep(500000);
+
+        do{
+           usleep(500000);
+           boost::this_thread::interruption_point();
+        }while(!device.isFunctional());
+
         owner->testableModeLock("Try recovery");
         std::cout << "go back the testable mode lock" << std::endl;
         errorLock.lock();
+        std::cout << "got the error lock"<< std::endl;
 
         // FIXME: we have to wait here until the device reports that it is functional again.
         // Otherwise we spam the error reporting with 2 Hz.

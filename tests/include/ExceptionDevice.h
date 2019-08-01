@@ -17,6 +17,9 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
       throw(ChimeraTK::runtime_error("DummyException: This is a test"));
     }
     ChimeraTK::DummyBackend::open();
+    if (throwExceptionRead ||throwExceptionWrite){
+        throw(ChimeraTK::runtime_error("DummyException: open throws because of device error when already open."));
+    }
   }
 
   void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
@@ -31,6 +34,10 @@ class ExceptionDummy : public ChimeraTK::DummyBackend {
       throw(ChimeraTK::runtime_error("DummyException: write throws by request"));
     }
     ChimeraTK::DummyBackend::write(bar, address, data, sizeInBytes);
+  }
+
+  bool isFunctional() const override{
+      return (_opened && !throwExceptionOpen && !throwExceptionRead && !throwExceptionWrite);
   }
 
   class BackendRegisterer {

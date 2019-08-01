@@ -303,6 +303,7 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
 }
 
 BOOST_AUTO_TEST_CASE(testConstants){
+    std::cout << "testConstants" << std::endl;
     // Constants are registered to the device to be written when opening/recovering
     // Attention: This test does not test that errors when writing to constants are displayed correctly. It only checks that witing when opeing and recovering works.
     TestApplication app;
@@ -327,6 +328,8 @@ BOOST_AUTO_TEST_CASE(testConstants){
 
     auto pleaseWriteToMe = test.getScalar<int32_t>("/PleaseWriteToMe");
     pleaseWriteToMe = 42;
+    std::cout << "here goes nothing " << std::endl;
+    sleep(1);
     pleaseWriteToMe.write();
     test.stepApplication();
 
