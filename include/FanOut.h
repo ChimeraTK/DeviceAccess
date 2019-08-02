@@ -50,8 +50,12 @@ namespace ChimeraTK {
 
     // interrupt the input and all slaves
     virtual void interrupt(){
-        impl->interrupt();
-        for (auto & slave: slaves) slave->interrupt();
+        if (impl){
+          impl->interrupt();
+        }
+        for (auto & slave: slaves){
+          slave->interrupt();
+        }
     }
 
    protected:
