@@ -18,6 +18,7 @@
 #include "ExceptionDevice.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "check_timeout.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -25,17 +26,6 @@ namespace ctk = ChimeraTK;
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 constexpr char ExceptionDummyCDD2[] = "(ExceptionDummy:2?map=test3.map)";
 constexpr char ExceptionDummyCDD3[] = "(ExceptionDummy:3?map=test3.map)";
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
 /* dummy application */
 
@@ -70,15 +60,16 @@ struct TestApplication2 : public ctk::Application {
 
   void defineConnections() {
       // let's do some manual cabling here....
-      //cs("trigger", typeid(int), 1) >> outputModule("trigger");
-      //outputModule("actuator") >> dev1["MyModule"]("actuator");
+      // A module that is only writin to a device such that no fan is involved
+      cs("trigger", typeid(int), 1) >> outputModule("trigger");
+      outputModule("actuator") >> dev1["MyModule"]("actuator");
 
       dev3.connectTo(cs["Device3"], cs("trigger2", typeid(int), 1));
   }
 
-  //OutputModule outputModule{this, "outputModule", "The output module"};
+  OutputModule outputModule{this, "outputModule", "The output module"};
 
-  //ctk::DeviceModule dev1{this, ExceptionDummyCDD1};
+  ctk::DeviceModule dev1{this, ExceptionDummyCDD1};
   //ctk::DeviceModule dev2{this, ExceptionDummyCDD2};
   ctk::DeviceModule dev3{this, ExceptionDummyCDD3};
   ctk::ControlSystemModule cs;
@@ -403,24 +394,47 @@ BOOST_AUTO_TEST_CASE(testShutdown){
 //    app.dumpConnections();
 //    std::cout << "did you get it?" << std::endl;
 
+    //Wait for the devices to come up.
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD1/"status"), 0, 3000);
+    //CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD2/"status"), 0, 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"status"), 0, 3000);
+    sleep(2);
 
-    // make all devices fail, and wait until they report the error state
-    auto dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-    dummyBackend1->throwExceptionWrite=true;
-    dummyBackend1->throwExceptionRead=true;
-    auto dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
-    dummyBackend2->throwExceptionWrite=true;
-    dummyBackend2->throwExceptionRead=true;
+    // make all devices fail, and wait until they report the error state, one after another
     auto dummyBackend3 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
     dummyBackend3->throwExceptionWrite=true;
     dummyBackend3->throwExceptionRead=true;
 
     // two blocking accessors on dev3: one for reading, one for writing
     auto trigger2= test.getScalar<int32_t>("/trigger2");
-    trigger2 = 42;
     trigger2.write(); // triggers the read of readBack
     auto theInt = test.getScalar<int32_t>("/Device3/Integers/signed32");
     theInt.write();
-    sleep(5);
-    std::cout << "slept well, that's it" <<std::endl;
+
+    // wait for the error to be reported in the control system
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"status"), 1, 3000);
+    // the read is the first error we see. The second one is not reported any more for this device.
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"message"), "DummyException: read throws by request", 3000);
+
+    std::cout << "device 3 successfully broken!" << std::endl;
+
+    // block the output accessor of "outputModule
+    auto dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+    dummyBackend1->throwExceptionWrite=true;
+    dummyBackend1->throwExceptionRead=true;
+
+    auto trigger= test.getScalar<int32_t>("/trigger");
+    trigger.write();
+
+    // wait for the error to be reported in the control system
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD1/"status"), 1, 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD1/"message"), "DummyException: write throws by request", 3000);
+
+    std::cout << "device 1 successfully broken!" << std::endl;
+
+    auto dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+    //dummyBackend2->throwExceptionWrite=true;
+    //dummyBackend2->throwExceptionRead=true;
+
+    std::cout << "device 2 successfully broken!" << std::endl;
 }
