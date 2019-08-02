@@ -115,6 +115,12 @@ namespace ChimeraTK {
 
     void terminate() override;
 
+    /** Notify all condition variables that are waiting inside reportExeption. This is
+     *  called from other threads hosting accessors. You must call a boost::thread::terminate() on the
+     *  thread running the accessor, then call DeviceModule::notify() to wake up reportException, which will detect the interruption and return.
+     */
+    void notify();
+
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override {

@@ -38,7 +38,13 @@ namespace ChimeraTK {
       }
     }
 
-   protected:
+    void interrupt() override{
+        // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
+        FanOut<UserType>::interrupt();
+        ChimeraTK::NDRegisterAccessor<UserType>::interrupt();
+    }
+
+  protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
   };
 

@@ -38,6 +38,7 @@ namespace ChimeraTK {
       if(_thread.joinable()) {
         _thread.interrupt();
         externalTrigger->interrupt();
+        dm.notify();
         _thread.join();
       }
       assert(!_thread.joinable());

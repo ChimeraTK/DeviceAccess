@@ -36,7 +36,7 @@ namespace ChimeraTK {
     void deactivate() override {
       if(_thread.joinable()) {
         _thread.interrupt();
-        FanOut<UserType>::impl->interrupt();
+        FanOut<UserType>::interrupt();
         _thread.join();
       }
       assert(!_thread.joinable());

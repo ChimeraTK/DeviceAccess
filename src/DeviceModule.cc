@@ -351,6 +351,7 @@ namespace ChimeraTK {
         do{
            usleep(500000);
            boost::this_thread::interruption_point();
+           std::cout << " no interruption yet.. " << std::endl;
         }while(!device.isFunctional());
 
         owner->testableModeLock("Try recovery");
@@ -459,6 +460,10 @@ namespace ChimeraTK {
 
   void DeviceModule::addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler) {
     initialisationHandlers.push_back(initialisationHandler);
+  }
+
+  void DeviceModule::notify(){
+      errorIsResolvedCondVar.notify_all();
   }
 
 } // namespace ChimeraTK

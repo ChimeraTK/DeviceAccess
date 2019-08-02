@@ -48,6 +48,12 @@ namespace ChimeraTK {
       slaves.push_back(slave);
     }
 
+    // interrupt the input and all slaves
+    virtual void interrupt(){
+        impl->interrupt();
+        for (auto & slave: slaves) slave->interrupt();
+    }
+
    protected:
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl;
 

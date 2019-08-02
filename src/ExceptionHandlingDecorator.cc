@@ -111,6 +111,13 @@ namespace ChimeraTK {
     }
   }
 
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::interrupt(){
+      // notify the condition variable waiting in reportException of the genericTransfer
+      dm.notify();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
+  }
+
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 
 } /* namespace ChimeraTK */

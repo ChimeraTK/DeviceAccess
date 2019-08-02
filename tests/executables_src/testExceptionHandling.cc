@@ -24,6 +24,7 @@ namespace ctk = ChimeraTK;
 
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 constexpr char ExceptionDummyCDD2[] = "(ExceptionDummy:2?map=test3.map)";
+constexpr char ExceptionDummyCDD3[] = "(ExceptionDummy:3?map=test3.map)";
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -46,6 +47,40 @@ struct TestApplication : public ctk::Application {
 
   ctk::DeviceModule dev1{this, ExceptionDummyCDD1};
   ctk::DeviceModule dev2{this, ExceptionDummyCDD2};
+  ctk::ControlSystemModule cs;
+};
+
+struct OutputModule : public ctk::ApplicationModule {
+   using ctk::ApplicationModule::ApplicationModule;
+
+   ctk::ScalarPushInput<int32_t> trigger{this, "trigger", "", "I wait for this to start."};
+   ctk::ScalarOutput<int32_t> actuator{this, "actuator", "", "This is where I write to."};
+
+   void mainLoop() override{
+       trigger.read();
+       actuator = int32_t(trigger);
+       actuator.write();
+   }
+};
+
+// A more compicated scenario with module that have blocking reads and writes, fans that connect to the device and the CS, and direct connection device/CS only without fans.
+struct TestApplication2 : public ctk::Application {
+  TestApplication2() : Application("testSuite") {}
+  ~TestApplication2() { shutdown(); }
+
+  void defineConnections() {
+      // let's do some manual cabling here....
+      //cs("trigger", typeid(int), 1) >> outputModule("trigger");
+      //outputModule("actuator") >> dev1["MyModule"]("actuator");
+
+      dev3.connectTo(cs["Device3"], cs("trigger2", typeid(int), 1));
+  }
+
+  //OutputModule outputModule{this, "outputModule", "The output module"};
+
+  //ctk::DeviceModule dev1{this, ExceptionDummyCDD1};
+  //ctk::DeviceModule dev2{this, ExceptionDummyCDD2};
+  ctk::DeviceModule dev3{this, ExceptionDummyCDD3};
   ctk::ControlSystemModule cs;
 };
 
@@ -352,4 +387,40 @@ BOOST_AUTO_TEST_CASE(testConstants){
 /// @todo FIXME: Write test that errors during constant writing are handled correctly, incl. correct error messages to the control system
 BOOST_AUTO_TEST_CASE(testConstantWitingErrors){
 
+}
+
+BOOST_AUTO_TEST_CASE(testShutdown){
+    std::cout << "\n \n \n testShutdown" << std::endl;
+    //Test that the application does shut down with a broken device and blocking accessors
+    TestApplication2 app;
+
+    ctk::TestFacility test(false); // test facility without testable mode
+
+    app.initialise();
+    app.run();
+
+//    std::cout << "dumping" << std::endl;
+//    app.dumpConnections();
+//    std::cout << "did you get it?" << std::endl;
+
+
+    // make all devices fail, and wait until they report the error state
+    auto dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+    dummyBackend1->throwExceptionWrite=true;
+    dummyBackend1->throwExceptionRead=true;
+    auto dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+    dummyBackend2->throwExceptionWrite=true;
+    dummyBackend2->throwExceptionRead=true;
+    auto dummyBackend3 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
+    dummyBackend3->throwExceptionWrite=true;
+    dummyBackend3->throwExceptionRead=true;
+
+    // two blocking accessors on dev3: one for reading, one for writing
+    auto trigger2= test.getScalar<int32_t>("/trigger2");
+    trigger2 = 42;
+    trigger2.write(); // triggers the read of readBack
+    auto theInt = test.getScalar<int32_t>("/Device3/Integers/signed32");
+    theInt.write();
+    sleep(5);
+    std::cout << "slept well, that's it" <<std::endl;
 }

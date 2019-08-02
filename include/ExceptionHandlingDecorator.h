@@ -45,6 +45,8 @@ namespace ChimeraTK {
 
     void setDataValidity(DataValidity validity = DataValidity::ok) override;
 
+    void interrupt() override;
+
    protected:
     DeviceModule& dm;
     DataValidity validity{DataValidity::ok};
