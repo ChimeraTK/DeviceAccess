@@ -25,7 +25,7 @@ namespace ctk = ChimeraTK;
 
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 constexpr char ExceptionDummyCDD2[] = "(ExceptionDummy:2?map=test3.map)";
-constexpr char ExceptionDummyCDD3[] = "(ExceptionDummy:3?map=test3.map)";
+constexpr char ExceptionDummyCDD3[] = "(ExceptionDummy:3?map=test4.map)";
 
 /* dummy application */
 
@@ -53,6 +53,36 @@ struct OutputModule : public ctk::ApplicationModule {
    }
 };
 
+struct InputModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<int32_t> trigger{this, "trigger", "", "I wait for this to start."};
+    ctk::ScalarPollInput<int32_t> readback{this, "readback", "", "Just going to read something."};
+
+    void mainLoop() override{
+        trigger.read();
+        readback.read();
+        // not very useful because I am doing anything with the read values, but still a useful test
+    }
+ };
+
+struct RealisticModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<int32_t> reg1{this, "REG1", "", "misused as input"};
+    ctk::ScalarPollInput<int32_t> reg2{this, "REG2", "", "also no input..."};
+    ctk::ScalarOutput<int32_t> reg3{this, "REG3", "", "my output"};
+
+    void mainLoop() override{
+        reg1.read();
+        reg2.readLatest();
+
+        reg3 = reg1 * reg2;
+        reg3.write();
+    }
+ };
+
+
 // A more compicated scenario with module that have blocking reads and writes, fans that connect to the device and the CS, and direct connection device/CS only without fans.
 struct TestApplication2 : public ctk::Application {
   TestApplication2() : Application("testSuite") {}
@@ -61,16 +91,33 @@ struct TestApplication2 : public ctk::Application {
   void defineConnections() {
       // let's do some manual cabling here....
       // A module that is only writin to a device such that no fan is involved
-      cs("trigger", typeid(int), 1) >> outputModule("trigger");
+      cs("triggerActuator") >> outputModule("trigger");
       outputModule("actuator") >> dev1["MyModule"]("actuator");
 
-      dev3.connectTo(cs["Device3"], cs("trigger2", typeid(int), 1));
+      cs("triggerReadback") >> inputModule("trigger");
+      dev1["MyModule"]("readBack") >> inputModule("readback");
+
+      dev2.connectTo(cs["Device2"], cs("trigger2", typeid(int), 1));
+
+    // the most realistic part: everything cabled everywhere with fans
+    // first cable the module to the device. This determines the direction of the variables
+    // FIXME: This does not work, don't know why.
+    //dev3["MODULE"]("REG1")[ cs("triggerRealistic",typeid(int), 1) ] >> realisticModule("REG1");
+
+    // This is not what I wanted. I wanted a triggered network for Reg1 and Reg2
+    realisticModule("REG3") >> dev3["MODULE"]("REG3"); // for the direction
+    dev3.connectTo(cs["Device3"], cs("triggerRealistic", typeid(int), 1));
+    realisticModule.connectTo(cs["Device3"]["MODULE"]);
   }
 
   OutputModule outputModule{this, "outputModule", "The output module"};
+  InputModule inputModule{this, "inputModule", "The input module"};
+
+  RealisticModule realisticModule{this, "realisticModule", "The most realistic module"};
+
 
   ctk::DeviceModule dev1{this, ExceptionDummyCDD1};
-  //ctk::DeviceModule dev2{this, ExceptionDummyCDD2};
+  ctk::DeviceModule dev2{this, ExceptionDummyCDD2};
   ctk::DeviceModule dev3{this, ExceptionDummyCDD3};
   ctk::ControlSystemModule cs;
 };
@@ -389,52 +436,66 @@ BOOST_AUTO_TEST_CASE(testShutdown){
 
     app.initialise();
     app.run();
-
-//    std::cout << "dumping" << std::endl;
-//    app.dumpConnections();
-//    std::cout << "did you get it?" << std::endl;
+    app.dumpConnections();
 
     //Wait for the devices to come up.
     CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD1/"status"), 0, 3000);
-    //CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD2/"status"), 0, 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD2/"status"), 0, 3000);
     CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"status"), 0, 3000);
     sleep(2);
 
     // make all devices fail, and wait until they report the error state, one after another
-    auto dummyBackend3 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
-    dummyBackend3->throwExceptionWrite=true;
-    dummyBackend3->throwExceptionRead=true;
+    auto dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
+    dummyBackend2->throwExceptionWrite=true;
+    dummyBackend2->throwExceptionRead=true;
 
     // two blocking accessors on dev3: one for reading, one for writing
     auto trigger2= test.getScalar<int32_t>("/trigger2");
     trigger2.write(); // triggers the read of readBack
-    auto theInt = test.getScalar<int32_t>("/Device3/Integers/signed32");
-    theInt.write();
 
     // wait for the error to be reported in the control system
-    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"status"), 1, 3000);
-    // the read is the first error we see. The second one is not reported any more for this device.
-    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"message"), "DummyException: read throws by request", 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD2/"status"), 1, 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD2/"message"), "DummyException: read throws by request", 3000);
 
-    std::cout << "device 3 successfully broken!" << std::endl;
+    auto theInt = test.getScalar<int32_t>("/Device2/Integers/signed32");
+    theInt.write();
+    // the read is the first error we see. The second one is not reported any more for this device.
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD2/"message"), "DummyException: read throws by request", 3000);
+
+    std::cout << "device 2 successfully broken!" << std::endl;
 
     // block the output accessor of "outputModule
     auto dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
     dummyBackend1->throwExceptionWrite=true;
     dummyBackend1->throwExceptionRead=true;
 
-    auto trigger= test.getScalar<int32_t>("/trigger");
-    trigger.write();
+    auto triggerActuator= test.getScalar<int32_t>("/triggerActuator");
+    triggerActuator.write();
 
     // wait for the error to be reported in the control system
     CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD1/"status"), 1, 3000);
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD1/"message"), "DummyException: write throws by request", 3000);
 
+    auto triggerReadback= test.getScalar<int32_t>("/triggerReadback");
+    triggerReadback.write();
+
     std::cout << "device 1 successfully broken!" << std::endl;
 
-    auto dummyBackend2 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD2));
-    //dummyBackend2->throwExceptionWrite=true;
-    //dummyBackend2->throwExceptionRead=true;
+    auto dummyBackend3 = boost::dynamic_pointer_cast<ExceptionDummy>( ctk::BackendFactory::getInstance().createBackend(ExceptionDummyCDD3));
+    dummyBackend3->throwExceptionWrite=true;
+    dummyBackend3->throwExceptionRead=true;
 
-    std::cout << "device 2 successfully broken!" << std::endl;
+    auto triggerRealistic = test.getScalar<int32_t>("/triggerRealistic");
+    triggerRealistic.write();
+
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"status"), 1, 3000);
+    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices")/ExceptionDummyCDD3/"message"), "DummyException: read throws by request", 3000);
+
+    auto reg4 = test.getScalar<int32_t>("/Device3/MODULE/REG4");
+    reg4.write();
+
+    std::cout << "device 3 successfully broken!" << std::endl;
+
+    // I now blocked everything that comes to my mind.
+    // And now the real test: does the test end or does it block when shuttig down?
 }
