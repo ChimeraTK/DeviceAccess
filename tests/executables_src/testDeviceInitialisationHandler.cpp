@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 3000);
 
     // Now fix the initialisation error and check that the device comes up.
-    //throwInInitialisation = false;
+    throwInInitialisation = false;
     // Wait until the device is OK again
     CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 3000);
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
