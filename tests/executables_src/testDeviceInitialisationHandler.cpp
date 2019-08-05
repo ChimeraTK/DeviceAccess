@@ -225,8 +225,6 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   BOOST_CHECK_EQUAL(reg2, 47);
   BOOST_CHECK_EQUAL(reg3, 52);
 
-  std::cout << "initalisation is correct now" << std::endl;
-
     // now check that the initialisation error is also reportet when recovering
     // Prepare registers to be initialised
     reg1=12; reg1.write();
@@ -240,10 +238,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
     auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
     reg4_cs=20;
-    std::cout << "about to write" << std::endl;
     reg4_cs.write();
-
-    std::cout << "wrote, which should cause errors" << std::endl;
 
     CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 3000);
     // First we see the message from the failing write
@@ -259,7 +254,4 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 3000);
     // Finally check that the 20 arrives on the device
     CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 3000);
-
-    std::cout << "all test done, shutting down" << std::endl;
-
 }
