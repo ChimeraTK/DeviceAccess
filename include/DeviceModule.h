@@ -52,12 +52,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  /** Implementes access to a ChimeraTK::Device.
+   */
   class DeviceModule : public Module {
    public:
     /** Constructor: The device represented by this DeviceModule is identified by
      * either the device alias found in the DMAP file or directly an URI.
      * A callback function to initialise the device can be registered as an optional argument (see addInitialisationHandler()
-     * for more information.*/
+     * for more information).*/
     DeviceModule(Application* application, const std::string& deviceAliasOrURI, std::function<void(DeviceModule *)> initialisationHandler = nullptr);
     /** Default constructor: create dysfunctional device module */
     DeviceModule() {}
@@ -106,7 +108,8 @@ namespace ChimeraTK {
     /** Use this function to report an exception. It should be called whenever a
      * ChimeraTK::runtime_error has been caught when trying to interact with this
      * device. This function shall not be called by the user, all exception
-     *  handling is done internally by ApplicationCore. */
+     * handling is done internally by ApplicationCore. 
+     * This functions is blocking until the Device reports isFunctional() again.*/
     void reportException(std::string errMsg);
 
     void prepare() override;
@@ -115,7 +118,7 @@ namespace ChimeraTK {
 
     void terminate() override;
 
-    /** Notify all condition variables that are waiting inside reportExeption. This is
+    /** Notify all condition variables that are waiting inside reportExeption(). This is
      *  called from other threads hosting accessors. You must call a boost::thread::terminate() on the
      *  thread running the accessor, then call DeviceModule::notify() to wake up reportException, which will detect the interruption and return.
      */
@@ -143,6 +146,25 @@ namespace ChimeraTK {
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
 
+    /** Add initialisation handlers to the device.
+     *
+     *  Initialisation handlers are called after the device has been opended, or after the device is recovering
+     *  from an error (i.e. an accessor has thrown an exception and Device::isFunctional() returns true afterwards).
+     *
+     *  You can add mupltiple handlers. They are executed in the sequence in which they are registered. If a handler 
+     *  has been registered in the constructor, it is called first.
+     *
+     *  The handler function is called from the DeviceModule thread (not from the thread with the accessor that threw the exception).
+     *  It is handed a pointer to the instance of the DeviceModule
+     *  where the handler was registered. The handler function may throw a ChimeraTK::runtime_error, so you don't have to
+     *  catch errors thrown when accessing the Device inside the handler. After a handler has thrown an exception, the
+     *  following handlers are not called. The DeviceModule will wait until the Device reports isFunctional() again and retry.
+     *  The exception is reported to other modules and the control system.
+     *
+     *  Notice: Especially in network based devices which do not hold a permanent connection, it is not always possible
+     *  to predict whether the next read()/write() will succeed. In this case the Device will always report isFunctional()
+     *  and one just has to retry. In this case the DeviceModule will start the initialisation sequence every 500 ms.
+     */
     void addInitialisationHandler( std::function<void(DeviceModule *)> initialisationHandler );
 
    protected:
