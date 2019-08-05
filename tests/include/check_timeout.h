@@ -12,10 +12,10 @@
     }                                                                                                                  \
   }
 
-#define CHECK_EQUAL_TIMEOUT(left, right, maxMilliseconds) \
-{                                                         \
-  CHECK_TIMEOUT( left == right, maxMilliseconds);         \
-  BOOST_CHECK_EQUAL(left,right);                          \
-}
+#define CHECK_EQUAL_TIMEOUT(left, right, maxMilliseconds)                                                              \
+  {                                                                                                                    \
+    CHECK_TIMEOUT(left == right, maxMilliseconds);                                                                     \
+    BOOST_CHECK_EQUAL(left, right);                                                                                    \
+  }
 
 #endif // CHECK_TIMEOUT_H

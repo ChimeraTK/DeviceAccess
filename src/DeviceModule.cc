@@ -236,7 +236,8 @@ namespace ChimeraTK {
         deviceHasError = true;
         errorLock.unlock();
         errorIsReportedCondVar.notify_all();
-      }else{
+      }
+      else {
         errorLock.unlock();
       }
 
@@ -298,8 +299,8 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error& e) {
         // we just report the exception and let the exception handling loop do the rest
         std::lock_guard<std::mutex> locakGuard(errorMutex);
-        deviceHasError=true;
-        if (errorQueue.push(e.what())){
+        deviceHasError = true;
+        if(errorQueue.push(e.what())) {
           if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
         }
       }
@@ -313,8 +314,9 @@ namespace ChimeraTK {
         // Just check the condition variable.
         std::unique_lock<std::mutex> errorLock(errorMutex);
         while(!deviceHasError) {
-          boost::this_thread::interruption_point();// Make sure not to start waiting for the condition variable if interruption was requested.
-          errorIsReportedCondVar.wait(errorLock);             // this releases the mutex while waiting
+          boost::this_thread::
+              interruption_point(); // Make sure not to start waiting for the condition variable if interruption was requested.
+          errorIsReportedCondVar.wait(errorLock);   // this releases the mutex while waiting
           boost::this_thread::interruption_point(); // we need an interruption point in the waiting loop
         }
 
@@ -324,7 +326,7 @@ namespace ChimeraTK {
 
         auto popResult = errorQueue.pop(error);
         assert(popResult); // this if should always be true, otherwise the condition variable logic is wrong
-        if(owner->isTestableModeEnabled()){
+        if(owner->isTestableModeEnabled()) {
           assert(owner->testableMode_counter > 0);
           --owner->testableMode_counter;
         }
@@ -340,10 +342,10 @@ namespace ChimeraTK {
         errorLock.unlock(); // we must not hold the error lock when not having the testable mode mutex
         owner->testableModeUnlock("Wait for recovery");
 
-        do{
-           usleep(500000);
-           boost::this_thread::interruption_point();
-        }while(!device.isFunctional());
+        do {
+          usleep(500000);
+          boost::this_thread::interruption_point();
+        } while(!device.isFunctional());
 
         owner->testableModeLock("Try recovery");
         errorLock.lock();
@@ -364,7 +366,7 @@ namespace ChimeraTK {
           // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.
           // It is sure we will enter it again because we just pushed to it, so if  the device recovers we will notice.
           // Do not use reportError, which would just do the mutext business in addition to pushing to the queue, but we already have the mutex.
-          if (errorQueue.push(e.what())){
+          if(errorQueue.push(e.what())) {
             if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
           }
           continue;
@@ -373,8 +375,8 @@ namespace ChimeraTK {
         // We survived the initialisation (if any). It seems the device is working again.
         // Empty exception reporting queue.
         while(errorQueue.pop()) {
-          if(owner->isTestableModeEnabled()){
-            assert(owner->testableMode_counter>0);
+          if(owner->isTestableModeEnabled()) {
+            assert(owner->testableMode_counter > 0);
             --owner->testableMode_counter;
           }
         }
@@ -423,7 +425,8 @@ namespace ChimeraTK {
   void DeviceModule::terminate() {
     if(moduleThread.joinable()) {
       moduleThread.interrupt();
-      errorIsReportedCondVar.notify_all(); // the terminating thread will notify the threads waiting for errorIsResolvedCondVar
+      errorIsReportedCondVar
+          .notify_all(); // the terminating thread will notify the threads waiting for errorIsResolvedCondVar
       moduleThread.join();
     }
     assert(!moduleThread.joinable());
@@ -449,8 +452,6 @@ namespace ChimeraTK {
     initialisationHandlers.push_back(initialisationHandler);
   }
 
-  void DeviceModule::notify(){
-      errorIsResolvedCondVar.notify_all();
-  }
+  void DeviceModule::notify() { errorIsResolvedCondVar.notify_all(); }
 
 } // namespace ChimeraTK

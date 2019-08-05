@@ -60,7 +60,8 @@ namespace ChimeraTK {
      * either the device alias found in the DMAP file or directly an URI.
      * A callback function to initialise the device can be registered as an optional argument (see addInitialisationHandler()
      * for more information).*/
-    DeviceModule(Application* application, const std::string& deviceAliasOrURI, std::function<void(DeviceModule *)> initialisationHandler = nullptr);
+    DeviceModule(Application* application, const std::string& deviceAliasOrURI,
+        std::function<void(DeviceModule*)> initialisationHandler = nullptr);
     /** Default constructor: create dysfunctional device module */
     DeviceModule() {}
 
@@ -165,7 +166,7 @@ namespace ChimeraTK {
      *  to predict whether the next read()/write() will succeed. In this case the Device will always report isFunctional()
      *  and one just has to retry. In this case the DeviceModule will start the initialisation sequence every 500 ms.
      */
-    void addInitialisationHandler( std::function<void(DeviceModule *)> initialisationHandler );
+    void addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler);
 
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
@@ -229,7 +230,7 @@ namespace ChimeraTK {
     mutable bool deviceIsInitialized = false;
 
     /* The list of initialisation handler callback functions */
-    std::list< std::function< void(DeviceModule *) > > initialisationHandlers;
+    std::list<std::function<void(DeviceModule*)>> initialisationHandlers;
 
     friend class Application;
     friend class detail::DeviceModuleProxy;

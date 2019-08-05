@@ -189,10 +189,10 @@ namespace ChimeraTK {
 
     DataValidity dataValidity() const override { return validity; }
 
-    void interrupt() override{
-        // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
-        FanOut<UserType>::interrupt();
-        ChimeraTK::NDRegisterAccessor<UserType>::interrupt();
+    void interrupt() override {
+      // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
+      FanOut<UserType>::interrupt();
+      ChimeraTK::NDRegisterAccessor<UserType>::interrupt();
     }
 
    protected:
