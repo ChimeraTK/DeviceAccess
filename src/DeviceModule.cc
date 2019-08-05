@@ -345,6 +345,14 @@ namespace ChimeraTK {
         do {
           usleep(500000);
           boost::this_thread::interruption_point();
+          try {
+            // This triggers a recovery (device is already opened).
+            device.open();
+          }
+          catch(ChimeraTK::runtime_error&) {
+            // Recovery failed. Just catch the exception and retry.
+            continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
+          }
         } while(!device.isFunctional());
 
         owner->testableModeLock("Try recovery");
