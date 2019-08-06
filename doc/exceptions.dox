@@ -1,0 +1,60 @@
+/**
+\page exceptions Exceptions and recovery
+
+This description is explicitly for DeviceAccess. If you are using ApplicationCore, the framework will handle all exceptions and the recovery.
+
+\section Exceptions
+
+There are only two types of exceptions in ChimeraTK:
+
+\li \c runtime_error This exception is thrown for (temporary) errors which can
+occur at run time, for instance network errors or I/O errors when reading/writing.
+These errors usually occur when a device that worked before becomes unavailable or
+is malfunctioning. This is a **recoverable error**. Usually retrying or re-opening the
+device will eventually make the device work again, once the source of the error has been removed.
+Program code can catch this exception to do error handling.
+
+\li \c logic_error This exception is thrown when parts of the program logic or configuration is wrong.
+An example would be requesting an accessor with a name that does not exist, or a missing map file.
+This is a **non-recoverable error**. **Do not catch** it in your code. The only way to fix this is to repair
+the program logic or the configuration.
+
+\section isFunctional isFunctional()
+
+When a device has successfully been opened, it usually reports \c isFunctional() as \c true.
+If a recoverable error (temporary failure) occurs, the backend will throw a \c runtime_error. In addition, \c isFunctional() shall return false if possible.
+To be precise: If it is **known** that the device is **not working**, \c isFunctional() shall return **\c false**. It shall return **true** in **all other cases**.
+
+\c isFunctional() is the indicator for the client code that it can try reading/writing. A backend with network communication for instance,
+that does not hold a permanent connection but always re-connects with each access, might throw \c runtime_errors in case of an unstable network.
+Nevertheless it will always report \c isFunctional() as true because it cannot know whether the next access will succeed.
+Another backend which is permanently opening a socket, will report \c isFunctional() as false if the socket does not work any more because it knows
+that read/write operations will fail.
+
+\section recovery Recovery 
+
+Only a backend can know how to recover from communication errors. However, the using code can tell the device  when to try a recovery.
+In principle there are three scenarios:
+
+\subsection recover_open Recovery on re-open
+
+If \c open() is called again on an already opened backend, the recovery is started. This is the most typical case.
+Usually it means closing the connection to the hardware (e.g. device node or network socket) and trying to re-establish it.
+While the connection to the hardware is broken, the backend still reports \c isOpened() as \c true, but \c isFunctional() is \c false.
+
+\subsection auto_recover Automatic recovery
+
+Some devices might have a monitoring thread which is supervising the health of the connection (network connection with heartbeat, for instance).
+In these cases the backend will report \c isFunctional() as \c false while the connection is down, but will automatically try the re-connection in the background.
+Once it is successful, \c isFunctional() goes back to \c true. Calling \c open() again will do nothing in this scenario.
+
+Again, \c isOpened() is \c true all the time. It means the backed is supposed to work and will try to recover in the background. If you close the device,
+the backend will not try to reach the hardware any more.
+
+\subsection no_recovery No recovery necessary
+
+In case of the aforementioned network communication without permanent connection, the recovery is implicit in each read/write action.
+In this scenario \c isFunctional() always returns \c true if the device is opened.
+
+*/
+

@@ -24,6 +24,7 @@ are complete and fully functional.
 \li \ref custom_backends
 \li \ref dmap
 
+\li \ref exceptions
 \li \ref q_and_a
 
 \page basic_example Basic Example
