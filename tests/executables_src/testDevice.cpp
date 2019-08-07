@@ -489,11 +489,12 @@ BOOST_AUTO_TEST_CASE(testCompatibilityLayer17) {
 }
 
 struct DysfunctDummy : public ChimeraTK::DummyBackend {
-  using ChimeraTK::DummyBackend::DummyBackend;
+  DysfunctDummy (std::string mapFileName) : DummyBackend(mapFileName){
+    _hasErrors = true;
+  }
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new DysfunctDummy(parameters["map"]));
   }
-  bool isFunctional() const override { return false; }
 };
 
 BOOST_AUTO_TEST_CASE(testIsFunctional) {

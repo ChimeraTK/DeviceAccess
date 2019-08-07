@@ -42,8 +42,12 @@ namespace ChimeraTK {
     virtual bool isConnected() = 0;
 
     /** Return wether a device is working as intended, usually this means it is opened
-     *  and does not have any errors. The default implementeation in DeviceBackendImpl just reports
-     *  isOpened(). Backends have to overload it to implement reporting errors.
+     *  and does not have any errors. The default implementeation in DeviceBackendImpl reports
+     *  (_opened && !_hasErrors). Backends can overload it to implement a more sophisticated error reporting.
+     *
+     *  Notice: isFunctional() shall only return false if there are known errors (or the device is closed).
+     *  If the working state is unknown, the response should be \c true. Client code will then try to read/write
+     *  and might get an exception, while isFunctional()==false means you surely will get an exception.
      */
     virtual bool isFunctional() const = 0;
 

@@ -7,28 +7,29 @@ This description is explicitly for DeviceAccess. If you are using ApplicationCor
 
 There are only two types of exceptions in ChimeraTK:
 
-\li \c runtime_error This exception is thrown for (temporary) errors which can
+\li \c runtime_error  This is a **recoverable error**. The exception is thrown for (temporary) errors which can
 occur at run time, for instance network errors or I/O errors when reading/writing.
 These errors usually occur when a device that worked before becomes unavailable or
-is malfunctioning. This is a **recoverable error**. Usually retrying or re-opening the
+is malfunctioning. Usually retrying or re-opening the
 device will eventually make the device work again, once the source of the error has been removed.
 Program code can catch this exception to do error handling.
 
-\li \c logic_error This exception is thrown when parts of the program logic or configuration is wrong.
-An example would be requesting an accessor with a name that does not exist, or a missing map file.
-This is a **non-recoverable error**. **Do not catch** it in your code. The only way to fix this is to repair
+\li \c logic_error This is a **non-recoverable error**. The exception is thrown when parts of the program logic or configuration is wrong.
+An example would be requesting an accessor with a name that does not exist, or a missing map file. **Do not catch** it in your code. The only way to fix this error is to repair
 the program logic or the configuration.
 
 \section isFunctional isFunctional()
 
+\c isFunctional() is used to indicate whether a device is expected to be working as intended, or if it is known to be dysfunctional (has seen errors, or perhaps has not been opened yet).
+
 When a device has successfully been opened, it usually reports \c isFunctional() as \c true.
 If a recoverable error (temporary failure) occurs, the backend will throw a \c runtime_error. In addition, \c isFunctional() shall return false if possible.
-To be precise: If it is **known** that the device is **not working**, \c isFunctional() shall return **\c false**. It shall return **true** in **all other cases**.
+To be precise: If it is **known** that the device is **not working**, \c isFunctional() shall return **false**. It shall return **true** in **all other cases**.
 
 \c isFunctional() is the indicator for the client code that it can try reading/writing. A backend with network communication for instance,
 that does not hold a permanent connection but always re-connects with each access, might throw \c runtime_errors in case of an unstable network.
-Nevertheless it will always report \c isFunctional() as true because it cannot know whether the next access will succeed.
-Another backend which is permanently opening a socket, will report \c isFunctional() as false if the socket does not work any more because it knows
+Nevertheless it will always report \c isFunctional() as \c true because it cannot know whether the next access will succeed.
+Another backend which is permanently opening a socket will report \c isFunctional() as \c false if the socket does not work any more because it knows
 that read/write operations will fail.
 
 \section recovery Recovery 
