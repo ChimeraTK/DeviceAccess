@@ -33,7 +33,7 @@ FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
 PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
-include_directories(SYSTEM ${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION} ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
+include_directories(SYSTEM ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
 # The PCIe backend can only be built on Linux, so we define a variable here that
 # we can then use in other places.
