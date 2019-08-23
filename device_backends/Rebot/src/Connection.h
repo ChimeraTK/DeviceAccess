@@ -33,6 +33,9 @@ namespace Rebot {
     /// Sends a std::vector of bytes to the socket.
     void write(const std::vector<uint32_t>& data);
 
+    /// Get the connection state.
+    bool isOpen();
+
   private:
     std::string address_;
     const std::string port_;
