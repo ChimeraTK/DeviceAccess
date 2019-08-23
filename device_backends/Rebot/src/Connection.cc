@@ -1,26 +1,27 @@
-#include "TcpCtrl.h"
+#include "Connection.h"
 #include "Exception.h"
 
 namespace ChimeraTK {
+namespace Rebot {
 
   namespace boost_ip = boost::asio::ip;
   typedef boost::asio::ip::tcp::resolver resolver_t;
   typedef boost::asio::ip::tcp::resolver::query query_t;
   typedef boost_ip::tcp::resolver::iterator iterator_t;
 
-  TcpCtrl::TcpCtrl(std::string address, int port) : _serverAddress(address), _port(port) {
+  Connection::Connection(std::string address, std::string port) : _serverAddress(address), _port(port) {
     _io_service = boost::make_shared<boost::asio::io_service>();
     _socket = boost::make_shared<boost_ip::tcp::socket>(*_io_service);
   }
 
-  TcpCtrl::~TcpCtrl() {}
+  Connection::~Connection() {}
 
-  void TcpCtrl::openConnection() {
+  void Connection::open() {
     try {
       // Use boost resolver for DNS name resolution when server address is a
       // hostname
       resolver_t dnsResolver(*_io_service);
-      query_t query(_serverAddress, std::to_string(_port));
+      query_t query(_serverAddress, _port);
       iterator_t endPointIterator = dnsResolver.resolve(query);
 
       boost::system::error_code ec;
@@ -38,7 +39,7 @@ namespace ChimeraTK {
     }
   }
 
-  void TcpCtrl::closeConnection() {
+  void Connection::close() {
     boost::system::error_code ec;
     _socket->close(ec);
     if(ec) {
@@ -46,9 +47,9 @@ namespace ChimeraTK {
     }
   }
 
-  std::vector<int32_t> TcpCtrl::receiveData(uint32_t const& numWordsToRead) {
+  std::vector<uint32_t> Connection::read(uint32_t const& numWordsToRead) {
     try {
-      std::vector<int32_t> readData(numWordsToRead);
+      std::vector<uint32_t> readData(numWordsToRead);
       boost::asio::read(*_socket, boost::asio::buffer(readData));
       return readData;
     }
@@ -59,18 +60,7 @@ namespace ChimeraTK {
     }
   }
 
-  void TcpCtrl::sendData(const std::vector<char>& data) {
-    try {
-      boost::asio::write(*_socket, boost::asio::buffer(&data[0], data.size()));
-    }
-    catch(...) {
-      // TODO: find out how to extract info from the boost excception and wrap it
-      // inside RebotBackendException
-      throw ChimeraTK::runtime_error("Error writing to socket");
-    }
-  }
-
-  void TcpCtrl::sendData(const std::vector<uint32_t>& data) {
+  void Connection::write(const std::vector<uint32_t>& data) {
     try {
       boost::asio::write(*_socket, boost::asio::buffer(data));
     }
@@ -81,25 +71,7 @@ namespace ChimeraTK {
     }
   }
 
-  std::string TcpCtrl::getAddress() { return _serverAddress; }
-
-  void TcpCtrl::setAddress(std::string ipaddr) {
-    if(_socket->is_open()) {
-      throw ChimeraTK::logic_error("Error setting IP. The socket is open");
-    }
-    _serverAddress = ipaddr;
-  }
-
-  int TcpCtrl::getPort() { return _port; }
-
-  void TcpCtrl::setPort(int port) {
-    if(_socket->is_open()) {
-      throw ChimeraTK::logic_error("Error setting port. The socket is open");
-    }
-    _port = port;
-  }
-
-  boost::system::error_code TcpCtrl::connectToResolvedEndPoints(
+  boost::system::error_code Connection::connectToResolvedEndPoints(
       boost::asio::ip::tcp::resolver::iterator endpointIterator) {
     boost::system::error_code ec;
     for(; endpointIterator != resolver_t::iterator(); ++endpointIterator) {
@@ -116,16 +88,5 @@ namespace ChimeraTK {
     return ec;
   }
 
-  // FIXME: remove this later; Do not want to do a cleanup at this point
-  void TcpCtrl::receiveData(boost::array<char, 4>& receivedArray) {
-    try {
-      boost::asio::read(*_socket, boost::asio::buffer(receivedArray));
-    }
-    catch(...) {
-      // TODO: find out how to extract info from the boost excception and wrap it
-      // inside RebotBackendException
-      throw ChimeraTK::runtime_error("Error reading from socket");
-    }
-  }
-
+} // Rebot
 } // namespace ChimeraTK
