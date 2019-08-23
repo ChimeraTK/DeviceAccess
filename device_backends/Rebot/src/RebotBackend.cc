@@ -1,18 +1,18 @@
 #include "RebotBackend.h"
 #include "RebotProtocol1.h"
 #include "RebotProtocolDefinitions.h"
-#include "TcpCtrl.h"
+#include "Connection.h"
 #include "testableRebotSleep.h"
 #include <boost/bind.hpp>
 #include <sstream>
 
 namespace ChimeraTK {
 
-  RebotBackend::RebotBackend(std::string boardAddr, int port, std::string mapFileName)
+  RebotBackend::RebotBackend(std::string boardAddr, std::string port, std::string mapFileName)
   : NumericAddressedBackend(mapFileName), _boardAddr(boardAddr), _port(port),
     _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
-    _tcpCommunicator(boost::make_shared<TcpCtrl>(_boardAddr, _port)), _protocolImplementor(),
-    _lastSendTime(testable_rebot_sleep::now()), _connectionTimeout(rebot::DEFAULT_CONNECTION_TIMEOUT),
+    _tcpCommunicator(boost::make_shared<Rebot::Connection>(_boardAddr, _port)), _protocolImplementor(),
+    _lastSendTime(testable_rebot_sleep::now()), _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
     _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex)) {}
 
   RebotBackend::~RebotBackend() {
@@ -23,7 +23,7 @@ namespace ChimeraTK {
       _threadInformerMutex->quitThread = true;
 
       if(isOpen()) {
-        _tcpCommunicator->closeConnection();
+        _tcpCommunicator->close();
       }
     } // end of the lock guard scope. We have to release the lock before waiting
       // for the thread to join
@@ -34,7 +34,7 @@ namespace ChimeraTK {
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
-    _tcpCommunicator->openConnection();
+    _tcpCommunicator->open();
     auto serverVersion = getServerProtocolVersion();
     if(serverVersion == 0) {
       _protocolImplementor.reset(new RebotProtocol0(_tcpCommunicator));
@@ -43,7 +43,7 @@ namespace ChimeraTK {
       _protocolImplementor.reset(new RebotProtocol1(_tcpCommunicator));
     }
     else {
-      _tcpCommunicator->closeConnection();
+      _tcpCommunicator->close();
       std::stringstream errorMessage;
       errorMessage << "Server protocol version " << serverVersion << " not supported!";
       throw ChimeraTK::runtime_error(errorMessage.str());
@@ -78,7 +78,7 @@ namespace ChimeraTK {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
     _opened = false;
-    _tcpCommunicator->closeConnection();
+    _tcpCommunicator->close();
     _protocolImplementor.reset(0);
   }
 
@@ -93,7 +93,7 @@ namespace ChimeraTK {
     }
 
     std::string tmcbIP = parameters["ip"];
-    int portNumber = std::stoi(parameters["port"]);
+    std::string portNumber = parameters["port"];
     std::string mapFileName = parameters["map"];
 
     return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName));
@@ -104,19 +104,19 @@ namespace ChimeraTK {
     // sendClientProtocolVersion
     _lastSendTime = testable_rebot_sleep::now();
     std::vector<uint32_t> clientHelloMessage = frameClientHello();
-    _tcpCommunicator->sendData(clientHelloMessage);
+    _tcpCommunicator->write(clientHelloMessage);
 
     // Kludge is needed to work around server bug.
     // We have a bug with the old version were only one word is returned for
     // multiple unrecognized command. Fetching one word for the 3 words send is a
     // workaround.
-    auto serverHello = _tcpCommunicator->receiveData(1);
+    auto serverHello = _tcpCommunicator->read(1);
 
-    if(serverHello.at(0) == rebot::UNKNOWN_INSTRUCTION) {
+    if(serverHello.at(0) == static_cast<uint32_t>(Rebot::UNKNOWN_INSTRUCTION)) {
       return 0; // initial protocol version 0.0
     }
 
-    auto remainingBytesOfAValidServerHello = _tcpCommunicator->receiveData(rebot::LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
+    auto remainingBytesOfAValidServerHello = _tcpCommunicator->read(Rebot::LENGTH_OF_HELLO_TOKEN_MESSAGE - 1);
 
     serverHello.insert(
         serverHello.end(), remainingBytesOfAValidServerHello.begin(), remainingBytesOfAValidServerHello.end());
@@ -125,13 +125,13 @@ namespace ChimeraTK {
 
   std::vector<uint32_t> RebotBackend::frameClientHello() {
     std::vector<uint32_t> clientHello;
-    clientHello.push_back(rebot::HELLO_TOKEN);
-    clientHello.push_back(rebot::MAGIC_WORD);
-    clientHello.push_back(rebot::CLIENT_PROTOCOL_VERSION);
+    clientHello.push_back(Rebot::HELLO_TOKEN);
+    clientHello.push_back(Rebot::MAGIC_WORD);
+    clientHello.push_back(Rebot::CLIENT_PROTOCOL_VERSION);
     return clientHello;
   }
 
-  uint32_t RebotBackend::parseRxServerHello(const std::vector<int32_t>& serverHello) {
+  uint32_t RebotBackend::parseRxServerHello(const std::vector<uint32_t>& serverHello) {
     // 3 rd element/word is the version word
     return serverHello.at(2);
   }

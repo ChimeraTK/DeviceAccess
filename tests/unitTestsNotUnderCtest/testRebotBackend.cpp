@@ -22,10 +22,10 @@ typedef ChimeraTK::DeviceInfoMap::DeviceInfo DeviceInfo;
 /******************************************************************************/
 struct RebotServerDetails {
   std::string ip;
-  int port;
+  std::string port;
 
   RebotServerDetails() : ip(), port(0){};
-  RebotServerDetails(std::string& ipAddress, int portNumber) : ip(ipAddress), port(portNumber){};
+  RebotServerDetails(std::string& ipAddress, std::string portNumber) : ip(ipAddress), port(portNumber){};
 };
 
 class RebotTestClass {
@@ -104,7 +104,7 @@ RebotServerDetails RebotTestClass::extractServerDetailsFromUri(std::string& uri)
   std::list<std::string>& serverParameters = parsedSDM._Parameters;
   std::list<std::string>::iterator it = serverParameters.begin();
   std::string ip = *it;
-  int port = std::stoi(*(++it));
+  std::string port = *++it;
   return RebotServerDetails(ip, port);
 }
 

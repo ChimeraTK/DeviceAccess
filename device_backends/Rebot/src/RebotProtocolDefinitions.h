@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace ChimeraTK { namespace rebot {
+namespace ChimeraTK { namespace Rebot {
 
   static const int READ_BLOCK_SIZE = 361;
   static const int32_t HELLO_TOKEN = 0x00000004;

@@ -7,10 +7,12 @@
 #include "RebotProtocolImplementor.h"
 
 namespace ChimeraTK {
-  class TcpCtrl;
+namespace Rebot {
+  class Connection;
+}
 
   struct RebotProtocol0 : RebotProtocolImplementor {
-    explicit RebotProtocol0(boost::shared_ptr<TcpCtrl>& tcpCommunicator);
+    explicit RebotProtocol0(boost::shared_ptr<Rebot::Connection>& tcpCommunicator);
     virtual ~RebotProtocol0(){};
 
     virtual void read(uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
@@ -26,10 +28,10 @@ namespace ChimeraTK {
     };
 
     //  protected:
-    boost::shared_ptr<TcpCtrl> _tcpCommunicator;
+    boost::shared_ptr<Rebot::Connection> _tcpCommunicator;
     void fetchFromRebotServer(uint32_t wordAddress, uint32_t numberOfWords, int32_t* dataLocation);
     void sendRebotReadRequest(const uint32_t wordAddress, const uint32_t wordsToRead);
-    void transferVectorToDataPtr(std::vector<int32_t> source, int32_t* destination);
+    void transferVectorToDataPtr(std::vector<uint32_t> source, int32_t* destination);
   };
 
 } // namespace ChimeraTK

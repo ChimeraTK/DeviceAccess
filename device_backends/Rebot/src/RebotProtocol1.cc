@@ -1,12 +1,12 @@
 #include "RebotProtocol1.h"
 
 #include "RebotProtocolDefinitions.h"
-#include "TcpCtrl.h"
+#include "Connection.h"
 
 namespace ChimeraTK {
-  using namespace rebot;
+  using namespace Rebot;
 
-  RebotProtocol1::RebotProtocol1(boost::shared_ptr<TcpCtrl>& tcpCommunicator)
+  RebotProtocol1::RebotProtocol1(boost::shared_ptr<Connection>& tcpCommunicator)
   : RebotProtocol0(tcpCommunicator), _lastSendTime(std::chrono::steady_clock::now()) {
     // Setting the time stamp to now() is sufficient in precision.
     // We know that the server has just replied to the hello before this class was
@@ -36,16 +36,16 @@ namespace ChimeraTK {
     // Again we timestamp here. Technically the comminucator might send muptilple
     // packets, but it is sufficient to reemember that we triggered it here.
     _lastSendTime = std::chrono::steady_clock::now();
-    _tcpCommunicator->sendData(writeCommandPacket);
+    _tcpCommunicator->write(writeCommandPacket);
     // FIXME: this returns std::vector<int32_t> of length 1. Do error handling!
-    (void)_tcpCommunicator->receiveData(1);
+    (void)_tcpCommunicator->read(1);
   }
 
   void RebotProtocol1::sendHeartbeat() {
-    _tcpCommunicator->sendData(std::vector<uint32_t>({HELLO_TOKEN, MAGIC_WORD, CLIENT_PROTOCOL_VERSION}));
+    _tcpCommunicator->write(std::vector<uint32_t>({HELLO_TOKEN, MAGIC_WORD, CLIENT_PROTOCOL_VERSION}));
     // don't evaluate. The other side is sending an error anyway in this protocol
     // version
-    _tcpCommunicator->receiveData(3);
+    _tcpCommunicator->read(3);
   }
 
 } // namespace ChimeraTK

@@ -20,8 +20,10 @@
 #include <vector>
 
 namespace ChimeraTK {
+namespace Rebot {
+  class Connection;
+}
 
-  class TcpCtrl;
   struct RebotProtocolImplementor;
 
   // A helper class that contains a mutex and a flag.
@@ -40,19 +42,19 @@ namespace ChimeraTK {
   class RebotBackend : public NumericAddressedBackend {
    protected:
     std::string _boardAddr;
-    int _port;
+    std::string _port;
 
     boost::shared_ptr<ThreadInformerMutex> _threadInformerMutex;
     // Only access the following membergs when holding the mutex. They are
     // also accessed by the heartbeat thread
-    boost::shared_ptr<TcpCtrl> _tcpCommunicator;
+    boost::shared_ptr<Rebot::Connection> _tcpCommunicator;
     std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
     /// The time when the last command (read/write/heartbeat) was send
     boost::chrono::steady_clock::time_point _lastSendTime;
     unsigned int _connectionTimeout;
 
    public:
-    RebotBackend(std::string boardAddr, int port, std::string mapFileName = "");
+    RebotBackend(std::string boardAddr, std::string port, std::string mapFileName = "");
     ~RebotBackend();
     /// The function opens the connection to the device
     void open() override;
@@ -70,7 +72,7 @@ namespace ChimeraTK {
     // us which implementor to instantiate.
     uint32_t getServerProtocolVersion();
     std::vector<uint32_t> frameClientHello();
-    uint32_t parseRxServerHello(const std::vector<int32_t>& serverHello);
+    uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello);
 
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;
