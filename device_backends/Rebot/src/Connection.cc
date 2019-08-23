@@ -57,6 +57,10 @@ namespace Rebot {
     }
   }
 
+  bool Connection::isOpen(){
+    return s_.is_open();
+  }
+
   void Connection::disconnectionTimerStart() {
     disconnectTimer_.expires_from_now(connectionTimeout_);
     disconnectTimer_.async_wait([=](const Error& ec) {
