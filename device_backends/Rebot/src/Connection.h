@@ -19,7 +19,7 @@ namespace Rebot {
     /// Gets an IP address and port of the device but does not open the
     /// connection
     Connection(const std::string& address, const std::string& port,
-               uint32_t connectionTimeout_sec = 10);
+               uint32_t connectionTimeout_sec = 5);
 
     /// Opens a connection to the device.
     void open();
@@ -40,6 +40,9 @@ namespace Rebot {
     boost::asio::ip::tcp::socket s_;
     boost::asio::deadline_timer disconnectTimer_;
     boost::asio::deadline_timer::duration_type connectionTimeout_;
+
+    void disconnectionTimerStart();
+    void disconnectionTimerCancel(const boost::system::error_code& ec);
   };
 } // namespace Rebot
 

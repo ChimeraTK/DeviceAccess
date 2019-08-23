@@ -17,11 +17,11 @@ namespace Rebot {
         connectionTimeout_(boost::posix_time::seconds(connectionTimeout_sec)) {}
 
   void Connection::open() {
-    //disconnectionTimerStart();
+    disconnectionTimerStart();
     boost::asio::ip::tcp::resolver r(ioService_);
     boost::asio::async_connect(
         s_, r.resolve({ address_.c_str(), port_.c_str() }),
-        [=](const Error ec, Iterator) {});
+        [=](const Error ec, Iterator) { disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -29,10 +29,10 @@ namespace Rebot {
 
   std::vector<uint32_t> Connection::read(uint32_t numWords) {
     std::vector<uint32_t> d(numWords);
-    //disconnectionTimerStart();
+    disconnectionTimerStart();
     boost::asio::async_read(
         s_, boost::asio::buffer(d),
-        [=](Error ec, std::size_t) {});
+        [=](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -40,10 +40,10 @@ namespace Rebot {
   }
 
   void Connection::write(const std::vector<uint32_t>& d) {
-    //disconnectionTimerStart();
+    disconnectionTimerStart();
     boost::asio::async_write(
         s_, boost::asio::buffer(d),
-        [=](Error ec, std::size_t) {});
+        [=](Error ec, std::size_t) { disconnectionTimerCancel(ec); });
 
     ioService_.reset();
     ioService_.run();
@@ -56,5 +56,25 @@ namespace Rebot {
       s_.close();
     }
   }
+
+  void Connection::disconnectionTimerStart() {
+    disconnectTimer_.expires_from_now(connectionTimeout_);
+    disconnectTimer_.async_wait([=](const Error& ec) {
+      if (ec == boost::asio::error::operation_aborted) {
+        // you have this error code when the timer was cancelled before expiry
+        return;
+      }
+      close();
+    });
+  }
+
+  void Connection::disconnectionTimerCancel(const Error& ec) {
+    disconnectTimer_.cancel();
+    if (ec) {
+      close();
+      throw std::runtime_error(ec.message());
+    }
+  }
+
 } // namespace Rebot
 } // namespace ChimeraTK
