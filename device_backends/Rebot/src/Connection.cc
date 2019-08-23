@@ -4,89 +4,57 @@
 namespace ChimeraTK {
 namespace Rebot {
 
-  namespace boost_ip = boost::asio::ip;
-  typedef boost::asio::ip::tcp::resolver resolver_t;
-  typedef boost::asio::ip::tcp::resolver::query query_t;
-  typedef boost_ip::tcp::resolver::iterator iterator_t;
+  using Error = boost::system::error_code;
+  using Iterator = boost::asio::ip::tcp::resolver::iterator;
 
-  Connection::Connection(std::string address, std::string port) : _serverAddress(address), _port(port) {
-    _io_service = boost::make_shared<boost::asio::io_service>();
-    _socket = boost::make_shared<boost_ip::tcp::socket>(*_io_service);
-  }
-
-  Connection::~Connection() {}
+  Connection::Connection(const std::string& address, const std::string& port,
+                         uint32_t connectionTimeout_sec)
+      : address_(address),
+        port_(port),
+        ioService_(),
+        s_(ioService_),
+        disconnectTimer_(ioService_),
+        connectionTimeout_(boost::posix_time::seconds(connectionTimeout_sec)) {}
 
   void Connection::open() {
-    try {
-      // Use boost resolver for DNS name resolution when server address is a
-      // hostname
-      resolver_t dnsResolver(*_io_service);
-      query_t query(_serverAddress, _port);
-      iterator_t endPointIterator = dnsResolver.resolve(query);
+    //disconnectionTimerStart();
+    boost::asio::ip::tcp::resolver r(ioService_);
+    boost::asio::async_connect(
+        s_, r.resolve({ address_.c_str(), port_.c_str() }),
+        [=](const Error ec, Iterator) {});
 
-      boost::system::error_code ec;
+    ioService_.reset();
+    ioService_.run();
+  }
 
-      // Try connecting to the first working endpoint in the list returned by
-      // the resolver.
-      // TODO: let boost asio throw instead of handling error through 'ec'.
-      ec = connectToResolvedEndPoints(endPointIterator);
-      if(ec) {
-        throw ChimeraTK::runtime_error("Could not connect to server");
-      }
-    }
-    catch(std::exception& exception) {
-      throw ChimeraTK::runtime_error(exception.what());
-    }
+  std::vector<uint32_t> Connection::read(uint32_t numWords) {
+    std::vector<uint32_t> d(numWords);
+    //disconnectionTimerStart();
+    boost::asio::async_read(
+        s_, boost::asio::buffer(d),
+        [=](Error ec, std::size_t) {});
+
+    ioService_.reset();
+    ioService_.run();
+    return d;
+  }
+
+  void Connection::write(const std::vector<uint32_t>& d) {
+    //disconnectionTimerStart();
+    boost::asio::async_write(
+        s_, boost::asio::buffer(d),
+        [=](Error ec, std::size_t) {});
+
+    ioService_.reset();
+    ioService_.run();
   }
 
   void Connection::close() {
-    boost::system::error_code ec;
-    _socket->close(ec);
-    if(ec) {
-      throw ChimeraTK::runtime_error("Error closing socket");
+    if (s_.is_open()) {
+      s_.cancel();
+      s_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+      s_.close();
     }
   }
-
-  std::vector<uint32_t> Connection::read(uint32_t const& numWordsToRead) {
-    try {
-      std::vector<uint32_t> readData(numWordsToRead);
-      boost::asio::read(*_socket, boost::asio::buffer(readData));
-      return readData;
-    }
-    catch(...) {
-      // TODO: find out how to extract info from the boost excception and wrap it
-      // inside RebotBackendException
-      throw ChimeraTK::runtime_error("Error reading from socket");
-    }
-  }
-
-  void Connection::write(const std::vector<uint32_t>& data) {
-    try {
-      boost::asio::write(*_socket, boost::asio::buffer(data));
-    }
-    catch(...) {
-      // TODO: find out how to extract info from the boost excception and wrap it
-      // inside RebotBackendException
-      throw ChimeraTK::runtime_error("Error writing to socket");
-    }
-  }
-
-  boost::system::error_code Connection::connectToResolvedEndPoints(
-      boost::asio::ip::tcp::resolver::iterator endpointIterator) {
-    boost::system::error_code ec;
-    for(; endpointIterator != resolver_t::iterator(); ++endpointIterator) {
-      _socket->close();
-      _socket->connect(*endpointIterator, ec);
-      if(ec == boost::system::errc::success) { // return if connection to server
-        // successful
-        return ec;
-      }
-    }
-    // Reaching here implies We failed to connect to every endpoint in the list.
-    // Indicate connection error in this case
-    ec = boost::asio::error::not_found;
-    return ec;
-  }
-
-} // Rebot
+} // namespace Rebot
 } // namespace ChimeraTK
