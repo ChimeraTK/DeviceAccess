@@ -47,7 +47,7 @@ namespace Rebot {
     boost::shared_ptr<ThreadInformerMutex> _threadInformerMutex;
     // Only access the following membergs when holding the mutex. They are
     // also accessed by the heartbeat thread
-    boost::shared_ptr<Rebot::Connection> _tcpCommunicator;
+    boost::shared_ptr<Rebot::Connection> _connection;
     std::unique_ptr<RebotProtocolImplementor> _protocolImplementor;
     /// The time when the last command (read/write/heartbeat) was send
     boost::chrono::steady_clock::time_point _lastSendTime;
@@ -68,11 +68,6 @@ namespace Rebot {
             parameters);
 
    protected:
-    // This is not in the protocol implementor. Only the result of the hello tells
-    // us which implementor to instantiate.
-    uint32_t getServerProtocolVersion();
-    std::vector<uint32_t> frameClientHello();
-    uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello);
 
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;
