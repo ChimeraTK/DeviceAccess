@@ -88,6 +88,8 @@ namespace ChimeraTK {
 
     void start();
     void stop();
+    bool is_running();
+
     boost::asio::io_service& service() { return _io; }
     std::shared_ptr<RebotDummySession> session() { return _currentSession.lock(); }
 
