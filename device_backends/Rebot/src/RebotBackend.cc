@@ -1,6 +1,6 @@
 #include "RebotBackend.h"
-#include "RebotProtocol1.h"
 #include "RebotProtocolDefinitions.h"
+#include "RebotProtocol1.h"
 #include "Connection.h"
 #include "testableRebotSleep.h"
 #include <boost/bind.hpp>
@@ -60,27 +60,35 @@ uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello) {
   return serverHello.at(2);
 }
 
-  RebotBackend::RebotBackend(std::string boardAddr, std::string port, std::string mapFileName)
-  : NumericAddressedBackend(mapFileName), _boardAddr(boardAddr), _port(port),
-    _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
-    _connection(boost::make_shared<Rebot::Connection>(_boardAddr, _port)), _protocolImplementor(),
-    _lastSendTime(testable_rebot_sleep::now()), _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
-    _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this, _threadInformerMutex)) {}
+RebotBackend::RebotBackend(std::string boardAddr, std::string port,
+                           std::string mapFileName,
+                           uint32_t connectionTimeout_sec)
+    : NumericAddressedBackend(mapFileName),
+      _boardAddr(boardAddr),
+      _port(port),
+      _threadInformerMutex(boost::make_shared<ThreadInformerMutex>()),
+      _connection(boost::make_shared<Rebot::Connection>(_boardAddr, _port,
+                                                        connectionTimeout_sec)),
+      _protocolImplementor(),
+      _lastSendTime(testable_rebot_sleep::now()),
+      _connectionTimeout(Rebot::DEFAULT_CONNECTION_TIMEOUT),
+      _heartbeatThread(std::bind(&RebotBackend::heartbeatLoop, this,
+                                 _threadInformerMutex)) {}
 
-  RebotBackend::~RebotBackend() {
-    { // extra scope for the lock guard
-      std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
+RebotBackend::~RebotBackend() {
+  { // extra scope for the lock guard
+    std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 
-      // make sure the thread does not access any hardware when it gets the lock
-      _threadInformerMutex->quitThread = true;
+    // make sure the thread does not access any hardware when it gets the lock
+    _threadInformerMutex->quitThread = true;
 
-      if(isOpen()) {
-        _connection->close();
-      }
-    } // end of the lock guard scope. We have to release the lock before waiting
-      // for the thread to join
-    _heartbeatThread.interrupt();
-    _heartbeatThread.join();
+    if (isOpen()) {
+      _connection->close();
+    }
+  } // end of the lock guard scope. We have to release the lock before waiting
+    // for the thread to join
+  _heartbeatThread.interrupt();
+  _heartbeatThread.join();
   }
 
   void RebotBackend::open() {
@@ -137,8 +145,13 @@ uint32_t parseRxServerHello(const std::vector<uint32_t>& serverHello) {
     std::string tmcbIP = parameters["ip"];
     std::string portNumber = parameters["port"];
     std::string mapFileName = parameters["map"];
+    uint32_t timeout = RebotBackend::CONNECTION_TIMEOUT_SEC;
 
-    return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName));
+    auto it = parameters.find("timeout");
+    if( it != parameters.end()){
+        timeout = static_cast<uint32_t>(std::stoul(it->second));
+    }
+    return boost::shared_ptr<RebotBackend>(new RebotBackend(tmcbIP, portNumber, mapFileName, timeout));
   }
 
   void RebotBackend::heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex) {

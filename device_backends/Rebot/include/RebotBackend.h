@@ -2,6 +2,7 @@
 #define CHIMERATK_REBOT_BACKEND_H
 
 #include "NumericAddressedBackend.h"
+
 #include <boost/algorithm/string.hpp>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -54,14 +55,19 @@ namespace Rebot {
     unsigned int _connectionTimeout;
 
    public:
-    RebotBackend(std::string boardAddr, std::string port, std::string mapFileName = "");
-    ~RebotBackend();
-    /// The function opens the connection to the device
-    void open() override;
-    void close() override;
-    void read(uint8_t bar, uint32_t addressInBytes, int32_t* data, size_t sizeInBytes) override;
-    void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) override;
-    std::string readDeviceInfo() override { return std::string("RebotDevice"); }
+     RebotBackend(std::string boardAddr, std::string port,
+                  std::string mapFileName = "",
+                  uint32_t connectionTimeout_sec = CONNECTION_TIMEOUT_SEC);
+     ~RebotBackend();
+     /// The function opens the connection to the device
+     void open() override;
+     void close() override;
+     void read(uint8_t bar, uint32_t addressInBytes, int32_t* data,
+               size_t sizeInBytes) override;
+     void write(uint8_t bar, uint32_t addressInBytes, int32_t const* data,
+                size_t sizeInBytes) override;
+     std::string readDeviceInfo() override {
+       return std::string("RebotDevice"); }
 
     static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
         std::map<std::string, std::string>
@@ -71,6 +77,8 @@ namespace Rebot {
 
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;
+
+    const static uint32_t CONNECTION_TIMEOUT_SEC{5};
   };
 
 } // namespace ChimeraTK
