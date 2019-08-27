@@ -205,4 +205,8 @@ namespace ChimeraTK {
     _io.stop();
   }
 
+  bool RebotDummyServer::is_running() {
+    return not _io.stopped();
+  }
+
 } /* namespace ChimeraTK */
