@@ -43,6 +43,7 @@ target_link_libraries(RebotDummyServer RebotDummyServerLib ${PROJECT_NAME})
 target_link_libraries(testRebotHeartbeatCount RebotDummyServerLib)
 target_link_libraries(testRebotConnectionTimeouts RebotDummyServerLib)
 
+
 #
 # Introduced directory unitTestsNotUnderCtest; This contains the boost unit
 # tests (currently for the rebot backend). The tests in this directory should
