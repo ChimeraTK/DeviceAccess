@@ -81,6 +81,7 @@ namespace ChimeraTK {
       deviceError = std::move(other.deviceError);
       owner = other.owner;
       proxies = std::move(other.proxies);
+      deviceHasError = other.deviceHasError;
       for(auto& proxy : proxies) proxy.second._myowner = this;
       owner->registerDeviceModule(this);
       return *this;
@@ -215,7 +216,7 @@ namespace ChimeraTK {
     std::condition_variable errorIsReportedCondVar;
 
     /** The error flag (predicate) for the conditionVariable */
-    bool deviceHasError;
+    bool deviceHasError{false};
 
     /** This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      *  The function is running an endless loop inside its own thread (moduleThread). */
@@ -225,7 +226,7 @@ namespace ChimeraTK {
      *  to the device. */
     std::list<boost::shared_ptr<TransferElement>> writeAfterOpen;
 
-    Application* owner;
+    Application* owner{nullptr};
 
     mutable bool deviceIsInitialized = false;
 
