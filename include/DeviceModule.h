@@ -110,7 +110,7 @@ namespace ChimeraTK {
     /** Use this function to report an exception. It should be called whenever a
      * ChimeraTK::runtime_error has been caught when trying to interact with this
      * device. This function shall not be called by the user, all exception
-     * handling is done internally by ApplicationCore. 
+     * handling is done internally by ApplicationCore.
      * This functions is blocking until the Device reports isFunctional() again.*/
     void reportException(std::string errMsg);
 
@@ -153,7 +153,7 @@ namespace ChimeraTK {
      *  Initialisation handlers are called after the device has been opended, or after the device is recovering
      *  from an error (i.e. an accessor has thrown an exception and Device::isFunctional() returns true afterwards).
      *
-     *  You can add mupltiple handlers. They are executed in the sequence in which they are registered. If a handler 
+     *  You can add mupltiple handlers. They are executed in the sequence in which they are registered. If a handler
      *  has been registered in the constructor, it is called first.
      *
      *  The handler function is called from the DeviceModule thread (not from the thread with the accessor that threw the exception).

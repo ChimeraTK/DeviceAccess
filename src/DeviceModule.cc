@@ -314,8 +314,8 @@ namespace ChimeraTK {
         // Just check the condition variable.
         std::unique_lock<std::mutex> errorLock(errorMutex);
         while(!deviceHasError) {
-          boost::this_thread::
-              interruption_point(); // Make sure not to start waiting for the condition variable if interruption was requested.
+          boost::this_thread::interruption_point(); // Make sure not to start waiting for the condition variable if
+                                                    // interruption was requested.
           errorIsReportedCondVar.wait(errorLock);   // this releases the mutex while waiting
           boost::this_thread::interruption_point(); // we need an interruption point in the waiting loop
         }
