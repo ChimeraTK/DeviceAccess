@@ -325,6 +325,7 @@ namespace ChimeraTK {
         errorLock.lock(); // we need both locks to modify the queue, so get it again.
 
         auto popResult = errorQueue.pop(error);
+        (void)popResult;
         assert(popResult); // this if should always be true, otherwise the condition variable logic is wrong
         if(owner->isTestableModeEnabled()) {
           assert(owner->testableMode_counter > 0);
