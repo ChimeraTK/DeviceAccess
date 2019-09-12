@@ -288,8 +288,10 @@ namespace ChimeraTK {
 
     // check that the bar is 0
     if(info->bar != 0) {
-      throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
-          registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
+//       throw ChimeraTK::logic_error("SubdeviceBackend: BARs other then 0 are not supported. Register '" +
+//           registerPathName + "' is in BAR " + std::to_string(info->bar) + ".");
+      std::cout << "SubdeviceBackend: WARNING: BAR others then 0 detected. BAR 0 will be used instead. Register " <<  registerPathName << " is in BAR " << std::to_string(info->bar) << "." << std::endl;
+      
     }
 
     // check that the register is not a 2D multiplexed register, which is not yet
