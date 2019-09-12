@@ -24,9 +24,9 @@ namespace ChimeraTK { namespace LNMBackend {
   void MathPlugin::updateRegisterInfo() {
     // Change data type to non-integral
     auto d = _info->_dataDescriptor;
-    _info->_dataDescriptor = ChimeraTK::RegisterInfo::DataDescriptor(d.fundamentalType(), false, false,
-        std::numeric_limits<double>::max_digits10, -std::numeric_limits<double>::min_exponent10, d.rawDataType(),
-        d.transportLayerDataType());
+    _info->_dataDescriptor =
+        RegisterInfo::DataDescriptor(d.fundamentalType(), false, false, std::numeric_limits<double>::max_digits10,
+            -std::numeric_limits<double>::min_exponent10, DataType::none, d.transportLayerDataType());
   }
 
   /********************************************************************************************************************/
