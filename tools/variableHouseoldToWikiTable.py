@@ -25,7 +25,7 @@ def parseDirectory(directory, cwd, stripDescriptionPrefix) :
       vardescription = ""
     varlength = int(elem.find("{https://github.com/ChimeraTK/ApplicationCore}numberOfElements").text)
     
-    if vardirection == "control_system_to_application" :
+    if vardirection == "application_to_control_system" :
       thetype=vartype+" (ro)"
     else :
       thetype=vartype
