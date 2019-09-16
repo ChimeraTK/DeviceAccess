@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import sys
 import xml.etree.ElementTree as ET
 
 
@@ -49,6 +50,13 @@ def parseDirectory(directory, cwd, stripDescriptionPrefix) :
 
     parseDirectory(elem, cwd+"/"+elem.attrib["name"], len(dirdescription)+1)
       
+
+if len(sys.argv) != 2 :
+  print("Usage: variableHouseholdToWikiTable.py <xml_file_name>")
+  sys.exit(1)
+
+filename=sys.argv[1]
+
 
 print("^ PV name           ^ Type          ^ Unit    ^ Description   ^")
     
