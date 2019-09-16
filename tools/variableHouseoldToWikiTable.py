@@ -21,6 +21,8 @@ def parseDirectory(directory, cwd, stripDescriptionPrefix) :
     vartype = elem.find("{https://github.com/ChimeraTK/ApplicationCore}value_type").text
     vardirection = elem.find("{https://github.com/ChimeraTK/ApplicationCore}direction").text
     varunit = elem.find("{https://github.com/ChimeraTK/ApplicationCore}unit").text
+    if not varunit :
+      varunit = ""
     vardescription = elem.find("{https://github.com/ChimeraTK/ApplicationCore}description").text
     if not vardescription :
       vardescription = ""
@@ -33,7 +35,7 @@ def parseDirectory(directory, cwd, stripDescriptionPrefix) :
     if varlength > 1 :
       thetype=thetype+" ("+str(varlength)+" elements)"
 
-    print("| "+varname+" | "+vartype+" | "+thetype+" | "+vardescription[stripDescriptionPrefix:]+" |")
+    print("| "+varname+" | "+vartype+" | "+varunit+" | "+vardescription[stripDescriptionPrefix:]+" |")
 
   for elem in directory.findall("{https://github.com/ChimeraTK/ApplicationCore}directory") :
     dirdescription = ""
