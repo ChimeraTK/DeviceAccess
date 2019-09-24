@@ -11,7 +11,6 @@
 #define BOOST_TEST_MODULE testModules
 
 #include <boost/test/included/unit_test.hpp>
-#include <boost/test/test_case_template.hpp>
 using namespace boost::unit_test_framework;
 
 #include <boost/mpl/list.hpp>

@@ -40,7 +40,7 @@ ENDIF()
 # Find BOOST filesystem
 # Note: we need to search this after looking for the unit_test_framework, since we must not link against the
 #       unit_test_framework library (use header-only)
-FIND_PACKAGE(Boost COMPONENTS filesystem date_time REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS filesystem date_time chrono system thread REQUIRED)
 
 # requierd dependency: HDF5 library needed for the MicroDAQ system (TODO make optional!)
 FIND_PACKAGE(HDF5 COMPONENTS CXX REQUIRED)

@@ -13,7 +13,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
-#include <boost/test/test_case_template.hpp>
 #include <boost/thread.hpp>
 
 #include <libxml++/libxml++.h>
