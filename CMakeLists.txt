@@ -105,6 +105,9 @@ else()
   set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
 endif()
 set(${PROJECT_NAME}_MEXFLAGS "-I${CMAKE_INSTALL_PREFIX}/include -L${CMAKE_INSTALL_PREFIX}/lib -l${PROJECT_NAME}")
+
+list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono")
+
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
 include(cmake/enable_doxygen_documentation.cmake)
