@@ -135,5 +135,7 @@ set(${PROJECT_NAME}_LIBRARIES "${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF
 set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
 set(${PROJECT_NAME}_CXX_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
 set(${PROJECT_NAME}_LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
+
+list(APPEND ${PROJECT_NAME}_PUBLIC_DEPDENDENCIES "Boost COMPONENTS system thread chrono filesystem date_time atomic")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
