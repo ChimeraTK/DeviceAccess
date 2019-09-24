@@ -34,6 +34,8 @@ FIND_LIBRARY(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
   NO_DEFAULT_PATH
 )
 
+@@PROJECT_NAME@_PUBLIC_DEPENDENCIES_L@
+
 # Since this file is already part of the installation to be found, the configuration can be hard-coded at
 # installation time
 set(@PROJECT_NAME@_VERSION "@@PROJECT_NAME@_SOVERSION@")
