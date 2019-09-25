@@ -1,0 +1,8 @@
+class AppVersion {
+  public:
+    // About 1xx-100: This is to prevent 08 and 09 being interpreted as
+    // octal, which would result in a compiler error.
+    static constexpr uint32_t major = 1${${PROJECT_NAME}_MAJOR_VERSION}-100;
+    static constexpr uint32_t minor = 1${${PROJECT_NAME}_MINOR_VERSION}-100;
+    static constexpr uint32_t patch = 1${${PROJECT_NAME}_PATCH_VERSION}-100;
+};
