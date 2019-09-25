@@ -55,7 +55,7 @@ endforeach()
 
 set(${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "")
 foreach(DEPENDENCY ${${PROJECT_NAME}_PUBLIC_DEPENDENCIES})
-    string(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "find_dependency(${DEPENDENCY})\n")
+    string(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "find_package(${DEPENDENCY} REQUIRED)\n")
 endforeach()
 
 # we have nested @-statements, so we have to parse twice:
