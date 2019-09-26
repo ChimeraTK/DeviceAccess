@@ -1,12 +1,11 @@
-#include <iostream>
 
 #include "Server.h"
 #include "version.h"
 
 #include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 
-
-static Server piezoCtrlServer;
+/// The Server instance
+static Server theServer;
 
 void Server::defineConnections() {
   ctk::setDMapFilePath("devices.dmap");

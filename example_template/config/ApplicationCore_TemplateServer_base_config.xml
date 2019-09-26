@@ -1,0 +1,7 @@
+<configuration>
+  <variable name="var1" type="int32" value="42"/>
+  <module name="Module1">
+    <variable name="var1" type="int32" value="3"/>
+    <variable name="var2" type="int32" value="7"/>
+  </module>
+</configuration>
