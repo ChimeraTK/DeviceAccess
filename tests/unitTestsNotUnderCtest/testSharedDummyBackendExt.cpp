@@ -31,7 +31,7 @@ namespace {
   // Static variables
   //  Use hardcoded information from the dmap-file to
   //  only use public interface here
-  static std::string instanceId{""};
+  static std::string instanceId{"1"};
   static std::string mapFileName{"shareddummy.map"};
 
   static bool terminationCaught = false;

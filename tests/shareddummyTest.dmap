@@ -1,2 +1,2 @@
-SHDMEMDEV     sdm://./sharedMemoryDummy=shareddummy.map
-SHDMEMDEV2    sdm://./sharedMemoryDummy=shareddummy2.map
+SHDMEMDEV      (sharedMemoryDummy:1?map=shareddummy.map)
+SHDMEMDEV2     (sharedMemoryDummy:2?map=shareddummy.map)
