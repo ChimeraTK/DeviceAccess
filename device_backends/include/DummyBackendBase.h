@@ -6,13 +6,12 @@
 #ifndef CHIMERA_TK_DUMMY_BACKEND_BASE_H
 #define CHIMERA_TK_DUMMY_BACKEND_BASE_H
 
-
 #include "NumericAddressedBackend.h"
 #include "NumericAddressedBackendRegisterAccessor.h"
+#include "NumericAddressedBackendMuxedRegisterAccessor.h"
 
 #include <sstream>
 #include <regex>
-
 
 // macro to avoid code duplication
 #define TRY_REGISTER_ACCESS(COMMAND)                                                                                   \
@@ -109,8 +108,16 @@ namespace ChimeraTK{
           if(flags.has(AccessMode::raw)){
             boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(accessor)->makeWriteable();
           }
-          else{
-            boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(accessor)->makeWriteable();
+          else {
+            if(info->getNumberOfDimensions() < 2) {
+              boost::dynamic_pointer_cast<
+                  NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, false>>(accessor)
+                  ->makeWriteable();
+            }
+            else {
+              boost::dynamic_pointer_cast<NumericAddressedBackendMuxedRegisterAccessor<UserType>>(accessor)
+                  ->makeWriteable();
+            }
           }
         }
         else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754){

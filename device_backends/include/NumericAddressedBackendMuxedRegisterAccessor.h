@@ -89,15 +89,19 @@ namespace ChimeraTK {
       return true;
     }
 
-    bool isReadOnly() const override { return false; }
+    bool isReadOnly() const override { return isReadable() && !isWriteable(); }
 
-    bool isReadable() const override { return true; }
+    bool isReadable() const override {
+      return (_areaInfo.registerAccess & RegisterInfoMap::RegisterInfo::Access::READ) != 0;
+    }
 
-    bool isWriteable() const override { return true; }
+    bool isWriteable() const override { return !_isNotWriteable; }
 
     AccessModeFlags getAccessModeFlags() const override { return {}; }
 
     VersionNumber getVersionNumber() const override { return currentVersion; }
+
+    void makeWriteable() { _isNotWriteable = false; }
 
    protected:
     /** One fixed point converter for each sequence. */
@@ -111,6 +115,7 @@ namespace ChimeraTK {
 
     std::vector<int32_t> _ioBuffer;
 
+    RegisterInfoMap::RegisterInfo _areaInfo;
     std::vector<RegisterInfoMap::RegisterInfo> _sequenceInfos;
 
     std::vector<detail::pitched_iterator<int32_t>> _startIterators;
@@ -128,6 +133,9 @@ namespace ChimeraTK {
     /// area of interest
     size_t _numberOfElements;
     size_t _elementsOffset;
+
+    /** cache for negated writeable status to avoid repeated evaluation */
+    bool _isNotWriteable;
 
     /// Version number of last transfer
     VersionNumber currentVersion;
@@ -165,8 +173,10 @@ namespace ChimeraTK {
 
       // Obtain information about the area
       auto registerMapping = _ioDevice->getRegisterMap();
-      RegisterInfoMap::RegisterInfo areaInfo;
-      registerMapping->getRegisterInfo(areaName, areaInfo, _moduleName);
+      registerMapping->getRegisterInfo(areaName, _areaInfo, _moduleName);
+
+      // Cache writeability
+      _isNotWriteable = (_areaInfo.registerAccess & RegisterInfoMap::RegisterInfo::Access::WRITE) == 0;
 
       // Obtain information for each sequence (= channel) in the area:
       // Create a fixed point converter for each sequence and store the sequence
@@ -215,7 +225,7 @@ namespace ChimeraTK {
       }
 
       // compute number of blocks (number of samples for each channel)
-      _nBlocks = std::floor(areaInfo.nBytes / bytesPerBlock);
+      _nBlocks = std::floor(_areaInfo.nBytes / bytesPerBlock);
 
       // check number of words
       if(_elementsOffset >= _nBlocks) {
@@ -229,11 +239,11 @@ namespace ChimeraTK {
       }
 
       // compute the address taking into account the selected area of interest
-      _bar = areaInfo.bar;
-      _address = areaInfo.address + bytesPerBlock * _elementsOffset;
+      _bar = _areaInfo.bar;
+      _address = _areaInfo.address + bytesPerBlock * _elementsOffset;
       _nBytes = bytesPerBlock * _numberOfElements;
       if(_nBytes % sizeof(int32_t) > 0) _nBytes += 4 - _nBytes % sizeof(int32_t); // round up to the next multiple of 4
-      if(_nBytes > areaInfo.nBytes) {
+      if(_nBytes > _areaInfo.nBytes) {
         throw ChimeraTK::logic_error(
             "Requested number of elements exceeds the size of the register (late, redundant safety check)!");
       }
