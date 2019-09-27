@@ -25,8 +25,7 @@
     throw ChimeraTK::logic_error(errorMessage.str());                                                                  \
   }
 
-
-namespace ChimeraTK{
+namespace ChimeraTK {
 
   /**
    * Base class for DummyBackends, provides common funtionality
@@ -36,31 +35,25 @@ namespace ChimeraTK{
    */
   template<typename DerivedBackendType>
   class DummyBackendBase : public NumericAddressedBackend {
-
-  private:
+   private:
     // ctor & dtor private with derived type as friend to enforce
     // correct specialization
     friend DerivedBackendType;
     DummyBackendBase(std::string const& mapFileName)
-        : NumericAddressedBackend(mapFileName),
-          _registerMapping{_registerMap}
-    {
+    : NumericAddressedBackend(mapFileName), _registerMapping{_registerMap} {
       FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl);
     }
 
-    virtual ~DummyBackendBase(){}
+    virtual ~DummyBackendBase() {}
 
-
-  protected:
-
+   protected:
     RegisterInfoMapPointer _registerMapping;
 
     /// Determines the size of each bar because the DummyBackends allocate memory per bar
     std::map<uint8_t, size_t> getBarSizesInBytesFromRegisterMapping() const {
       std::map<uint8_t, size_t> barSizesInBytes;
       for(RegisterInfoMap::const_iterator mappingElementIter = _registerMapping->begin();
-          mappingElementIter != _registerMapping->end(); ++mappingElementIter)
-      {
+          mappingElementIter != _registerMapping->end(); ++mappingElementIter) {
         barSizesInBytes[mappingElementIter->bar] = std::max(barSizesInBytes[mappingElementIter->bar],
             static_cast<size_t>(mappingElementIter->address + mappingElementIter->nBytes));
       }
@@ -75,9 +68,8 @@ namespace ChimeraTK{
 
     /// Specific override which allows to create "DUMMY_WRITEABLE" accessors for read-only registers
     template<typename UserType>
-    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(
-        const RegisterPath& registerPathName, size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
-
+    boost::shared_ptr<NDRegisterAccessor<UserType>> getRegisterAccessor_impl(const RegisterPath& registerPathName,
+        size_t numberOfWords, size_t wordOffsetInRegister, AccessModeFlags flags) {
       // Suffix to mark writeable references to read-only registers
       static const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
 
@@ -89,24 +81,26 @@ namespace ChimeraTK{
       // which exists in the catalogue.
       const std::string regPathNameStr{registerPathName};
       std::smatch match;
-      const std::regex re{DUMMY_WRITEABLE_SUFFIX+"$"};
+      const std::regex re{DUMMY_WRITEABLE_SUFFIX + "$"};
       std::regex_search(regPathNameStr, match, re);
 
-      if(!match.empty()){
-          isDummyWriteableAccessor = true;
-          actualRegisterPath = RegisterPath{match.prefix()};
+      if(!match.empty()) {
+        isDummyWriteableAccessor = true;
+        actualRegisterPath = RegisterPath{match.prefix()};
       }
 
-      auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
+      auto accessor = NumericAddressedBackend::getRegisterAccessor_impl<UserType>(
+          actualRegisterPath, numberOfWords, wordOffsetInRegister, flags);
 
       // Modify writeability of the NumericAddressedBackendRegisterAccessor
-      if(isDummyWriteableAccessor){
-
+      if(isDummyWriteableAccessor) {
         const auto info{getRegisterInfo(actualRegisterPath)};
 
-        if(info->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT){
-          if(flags.has(AccessMode::raw)){
-            boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(accessor)->makeWriteable();
+        if(info->dataType == RegisterInfoMap::RegisterInfo::Type::FIXED_POINT) {
+          if(flags.has(AccessMode::raw)) {
+            boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, FixedPointConverter, true>>(
+                accessor)
+                ->makeWriteable();
           }
           else {
             if(info->getNumberOfDimensions() < 2) {
@@ -120,19 +114,22 @@ namespace ChimeraTK{
             }
           }
         }
-        else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754){
-          if(flags.has(AccessMode::raw)){
-            boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(accessor)->makeWriteable();
+        else if(info->dataType == RegisterInfoMap::RegisterInfo::Type::IEEE754) {
+          if(flags.has(AccessMode::raw)) {
+            boost::dynamic_pointer_cast<
+                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, true>>(accessor)
+                ->makeWriteable();
           }
-          else{
-            boost::dynamic_pointer_cast<NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(accessor)->makeWriteable();
+          else {
+            boost::dynamic_pointer_cast<
+                NumericAddressedBackendRegisterAccessor<UserType, IEEE754_SingleConverter, false>>(accessor)
+                ->makeWriteable();
           }
         }
       }
 
       return accessor;
     }
-
 
     /**
      * @brief Method looks up and returns an existing instance of class 'T'
