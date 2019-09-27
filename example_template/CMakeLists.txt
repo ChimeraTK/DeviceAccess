@@ -54,41 +54,29 @@ include_directories(${PROJECT_BINARY_DIR}/version)
 # Module and Server include directories
 include_directories(${CMAKE_SOURCE_DIR}/modules/include ${CMAKE_SOURCE_DIR}/server/include)
 
-# Process server modules
+# Process server ApplicationModules
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules)
 
-set(SERVER_SRC ${CMAKE_SOURCE_DIR}/server/src/Server.cc)
+set(SERVER_SRC_DIR ${CMAKE_SOURCE_DIR}/server/src)
 
 # The server executable. It depends on application core and the control system adapter implementation.
-add_executable(${PROJECT_NAME} ${SERVER_SRC})
+add_executable(${PROJECT_NAME} ${SERVER_SRC_DIR}/ApplicationInstance.cc ${SERVER_SRC_DIR}/Server.cc)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${CMAKE_LINK_FLAGS}")
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}lib ${ChimeraTK-ApplicationCore_LIBRARIES} ${Adapter_LIBRARIES} )
 
 # We compile the same sources with the GENERATE_XML flag to get an xml generator.
 # This one does not depent on a control system adapter implementation.
-add_executable(${PROJECT_NAME}-xmlGenerator ${SERVER_SRC})
+add_executable(${PROJECT_NAME}-xmlGenerator ${SERVER_SRC_DIR}/ApplicationInstance.cc ${SERVER_SRC_DIR}/Server.cc)
 set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS}")
 target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib ${ChimeraTK-ApplicationCore_LIBRARIES})
-
 
 # Process tests:
 ENABLE_TESTING()
 add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
 
-## copy the (test) config files to the build directory for tests
-#FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
-
-## Add all tests residing in the "tests" directory
-#aux_source_directory(${CMAKE_SOURCE_DIR}/tests testExecutables)
-#foreach( testExecutableSrcFile ${testExecutables})
-#  #NAME_WE means the base name without path and (longest) extension
-#  get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
-#  add_executable(${excutableName} ${testExecutableSrcFile})
-#  set_target_properties(${excutableName} PROPERTIES LINK_FLAGS "${CMAKE_LINK_FLAGS}")
-#  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} ${Adapter_LIBRARIES} )
-#  add_test(${excutableName} ${excutableName})
-#endforeach( testExecutableSrcFile )
+# Copy the (test) config files to the build directory
+FILE( COPY ${CMAKE_SOURCE_DIR}/config/ DESTINATION ${PROJECT_BINARY_DIR})
 
 
 # Installation:
