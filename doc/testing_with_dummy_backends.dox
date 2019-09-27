@@ -13,8 +13,8 @@ for a specific device, as described in \ref custom_backends.
 
 The DummyBackends get registered by the names, "dummy" and "sharedMemoryDummy", so dummy devices have to be defined in the device map file as
 \verbatim
-DUMMYDEVICE       (sdm://./dummy=mymapfile.map)
-SHAREDDUMMYDEVICE (sdm://./sharedMemoryDummy=mymapfile.map)
+DUMMYDEVICE       (dummy?map=mymapfile.map)
+SHAREDDUMMYDEVICE (sharedMemoryDummy?map=mymapfile.map)
 \endverbatim
 for the DummyBackend and the SharedDummyBackend, respectively.
 
