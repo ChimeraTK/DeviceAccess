@@ -6,11 +6,15 @@
 void Server::defineConnections() {
   ctk::setDMapFilePath("devices.dmap");
 
-
-//  ctk::VariableNetworkNode trigger{};
-//  //trigger = externalTrigger("MACRO_PULSE_NUMBER", typeid(int), 1, ctk::UpdateMode::push);
-//  trigger >> cs["Server"]("triggerNumber");
+  std::cout << "****************************************************************" << std::endl;
+  std::cout << "*** Template server version " << AppVersion::major << "." << AppVersion::minor << "."
+            << AppVersion::patch << std::endl;
 
   dev.connectTo(cs/*, timer.tick*/);
+  config.connectTo(cs);
+
+  dumpConnectionGraph();
+  dumpGraph();
+  dumpModuleGraph("module-graph.dot");
 }
 
