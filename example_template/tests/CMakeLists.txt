@@ -22,8 +22,8 @@ foreach( testExecutableSrcFile ${testExecutables})
   set_target_properties(${excutableName} 
     PROPERTIES 
     LINK_FLAGS "${CMAKE_LINK_FLAGS}"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    #RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
   target_link_libraries(${excutableName} ${PROJECT_NAME}lib ${ChimeraTK-ApplicationCore_LIBRARIES} ${Adapter_LIBRARIES} )
-  add_test(${excutableName} ${excutableName})
+  add_test(${excutableName} ${CMAKE_CURRENT_BINARY_DIR}/${excutableName})
 endforeach( testExecutableSrcFile )
