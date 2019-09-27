@@ -31,7 +31,7 @@ struct Server : public ctk::Application {
   ctk::ConfigReader config{this, "Configuration", getName() + "_base_config.xml"};
 
   ctk::ControlSystemModule cs;
-  ctk::DeviceModule dev{this, "Device"};
+  ctk::DeviceModule dev{this, "DummyDevice"};
 
   TemplateModule templateModule{this, "TemplateModule", "This is a template module, adapt as needed!"};
 

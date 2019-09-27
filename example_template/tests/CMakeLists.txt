@@ -20,5 +20,9 @@ foreach( testExecutableSrcFile ${testExecutables})
     LINK_FLAGS "${CMAKE_LINK_FLAGS}"
   )
   target_link_libraries(${excutableName} ${PROJECT_NAME}lib ${ChimeraTK-ApplicationCore_LIBRARIES} ${Adapter_LIBRARIES} )
-  add_test(${excutableName} ${CMAKE_CURRENT_BINARY_DIR}/${excutableName})
+  add_test(
+    NAME ${excutableName}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${excutableName}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
 endforeach( testExecutableSrcFile )

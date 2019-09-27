@@ -2,10 +2,6 @@
 #include "Server.h"
 #include "version.h"
 
-#include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
-
-/// The Server instance
-static Server theServer;
 
 void Server::defineConnections() {
   ctk::setDMapFilePath("devices.dmap");

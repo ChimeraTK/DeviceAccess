@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<device_server xmlns="https://github.com/ChimeraTK/ControlSystemAdapter-DoocsAdapter">
+
+  <location name="TEMPLATE_LOCATION">
+    
+    <!-- Simply import all variables provided by the application 
+         Adapt to your needs!
+    -->
+    <import>/</import>
+  </location>
+
+</device_server>
