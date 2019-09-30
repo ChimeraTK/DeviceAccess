@@ -85,7 +85,7 @@ MACRO( COPY_MAPPING_FILES )
     performanceTest.map run_performance_test.sh
     badLoadlib.dmap badLoadlib2.dmap unkownKey.dmap
     subdeviceTest.dmap Subdevice.map SubdeviceTarget.map
-    shareddummyTest.dmap shareddummy.map shareddummy2.map
+    shareddummyTest.dmap shareddummy.map
     registerAccess.map floatRawTest.map
     DESTINATION ${PROJECT_BINARY_DIR}/tests)
   # The valid dmap file has an absolute path which has to be configured by cmake
