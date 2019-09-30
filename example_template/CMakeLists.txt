@@ -18,29 +18,9 @@ include(cmake/set_default_flags.cmake)
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
 add_dependency(ChimeraTK-ApplicationCore 01.08 REQUIRED)
 
-# Select control system adapter
-IF(ADAPTER STREQUAL "OPCUA")
-  message("Building against the OPC UA ControlSystemAdater")
-  add_dependency(ChimeraTK-ControlSystemAdapter-OPCUAAdapter REQUIRED)
-  set(Adapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LINK_FLAGS})
-  set(Adapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES})
-ELSEIF(ADAPTER STREQUAL "DOOCS")
-  message("Building against the DOOCS ControlSystemAdater")
-  add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter REQUIRED)
-  set(Adapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS})
-  set(Adapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES})
-ELSEIF(ADAPTER STREQUAL "EPICSIOC")
-  message("Building against the EPICS IOC ControlSystemAdater")
-  add_dependency(ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter REQUIRED)
-  set(Adapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LINK_FLAGS})
-  set(Adapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LIBRARIES})
-ELSE()
-  message(FATAL_ERROR "Please select your ControlSystemAdapter to use by passing to the cmake command line:\n"
-                      "   -DADAPTER=DOOCS to build a DOOCS server\n"
-                      "   -DADAPTER=OPCUA to build an OPC UA server\n"
-                      "   -DADAPTER=EPICSIOC to build an EPICS IOC")
-ENDIF()
-
+# Select the control system adapter
+include(cmake/set_control_system_adapter.cmake)
+#set_control_system_adapter()
 
 # Define compiler and link flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-ApplicationCore_CXX_FLAGS}")

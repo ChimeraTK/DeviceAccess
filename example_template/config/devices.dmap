@@ -1,1 +1,2 @@
-DummyDevice (sharedMemoryDummy:?map=dummydevice.map)
+DummyDevice       (sharedMemoryDummy:?map=dummydevice.map)
+MappedDummyDevice (logicalNameMap?map=name_mapping.xlmap&target=DummyDevice)
