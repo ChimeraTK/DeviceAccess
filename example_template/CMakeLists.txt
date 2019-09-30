@@ -20,7 +20,6 @@ add_dependency(ChimeraTK-ApplicationCore 01.08 REQUIRED)
 
 # Select the control system adapter
 include(cmake/set_control_system_adapter.cmake)
-#set_control_system_adapter()
 
 # Define compiler and link flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-ApplicationCore_CXX_FLAGS}")

@@ -3,14 +3,19 @@
     <targetDevice><par>target</par></targetDevice>
     <targetRegister>WORD_1</targetRegister>
   </redirectedRegister>
-  <redirectedChannel name="Channel0">
-    <targetDevice><par>target</par></targetDevice>
-    <targetRegister>MODULE_1.AREA</targetRegister>
-    <targetChannel>0</targetChannel>
-  </redirectedChannel>
-  <redirectedChannel name="Channel1">
-    <targetDevice><par>target</par></targetDevice>
-    <targetRegister>MODULE_1.AREA</targetRegister>
-    <targetChannel>1</targetChannel>
-  </redirectedChannel>
+
+  <module name="Module1">
+    <redirectedRegister name="Channel0">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>MODULE_1.AREA</targetRegister>
+      <targetStartIndex>0</targetStartIndex>
+      <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+    <redirectedRegister name="Channel1">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>MODULE_1.AREA</targetRegister>
+      <targetStartIndex>1</targetStartIndex>
+      <numberOfElements>1</numberOfElements>
+    </redirectedRegister>
+  </module>
 </logicalNameMap>
