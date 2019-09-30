@@ -1,12 +1,9 @@
 # Note: This CMakeLists.txt is a minimal complete example how to use the
 # *installed* application core library. It is not included from the main CMakeLists.txt
 # which is used to build ApplicationCore itself.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
-#The regex matches everthing that is not a / until the end of the string (i.e. everyting after the last slash, if any)
-string(REGEX MATCH "[^/]*$" PROJECT_BASE_NAME ${CMAKE_SOURCE_DIR})
-message("REGEX MATCH is ${PROJECT_BASE_NAME}")
+PROJECT(demo_example)
 
-SET(PROJECT_NAME demo_${PROJECT_BASE_NAME})
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
 
 # Use the project template to get the settings required for an application core project
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
