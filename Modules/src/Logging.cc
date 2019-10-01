@@ -45,8 +45,8 @@ std::string logging::getTime() {
 
 Logger::Logger(ctk::Module* module)
 : message(
-      module, "message", "", "Message of the module to the logging System", {"Logging", "OneWire", module->getName()}),
-  messageLevel(module, "messageLevel", "", "Logging level of the message", {"Logging", "OneWire", module->getName()}) {}
+      module, "message", "", "Message of the module to the logging System", {"Logging", module->getName()}),
+  messageLevel(module, "messageLevel", "", "Logging level of the message", {"Logging", module->getName()}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {

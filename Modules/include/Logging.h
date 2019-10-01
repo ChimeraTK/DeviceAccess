@@ -218,20 +218,26 @@ namespace logging {
     using ctk::ApplicationModule::ApplicationModule;
 
     ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
-        "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
-        "(cout/cerr), 3 (none)"};
+      "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
+      "(cout/cerr), 3 (none)",
+      {"CS", getName()}};
 
     ctk::ScalarPollInput<std::string> logFile{this, "Logfile", "",
-        "Name of the external logfile. If empty messages are pushed to "
-        "cout/cerr"};
+      "Name of the external logfile. If empty messages are pushed to "
+      "cout/cerr",
+      {"CS", getName()}};
 
-    ctk::ScalarPollInput<uint> tailLength{
-        this, "maxLength", "", "Maximum number of messages to be shown in the logging stream tail."};
+    ctk::ScalarPollInput<uint> tailLength{this, "maxLength", "",
+      "Maximum number of messages to be shown in the logging stream tail.",
+      {"CS", getName()}};
 
-    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "", "Current log level used for messages."};
+    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "",
+      "Current log level used for messages.",
+      {"CS", getName()}};
 
-    ctk::ScalarOutput<std::string> logTail{
-        this, "LogTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
+    ctk::ScalarOutput<std::string> logTail{this, "LogTail", "",
+      "Tail of the logging stream.",
+      {"CS", "PROCESS", getName()}};
 
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
