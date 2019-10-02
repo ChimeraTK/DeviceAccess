@@ -27,7 +27,11 @@ using namespace boost::unit_test_framework;
  * Define a test app to test the SoftwareMasterModule.
  */
 struct testApp : public ChimeraTK::Application {
-  testApp() : Application("test"), fileCreated(false) {}
+  testApp() : Application("test"), fileCreated(false) {
+    // remove possible left overs
+    boost::filesystem::remove("/tmp/testLogging/test.log");
+    boost::filesystem::remove("/tmp/testLogging/");
+  }
   ~testApp() {
     shutdown();
     if(fileCreated) {
@@ -60,9 +64,10 @@ BOOST_AUTO_TEST_CASE(testLogMsg) {
   ChimeraTK::TestFacility tf;
   tf.runApplication();
   auto tailLength = tf.getScalar<uint>("tailLength");
-  app.logger.sendMessage("test", LogLevel::DEBUG);
   tailLength = 1;
   tailLength.write();
+  tf.stepApplication();
+  app.logger.sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
   std::string ss = (std::string)tf.readScalar<std::string>("LogTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("test\n"));
@@ -76,6 +81,7 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
   tf.runApplication();
   logFile = std::string("/tmp/testLogging/test.log");
   logFile.write();
+  tf.stepApplication();
   // message not considered here but used to step through the application
   app.logger.sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
@@ -96,6 +102,7 @@ BOOST_AUTO_TEST_CASE(testLogfile) {
   tf.runApplication();
   logFile = std::string("/tmp/testLogging/test.log");
   logFile.write();
+  tf.stepApplication();
   // message not considered here but used to step through the application
   app.logger.sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
@@ -119,12 +126,12 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   auto logLevel = tf.getScalar<uint>("logLevel");
   auto tailLength = tf.getScalar<uint>("tailLength");
 
+  tf.runApplication();
   logLevel = 0;
   logLevel.write();
   tailLength = 2;
   tailLength.write();
-
-  tf.runApplication();
+  tf.stepApplication();
   app.logger.sendMessage("1st test message", LogLevel::DEBUG);
   tf.stepApplication();
   app.logger.sendMessage("2nd test message", LogLevel::DEBUG);
@@ -147,9 +154,10 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   BOOST_CHECK_EQUAL(result.size(), 3);
 
   /**** Test tail length ****/
-  app.logger.sendMessage("4th test message", LogLevel::ERROR);
   tailLength = 3;
   tailLength.write();
+  tf.stepApplication();
+  app.logger.sendMessage("4th test message", LogLevel::ERROR);
   tf.stepApplication();
   tail = tf.readScalar<std::string>("LogTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
