@@ -115,7 +115,7 @@ void LoggingModule::mainLoop() {
   auto group = readAnyGroup();
   while(1) {
     auto id = group.readAny();
-    auto sender = UpdatePair(id);
+    auto sender = FindSender(id);
     if(targetStream == 3) continue;
     LogLevel level = static_cast<LogLevel>((uint)sender->second.second);
     LogLevel setLevel = static_cast<LogLevel>((uint)logLevel);
@@ -123,8 +123,8 @@ void LoggingModule::mainLoop() {
     ss << level << getName() << "/" << sender->first << " " << getTime() << (std::string)sender->second.first;
     if(targetStream == 0 || targetStream == 1) {
       if(!((std::string)logFile).empty() && !file->is_open()) {
-        file->open((std::string)logFile, std::ofstream::out | std::ofstream::app);
         std::stringstream ss_file;
+        file->open((std::string)logFile, std::ofstream::out | std::ofstream::app);
         if(!file->is_open() && setLevel <= LogLevel::ERROR) {
           ss_file << LogLevel::ERROR << getName() << " " << getTime()
                   << "Failed to open log file for writing: " << (std::string)logFile << std::endl;
@@ -158,7 +158,7 @@ std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode> LoggingModule::get
     msg_list.emplace(std::piecewise_construct, std::make_tuple(sender),
         std::forward_as_tuple(std::piecewise_construct,
             std::forward_as_tuple(ctk::ScalarPushInput<std::string>{this, sender + "Msg", "", ""}),
-            std::forward_as_tuple(ctk::ScalarPushInput<uint>{this, sender + "MsgLevel", "", ""})));
+            std::forward_as_tuple(ctk::ScalarPollInput<uint>{this, sender + "MsgLevel", "", ""})));
   }
   else {
     throw ChimeraTK::logic_error(
@@ -167,16 +167,10 @@ std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode> LoggingModule::get
   return msg_list[sender];
 }
 
-std::map<std::string, Message>::iterator LoggingModule::UpdatePair(const ChimeraTK::TransferElementID& id) {
+std::map<std::string, Message>::iterator LoggingModule::FindSender(const ChimeraTK::TransferElementID& id) {
   for(auto it = msg_list.begin(), iend = msg_list.end(); it != iend; it++) {
-    if(it->second.first.getId() == id) {
-      it->second.second.read();
+    if(it->second.first.getId() == id)
       return it;
-    }
-    if(it->second.second.getId() == id) {
-      it->second.first.read();
-      return it;
-    }
   }
   throw ChimeraTK::logic_error("Cannot find  element id"
                                "when updating logging variables.");

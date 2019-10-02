@@ -113,7 +113,7 @@ namespace ctk = ChimeraTK;
 namespace logging {
 
   /** Pair of message and messageLevel */
-  using Message = std::pair<ctk::ScalarPushInput<std::string>, ctk::ScalarPushInput<uint>>;
+  using Message = std::pair<ctk::ScalarPushInput<std::string>, ctk::ScalarPollInput<uint>>;
 
   /** Define available logging levels. */
   enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
@@ -198,12 +198,9 @@ namespace logging {
     /** Map key is the feeding module */
     std::map<std::string, Message> msg_list;
 
-    /** Update message or messageLevel from the sending module
-     * Basically the first element read by readAny() could be either the message
-     * or the messageLevel. Here the element not updated by readSAny is also read,
-     * since both are PushInput variables.
+    /** Find the Message that was updated.
      */
-    std::map<std::string, Message>::iterator UpdatePair(const ChimeraTK::TransferElementID& id);
+    std::map<std::string, Message>::iterator FindSender(const ChimeraTK::TransferElementID& id);
 
     /** Number of messages stored in the tail */
     size_t messageCounter;
