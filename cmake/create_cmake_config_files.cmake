@@ -48,6 +48,9 @@ foreach(LIBRARY ${LIST})
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} ${LIBRARY}")
   elseif(LIBRARY MATCHES "^-l")   # library name does not contain slashes but already the -l option: directly quote it
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} ${LIBRARY}")
+  elseif(LIBRARY MATCHES "::")  # library name is an exported target - we need to resolve it for Makefiles
+    get_property(lib_loc TARGET ${LIBRARY} PROPERTY LOCATION)
+    string(APPEND ${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE " ${lib_loc}")
   else()                          # link against library with -l option
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} -l${LIBRARY}")
   endif()
