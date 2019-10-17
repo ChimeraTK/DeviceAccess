@@ -397,6 +397,9 @@ namespace ChimeraTK {
 
         deviceHasError = false;
 
+        // send the trigger that the device is available again
+        deviceBecameFunctional.write();
+
         errorLock.unlock();
         errorIsResolvedCondVar.notify_all();
       }
@@ -455,6 +458,7 @@ namespace ChimeraTK {
     // Connect deviceError module to the control system
     ControlSystemModule cs;
     deviceError.connectTo(cs["Devices"][deviceAliasOrURI_withoutSlashes]);
+    deviceBecameFunctional >> cs["Devices"][deviceAliasOrURI_withoutSlashes]("deviceBecameFunctional");
   }
 
   void DeviceModule::addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler) {

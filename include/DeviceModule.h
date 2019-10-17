@@ -169,6 +169,17 @@ namespace ChimeraTK {
      */
     void addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler);
 
+     /** A trigger that indicated that the device just became available again an error (in contrast to the
+      *  error status which is also send when the device goes away).
+      *  The output is public so your module can connect to it and trigger re-sending of variables that
+      *  have to be send to the device again. e.g. after this has re-booted.
+      *  Attention: It is not send the first time the device is being opened. In this case the normal startup
+      *  mechanism takes care that the data is send.
+      *  Like the deviceError, it is automatically published to the control systen to ensure that there is at least one
+      *  consumer connected.
+      */
+    ScalarOutput<int> deviceBecameFunctional{this, "deviceBecameFunctional", "", ""};// should be changed to data type void
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
