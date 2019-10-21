@@ -44,6 +44,14 @@ namespace ChimeraTK {
     // start the module thread
     assert(!moduleThread.joinable());
     moduleThread = boost::thread(&ApplicationModule::mainLoopWrapper, this);
+    //Wait until the thread has launched and acquired and released the testable mode lock at least once.
+    if(Application::getInstance().isTestableModeEnabled()) {
+      while(!testableModeReached) {
+        Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+        usleep(100);
+        Application::getInstance().testableModeLock("acquireForReachTestableMode");
+      }
+    }
   }
 
   /*********************************************************************************************************************/
@@ -74,6 +82,8 @@ namespace ChimeraTK {
   void ApplicationModule::mainLoopWrapper() {
     Application::registerThread("AM_" + getName());
     Application::testableModeLock("start");
+    // We are holding the testable mode lock, so we are sure the mechanism will work now.
+    testableModeReached = true;
     // enter the main loop
     mainLoop();
     Application::testableModeUnlock("terminate");
