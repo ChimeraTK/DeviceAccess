@@ -148,6 +148,13 @@ void Application::checkConnections() {
 void Application::run() {
   assert(applicationName != "");
 
+  // set all initial version numbers in the modules to the same value
+  VersionNumber startVersion;
+  for(auto& module : getSubmoduleListRecursive()) {
+    if(module->getModuleType() != ModuleType::ApplicationModule) continue;
+    module->setCurrentVersionNumber(startVersion);
+  }
+
   // prepare the modules
   for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
@@ -528,13 +535,6 @@ void Application::makeConnections() {
   // make the connections for all networks
   for(auto& network : networkList) {
     makeConnectionsForNetwork(network);
-  }
-
-  // set all initial version numbers in the modules to the same value
-  VersionNumber startVersion;
-  for(auto& module : getSubmoduleListRecursive()) {
-    if(module->getModuleType() != ModuleType::ApplicationModule) continue;
-    module->setCurrentVersionNumber(startVersion);
   }
 }
 

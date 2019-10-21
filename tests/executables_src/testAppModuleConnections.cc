@@ -83,6 +83,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
 
   app.testModule.feedingPush >> app.testModule.consumingPush;
   app.initialise();
+  app.run();
 
   // single theaded test
   app.testModule.consumingPush = 0;
@@ -123,6 +124,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFourScalarPushAccessors, T, test_types) {
   app.testModule.feedingPush >> app.testModule.consumingPush2;
   app.testModule.feedingPush >> app.testModule.consumingPush3;
   app.initialise();
+  app.run();
 
   // single theaded test
   app.testModule.consumingPush = 0;
@@ -186,6 +188,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushPollAccessors, T, test_types) {
 
   app.testModule.feedingPush >> app.testModule.consumingPoll;
   app.initialise();
+  app.run();
 
   // single theaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;
@@ -221,6 +224,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
 
   app.testModule.feedingArray >> app.testModule.consumingPushArray;
   app.initialise();
+  app.run();
 
   BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
   BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);

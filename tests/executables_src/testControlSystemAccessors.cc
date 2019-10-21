@@ -85,6 +85,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
 
   app.testModule.feeder >> app.cs("myFeeder");
   app.initialise();
+  app.run();
 
   auto myFeeder = pvManagers.first->getProcessArray<T>("/myFeeder");
   BOOST_CHECK(myFeeder->getName() == "/myFeeder");
