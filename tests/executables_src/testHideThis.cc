@@ -1,5 +1,5 @@
-#include <ChimeraTK/ApplicationCore/ApplicationCore.h>
-#include <ChimeraTK/ApplicationCore/TestFacility.h>
+#include "ApplicationCore.h"
+#include "TestFacility.h"
 using namespace ChimeraTK;
 
 struct TestApp : public Application {
