@@ -21,42 +21,41 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  void defineConnections() {} // the setup is done in the tests
+  void defineConnections() { findTag(".*").connectTo(cs); }
   ctk::ControlSystemModule cs;
-  T monitor{this, "MONITOR","",ChimeraTK::HierarchyModifier::none,"WATCH","STATUS",{"CS"}};
+  T monitor{this, "monitor", "", ChimeraTK::HierarchyModifier::none, "watch", "status", {"CS"}};
 };
 
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   std::cout << "testMaxMonitor" << std::endl;
-  TestApplication<ctk::MaxMonitor<double_t> > app;
+  TestApplication<ctk::MaxMonitor<double_t>> app;
 
-  app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto warning = test.getScalar<double_t>(std::string("/MAX_MONITOR.WARNING.THRESHOLD"));
+  auto warning = test.getScalar<double_t>(std::string("/monitor/upperWarningThreshold"));
   warning = 45.1;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<double_t>(std::string("/MAX_MONITOR.ERROR.THRESHOLD"));
+  auto error = test.getScalar<double_t>(std::string("/monitor/upperErrorThreshold"));
   error = 50.1;
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/WATCH"));
+  auto watch = test.getScalar<double_t>(std::string("/monitor/watch"));
   watch = 40.1;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
+  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
   status.readLatest();
 
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set watch value exceeding warning level
   watch = 46.1;
@@ -64,7 +63,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //set watch value exceeding error level
   watch = 51.1;
@@ -72,7 +71,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //increase error value greater than watch
   error = 60.1;
@@ -80,7 +79,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //increase warning value greater than watch
   warning = 55.1;
@@ -88,7 +87,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set watch value exceeding error level
   watch = 65.1;
@@ -96,7 +95,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //decrease watch value lower than error level but still greater than warning level
   watch = 58.1;
@@ -104,7 +103,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //decrease watch value lower than warning level
   watch = 54.1;
@@ -112,7 +111,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 }
 
 /*********************************************************************************************************************/
@@ -121,31 +120,30 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
 
   TestApplication<ctk::MinMonitor<uint>> app;
 
-  app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto warning = test.getScalar<uint>(std::string("MIN_MONITOR.WARNING.THRESHOLD"));
+  auto warning = test.getScalar<uint>(std::string("/monitor/lowerWarningThreshold"));
   warning = 50;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<uint>(std::string("MIN_MONITOR.ERROR.THRESHOLD"));
+  auto error = test.getScalar<uint>(std::string("/monitor/lowerErrorThreshold"));
   error = 45;
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<uint>(std::string("/WATCH"));
+  auto watch = test.getScalar<uint>(std::string("/monitor/watch"));
   watch = 55;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
+  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
   status.readLatest();
 
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set watch value lower than warning threshold
   watch = 48;
@@ -153,7 +151,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //set watch value greater than error threshold
   watch = 42;
@@ -161,7 +159,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //decrease error value lower than watch
   error = 35;
@@ -169,7 +167,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //decrease warning value lower than watch
   warning = 40;
@@ -177,7 +175,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set watch value lower than error threshold
   watch = 33;
@@ -185,7 +183,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //decrease watch value greater than error level but still lower than warning level
   watch = 36;
@@ -193,7 +191,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //decrease watch value lower than warning level
   watch = 41;
@@ -201,7 +199,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 }
 
 /*********************************************************************************************************************/
@@ -209,42 +207,41 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
 BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   std::cout << "testRangeMonitor" << std::endl;
   TestApplication<ctk::RangeMonitor<int>> app;
-  
-  app.monitor.connectTo(app.cs);
+
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
-  
-  auto warningUpperLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.WARNING.UPPER_LIMIT"));
+
+  auto warningUpperLimit = test.getScalar<int>(std::string("/monitor/upperWarningThreshold"));
   warningUpperLimit = 50;
   warningUpperLimit.write();
   test.stepApplication();
-  
-  auto warningLowerLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.WARNING.LOWER_LIMIT"));
+
+  auto warningLowerLimit = test.getScalar<int>(std::string("/monitor/lowerWarningThreshold"));
   warningLowerLimit = 41;
   warningLowerLimit.write();
   test.stepApplication();
-  
-  auto errorUpperLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.ERROR.UPPER_LIMIT"));
+
+  auto errorUpperLimit = test.getScalar<int>(std::string("/monitor/upperErrorThreshold"));
   errorUpperLimit = 60;
   errorUpperLimit.write();
   test.stepApplication();
-  
-  auto errorLowerLimit = test.getScalar<int>(std::string("/RANGE_MONITOR.ERROR.LOWER_LIMIT"));
+
+  auto errorLowerLimit = test.getScalar<int>(std::string("/monitor/lowerErrorThreshold"));
   errorLowerLimit = 51;
   errorLowerLimit.write();
   test.stepApplication();
-  
-  auto watch = test.getScalar<int>(std::string("/WATCH"));
+
+  auto watch = test.getScalar<int>(std::string("/monitor/watch"));
   watch = 40;
   watch.write();
   test.stepApplication();
-  
-  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
+
+  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
   status.readLatest();
-  
+
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set watch value exceeding warning level
   watch = 41;
@@ -252,7 +249,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //still test warning range
   watch = 45;
@@ -260,7 +257,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //Test warningUpperLimit
   watch = 50;
@@ -268,7 +265,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //Test errorUpperLimit
   watch = 60;
@@ -276,7 +273,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //Still test error
   watch = 58;
@@ -284,7 +281,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //Test errorLowerLimit
   watch = 51;
@@ -292,7 +289,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //increase error upper limit value greater than watch
   errorUpperLimit = 70;
@@ -300,7 +297,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   errorLowerLimit = 61;
   errorLowerLimit.write();
@@ -316,14 +313,14 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   warningLowerLimit = 55;
   warningLowerLimit.write();
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 }
 
 /*********************************************************************************************************************/
@@ -332,26 +329,25 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   std::cout << "testExactMonitor" << std::endl;
   TestApplication<ctk::ExactMonitor<float>> app;
 
-  app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto requiredValue = test.getScalar<float>(std::string("/EXACT_MONITOR.REQUIRED_VALUE"));
+  auto requiredValue = test.getScalar<float>(std::string("/monitor/requiredValue"));
   requiredValue = 40.9;
   requiredValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<float>(std::string("/WATCH"));
+  auto watch = test.getScalar<float>(std::string("/monitor/watch"));
   watch = 40.9;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
+  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
   status.readLatest();
 
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set watch value different than required value
   watch = 41.4;
@@ -359,14 +355,14 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   watch = 40.9;
   watch.write();
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   //set requiredValue value different than watch value
   requiredValue = 41.3;
@@ -374,7 +370,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //set requiredValue value equals to watch value
   requiredValue = 40.9;
@@ -382,7 +378,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 }
 
 /*********************************************************************************************************************/
@@ -391,37 +387,36 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   std::cout << "testStateMonitor" << std::endl;
   TestApplication<ctk::StateMonitor<uint8_t>> app;
 
-  app.monitor.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto stateValue = test.getScalar<uint8_t>(std::string("/STATE_MONITOR.STATE"));
+  auto stateValue = test.getScalar<uint8_t>(std::string("/monitor/nominalState"));
   stateValue = 1;
   stateValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<uint8_t>(std::string("/WATCH"));
+  auto watch = test.getScalar<uint8_t>(std::string("/monitor/watch"));
   watch = 1;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/STATUS"));
+  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OK);
-  
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
   watch = 0;
   watch.write();
   test.stepApplication();
   status.readLatest();
   //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::ERROR);
-  
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
+
   stateValue = 0;
   stateValue.write();
   test.stepApplication();
   status.readLatest();
   //should be in OFF state.
-  BOOST_CHECK_EQUAL(status,ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 }
