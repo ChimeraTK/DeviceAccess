@@ -89,7 +89,7 @@ namespace ChimeraTK {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
       ReadAnyGroup group{StatusMonitor<T>::watch, warning, error};
       while(true) {
-        group.readAny();
+        // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
         if(StatusMonitor<T>::watch > error) {
           StatusMonitor<T>::status = ERROR;
         }
@@ -100,7 +100,7 @@ namespace ChimeraTK {
           StatusMonitor<T>::status = OK;
         }
         StatusMonitor<T>::status.write();
-        usleep(500);
+        group.readAny();
       }
     }
   };
@@ -120,7 +120,6 @@ namespace ChimeraTK {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
       ReadAnyGroup group{StatusMonitor<T>::watch, warning, error};
       while(true) {
-        group.readAny();
         if(StatusMonitor<T>::watch < error) {
           StatusMonitor<T>::status = ERROR;
         }
@@ -131,7 +130,7 @@ namespace ChimeraTK {
           StatusMonitor<T>::status = OK;
         }
         StatusMonitor<T>::status.write();
-        usleep(500);
+        group.readAny();
       }
     }
   };
@@ -152,7 +151,7 @@ namespace ChimeraTK {
  */
     ScalarPushInput<T> warningUpperThreshold{this, "upperWarningThreshold", "", "", StatusMonitor<T>::_parameterTags};
     ScalarPushInput<T> warningLowerThreshold{this, "lowerWarningThreshold", "", "", StatusMonitor<T>::_parameterTags};
-    /** ERROR state to be reported if value is in between the upper and 
+    /** ERROR state to be reported if value is in between the upper and
  * lower threshold including the start and end of thresholds.
  */
     ScalarPushInput<T> errorUpperThreshold{this, "upperErrorThreshold", "", "", StatusMonitor<T>::_parameterTags};
@@ -164,7 +163,6 @@ namespace ChimeraTK {
       ReadAnyGroup group{StatusMonitor<T>::watch, warningUpperThreshold, warningLowerThreshold, errorUpperThreshold,
           errorLowerThreshold};
       while(true) {
-        group.readAny();
         T warningUpperThresholdCorrected = warningUpperThreshold;
         T errorUpperThresholdCorrected = errorUpperThreshold;
         /** The only sanity check done in this module is if the upper threshold
@@ -186,7 +184,7 @@ namespace ChimeraTK {
           StatusMonitor<T>::status = OK;
         }
         StatusMonitor<T>::status.write();
-        usleep(500);
+        group.readAny();
       }
     }
   };
@@ -205,7 +203,6 @@ namespace ChimeraTK {
       /** If there is a change either in value monitored or in requiredValue, the status is re-evaluated*/
       ReadAnyGroup group{StatusMonitor<T>::watch, requiredValue};
       while(true) {
-        group.readAny();
         if(StatusMonitor<T>::watch != requiredValue) {
           StatusMonitor<T>::status = ERROR;
         }
@@ -213,7 +210,7 @@ namespace ChimeraTK {
           StatusMonitor<T>::status = OK;
         }
         StatusMonitor<T>::status.write();
-        usleep(500);
+        group.readAny();
       }
     }
   };
@@ -234,7 +231,6 @@ namespace ChimeraTK {
       /** If there is a change either in value monitored or in state, the status is re-evaluated*/
       ReadAnyGroup group{StatusMonitor<T>::watch, nominalState};
       while(true) {
-        group.readAny();
         if(StatusMonitor<T>::watch != nominalState) {
           StatusMonitor<T>::status = ERROR;
         }
@@ -246,7 +242,7 @@ namespace ChimeraTK {
           StatusMonitor<T>::status = ERROR;
         }
         StatusMonitor<T>::status.write();
-        usleep(500);
+        group.readAny();
       }
     }
   };
