@@ -100,7 +100,7 @@ namespace ChimeraTK {
 
     // add everything matching the tag to the virtual module and return it
     if(this == &Application::getInstance()) {
-      // if this module is the top-level application, we need special treatment for HierarchyModifier::moveThisToRoot
+      // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
       findTagAndAppendToModule(module, tag, false, true, false, module);
     }
     else {
@@ -181,11 +181,21 @@ namespace ChimeraTK {
 
     if(needToAddSubModule) {
       if(nextmodule.getAccessorList().size() > 0 || nextmodule.getSubmoduleList().size() > 0) {
-        if(_hierarchyModifier != HierarchyModifier::moveToRoot) {
-          module.addSubModule(nextmodule);
+        if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
+          root.addSubModule(nextmodule);
+        }
+        else if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
+          auto owner = dynamic_cast<VirtualModule*>(module.getOwner());
+          if(owner) { // the root does not have an owner.
+            owner->addSubModule(nextmodule);
+          }
+          else {
+            throw logic_error(std::string("Module ") + module.getName() +
+                ": cannot have hierarchy modifier 'oneLevelUp' in root of the application.");
+          }
         }
         else {
-          root.addSubModule(nextmodule);
+          module.addSubModule(nextmodule);
         }
       }
     }
