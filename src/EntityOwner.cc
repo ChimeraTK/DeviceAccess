@@ -167,7 +167,7 @@ namespace ChimeraTK {
     for(auto submodule : getSubmoduleList()) {
       // check if submodule already exists by this name and its hierarchy should
       // not be eliminated
-      if(!moduleToAddTo->getEliminateHierarchy() && moduleToAddTo->hasSubmodule(submodule->getName())) {
+      if(!submodule->getEliminateHierarchy() && moduleToAddTo->hasSubmodule(submodule->getName())) {
         // exists: add to the existing module
         auto* existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
         assert(existingSubModule != nullptr);
