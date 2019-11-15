@@ -36,8 +36,12 @@ struct FirstHierarchy : ctk::ModuleGroup {
       ctk::ScalarOutput<int> varC{this, "varC", "MV/m", "Desc"};
       struct : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
-        ctk::ScalarPushInput<double> sisterOfVarGroup{this, "sisterOfVarGroup", "MV/m", "Desc"};
-      } movedUp{getOwner(), "youLNeverSee", "minus one test", ctk::HierarchyModifier::hideThis, {"Partial"}};
+        ctk::ScalarPushInput<double> nieceOfVarGroup{this, "nieceOfVarGroup", "MV/m", "Desc"};
+      } movedUp{this, "sisterGroupOfVarGroup", "minus one test 1", ctk::HierarchyModifier::oneLevelUp, {"Partial"}};
+      struct : ctk::VariableGroup {
+        using ctk::VariableGroup::VariableGroup;
+        ctk::ScalarPushInput<double> sisterVarOfVarGroup{this, "sisterVarOfVarGroup", "MV/m", "Desc"};
+      } movedUpAndHidden{this, "youLNeverSee", "minus one test 2", ctk::HierarchyModifier::oneUpAndHide, {"Partial"}};
     } varGroup{this, "VarGroup", "A group", ctk::HierarchyModifier::none, {"Exclude", "Partial"}};
 
     struct MoveToRoot : ctk::VariableGroup {
@@ -90,13 +94,14 @@ BOOST_AUTO_TEST_CASE(testEverythingTag) {
   app.findTag("Everything").connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
+  app.cs.dump();
 
   // check if all variables are found on the ControlSystem - read/write dummy values as a consistency check. We have
   // different types and input/output mixed, so mixing up variables will be noticed.
   test.writeScalar<int>("/first/TestModule/VarGroup/varA", 42);
   test.writeScalar<double>("/first/TestModule/VarGroup/varB", 3.14);
   test.readScalar<int>("/first/TestModule/VarGroup/varC");
-  test.writeScalar<double>("/first/TestModule/sisterOfVarGroup", 9.9);
+  test.writeScalar<double>("/first/TestModule/sisterGroupOfVarGroup/nieceOfVarGroup", 9.9);
   test.writeScalar<std::string>("/first/TestModule/varA", "Hallo123");
   test.readScalar<float>("/first/TestModule/varX");
   for(size_t i = 0; i < 22; ++i) {

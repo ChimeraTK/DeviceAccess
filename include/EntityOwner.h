@@ -211,7 +211,7 @@ namespace ChimeraTK {
      * VirtualModule. Users normally will use findTag() instead. "tag" is
      * interpreted as a regular expression (see std::regex_match). */
     void findTagAndAppendToModule(VirtualModule& module, const std::string& tag, bool eliminateAllHierarchies,
-        bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const;
+        bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule * ownerOfModule) const;
 
     /** The name of this instance */
     std::string _name;

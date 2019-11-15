@@ -101,12 +101,12 @@ namespace ChimeraTK {
     // add everything matching the tag to the virtual module and return it
     if(this == &Application::getInstance()) {
       // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
-      findTagAndAppendToModule(module, tag, false, true, false, module);
+      findTagAndAppendToModule(module, tag, false, true, false, module, nullptr);
     }
     else {
       // Not the top-level module: Things that are moved to the top-level are simply discarded
       VirtualModule discard("discarded", "", ModuleType::Invalid);
-      findTagAndAppendToModule(module, tag, false, true, false, discard);
+      findTagAndAppendToModule(module, tag, false, true, false, discard, nullptr);
     }
 
     return module;
@@ -121,12 +121,12 @@ namespace ChimeraTK {
     // add everything matching the tag to the virtual module and return it
     if(this == &Application::getInstance()) {
       // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
-      findTagAndAppendToModule(module, tag, false, true, true, module);
+      findTagAndAppendToModule(module, tag, false, true, true, module, nullptr);
     }
     else {
       // Not the top-level module: Things that are moved to the top-level are simply discarded
       VirtualModule discard("discarded", "", ModuleType::Invalid);
-      findTagAndAppendToModule(module, tag, false, true, true, discard);
+      findTagAndAppendToModule(module, tag, false, true, true, discard, nullptr);
     }
     return module;
   }
@@ -134,17 +134,20 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void EntityOwner::findTagAndAppendToModule(VirtualModule& module, const std::string& tag,
-      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
+                                             bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule * ownerOfModule) const {
     VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule* moduleToAddTo;
+    VirtualModule* ownerOfModuleToAddTo;
 
     bool needToAddSubModule = false;
     if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
       moduleToAddTo = &nextmodule;
+      ownerOfModuleToAddTo = &module;
       needToAddSubModule = true;
     }
     else {
       moduleToAddTo = &module;
+      ownerOfModuleToAddTo = ownerOfModule;
     }
 
     // add nodes to the module if matching the tag
@@ -171,11 +174,11 @@ namespace ChimeraTK {
         // exists: add to the existing module
         auto* existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
         assert(existingSubModule != nullptr);
-        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate, root);
+        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate, root, ownerOfModuleToAddTo);
       }
       else {
         // does not yet exist: add as new submodule to the current module
-        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root);
+        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root, ownerOfModuleToAddTo);
       }
     }
 
@@ -184,10 +187,9 @@ namespace ChimeraTK {
         if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
           root.addSubModule(nextmodule);
         }
-        else if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
-          auto owner = dynamic_cast<VirtualModule*>(module.getOwner());
-          if(owner) { // the root does not have an owner.
-            owner->addSubModule(nextmodule);
+        else if(_hierarchyModifier == HierarchyModifier::oneLevelUp) {
+          if(ownerOfModule) { // the root does not have an owner.
+            ownerOfModule->addSubModule(nextmodule);
           }
           else {
             throw logic_error(std::string("Module ") + module.getName() +
