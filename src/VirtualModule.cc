@@ -98,8 +98,21 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VirtualModule::addSubModule(VirtualModule module) {
-    submodules.push_back(module);
-    registerModule(&(submodules.back()));
+    if(!hasSubmodule(module.getName())) {
+      // Submodule doesn'st exist already: register the given module as a new submodule
+      submodules.push_back(module);
+      registerModule(&(submodules.back()));
+    }
+    else {
+      // Submodule does exist already: copy content into the existing submodule
+      VirtualModule& theSubmodule = dynamic_cast<VirtualModule&>(submodule(module.getName()));
+      for(auto& submod : module.getSubmoduleList()) {
+        theSubmodule.addSubModule(dynamic_cast<VirtualModule&>(*submod));
+      }
+      for(auto& acc : module.getAccessorList()) {
+        theSubmodule.addAccessor(acc);
+      }
+    }
   }
 
   /*********************************************************************************************************************/
