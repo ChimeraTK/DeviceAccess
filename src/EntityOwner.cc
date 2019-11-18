@@ -94,6 +94,13 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  bool EntityOwner::getEliminateHierarchy() const {
+    return (_hierarchyModifier == HierarchyModifier::hideThis) ||
+        (_hierarchyModifier == HierarchyModifier::oneUpAndHide);
+  }
+
+  /*********************************************************************************************************************/
+
   VirtualModule EntityOwner::findTag(const std::string& tag) const {
     // create new module to return
     VirtualModule module{_name, _description, getModuleType()};
@@ -133,21 +140,42 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  // @todo FIXME: The naming of variables is not good. What the function does is add
+  // the EntityOwner itself with all its children to a parent.
+  // The parent is called module, the EntityOwner is called nextmodule, the flag whether to add the
+  // EntityOwner to a parent is called needToAddSubmodule, while submodule are the children of EntityOwner
+  // In addition there are two different kinds of add: The submodules and accessors to the target, and
+  // the EntityOwner itself to a parent.
   void EntityOwner::findTagAndAppendToModule(VirtualModule& module, const std::string& tag,
-                                             bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule * ownerOfModule) const {
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root,
+      VirtualModule* ownerOfModule) const {
     VirtualModule nextmodule{_name, _description, getModuleType()};
     VirtualModule* moduleToAddTo;
     VirtualModule* ownerOfModuleToAddTo;
 
+    // This function is adding the current entity owner to a parent.
+    // It might be that it is requested to hide ourseves. In this case we do not add
+    // ourselves but directly put the children into the parent (or grand parent, depending on the hierarchy modifier).
     bool needToAddSubModule = false;
+    //< FIXME: rename to needToAddMyself;
     if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
+      // We are not hiding ourselves.
       moduleToAddTo = &nextmodule;
       ownerOfModuleToAddTo = &module;
       needToAddSubModule = true;
     }
     else {
-      moduleToAddTo = &module;
-      ownerOfModuleToAddTo = ownerOfModule;
+      // We are hiding. Find the correct ancestor to add to:
+      if(_hierarchyModifier == HierarchyModifier::oneUpAndHide) {
+        // don't just hide but also move one level up -> add to the grandparent
+        moduleToAddTo = ownerOfModule;
+        ownerOfModuleToAddTo = nullptr; //FIXME: oneLevelUp and oneUpAndHide cannit be nested
+      }
+      else {
+        // just hide -> add to the parent
+        moduleToAddTo = &module;
+        ownerOfModuleToAddTo = ownerOfModule;
+      }
     }
 
     // add nodes to the module if matching the tag
@@ -174,11 +202,13 @@ namespace ChimeraTK {
         // exists: add to the existing module
         auto* existingSubModule = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
         assert(existingSubModule != nullptr);
-        submodule->findTagAndAppendToModule(*existingSubModule, tag, eliminateAllHierarchies, true, negate, root, ownerOfModuleToAddTo);
+        submodule->findTagAndAppendToModule(
+            *existingSubModule, tag, eliminateAllHierarchies, true, negate, root, ownerOfModuleToAddTo);
       }
       else {
         // does not yet exist: add as new submodule to the current module
-        submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root, ownerOfModuleToAddTo);
+        submodule->findTagAndAppendToModule(
+            *moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root, ownerOfModuleToAddTo);
       }
     }
 
@@ -187,7 +217,8 @@ namespace ChimeraTK {
         if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
           root.addSubModule(nextmodule);
         }
-        else if(_hierarchyModifier == HierarchyModifier::oneLevelUp) {
+        else if((_hierarchyModifier == HierarchyModifier::oneLevelUp) ||
+            (_hierarchyModifier == HierarchyModifier::oneUpAndHide)) {
           if(ownerOfModule) { // the root does not have an owner.
             ownerOfModule->addSubModule(nextmodule);
           }
@@ -201,7 +232,7 @@ namespace ChimeraTK {
         }
       }
     }
-  }
+  } // namespace ChimeraTK
 
   /*********************************************************************************************************************/
 

@@ -146,11 +146,13 @@ namespace ChimeraTK {
      *  model, while the static C++ model is fixed at compile time. */
     void setEliminateHierarchy() { _hierarchyModifier = HierarchyModifier::hideThis; }
 
-    /** Note: this function is deprectated. If you really need this, write a feature request for a function to get
-     *  the HierarchyModifier.
-     *
-     * Returns the flag whether this level of hierarchy should be eliminated */
-    bool getEliminateHierarchy() const { return _hierarchyModifier == HierarchyModifier::hideThis; }
+    /** Returns the flag whether this level of hierarchy should be eliminated. It returns true
+        if hiding the hierarchy is required by the hierarchy modifier (HierarchyModifier::hideThis or HierarchyModifier::oneUpAndHide) */
+    bool getEliminateHierarchy() const;
+
+    /** Returns the hierarchy modifier of this entity. FIXE: One of those useless code comments.
+     */
+    HierarchyModifier getHierarchyModifier() const { return _hierarchyModifier; }
 
     /** Create a VirtualModule which contains all variables of this EntityOwner in
      * a flat hierarchy. It will recurse
@@ -211,7 +213,7 @@ namespace ChimeraTK {
      * VirtualModule. Users normally will use findTag() instead. "tag" is
      * interpreted as a regular expression (see std::regex_match). */
     void findTagAndAppendToModule(VirtualModule& module, const std::string& tag, bool eliminateAllHierarchies,
-        bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule * ownerOfModule) const;
+        bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule* ownerOfModule) const;
 
     /** The name of this instance */
     std::string _name;

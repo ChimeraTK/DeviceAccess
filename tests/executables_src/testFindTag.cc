@@ -37,10 +37,18 @@ struct FirstHierarchy : ctk::ModuleGroup {
       struct : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
         ctk::ScalarPushInput<double> nieceOfVarGroup{this, "nieceOfVarGroup", "MV/m", "Desc"};
+        struct : ctk::VariableGroup {
+          using ctk::VariableGroup::VariableGroup;
+          ctk::ScalarOutput<int> varC{this, "childOfNiceGroup", "MV/m", "Desc"};
+        } moveMeAlong{this, "nieceGroup", ""};
       } movedUp{this, "sisterGroupOfVarGroup", "minus one test 1", ctk::HierarchyModifier::oneLevelUp, {"Partial"}};
       struct : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
         ctk::ScalarPushInput<double> sisterVarOfVarGroup{this, "sisterVarOfVarGroup", "MV/m", "Desc"};
+        struct : ctk::VariableGroup {
+          using ctk::VariableGroup::VariableGroup;
+          ctk::ScalarOutput<int> varC{this, "anotherNieceVar", "MV/m", "Desc"};
+        } moveMeAlong{this, "AnotherSisterGroup", ""};
       } movedUpAndHidden{this, "youLNeverSee", "minus one test 2", ctk::HierarchyModifier::oneUpAndHide, {"Partial"}};
     } varGroup{this, "VarGroup", "A group", ctk::HierarchyModifier::none, {"Exclude", "Partial"}};
 
@@ -102,6 +110,7 @@ BOOST_AUTO_TEST_CASE(testEverythingTag) {
   test.writeScalar<double>("/first/TestModule/VarGroup/varB", 3.14);
   test.readScalar<int>("/first/TestModule/VarGroup/varC");
   test.writeScalar<double>("/first/TestModule/sisterGroupOfVarGroup/nieceOfVarGroup", 9.9);
+  test.writeScalar<double>("/first/TestModule/sisterVarOfVarGroup", -9.9);
   test.writeScalar<std::string>("/first/TestModule/varA", "Hallo123");
   test.readScalar<float>("/first/TestModule/varX");
   for(size_t i = 0; i < 22; ++i) {
