@@ -212,8 +212,8 @@ namespace ChimeraTK {
     /** Add the part of the tree structure matching the given tag to a
      * VirtualModule. Users normally will use findTag() instead. "tag" is
      * interpreted as a regular expression (see std::regex_match). */
-    void findTagAndAppendToModule(VirtualModule& module, const std::string& tag, bool eliminateAllHierarchies,
-        bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule* ownerOfModule) const;
+    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool eliminateAllHierarchies,
+        bool eliminateFirstHierarchy, bool negate, VirtualModule& root, VirtualModule* virtualGrandparent) const;
 
     /** The name of this instance */
     std::string _name;
