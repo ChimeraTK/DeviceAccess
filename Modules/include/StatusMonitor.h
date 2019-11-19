@@ -42,7 +42,7 @@ namespace ChimeraTK {
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description,
         HierarchyModifier modifier, const std::string& input, const std::string& output,
         const std::unordered_set<std::string>& tags)
-    : ApplicationModule(owner, name, description, modifier), _parameterTags(tags), watch(this, input, "", "", tags),
+    : ApplicationModule(owner, name, description, modifier), _parameterTags(tags), oneUp(this, input, tags),
       status(this, output, "", "", tags) {}
 
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description,
@@ -50,18 +50,18 @@ namespace ChimeraTK {
         const std::string& output, const std::unordered_set<std::string>& outputTags,
         const std::unordered_set<std::string>& parameterTags)
     : ApplicationModule(owner, name, description, modifier), _parameterTags(parameterTags),
-      watch(this, input, "", "", inputTags), status(this, output, "", "", outputTags) {}
+      oneUp(this, input, inputTags), status(this, output, "", "", outputTags) {}
 
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description,
         HierarchyModifier modifier, const std::string& input, const std::unordered_set<std::string>& inputTags,
         const std::string& output, const std::unordered_set<std::string>& parameterTags)
     : ApplicationModule(owner, name, description, modifier), _parameterTags(parameterTags),
-      watch(this, input, "", "", inputTags), status(this, output, "", "", {}) {}
+      oneUp(this, input, inputTags), status(this, output, "", "", {}) {}
 
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description,
         HierarchyModifier modifier, const std::string& input, const std::string& output,
         const std::unordered_set<std::string>& inputTags, const std::unordered_set<std::string>& outputTags)
-    : ApplicationModule(owner, name, description, modifier), _parameterTags({}), watch(this, input, "", "", inputTags),
+    : ApplicationModule(owner, name, description, modifier), _parameterTags({}), oneUp(this, input, inputTags),
       status(this, output, "", "", outputTags) {}
 
     ~StatusMonitor() override {}
@@ -69,8 +69,16 @@ namespace ChimeraTK {
 
     /**Tags for parameters. This makes it easier to connect them to e.g, to control system*/
     std::unordered_set<std::string> _parameterTags;
-    /**Input value that should be monitored*/
-    ScalarPushInput<T> watch;
+    /**Input value that should be monitored. It is moved one level up, so it's parallel to this monitor object.*/
+    struct OneUp : public VariableGroup {
+      OneUp(EntityOwner* owner, const std::string& watchName, const std::unordered_set<std::string>& tags)
+      : VariableGroup(owner, "hidden", "", HierarchyModifier::oneUpAndHide), watch(this, watchName, "", "", tags) {}
+      ScalarPushInput<T> watch;
+    } oneUp;
+
+    // Conveniance reference to avoid the "oneUp" in the code
+    ScalarPushInput<T>& watch = oneUp.watch;
+
     /**One of four possible states to be reported*/
     ScalarOutput<uint16_t> status;
   };

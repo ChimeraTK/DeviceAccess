@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<double_t>(std::string("/monitor/watch"));
+  auto watch = test.getScalar<double_t>(std::string("/watch"));
   watch = 40.1;
   watch.write();
   test.stepApplication();
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   error.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<uint>(std::string("/monitor/watch"));
+  auto watch = test.getScalar<uint>(std::string("/watch"));
   watch = 55;
   watch.write();
   test.stepApplication();
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   errorLowerLimit.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<int>(std::string("/monitor/watch"));
+  auto watch = test.getScalar<int>(std::string("/watch"));
   watch = 40;
   watch.write();
   test.stepApplication();
@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   requiredValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<float>(std::string("/monitor/watch"));
+  auto watch = test.getScalar<float>(std::string("/watch"));
   watch = 40.9;
   watch.write();
   test.stepApplication();
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   stateValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<uint8_t>(std::string("/monitor/watch"));
+  auto watch = test.getScalar<uint8_t>(std::string("/watch"));
   watch = 1;
   watch.write();
   test.stepApplication();
