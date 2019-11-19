@@ -2,89 +2,37 @@
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/StatusMonitor.h>
+#include <ChimeraTK/ApplicationCore/ModuleGroup.h>
 #include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 
 namespace ctk = ChimeraTK;
-struct Simulation : public ctk::ApplicationModule {
+
+// Just simulate a temperature going up and down
+struct SimulationModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  /** All the variable names like "TEMPERATURE", MAX_STATUS,
-   * MAX_MONITOR.WARNING.THRESHOLD and others should be exactly the same as
-   * and their data type should match with those given in the the monitor.
-   * The direction should be oppisite e.g., the ScalarPushInput<double_t> watch
-   * in the StatusMonitor would become ctk::ScalarOutput<double_t> watch.
-   * */
 
   /**The value to be monitored.*/
-  ctk::ScalarOutput<double_t> temperature{this, "TEMPERATURE", "deg", ""};
-  /**The status of the MaxMonitor*/
-  ctk::ScalarPushInput<uint16_t> max_status{this, "MAX_STATUS", "", ""};
-  /**Thersholds for the MaxMonitor. The variable names are exactly as in MaxMonitor.*/
-  ctk::ScalarOutput<double_t> max_warning{this, "MAX_MONITOR.WARNING.THRESHOLD", "", ""};
-  ctk::ScalarOutput<double_t> max_error{this, "MAX_MONITOR.ERROR.THRESHOLD", "", ""};
-
-  /**The status of the MinMonitor.*/
-  ctk::ScalarPushInput<uint16_t> min_status{this, "MIN_STATUS", "", ""};
-  /**Thersholds for the MinMonitor. The variable names are exactly as in MinMonitor.*/
-  ctk::ScalarOutput<double_t> min_warning{this, "MIN_MONITOR.WARNING.THRESHOLD", "", ""};
-  ctk::ScalarOutput<double_t> min_error{this, "MIN_MONITOR.ERROR.THRESHOLD", "", ""};
-
-  /**The status of the RangeMonitor.*/
-  ctk::ScalarPushInput<uint16_t> range_status{this, "RANGE_STATUS", "", ""};
-  /**Thersholds for the MinMonitor. The variable names are exactly as in RangeMonitor.*/
-  ctk::ScalarOutput<double_t> rangeWarningUpperLimit{this, "RANGE_MONITOR.WARNING.UPPER_LIMIT", "", ""};
-  ctk::ScalarOutput<double_t> rangeWarningLowerLimit{this, "RANGE_MONITOR.WARNING.LOWER_LIMIT", "", ""};
-  ctk::ScalarOutput<double_t> rangeErrorUpperLimit{this, "RANGE_MONITOR.ERROR.UPPER_LIMIT", "", ""};
-  ctk::ScalarOutput<double_t> rangeErrorLowerLimit{this, "RANGE_MONITOR.ERROR.LOWER_LIMIT", "", ""};
+  ctk::ScalarOutput<double> temperature{this, "temperature", "degC", "simulated temperature"};
 
   void mainLoop() {
     /**Intialize temperature.*/
     temperature = 0;
     temperature.write();
-
-    /**Set MaxMonitor threshold.*/
-    max_warning = 20;
-    max_warning.write();
-    max_error = 40;
-    max_error.write();
-
-    /**Set MinMonitor threshold.*/
-    min_warning = -20;
-    min_warning.write();
-    min_error = -40;
-    min_error.write();
-
-    /**Set RangeMonitor threshold.*/
-    rangeWarningLowerLimit = 21;
-    rangeWarningLowerLimit.write();
-    rangeWarningUpperLimit = 35;
-    rangeWarningUpperLimit.write();
-    rangeErrorLowerLimit = 36;
-    rangeErrorLowerLimit.write();
-    rangeErrorUpperLimit = 70;
-    rangeErrorUpperLimit.write();
+    double direction = 1;
 
     while(true) {
-      //this is simulating temperature going high and low.
+      // go down with the temperature if too hot
       if(temperature > 50) {
-        while(temperature > -50) {
-          temperature -= 1;
-          temperature.write();
-          usleep(100000);
-          min_status.read();
-          max_status.read();
-          range_status.read();
-          std::cout << "temperature:" << temperature << " min_status:" << min_status << " max_status:" << max_status
-                    << " range_status:" << range_status << std::endl;
-        }
+        direction = -1;
       }
-      temperature += 1;
+      // go up with the temperature if too cold
+      if(temperature < -50) {
+        direction = 1;
+      }
+
+      temperature += direction * 1; // one dregree steps
       temperature.write();
       usleep(100000);
-      min_status.read();
-      max_status.read();
-      range_status.read();
-      std::cout << "temperature:" << temperature << " min_status:" << min_status << " max_status:" << max_status
-                << " range_status:" << range_status << std::endl;
     }
   }
 };
@@ -93,28 +41,53 @@ struct ExampleApp : public ctk::Application {
   ExampleApp() : Application("exampleApp") {}
   ~ExampleApp() { shutdown(); }
 
-  Simulation simulation{this, "SIMULATION", "", ChimeraTK::HierarchyModifier::none, {"CS"}};
+  // Create an instance of the simulation module. We name it "Simulation".
+  // There will be a variable /Simulation/temperature from this.
+  SimulationModule simulation{this, "Simulation", "temperature simulation"};
+
+  // Now we place a monitor next to the temperature variable. First we create a module group, also with the name "Simulation".
+  // Everything in it will be placed next to the variables from the simulation module.
+  struct : ctk::ModuleGroup {
+    using ctk::ModuleGroup::ModuleGroup;
+    // Inside the module group we place the monitor. In the constructor it gets the name of the variable to monitor, and the name of the output variable.
+    // The monitor automatically connects to the input variable that is in the same hierarchy level.
+    // We add output and parameter tags (STATUS and CONFIG, respectively) for easier connetion of the variables.
+    ctk::RangeMonitor<double> temperatureMonitor{this, "TemperatureMonitor", "monitor for the simulated temperature",
+        "temperature", "temperatureStatus", ctk::HierarchyModifier::none, {"STATUS"}, {"CONFIG"}, {}};
+  } simulationGroup{this, "Simulation", ""};
+
   ctk::ControlSystemModule cs;
-  /**Create MaxMonitor with exact variable names as in simulation.*/
-  ctk::MaxMonitor<double_t> maxMonitor{
-      this, "SIMULATION", "", ChimeraTK::HierarchyModifier::none, "TEMPERATURE", "MAX_STATUS", {"CS"}};
-  /**Create MinMonitor with exact variable names as in simulation.*/
-  ctk::MinMonitor<double_t> minMonitor{
-      this, "SIMULATION", "", ChimeraTK::HierarchyModifier::none, "TEMPERATURE", "MIN_STATUS", {"CS"}};
-  /**Create RangeMonitor with exact variable names as in simulation.*/
-  ctk::RangeMonitor<double_t> rangeMonitor{
-      this, "SIMULATION", "", ChimeraTK::HierarchyModifier::none, "TEMPERATURE", "RANGE_STATUS", {"CS"}};
+
   void defineConnections();
 };
+
 ExampleApp theExampleApp;
+
 void ExampleApp::defineConnections() {
   // Usually you set the dmap file here. This example does not have one.
 
-  /**Find and map all the variable with CS tag automatically.*/
-  findTag("CS").connectTo(cs);
+  /** At this point you usually connect the configuration from the file to the control system. We assume
+    * it would create the following variables:
+    * /Config/TemperatureMonitor/lowerWarningThreshold
+    * /Config/TemperatureMonitor/upperWarningThreshold
+    * /Config/TemperatureMonitor/lowerErrorgThreshold
+    * /Config/TemperatureMonitor/upperErrorThreshold
+    */
+  // Now we connect the parameters of the temperature monitor it the control system, into the Config directory so the variable names match.
+  // In this example it creates inputs on the CS side, if you have a real config they are outputs.
+  findTag("CONFIG").flatten().connectTo(cs["Config"]["TemperatureMonitor"]);
 
+  // connect everything in the app to the cs. This makes the connection of temperature from Simulation to the input of the monitor because they are the same variable in the CS module.
+  findTag(".*").connectTo(cs);
+
+  // FIXME: At this point a status aggregator would connect everything with tag STATUS
+
+  // show how it looks in the application (C++ hierarchy)
+  dump();
+
+  // show how it looks on the cs side (virtual hierarchy)
+  cs.dump();
+
+  // show how it is connected
   dumpConnections();
-  dumpConnectionGraph();
-  dumpGraph();
-  dumpModuleGraph("module-graph.dot");
 }
