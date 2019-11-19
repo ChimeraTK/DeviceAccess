@@ -21,9 +21,17 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  void defineConnections() { findTag(".*").connectTo(cs); }
+  void defineConnections() {
+    findTag(".*").connectTo(cs);                              // publish everything to CS
+    findTag("MY_MONITOR").connectTo(cs["MyNiceMonitorCopy"]); // cable again, checking that the tag is applied correctly
+    findTag("MON_PARAMS")
+        .connectTo(cs["MonitorParameters"]); // cable the parameters in addition (checking that tags are set correctly)
+    findTag("MON_OUTPUT")
+        .connectTo(cs["MonitorOutput"]); // cable the parameters in addition (checking that tags are set correctly)
+  }
   ctk::ControlSystemModule cs;
-  T monitor{this, "monitor", "", ChimeraTK::HierarchyModifier::none, "watch", "status", {"CS"}};
+  T monitor{this, "Monitor", "Now this is a nice monitor...", "watch", "status", ChimeraTK::HierarchyModifier::none,
+      {"MON_OUTPUT"}, {"MON_PARAMS"}, {"MY_MONITOR"}};
 };
 
 /*********************************************************************************************************************/
@@ -34,14 +42,14 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 
   ctk::TestFacility test;
   test.runApplication();
-  //app.dumpConnections();
+  //app.cs.dump();
 
-  auto warning = test.getScalar<double_t>(std::string("/monitor/upperWarningThreshold"));
+  auto warning = test.getScalar<double_t>(std::string("/Monitor/upperWarningThreshold"));
   warning = 45.1;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<double_t>(std::string("/monitor/upperErrorThreshold"));
+  auto error = test.getScalar<double_t>(std::string("/Monitor/upperErrorThreshold"));
   error = 50.1;
   error.write();
   test.stepApplication();
@@ -51,7 +59,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
@@ -112,6 +120,13 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   status.readLatest();
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // check that the tags are applied correctly
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(watch, test.readScalar<double>("/MyNiceMonitorCopy/watch"));
+  BOOST_CHECK_EQUAL(error, test.readScalar<double>("/MonitorParameters/Monitor/upperErrorThreshold"));
+  BOOST_CHECK_EQUAL(warning, test.readScalar<double>("/MonitorParameters/Monitor/upperWarningThreshold"));
 }
 
 /*********************************************************************************************************************/
@@ -124,12 +139,12 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto warning = test.getScalar<uint>(std::string("/monitor/lowerWarningThreshold"));
+  auto warning = test.getScalar<uint>(std::string("/Monitor/lowerWarningThreshold"));
   warning = 50;
   warning.write();
   test.stepApplication();
 
-  auto error = test.getScalar<uint>(std::string("/monitor/lowerErrorThreshold"));
+  auto error = test.getScalar<uint>(std::string("/Monitor/lowerErrorThreshold"));
   error = 45;
   error.write();
   test.stepApplication();
@@ -139,7 +154,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
@@ -200,6 +215,13 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   status.readLatest();
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // check that the tags are applied correctly
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(watch, test.readScalar<uint>("/MyNiceMonitorCopy/watch"));
+  BOOST_CHECK_EQUAL(error, test.readScalar<uint>("/MonitorParameters/Monitor/lowerErrorThreshold"));
+  BOOST_CHECK_EQUAL(warning, test.readScalar<uint>("/MonitorParameters/Monitor/lowerWarningThreshold"));
 }
 
 /*********************************************************************************************************************/
@@ -212,22 +234,22 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto warningUpperLimit = test.getScalar<int>(std::string("/monitor/upperWarningThreshold"));
+  auto warningUpperLimit = test.getScalar<int>(std::string("/Monitor/upperWarningThreshold"));
   warningUpperLimit = 50;
   warningUpperLimit.write();
   test.stepApplication();
 
-  auto warningLowerLimit = test.getScalar<int>(std::string("/monitor/lowerWarningThreshold"));
+  auto warningLowerLimit = test.getScalar<int>(std::string("/Monitor/lowerWarningThreshold"));
   warningLowerLimit = 41;
   warningLowerLimit.write();
   test.stepApplication();
 
-  auto errorUpperLimit = test.getScalar<int>(std::string("/monitor/upperErrorThreshold"));
+  auto errorUpperLimit = test.getScalar<int>(std::string("/Monitor/upperErrorThreshold"));
   errorUpperLimit = 60;
   errorUpperLimit.write();
   test.stepApplication();
 
-  auto errorLowerLimit = test.getScalar<int>(std::string("/monitor/lowerErrorThreshold"));
+  auto errorLowerLimit = test.getScalar<int>(std::string("/Monitor/lowerErrorThreshold"));
   errorLowerLimit = 51;
   errorLowerLimit.write();
   test.stepApplication();
@@ -237,7 +259,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
@@ -321,6 +343,15 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   status.readLatest();
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // check that the tags are applied correctly
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(watch, test.readScalar<int>("/MyNiceMonitorCopy/watch"));
+  BOOST_CHECK_EQUAL(errorLowerLimit, test.readScalar<int>("/MonitorParameters/Monitor/lowerErrorThreshold"));
+  BOOST_CHECK_EQUAL(warningLowerLimit, test.readScalar<int>("/MonitorParameters/Monitor/lowerWarningThreshold"));
+  BOOST_CHECK_EQUAL(errorUpperLimit, test.readScalar<int>("/MonitorParameters/Monitor/upperErrorThreshold"));
+  BOOST_CHECK_EQUAL(warningUpperLimit, test.readScalar<int>("/MonitorParameters/Monitor/upperWarningThreshold"));
 }
 
 /*********************************************************************************************************************/
@@ -333,7 +364,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto requiredValue = test.getScalar<float>(std::string("/monitor/requiredValue"));
+  auto requiredValue = test.getScalar<float>(std::string("/Monitor/requiredValue"));
   requiredValue = 40.9;
   requiredValue.write();
   test.stepApplication();
@@ -343,7 +374,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
@@ -379,6 +410,12 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   status.readLatest();
   //should be in WARNING state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // check that the tags are applied correctly
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(watch, test.readScalar<float>("/MyNiceMonitorCopy/watch"));
+  BOOST_CHECK_EQUAL(requiredValue, test.readScalar<float>("/MonitorParameters/Monitor/requiredValue"));
 }
 
 /*********************************************************************************************************************/
@@ -391,7 +428,7 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   test.runApplication();
   //app.dumpConnections();
 
-  auto stateValue = test.getScalar<uint8_t>(std::string("/monitor/nominalState"));
+  auto stateValue = test.getScalar<uint8_t>(std::string("/Monitor/nominalState"));
   stateValue = 1;
   stateValue.write();
   test.stepApplication();
@@ -401,7 +438,7 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/monitor/status"));
+  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
   status.readLatest();
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
@@ -419,4 +456,10 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   status.readLatest();
   //should be in OFF state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+
+  // check that the tags are applied correctly
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(watch, test.readScalar<uint8_t>("/MyNiceMonitorCopy/watch"));
+  BOOST_CHECK_EQUAL(stateValue, test.readScalar<uint8_t>("/MonitorParameters/Monitor/nominalState"));
 }
