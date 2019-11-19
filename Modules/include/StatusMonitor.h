@@ -45,6 +45,8 @@ namespace ChimeraTK {
     : ApplicationModule(owner, name, description, modifier, tags), _parameterTags(parameterTags), oneUp(this, input),
       status(this, output, "", "", outputTags) {}
 
+    StatusMonitor() { throw logic_error("Default constructor unusable. Just exists to work around gcc bug."); }
+
     ~StatusMonitor() override {}
     void prepare() override {}
 
@@ -56,9 +58,6 @@ namespace ChimeraTK {
       : VariableGroup(owner, "hidden", "", HierarchyModifier::oneUpAndHide), watch(this, watchName, "", "") {}
       ScalarPushInput<T> watch;
     } oneUp;
-
-    // Conveniance reference to avoid the "oneUp" in the code
-    ScalarPushInput<T>& watch = oneUp.watch;
 
     /**One of four possible states to be reported*/
     ScalarOutput<uint16_t> status;
@@ -76,13 +75,13 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::watch, warning, error};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warning, error};
       while(true) {
         // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
-        if(StatusMonitor<T>::watch > error) {
+        if(StatusMonitor<T>::oneUp.watch > error) {
           StatusMonitor<T>::status = ERROR;
         }
-        else if(StatusMonitor<T>::watch > warning) {
+        else if(StatusMonitor<T>::oneUp.watch > warning) {
           StatusMonitor<T>::status = WARNING;
         }
         else {
@@ -107,12 +106,12 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::watch, warning, error};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warning, error};
       while(true) {
-        if(StatusMonitor<T>::watch < error) {
+        if(StatusMonitor<T>::oneUp.watch < error) {
           StatusMonitor<T>::status = ERROR;
         }
-        else if(StatusMonitor<T>::watch < warning) {
+        else if(StatusMonitor<T>::oneUp.watch < warning) {
           StatusMonitor<T>::status = WARNING;
         }
         else {
@@ -149,8 +148,8 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::watch, warningUpperThreshold, warningLowerThreshold, errorUpperThreshold,
-          errorLowerThreshold};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warningUpperThreshold, warningLowerThreshold,
+          errorUpperThreshold, errorLowerThreshold};
       while(true) {
         T warningUpperThresholdCorrected = warningUpperThreshold;
         T errorUpperThresholdCorrected = errorUpperThreshold;
@@ -162,11 +161,12 @@ namespace ChimeraTK {
         if(errorUpperThresholdCorrected < errorLowerThreshold) {
           errorUpperThresholdCorrected = errorLowerThreshold;
         }
-        if(StatusMonitor<T>::watch <= errorUpperThresholdCorrected && StatusMonitor<T>::watch >= errorLowerThreshold) {
+        if(StatusMonitor<T>::oneUp.watch <= errorUpperThresholdCorrected &&
+            StatusMonitor<T>::oneUp.watch >= errorLowerThreshold) {
           StatusMonitor<T>::status = ERROR;
         }
-        else if(StatusMonitor<T>::watch <= warningUpperThresholdCorrected &&
-            StatusMonitor<T>::watch >= warningLowerThreshold) {
+        else if(StatusMonitor<T>::oneUp.watch <= warningUpperThresholdCorrected &&
+            StatusMonitor<T>::oneUp.watch >= warningLowerThreshold) {
           StatusMonitor<T>::status = WARNING;
         }
         else {
@@ -190,9 +190,9 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in requiredValue, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::watch, requiredValue};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, requiredValue};
       while(true) {
-        if(StatusMonitor<T>::watch != requiredValue) {
+        if(StatusMonitor<T>::oneUp.watch != requiredValue) {
           StatusMonitor<T>::status = ERROR;
         }
         else {
@@ -218,9 +218,9 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in state, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::watch, nominalState};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, nominalState};
       while(true) {
-        if(StatusMonitor<T>::watch != nominalState) {
+        if(StatusMonitor<T>::oneUp.watch != nominalState) {
           StatusMonitor<T>::status = ERROR;
         }
         else if(nominalState == OK || nominalState == OFF) {
