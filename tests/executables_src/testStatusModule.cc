@@ -140,17 +140,17 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   //app.dumpConnections();
 
   auto warning = test.getScalar<uint>(std::string("/Monitor/lowerWarningThreshold"));
-  warning = 50;
+  warning = 40;
   warning.write();
   test.stepApplication();
 
   auto error = test.getScalar<uint>(std::string("/Monitor/lowerErrorThreshold"));
-  error = 45;
+  error = 30;
   error.write();
   test.stepApplication();
 
   auto watch = test.getScalar<uint>(std::string("/watch"));
-  watch = 55;
+  watch = 45;
   watch.write();
   test.stepApplication();
 
@@ -160,61 +160,40 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
-  //set watch value lower than warning threshold
-  watch = 48;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
-
-  //set watch value greater than error threshold
-  watch = 42;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
-
-  //decrease error value lower than watch
-  error = 35;
-  error.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
-
-  //decrease warning value lower than watch
-  warning = 40;
-  warning.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
-
-  //set watch value lower than error threshold
-  watch = 33;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in ERROR state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
-
-  //decrease watch value greater than error level but still lower than warning level
-  watch = 36;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
-
-  //decrease watch value lower than warning level
+  // just abow the lower warning limit
   watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  //exactly at the lower warning limit
+  watch = 40;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  //just above the lower error limit
+  watch = 31;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  //exactly at the lower error limit (only well defined for int)
+  watch = 30;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
+
+  //way bellow the lower error limit
+  watch = 12;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   // check that the tags are applied correctly
   BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
@@ -329,34 +308,11 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
   //way bellow the lower error limit
-  errorUpperLimit = 12;
-  errorUpperLimit.write();
+  watch = 12;
+  watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
-
-  //  errorLowerLimit = 61;
-  //  errorLowerLimit.write();
-  //  test.stepApplication();
-
-  //  warningUpperLimit = 60;
-  //  warningUpperLimit.write();
-  //  test.stepApplication();
-
-  //  warningLowerLimit = 51;
-  //  warningLowerLimit.write();
-  //  test.stepApplication();
-
-  //  status.readLatest();
-  //  //should be in WARNING state.
-  //  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
-
-  //  warningLowerLimit = 55;
-  //  warningLowerLimit.write();
-  //  test.stepApplication();
-  //  status.readLatest();
-  //  //should be in OK state.
-  //  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   // check that the tags are applied correctly
   BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));

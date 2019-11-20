@@ -67,9 +67,9 @@ namespace ChimeraTK {
   template<typename T>
   struct MaxMonitor : public StatusMonitor<T> {
     using StatusMonitor<T>::StatusMonitor;
-    /** WARNING state to be reported if threshold is crossed*/
+    /** WARNING state to be reported if threshold is reached or exceeded*/
     ScalarPushInput<T> warning{this, "upperWarningThreshold", "", "", StatusMonitor<T>::_parameterTags};
-    /** ERROR state to be reported if threshold is crossed*/
+    /** ERROR state to be reported if threshold is reached or exceeded*/
     ScalarPushInput<T> error{this, "upperErrorThreshold", "", "", StatusMonitor<T>::_parameterTags};
 
     /**This is where state evaluation is done*/
@@ -78,10 +78,10 @@ namespace ChimeraTK {
       ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warning, error};
       while(true) {
         // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
-        if(StatusMonitor<T>::oneUp.watch > error) {
+        if(StatusMonitor<T>::oneUp.watch >= error) {
           StatusMonitor<T>::status = ERROR;
         }
-        else if(StatusMonitor<T>::oneUp.watch > warning) {
+        else if(StatusMonitor<T>::oneUp.watch >= warning) {
           StatusMonitor<T>::status = WARNING;
         }
         else {
@@ -108,10 +108,10 @@ namespace ChimeraTK {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
       ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warning, error};
       while(true) {
-        if(StatusMonitor<T>::oneUp.watch < error) {
+        if(StatusMonitor<T>::oneUp.watch <= error) {
           StatusMonitor<T>::status = ERROR;
         }
-        else if(StatusMonitor<T>::oneUp.watch < warning) {
+        else if(StatusMonitor<T>::oneUp.watch <= warning) {
           StatusMonitor<T>::status = WARNING;
         }
         else {
