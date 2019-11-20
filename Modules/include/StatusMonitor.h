@@ -151,22 +151,14 @@ namespace ChimeraTK {
       ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warningUpperThreshold, warningLowerThreshold,
           errorUpperThreshold, errorLowerThreshold};
       while(true) {
-        T warningUpperThresholdCorrected = warningUpperThreshold;
-        T errorUpperThresholdCorrected = errorUpperThreshold;
-        /** The only sanity check done in this module is if the upper threshold
- * is less then lower threshold*/
-        if(warningUpperThresholdCorrected < warningLowerThreshold) {
-          warningUpperThresholdCorrected = warningLowerThreshold;
-        }
-        if(errorUpperThresholdCorrected < errorLowerThreshold) {
-          errorUpperThresholdCorrected = errorLowerThreshold;
-        }
-        if(StatusMonitor<T>::oneUp.watch <= errorUpperThresholdCorrected &&
-            StatusMonitor<T>::oneUp.watch >= errorLowerThreshold) {
+        // Check for error limits first. Like this they supersede the warning,
+        // even if they are stricter then the warning limits (mis-configuration)
+        if(StatusMonitor<T>::oneUp.watch <= errorLowerThreshold ||
+            StatusMonitor<T>::oneUp.watch >= errorUpperThreshold) {
           StatusMonitor<T>::status = ERROR;
         }
-        else if(StatusMonitor<T>::oneUp.watch <= warningUpperThresholdCorrected &&
-            StatusMonitor<T>::oneUp.watch >= warningLowerThreshold) {
+        else if(StatusMonitor<T>::oneUp.watch <= warningLowerThreshold ||
+            StatusMonitor<T>::oneUp.watch >= warningUpperThreshold) {
           StatusMonitor<T>::status = WARNING;
         }
         else {

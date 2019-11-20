@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
 
   auto warningLowerLimit = test.getScalar<int>(std::string("/Monitor/lowerWarningThreshold"));
-  warningLowerLimit = 41;
+  warningLowerLimit = 40;
   warningLowerLimit.write();
   test.stepApplication();
 
@@ -250,99 +250,113 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   test.stepApplication();
 
   auto errorLowerLimit = test.getScalar<int>(std::string("/Monitor/lowerErrorThreshold"));
-  errorLowerLimit = 51;
+  errorLowerLimit = 30;
   errorLowerLimit.write();
   test.stepApplication();
 
+  // start with a good value
   auto watch = test.getScalar<int>(std::string("/watch"));
-  watch = 40;
+  watch = 45;
   watch.write();
   test.stepApplication();
 
   auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
   status.readLatest();
 
-  //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
-  //set watch value exceeding warning level
-  watch = 41;
+  //just below the warning level
+  watch = 49;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
-  //still test warning range
-  watch = 45;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
-
-  //Test warningUpperLimit
+  //exactly at the upper warning threshold (only well defined for int)
   watch = 50;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in WARNING state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
-  //Test errorUpperLimit
+  //just below the error threshold,. still warning
+  watch = 59;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  //exactly at the upper warning threshold (only well defined for int)
   watch = 60;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in ERROR state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
-  //Still test error
-  watch = 58;
+  //increase well above the upper error level
+  watch = 65;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in ERROR state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
-  //Test errorLowerLimit
-  watch = 51;
+  //back to ok, just abow the lower warning limit
+  watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in ERROR state.
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  //exactly at the lower warning limit
+  watch = 40;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  //just above the lower error limit
+  watch = 31;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  //exactly at the lower error limit (only well defined for int)
+  watch = 30;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
-  //increase error upper limit value greater than watch
-  errorUpperLimit = 70;
+  //way bellow the lower error limit
+  errorUpperLimit = 12;
   errorUpperLimit.write();
   test.stepApplication();
   status.readLatest();
-  //should be in ERROR state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
-  errorLowerLimit = 61;
-  errorLowerLimit.write();
-  test.stepApplication();
+  //  errorLowerLimit = 61;
+  //  errorLowerLimit.write();
+  //  test.stepApplication();
 
-  warningUpperLimit = 60;
-  warningUpperLimit.write();
-  test.stepApplication();
+  //  warningUpperLimit = 60;
+  //  warningUpperLimit.write();
+  //  test.stepApplication();
 
-  warningLowerLimit = 51;
-  warningLowerLimit.write();
-  test.stepApplication();
+  //  warningLowerLimit = 51;
+  //  warningLowerLimit.write();
+  //  test.stepApplication();
 
-  status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  //  status.readLatest();
+  //  //should be in WARNING state.
+  //  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
-  warningLowerLimit = 55;
-  warningLowerLimit.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  //  warningLowerLimit = 55;
+  //  warningLowerLimit.write();
+  //  test.stepApplication();
+  //  status.readLatest();
+  //  //should be in OK state.
+  //  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   // check that the tags are applied correctly
   BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
