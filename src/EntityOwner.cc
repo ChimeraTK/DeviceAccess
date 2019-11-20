@@ -147,7 +147,7 @@ namespace ChimeraTK {
     // This function adds the EntityOwner "this" (C++ hierarchy) and its children to the virtual hierarchy.
     /// We must create a virtual version of "this".
     VirtualModule virtualMe{_name, _description, getModuleType()};
-    // It might be that it is requested to hide ourseves. In this case we do not add
+    // It might be that it is requested to hide ourselves. In this case we do not add
     // ourselves but directly put the children into the parent (or grand parent, depending on the hierarchy modifier).
     // So we store which module to add to (either virtualMe, the virtual parent or virtual grand parent)
     VirtualModule* moduleToAddTo;
