@@ -45,17 +45,17 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   //app.cs.dump();
 
   auto warning = test.getScalar<double_t>(std::string("/Monitor/upperWarningThreshold"));
-  warning = 45.1;
+  warning = 50.0;
   warning.write();
   test.stepApplication();
 
   auto error = test.getScalar<double_t>(std::string("/Monitor/upperErrorThreshold"));
-  error = 50.1;
+  error = 60.0;
   error.write();
   test.stepApplication();
 
   auto watch = test.getScalar<double_t>(std::string("/watch"));
-  watch = 40.1;
+  watch = 40.0;
   watch.write();
   test.stepApplication();
 
@@ -65,24 +65,45 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
-  //set watch value exceeding warning level
-  watch = 46.1;
+  //   //just below the warning level
+  watch = 49.99;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in WARNING state.
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // slightly above at the upper warning threshold (exact is not good due to rounding errors in floats/doubles)
+  watch = 50.01;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
-  //set watch value exceeding error level
-  watch = 51.1;
+  //just below the error threshold,. still warning
+  watch = 59.99;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in ERROR state.
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  // slightly above at the upper error threshold (exact is not good due to rounding errors in floats/doubles)
+  watch = 60.01;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
 
+  //increase well above the upper error level
+  watch = 65;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
+
+  // now check that changing the status is updated correctly if we change the limits
+
   //increase error value greater than watch
-  error = 60.1;
+  error = 68;
   error.write();
   test.stepApplication();
   status.readLatest();
@@ -90,36 +111,20 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   //increase warning value greater than watch
-  warning = 55.1;
+  warning = 66;
   warning.write();
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
-  //set watch value exceeding error level
-  watch = 65.1;
-  watch.write();
+  // Set the upper error limit below the upper warning limit and below the current temperature. The warning is not active, but the error.
+  // Although this is not a reasonable configuration the error limit must superseed the warning and the status has to be error.
+  error = 60;
+  error.write();
   test.stepApplication();
   status.readLatest();
-  //should be in ERROR state.
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
-
-  //decrease watch value lower than error level but still greater than warning level
-  watch = 58.1;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
-
-  //decrease watch value lower than warning level
-  watch = 54.1;
-  watch.write();
-  test.stepApplication();
-  status.readLatest();
-  //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
 
   // check that the tags are applied correctly
   BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
@@ -191,6 +196,35 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   //way bellow the lower error limit
   watch = 12;
   watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
+
+  // move the temperature back to the good range and check that the status updates correctly when changing the limits
+  watch = 41;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // change upper warning limit
+  warning = 42;
+  warning.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  // rise the temperature above the lower warning limit
+  watch = 43;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // Set the lower error limit above the lower warning limit. The warning is not active, but the error.
+  // Although this is not a reasonable configuration the error limit must superseed the warning and the status has to be error.
+  error = 44;
+  error.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
@@ -310,6 +344,64 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   //way bellow the lower error limit
   watch = 12;
   watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
+
+  // Put the value back to the good range, then check that chaning the threshold also updated the status
+  watch = 49;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // change upper warning limit
+  warningUpperLimit = 48;
+  warningUpperLimit.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  // lower the temperature below the upper warning limit
+  watch = 47;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // Set the upper error limit below the upper warning limit. The warning is not active, but the error.
+  // Although this is not a reasonable configuration the error limit must superseed the warning and the status has to be error.
+  errorUpperLimit = 46;
+  errorUpperLimit.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
+
+  // move the temperature back to the good range and repeat for the lower limits
+  watch = 41;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // change upper warning limit
+  warningLowerLimit = 42;
+  warningLowerLimit.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+
+  // rise the temperature above the lower warning limit
+  watch = 43;
+  watch.write();
+  test.stepApplication();
+  status.readLatest();
+  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+
+  // Set the lower error limit above the lower warning limit. The warning is not active, but the error.
+  // Although this is not a reasonable configuration the error limit must superseed the warning and the status has to be error.
+  errorLowerLimit = 44;
+  errorLowerLimit.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::ERROR);
