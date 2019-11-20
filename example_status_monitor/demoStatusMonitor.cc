@@ -56,6 +56,7 @@ struct ExampleApp : public ctk::Application {
         "temperature", "temperatureStatus", ctk::HierarchyModifier::none, {"STATUS"}, {"CONFIG"}, {}};
   } simulationGroup{this, "Simulation", ""};
 
+  ctk::ConfigReader config{this, "Config", "demoStatusMonitor_config.xml"};
   ctk::ControlSystemModule cs;
 
   void defineConnections();
@@ -66,19 +67,22 @@ ExampleApp theExampleApp;
 void ExampleApp::defineConnections() {
   // Usually you set the dmap file here. This example does not have one.
 
-  /** At this point you usually connect the configuration from the file to the control system. We assume
-    * it would create the following variables:
-    * /Config/TemperatureMonitor/lowerWarningThreshold
-    * /Config/TemperatureMonitor/upperWarningThreshold
-    * /Config/TemperatureMonitor/lowerErrorgThreshold
-    * /Config/TemperatureMonitor/upperErrorThreshold
-    */
-  // Now we connect the parameters of the temperature monitor it the control system, into the Config directory so the variable names match.
-  // In this example it creates inputs on the CS side, if you have a real config they are outputs.
-  findTag("CONFIG").flatten().connectTo(cs["Config"]["TemperatureMonitor"]);
-
-  // connect everything in the app to the cs. This makes the connection of temperature from Simulation to the input of the monitor because they are the same variable in the CS module.
+  // Connect everything in the app to the cs. This makes the connection of temperature from Simulation to the input of the monitor because they are the same variable in the CS module.
   findTag(".*").connectTo(cs);
+
+  /* The trick of connecting the temperature automatically only worked because we put the temperatureMonitor into the correct place in the hierarchy
+   * by putting it into the variable group "Simulation". However, the threshold parameters inside the monitor are not connected yet.
+   *
+   * When connecting the app, the config created the following variables:
+   * /Config/TemperatureMonitor/lowerWarningThreshold
+   * /Config/TemperatureMonitor/upperWarningThreshold
+   * /Config/TemperatureMonitor/lowerErrorgThreshold
+   * /Config/TemperatureMonitor/upperErrorThreshold
+   */
+
+  // Now we connect the parameters of the temperature monitor to the control system, right into the Config directory so the variable names match.
+  // Like this the parameters are connected to the values coming from the configuration.
+  findTag("CONFIG").flatten().connectTo(cs["Config"]["TemperatureMonitor"]);
 
   // FIXME: At this point a status aggregator would connect everything with tag STATUS
 
