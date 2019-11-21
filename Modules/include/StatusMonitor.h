@@ -64,6 +64,11 @@ namespace ChimeraTK {
 
     /**One of four possible states to be reported*/
     ScalarOutput<uint16_t> status;
+
+    /** Disable the monitor. The status will always be OFF. You don't have to connect this input.
+     *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is always enabled.
+     */
+    ScalarPushInput<int> disable{this, "disable", "", "Disable the status monitor"};
   };
 
   /** Module for status monitoring depending on a maximum threshold value*/
@@ -78,10 +83,13 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warning, error};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, StatusMonitor<T>::disable, warning, error};
       while(true) {
         // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
-        if(StatusMonitor<T>::oneUp.watch >= error) {
+        if(StatusMonitor<T>::disable != 0) {
+          StatusMonitor<T>::status = OFF;
+        } 
+        else if(StatusMonitor<T>::oneUp.watch >= error) {
           StatusMonitor<T>::status = ERROR;
         }
         else if(StatusMonitor<T>::oneUp.watch >= warning) {
@@ -109,9 +117,12 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warning, error};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, StatusMonitor<T>::disable, warning, error};
       while(true) {
-        if(StatusMonitor<T>::oneUp.watch <= error) {
+        if(StatusMonitor<T>::disable != 0) {
+          StatusMonitor<T>::status = OFF;
+        } 
+        else if(StatusMonitor<T>::oneUp.watch <= error) {
           StatusMonitor<T>::status = ERROR;
         }
         else if(StatusMonitor<T>::oneUp.watch <= warning) {
@@ -151,12 +162,15 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in thershold values, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, warningUpperThreshold, warningLowerThreshold,
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, StatusMonitor<T>::disable, warningUpperThreshold, warningLowerThreshold,
           errorUpperThreshold, errorLowerThreshold};
       while(true) {
+        if(StatusMonitor<T>::disable != 0) {
+          StatusMonitor<T>::status = OFF;
+        } 
         // Check for error limits first. Like this they supersede the warning,
         // even if they are stricter then the warning limits (mis-configuration)
-        if(StatusMonitor<T>::oneUp.watch <= errorLowerThreshold ||
+        else if(StatusMonitor<T>::oneUp.watch <= errorLowerThreshold ||
             StatusMonitor<T>::oneUp.watch >= errorUpperThreshold) {
           StatusMonitor<T>::status = ERROR;
         }
@@ -185,9 +199,12 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in requiredValue, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, requiredValue};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, StatusMonitor<T>::disable, requiredValue};
       while(true) {
-        if(StatusMonitor<T>::oneUp.watch != requiredValue) {
+        if(StatusMonitor<T>::disable != 0) {
+          StatusMonitor<T>::status = OFF;
+        } 
+        else if(StatusMonitor<T>::oneUp.watch != requiredValue) {
           StatusMonitor<T>::status = ERROR;
         }
         else {
@@ -213,9 +230,12 @@ namespace ChimeraTK {
     /**This is where state evaluation is done*/
     void mainLoop() {
       /** If there is a change either in value monitored or in state, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, nominalState};
+      ReadAnyGroup group{StatusMonitor<T>::oneUp.watch, StatusMonitor<T>::disable, nominalState};
       while(true) {
-        if(StatusMonitor<T>::oneUp.watch != nominalState) {
+        if(StatusMonitor<T>::disable != 0) {
+          StatusMonitor<T>::status = OFF;
+        } 
+        else if(StatusMonitor<T>::oneUp.watch != nominalState) {
           StatusMonitor<T>::status = ERROR;
         }
         else if(nominalState == OK || nominalState == OFF) {
