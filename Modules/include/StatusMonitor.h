@@ -1,3 +1,6 @@
+#ifndef CHIMERATK_STATUS_MONITOR_H
+#define CHIMERATK_STATUS_MONITOR_H
+
 /*!
  * \author Nadeem Shehzad (DESY)
  * \date 15.05.2019
@@ -228,3 +231,5 @@ namespace ChimeraTK {
     }
   };
 } // namespace ChimeraTK
+
+#endif // CHIMERATK_STATUS_MONITOR_H
