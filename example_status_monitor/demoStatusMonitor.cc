@@ -1,4 +1,8 @@
-/**Example to simulate the working and usage of StatusMonitor*/
+/** Example to simulate the working and usage of StatusMonitor. 
+ *  Look at the server code, then run the server. Watch the values
+ *  /Simulation/temperature and /Simulation/TemperatureMonitor/status.
+ *  Try to disable the monitor with /Simulation/TemperatureMonitor/disable.
+*/
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/StatusMonitor.h>
@@ -68,6 +72,7 @@ void ExampleApp::defineConnections() {
   // Usually you set the dmap file here. This example does not have one.
 
   // Connect everything in the app to the cs. This makes the connection of temperature from Simulation to the input of the monitor because they are the same variable in the CS module.
+  // Also the disable variable if the monitor is connected to the CS. Try what happens if you disable the monitor.
   findTag(".*").connectTo(cs);
 
   /* The trick of connecting the temperature automatically only worked because we put the temperatureMonitor into the correct place in the hierarchy
