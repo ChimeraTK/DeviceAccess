@@ -6,9 +6,9 @@ namespace ctk = ChimeraTK;
 
 struct Controller : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPollInput<double> sp{this, "temperatureSetpoint", "degC", "Description", {"CS"}};
-  ctk::ScalarPushInput<double> rb{this, "temperatureReadback", "degC", "...", {"DEV", "CS"}};
-  ctk::ScalarOutput<double> cur{this, "heatingCurrent", "mA", "...", {"DEV"}};
+  ctk::ScalarPollInput<double> sp{this, "temperatureSetpoint", "degC", "Description"};
+  ctk::ScalarPushInput<double> rb{this, "temperatureReadback", "degC", "..."};
+  ctk::ScalarOutput<double> cur{this, "heatingCurrent", "mA", "..."};
 
   void mainLoop() {
     const double gain = 100.0;
@@ -25,7 +25,8 @@ struct ExampleApp : public ctk::Application {
   ExampleApp() : Application("demoApp2") {}
   ~ExampleApp() { shutdown(); }
 
-  Controller controller{this, "Controller", "The Controller"};
+  // We can pick any name for the module. "Oven" is what we want to see in the CS
+  Controller controller{this, "Oven", "The controller of the oven"};
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
@@ -39,6 +40,8 @@ static ExampleApp theExampleApp;
 void ExampleApp::defineConnections() {
   ChimeraTK::setDMapFilePath("example2.dmap");
 
-  controller.findTag("DEV").connectTo(oven["heater"], timer.tick);
-  controller.findTag("CS").connectTo(cs);
+  // Connect everything to the CS (except for the device, which is special)
+  findTag(".*").connectTo(cs);
+  // Connect device's "heater" to "Oven" in the CS, and use timer.tick as trigger
+  oven["heater"].connectTo(cs["Oven"], timer.tick);
 }
