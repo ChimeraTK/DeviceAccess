@@ -17,7 +17,7 @@ include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
-add_dependency(ChimeraTK-ApplicationCore 01.09 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore 01.08 REQUIRED)
 #FIXME: Make the adapter configurable via command line parameter
 add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10 REQUIRED)
 
