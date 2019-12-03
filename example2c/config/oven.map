@@ -1,0 +1,7 @@
+# name                    n_elements  address  size   bar   width  fracbits  signed   R/W
+APP.0.TEMPERATURE_ADC     1           0        4      0     16     0         0        RO
+APP.0.HEATING_CURRENT     1           4        4      0     32     16        0        RW
+APP.0.SUPPLY_ADCS         4           8        16     0     16     0         0        RO
+APP.0.POWER               1           24       4      0     1      0         0        RW
+APP.0.SUPPLY_ADCS_GAIN    4           28       16     0     32     0         0        RW
+APP.0.AREA_FW_UPGRADE     1024        256      4096   0     32     0         0        RW

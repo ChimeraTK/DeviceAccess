@@ -1,0 +1,51 @@
+<logicalNameMap>
+  <module name="heater">
+
+    <redirectedRegister name="heatingCurrent">
+      <targetDevice>oven_raw</targetDevice>
+      <targetRegister>APP/0/HEATING_CURRENT</targetRegister>
+    </redirectedRegister>
+
+    <redirectedRegister name="temperatureReadback">
+      <targetDevice>oven_raw</targetDevice>
+      <targetRegister>APP/0/TEMPERATURE_ADC</targetRegister>
+      <plugin name="math">
+        <!-- 16 bit ADC with 10 V, Sensor: 65 V/degC -->
+        <parameter name="formula">x / 2.^16 * 10. * 65.</parameter>
+      </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="managementVoltage">
+      <targetDevice>oven_raw</targetDevice>
+      <targetRegister>APP/0/SUPPLY_ADCS</targetRegister>
+      <numberOfElements>1</numberOfElements>
+        <plugin name="math">
+        <!-- 16 bit ADC with 32 V -->
+        <parameter name="formula">x / 2.^16 * 32.</parameter>
+      </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="threePhaseVoltages">
+      <targetDevice>oven_raw</targetDevice>
+      <targetRegister>APP/0/SUPPLY_ADCS</targetRegister>\
+      <targetStartIndex>1</targetStartIndex>
+      <numberOfElements>3</numberOfElements>
+      <plugin name="math">
+        <!-- 16 bit ADC with 650 V -->
+        <parameter name="formula">return[x / 2.^16 * 650.]</parameter>
+      </plugin>
+    </redirectedRegister>
+
+    <redirectedRegister name="power">
+      <targetDevice>oven_raw</targetDevice>
+      <targetRegister>APP/0/POWER</targetRegister>
+    </redirectedRegister>
+  </module>
+
+  <module name="settings">
+    <redirectedRegister name="supplyVoltageAdcGains">
+      <targetDevice>oven_raw</targetDevice>
+      <targetRegister>APP/0/SUPPLY_ADCS_GAIN</targetRegister>
+    </redirectedRegister>
+  </module>
+</logicalNameMap>
