@@ -424,19 +424,47 @@ class MainWindow(QMainWindow):
             # open the file
             self.importMapFile(name, str(deviceAliasWidged.text()))
 
+    def _ensure_module(self, modules, moduleName):
+        hierarchy = moduleName.split('/')
+        path = "/"
+        child = None
+        for module in hierarchy:
+            parent = modules[path]
+            path += module
+            if path not in modules:
+                modules[path] = self._create_module_node(parent, module)
+
+            child = modules[path]
+
+        return child
+
+    def _create_node(self, parent, data):
+        node = QTreeWidgetItem(parent, data)
+
+        # mae editable and dragable
+        node.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled)
+
+        return node
+
+    def _create_module_node(self, parent, name):
+        node = self._create_node(parent, [name] + [""] * 7)
+
+        # for module nodes, things can also be dropped to
+        node.setFlags(node.flags() | Qt.ItemIsDropEnabled)
+        node.setExpanded(True)
+
+        return node
+
 #######################################################################################################################
 # open lmap file
     def importMapFile(self, fileName, deviceAlias):
         # read file
         with open(fileName) as f:
           mapFileContent = f.readlines()
-          
+
         # create module in the tree for the file
-        data = [ "importedFromMapFile", "", "", "", "", "", "", "" ]
-        moduleItem = QTreeWidgetItem(self.listWidget.topLevelItem(0), data)
-        moduleItem.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled )
-        moduleItem.setExpanded(True)
-        
+        modules = {"/": self._create_module_node(self.listWidget.topLevelItem(0), "importedFromMapFile")}
+
         # parse line by line
         for line in mapFileContent:
           line = line.strip()
@@ -452,11 +480,10 @@ class MainWindow(QMainWindow):
           names = fullName.split(".")
           registerName = names[len(names)-1]
           
-          # merge module name
-          moduleName = ""
-          for i in range(0,len(names)-1):
-            moduleName = moduleName+names[i]+"/"
-          
+          # merge module name, add empty item to force trailing /
+          moduleName = '/'.join(names[:-1])
+          moduleItem = self._ensure_module(modules, moduleName)
+
           # check for special cases: 2D registers and their sequences
           isChannel = False
           channelIndex = ""
@@ -468,16 +495,12 @@ class MainWindow(QMainWindow):
             
           # add item to tree
           if not isChannel:
-            data = [ registerName, "redirectedRegister" , deviceAlias, moduleName+registerName, "", "", "", "" ]
+            data = [ registerName, "redirectedRegister" , deviceAlias, moduleName+ "/" + registerName, "", "", "", "" ]
           else:
-            data = [ registerName, "redirectedChannel" , deviceAlias, moduleName+registerName, "", "", channelIndex, "" ]
-            
-          # create item
-          item = QTreeWidgetItem(moduleItem, data)
-           
-          # make item editable
-          item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
-          
+            data = [ registerName, "redirectedChannel" , deviceAlias, moduleName+ "/" + registerName, "", "", channelIndex, "" ]
+
+          self._create_node(moduleItem, data)
+
 
 #######################################################################################################################
 # close the editor
