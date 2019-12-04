@@ -441,8 +441,8 @@ class MainWindow(QMainWindow):
         for line in mapFileContent:
           line = line.strip()
           
-          # ignore comment and empty lines
-          if line[0:1] == "#" or line == "":
+          # ignore comment, empty lines and version tags
+          if line[0:1] == "#" or line == "" or line[0:1] == "@":
             continue
             
           # extract name
