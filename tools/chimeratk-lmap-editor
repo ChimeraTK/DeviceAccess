@@ -141,26 +141,18 @@ class MainWindow(QMainWindow):
 #######################################################################################################################
 # add new register to the tree
     def addRegister(self):
-            
         # create item
-        item = QTreeWidgetItem(self.listWidget.currentItem(), ["newRegister", "redirectedRegister"])
-            
-        # make item editable
-        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
-        
+        item = self._create_node(self.listWidget.currentItem(), ["newRegister", "redirectedRegister"])
+
         # select the new entry in list
         self.listWidget.setCurrentItem(item)
 
 #######################################################################################################################
 # add new module to the tree
     def addModule(self):
-            
-        # create item
-        item = QTreeWidgetItem(self.listWidget.currentItem(), ["newModule"])
-            
-        # make item editable
-        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled )
-        
+        item = self._create_module_node(self.listWidget.currentItem(), "newModule")
+        item.setExpanded(False)
+
         # select the new entry in list
         self.listWidget.setCurrentItem(item)
 
@@ -232,10 +224,7 @@ class MainWindow(QMainWindow):
 
             # create entry for module
             if(child.tag == "module"):
-              data = [ child.get("name"), "", "", "", "", "", "", "" ]
-              item = QTreeWidgetItem(parentItem, data)
-              item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled )
-              item.setExpanded(True)
+              item = self._create_module_node(parentItem, child.get("name"))
 
                # recures into module
               self.updateListInternal(item, child)
@@ -257,12 +246,8 @@ class MainWindow(QMainWindow):
                 data[6] = child.find("targetChannel").text
               if child.find("value") is not None:
                 data[7] = child.find("value").text
-            
-              # create item
-              item = QTreeWidgetItem(parentItem, data)
-            
-              # make item editable
-              item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled )
+
+              self._create_node(parentItem, data)
 
 #######################################################################################################################
 # show open lmap file dialogue
