@@ -11,7 +11,7 @@ import lxml.etree as ET
 
 #######################################################################################################################
 #######################################################################################################################
-# event filter to disable the mous wheel on combo boxes
+# event filter to disable the mouse wheel on combo boxes
 class NoWheelFilter(QObject):
     def eventFilter(self,  obj,  event):
       if event.type() == QEvent.Wheel:
@@ -222,7 +222,7 @@ class MainWindow(QMainWindow):
         self.listWidget.clear()
         toplevelItem = QTreeWidgetItem(self.listWidget, ["logicalNameMap"] )
         toplevelItem.setExpanded(True)
-        # start with the root element, interate through the entire tree
+        # start with the root element, iterate through the entire tree
         self.updateListInternal(toplevelItem, theData)
 
 #######################################################################################################################
