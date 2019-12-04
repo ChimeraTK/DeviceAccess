@@ -3,8 +3,9 @@
 import os
 import sys
 import re
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 #import xml.etree.ElementTree as ET
 import lxml.etree as ET
 
@@ -45,9 +46,8 @@ class MainWindow(QMainWindow):
         self.listWidget.setAutoScroll(True)
         self.listWidget.setAutoScrollMargin(10)
         self.listWidget.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.listWidget.setVerticalStepsPerItem(20)
         self.grid.addWidget(self.listWidget,1,1,1,3)
-        self.connect(self.listWidget.model(), SIGNAL ("rowsInserted(const QModelIndex &, int, int)"), self.onInsertRows)
+        self.listWidget.model().rowsInserted.connect(self.onInsertRows)
 
         
         # enable drag&drop, but not on the top-level
@@ -118,24 +118,24 @@ class MainWindow(QMainWindow):
         fileMenu = menuBar.addMenu("&File")
 
         self._fileOpenAction = QAction("&Open...", None)
-        self.connect(self._fileOpenAction, SIGNAL('triggered()'), self.openFileDialog)
+        self._fileOpenAction.triggered.connect(self.openFileDialog)
         fileMenu.addAction(self._fileOpenAction)
 
         self._fileSaveAction = QAction("Save &As...", None)
-        self.connect(self._fileSaveAction, SIGNAL('triggered()'), self.saveFileDialog)
+        self._fileSaveAction.triggered.connect(self.saveFileDialog)
         fileMenu.addAction(self._fileSaveAction)
 
         self._fileSaveAgainAction = QAction("&Save", None)
         self._fileSaveAgainAction.setEnabled(False)
-        self.connect(self._fileSaveAgainAction, SIGNAL('triggered()'), self.saveFileAgain)
+        self._fileSaveAgainAction.triggered.connect(self.saveFileAgain)
         fileMenu.addAction(self._fileSaveAgainAction)
 
         self._fileImportMapAction = QAction("&Import map file...", None)
-        self.connect(self._fileImportMapAction, SIGNAL('triggered()'), self.importMapFileDialog)
+        self._fileImportMapAction.triggered.connect(self.importMapFileDialog)
         fileMenu.addAction(self._fileImportMapAction)
 
         self._exitAction = QAction("&Quit", None)
-        self.connect(self._exitAction, SIGNAL('triggered()'), self.exit)
+        self._exitAction.triggered.connect(self.exit)
         fileMenu.addAction(self._exitAction)
 
 #######################################################################################################################
@@ -196,7 +196,7 @@ class MainWindow(QMainWindow):
         box.setCurrentIndex( box.findData(item.text(1)) )
         box.setFocusPolicy( Qt.ClickFocus )
         box.installEventFilter(self.noWheelFilter)
-        self.connect(box, SIGNAL("currentIndexChanged(const QString&)"), lambda text: self.updateComboBox(index, text))
+        box.currentIndexChanged.connect(lambda _: self.updateComboBox(index, box.currentData()))
         return box
 
 
@@ -321,7 +321,7 @@ class MainWindow(QMainWindow):
           # registers
           if(child.childCount() == 0):
             wg = self.listWidget.itemWidget(child, 1)
-            targetType = str(wg.itemData(wg.currentIndex()).toString())
+            targetType = str(wg.itemData(wg.currentIndex()))
             if targetType == "redirectedRegister":
               xmlChild = ET.SubElement(xmlElement, targetType, name=str(child.text(0)))
               ET.SubElement(xmlChild, "targetDevice").text = str(child.text(2))
