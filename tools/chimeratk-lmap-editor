@@ -91,9 +91,9 @@ class MainWindow(QMainWindow):
         self.statusBar.showMessage('Ready.')
 
         # add grid layout
-        self.widget = QWidget();
-        self.widget.setLayout(self.grid);
-        self.setCentralWidget(self.widget);
+        self.widget = QWidget()
+        self.widget.setLayout(self.grid)
+        self.setCentralWidget(self.widget)
 
         # set window title and size
         self.setWindowTitle("ChimeraTK Logical Name Mapping editor")
