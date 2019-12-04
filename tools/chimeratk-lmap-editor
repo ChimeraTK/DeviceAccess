@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -377,7 +377,7 @@ class MainWindow(QMainWindow):
         # format XML properly (with indentation, but without adding spaces and new lines to the text nodes)
         tree = ET.ElementTree()
         tree._setroot(theData)
-        uglyXml = ET.tostring(tree, pretty_print = True)
+        uglyXml = ET.tounicode(tree, pretty_print = True)
         text_re = re.compile('>\n\s+([^<>\s].*?)\n\s+</', re.DOTALL)    
         prettyXml = text_re.sub('>\g<1></', uglyXml)
         
