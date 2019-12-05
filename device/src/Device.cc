@@ -295,9 +295,7 @@ namespace ChimeraTK {
 
   void Device::open() {
     checkPointersAreNotNull();
-    if(!_deviceBackendPointer->isOpen()) {
-      _deviceBackendPointer->open();
-    }
+    _deviceBackendPointer->open();
   }
 
   /********************************************************************************************************************/
