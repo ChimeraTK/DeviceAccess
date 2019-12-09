@@ -35,8 +35,9 @@ set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-D
 set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS}")
 target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES})
 
-# copy the (test) config files to the build directory for tests
+# copy the (test) config files and the test simulation to the build directory for tests
 FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
+FILE( COPY oven_sim/ DESTINATION ${PROJECT_BINARY_DIR})
 
 # Tests:
 # There are no dedicated tests for this demo. But we run the xml generator to
