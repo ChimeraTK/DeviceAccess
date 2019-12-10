@@ -273,8 +273,7 @@ void PcieBackendTest::testFailIfBackendClosed() {
   _pcieBackendInstance->close();
   BOOST_CHECK_THROW( // _pcieBackendInstance->readReg(WORD_USER_OFFSET,
                      // &dataWord, /*bar*/ 0),
-      _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4),
-      ChimeraTK::logic_error);
+      _pcieBackendInstance->read(/*bar*/ 0, WORD_USER_OFFSET, &dataWord, 4), ChimeraTK::logic_error);
   // BOOST_CHECK_THROW(  _pcieBackendInstance->read(WORD_USER_OFFSET, &dataWord,
   // sizeof(dataWord), /*bar*/ 0),
   BOOST_CHECK_THROW(
@@ -430,8 +429,6 @@ void PcieBackendTest::testReadRegister() {
   _pcieBackendInstance->open(); // no need to check if this works because we did
                                 // the open test first
   //_pcieBackendInstance->readReg(WORD_DUMMY_OFFSET, &dataWord, /*bar*/ 0);
-  BOOST_CHECK_THROW(_pcieBackendInstance->open(),
-      ChimeraTK::logic_error); // try opening again will cause an exception
   _pcieBackendInstance->read(/*bar*/ 0, WORD_DUMMY_OFFSET, &dataWord, 4);
   BOOST_CHECK_EQUAL(dataWord, DMMY_AS_ASCII);
 
@@ -467,12 +464,15 @@ void PcieBackendTest::testWriteRegister() {
 
 void PcieBackendTest::testClose() {
   std::cout << "testClose" << std::endl;
-  /** Try closing the backend */
+  /* Try closing the backend */
   _pcieBackendInstance->close();
-  /** backend should not be open now */
+  /* backend should not be open now */
   BOOST_CHECK(_pcieBackendInstance->isOpen() == false);
-  /** backend should remain in connected state */
+  /* backend should remain in connected state */
   BOOST_CHECK(_pcieBackendInstance->isConnected() == true);
+  // It always has to be possible to call close again.
+  _pcieBackendInstance->close();
+  BOOST_CHECK(_pcieBackendInstance->isOpen() == false);
 }
 
 void PcieBackendTest::testOpen() {
@@ -480,6 +480,9 @@ void PcieBackendTest::testOpen() {
   _pcieBackendInstance->open();
   BOOST_CHECK(_pcieBackendInstance->isOpen() == true);
   BOOST_CHECK(_pcieBackendInstance->isConnected() == true);
+  // It must always be possible to re-open a backend. It should try to re-connect.
+  _pcieBackendInstance->open();
+  BOOST_CHECK(_pcieBackendInstance->isOpen());
 }
 
 void PcieBackendTest::testCreateBackend() {

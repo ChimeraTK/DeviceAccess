@@ -29,7 +29,11 @@ namespace ChimeraTK {
     std::cout << "open pcie dev" << std::endl;
 #endif
     if(_opened) {
-      throw ChimeraTK::logic_error("Device already has been opened");
+      // FIXME: This mimics the previous behaviour where the Device would simply discard open calls
+      // if the backend is already opened. The correct behaviour would be a recovery procedure.
+      // At the moment this exceeds the scope of just restoring the previous functionality (you can re-call open)
+      // because it would require extensive testing, even with real hardware.
+      return;
     }
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
     if(_deviceID < 0) {
@@ -280,9 +284,8 @@ namespace ChimeraTK {
     return startText + _deviceNodeName + ": " + strerror_r(errno, errorBuffer, sizeof(errorBuffer));
   }
 
-  boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(std::string address,
-      std::map<std::string, std::string>
-          parameters) {
+  boost::shared_ptr<DeviceBackend> PcieBackend::createInstance(
+      std::string address, std::map<std::string, std::string> parameters) {
     if(address.size() == 0) {
       throw ChimeraTK::logic_error("Device address not specified.");
     }
