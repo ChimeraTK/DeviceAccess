@@ -120,11 +120,16 @@ void RebotTestClass::testConnection() { // BAckend test
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), true);
 
-  // BOOST_CHECK_THROW(secondConnectionToServer.open(),
-  // ChimeraTK::RebotBackendException);
+  // it must always be possible to call open() again
+  BOOST_CHECK_NO_THROW(rebotBackend.open());
+  BOOST_CHECK_EQUAL(rebotBackend.isOpen(), true);
 
   BOOST_CHECK_NO_THROW(rebotBackend.close());
   BOOST_CHECK_EQUAL(rebotBackend.isConnected(), true);
+  BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
+
+  // it must always be possible to call close() again
+  BOOST_CHECK_NO_THROW(rebotBackend.close());
   BOOST_CHECK_EQUAL(rebotBackend.isOpen(), false);
 }
 
