@@ -12,15 +12,11 @@
 #include "SharedDummyBackend.h"
 #include "parserUtilities.h"
 
-
 namespace ChimeraTK {
 
   SharedDummyBackend::SharedDummyBackend(std::string instanceId, std::string mapFileName)
-    : DummyBackendBase(mapFileName),
-      _mapFile(mapFileName),
-      _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
-      sharedMemoryManager(*this, instanceId, mapFileName)
-  {
+  : DummyBackendBase(mapFileName), _mapFile(mapFileName), _barSizesInBytes(getBarSizesInBytesFromRegisterMapping()),
+    sharedMemoryManager(*this, instanceId, mapFileName) {
     setupBarContents();
   }
 
@@ -31,8 +27,7 @@ namespace ChimeraTK {
   // Construct a segment for each bar and set required size
   void SharedDummyBackend::setupBarContents() {
     for(std::map<uint8_t, size_t>::const_iterator barSizeInBytesIter = _barSizesInBytes.begin();
-        barSizeInBytesIter != _barSizesInBytes.end();
-        ++barSizeInBytesIter) {
+        barSizeInBytesIter != _barSizesInBytes.end(); ++barSizeInBytesIter) {
       std::string barName = SHARED_MEMORY_BAR_PREFIX + std::to_string(barSizeInBytesIter->first);
 
       size_t barSizeInWords = (barSizeInBytesIter->second + sizeof(int32_t) - 1) / sizeof(int32_t);
@@ -53,19 +48,9 @@ namespace ChimeraTK {
     } /* for(barSizesInBytesIter) */
   }
 
-  void SharedDummyBackend::open() {
-    if(_opened) {
-      throw ChimeraTK::logic_error("Device is already open.");
-    }
-    _opened = true;
-  }
+  void SharedDummyBackend::open() { _opened = true; }
 
-  void SharedDummyBackend::close() {
-    if(!_opened) {
-      throw ChimeraTK::logic_error("Device is already closed.");
-    }
-    _opened = false;
-  }
+  void SharedDummyBackend::close() { _opened = false; }
 
   void SharedDummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
     if(!_opened) {
@@ -115,9 +100,8 @@ namespace ChimeraTK {
     }
   }
 
-  boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(std::string address,
-      std::map<std::string, std::string>
-          parameters) {
+  boost::shared_ptr<DeviceBackend> SharedDummyBackend::createInstance(
+      std::string address, std::map<std::string, std::string> parameters) {
     std::string mapFileName = parameters["map"];
     if(mapFileName == "") {
       throw ChimeraTK::logic_error("No map file name given.");

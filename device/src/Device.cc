@@ -303,10 +303,7 @@ namespace ChimeraTK {
   void Device::open(std::string const& aliasName) {
     BackendFactory& factoryInstance = BackendFactory::getInstance();
     _deviceBackendPointer = factoryInstance.createBackend(aliasName);
-    if(!_deviceBackendPointer->isOpen()) { // createBackend may return an already
-                                           // opened instance for some backends
-      _deviceBackendPointer->open();
-    }
+    _deviceBackendPointer->open();
   }
 
   /********************************************************************************************************************/

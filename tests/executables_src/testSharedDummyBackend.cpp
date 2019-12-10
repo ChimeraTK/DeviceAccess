@@ -52,26 +52,22 @@ namespace {
   };
   static TestLocker testLocker;
 
-
   // Helpers to test the catalogue
   class TestableSharedDummyBackend : public SharedDummyBackend {
-  public:
+   public:
     friend struct TestFixture;
   };
 
   struct TestFixture {
-    bool testRegisterNotInCatalogue(const std::string& registerPath){
-
+    bool testRegisterNotInCatalogue(const std::string& registerPath) {
       // Also get the backend to test the catalogue
       auto backendInstance = BackendFactory::getInstance().createBackend("SHDMEMDEV");
 
-      auto catalogue
-          = static_cast<TestableSharedDummyBackend*>(backendInstance.get())->getRegisterCatalogue();
+      auto catalogue = static_cast<TestableSharedDummyBackend*>(backendInstance.get())->getRegisterCatalogue();
 
       return !catalogue.hasRegister(registerPath);
     }
   };
-
 
   BOOST_AUTO_TEST_SUITE(SharedDummyBackendTestSuite)
 
@@ -88,6 +84,13 @@ namespace {
     BOOST_CHECK(!dev.isOpened());
     dev.open();
     BOOST_CHECK(dev.isOpened());
+    // you must always be able to call open  and close again
+    dev.open();
+    BOOST_CHECK(dev.isOpened());
+    dev.open("SHDMEMDEV");
+    BOOST_CHECK(dev.isOpened());
+    dev.close();
+    BOOST_CHECK(!dev.isOpened());
     dev.close();
     BOOST_CHECK(!dev.isOpened());
   }
@@ -136,13 +139,13 @@ namespace {
   /*********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testWriteToReadOnly, TestFixture) {
-
     setDMapFilePath("shareddummyTest.dmap");
     Device dev;
     dev.open("SHDMEMDEV");
 
     ScalarRegisterAccessor<int> roRegisterOne{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_1")};
-    ScalarRegisterAccessor<int> roRegisterTwo_dw{dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_2.DUMMY_WRITEABLE")};
+    ScalarRegisterAccessor<int> roRegisterTwo_dw{
+        dev.getScalarRegisterAccessor<int>("WORD_READ_ONLY_2.DUMMY_WRITEABLE")};
 
     BOOST_CHECK(roRegisterOne.isReadOnly());
     BOOST_CHECK(!roRegisterOne.isWriteable());
@@ -153,7 +156,7 @@ namespace {
 
     BOOST_CHECK_THROW(roRegisterOne.write(), ChimeraTK::logic_error);
 
-    roRegisterOne    = 0;
+    roRegisterOne = 0;
     roRegisterTwo_dw = 25;
     roRegisterTwo_dw.write();
 
@@ -169,16 +172,13 @@ namespace {
     dev.close();
   }
 
-  BOOST_FIXTURE_TEST_CASE(testCreateBackend, TestFixture){
-
+  BOOST_FIXTURE_TEST_CASE(testCreateBackend, TestFixture) {
     auto backendInst1 = BackendFactory::getInstance().createBackend("SHDMEMDEV");
     auto backendInst2 = BackendFactory::getInstance().createBackend("SHDMEMDEV");
     auto backendInst3 = BackendFactory::getInstance().createBackend("SHDMEMDEV2");
 
     BOOST_CHECK(backendInst1.get() == backendInst2.get());
     BOOST_CHECK(backendInst3.get() != backendInst2.get());
-
-
   }
 
 } // anonymous namespace
