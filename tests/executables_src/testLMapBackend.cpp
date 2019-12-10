@@ -19,6 +19,12 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   BOOST_CHECK(device.isOpened() == false);
   device.open("LMAP0");
   BOOST_CHECK(device.isOpened() == true);
+  // you must always be able to re-open a backend. It should try to re-connect, if applicable.
+  device.open();
+  BOOST_CHECK(device.isOpened() == true);
+  device.open("LMAP0");
+  BOOST_CHECK(device.isOpened() == true);
+
   int data = 0;
 
   BOOST_CHECK_THROW(device.write("Channel3", data), ChimeraTK::logic_error);
@@ -27,6 +33,8 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   BOOST_CHECK_NO_THROW(device.getOneDRegisterAccessor<int>("LastChannelInRegister"));
 
   BOOST_CHECK(device.isOpened() == true);
+  device.close();
+  BOOST_CHECK(device.isOpened() == false);
   device.close();
   BOOST_CHECK(device.isOpened() == false);
 }
