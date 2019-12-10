@@ -85,7 +85,7 @@ class DummyBackendTest {
 
  private:
   boost::shared_ptr<TestableDummyBackend> _dummyBackend;
-  TestableDummyBackend* getBackendInstance(bool reOpen = false);
+  TestableDummyBackend* getBackendInstance();
   friend class DummyBackendTestSuite;
 
   // stuff for the callback function test
@@ -195,7 +195,7 @@ void DummyBackendTest::testCheckSizeIsMultipleOfWordSize() {
 }
 
 void DummyBackendTest::testReadWriteSingleWordRegister() {
-  TestableDummyBackend* dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_RESET_REGISTER_STRING, mappingElement);
   uint32_t offset = mappingElement.address;
@@ -220,7 +220,7 @@ void DummyBackendTest::testReadWriteSingleWordRegister() {
 }
 
 void DummyBackendTest::testReadWriteMultiWordRegister() {
-  TestableDummyBackend* dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
@@ -274,12 +274,9 @@ void DummyBackendTest::testReadWriteMultiWordRegister() {
   BOOST_CHECK_THROW(dummyBackend->write(bar, offset, &(dataContent[0]), sizeInBytes - 1), ChimeraTK::logic_error);
 }
 
-TestableDummyBackend* DummyBackendTest::getBackendInstance(bool reOpen) {
-  if(_backendInstance == 0) _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
-  if(reOpen || (!_backendInstance->isOpen())) {
-    if(_backendInstance->isOpen()) _backendInstance->close();
-    _backendInstance->open();
-  }
+TestableDummyBackend* DummyBackendTest::getBackendInstance() {
+  if(_backendInstance == nullptr) _backendInstance = FactoryInstance.createBackend(EXISTING_DEVICE);
+  _backendInstance->open();
   DeviceBackend* rawBasePointer = _backendInstance.get();
   return (static_cast<TestableDummyBackend*>(rawBasePointer));
 }
@@ -299,7 +296,7 @@ void DummyBackendTest::testReadDeviceInfo() {
 }
 
 void DummyBackendTest::testReadOnly() {
-  TestableDummyBackend* dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   RegisterInfoMap::RegisterInfo mappingElement;
   dummyBackend->_registerMapping->getRegisterInfo(CLOCK_MUX_REGISTER_STRING, mappingElement);
 
@@ -469,8 +466,7 @@ void DummyBackendTest::testWriteRegisterWithoutCallback() {
   BOOST_CHECK(readbackDataWord == dataWord + 1);
 }
 
-void DummyBackendTest::testWriteToReadOnlyRegister(){
-
+void DummyBackendTest::testWriteToReadOnlyRegister() {
   ChimeraTK::Device dummyDevice;
   dummyDevice.open("DUMMYD0");
 
@@ -478,7 +474,7 @@ void DummyBackendTest::testWriteToReadOnlyRegister(){
   TestableDummyBackend* dummyBackend = getBackendInstance();
 
   const std::string DUMMY_WRITEABLE_SUFFIX{".DUMMY_WRITEABLE"};
-  auto ro_register    = dummyDevice.getScalarRegisterAccessor<int>(READ_ONLY_REGISTER_STRING);
+  auto ro_register = dummyDevice.getScalarRegisterAccessor<int>(READ_ONLY_REGISTER_STRING);
   auto ro_register_dw = dummyDevice.getScalarRegisterAccessor<int>(READ_ONLY_REGISTER_STRING + DUMMY_WRITEABLE_SUFFIX);
 
   // The suffixed register must not appear in the catalogue
@@ -491,7 +487,7 @@ void DummyBackendTest::testWriteToReadOnlyRegister(){
   BOOST_CHECK(!ro_register_dw.isReadOnly());
   BOOST_CHECK(ro_register_dw.isWriteable());
 
-   // Test writing to the DUMMY_WRITEABLE register and
+  // Test writing to the DUMMY_WRITEABLE register and
   // read back through the real register
   ro_register_dw = 42;
   ro_register_dw.write();
@@ -562,7 +558,7 @@ void DummyBackendTest::testFinalClosing() {
 }
 
 void DummyBackendTest::testOpenClose() {
-  TestableDummyBackend* dummyBackend = getBackendInstance(true);
+  TestableDummyBackend* dummyBackend = getBackendInstance();
   // there have to be bars 0 and 2  with sizes 0x14C and 0x1000 bytes,
   // plus the dma bar 0xD
   // BOOST_CHECK((*dummyBackend)._barContents.size() == 3 );
@@ -578,11 +574,15 @@ void DummyBackendTest::testOpenClose() {
   // if it points to NULL
   BOOST_CHECK(dummyBackend->_registerMapping);
   BOOST_CHECK(dummyBackend->isOpen());
-  BOOST_CHECK_THROW(dummyBackend->open(), ChimeraTK::logic_error);
+  // it must always be possible to re-open a backend
+  dummyBackend->open();
+  BOOST_CHECK(dummyBackend->isOpen());
 
   dummyBackend->close();
   BOOST_CHECK(dummyBackend->isOpen() == false);
-  BOOST_CHECK_THROW(dummyBackend->close(), ChimeraTK::logic_error);
+  // it must always be possible to re-close a backend
+  dummyBackend->close();
+  BOOST_CHECK(dummyBackend->isOpen() == false);
 }
 
 void DummyBackendTest::testClose() {

@@ -10,7 +10,6 @@
 #include "parserUtilities.h"
 #include "DummyRegisterAccessor.h"
 
-
 namespace ChimeraTK {
   // Valid bar numbers are 0 to 5 , so they must be contained
   // in three bits.
@@ -18,10 +17,7 @@ namespace ChimeraTK {
   // the bar number is stored in bits 60 to 62
   const unsigned int BAR_POSITION_IN_VIRTUAL_REGISTER = 60;
 
-  DummyBackend::DummyBackend(std::string mapFileName)
-      : DummyBackendBase(mapFileName),
-        _mapFile(mapFileName)
-  {
+  DummyBackend::DummyBackend(std::string mapFileName) : DummyBackendBase(mapFileName), _mapFile(mapFileName) {
     resizeBarContents();
   }
 
@@ -31,9 +27,6 @@ namespace ChimeraTK {
 
   void DummyBackend::open() {
     std::lock_guard<std::mutex> lock(mutex);
-    if(_opened) {
-      throw ChimeraTK::logic_error("Device is already open.");
-    }
     _opened = true;
   }
 
@@ -48,12 +41,8 @@ namespace ChimeraTK {
     }
   }
 
-
   void DummyBackend::close() {
     std::lock_guard<std::mutex> lock(mutex);
-    if(!_opened) {
-      throw ChimeraTK::logic_error("Device is already closed.");
-    }
 
     _readOnlyAddresses.clear();
     _writeCallbackFunctions.clear();
@@ -64,7 +53,6 @@ namespace ChimeraTK {
     std::lock_guard<std::mutex> lock(mutex);
     TRY_REGISTER_ACCESS(_barContents[bar].at(address / sizeof(int32_t)) = data;);
   }
-
 
   void DummyBackend::read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -107,7 +95,6 @@ namespace ChimeraTK {
     return (static_cast<uint64_t>(bar & BAR_MASK) << BAR_POSITION_IN_VIRTUAL_REGISTER) |
         (static_cast<uint64_t>(registerOffsetInBar));
   }
-
 
   void DummyBackend::setReadOnly(uint8_t bar, uint32_t address, size_t sizeInWords) {
     for(size_t i = 0; i < sizeInWords; ++i) {
