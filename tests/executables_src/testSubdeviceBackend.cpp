@@ -35,6 +35,13 @@ BOOST_AUTO_TEST_CASE(testOpenClose) {
   BOOST_CHECK(!dev.isOpened());
   dev.open();
   BOOST_CHECK(dev.isOpened());
+  // It must always be possible to re-open and re-close a backend
+  dev.open();
+  BOOST_CHECK(dev.isOpened());
+  dev.open("SUBDEV1");
+  BOOST_CHECK(dev.isOpened());
+  dev.close();
+  BOOST_CHECK(!dev.isOpened());
   dev.close();
   BOOST_CHECK(!dev.isOpened());
 }
