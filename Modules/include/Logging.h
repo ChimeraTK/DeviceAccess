@@ -2,7 +2,7 @@
  * \author Klaus Zenker (HZDR)
  * \date 03.04.2018
  * \page loggingdoc Logging module and Logger
- * \section logginintro Introduction to the logging mechanism
+ * \section loggingintro Introduction to the logging mechanism
  * The logging provided here requires to add the LoggingModule to your
  Application.
  * The module introduces the following input variables, that need to be
@@ -57,7 +57,7 @@
  *  messages (TestModule).
  *  \code
  *  sruct TestModule: public ChimeraTK::ApplicationModule{
- *  Logger{this};
+ *  Logger logger{this};
  *  ...
  *  };
  *  struct myApp : public ChimeraTK::Application{
