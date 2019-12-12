@@ -44,28 +44,21 @@ std::string logging::getTime() {
 }
 
 Logger::Logger(ctk::Module* module)
-: message(
-      module, "message", "", "Message of the module to the logging System", {"Logging", module->getName()}),
-  messageLevel(module, "messageLevel", "", "Logging level of the message", {"Logging", module->getName()}) {}
+: message(module, "message", "", "Message of the module to the logging System", {"Logging", module->getName()}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
     while(!msg_buffer.empty()) {
-      message = msg_buffer.front().first;
-      messageLevel = msg_buffer.front().second;
+      message = msg_buffer.front();
       message.write();
-      messageLevel.write();
       msg_buffer.pop();
     }
-
-    message = msg + "\n";
-    messageLevel = level;
+    message = std::to_string(level) + msg + "\n";
     message.write();
-    messageLevel.write();
   }
   else {
     // only use the buffer until ctk initialized the process variables
-    msg_buffer.push(std::make_pair(msg + "\n", level));
+    msg_buffer.push(std::to_string(level) + msg + "\n");
   }
 }
 
@@ -73,6 +66,7 @@ void LoggingModule::broadcastMessage(std::string msg, bool isError) {
   if(msg.back() != '\n') {
     msg.append("\n");
   }
+
   std::string tmpLog = (std::string)logTail;
   if(tailLength == 0 && messageCounter > 20) {
     messageCounter--;
@@ -117,10 +111,14 @@ void LoggingModule::mainLoop() {
     auto id = group.readAny();
     auto sender = FindSender(id);
     if(targetStream == 3) continue;
-    LogLevel level = static_cast<LogLevel>((uint)sender->second.second);
+    auto strlevel = ((std::string)(sender->second))[0];
+    LogLevel level = static_cast<LogLevel>(std::strtoul(&strlevel,NULL, 0));
     LogLevel setLevel = static_cast<LogLevel>((uint)logLevel);
+    std::string tmpStr = (std::string)(sender->second);
+    // remove message level
+    tmpStr = tmpStr.substr(1,tmpStr.size());
     std::stringstream ss;
-    ss << level << getName() << "/" << sender->first << " " << getTime() << (std::string)sender->second.first;
+    ss << level << getName() << "/" << sender->first << " " << getTime() << tmpStr;
     if(targetStream == 0 || targetStream == 1) {
       if(!((std::string)logFile).empty() && !file->is_open()) {
         std::stringstream ss_file;
@@ -148,17 +146,14 @@ void LoggingModule::mainLoop() {
 
 void LoggingModule::addSource(Logger* logger) {
   auto acc = getAccessorPair(logger->message.getOwner()->getName());
-  logger->message >> acc.first;
-  logger->messageLevel >> acc.second;
+  logger->message >> acc;
 }
 
-std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode> LoggingModule::getAccessorPair(
+ctk::VariableNetworkNode LoggingModule::getAccessorPair(
     const std::string& sender) {
   if(msg_list.count(sender) == 0) {
     msg_list.emplace(std::piecewise_construct, std::make_tuple(sender),
-        std::forward_as_tuple(std::piecewise_construct,
-            std::forward_as_tuple(ctk::ScalarPushInput<std::string>{this, sender + "Msg", "", ""}),
-            std::forward_as_tuple(ctk::ScalarPollInput<uint>{this, sender + "MsgLevel", "", ""})));
+        std::make_tuple(ctk::ScalarPushInput<std::string>{this, sender + "Msg", "", ""}));
   }
   else {
     throw ChimeraTK::logic_error(
@@ -167,9 +162,9 @@ std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode> LoggingModule::get
   return msg_list[sender];
 }
 
-std::map<std::string, Message>::iterator LoggingModule::FindSender(const ChimeraTK::TransferElementID& id) {
+std::map<std::string, ctk::ScalarPushInput<std::string> >::iterator LoggingModule::FindSender(const ChimeraTK::TransferElementID& id) {
   for(auto it = msg_list.begin(), iend = msg_list.end(); it != iend; it++) {
-    if(it->second.first.getId() == id)
+    if(it->second.getId() == id)
       return it;
   }
   throw ChimeraTK::logic_error("Cannot find  element id"

@@ -139,7 +139,7 @@ namespace logging {
    */
   class Logger {
    private:
-    std::queue<std::pair<std::string, logging::LogLevel>> msg_buffer;
+    std::queue<std::string> msg_buffer;
 
    public:
     /**
@@ -161,9 +161,6 @@ namespace logging {
     Logger(ctk::Module* module);
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel;
 
     /**
      * \brief Send a message, which means to update the message and messageLevel
@@ -193,14 +190,14 @@ namespace logging {
    */
   class LoggingModule : public ctk::ApplicationModule {
    private:
-    std::pair<ctk::VariableNetworkNode, ctk::VariableNetworkNode> getAccessorPair(const std::string& sender);
+    ctk::VariableNetworkNode getAccessorPair(const std::string& sender);
 
     /** Map key is the feeding module */
-    std::map<std::string, Message> msg_list;
+    std::map<std::string, ctk::ScalarPushInput<std::string> > msg_list;
 
     /** Find the Message that was updated.
      */
-    std::map<std::string, Message>::iterator FindSender(const ChimeraTK::TransferElementID& id);
+    std::map<std::string, ctk::ScalarPushInput<std::string> >::iterator FindSender(const ChimeraTK::TransferElementID& id);
 
     /** Number of messages stored in the tail */
     size_t messageCounter;
