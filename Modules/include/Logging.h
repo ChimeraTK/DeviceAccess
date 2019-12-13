@@ -23,7 +23,7 @@
  *   level. The Logging module compares both levels and decides if a message is
  dropped (e.g. message level is
  *   DEBUG and Module level is ERROR) or broadcasted.
- * - tailLength: The number of messages published by the Logging module (see
+ * - maxTailLength: The number of messages published by the Logging module (see
  logTail), i.e. to the control system.
  *   This length has no influence on the targetStreams, that receive all
  messages (depending on the logLevel). The
@@ -72,10 +72,7 @@
  *
  *
  *  void myAPP::defineConnctions(){
- *  cs["Logging"]("targetStream") >> log.targetStream;
- *  cs["Logging"]("logLevel") >> log.logLevel;
- *  cs["Logging"]("logFile") >> log.logFile;
- *  cs["Logging"]("tailLength") >> log.tailLength;
+ *  log.findTag("CS").connectTo(cs);
  *  log.addSource(&TestModule.logger)
  *  ...
  *  }
@@ -88,7 +85,7 @@
  *
  *  A message always looks like this:
  *  LogLevel::LoggingModuleName/SendingModuleName TimeString -> message\n
- *  In the example given above the meassge could look like:
+ *  In the example given above the message could look like:
  *  \code
  *  DEBUG::LogggingModule/test 2018-Apr-12 14:03:07.947949 -> Test
  *  \endcode
