@@ -216,12 +216,12 @@ namespace logging {
       "(cout/cerr), 3 (none)",
       {"CS", getName()}};
 
-    ctk::ScalarPollInput<std::string> logFile{this, "Logfile", "",
+    ctk::ScalarPollInput<std::string> logFile{this, "logFile", "",
       "Name of the external logfile. If empty messages are pushed to "
       "cout/cerr",
       {"CS", getName()}};
 
-    ctk::ScalarPollInput<uint> tailLength{this, "maxLength", "",
+    ctk::ScalarPollInput<uint> tailLength{this, "maxTailLength", "",
       "Maximum number of messages to be shown in the logging stream tail.",
       {"CS", getName()}};
 
@@ -229,7 +229,7 @@ namespace logging {
       "Current log level used for messages.",
       {"CS", getName()}};
 
-    ctk::ScalarOutput<std::string> logTail{this, "LogTail", "",
+    ctk::ScalarOutput<std::string> logTail{this, "logTail", "",
       "Tail of the logging stream.",
       {"CS", "PROCESS", getName()}};
 
