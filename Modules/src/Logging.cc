@@ -62,7 +62,7 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
   }
 }
 
-void LoggingModule::broadcastMessage(std::string msg, bool isError) {
+void LoggingModule::broadcastMessage(std::string msg, const bool &isError) {
   if(msg.back() != '\n') {
     msg.append("\n");
   }
@@ -144,7 +144,7 @@ void LoggingModule::mainLoop() {
   }
 }
 
-void LoggingModule::addSource(Logger* logger) {
+void LoggingModule::addSource(boost::shared_ptr<Logger> logger) {
   auto acc = getAccessorPair(logger->message.getOwner()->getName());
   logger->message >> acc;
 }

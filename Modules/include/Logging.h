@@ -206,7 +206,7 @@ namespace logging {
      * \param msg The mesage
      * \param isError If true cerr is used. Else cout is used.
      */
-    void broadcastMessage(std::string msg, bool isError = false);
+    void broadcastMessage(std::string msg, const bool &isError = false);
 
    public:
     using ctk::ApplicationModule::ApplicationModule;
@@ -236,7 +236,7 @@ namespace logging {
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
     /** Add a Module as a source to this DAQ. */
-    void addSource(Logger* logger);
+    void addSource(boost::shared_ptr<Logger> logger);
 
     /**
      * Application core main loop.
