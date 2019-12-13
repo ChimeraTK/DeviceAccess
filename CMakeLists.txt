@@ -50,12 +50,14 @@ FIND_PACKAGE(Boost COMPONENTS filesystem date_time chrono system thread REQUIRED
 # requierd dependency: HDF5 library needed for the MicroDAQ system (TODO make optional!)
 option(BUILD_MICRODAQ "Build the MicroDAQ module, which depends on HDF5 (libhdf5-dev)." ON)
 if(BUILD_MICRODAQ)
-  FIND_PACKAGE(HDF5 COMPONENTS CXX REQUIRED)
-  include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
-  link_directories(${HDF5_LIBRARY_DIRS})
-  # add flag to be used in user code to test weather MicroDAQ is included
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_MICRO_DAQ")
-  IF(HDF5-NOTFOUND)
+  FIND_PACKAGE(HDF5 COMPONENTS CXX)
+  IF(HDF5_FOUND)
+    include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
+    link_directories(${HDF5_LIBRARY_DIRS})
+    # add flag to be used in user code to test weather MicroDAQ is included
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_MICRO_DAQ")
+  ELSE()
+    set(HDF5_LIBRARIES "")
     message(" HDF5 was not found, so the MicroDAQ system will not be built.")
   ENDIF()
 endif(BUILD_MICRODAQ)
@@ -74,10 +76,10 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
 include_directories(${CMAKE_SOURCE_DIR}/Modules/include)
 aux_source_directory(${CMAKE_SOURCE_DIR}/Modules/src library_sources)
 
-if((NOT BUILD_MICRODAQ) OR (HDF5-NOTFOUND))
+if((NOT BUILD_MICRODAQ) OR (NOT HDF5_FOUND))
   LIST(REMOVE_ITEM library_sources ${CMAKE_SOURCE_DIR}/Modules/include/MicroDAQ.h)
   LIST(REMOVE_ITEM library_sources ${CMAKE_SOURCE_DIR}/Modules/src/MicroDAQ.cc)
-endif((NOT BUILD_MICRODAQ) OR (HDF5-NOTFOUND))
+endif((NOT BUILD_MICRODAQ) OR (NOT HDF5_FOUND))
 
 MACRO( COPY_MAPPING_FILES )
   foreach( FILE_TO_COPY test.xlmap test.dmap )
@@ -137,7 +139,7 @@ install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib
 # all include files go into include/PROJECT_NAME
 # The exclusion of ${PROJECT_NAME} prevents the recursive installation of the files just being installed.
 # The original headers are in include/*.h, the installed ones in include/PROJECT_NAME/*.h.
-if((NOT BUILD_MICRODAQ) OR (HDF5-NOTFOUND))
+if((NOT BUILD_MICRODAQ) OR (NOT HDF5_FOUND))
   install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/ApplicationCore
                                                     FILES_MATCHING PATTERN "*.h"
                                                                    PATTERN ".svn" EXCLUDE
@@ -149,7 +151,7 @@ else()
                                                     FILES_MATCHING PATTERN "*.h"
                                                                    PATTERN ".svn" EXCLUDE
                                                                    PATTERN "${PROJECT_NAME}" EXCLUDE)
-endif((NOT BUILD_MICRODAQ) OR (HDF5-NOTFOUND))
+endif((NOT BUILD_MICRODAQ) OR (NOT HDF5_FOUND))
 
 set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 set(${PROJECT_NAME}_LIBRARIES "${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES}")
