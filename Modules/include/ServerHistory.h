@@ -24,6 +24,14 @@
  *  - CS
  *  - name of the history module
  *
+ * It is also possible to connect a DeviceModule to the ServerHistory module. This
+ * requires a trigger, which is given as optional parameter to the \c addSource
+ * method. If the device variables are writable they are of push type. In this case
+ * the trigger will not be added. One has to use the LogicalNameMapping backend to
+ * force the device variables to be read only by using the \c forceReadOnly plugin.
+ * Using the LogicalNameMapping backend also allows to select individual device
+ * process variables to be connected to the \c ServerHistory.
+ *
  *
  *  The following example shows how to integrate the \c ServerHistory module.
  *  \code
@@ -39,6 +47,10 @@
  *
  *  ChimeraTK::ControlSystemModule cs;
  *
+ *  ChimeraTK::DeviceModule dev{this, "Dummy"};
+ *
+ *  ChimeraTK::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
+ *
  *
  *  TestModule test{ this, "test", "" };
  *  ...
@@ -46,9 +58,14 @@
  *
  *
  *  void myAPP::defineConnctions(){
+ *  // connect a module with variables that are updated by the module, which
+ *  // triggers an update of the history buffer
  *  history.addSource(test.findTag("History"), "history" + test->getName())
- *  history.findTag("CS").connectTo(cs);
  *  // will show up in the control system as history/test/measurement
+ *  // add a device. Updating of the history buffer is trigger external by the given trigger
+ *  history.addSource(dev..virtualiseFromCatalog(),"device_history",trigger.tick);
+ *
+ *  history.findTag("CS").connectTo(cs);
  *  ...
  *  }
  *
