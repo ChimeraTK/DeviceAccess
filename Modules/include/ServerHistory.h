@@ -78,7 +78,7 @@ namespace ChimeraTK { namespace history {
     ServerHistory() : _historyLength(1200) {}
 
     /** Add a Module as a source to this History module. */
-    void addSource(const Module& source, const RegisterPath& namePrefix);
+    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
 
    protected:
     void mainLoop() override;

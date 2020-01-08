@@ -7,8 +7,8 @@ namespace ChimeraTK { namespace history {
   /** Callable class for use with  boost::fusion::for_each: Attach the given
    * accessor to the History with proper handling of the UserType. */
   struct AccessorAttacher {
-    AccessorAttacher(VariableNetworkNode& feeder, ServerHistory* owner, const std::string& name)
-    : _feeder(feeder), _owner(owner), _name(name) {}
+    AccessorAttacher(VariableNetworkNode& feeder, ServerHistory* owner, const std::string& name, const VariableNetworkNode &trigger)
+    : _feeder(feeder),_trigger(trigger), _owner(owner), _name(name) {}
 
     template<typename PAIR>
     void operator()(PAIR&) const {
@@ -16,15 +16,20 @@ namespace ChimeraTK { namespace history {
       if(typeid(typename PAIR::first_type) != _feeder.getValueType()) return;
 
       // register connection
-      _feeder >> _owner->template getAccessor<typename PAIR::first_type>(_name, _feeder.pdata->nElements);
+      if(_trigger != VariableNetworkNode() && _feeder.getMode() == UpdateMode::poll){
+          _feeder[_trigger] >> _owner->template getAccessor<typename PAIR::first_type>(_name, _feeder.pdata->nElements);
+      } else {
+        _feeder >> _owner->template getAccessor<typename PAIR::first_type>(_name, _feeder.pdata->nElements);
+      }
     }
 
     VariableNetworkNode& _feeder;
+    VariableNetworkNode _trigger;
     ServerHistory* _owner;
     const std::string& _name;
   };
 
-  void ServerHistory::addSource(const Module& source, const RegisterPath& namePrefix) {
+  void ServerHistory::addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger) {
     // for simplification, first create a VirtualModule containing the correct
     // hierarchy structure (obeying eliminate hierarchy etc.)
     auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
@@ -51,12 +56,12 @@ namespace ChimeraTK { namespace history {
 
     // add all accessors on this hierarchy level
     for(auto& acc : dynamicModel.getAccessorList()) {
-      boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix / acc.getName()));
+      boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix / acc.getName(), trigger));
     }
 
     // recurse into submodules
     for(auto mod : dynamicModel.getSubmoduleList()) {
-      addSource(*mod, namePrefix / mod->getName());
+      addSource(*mod, namePrefix / mod->getName(), trigger);
     }
   }
 
