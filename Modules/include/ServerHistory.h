@@ -11,7 +11,10 @@
  * during module construction and fixed per module. Every time one of the
  * variable handled by the history module is updated it will be filled into the
  * history buffer. The buffer length (history length) can not be changed during
- * runtime.
+ * runtime. Finally, one can create an addition buffer for each history
+ * buffer that includes the time stamps of each data point in the history buffer.
+ * This is useful if not all history buffers are filled with the same rate or the
+ * rate is not known.
  *
  *
  *  Output variables created by the \c ServerHistory module are named like their
@@ -79,6 +82,7 @@
 #include <ChimeraTK/SupportedUserTypes.h>
 
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 namespace ChimeraTK { namespace history {
@@ -96,6 +100,14 @@ namespace ChimeraTK { namespace history {
   };
 
   struct ServerHistory : public ApplicationModule {
+
+    /**
+     * Constructor.
+     * Addition parameters to a normal device module constructor:
+     * \param historyLength Length of the history buffers.
+     * \param enableTimeStamps An additional ring buffer per variable will be added that holds the time stamps
+     *                         corresponding to the data ring buffer entries.
+     */
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
         size_t historyLength = 1200, bool enableTimeStamps = false, bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
     : ApplicationModule(owner, name, description, eliminateHierarchy, tags), _historyLength(historyLength), _enbaleTimeStamps(enableTimeStamps) {  }
@@ -104,7 +116,18 @@ namespace ChimeraTK { namespace history {
      * initialisation. */
     ServerHistory() : _historyLength(1200), _enbaleTimeStamps(false) {}
 
-    /** Add a Module as a source to this History module. */
+    /**
+     * Add a Module as a source to this History module.
+     *
+     * \parameter source For all variables of this module ring buffers are created. Use \c findTag in combination
+     *                   with a dedicated history tag. In case device modules use the LogicalNameMapping to create
+     *                   a virtual device module that holds all variables that should be passed to the history module.
+     * \parameter namePrefix This prefix is added to variable names added to the root directory in the process variable
+     *                       tree. E.g. a prefix \c history for a variable names data will appear as history/dummy/data
+     *                       if dummy is the name of the source module.
+     * \parameter trigger This trigger is used for all poll type variable found in the source module.
+     *
+     */
     void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
 
    protected:
