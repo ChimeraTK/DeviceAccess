@@ -180,10 +180,11 @@ namespace ChimeraTK {
       */
     ScalarOutput<int> deviceBecameFunctional{this, "deviceBecameFunctional", "", ""};// should be changed to data type void
 
-   protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
     VirtualModule& virtualiseFromCatalog() const;
+   protected:
+
     mutable VirtualModule virtualisedModuleFromCatalog{"INVALID", "", ModuleType::Invalid};
     mutable bool virtualisedModuleFromCatalog_isValid{false};
 
