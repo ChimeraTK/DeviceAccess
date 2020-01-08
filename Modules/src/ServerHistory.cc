@@ -1,6 +1,6 @@
 #include "ServerHistory.h"
 
-//#include "ChimeraTK/TransferElementID.h"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 namespace ChimeraTK { namespace history {
 
@@ -90,17 +90,27 @@ namespace ChimeraTK { namespace history {
             0,
             "",
         }),
-        std::forward_as_tuple(std::vector<ArrayOutput<UserType>>{}));
+        std::forward_as_tuple(HistoryEntry<UserType>{_enbaleTimeStamps}));
     for(size_t i = 0; i < nElements; i++) {
       if(nElements == 1) {
         // in case of a scalar history only use the variableName
-        tmpList.back().second.emplace_back(
+        tmpList.back().second.data.emplace_back(
             ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {"CS", getName()}});
+        if(_enbaleTimeStamps){
+          tmpList.back().second.timeStamp.emplace_back(
+              ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_timeStamps", "Time stamps for entries in the history buffer",
+                                    _historyLength, "", {"CS", getName()}});
+        }
       }
       else {
         // in case of an array history append the index to the variableName
-        tmpList.back().second.emplace_back(ArrayOutput<UserType>{
+        tmpList.back().second.data.emplace_back(ArrayOutput<UserType>{
             &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {"CS", getName()}});
+        if(_enbaleTimeStamps){
+          tmpList.back().second.timeStamp.emplace_back(
+              ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_" + std::to_string(i) + "_timeStamps", "Time stamps for entries in the history buffer",
+                                    _historyLength, "", {"CS", getName()}});
+        }
       }
     }
     nameList.push_back(variableName);
@@ -119,9 +129,15 @@ namespace ChimeraTK { namespace history {
         if(accessor->first.getId() == _id) {
           for(size_t i = 0; i < accessor->first.getNElements(); i++) {
             std::rotate(
-                accessor->second.at(i).begin(), accessor->second.at(i).begin() + 1, accessor->second.at(i).end());
-            *(accessor->second.at(i).end() - 1) = accessor->first[i];
-            accessor->second.at(i).write();
+                accessor->second.data.at(i).begin(), accessor->second.data.at(i).begin() + 1, accessor->second.data.at(i).end());
+            *(accessor->second.data.at(i).end() - 1) = accessor->first[i];
+            accessor->second.data.at(i).write();
+            if(accessor->second.withTimeStamps){
+              std::rotate(
+                accessor->second.timeStamp.at(i).begin(), accessor->second.timeStamp.at(i).begin() + 1, accessor->second.timeStamp.at(i).end());
+            *(accessor->second.timeStamp.at(i).end() - 1) = boost::posix_time::to_time_t(boost::posix_time::second_clock::local_time());
+            accessor->second.timeStamp.at(i).write();
+            }
           }
         }
       }

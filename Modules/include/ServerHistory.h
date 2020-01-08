@@ -85,14 +85,24 @@ namespace ChimeraTK { namespace history {
 
   struct AccessorAttacher;
 
+  template<typename UserType>
+  struct HistoryEntry{
+    HistoryEntry(bool enableHistory): data(std::vector<ArrayOutput<UserType> >{}),
+                                      timeStamp(std::vector<ArrayOutput<uint64_t> >{}),
+                                      withTimeStamps(enableHistory){  }
+    std::vector<ArrayOutput<UserType> > data;
+    std::vector<ArrayOutput<uint64_t> > timeStamp;
+    bool withTimeStamps;
+  };
+
   struct ServerHistory : public ApplicationModule {
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-        size_t historyLength = 1200, bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, eliminateHierarchy, tags), _historyLength(historyLength) {}
+        size_t historyLength = 1200, bool enableTimeStamps = false, bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, eliminateHierarchy, tags), _historyLength(historyLength), _enbaleTimeStamps(enableTimeStamps) {  }
 
     /** Default constructor, creates a non-working module. Can be used for late
      * initialisation. */
-    ServerHistory() : _historyLength(1200) {}
+    ServerHistory() : _historyLength(1200), _enbaleTimeStamps(false) {}
 
     /** Add a Module as a source to this History module. */
     void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
@@ -111,7 +121,7 @@ namespace ChimeraTK { namespace history {
      * ArrayPushInput and ArrayOutput accessors. These accessors are dynamically
      * created by the AccessorAttacher. */
     template<typename UserType>
-    using AccessorList = std::list<std::pair<ArrayPushInput<UserType>, std::vector<ArrayOutput<UserType>>>>;
+    using AccessorList = std::list<std::pair<ArrayPushInput<UserType>, HistoryEntry<UserType> > >;
     TemplateUserTypeMap<AccessorList> _accessorListMap;
 
     /** boost::fusion::map of UserTypes to std::lists containing the names of the
@@ -127,6 +137,7 @@ namespace ChimeraTK { namespace history {
     std::list<std::string> _overallVariableList;
 
     size_t _historyLength;
+    bool _enbaleTimeStamps;
 
     friend struct AccessorAttacher;
   };
