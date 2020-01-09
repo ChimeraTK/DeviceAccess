@@ -17,10 +17,15 @@
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
 #include <ChimeraTK/Device.h>
+#include "ServerHistory.h"
 
 namespace ChimeraTK {
   class Application;
   class DeviceModule;
+  namespace history
+  {
+    struct ServerHistory;
+  }
 
   /*********************************************************************************************************************/
 
@@ -180,10 +185,10 @@ namespace ChimeraTK {
       */
     ScalarOutput<int> deviceBecameFunctional{this, "deviceBecameFunctional", "", ""};// should be changed to data type void
 
+   protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
     VirtualModule& virtualiseFromCatalog() const;
-   protected:
 
     mutable VirtualModule virtualisedModuleFromCatalog{"INVALID", "", ModuleType::Invalid};
     mutable bool virtualisedModuleFromCatalog_isValid{false};
@@ -246,6 +251,7 @@ namespace ChimeraTK {
     std::list<std::function<void(DeviceModule*)>> initialisationHandlers;
 
     friend class Application;
+    friend struct history::ServerHistory;
     friend class detail::DeviceModuleProxy;
   };
 

@@ -65,6 +65,11 @@ namespace ChimeraTK { namespace history {
     }
   }
 
+  void ServerHistory::addSource(const DeviceModule& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger) {
+    auto mod = source.virtualiseFromCatalog();
+    addSource(mod, namePrefix, trigger);
+  }
+
   template<typename UserType>
   VariableNetworkNode ServerHistory::getAccessor(const std::string& variableName, const size_t& nElements) {
     // check if variable name already registered

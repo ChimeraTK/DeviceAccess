@@ -117,7 +117,7 @@ struct testAppDev : public ChimeraTK::Application {
 
   void defineConnections() override{
     dummy.connectTo(cs);
-    hist.addSource(dev.virtualiseFromCatalog(),"history",dummy.out);
+    hist.addSource(dev,"history",dummy.out);
     hist.findTag("CS").connectTo(cs);
    }
 };

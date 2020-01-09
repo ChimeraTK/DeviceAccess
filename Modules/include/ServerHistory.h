@@ -103,7 +103,7 @@ namespace ChimeraTK { namespace history {
 
     /**
      * Constructor.
-     * Addition parameters to a normal device module constructor:
+     * Addition parameters to a normal application module constructor:
      * \param historyLength Length of the history buffers.
      * \param enableTimeStamps An additional ring buffer per variable will be added that holds the time stamps
      *                         corresponding to the data ring buffer entries.
@@ -119,17 +119,21 @@ namespace ChimeraTK { namespace history {
     /**
      * Add a Module as a source to this History module.
      *
-     * \parameter source For all variables of this module ring buffers are created. Use \c findTag in combination
+     * \param source For all variables of this module ring buffers are created. Use \c findTag in combination
      *                   with a dedicated history tag. In case device modules use the LogicalNameMapping to create
      *                   a virtual device module that holds all variables that should be passed to the history module.
-     * \parameter namePrefix This prefix is added to variable names added to the root directory in the process variable
+     * \param namePrefix This prefix is added to variable names added to the root directory in the process variable
      *                       tree. E.g. a prefix \c history for a variable names data will appear as history/dummy/data
      *                       if dummy is the name of the source module.
-     * \parameter trigger This trigger is used for all poll type variable found in the source module.
+     * \param trigger This trigger is used for all poll type variable found in the source module.
      *
      */
     void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
 
+    /**
+     * Overload that calls virtualiseFromCatalog.
+     */
+    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger = {});
    protected:
     void mainLoop() override;
 
