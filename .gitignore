@@ -5,6 +5,8 @@
 ######################
 build
 .project
+.cproject
+.settings
 .kdev4
 *.kdev4
 .vscode
