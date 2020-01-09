@@ -104,9 +104,14 @@ namespace ChimeraTK { namespace history {
     /**
      * Constructor.
      * Addition parameters to a normal application module constructor:
+     * \param owner Module owner passed to ApplicationModule constructor.
+     * \param name Module name passed to ApplicationModule constructor.
+     * \param description Module description passed to ApplicationModule constructor.
      * \param historyLength Length of the history buffers.
      * \param enableTimeStamps An additional ring buffer per variable will be added that holds the time stamps
      *                         corresponding to the data ring buffer entries.
+     * \param eliminateHierarchy Flag passed to ApplicationModule constructor.
+     * \param tags Module tags passed to ApplicationModule constructor.
      */
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
         size_t historyLength = 1200, bool enableTimeStamps = false, bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
