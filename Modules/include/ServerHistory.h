@@ -66,7 +66,7 @@
  *  history.addSource(test.findTag("History"), "history" + test->getName())
  *  // will show up in the control system as history/test/measurement
  *  // add a device. Updating of the history buffer is trigger external by the given trigger
- *  history.addSource(dev..virtualiseFromCatalog(),"device_history",trigger.tick);
+ *  history.addSource(dev,"device_history",trigger.tick);
  *
  *  history.findTag("CS").connectTo(cs);
  *  ...
