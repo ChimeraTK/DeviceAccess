@@ -122,12 +122,6 @@ ENDMACRO( COPY_SELECTED_DIRECTORIES )
 COPY_MAPPING_FILES()
 COPY_SELECTED_DIRECTORIES()
 
-ADD_CUSTOM_TARGET(COPY_FAKE_DEVICE_REF_FILE ALL
-       COMMAND ${CMAKE_COMMAND} -E
-      copy  ${CMAKE_SOURCE_DIR}/tests/._Reference_Device ${PROJECT_BINARY_DIR}/tests/._Reference_Device
-      VERBATIM
-  )
-
 ####################################
 # Libraries for testing the backend plugin mechanism. Each file is converted to an so file
 
