@@ -81,6 +81,30 @@ namespace ChimeraTK {
 
   void ApplicationModule::mainLoopWrapper() {
     Application::registerThread("AM_" + getName());
+    // Read all variables once to obtain the initial values from the devices and from the control system persistency
+    // layer.
+    for(auto& variable : getAccessorList()) {
+      if(variable.getDirection().dir == VariableDirection::consuming) {
+        if((variable.getOwner().getFeedingNode().getType() == NodeType::Device ||
+               variable.getOwner().getFeedingNode().getType() == NodeType::Constant) &&
+            variable.getOwner().getConsumingNodes().size() == 1 &&
+            variable.getOwner().getTriggerType() != VariableNetwork::TriggerType::external) {
+          // Special case if a push-type device accessor is directly placed into our module (without FanOut): Since the
+          // device will not push an initial value to us, a read() would block until the value is changed for the first
+          // time. Hence we need to use readLatest() here to obtain the initial value.
+          // The same is true for Constant accessors, since their read() never returns.
+          variable.getAppAccessorNoType().readLatest();
+        }
+        else if(variable.getOwner().getFeedingNode().getType() != NodeType::Application) {
+          // This case includes inserted FanOuts, which have their own thread, so we must block to make sure to get the
+          // initial value. FanOuts will always forward the initial values and the ControlSystemAdapter will always psuh
+          // the initial values, hence a blocking read() here will not block indefinitively.
+          variable.getAppAccessorNoType().read();
+        }
+      }
+    }
+
+    // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
     Application::testableModeLock("start");
     // We are holding the testable mode lock, so we are sure the mechanism will work now.
     testableModeReached = true;

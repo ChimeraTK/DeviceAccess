@@ -171,7 +171,7 @@ void Application::run() {
   for(auto& deviceModule : deviceModuleList) {
     deviceModule->run();
   }
-
+  /*   -> moved into the module itself!
   // Read all non-device variables once, to set the startup value from the persistency layer
   // (without triggering an action inside the application)
   // Note: this will read all application variables directly connected to either the control system or to another
@@ -189,7 +189,7 @@ void Application::run() {
       }
     }
   }
-
+*/
   // start the threads for the modules
   for(auto& module : getSubmoduleListRecursive()) {
     module->run();
@@ -727,7 +727,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
               {VariableDirection::feeding, false}, consumer.getMode(), consumer.getNumberOfElements());
           // connect the Device with e.g. a ControlSystem node via a
           // ThreadedFanOut
-          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
           fanOut->addSlave(consumingImpl, consumer);
           internalModuleList.push_back(fanOut);
           connectionMade = true;
@@ -736,7 +736,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto consumingImpl = createProcessVariable<UserType>(consumer);
           // connect the ControlSystem with e.g. a Device node via an
           // ThreadedFanOut
-          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+          auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
           fanOut->addSlave(consumingImpl, consumer);
           internalModuleList.push_back(fanOut);
           connectionMade = true;
@@ -785,10 +785,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           // the right implementation of the FanOut
           boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
           if(!feeder.getDirection().withReturn) {
-            threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl);
+            threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network);
           }
           else {
-            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl);
+            threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl, network);
           }
           internalModuleList.push_back(threadedFanOut);
           fanOut = threadedFanOut;
