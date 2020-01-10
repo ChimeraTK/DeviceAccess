@@ -1,0 +1,11 @@
+<logicalNameMap>
+  <module name="Device">
+    <redirectedRegister name="signed32">
+      <targetDevice>Dummy1</targetDevice>
+      <targetRegister>/FixedPoint/value</targetRegister>
+      <targetStartIndex>0</targetStartIndex>
+      <numberOfElements>1</numberOfElements>
+      <plugin name="forceReadOnly"/>
+    </redirectedRegister>
+  </module>
+</logicalNameMap>

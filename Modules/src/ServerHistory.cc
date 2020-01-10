@@ -1,14 +1,14 @@
 #include "ServerHistory.h"
 
-//#include "ChimeraTK/TransferElementID.h"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 namespace ChimeraTK { namespace history {
 
   /** Callable class for use with  boost::fusion::for_each: Attach the given
    * accessor to the History with proper handling of the UserType. */
   struct AccessorAttacher {
-    AccessorAttacher(VariableNetworkNode& feeder, ServerHistory* owner, const std::string& name)
-    : _feeder(feeder), _owner(owner), _name(name) {}
+    AccessorAttacher(VariableNetworkNode& feeder, ServerHistory* owner, const std::string& name, const VariableNetworkNode &trigger)
+    : _feeder(feeder),_trigger(trigger), _owner(owner), _name(name) {}
 
     template<typename PAIR>
     void operator()(PAIR&) const {
@@ -16,15 +16,20 @@ namespace ChimeraTK { namespace history {
       if(typeid(typename PAIR::first_type) != _feeder.getValueType()) return;
 
       // register connection
-      _feeder >> _owner->template getAccessor<typename PAIR::first_type>(_name, _feeder.pdata->nElements);
+      if(_trigger != VariableNetworkNode() && _feeder.getMode() == UpdateMode::poll){
+          _feeder[_trigger] >> _owner->template getAccessor<typename PAIR::first_type>(_name, _feeder.pdata->nElements);
+      } else {
+        _feeder >> _owner->template getAccessor<typename PAIR::first_type>(_name, _feeder.pdata->nElements);
+      }
     }
 
     VariableNetworkNode& _feeder;
+    VariableNetworkNode _trigger;
     ServerHistory* _owner;
     const std::string& _name;
   };
 
-  void ServerHistory::addSource(const Module& source, const RegisterPath& namePrefix) {
+  void ServerHistory::addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger) {
     // for simplification, first create a VirtualModule containing the correct
     // hierarchy structure (obeying eliminate hierarchy etc.)
     auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
@@ -51,13 +56,18 @@ namespace ChimeraTK { namespace history {
 
     // add all accessors on this hierarchy level
     for(auto& acc : dynamicModel.getAccessorList()) {
-      boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix / acc.getName()));
+      boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix / acc.getName(), trigger));
     }
 
     // recurse into submodules
     for(auto mod : dynamicModel.getSubmoduleList()) {
-      addSource(*mod, namePrefix / mod->getName());
+      addSource(*mod, namePrefix / mod->getName(), trigger);
     }
+  }
+
+  void ServerHistory::addSource(const DeviceModule& source, const RegisterPath& namePrefix, const VariableNetworkNode &trigger) {
+    auto mod = source.virtualiseFromCatalog();
+    addSource(mod, namePrefix, trigger);
   }
 
   template<typename UserType>
@@ -85,17 +95,27 @@ namespace ChimeraTK { namespace history {
             0,
             "",
         }),
-        std::forward_as_tuple(std::vector<ArrayOutput<UserType>>{}));
+        std::forward_as_tuple(HistoryEntry<UserType>{_enbaleTimeStamps}));
     for(size_t i = 0; i < nElements; i++) {
       if(nElements == 1) {
         // in case of a scalar history only use the variableName
-        tmpList.back().second.emplace_back(
+        tmpList.back().second.data.emplace_back(
             ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {"CS", getName()}});
+        if(_enbaleTimeStamps){
+          tmpList.back().second.timeStamp.emplace_back(
+              ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_timeStamps", "Time stamps for entries in the history buffer",
+                                    _historyLength, "", {"CS", getName()}});
+        }
       }
       else {
         // in case of an array history append the index to the variableName
-        tmpList.back().second.emplace_back(ArrayOutput<UserType>{
+        tmpList.back().second.data.emplace_back(ArrayOutput<UserType>{
             &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {"CS", getName()}});
+        if(_enbaleTimeStamps){
+          tmpList.back().second.timeStamp.emplace_back(
+              ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_" + std::to_string(i) + "_timeStamps", "Time stamps for entries in the history buffer",
+                                    _historyLength, "", {"CS", getName()}});
+        }
       }
     }
     nameList.push_back(variableName);
@@ -114,9 +134,15 @@ namespace ChimeraTK { namespace history {
         if(accessor->first.getId() == _id) {
           for(size_t i = 0; i < accessor->first.getNElements(); i++) {
             std::rotate(
-                accessor->second.at(i).begin(), accessor->second.at(i).begin() + 1, accessor->second.at(i).end());
-            *(accessor->second.at(i).end() - 1) = accessor->first[i];
-            accessor->second.at(i).write();
+                accessor->second.data.at(i).begin(), accessor->second.data.at(i).begin() + 1, accessor->second.data.at(i).end());
+            *(accessor->second.data.at(i).end() - 1) = accessor->first[i];
+            accessor->second.data.at(i).write();
+            if(accessor->second.withTimeStamps){
+              std::rotate(
+                accessor->second.timeStamp.at(i).begin(), accessor->second.timeStamp.at(i).begin() + 1, accessor->second.timeStamp.at(i).end());
+            *(accessor->second.timeStamp.at(i).end() - 1) = boost::posix_time::to_time_t(boost::posix_time::second_clock::local_time());
+            accessor->second.timeStamp.at(i).write();
+            }
           }
         }
       }

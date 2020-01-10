@@ -1,1 +1,3 @@
 Dummy0  (dummy?map=test2.map)
+Dummy1  (dummy?map=test3.map)
+Dummy1Mapped  (logicalNameMap?map=test.xlmap)
