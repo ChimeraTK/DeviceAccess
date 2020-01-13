@@ -184,6 +184,9 @@ namespace ChimeraTK {
     ScalarOutput<int> deviceBecameFunctional{
         this, "deviceBecameFunctional", "", ""}; // should be changed to data type void
 
+    void addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor);
+    boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
@@ -248,6 +251,8 @@ namespace ChimeraTK {
 
     /* The list of initialisation handler callback functions */
     std::list<std::function<void(DeviceModule*)>> initialisationHandlers;
+
+    boost::shared_mutex recoverySharedMutex;
 
     friend class Application;
     friend struct history::ServerHistory;

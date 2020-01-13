@@ -467,4 +467,12 @@ namespace ChimeraTK {
 
   void DeviceModule::notify() { errorIsResolvedCondVar.notify_all(); }
 
+  void DeviceModule::addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor) {
+    std::cout << "DeviceModule::addRecoveryAccessor:: Implement me" << std::endl;
+  }
+
+  boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {
+    return boost::shared_lock<boost::shared_mutex>(recoverySharedMutex);
+  }
+
 } // namespace ChimeraTK
