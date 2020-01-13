@@ -1,6 +1,7 @@
 #include <libxml++/libxml++.h>
 
 #include "ConfigReader.h"
+#include "VariableGroup.h"
 #include <iostream>
 
 namespace ChimeraTK {

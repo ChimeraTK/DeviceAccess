@@ -8,6 +8,9 @@
  * includes and functionality needed for writing an application.
  */
 
+#ifndef APPLICATION_CORE_CONVENIENCE_H
+#define APPLICATION_CORE_CONVENIENCE_H
+
 #include <ChimeraTK/Utilities.h> // for ChimeraTK::setDMapFilePath(), which is used by all applications
 
 #include "Application.h"
@@ -20,3 +23,5 @@
 #include "VariableGroup.h"
 #include "VirtualModule.h"
 #include "ConfigReader.h"
+
+#endif /* APPLICATION_CORE_CONVENIENCE_H */
