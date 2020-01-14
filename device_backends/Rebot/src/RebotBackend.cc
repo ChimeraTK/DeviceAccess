@@ -82,9 +82,6 @@ RebotBackend::~RebotBackend() {
     // make sure the thread does not access any hardware when it gets the lock
     _threadInformerMutex->quitThread = true;
 
-    if (isOpen()) {
-      _connection->close();
-    }
   } // end of the lock guard scope. We have to release the lock before waiting
     // for the thread to join
   _heartbeatThread.interrupt();
@@ -145,7 +142,7 @@ RebotBackend::~RebotBackend() {
     std::string tmcbIP = parameters["ip"];
     std::string portNumber = parameters["port"];
     std::string mapFileName = parameters["map"];
-    uint32_t timeout = RebotBackend::CONNECTION_TIMEOUT_SEC;
+    uint32_t timeout = RebotBackend::DEFAULT_CONNECTION_TIMEOUT_sec;
 
     auto it = parameters.find("timeout");
     if( it != parameters.end()){

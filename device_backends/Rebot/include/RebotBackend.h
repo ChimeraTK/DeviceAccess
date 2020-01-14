@@ -57,7 +57,7 @@ namespace Rebot {
    public:
      RebotBackend(std::string boardAddr, std::string port,
                   std::string mapFileName = "",
-                  uint32_t connectionTimeout_sec = CONNECTION_TIMEOUT_SEC);
+                  uint32_t connectionTimeout_sec = DEFAULT_CONNECTION_TIMEOUT_sec);
      ~RebotBackend();
      /// The function opens the connection to the device
      void open() override;
@@ -78,7 +78,7 @@ namespace Rebot {
     void heartbeatLoop(boost::shared_ptr<ThreadInformerMutex> threadInformerMutex);
     boost::thread _heartbeatThread;
 
-    const static uint32_t CONNECTION_TIMEOUT_SEC{5};
+    const static uint32_t DEFAULT_CONNECTION_TIMEOUT_sec{5};
   };
 
 } // namespace ChimeraTK
