@@ -27,11 +27,11 @@ namespace ChimeraTK {
   void RebotProtocol1::write(uint32_t addressInBytes, int32_t const* data, size_t sizeInBytes) {
     RegisterInfo registerInfo(addressInBytes, sizeInBytes);
     std::vector<uint32_t> writeCommandPacket;
-    writeCommandPacket.push_back(MULTI_WORD_WRITE);
-    writeCommandPacket.push_back(registerInfo.addressInWords);
-    writeCommandPacket.push_back(registerInfo.nWords);
+    writeCommandPacket.push_back(htole32(MULTI_WORD_WRITE));
+    writeCommandPacket.push_back(htole32(registerInfo.addressInWords));
+    writeCommandPacket.push_back(htole32(registerInfo.nWords));
     for(unsigned int i = 0; i < registerInfo.nWords; ++i) {
-      writeCommandPacket.push_back(data[i]);
+      writeCommandPacket.push_back(htole32(data[i]));
     }
     // Again we timestamp here. Technically the comminucator might send muptilple
     // packets, but it is sufficient to reemember that we triggered it here.
