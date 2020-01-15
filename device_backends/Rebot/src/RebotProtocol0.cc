@@ -50,9 +50,9 @@ namespace ChimeraTK {
     // Implementation for protocol version 0: Only single word write possible
     std::vector<uint32_t> packet(3);
     for(unsigned int i = 0; i < registerInfo.nWords; ++i) {
-        packet[0] = htole32(SINGLE_WORD_WRITE);
-        packet[1] = htole32(registerInfo.addressInWords++);
-        packet[2] = htole32(static_cast<uint32_t>(data[i]));
+        packet[0] = SINGLE_WORD_WRITE;
+        packet[1] = registerInfo.addressInWords++;
+        packet[2] = static_cast<uint32_t>(data[i]);
         _tcpCommunicator->write(packet);
         _tcpCommunicator->read(1); // response is ignored for now
     }
@@ -64,7 +64,7 @@ namespace ChimeraTK {
 
     // first check that the response starts with READ_ACK. If it is an error code
     // there might be just one word in the response.
-    std::vector<uint32_t> responseCode = le32toh(_tcpCommunicator->read(1));
+    std::vector<uint32_t> responseCode = _tcpCommunicator->read(1);
     if(responseCode[0] != Rebot::READ_ACK) {
       // FIXME: can we do somwthing more clever here?
       throw ChimeraTK::runtime_error("Reading via ReboT failed. Response code: " + std::to_string(responseCode[0]));
@@ -80,16 +80,16 @@ namespace ChimeraTK {
     unsigned int datasendSize = 3 * sizeof(int);
     std::vector<char> datasend(datasendSize);
     std::vector<uint32_t> packet(3);
-    packet[0] = htole32(MULTI_WORD_READ);
-    packet[1] = htole32(wordAddress);
-    packet[2] = htole32(wordsToRead);
+    packet[0] = MULTI_WORD_READ;
+    packet[1] = wordAddress;
+    packet[2] = wordsToRead;
     _tcpCommunicator->write(packet);
   }
 
   void RebotProtocol0::transferVectorToDataPtr(std::vector<uint32_t> source, int32_t* destination) {
     // FIXME: just use memcopy
     for(auto& i : source) {
-      *destination = le32toh(i);
+      *destination = i;
       ++destination; // this will not change the destination ptr value outside the
                      // scope of this function (signature pass by value)
     }
