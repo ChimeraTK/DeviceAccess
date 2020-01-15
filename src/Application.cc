@@ -347,6 +347,13 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   // obtain the register accessor from the device
   auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
+  // writable registers additionally get a recoveryAccessor
+  // TODO Reorder
+  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor;
+  if(direction.dir == VariableDirection::feeding){ // TODO Also handle accessors with writeback functionality?
+    recoveryAccessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
+  }
+
   // find the right DeviceModule for this alias name - required for exception handling
   DeviceModule* devmod = nullptr;
   for(auto& dm : deviceModuleList) {
@@ -358,7 +365,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   assert(devmod != nullptr);
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
-  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod);
+  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, recoveryAccessor);
 }
 
 /*********************************************************************************************************************/

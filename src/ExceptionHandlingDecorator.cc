@@ -8,6 +8,19 @@ constexpr useconds_t DeviceOpenTimeout = 500;
 namespace ChimeraTK {
 
   template<typename UserType>
+  ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), dm(devMod) {
+
+    // Register recoveryAccessor at the DeviceModule
+    if(recoveryAccessor != nullptr){
+      _recoveryAccessor = recoveryAccessor;
+      dm.addRecoveryAccessor(_recoveryAccessor);
+    }
+  }
+
+  template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::genericTransfer(std::function<bool(void)> callable) {
     while(true) {
       try {
@@ -83,6 +96,22 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
+    /* Copy data to the recoveryAcessor before perfroming the write.
+     * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
+     * This obtains a shared lock from the DeviceModule, hence, the regular writing happeniin here
+     * can be performed in shared mode of the mutex and accessors are not blocking each other.
+     * In case of recovery, the DeviceModule thread will take an exclusive lock so that this thread can not
+     * modify the recoveryAcessor's user buffer while data is written to the device.
+     */
+    {
+      auto lock{dm.getRecoverySharedLock()};
+//      _recoveryAccessor->buffer_2D = NDRegisterAccessorDecorator<UserType>::buffer_2D;
+
+      for(unsigned int ch=0; ch<_recoveryAccessor->getNumberOfChannels(); ++ch){
+       _recoveryAccessor->accessChannel(ch) = NDRegisterAccessorDecorator<UserType>::buffer_2D[ch];
+      }
+    }
+    // Now delegate call
     genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; });
   }
 
