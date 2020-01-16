@@ -18,9 +18,18 @@ namespace ChimeraTK {
   template<typename UserType>
   class ExceptionHandlingDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
+//    ExceptionHandlingDecorator(
+//        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
+//        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor=nullptr);
+
+    /// Basic constructor, inititalizes the base decorator and the reference to the DeviceModule
+    ExceptionHandlingDecorator(
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod);
+
+    /// Constructor for writeable registers, allows also setting the recoveryAccessor
     ExceptionHandlingDecorator(
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor=nullptr);
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor);
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
@@ -51,7 +60,7 @@ namespace ChimeraTK {
     DeviceModule& dm;
     DataValidity validity{DataValidity::ok};
     bool genericTransfer(std::function<bool(void)> callable);
-    boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor;
+    boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

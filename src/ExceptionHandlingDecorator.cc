@@ -9,9 +9,14 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), dm(devMod) {}
+
+  template<typename UserType>
+  ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), dm(devMod) {
+    : ExceptionHandlingDecorator<UserType>(accessor, devMod) {
 
     // Register recoveryAccessor at the DeviceModule
     if(recoveryAccessor != nullptr){
@@ -105,13 +110,13 @@ namespace ChimeraTK {
      */
     {
       auto lock{dm.getRecoverySharedLock()};
-//      _recoveryAccessor->buffer_2D = NDRegisterAccessorDecorator<UserType>::buffer_2D;
 
+      // Access to _recoveryAccessor is only possible channel-wise
       for(unsigned int ch=0; ch<_recoveryAccessor->getNumberOfChannels(); ++ch){
        _recoveryAccessor->accessChannel(ch) = NDRegisterAccessorDecorator<UserType>::buffer_2D[ch];
       }
     }
-    // Now delegate call
+    // Now delegate call to the generic decorator, which swaps the buffer
     genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; });
   }
 
