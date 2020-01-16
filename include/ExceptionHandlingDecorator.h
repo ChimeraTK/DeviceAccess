@@ -50,7 +50,7 @@ namespace ChimeraTK {
    protected:
     DeviceModule& dm;
     DataValidity validity{DataValidity::ok};
-    bool genericTransfer(std::function<bool(void)> callable);
+    bool genericTransfer(std::function<bool(void)> callable, bool invalidateOnFailure = true);
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

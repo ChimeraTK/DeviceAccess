@@ -8,11 +8,18 @@ constexpr useconds_t DeviceOpenTimeout = 500;
 namespace ChimeraTK {
 
   template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::genericTransfer(std::function<bool(void)> callable) {
+  bool ExceptionHandlingDecorator<UserType>::genericTransfer(std::function<bool(void)> callable, bool invalidateOnFailure) {
+    std::function<void()> invalidateData{};
+    if (invalidateOnFailure) {
+      invalidateData = [=]() { setDataValidity(DataValidity::faulty); };
+    } else {
+      invalidateData = []() {}; // do nothing if user does
+                                // not want to invalidate data.
+    }
     while(true) {
       try {
         if(!dm.device.isOpened()) {
-          setDataValidity(DataValidity::faulty);
+	  invalidateData();
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
           Application::getInstance().testableModeLock("waitForDeviceOpen");
@@ -21,9 +28,9 @@ namespace ChimeraTK {
         auto retval = callable();
         setDataValidity(DataValidity::ok);
         return retval;
-      }
-      catch(ChimeraTK::runtime_error& e) {
-        setDataValidity(DataValidity::faulty);
+        }
+      } catch (ChimeraTK::runtime_error& e) {
+        invalidateData();
         dm.reportException(e.what());
       }
     }
@@ -33,14 +40,14 @@ namespace ChimeraTK {
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
     return genericTransfer([this, versionNumber]() {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
-    });
+    }, false);
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
     return genericTransfer([this, versionNumber]() {
       return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
-    });
+    }, false);
   }
 
   template<typename UserType>
@@ -83,12 +90,12 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; });
+    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; }, false);
   }
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(), true; });
+    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(), true; }, false);
   }
 
   template<typename UserType>
