@@ -16,6 +16,8 @@
 #include <stdlib.h>
 
 #include "check_timeout.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -41,6 +43,25 @@ void initialiseReg3(ctk::DeviceModule* dev) {
   dev->device.write<int32_t>("/REG3", dev->device.read<int32_t>("/REG2") + 5);
 }
 
+struct TestModule : public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int32_t> trigger{this, "trigger", "", "This is my trigger."};
+  ctk::ScalarOutput<int32_t> scalarOutput{this, "scalarOutput", "", "Here I write a scaler"};
+  ctk::ArrayOutput<int32_t> arrayOutput{this, "arrayOutput", "", 4, "Here I write an array"};
+
+  void mainLoop() override {
+    trigger.read();
+    scalarOutput = int32_t(trigger);
+    scalarOutput.write();
+    for(uint i=0; i<4; i++){
+      arrayOutput[i] = int32_t(trigger);
+    }
+    arrayOutput.write();
+  }
+};
+
+
 /* dummy application */
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
@@ -49,9 +70,106 @@ struct TestApplication : public ctk::Application {
   void defineConnections() {} // the setup is done in the tests
   ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, deviceCDD, &initialiseReg1};
+  TestModule applicationModule{this, "testModule", "The test module"};
 };
 
 /*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
+  std::cout << "testProcessVariableRecovery" << std::endl;
+  TestApplication app;
+  app.dev.connectTo(app.cs);
+  app.applicationModule.connectTo(app.cs);
+  //Connect PVs directly to device
+  app.cs("scalarOutput") >> app.dev("/REG1");
+  app.cs("arrayOutput") >> app.dev("/AREA1");
+
+  ctk::TestFacility test;
+  test.runApplication();
+  //app.dumpConnections();
+
+  //Check default hardware values.
+  ctk::Device dummy;
+  dummy.open(deviceCDD);
+  auto reg1 = dummy.getScalarRegisterAccessor<int32_t>("/REG1");
+  reg1.readLatest();
+  BOOST_CHECK_EQUAL(reg1, 42);
+
+  auto area1 = dummy.getOneDRegisterAccessor<int32_t>("/AREA1");
+  area1.readLatest();
+  for(auto values : area1) {
+    BOOST_CHECK_EQUAL(values, 0);
+  }
+
+  //Initialized device registers through process variable.
+  auto trigger = test.getScalar<int32_t>("/trigger");
+  trigger = 100;
+  trigger.write();
+  test.stepApplication();
+
+  //Add some zzz to make sure that changes propagate.
+  usleep(1000000);
+
+  //Verify that the device registers are updated.
+  reg1.readLatest();
+  BOOST_CHECK_EQUAL(reg1, 100);
+  area1.readLatest();
+  for(auto values : area1) {
+    BOOST_CHECK_EQUAL(values, 100);
+  }
+
+  auto dummyBackend =
+      boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+  //Device should be functional.
+  BOOST_CHECK_EQUAL(dummyBackend->isFunctional(), 1);
+
+  //Set the device to throw.
+  dummyBackend->throwExceptionWrite = true;
+  dummyBackend->throwExceptionOpen = true;
+
+  //Add some zzz to make sure condition is set.
+  usleep(1000000);
+
+  //Verify device is in not functional anymore.
+  BOOST_CHECK_EQUAL(dummyBackend->isFunctional(), 0);
+
+  //Set write exception to false so that device registers can be set to 0.
+  dummyBackend->throwExceptionWrite = false;
+
+  //Set dummy registers to 0.
+  app.dev.device.write<int32_t>("/REG1", 0);
+  std::vector<int32_t> array= {0,0,0,0};
+  app.dev.device.write<int32_t>("/AREA1", array);
+
+  //Add some zzz for wait.
+  usleep(1000000);
+
+  //Verify that the device registers are updated.
+  reg1.readLatest();
+  BOOST_CHECK_EQUAL(reg1, 0);
+  area1.readLatest();
+  for(auto values : area1) {
+    BOOST_CHECK_EQUAL(values, 0);
+  }
+
+  //Set device back to normal.
+  dummyBackend->throwExceptionOpen = false;
+
+  //Let's wait for some time to make sure device is ready.
+  usleep(1000000);
+
+  //Verify if the device is ready.
+  BOOST_CHECK_EQUAL(dummyBackend->isFunctional(), 1);
+
+  //DeviceModule should have the correct values now.
+  reg1.readLatest();
+  BOOST_CHECK_EQUAL(reg1, 100);
+  area1.readLatest();
+  for(auto values : area1) {
+    BOOST_CHECK_EQUAL(values, 100);
+  }
+
+}
 
 BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   std::cout << "testBasicInitialisation" << std::endl;
