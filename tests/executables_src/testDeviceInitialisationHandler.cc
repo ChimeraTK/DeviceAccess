@@ -51,13 +51,16 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ArrayOutput<int32_t> arrayOutput{this, "arrayOutput", "", 4, "Here I write an array"};
 
   void mainLoop() override {
-    trigger.read();
-    scalarOutput = int32_t(trigger);
-    scalarOutput.write();
-    for(uint i=0; i<4; i++){
-      arrayOutput[i] = int32_t(trigger);
+    while(true)
+    {
+      trigger.read();
+      scalarOutput = int32_t(trigger);
+      scalarOutput.write();
+      for(uint i=0; i<4; i++){
+        arrayOutput[i] = int32_t(trigger);
+      }
+      arrayOutput.write();
     }
-    arrayOutput.write();
   }
 };
 
