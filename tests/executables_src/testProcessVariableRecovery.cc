@@ -47,7 +47,7 @@ struct ReaderModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<int32_t> trigger{this, "trigger2", "", "This is my trigger."};
-  ctk::ScalarPollInput<int32_t> input{this, "FORM_DEV_SCALAR1", "", "Here I read a scalar"};
+  ctk::ScalarPollInput<int32_t> input{this, "FROM_DEV_SCALAR1", "", "Here I read a scalar"};
   ctk::ScalarOutput<int32_t> output{this, "twoTimesInput", "", "Twice what I read."};
 
   void mainLoop() override {
@@ -126,33 +126,27 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummy.write("/TEST/TO_DEV_ARRAY1", array);
   dummy.write("/TEST/TO_DEV_ARRAY2", array);
 
-  /*
-   * Set the device to throw on write so that when application module
-   * tries to update the device register device goes into error state.
-  */
   dummyBackend->throwExceptionWrite = true;
-  trigger = 100;
-  trigger.write();
+  dummyBackend->throwExceptionRead = true;
+
+  // Now we trigger the reading module. This should put the device into an error state
+  auto trigger2 = test.getScalar<int32_t>("/TEST/trigger2");
+  trigger2.write();
 
   //Verify that the device is in error state.
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 3000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 5000);
 
   //Set device back to normal.
-  dummyBackend->throwExceptionOpen = false;
   dummyBackend->throwExceptionWrite = false;
+  dummyBackend->throwExceptionRead = false;
+  dummyBackend->throwExceptionOpen = false;
   //Verify if the device is ready.
-  CHECK_EQUAL_TIMEOUT(dummyBackend->isFunctional(), 1, 3000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 3000);
 
-  //Device should have the correct values now.
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 0)[0], 99, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 1)[0], 99, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 2)[0], 99, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 3)[0], 99, 3000);
+  //Device should have the correct values now. Notice that we did not trigger the writer module!
+  BOOST_CHECK_EQUAL(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42);
+  BOOST_CHECK((dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 0) == std::vector<int32_t>{99, 99, 99, 99}));
 
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR1"), 100, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 0)[0], 100, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 1)[0], 100, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 2)[0], 100, 3000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 3)[0], 100, 3000);
+  BOOST_CHECK_EQUAL(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR1"), 100);
+  BOOST_CHECK((dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 0) == std::vector<int32_t>{100, 100, 100, 100}));
 }
