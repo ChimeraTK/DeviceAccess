@@ -64,7 +64,6 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::vector<int32_t> array= {99,99,99,99};
   test.writeArray("/TEST/TO_DEV_ARRAY2", array);
 
-  //test.runApplication();
   app.run();
   app.dumpConnections();
   
@@ -72,43 +71,62 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummy.open(deviceCDD);
   //auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV2");
   //CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,3000);
-  
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV2"), 42, 3000);
-  //CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",0,1), 99, 3000);
-  
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,0)[0], 99, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,1)[0], 99, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,2)[0], 99, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,3)[0], 99, 3000);
+
   auto trigger = test.getScalar<int32_t>("/TEST/trigger");
   trigger = 100;
   trigger.write();
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV1"), 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,0)[0], 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,1)[0], 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,2)[0], 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,3)[0], 100, 3000);
   
   auto dummyBackend =
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   
   //Set the device to throw.
-  dummyBackend->throwExceptionWrite = true;
   dummyBackend->throwExceptionOpen = true;
   
   //Verify device is in not functional anymore.
   CHECK_EQUAL_TIMEOUT(dummyBackend->isFunctional(), 0, 1000);
 
-  //Set write exception to false so that device registers can be set to 0.
-  dummyBackend->throwExceptionWrite = false;
- 
   //Set dummy registers to 0.
   app.dev.device.write<int32_t>("/TEST/TO_DEV1", 0);
   app.dev.device.write<int32_t>("/TEST/TO_DEV2", 0);
-  //std::vector<int32_t> array= {0,0,0,0};
-  //app.dev.device.write<int32_t>("/AREA1", array);
+  array= {0,0,0,0};
+  app.dev.device.write<int32_t>("/TEST/TO_DEV_ARRAY1", array);
+  app.dev.device.write<int32_t>("/TEST/TO_DEV_ARRAY2", array);
   
+  
+  dummyBackend->throwExceptionWrite = true;
+  trigger = 100;
+  trigger.write();
+
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"),1,3000);
   
   //Set device back to normal.
   dummyBackend->throwExceptionOpen = false;
-
+  dummyBackend->throwExceptionWrite = false;
   //Verify if the device is ready.
-  CHECK_EQUAL_TIMEOUT(dummyBackend->isFunctional(), 1, 1000);
-
+  CHECK_EQUAL_TIMEOUT(dummyBackend->isFunctional(), 1, 3000);
+  
   //Device should have the correct values now.
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV2"), 42, 5000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV1"), 100, 5000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV2"), 42, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,0)[0], 99, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,1)[0], 99, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,2)[0], 99, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,3)[0], 99, 3000);
+
+  
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV1"), 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,0)[0], 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,1)[0], 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,2)[0], 100, 3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,3)[0], 100, 3000);
 
 }
