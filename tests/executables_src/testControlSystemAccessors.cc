@@ -55,6 +55,8 @@ struct TestModule : public ctk::ApplicationModule {
   ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
   ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
 
+  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+  // mainLoop(). This is required to test the initial values reliably.
   boost::barrier mainLoopStarted;
 
   void mainLoop() { mainLoopStarted.wait(); }
