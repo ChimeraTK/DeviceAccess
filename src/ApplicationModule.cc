@@ -81,10 +81,26 @@ namespace ChimeraTK {
 
   void ApplicationModule::mainLoopWrapper() {
     Application::registerThread("AM_" + getName());
+
+    // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
+    Application::testableModeLock("start");
+
     // Read all variables once to obtain the initial values from the devices and from the control system persistency
     // layer.
     for(auto& variable : getAccessorList()) {
-      if(variable.getDirection().dir == VariableDirection::consuming) {
+      // We need two loops for this: first we need to read all ConsumingFanOuts (i.e. fan outs triggered by a poll-type
+      // read), because they trigger propagation of values to other variables.
+      // This is a special case, the standard case is handled in the second loop.
+      if(variable.getDirection().dir == VariableDirection::consuming && variable.getMode() == UpdateMode::poll &&
+          variable.getOwner().getTriggerType() == VariableNetwork::TriggerType::pollingConsumer) {
+        variable.getAppAccessorNoType().read();
+      }
+    }
+    for(auto& variable : getAccessorList()) {
+      // In the second loop we deal with all the other variables (this is the standard case)
+      if(variable.getDirection().dir == VariableDirection::consuming &&
+          (variable.getMode() != UpdateMode::poll ||
+              variable.getOwner().getTriggerType() != VariableNetwork::TriggerType::pollingConsumer)) {
         if((variable.getOwner().getFeedingNode().getType() == NodeType::Device ||
                variable.getOwner().getFeedingNode().getType() == NodeType::Constant) &&
             variable.getOwner().getConsumingNodes().size() == 1 &&
@@ -104,10 +120,9 @@ namespace ChimeraTK {
       }
     }
 
-    // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
-    Application::testableModeLock("start");
     // We are holding the testable mode lock, so we are sure the mechanism will work now.
     testableModeReached = true;
+
     // enter the main loop
     mainLoop();
     Application::testableModeUnlock("terminate");
