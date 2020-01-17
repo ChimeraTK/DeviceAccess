@@ -65,6 +65,13 @@ namespace ChimeraTK {
         if(allOpened) break;
       }
       Application::testableModeLock("waitDevicesToOpen");
+      // receive all initial values for the control system variables
+      for(auto& pv : pvManager->getAllProcessVariables()) {
+        callForType(pv->getValueType(), [&pv, this](auto arg) {
+          if(!pv->isReadable()) return;
+          pv->readNonBlocking();
+        });
+      }
     }
 
     /** Perform a "step" of the application. This runs the application until all
