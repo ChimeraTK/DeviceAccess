@@ -69,6 +69,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   
   ctk::Device dummy;
   dummy.open(deviceCDD);
+  //Check that the initial values are there.
   //auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV2");
   //CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV2"), 42, 3000);
@@ -77,9 +78,11 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,2)[0], 99, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,3)[0], 99, 3000);
 
+  //Update device register via application module.
   auto trigger = test.getScalar<int32_t>("/TEST/trigger");
   trigger = 100;
   trigger.write();
+  //Check if the values are updated.
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV1"), 100, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,0)[0], 100, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,1)[0], 100, 3000);
@@ -92,7 +95,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   //Set the device to throw.
   dummyBackend->throwExceptionOpen = true;
   
-  //Verify device is in not functional anymore.
+  //Verify that the device is in not functional anymore.
   CHECK_EQUAL_TIMEOUT(dummyBackend->isFunctional(), 0, 1000);
 
   //Set dummy registers to 0.
@@ -102,11 +105,15 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   app.dev.device.write<int32_t>("/TEST/TO_DEV_ARRAY1", array);
   app.dev.device.write<int32_t>("/TEST/TO_DEV_ARRAY2", array);
   
-  
+  /*
+   * Set the device to throw on write so that when application module
+   * tries to update the device register device goes into error state.
+  */
   dummyBackend->throwExceptionWrite = true;
   trigger = 100;
   trigger.write();
 
+  //Verify that the device is in error state.
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"),1,3000);
   
   //Set device back to normal.
@@ -121,7 +128,6 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,1)[0], 99, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,2)[0], 99, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2",1,3)[0], 99, 3000);
-
   
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV1"), 100, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1",1,0)[0], 100, 3000);
