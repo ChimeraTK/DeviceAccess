@@ -7,20 +7,19 @@ constexpr useconds_t DeviceOpenTimeout = 500;
 
 namespace ChimeraTK {
 
-    template<typename UserType>
-    void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
-        if (newValidity != validity) {
-            validity = newValidity; 
-            if (!_owner) return; // hack to deal with null ptr until it filled correctly
-            if (newValidity == DataValidity::faulty) {
-                _owner->incrementDataFaultCounter();
-            } else {
-                _owner->decrementDataFaultCounter();
-            }
-        }
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
+    if (newValidity != validity) {
+      validity = newValidity;
+      if (!_owner) return;
+      if (newValidity == DataValidity::faulty) {
+        _owner->incrementDataFaultCounter();
+      } else {
+        _owner->decrementDataFaultCounter();
+      }
     }
-    
-    
+  }
+  
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::genericTransfer(
     std::function<bool(void)> callable, bool updateOwnerValidityFlag) {
@@ -30,9 +29,9 @@ namespace ChimeraTK {
       setOwnerValidityFunction = std::bind(&ExceptionHandlingDecorator<UserType>::setOwnerValidity, this, std::placeholders::_1);
     } 
     else {
-      setOwnerValidityFunction = [](DataValidity) {}; // do nothing if user does
-                                                     // not want to invalidate data.
+      setOwnerValidityFunction = [](DataValidity) {}; // do nothing if user does                                               // not want to invalidate data.
     }
+    
     while(true) {
       try {
         if(!deviceModule.device.isOpened()) {
@@ -132,21 +131,17 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::setDataValidity(DataValidity newValidity) {
-    // Remember ourselves, but also pass down the line
-    if(newValidity != validity) {
-      validity = newValidity;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::setDataValidity(validity);
-    }
-  }
-
-  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::interrupt() {
     // notify the condition variable waiting in reportException of the genericTransfer
     deviceModule.notify();
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
   }
-
+  
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
+    _owner = owner;
+  }
+  
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 
 } /* namespace ChimeraTK */

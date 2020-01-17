@@ -19,8 +19,8 @@ namespace ChimeraTK {
   class ExceptionHandlingDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
     ExceptionHandlingDecorator(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod, EntityOwner* owner)
-    : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod), _owner(owner) {}
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod)
+    : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), deviceModule(devMod) {}
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
@@ -43,16 +43,16 @@ namespace ChimeraTK {
 
     DataValidity dataValidity() const override;
 
-    void setDataValidity(DataValidity validity = DataValidity::ok) override;
-
     void interrupt() override;
 
+    void setOwner(EntityOwner* owner);
+    
    protected:
     DeviceModule& deviceModule;
     DataValidity validity{DataValidity::ok};
     bool genericTransfer(std::function<bool(void)> callable, bool invalidateOnFailure = true);
     void setOwnerValidity(DataValidity newValidity);
-    EntityOwner* _owner;
+    EntityOwner* _owner = {nullptr};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

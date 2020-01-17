@@ -358,7 +358,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   assert(devmod != nullptr);
 
   // decorate the accessor with a ExceptionHandlingDecorator and return it
-  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod, nullptr);
+  return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, *devmod);
 }
 
 /*********************************************************************************************************************/
