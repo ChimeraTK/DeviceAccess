@@ -76,7 +76,6 @@ namespace ChimeraTK {
         }
         catch(ChimeraTK::runtime_error& e) {
           // send the data to the consumers
-          auto version = externalTrigger->getVersionNumber();
           if(lastValidity == DataValidity::ok) {
             lastValidity = DataValidity::faulty;
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
