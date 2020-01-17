@@ -27,6 +27,7 @@ namespace ChimeraTK {
     ScalarOutput<uint64_t> tick{this, "tick", "", "Timer tick. Counts the trigger number starting from 0."};
 
     void sendTrigger() {
+      setCurrentVersionNumber({});
       ++tick;
       tick.write();
     }
@@ -49,9 +50,7 @@ namespace ChimeraTK {
         boost::this_thread::interruption_point();
         std::this_thread::sleep_until(t);
 
-        setCurrentVersionNumber({});
-        tick++;
-        tick.write();
+        sendTrigger();
       }
     }
 
