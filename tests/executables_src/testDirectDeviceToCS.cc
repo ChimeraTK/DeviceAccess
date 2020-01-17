@@ -78,6 +78,9 @@ TestApplicationConnectTo::~TestApplicationConnectTo() {
 template<typename T, typename LAMBDA>
 void testDirectRegister(ctk::TestFacility& test, ChimeraTK::ScalarRegisterAccessor<T> sender,
     ChimeraTK::ScalarRegisterAccessor<T> receiver, LAMBDA trigger, bool testMinMax = true) {
+  std::cout << "testDirectRegister<" << typeid(T).name() << ">: " << sender.getName() << " -> " << receiver.getName()
+            << std::endl;
+
   sender = 42;
   sender.write();
   trigger();
