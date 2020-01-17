@@ -31,6 +31,15 @@ namespace ChimeraTK {
     void activate() override {
       assert(!_thread.joinable());
       _thread = boost::thread([this] { this->run(); });
+
+      // Wait until the thread has launched and acquired and released the testable mode lock at least once.
+      if(Application::getInstance().isTestableModeEnabled()) {
+        while(!testableModeReached) {
+          Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+          usleep(100);
+          Application::getInstance().testableModeLock("acquireForReachTestableMode");
+        }
+      }
     }
 
     void deactivate() override {
@@ -47,6 +56,7 @@ namespace ChimeraTK {
     virtual void run() {
       Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
       Application::testableModeLock("start");
+      testableModeReached = true;
 
       ChimeraTK::VersionNumber version;
       readInitialValues();
@@ -125,6 +135,8 @@ namespace ChimeraTK {
     void run() override {
       Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
       Application::testableModeLock("start");
+      testableModeReached = true;
+
       TransferElementID var;
       ChimeraTK::VersionNumber version;
 
@@ -166,6 +178,7 @@ namespace ChimeraTK {
 
     using ThreadedFanOut<UserType>::_network;
     using ThreadedFanOut<UserType>::readInitialValues;
+    using EntityOwner::testableModeReached;
   };
 
 } /* namespace ChimeraTK */

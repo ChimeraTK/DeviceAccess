@@ -32,6 +32,15 @@ namespace ChimeraTK {
     void activate() override {
       assert(!_thread.joinable());
       _thread = boost::thread([this] { this->run(); });
+
+      // Wait until the thread has launched and acquired and released the testable mode lock at least once.
+      if(Application::getInstance().isTestableModeEnabled()) {
+        while(!testableModeReached) {
+          Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+          usleep(100);
+          Application::getInstance().testableModeLock("acquireForReachTestableMode");
+        }
+      }
     }
 
     void deactivate() override {
@@ -64,6 +73,8 @@ namespace ChimeraTK {
     void run() {
       Application::registerThread("TrFO" + externalTrigger->getName());
       Application::testableModeLock("start");
+      testableModeReached = true;
+
       ChimeraTK::VersionNumber version;
       while(true) {
         // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
