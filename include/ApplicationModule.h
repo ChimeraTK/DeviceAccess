@@ -82,6 +82,10 @@ namespace ChimeraTK {
       --faultCounter;
     }
 
+    void setCurrentVersionNumber(VersionNumber versionNumber) override {
+      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+    }
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */
@@ -89,10 +93,6 @@ namespace ChimeraTK {
 
     /** The thread executing mainLoop() */
     boost::thread moduleThread;
-
-    void setCurrentVersionNumber(VersionNumber versionNumber) override {
-      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
-    }
 
     /** Version number of last push-type read operation - will be passed on to any
      * write operations */
