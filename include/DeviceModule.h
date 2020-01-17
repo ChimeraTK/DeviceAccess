@@ -245,6 +245,8 @@ namespace ChimeraTK {
      *  to the device. */
     std::list<boost::shared_ptr<TransferElement>> writeAfterOpen;
 
+    std::list<boost::shared_ptr<TransferElement>> writeRecoveryOpen;
+
     Application* owner{nullptr};
 
     mutable bool deviceIsInitialized = false;

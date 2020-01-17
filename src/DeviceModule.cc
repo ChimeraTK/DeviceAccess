@@ -294,6 +294,8 @@ namespace ChimeraTK {
         }
         for(auto& te : writeAfterOpen) {
           te->write();
+//          addRecoveryAccessor(te);
+
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -369,6 +371,12 @@ namespace ChimeraTK {
           }
           for(auto& te : writeAfterOpen) {
             te->write();
+          }
+          {
+            boost::unique_lock<boost::shared_mutex> uniiqueLock(recoverySharedMutex);
+            for(auto& te : writeRecoveryOpen) {
+              te->write();
+            }
           }
         }
         catch(ChimeraTK::runtime_error& e) {
@@ -468,7 +476,7 @@ namespace ChimeraTK {
   void DeviceModule::notify() { errorIsResolvedCondVar.notify_all(); }
 
   void DeviceModule::addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor) {
-    std::cout << "DeviceModule::addRecoveryAccessor:: Implement me" << std::endl;
+    writeRecoveryOpen.push_back(recoveryAccessor);
   }
 
   boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {
