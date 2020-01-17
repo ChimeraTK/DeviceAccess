@@ -7,33 +7,49 @@ constexpr useconds_t DeviceOpenTimeout = 500;
 
 namespace ChimeraTK {
 
+    template<typename UserType>
+    void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
+        if (newValidity != validity) {
+            validity = newValidity; 
+            if (!_owner) return; // hack to deal with null ptr until it filled correctly
+            if (newValidity == DataValidity::faulty) {
+                _owner->incrementDataFaultCounter();
+            } else {
+                _owner->decrementDataFaultCounter();
+            }
+        }
+    }
+    
+    
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::genericTransfer(
-      std::function<bool(void)> callable, bool invalidateOnFailure) {
-    std::function<void()> invalidateData{};
-    if(invalidateOnFailure) {
-      invalidateData = [=]() { setDataValidity(DataValidity::faulty); };
-    }
+    std::function<bool(void)> callable, bool updateOwnerValidityFlag) {
+    
+    std::function<void(DataValidity)> setOwnerValidityFunction{};
+    if(updateOwnerValidityFlag) {
+      setOwnerValidityFunction = std::bind(&ExceptionHandlingDecorator<UserType>::setOwnerValidity, this, std::placeholders::_1);
+    } 
     else {
-      invalidateData = []() {}; // do nothing if user does
-                                // not want to invalidate data.
+      setOwnerValidityFunction = [](DataValidity) {}; // do nothing if user does
+                                                     // not want to invalidate data.
     }
     while(true) {
       try {
-        if(!dm.device.isOpened()) {
-          invalidateData();
+        if(!deviceModule.device.isOpened()) {
+          setOwnerValidityFunction(DataValidity::faulty);
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
           Application::getInstance().testableModeLock("waitForDeviceOpen");
           continue;
         }
         auto retval = callable();
-        setDataValidity(DataValidity::ok);
+        auto delegatedValidity = ChimeraTK::NDRegisterAccessorDecorator<UserType>::dataValidity();
+        setOwnerValidityFunction(delegatedValidity);
         return retval;
       }
       catch(ChimeraTK::runtime_error& e) {
-        invalidateData();
-        dm.reportException(e.what());
+        setOwnerValidityFunction(DataValidity::faulty);
+        deviceModule.reportException(e.what());
       }
     }
   }
@@ -127,7 +143,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::interrupt() {
     // notify the condition variable waiting in reportException of the genericTransfer
-    dm.notify();
+    deviceModule.notify();
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
   }
 
