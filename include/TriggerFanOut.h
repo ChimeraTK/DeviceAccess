@@ -64,13 +64,8 @@ namespace ChimeraTK {
     void run() {
       Application::registerThread("TrFO" + externalTrigger->getName());
       Application::testableModeLock("start");
+      ChimeraTK::VersionNumber version;
       while(true) {
-        // wait for external trigger
-        boost::this_thread::interruption_point();
-        Profiler::stopMeasurement();
-        externalTrigger->read();
-        Profiler::startMeasurement();
-        boost::this_thread::interruption_point();
         // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
         // inside a TransferGroup, if the exception is thrown inside doReadTransfer() (as it is directly called on the
         // lowest-level TransferElements inside the group).
@@ -89,9 +84,15 @@ namespace ChimeraTK {
           dm.reportException(e.what());
           goto retry;
         }
-        // send the data to the consumers
-        auto version = externalTrigger->getVersionNumber();
+        // send the version number to the consumers
         boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version));
+        // wait for external trigger
+        boost::this_thread::interruption_point();
+        Profiler::stopMeasurement();
+        externalTrigger->read();
+        Profiler::startMeasurement();
+        boost::this_thread::interruption_point();
+        version = externalTrigger->getVersionNumber();
       }
     }
 
