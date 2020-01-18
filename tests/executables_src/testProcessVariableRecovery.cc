@@ -41,25 +41,6 @@ struct TestModule : public ctk::ApplicationModule {
   }
 };
 
-/* This module is the one which sees the exception because we will make it read from the 'broken' device.
- */
-struct ReaderModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
-
-  ctk::ScalarPushInput<int32_t> trigger{this, "trigger2", "", "This is my trigger."};
-  ctk::ScalarPollInput<int32_t> input{this, "FROM_DEV_SCALAR1", "", "Here I read a scalar"};
-  ctk::ScalarOutput<int32_t> output{this, "twoTimesInput", "", "Twice what I read."};
-
-  void mainLoop() override {
-    while(true) {
-      trigger.read();
-      input.readLatest();
-      output = 2 * input;
-      output.write();
-    }
-  }
-};
-
 /* dummy application */
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
@@ -69,7 +50,6 @@ struct TestApplication : public ctk::Application {
   ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, deviceCDD};
   TestModule module{this, "TEST", "The test module"};
-  ReaderModule readerModule{this, "TEST", "The reader module"};
 };
 
 /*********************************************************************************************************************/
@@ -79,8 +59,9 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   TestApplication app;
   app.findTag(".*").connectTo(app.cs); // creates /TEST/TO_DEV_SCALAR1 and /TEST/TO/DEV/ARRAY1
   // devices are not automatically connected (yet)
-  app.dev.connectTo(
-      app.cs); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1, FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
+  app.dev.connectTo(app.cs,
+      app.cs("deviceTrigger", typeid(int),
+          1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1, FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
 
   ctk::TestFacility test(false);
   // initial value for the direct CS->DEV register
@@ -130,7 +111,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummyBackend->throwExceptionRead = true;
 
   // Now we trigger the reading module. This should put the device into an error state
-  auto trigger2 = test.getScalar<int32_t>("/TEST/trigger2");
+  auto trigger2 = test.getScalar<int32_t>("/deviceTrigger");
   trigger2.write();
 
   //Verify that the device is in error state.
