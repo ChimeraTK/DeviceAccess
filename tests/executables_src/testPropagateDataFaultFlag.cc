@@ -16,6 +16,8 @@
 #include "ScalarAccessor.h"
 #include "ArrayAccessor.h"
 #include "TestFacility.h"
+#include "ExceptionDevice.h"
+#include "ModuleGroup.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -240,7 +242,7 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 
   test.runApplication();
 
-  app.dumpConnections();
+  //app.dumpConnections();
 
   // test if fault flag propagates to all outputs
   Ai1 = 1;
@@ -340,3 +342,126 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 }
 
 /*********************************************************************************************************************/
+/*
+ * Tests below verify data fault flag propagation on:
+ * - Threaded FanOut
+ * - Consuming FanOut
+ * - Triggers
+ */
+
+struct Module1 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+  ctk::ScalarPushInput<int> fromThreadedFanout{ this, "o1", "", "", { "DEVICE1", "CS" } };
+
+  // As a workaround the device side connection is done manually for
+  // acheiving this consumingFanout; see:
+  // TestApplication3::defineConnections
+  ctk::ScalarPollInput<int> fromConsumingFanout{ this, "i1", "", "", { "CS" } };
+
+  ctk::ScalarPollInput<int> fromDevice{ this, "i2", "", "", { "DEVICE2" } };
+  ctk::ScalarOutput<int> result{ this, "Module1_result", "", "", { "CS" } };
+
+  void mainLoop() override {
+    while (true) {
+      readAll();
+      result = fromConsumingFanout + fromThreadedFanout + fromDevice;
+      writeAll();
+    }
+  }
+};
+
+struct Module2 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  struct : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<int> result{ this,
+                                      "Module1_result",
+                                      "",
+                                      "",
+                                      { "CS" } };
+  } m1VarsFromCS{ this, "m1", "", ctk::HierarchyModifier::oneLevelUp }; // "m1" being in there 
+                                                                        // not good for a general case
+  ctk::ScalarOutput<int> result{ this, "Module2_result", "", "", { "CS" } };
+
+  void mainLoop() override {
+    while (true) {
+      readAll();
+      result = static_cast<int>(m1VarsFromCS.result);
+      writeAll();
+    }
+  }
+};
+
+// struct TestApplication3 : ctk::ApplicationModule {
+struct TestApplication3 : ctk::Application {
+/*
+ *   CS +---> threaded fanout +------------------+
+ *                +                              v
+ *                +--------+                   +Device1+
+ *                         |                   |       |
+ *                         v                +--+       |
+ *     CS   <---------+ Module1 <-------+   v          |
+ *                 |       ^            +Consuming     |
+ *                 |       +---------+    fanout       |
+ *                 +----+            +      +          |
+ *                      v         Device2   |          |
+ *     CS   <---------+ Module2             |          |
+ *                                          |          |
+ *     CS   <-------------------------------+          |
+ *                                                     |
+ *                                                     |
+ *     CS   <---------+ Trigger <----------------------+
+ *                         ^
+ *                         |
+ *                         +
+ *                         CS
+ */                        
+
+  constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=testDataValidity1.map)";
+  constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
+  TestApplication3() : Application("testDataFlagPropagation") {}
+  ~TestApplication3() { shutdown(); }
+
+  Module1 m1{ this, "m1", "" };
+  Module2 m2{ this, "m2", "" };
+
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule device1{ this, ExceptionDummyCDD1 };
+  ctk::DeviceModule device2{ this, ExceptionDummyCDD2 };
+
+  void defineConnections() override {
+    device1["m1"]("i1") >> m1("i1");
+    findTag("CS").connectTo(cs);
+    findTag("DEVICE1").connectTo(device1);
+    findTag("DEVICE2").connectTo(device2);
+    device1["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+  }
+};
+
+BOOST_AUTO_TEST_CASE(testThreadedFanout) {
+
+//  -  good value threaded, device
+//  - loop, check expected result.
+//
+//  - bad value.
+//  - Result expected + invalid flag
+//
+//  Q where do i chek for the invalid flag
+  // can be local to the test.
+  //
+  // boost::shared_ptr<ExceptionDummy> dummyBackend1 =
+  // boost::dynamic_pointer_cast<ExceptionDummy>(
+  //     ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+  //   dummyBackend1->throwExceptionRead = true;
+  //   dummyBackend1->throwExceptionWrite = true;
+
+  TestApplication3 app;
+  ctk::TestFacility test{ false };
+}
+
+
+BOOST_AUTO_TEST_CASE(testConsumingFanout){}
+BOOST_AUTO_TEST_CASE(testTrigger){}
+BOOST_AUTO_TEST_CASE(testDeviceReadFailure){}
+
