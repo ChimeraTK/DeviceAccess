@@ -9,14 +9,9 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), dm(devMod) {}
-
-  template<typename UserType>
-  ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
-  : ExceptionHandlingDecorator<UserType>(accessor, devMod) {
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), dm(devMod) {
     // Register recoveryAccessor at the DeviceModule
     if(recoveryAccessor != nullptr) {
       _recoveryAccessor = recoveryAccessor;
