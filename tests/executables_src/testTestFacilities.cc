@@ -374,8 +374,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   test.stepApplication();
   BOOST_CHECK(value.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(value == 66);
-  BOOST_CHECK(index == 4);
+  BOOST_CHECK_EQUAL(value, 66);
+  BOOST_CHECK_EQUAL(index, 4);
 
   // send something to v1
   v1 = 33;
@@ -390,8 +390,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   test.stepApplication();
   BOOST_CHECK(value.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(value == 33);
-  BOOST_CHECK(index == 1);
+  BOOST_CHECK_EQUAL(value, 33);
+  BOOST_CHECK_EQUAL(index, 1);
 
   // send something to v1 again
   v1 = 34;
@@ -407,8 +407,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
 
   BOOST_CHECK(value.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(value == 34);
-  BOOST_CHECK(index == 1);
+  BOOST_CHECK_EQUAL(value, 34);
+  BOOST_CHECK_EQUAL(index, 1);
 
   // send something to v3
   v3 = 40;
@@ -423,8 +423,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   test.stepApplication();
   BOOST_CHECK(value.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(value == 40);
-  BOOST_CHECK(index == 3);
+  BOOST_CHECK_EQUAL(value, 40);
+  BOOST_CHECK_EQUAL(index, 3);
 
   // send something to v2
   v2 = 50;
@@ -439,8 +439,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   test.stepApplication();
   BOOST_CHECK(value.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(value == 50);
-  BOOST_CHECK(index == 2);
+  BOOST_CHECK_EQUAL(value, 50);
+  BOOST_CHECK_EQUAL(index, 2);
 
   // check that stepApplication() throws an exception if no input data is
   // available
@@ -469,8 +469,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   test.stepApplication();
   BOOST_CHECK(value.readNonBlocking() == true);
   BOOST_CHECK(index.readNonBlocking() == true);
-  BOOST_CHECK(value == 35);
-  BOOST_CHECK(index == 1);
+  BOOST_CHECK_EQUAL(value, 35);
+  BOOST_CHECK_EQUAL(index, 1);
 }
 
 /*********************************************************************************************************************/
