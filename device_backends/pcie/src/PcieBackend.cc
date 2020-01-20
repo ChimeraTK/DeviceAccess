@@ -29,11 +29,8 @@ namespace ChimeraTK {
     std::cout << "open pcie dev" << std::endl;
 #endif
     if(_opened) {
-      // FIXME: This mimics the previous behaviour where the Device would simply discard open calls
-      // if the backend is already opened. The correct behaviour would be a recovery procedure.
-      // At the moment this exceeds the scope of just restoring the previous functionality (you can re-call open)
-      // because it would require extensive testing, even with real hardware.
-      return;
+      if(isFunctional()) return;
+      close();
     }
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
     if(_deviceID < 0) {
