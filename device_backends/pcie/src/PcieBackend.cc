@@ -96,6 +96,17 @@ namespace ChimeraTK {
     _opened = false;
   }
 
+  bool PcieBackend::isFunctional() const {
+    if(!_opened) return false;
+
+    // read slot number to check if device is still alive
+    device_ioctrl_data ioctlData = {0, 0, 0, 0};
+    if(ioctl(_deviceID, _ioctlPhysicalSlot, &ioctlData) < 0) {
+      return false;
+    }
+    return true;
+  }
+
   void PcieBackend::readInternal(uint8_t bar, uint32_t address, int32_t* data) {
     device_rw l_RW;
     if(_opened == false) {
