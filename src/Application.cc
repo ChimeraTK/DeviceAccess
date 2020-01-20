@@ -793,7 +793,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
         // In case we have one or more trigger receivers among our consumers, we
         // produce one consuming application variable for each device. Later this will create a TriggerFanOut for
-        // each trigger consimer, i.e. one per device so one blocking device does not affect the others.
+        // each trigger consumer, i.e. one per device so one blocking device does not affect the others.
         /** Map of deviceAliases to their corresponding TriggerFanOuts. */
         std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
 

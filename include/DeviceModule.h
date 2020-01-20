@@ -17,13 +17,11 @@
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
 #include <ChimeraTK/Device.h>
-#include "ServerHistory.h"
 
 namespace ChimeraTK {
   class Application;
   class DeviceModule;
-  namespace history
-  {
+  namespace history {
     struct ServerHistory;
   }
 
@@ -174,7 +172,7 @@ namespace ChimeraTK {
      */
     void addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler);
 
-     /** A trigger that indicated that the device just became available again an error (in contrast to the
+    /** A trigger that indicated that the device just became available again an error (in contrast to the
       *  error status which is also send when the device goes away).
       *  The output is public so your module can connect to it and trigger re-sending of variables that
       *  have to be send to the device again. e.g. after this has re-booted.
@@ -183,7 +181,8 @@ namespace ChimeraTK {
       *  Like the deviceError, it is automatically published to the control systen to ensure that there is at least one
       *  consumer connected.
       */
-    ScalarOutput<int> deviceBecameFunctional{this, "deviceBecameFunctional", "", ""};// should be changed to data type void
+    ScalarOutput<int> deviceBecameFunctional{
+        this, "deviceBecameFunctional", "", ""}; // should be changed to data type void
 
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the

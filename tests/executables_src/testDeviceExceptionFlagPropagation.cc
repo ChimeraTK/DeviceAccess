@@ -190,7 +190,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
     dummyBackend1->throwExceptionWrite = true;
     app.trigger.sendTrigger();
     test.stepApplication();
-    BOOST_CHECK(app.module.vars.set.dataValidity() == ctk::DataValidity::faulty);
+    // write operations failing does not invalidate data
+    BOOST_CHECK(app.module.vars.set.dataValidity() == ctk::DataValidity::ok);
 
     // advance to the next read
     dummyBackend1->throwExceptionWrite = false;

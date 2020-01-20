@@ -73,7 +73,9 @@
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "ScalarAccessor.h"
+#include "ArrayAccessor.h"
 
 namespace ChimeraTK {
 
