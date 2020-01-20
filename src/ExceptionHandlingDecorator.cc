@@ -16,10 +16,9 @@ namespace ChimeraTK {
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
-    : ExceptionHandlingDecorator<UserType>(accessor, devMod) {
-
+  : ExceptionHandlingDecorator<UserType>(accessor, devMod) {
     // Register recoveryAccessor at the DeviceModule
-    if(recoveryAccessor != nullptr){
+    if(recoveryAccessor != nullptr) {
       _recoveryAccessor = recoveryAccessor;
       dm.addRecoveryAccessor(_recoveryAccessor);
     }
@@ -111,16 +110,18 @@ namespace ChimeraTK {
     {
       auto lock{dm.getRecoverySharedLock()};
 
-      if(_recoveryAccessor != nullptr){
+      if(_recoveryAccessor != nullptr) {
         // Access to _recoveryAccessor is only possible channel-wise
-        for(unsigned int ch=0; ch<_recoveryAccessor->getNumberOfChannels(); ++ch){
+        for(unsigned int ch = 0; ch < _recoveryAccessor->getNumberOfChannels(); ++ch) {
           _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
         }
       }
-      else{
-        throw ChimeraTK::logic_error("ChimeraTK::ExceptionhandlingDecorator: Calling write() on a non-writeable accessor is not supported ");
+      else {
+        throw ChimeraTK::logic_error(
+            "ChimeraTK::ExceptionhandlingDecorator: Calling write() on a non-writeable accessor is not supported ");
       }
-    }
+    } // lock guard goes out of scope
+
     // Now delegate call to the generic decorator, which swaps the buffer
     genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; });
   }

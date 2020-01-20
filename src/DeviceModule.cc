@@ -294,8 +294,6 @@ namespace ChimeraTK {
         }
         for(auto& te : writeAfterOpen) {
           te->write();
-//          addRecoveryAccessor(te);
-
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -372,12 +370,12 @@ namespace ChimeraTK {
           for(auto& te : writeAfterOpen) {
             te->write();
           }
-          {
-            boost::unique_lock<boost::shared_mutex> uniiqueLock(recoverySharedMutex);
+          { // scope for the lock guard
+            boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
             for(auto& te : writeRecoveryOpen) {
               te->write();
             }
-          }
+          } // end of scope for the lock guard
         }
         catch(ChimeraTK::runtime_error& e) {
           // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.

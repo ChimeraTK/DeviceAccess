@@ -62,7 +62,7 @@ struct TestApplication : public ctk::Application {
  */
 struct ReadOnlyTestApplication : public ctk::Application {
   ReadOnlyTestApplication() : Application("ReadOnlytestApp") {}
-  ~ReadOnlyTestApplication(){ shutdown(); }
+  ~ReadOnlyTestApplication() { shutdown(); }
 
   void defineConnections() {
     dev["TEST"]("FROM_DEV_SCALAR2") >> module("FROM_DEV_SCALAR2");
@@ -75,24 +75,23 @@ struct ReadOnlyTestApplication : public ctk::Application {
   struct TestModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    ctk::ScalarPushInput<int>     start{this, "startTest", "", "This has to be written once, before writing to the device", {"CS"}};
+    ctk::ScalarPushInput<int> start{
+        this, "startTest", "", "This has to be written once, before writing to the device", {"CS"}};
     ctk::ScalarPollInput<int32_t> scalarROInput{this, "FROM_DEV_SCALAR2", "", "Here I read from a scalar RO-register"};
 
     void mainLoop() override {
-
       // Just to have a blocking read, gives the test
       // time to dumpConnections and explicitly trigger
       // before terminating.
       start.read();
 
       scalarROInput = 42;
-      try{
+      try {
         scalarROInput.write();
-        BOOST_CHECK_MESSAGE(false,
-          "ReadOnlyTestApplication: Calling write() on input to read-only device register did not throw.");
+        BOOST_CHECK_MESSAGE(
+            false, "ReadOnlyTestApplication: Calling write() on input to read-only device register did not throw.");
       }
-      catch(ChimeraTK::logic_error &e){
-
+      catch(ChimeraTK::logic_error& e) {
         const std::string exMsg{e.what()};
         std::regex exceptionHandlingRegex{"^ChimeraTK::ExceptionhandlingDecorator:*"};
         std::smatch exMatch;
@@ -106,7 +105,7 @@ struct ReadOnlyTestApplication : public ctk::Application {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testWriteToReadOnly){
+BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
   std::cout << "testWriteToReadOnly" << std::endl;
 
   ReadOnlyTestApplication app;
@@ -122,7 +121,6 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnly){
   // here, as the exception gets thrown in the thread of the module.
   test.writeScalar("/READ_ONLY_TEST/startTest", 1);
 }
-
 
 BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::cout << "testProcessVariableRecovery" << std::endl;
