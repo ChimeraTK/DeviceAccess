@@ -154,6 +154,10 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
 
   auto trigger = test.getScalar<int>("trigger");
 
+  // we do not use testable mode, so we need to read the initial values at CS ourself where present
+  readback1.read();
+  readback2.read();
+
   readbackDummy1 = 42;
   readbackDummy2 = 52;
 
@@ -426,10 +430,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   TestApplication2 app;
 
   ctk::TestFacility test(false); // test facility without testable mode
-
-  app.initialise();
-  app.run();
-  //app.dumpConnections();
+  test.runApplication();
 
   //Wait for the devices to come up.
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ExceptionDummyCDD1 / "status"), 0, 3000);
