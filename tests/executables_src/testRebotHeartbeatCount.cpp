@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
   auto session = rebotServer.session();
 
+  BOOST_CHECK(d.isFunctional() == true);
+
   BOOST_CHECK_EQUAL(session->_helloCount, 1);
 
   // startup of the sleeping: get the lock, then tell the application it can try
@@ -87,8 +89,17 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   session.reset();
 
   BOOST_CHECK(d.isOpened() == true);
+  BOOST_CHECK(d.isFunctional() == true);
   d.close();
+  BOOST_CHECK(d.isFunctional() == false);
   BOOST_CHECK(d.isOpened() == false);
+
+  //test, if device is not functinal after stopping server
+  d.open("sdm://./rebot=localhost,5001,mtcadummy_rebot.map");
+  BOOST_CHECK(d.isFunctional() == true);
+  rebotServer.stop();
+  testable_rebot_sleep::advance_until( boost::chrono::milliseconds( 62505 +  2500 ) );
+  BOOST_CHECK(d.isFunctional() == false);
 
   std::cout << "test done" << std::endl;
   RebotSleepSynchroniser::_lock.unlock();
@@ -100,6 +111,7 @@ BOOST_AUTO_TEST_CASE(testHeartbeat1) {
   // forever.
   assert(d.isOpened() == false);
   rebotServer.stop();
+
   serverThread.join();
 }
 

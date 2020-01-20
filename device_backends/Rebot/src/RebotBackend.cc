@@ -88,6 +88,10 @@ RebotBackend::~RebotBackend() {
   _heartbeatThread.join();
   }
 
+  bool RebotBackend::isFunctional() const {
+    return _connection->isOpen();
+  }
+
   void RebotBackend::open() {
     std::lock_guard<std::mutex> lock(_threadInformerMutex->mutex);
 

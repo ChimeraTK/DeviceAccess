@@ -37,9 +37,13 @@ BOOST_FIXTURE_TEST_CASE(testOpenConnection, F) {
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
   Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
+  BOOST_CHECK(d.isFunctional() == 0);
+
   auto begin = std::chrono::system_clock::now();
   { BOOST_CHECK_THROW(d.open(), ChimeraTK::runtime_error); }
   auto end = std::chrono::system_clock::now();
+
+  BOOST_CHECK(d.isFunctional() == 0);
 
   auto execution_duration = end - begin;
   BOOST_CHECK(execution_duration < accetable_completion_time);
@@ -50,13 +54,20 @@ BOOST_FIXTURE_TEST_CASE(testReadTimeout, F) {
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
   Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
+  BOOST_CHECK(d.isFunctional() == 0);
+
   d.open();
+
+  BOOST_CHECK(d.isFunctional() == 1);
+
   rebotServer.stop();
   auto begin = std::chrono::system_clock::now();
   {
     BOOST_CHECK_THROW(d.read<int>("BOARD.WORD_USER"), ChimeraTK::runtime_error);
   }
   auto end = std::chrono::system_clock::now();
+
+  BOOST_CHECK(d.isFunctional() == 0);
 
   auto execution_duration = end - begin;
   BOOST_CHECK(execution_duration < accetable_completion_time);
@@ -67,13 +78,20 @@ BOOST_FIXTURE_TEST_CASE(testWriteTimeout, F) {
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
   Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
+  BOOST_CHECK(d.isFunctional() == 0);
+
   d.open();
+
+  BOOST_CHECK(d.isFunctional() == 1);
+
   rebotServer.stop();
   auto begin = std::chrono::system_clock::now();
   {
     BOOST_CHECK_THROW(d.write("BOARD.WORD_USER", 42), ChimeraTK::runtime_error);
   }
   auto end = std::chrono::system_clock::now();
+
+  BOOST_CHECK(d.isFunctional() == 0);
 
   auto execution_duration = end - begin;
   BOOST_CHECK(execution_duration < accetable_completion_time);
