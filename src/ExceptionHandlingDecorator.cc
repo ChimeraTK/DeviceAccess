@@ -101,7 +101,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
-    /* Copy data to the recoveryAcessor before perfroming the write.
+    /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
      * This obtains a shared lock from the DeviceModule, hence, the regular writing happeniin here
      * can be performed in shared mode of the mutex and accessors are not blocking each other.
@@ -111,9 +111,14 @@ namespace ChimeraTK {
     {
       auto lock{dm.getRecoverySharedLock()};
 
-      // Access to _recoveryAccessor is only possible channel-wise
-      for(unsigned int ch=0; ch<_recoveryAccessor->getNumberOfChannels(); ++ch){
-        _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
+      if(_recoveryAccessor != nullptr){
+        // Access to _recoveryAccessor is only possible channel-wise
+        for(unsigned int ch=0; ch<_recoveryAccessor->getNumberOfChannels(); ++ch){
+          _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
+        }
+      }
+      else{
+        throw ChimeraTK::logic_error("ChimeraTK::ExceptionhandlingDecorator: Calling write() on a non-writeable accessor is not supported ");
       }
     }
     // Now delegate call to the generic decorator, which swaps the buffer

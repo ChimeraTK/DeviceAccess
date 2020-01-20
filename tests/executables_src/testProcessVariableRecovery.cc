@@ -12,6 +12,8 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 
+#include <regex>
+
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
@@ -52,7 +54,75 @@ struct TestApplication : public ctk::Application {
   TestModule module{this, "TEST", "The test module"};
 };
 
+/* Test application for the specific case of wrinting to a read-only
+ * accessor. Provides an input to an ApplicationModule from a read-only
+ * accessor of the device. For the test, the accessor must not be routed
+ * through the control system, the illegal write would be catched by the
+ * ControlSystemAdapter, not by the ExceptionHandlingDecorator under test here.
+ */
+struct ReadOnlyTestApplication : public ctk::Application {
+  ReadOnlyTestApplication() : Application("ReadOnlytestApp") {}
+  ~ReadOnlyTestApplication(){ shutdown(); }
+
+  void defineConnections() {
+    dev["TEST"]("FROM_DEV_SCALAR2") >> module("FROM_DEV_SCALAR2");
+    findTag("CS").connectTo(cs);
+  }
+
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule dev{this, deviceCDD};
+
+  struct TestModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<int>     start{this, "startTest", "", "This has to be written once, before writing to the device", {"CS"}};
+    ctk::ScalarPollInput<int32_t> scalarROInput{this, "FROM_DEV_SCALAR2", "", "Here I read from a scalar RO-register"};
+
+    void mainLoop() override {
+
+      // Just to have a blocking read, gives the test
+      // time to dumpConnections and explicitly trigger
+      // before terminating.
+      start.read();
+
+      scalarROInput = 42;
+      try{
+        scalarROInput.write();
+        BOOST_CHECK_MESSAGE(false,
+          "ReadOnlyTestApplication: Calling write() on input to read-only device register did not throw.");
+      }
+      catch(ChimeraTK::logic_error &e){
+
+        const std::string exMsg{e.what()};
+        std::regex exceptionHandlingRegex{"^ChimeraTK::ExceptionhandlingDecorator:*"};
+        std::smatch exMatch;
+
+        BOOST_CHECK(std::regex_search(exMsg, exMatch, exceptionHandlingRegex));
+      }
+    }
+
+  } module{this, "READ_ONLY_TEST", "The test module"};
+};
+
 /*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testWriteToReadOnly){
+  std::cout << "testWriteToReadOnly" << std::endl;
+
+  ReadOnlyTestApplication app;
+
+  ctk::TestFacility test;
+
+  app.run();
+  app.dumpConnections();
+
+  // Should trigger the blocking read in ReadOnlyTestApplication's
+  // ApplicationModule. It then writes to a read-only register of the device,
+  // which should throw. Check is done in the module's mainLoop. We can not check
+  // here, as the exception gets thrown in the thread of the module.
+  test.writeScalar("/READ_ONLY_TEST/startTest", 1);
+}
+
 
 BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::cout << "testProcessVariableRecovery" << std::endl;
