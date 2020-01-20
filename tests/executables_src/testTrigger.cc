@@ -266,6 +266,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
   auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
   auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
 
+  // Need to send the trigger once, since ApplicationCore expects all CS variables to be written once by the
+  // ControlSystemAdapter. We do not use the TestFacility here, so we have to do it ourself.
+  theTrigger->write();
+
   // single theaded test only, since the receiving process scalar does not support blocking
   myCSVar->read(); // read initial value
   BOOST_CHECK(myCSVar->accessData(0) == 1);
