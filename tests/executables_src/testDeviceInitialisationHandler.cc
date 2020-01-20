@@ -56,8 +56,11 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   std::cout << "testBasicInitialisation" << std::endl;
   TestApplication app;
-
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG2 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+  app.cs("/REG2/REG2",typeid(int32_t),1) >> app.dev("REG2");
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
@@ -105,6 +108,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   // ****************************************************************
   reg1.readLatest();
   BOOST_CHECK_EQUAL(reg1, 42);
+
 }
 
 BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
@@ -113,7 +117,11 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG4 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+  app.cs("/REG4/REG4",typeid(int32_t),1) >> app.dev("REG4");
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
@@ -178,7 +186,12 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG4 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+
+  app.cs("/REG4/REG4",typeid(int32_t),1) >> app.dev("REG4");
   ctk::TestFacility test(false); // test facility without testable mode
 
   // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but has not finished error handling yet.
