@@ -69,7 +69,6 @@ namespace ChimeraTK {
       for(auto& pv : pvManager->getAllProcessVariables()) {
         if(!pv->isReadable()) continue;
         pv->readNonBlocking();
-        assert(pv->readNonBlocking() == false);
       }
     }
 
