@@ -24,8 +24,9 @@ namespace ChimeraTK {
    * and distributes each of them to any number of slaves. */
   class TriggerFanOut : public InternalModule {
    public:
-    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule)
-    : externalTrigger(externalTriggerImpl), dm(deviceModule) {}
+    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule,
+        VariableNetwork& network)
+    : externalTrigger(externalTriggerImpl), dm(deviceModule), _network(network) {}
 
     ~TriggerFanOut() { deactivate(); }
 
@@ -74,6 +75,12 @@ namespace ChimeraTK {
       Application::registerThread("TrFO" + externalTrigger->getName());
       Application::testableModeLock("start");
       testableModeReached = true;
+
+      // If trigger gets an initial value pushed, read it (otherwise we would trigger twice at application start)
+      auto hasInitialValue = _network.getFeedingNode().getExternalTrigger().hasInitialValue();
+      if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
+        externalTrigger->read();
+      }
 
       ChimeraTK::VersionNumber version;
       while(true) {
@@ -152,6 +159,9 @@ namespace ChimeraTK {
 
     /** The DeviceModule of the feeder. Required for exception handling */
     DeviceModule& dm;
+
+    /** Reference to VariableNetwork which is being realised by this FanOut. **/
+    VariableNetwork& _network;
   };
 
 } /* namespace ChimeraTK */

@@ -763,7 +763,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             assert(devmod != nullptr);
 
             // create the trigger fan out and store it in the map and the internalModuleList
-            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod);
+            triggerFanOut = boost::make_shared<TriggerFanOut>(network.getExternalTriggerImpl(), *devmod, network);
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.push_back(triggerFanOut);
           }
