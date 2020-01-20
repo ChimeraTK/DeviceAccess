@@ -163,6 +163,15 @@ void Application::run() {
     deviceModule->prepare();
   }
 
+  // check for application PVs which have a value, which needs to be propagated as initial value
+  for(auto& module : getSubmoduleListRecursive()) {
+    for(auto& var : module->getAccessorList()) {
+      if(var.getAppAccessorNoType().getVersionNumber() > startVersion) {
+        var.setHasInitialValue(true);
+      }
+    }
+  }
+
   // start the necessary threads for the FanOuts etc.
   for(auto& internalModule : internalModuleList) {
     internalModule->activate();

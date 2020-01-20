@@ -83,22 +83,11 @@ namespace ChimeraTK {
     }
 
     void readInitialValues() {
-      // Read all variables once to obtain the initial values from the devices and from the control system persistency
-      // layer.
-      if((_network.getFeedingNode().getType() == NodeType::Device ||
-             _network.getFeedingNode().getType() == NodeType::Constant) &&
-          _network.getConsumingNodes().size() == 1 &&
-          _network.getTriggerType() != VariableNetwork::TriggerType::external) {
-        // Special case if a push-type device accessor is directly placed into our module (without FanOut): Since the
-        // device will not push an initial value to us, a read() would block until the value is changed for the first
-        // time. Hence we need to use readLatest() here to obtain the initial value.
-        // The same is true for Constant accessors, since their read() never returns.
+      auto hasInitialValue = _network.getFeedingNode().hasInitialValue();
+      if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
         FanOut<UserType>::impl->readLatest();
       }
-      else if(_network.getFeedingNode().getType() != NodeType::Application) {
-        // This case includes inserted FanOuts, which have their own thread, so we must block to make sure to get the
-        // initial value. FanOuts will always forward the initial values and the ControlSystemAdapter will always psuh
-        // the initial values, hence a blocking read() here will not block indefinitively.
+      else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
         FanOut<UserType>::impl->read();
       }
     }

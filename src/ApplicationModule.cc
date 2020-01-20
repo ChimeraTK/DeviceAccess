@@ -86,35 +86,23 @@ namespace ChimeraTK {
     Application::testableModeLock("start");
 
     // Read all variables once to obtain the initial values from the devices and from the control system persistency
-    // layer.
+    // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
+    // poll-type reads might trigger distribution of values to push-type variables via a ConsumingFanOut.
     for(auto& variable : getAccessorList()) {
-      // We need two loops for this: first we need to read all ConsumingFanOuts (i.e. fan outs triggered by a poll-type
-      // read), because they trigger propagation of values to other variables.
-      // This is a special case, the standard case is handled in the second loop.
-      if(variable.getDirection().dir == VariableDirection::consuming && variable.getMode() == UpdateMode::poll &&
-          variable.getOwner().getTriggerType() == VariableNetwork::TriggerType::pollingConsumer) {
-        variable.getAppAccessorNoType().read();
+      if(variable.getMode() == UpdateMode::poll) {
+        auto hasInitialValue = variable.hasInitialValue();
+        if(hasInitialValue != VariableNetworkNode::InitialValueMode::None) {
+          variable.getAppAccessorNoType().readLatest();
+        }
       }
     }
     for(auto& variable : getAccessorList()) {
-      // In the second loop we deal with all the other variables (this is the standard case)
-      if(variable.getDirection().dir == VariableDirection::consuming &&
-          (variable.getMode() != UpdateMode::poll ||
-              variable.getOwner().getTriggerType() != VariableNetwork::TriggerType::pollingConsumer)) {
-        if((variable.getOwner().getFeedingNode().getType() == NodeType::Device ||
-               variable.getOwner().getFeedingNode().getType() == NodeType::Constant) &&
-            variable.getOwner().getConsumingNodes().size() == 1 &&
-            variable.getOwner().getTriggerType() != VariableNetwork::TriggerType::external) {
-          // Special case if a push-type device accessor is directly placed into our module (without FanOut): Since the
-          // device will not push an initial value to us, a read() would block until the value is changed for the first
-          // time. Hence we need to use readLatest() here to obtain the initial value.
-          // The same is true for Constant accessors, since their read() never returns.
+      if(variable.getMode() == UpdateMode::push) {
+        auto hasInitialValue = variable.hasInitialValue();
+        if(hasInitialValue == VariableNetworkNode::InitialValueMode::Poll) {
           variable.getAppAccessorNoType().readLatest();
         }
-        else if(variable.getOwner().getFeedingNode().getType() != NodeType::Application) {
-          // This case includes inserted FanOuts, which have their own thread, so we must block to make sure to get the
-          // initial value. FanOuts will always forward the initial values and the ControlSystemAdapter will always psuh
-          // the initial values, hence a blocking read() here will not block indefinitively.
+        else if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
           variable.getAppAccessorNoType().read();
         }
       }
