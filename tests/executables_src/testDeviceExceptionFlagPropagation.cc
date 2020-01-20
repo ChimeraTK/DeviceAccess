@@ -95,40 +95,35 @@ struct TestApplication : ctk::Application {
 };
 
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
-  TestApplication app;
-  boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
-  app.name.name.tick >> app.module.vars.tick;
+  for (int readMode = 0; readMode < 3; ++readMode) {
+    TestApplication app;
+    boost::shared_ptr<ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ExceptionDummy>(
+            ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-  // Open
+    app.dev("/MyModule/readBack", typeid (int), 1) >> app.module.vars.read;
+    app.module.vars.set >> app.dev("/MyModule/actuator", typeid (int), 1);
+    app.name.name.tick >> app.module.vars.tick;
 
-  dummyBackend1->throwExceptionOpen = true;
-  ctk::TestFacility test(false);
-  CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::ok, 1000);
-
-  app.run();
-
-  // Advance through all non-blocking read methods - write will block when open fails
-  while(app.module.readMode < 3) {
-    // Check
-    app.name.name.tick.write();
-    std::cout << "Checking read mode " << app.module.readMode << "\n";
-    CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty, 1000);
-
-    // Reset data validity
-    app.module.vars.read.setDataValidity();
+    // Open and put device in an error state
+    dummyBackend1->throwExceptionOpen = true;
+    ctk::TestFacility test(false);
     CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::ok, 1000);
 
-    // advance to the next read
-    app.module.readMode++;
+    // set the read mode
+    app.module.readMode = readMode;
+    std::cout << "Read mode is: " << app.module.readMode << ". Run application.\n";
+    app.run();
+
+    // Trigger and check
+    app.name.name.tick.write();   
+    CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty, 1000);
+    
+    // recover from error state
+    dummyBackend1->throwExceptionOpen = false;
+    CHECK_TIMEOUT(app.module.vars.read.dataValidity() == ctk::DataValidity::ok, 1000);
   }
 
-  // Unblock last read()
-  dummyBackend1->throwExceptionOpen = false;
-  app.module.vars.set.write();
 }
 
 BOOST_AUTO_TEST_CASE(testDirectConnectRead) {

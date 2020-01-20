@@ -49,8 +49,8 @@ namespace ChimeraTK {
     
    protected:
     DeviceModule& deviceModule;
-    DataValidity validity{DataValidity::ok};
-    bool genericTransfer(std::function<bool(void)> callable, bool invalidateOnFailure = true);
+    DataValidity localValidity{DataValidity::ok};
+    bool genericTransfer(std::function<bool(void)> callable, bool updateOwnerValidityFlag = true);
     void setOwnerValidity(DataValidity newValidity);
     EntityOwner* _owner = {nullptr};
   };

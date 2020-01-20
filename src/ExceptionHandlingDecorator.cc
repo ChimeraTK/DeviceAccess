@@ -9,8 +9,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
-    if (newValidity != validity) {
-      validity = newValidity;
+    if (newValidity != localValidity) {
+      localValidity = newValidity;
       if (!_owner) return;
       if (newValidity == DataValidity::faulty) {
         _owner->incrementDataFaultCounter();
@@ -78,8 +78,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
-    return genericTransfer(
-        [this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); });
+    return genericTransfer( [this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); });
   }
 
   template<typename UserType>
@@ -127,7 +126,7 @@ namespace ChimeraTK {
       return delegatedValidity;
     }
 
-    return validity;
+    return localValidity;
   }
 
   template<typename UserType>
