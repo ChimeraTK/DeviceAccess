@@ -17,7 +17,7 @@ namespace ChimeraTK {
   using namespace ChimeraTK;
 }
 
-BOOST_AUTO_TEST_CASE(testConvenienceReadWrite) {
+BOOST_AUTO_TEST_CASE(testPcieErrorHandling) {
   std::string line;
 
   ChimeraTK::setDMapFilePath("pcie_device.dmap");
