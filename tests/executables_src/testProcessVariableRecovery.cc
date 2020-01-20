@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   test.writeArray("/TEST/TO_DEV_ARRAY2", array);
 
   app.run();
-  app.dumpConnections();
+  //app.dumpConnections();
 
   ctk::Device dummy;
   dummy.open(deviceCDD);
