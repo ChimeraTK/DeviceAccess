@@ -98,25 +98,14 @@ namespace ChimeraTK {
     return future;
   }
 
+  
+  /*
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead() {
     genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(), true; });
   }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPostRead() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(), true; });
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPreWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; }, false);
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPostWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(), true; }, false);
-  }
+  */
+  
 
   template<typename UserType>
   DataValidity ExceptionHandlingDecorator<UserType>::dataValidity() const {
@@ -142,5 +131,12 @@ namespace ChimeraTK {
   }
   
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
+  
+    /*
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::doPostRead() {
+    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(), true; });
+  }
+  */
 
 } /* namespace ChimeraTK */
