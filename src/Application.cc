@@ -166,7 +166,7 @@ void Application::run() {
   // check for application PVs which have a value, which needs to be propagated as initial value
   for(auto& module : getSubmoduleListRecursive()) {
     for(auto& var : module->getAccessorList()) {
-      if(var.getAppAccessorNoType().getVersionNumber() > startVersion) {
+      if(var.getAppAccessorNoType().getVersionNumber() >= startVersion) {
         var.setHasInitialValue(true);
       }
     }
