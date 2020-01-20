@@ -113,7 +113,7 @@ namespace ChimeraTK {
 
       // Access to _recoveryAccessor is only possible channel-wise
       for(unsigned int ch=0; ch<_recoveryAccessor->getNumberOfChannels(); ++ch){
-       _recoveryAccessor->accessChannel(ch) = NDRegisterAccessorDecorator<UserType>::buffer_2D[ch];
+        _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
       }
     }
     // Now delegate call to the generic decorator, which swaps the buffer
