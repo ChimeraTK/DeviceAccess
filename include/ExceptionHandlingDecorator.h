@@ -48,16 +48,18 @@ namespace ChimeraTK {
 
     DataValidity dataValidity() const override;
 
-    void setDataValidity(DataValidity validity = DataValidity::ok) override;
-
     void interrupt() override;
 
+    void setOwner(EntityOwner* owner);
+    
    protected:
     using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
-    DeviceModule& dm;
-    DataValidity validity{DataValidity::ok};
-    bool genericTransfer(std::function<bool(void)> callable);
+    DeviceModule& deviceModule;
+    DataValidity localValidity{DataValidity::ok};
+    bool genericTransfer(std::function<bool(void)> callable, bool updateOwnerValidityFlag = true);
+    void setOwnerValidity(DataValidity newValidity);
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
+    EntityOwner* _owner = {nullptr};
   };
 
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);

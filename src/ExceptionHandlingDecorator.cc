@@ -20,39 +20,67 @@ namespace ChimeraTK {
   }
 
   template<typename UserType>
-  bool ExceptionHandlingDecorator<UserType>::genericTransfer(std::function<bool(void)> callable) {
+  void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
+    if (newValidity != localValidity) {
+      localValidity = newValidity;
+      if (!_owner) return;
+      if (newValidity == DataValidity::faulty) {
+        _owner->incrementDataFaultCounter();
+      } else {
+        _owner->decrementDataFaultCounter();
+      }
+    }
+  }
+  
+  template<typename UserType>
+  bool ExceptionHandlingDecorator<UserType>::genericTransfer(
+    std::function<bool(void)> callable, bool updateOwnerValidityFlag) {
+    
+    std::function<void(DataValidity)> setOwnerValidityFunction{};
+    if(updateOwnerValidityFlag) {
+      setOwnerValidityFunction = std::bind(&ExceptionHandlingDecorator<UserType>::setOwnerValidity, this, std::placeholders::_1);
+    } 
+    else {
+      setOwnerValidityFunction = [](DataValidity) {}; // do nothing if user does                                               // not want to invalidate data.
+    }
+    
     while(true) {
       try {
-        if(!dm.device.isOpened()) {
-          setDataValidity(DataValidity::faulty);
+        if(!deviceModule.device.isOpened()) {
+          setOwnerValidityFunction(DataValidity::faulty);
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
           Application::getInstance().testableModeLock("waitForDeviceOpen");
           continue;
         }
         auto retval = callable();
-        setDataValidity(DataValidity::ok);
+        auto delegatedValidity = ChimeraTK::NDRegisterAccessorDecorator<UserType>::dataValidity();
+        setOwnerValidityFunction(delegatedValidity);
         return retval;
       }
       catch(ChimeraTK::runtime_error& e) {
-        setDataValidity(DataValidity::faulty);
-        dm.reportException(e.what());
+        setOwnerValidityFunction(DataValidity::faulty);
+        deviceModule.reportException(e.what());
       }
     }
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    return genericTransfer([this, versionNumber]() {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
-    });
+    return genericTransfer(
+        [this, versionNumber]() {
+          return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
+        },
+        false);
   }
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
-    return genericTransfer([this, versionNumber]() {
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
-    });
+    return genericTransfer(
+        [this, versionNumber]() {
+          return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
+        },
+        false);
   }
 
   template<typename UserType>
@@ -62,8 +90,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doReadTransferNonBlocking() {
-    return genericTransfer(
-        [this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); });
+    return genericTransfer( [this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doReadTransferNonBlocking(); });
   }
 
   template<typename UserType>
@@ -123,7 +150,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(), true; });
+    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostWrite(), true; }, false);
   }
 
   template<typename UserType>
@@ -134,25 +161,21 @@ namespace ChimeraTK {
       return delegatedValidity;
     }
 
-    return validity;
-  }
-
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::setDataValidity(DataValidity newValidity) {
-    // Remember ourselves, but also pass down the line
-    if(newValidity != validity) {
-      validity = newValidity;
-      ChimeraTK::NDRegisterAccessorDecorator<UserType>::setDataValidity(validity);
-    }
+    return localValidity;
   }
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::interrupt() {
     // notify the condition variable waiting in reportException of the genericTransfer
-    dm.notify();
+    deviceModule.notify();
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
   }
-
+  
+  template<typename UserType>
+  void ExceptionHandlingDecorator<UserType>::setOwner(EntityOwner* owner) {
+    _owner = owner;
+  }
+  
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 
 } /* namespace ChimeraTK */
