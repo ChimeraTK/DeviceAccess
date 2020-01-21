@@ -1,0 +1,5 @@
+var32u              1     0     4     0   32  0   0   RW
+var16               1     4     4     0   16  0   1   RW
+module1.var16       1     8     4     0   16  0   1   RW
+intArray           10    12    40     0   32  0   1   RW
+
