@@ -90,13 +90,14 @@ namespace ChimeraTK {
   }
 
   void ApplicationModule::incrementDataFaultCounter(bool writeAllOutputs) {
-    writeAllOutputs ? throw ChimeraTK::runtime_error("incrementDataFaultCounter with writeAllOutputs set true.") : throw ChimeraTK::runtime_error("incrementDataFaultCounter with writeAllOutputs set false.");
+    //writeAllOutputs ? throw ChimeraTK::runtime_error("incrementDataFaultCounter with writeAllOutputs set true.") : throw ChimeraTK::runtime_error("incrementDataFaultCounter with writeAllOutputs set false.");
     if (writeAllOutputs && !faultCounter) {
       //TO_DO -> the module should write all its outputs again (old values with data validity flag) -> Issue #87 in application core
-      throw ChimeraTK::runtime_error("We will now execute incrementDataFaultCounter with module rewrite.");
-      for (auto module : moduleList) {
-        module->writeAll();
-      }
+      //throw ChimeraTK::runtime_error("We will now execute incrementDataFaultCounter with module rewrite.");
+      //for (auto module : moduleList) {
+      //  module->writeAll();
+      //}
+      this->writeAll();
     }
     ++faultCounter;
   }
