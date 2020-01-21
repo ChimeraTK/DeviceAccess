@@ -25,7 +25,7 @@ namespace ChimeraTK {
   class TriggerFanOut : public InternalModule {
    public:
     TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule)
-    : externalTrigger(externalTriggerImpl), dm(deviceModule) {}
+    : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule) {}
 
     ~TriggerFanOut() { deactivate(); }
 
@@ -38,7 +38,7 @@ namespace ChimeraTK {
       if(_thread.joinable()) {
         _thread.interrupt();
         externalTrigger->interrupt();
-        dm.notify();
+        _deviceModule.notify();
         _thread.join();
       }
       assert(!_thread.joinable());
@@ -86,7 +86,7 @@ namespace ChimeraTK {
             lastValidity = DataValidity::faulty;
             boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, lastValidity));
           }
-          dm.reportException(e.what());
+          _deviceModule.reportException(e.what());
           goto retry;
         }
         // send the data to the consumers
@@ -140,7 +140,7 @@ namespace ChimeraTK {
     boost::thread _thread;
 
     /** The DeviceModule of the feeder. Required for exception handling */
-    DeviceModule& dm;
+    DeviceModule& _deviceModule;
   };
 
 } /* namespace ChimeraTK */
