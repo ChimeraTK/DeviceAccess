@@ -60,6 +60,8 @@ namespace ChimeraTK {
     virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
     virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
 
+    bool isFunctional() const override { return _opened; }
+
     virtual std::string readDeviceInfo();
 
     /// A virtual address is an address is a virtual 64 bit address space
