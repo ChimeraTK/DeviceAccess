@@ -56,8 +56,11 @@ struct TestApplication : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   std::cout << "testBasicInitialisation" << std::endl;
   TestApplication app;
-
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG2 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+  app.cs("REG2", typeid(int32_t), 1) >> app.dev("REG2");
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
@@ -81,7 +84,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   dummyBackend->throwExceptionWrite = true;
 
   // FIXME: Due to a bug it is /REG2/REG2 instead of just /REG2. This will fails once the bug has been solved.
-  auto reg2_cs = test.getScalar<int32_t>("/REG2/REG2");
+  auto reg2_cs = test.getScalar<int32_t>("/REG2");
   reg2_cs = 19;
   reg2_cs.write();
   test.stepApplication();
@@ -113,7 +116,11 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG4 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+  app.cs("REG4", typeid(int32_t), 1) >> app.dev("REG4");
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
@@ -149,7 +156,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 19;
   reg4_cs.write();
   test.stepApplication();
@@ -178,7 +185,12 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  /*
+   * Directly connecting REG4 so that other variables do not update from
+   * CS after the device has recoverd from exception state.
+  */
+
+  app.cs("REG4", typeid(int32_t), 1) >> app.dev("REG4");
   ctk::TestFacility test(false); // test facility without testable mode
 
   // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but has not finished error handling yet.
@@ -240,7 +252,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
       boost::dynamic_pointer_cast<ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
   dummyBackend->throwExceptionWrite = true;
 
-  auto reg4_cs = test.getScalar<int32_t>("/REG4/REG4");
+  auto reg4_cs = test.getScalar<int32_t>("/REG4");
   reg4_cs = 20;
   reg4_cs.write();
 

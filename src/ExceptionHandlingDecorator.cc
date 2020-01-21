@@ -8,6 +8,18 @@ constexpr useconds_t DeviceOpenTimeout = 500;
 namespace ChimeraTK {
 
   template<typename UserType>
+  ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, DeviceModule& devMod,
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> recoveryAccessor)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), dm(devMod) {
+    // Register recoveryAccessor at the DeviceModule
+    if(recoveryAccessor != nullptr) {
+      _recoveryAccessor = recoveryAccessor;
+      dm.addRecoveryAccessor(_recoveryAccessor);
+    }
+  }
+
+  template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::setOwnerValidity(DataValidity newValidity) {
     if (newValidity != localValidity) {
       localValidity = newValidity;
@@ -110,7 +122,30 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; }, false);
+    /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
+     * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
+     * This obtains a shared lock from the DeviceModule, hence, the regular writing happeniin here
+     * can be performed in shared mode of the mutex and accessors are not blocking each other.
+     * In case of recovery, the DeviceModule thread will take an exclusive lock so that this thread can not
+     * modify the recoveryAcessor's user buffer while data is written to the device.
+     */
+    {
+      auto lock{dm.getRecoverySharedLock()};
+
+      if(_recoveryAccessor != nullptr) {
+        // Access to _recoveryAccessor is only possible channel-wise
+        for(unsigned int ch = 0; ch < _recoveryAccessor->getNumberOfChannels(); ++ch) {
+          _recoveryAccessor->accessChannel(ch) = buffer_2D[ch];
+        }
+      }
+      else {
+        throw ChimeraTK::logic_error(
+            "ChimeraTK::ExceptionhandlingDecorator: Calling write() on a non-writeable accessor is not supported ");
+      }
+    } // lock guard goes out of scope
+
+    // Now delegate call to the generic decorator, which swaps the buffer
+    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(), true; });
   }
 
   template<typename UserType>
