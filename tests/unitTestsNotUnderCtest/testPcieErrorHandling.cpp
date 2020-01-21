@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(testPcieErrorHandling) {
   std::cout << "Please now pull the hotplug handle or shut the board down via the MCH, then press ENTER...";
   std::getline(std::cin, line);
 
-  BOOST_CHECK(device.isFunctional());
+  BOOST_CHECK(!device.isFunctional());
   BOOST_CHECK_THROW(reg.read(), ChimeraTK::runtime_error);
   BOOST_CHECK(!device.isFunctional());
   BOOST_CHECK_THROW(device.open(), ChimeraTK::runtime_error);
