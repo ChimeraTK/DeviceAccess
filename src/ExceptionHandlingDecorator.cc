@@ -35,6 +35,11 @@ namespace ChimeraTK {
     while(true) {
       try {
         if(!deviceModule.device.isOpened()) {
+          if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
+            // If the application has not yet fully started, we cannot wait for the device to open. Instead just do
+            // nothing, since the transfer will later be repeated by the DeviceModule.
+            return false;
+          }
           setOwnerValidityFunction(DataValidity::faulty);
           Application::getInstance().testableModeUnlock("waitForDeviceOpen");
           boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
