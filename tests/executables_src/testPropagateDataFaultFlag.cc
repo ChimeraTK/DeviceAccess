@@ -439,29 +439,82 @@ struct TestApplication3 : ctk::Application {
   }
 };
 
-BOOST_AUTO_TEST_CASE(testThreadedFanout) {
-
-//  -  good value threaded, device
-//  - loop, check expected result.
-//
-//  - bad value.
-//  - Result expected + invalid flag
-//
-//  Q where do i chek for the invalid flag
-  // can be local to the test.
-  //
-  // boost::shared_ptr<ExceptionDummy> dummyBackend1 =
-  // boost::dynamic_pointer_cast<ExceptionDummy>(
-  //     ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-  //   dummyBackend1->throwExceptionRead = true;
-  //   dummyBackend1->throwExceptionWrite = true;
-
+struct Fixture_testFacility {
+  Fixture_testFacility()
+      : device1(boost::dynamic_pointer_cast<ExceptionDummy>(
+            ChimeraTK::BackendFactory::getInstance().createBackend(
+                TestApplication3::ExceptionDummyCDD1))),
+        device2(boost::dynamic_pointer_cast<ExceptionDummy>(
+            ChimeraTK::BackendFactory::getInstance().createBackend(
+                TestApplication3::ExceptionDummyCDD2))) {
+    device1->open();
+    device2->open();
+    test.runApplication();
+  }
+  boost::shared_ptr<ExceptionDummy> device1;
+  boost::shared_ptr<ExceptionDummy> device2;
   TestApplication3 app;
-  ctk::TestFacility test{ false };
+  ctk::TestFacility test;
+};
+
+BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, Fixture_testFacility)
+
+BOOST_AUTO_TEST_CASE(testThreadedFanout) {
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto m1_result = test.getScalar<int>("m1/Module1_result");
+  auto m2_result = test.getScalar<int>("m2/Module2_result");
+
+  threadedFanoutInput = 20;
+  threadedFanoutInput.write();
+  // write to register: m1.i1 linked with the consumingFanout.
+  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  consumingFanoutSource = 10;
+
+  auto pollRegister = device2->getRawAccessor("m1", "i2");
+  pollRegister = 5;
+
+  test.stepApplication();
+
+  m1_result.read();
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 35);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+
+  BOOST_CHECK_EQUAL(m2_result, 35);
+  BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::ok);
+
+  threadedFanoutInput = 10;
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::faulty);
+  threadedFanoutInput.write();
+  test.stepApplication();
+
+  m1_result.read();
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 25);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(m2_result, 25);
+  BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::faulty);
+
+  threadedFanoutInput = 40;
+  threadedFanoutInput.setDataValidity(ctk::DataValidity::ok);
+  threadedFanoutInput.write();
+  test.stepApplication();
+
+  m1_result.read();
+  m2_result.read();
+  BOOST_CHECK_EQUAL(m1_result, 55);
+  BOOST_CHECK(m1_result.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(m2_result, 55);
+  BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::ok);
 }
 
+BOOST_AUTO_TEST_CASE(testDeviceReadFailure){
 
-BOOST_AUTO_TEST_CASE(testConsumingFanout){}
+}
+BOOST_AUTO_TEST_CASE(testConsumingFanout){
+
+}
+
 BOOST_AUTO_TEST_CASE(testTrigger){}
-BOOST_AUTO_TEST_CASE(testDeviceReadFailure){}
 
+BOOST_AUTO_TEST_SUITE_END()
