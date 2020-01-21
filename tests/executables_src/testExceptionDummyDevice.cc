@@ -49,6 +49,7 @@ BOOST_AUTO_TEST_CASE(testExceptionsDummyDevice) {
  BOOST_CHECK_THROW(device.open("(ExceptionDummy:1?map=test3.map)"),ChimeraTK::runtime_error);
  BOOST_CHECK(!device.isFunctional());
  exceptionDummy->throwExceptionOpen = false;
+ BOOST_CHECK(!device.isFunctional());
  device.open("(ExceptionDummy:1?map=test3.map)");
  BOOST_CHECK(device.isFunctional());
 
