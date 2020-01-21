@@ -53,21 +53,22 @@ namespace ChimeraTK {
 
    public:
     PcieBackend(std::string deviceNodeName, std::string mapFileName = "");
-    virtual ~PcieBackend();
+    ~PcieBackend() override;
 
-    virtual void open();
-    virtual void close();
+    void open() override;
+    void close() override;
 
-    virtual void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes);
-    virtual void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes);
+    bool isFunctional() const override;
 
-    virtual std::string readDeviceInfo();
+    void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override;
+    void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override;
+
+    std::string readDeviceInfo() override;
 
     /*Host or parameters (at least for now) are just place holders as pcidevice
      * does not use them*/
-    static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
-        std::map<std::string, std::string>
-            parameters);
+    static boost::shared_ptr<DeviceBackend> createInstance(
+        std::string address, std::map<std::string, std::string> parameters);
   };
 
 } // namespace ChimeraTK

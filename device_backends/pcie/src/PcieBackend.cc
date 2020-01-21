@@ -29,11 +29,8 @@ namespace ChimeraTK {
     std::cout << "open pcie dev" << std::endl;
 #endif
     if(_opened) {
-      // FIXME: This mimics the previous behaviour where the Device would simply discard open calls
-      // if the backend is already opened. The correct behaviour would be a recovery procedure.
-      // At the moment this exceeds the scope of just restoring the previous functionality (you can re-call open)
-      // because it would require extensive testing, even with real hardware.
-      return;
+      if(isFunctional()) return;
+      close();
     }
     _deviceID = ::open(_deviceNodeName.c_str(), O_RDWR);
     if(_deviceID < 0) {
@@ -94,6 +91,27 @@ namespace ChimeraTK {
       ::close(_deviceID);
     }
     _opened = false;
+  }
+
+  bool PcieBackend::isFunctional() const {
+    if(!_opened) return false;
+
+    // Note: This expects byte 0 of bar 0 to be readable. This is currently guaranteed by our firmware framework. If
+    // other firmware needs to be supported, this should be made configurable (via CDD). If a map file is used, we could
+    // also use the first readable address specified in the map file.
+
+    // read word 0 from bar 0 to check if device works
+    device_rw l_RW;
+    l_RW.barx_rw = 0;
+    l_RW.mode_rw = RW_D8;
+    l_RW.offset_rw = 0;
+    l_RW.size_rw = 0; // does not overwrite the struct but writes one word back to data
+    l_RW.data_rw = -1;
+    l_RW.rsrvd_rw = 0;
+    if(::read(_deviceID, &l_RW, sizeof(device_rw)) != sizeof(device_rw)) {
+      return false;
+    }
+    return true;
   }
 
   void PcieBackend::readInternal(uint8_t bar, uint32_t address, int32_t* data) {
