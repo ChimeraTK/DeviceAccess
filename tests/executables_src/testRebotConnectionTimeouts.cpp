@@ -15,9 +15,9 @@ using namespace ChimeraTK;
 // Test fixture for setup and teardown
 struct F {
   F()
-      : rebotServer{ 5001 /*port*/, "./mtcadummy_rebot.map", 1 /*protocol version*/ },
-        serverThread([&]() { rebotServer.start(); }) {
-    while (not rebotServer.is_running()) {
+  : rebotServer{5001 /*port*/, "./mtcadummy_rebot.map", 1 /*protocol version*/},
+    serverThread([&]() { rebotServer.start(); }) {
+    while(not rebotServer.is_running()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
   }
@@ -37,9 +37,13 @@ BOOST_FIXTURE_TEST_CASE(testOpenConnection, F) {
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
   Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
+  BOOST_CHECK(d.isFunctional() == false);
+
   auto begin = std::chrono::system_clock::now();
   { BOOST_CHECK_THROW(d.open(), ChimeraTK::runtime_error); }
   auto end = std::chrono::system_clock::now();
+
+  BOOST_CHECK(d.isFunctional() == false);
 
   auto execution_duration = end - begin;
   BOOST_CHECK(execution_duration < accetable_completion_time);
@@ -50,13 +54,18 @@ BOOST_FIXTURE_TEST_CASE(testReadTimeout, F) {
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
   Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
+  BOOST_CHECK(d.isFunctional() == false);
+
   d.open();
+
+  BOOST_CHECK(d.isFunctional() == true);
+
   rebotServer.stop();
   auto begin = std::chrono::system_clock::now();
-  {
-    BOOST_CHECK_THROW(d.read<int>("BOARD.WORD_USER"), ChimeraTK::runtime_error);
-  }
+  { BOOST_CHECK_THROW(d.read<int>("BOARD.WORD_USER"), ChimeraTK::runtime_error); }
   auto end = std::chrono::system_clock::now();
+
+  BOOST_CHECK(d.isFunctional() == false);
 
   auto execution_duration = end - begin;
   BOOST_CHECK(execution_duration < accetable_completion_time);
@@ -67,13 +76,18 @@ BOOST_FIXTURE_TEST_CASE(testWriteTimeout, F) {
   auto accetable_completion_time = std::chrono::seconds(timeout_sec * 5);
   Device d("sdm://./rebot=localhost,5001,mtcadummy_rebot.map," + std::to_string(timeout_sec));
 
+  BOOST_CHECK(d.isFunctional() == false);
+
   d.open();
+
+  BOOST_CHECK(d.isFunctional() == true);
+
   rebotServer.stop();
   auto begin = std::chrono::system_clock::now();
-  {
-    BOOST_CHECK_THROW(d.write("BOARD.WORD_USER", 42), ChimeraTK::runtime_error);
-  }
+  { BOOST_CHECK_THROW(d.write("BOARD.WORD_USER", 42), ChimeraTK::runtime_error); }
   auto end = std::chrono::system_clock::now();
+
+  BOOST_CHECK(d.isFunctional() == false);
 
   auto execution_duration = end - begin;
   BOOST_CHECK(execution_duration < accetable_completion_time);

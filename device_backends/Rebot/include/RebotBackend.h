@@ -54,6 +54,7 @@ namespace Rebot {
     boost::chrono::steady_clock::time_point _lastSendTime;
     unsigned int _connectionTimeout;
 
+
    public:
      RebotBackend(std::string boardAddr, std::string port,
                   std::string mapFileName = "",
@@ -72,6 +73,8 @@ namespace Rebot {
     static boost::shared_ptr<DeviceBackend> createInstance(std::string address,
         std::map<std::string, std::string>
             parameters);
+
+    bool isFunctional() const ;
 
    protected:
 
