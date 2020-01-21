@@ -367,9 +367,6 @@ namespace ChimeraTK {
           for(auto& initHandler : initialisationHandlers) {
             initHandler(this);
           }
-          for(auto& te : writeAfterOpen) {
-            te->write();
-          }
           { // scope for the lock guard
             boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
             for(auto& te : writeRecoveryOpen) {

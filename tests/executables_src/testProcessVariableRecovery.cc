@@ -11,6 +11,7 @@
 #include "check_timeout.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
+#include "ConfigReader.h"
 
 #include <regex>
 
@@ -125,11 +126,17 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
 BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::cout << "testProcessVariableRecovery" << std::endl;
   TestApplication app;
+
+
   app.findTag(".*").connectTo(app.cs); // creates /TEST/TO_DEV_SCALAR1 and /TEST/TO/DEV/ARRAY1
   // devices are not automatically connected (yet)
   app.dev.connectTo(app.cs,
       app.cs("deviceTrigger", typeid(int),
           1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1, FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
+
+  // make a constant and connect to the device
+  auto constante = ctk::VariableNetworkNode::makeConstant(1,44252,1);
+  constante >> app.dev["CONSTANT"]("VAR32");
 
   ctk::TestFacility test(false);
   // initial value for the direct CS->DEV register
@@ -137,14 +144,15 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::vector<int32_t> array = {99, 99, 99, 99};
   test.writeArray("/TEST/TO_DEV_ARRAY2", array);
 
+  app.dumpConnections();
   app.run();
-  //app.dumpConnections();
 
   ctk::Device dummy;
   dummy.open(deviceCDD);
   //Check that the initial values are there.
   //auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV_SCALAR2");
   //CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,3000);
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/CONSTANT/VAR32"), 44252, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 0)[0], 99, 3000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 1)[0], 99, 3000);
@@ -169,12 +177,14 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummyBackend->throwExceptionOpen = true;
 
   //Set dummy registers to 0.
+  dummy.write<int32_t>("/CONSTANT/VAR32", 0);
   dummy.write<int32_t>("/TEST/TO_DEV_SCALAR1", 0);
   dummy.write<int32_t>("/TEST/TO_DEV_SCALAR2", 0);
   array = {0, 0, 0, 0};
   dummy.write("/TEST/TO_DEV_ARRAY1", array);
   dummy.write("/TEST/TO_DEV_ARRAY2", array);
 
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/CONSTANT/VAR32"), 0, 3000);
   dummyBackend->throwExceptionWrite = true;
   dummyBackend->throwExceptionRead = true;
 
@@ -198,4 +208,8 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
 
   BOOST_CHECK_EQUAL(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR1"), 100);
   BOOST_CHECK((dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 0) == std::vector<int32_t>{100, 100, 100, 100}));
+
+  // check if the constant is written back after recovery
+  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/CONSTANT/VAR32"), 44252, 3000);
+
 }
