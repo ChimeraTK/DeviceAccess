@@ -18,6 +18,8 @@
 #include "Profiler.h"
 #include "DeviceModule.h"
 
+constexpr useconds_t DeviceOpenTimeout = 500;
+
 namespace ChimeraTK {
 
   /** InternalModule which waits for a trigger, then reads a number of variables
@@ -77,6 +79,14 @@ namespace ChimeraTK {
         auto lastValidity = DataValidity::ok;
       retry:
         try {
+          if(!_deviceModule.device.isOpened()) {
+            auto version = externalTrigger->getVersionNumber();
+            //boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, DataValidity::faulty));
+            Application::getInstance().testableModeUnlock("waitForDeviceOpen");
+            boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
+            Application::getInstance().testableModeLock("waitForDeviceOpen");
+            goto retry;
+          }
           transferGroup.read();
         }
         catch(ChimeraTK::runtime_error& e) {
