@@ -76,11 +76,7 @@ namespace ChimeraTK {
     }
 
     void incrementDataFaultCounter(bool writeAllOutputs) override;
-
-    void decrementDataFaultCounter() override {
-      assert(faultCounter > 0);
-      --faultCounter;
-    }
+    void decrementDataFaultCounter(bool writeAllOutputs) override;
 
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread

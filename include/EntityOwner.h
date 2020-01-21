@@ -206,7 +206,7 @@ namespace ChimeraTK {
      *  will be called by all input accessors when receiving the an ok update if the previous update was faulty. The
      *  caller of this function must ensure that calles to this function are paired to a previous call to
      *  incrementDataFaultCounter(). */
-    virtual void decrementDataFaultCounter() = 0;
+    virtual void decrementDataFaultCounter(bool writeAllOutputs) = 0;
 
    protected:
     /** Add the part of the tree structure matching the given tag to a

@@ -146,7 +146,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    void decrementDataFaultCounter() override {
+    void decrementDataFaultCounter(bool) override {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }

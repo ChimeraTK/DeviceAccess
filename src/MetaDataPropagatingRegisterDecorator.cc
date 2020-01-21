@@ -15,12 +15,10 @@ namespace ChimeraTK {
     // Check if the data validity flag changed. If yes, propagate this information to the owning module.
     auto valid = ChimeraTK::NDRegisterAccessorDecorator<T>::dataValidity();
     if(valid != lastValidity) {
-      if(valid == DataValidity::faulty) {
+      if(valid == DataValidity::faulty)
         _owner->incrementDataFaultCounter(false);
-      }
-      else {
-        _owner->decrementDataFaultCounter();
-      }
+      else
+        _owner->decrementDataFaultCounter(false);
       lastValidity = valid;
     }
   }
