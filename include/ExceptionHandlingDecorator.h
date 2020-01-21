@@ -34,9 +34,6 @@ namespace ChimeraTK {
 
     TransferFuture doReadTransferAsync() override;
 
-    
-    //void doPreRead() override;
-    
     DataValidity dataValidity() const override;
 
     void interrupt() override;

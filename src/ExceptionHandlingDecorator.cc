@@ -98,15 +98,6 @@ namespace ChimeraTK {
     return future;
   }
 
-  
-  /*
-  template<typename UserType>
-  void ExceptionHandlingDecorator<UserType>::doPreRead() {
-    genericTransfer([this]() { return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(), true; });
-  }
-  */
-  
-
   template<typename UserType>
   DataValidity ExceptionHandlingDecorator<UserType>::dataValidity() const {
     // faulty Validity from the decorated class takes precedence over our own
