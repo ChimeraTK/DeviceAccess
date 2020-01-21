@@ -80,8 +80,11 @@ namespace ChimeraTK {
       retry:
         try {
           if(!_deviceModule.device.isOpened()) {
-            auto version = externalTrigger->getVersionNumber();
-            //boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, DataValidity::faulty));
+            if(lastValidity == DataValidity::ok) {
+              lastValidity = DataValidity::faulty;
+              auto version = externalTrigger->getVersionNumber();
+              boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, DataValidity::faulty));
+            }
             Application::getInstance().testableModeUnlock("waitForDeviceOpen");
             boost::this_thread::sleep(boost::posix_time::millisec(DeviceOpenTimeout));
             Application::getInstance().testableModeLock("waitForDeviceOpen");
