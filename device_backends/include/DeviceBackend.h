@@ -43,7 +43,8 @@ namespace ChimeraTK {
 
     /** Return wether a device is working as intended, usually this means it is opened
      *  and does not have any errors. The default implementeation in DeviceBackendImpl reports
-     *  (_opened && !_hasErrors). Backends can overload it to implement a more sophisticated error reporting.
+     *  (_opened && !_hasErrors). Backends can overload it to implement a more sophisticated error reporting. The
+     *  implementation might involve a communication attempt with the device.
      *
      *  Notice: isFunctional() shall only return false if there are known errors (or the device is closed).
      *  If the working state is unknown, the response should be \c true. Client code will then try to read/write
