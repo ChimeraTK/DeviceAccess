@@ -311,17 +311,20 @@ namespace ChimeraTK {
 
     /** Perform any pre-read tasks if necessary.
      *
-     *  Called by read() etc. Also the TransferGroup will call this function
-     * before a read is executed directly on the underlying accessor. */
+     *  Called by read() etc. Also the TransferGroup will call this function before a read is executed directly on the
+     *  underlying accessor. */
     void preRead() {
       if(readTransactionInProgress) return;
       doPreRead();
       readTransactionInProgress = true;
     }
 
-    /** Backend specific implementation of preRead(). preRead() will call this
-     * function, but it will make sure that
-     *  it gets called only once per transfer. */
+    /** Backend specific implementation of preRead(). preRead() will call this function, but it will make sure that
+     *  it gets called only once per transfer.
+     * 
+     *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
+     *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
+     *  no exception is thrown. */
    protected:
     virtual void doPreRead() {}
 
@@ -340,9 +343,12 @@ namespace ChimeraTK {
       hasActiveFuture = false;
     }
 
-    /** Backend specific implementation of postRead(). postRead() will call this
-     * function, but it will make sure that
-     *  it gets called only once per transfer. */
+    /** Backend specific implementation of postRead(). postRead() will call this function, but it will make sure that
+     *  it gets called only once per transfer.
+     * 
+     *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
+     *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
+     *  no exception is thrown. */
    protected:
     virtual void doPostRead() {}
 
@@ -372,9 +378,12 @@ namespace ChimeraTK {
       writeTransactionInProgress = true;
     }
 
-    /** Backend specific implementation of preWrite(). preWrite() will call this
-     * function, but it will make sure that
-     *  it gets called only once per transfer. */
+    /** Backend specific implementation of preWrite(). preWrite() will call this function, but it will make sure that
+     *  it gets called only once per transfer.
+     * 
+     *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
+     *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
+     *  no exception is thrown. */
    protected:
     virtual void doPreWrite() {}
 
@@ -391,9 +400,12 @@ namespace ChimeraTK {
       doPostWrite();
     }
 
-    /** Backend specific implementation of postWrite(). postWrite() will call this
-     * function, but it will make sure that
-     *  it gets called only once per transfer. */
+    /** Backend specific implementation of postWrite(). postWrite() will call this function, but it will make sure that
+     *  it gets called only once per transfer.
+     * 
+     *  No actual communication may be done. Hence, no runtime_error exception may be thrown by this function. Also it
+     *  must be acceptable to call this function while the device is closed or not functional (see isFunctional()) and
+     *  no exception is thrown. */
    protected:
     virtual void doPostWrite() {}
 
