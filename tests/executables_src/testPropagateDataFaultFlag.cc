@@ -18,20 +18,10 @@
 #include "TestFacility.h"
 #include "ExceptionDevice.h"
 #include "ModuleGroup.h"
+#include "check_timeout.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
 /* dummy application */
 
@@ -508,13 +498,72 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   BOOST_CHECK(m2_result.dataValidity()== ctk::DataValidity::ok);
 }
 
-BOOST_AUTO_TEST_CASE(testDeviceReadFailure){
 
-}
-BOOST_AUTO_TEST_CASE(testConsumingFanout){
+
+BOOST_AUTO_TEST_CASE(testConsumingFanout){ 
 
 }
 
 BOOST_AUTO_TEST_CASE(testTrigger){}
 
+BOOST_AUTO_TEST_SUITE_END()
+
+struct Fixture_noTestFacility {
+  Fixture_noTestFacility()
+      : device1(boost::dynamic_pointer_cast<ExceptionDummy>(
+            ChimeraTK::BackendFactory::getInstance().createBackend(
+                TestApplication3::ExceptionDummyCDD1))),
+        device2(boost::dynamic_pointer_cast<ExceptionDummy>(
+            ChimeraTK::BackendFactory::getInstance().createBackend(
+                TestApplication3::ExceptionDummyCDD2))) {
+    device1->open();
+    device2->open();
+  }
+  boost::shared_ptr<ExceptionDummy> device1;
+  boost::shared_ptr<ExceptionDummy> device2;
+  TestApplication3 app;
+  ctk::TestFacility test{ false };
+};
+
+BOOST_FIXTURE_TEST_SUITE(data_validity_propagation_noTestFacility, Fixture_noTestFacility)
+
+BOOST_AUTO_TEST_CASE(testDeviceReadFailure) {
+  auto consumingFanoutSource = device1->getRawAccessor("m1", "i1");
+  auto pollRegister = device2->getRawAccessor("m1", "i2");
+
+  auto threadedFanoutInput = test.getScalar<int>("m1/o1");
+  auto result = test.getScalar<int>("m1/Module1_result");
+
+  threadedFanoutInput = 10000;
+  consumingFanoutSource = 1000;
+  pollRegister = 1;
+
+  // -------------------------------------------------------------//
+  // without errors
+  app.run();
+  threadedFanoutInput.write();
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 11001);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+
+  // -------------------------------------------------------------//
+  // device module exception
+  pollRegister = 0;
+
+  device2->throwExceptionRead = true;
+
+  threadedFanoutInput.write();
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 11001);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
+
+  // -------------------------------------------------------------//
+  // recovery from device module exception
+  device2->throwExceptionRead = false;
+
+  CHECK_TIMEOUT(result.readLatest(), 10000);
+  BOOST_CHECK_EQUAL(result, 11000);
+  BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
+}
 BOOST_AUTO_TEST_SUITE_END()
