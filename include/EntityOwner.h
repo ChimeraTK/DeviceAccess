@@ -61,7 +61,7 @@ namespace ChimeraTK {
      * containing all module names further up in the hierarchy. */
     virtual std::string getQualifiedName() const = 0;
 
-    /** Get the decription of the module instance */
+    /** Get the description of the module instance */
     const std::string& getDescription() const { return _description; }
 
     /** Obtain the full description including the full description of the owner.
@@ -93,7 +93,7 @@ namespace ChimeraTK {
 
     /** Return a VirtualModule containing the part of the tree structure matching
      * the given tag. The resulting VirtualModule might have virtual sub-modules,
-     * if this EntityOwner contains sub-EntityOwners with entities matchting the
+     * if this EntityOwner contains sub-EntityOwners with entities matching the
      * tag. "tag" is interpreted as a regular expression (see std::regex_match).
      */
     VirtualModule findTag(const std::string& tag) const;
@@ -116,14 +116,14 @@ namespace ChimeraTK {
      * list */
     void unregisterAccessor(VariableNetworkNode accessor) { accessorList.remove(accessor); }
 
-    /** Register another module as a sub-mdoule. Will be called automatically by
+    /** Register another module as a sub-module. Will be called automatically by
      * all modules in their constructors. If addTags is set to false, the tags of
      * this EntityOwner will not be set to the module being registered. This is
      * e.g. used in the move-constructor of Module to prevent from altering the
      * tags in the move operation. */
     void registerModule(Module* module, bool addTags = true);
 
-    /** Unregister another module as a sub-mdoule. Will be called automatically by
+    /** Unregister another module as a sub-module. Will be called automatically by
      * all modules in their destructors. */
     void unregisterModule(Module* module);
 
@@ -200,7 +200,7 @@ namespace ChimeraTK {
     /** Set the data validity flag to fault and increment the fault counter. This function will be called by all input
      *  accessors when receiving the a faulty update if the previous update was ok. The caller of this function must
      *  ensure that calls to this function are paired to a subsequent call to decrementDataFaultCounter(). */
-    virtual void incrementDataFaultCounter() = 0;
+    virtual void incrementDataFaultCounter(bool writeAllOutputs) = 0;
 
     /** Decrement the fault counter and set the data validity flag to ok if the counter has reached 0. This function
      *  will be called by all input accessors when receiving the an ok update if the previous update was faulty. The

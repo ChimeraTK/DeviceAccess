@@ -149,7 +149,7 @@ namespace ChimeraTK {
     void setCurrentVersionNumber(VersionNumber version) override { _owner->setCurrentVersionNumber(version); }
 
     DataValidity getDataValidity() const override { return _owner->getDataValidity(); }
-    void incrementDataFaultCounter() override { _owner->incrementDataFaultCounter(); }
+    void incrementDataFaultCounter(bool writeAllOutputs) override { _owner->incrementDataFaultCounter(writeAllOutputs); }
     void decrementDataFaultCounter() override { _owner->decrementDataFaultCounter(); }
 
    protected:
