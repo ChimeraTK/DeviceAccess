@@ -202,8 +202,15 @@ namespace ChimeraTK {
 
       auto name = std::string(reg.getRegisterName()).substr(prefixLength);
       auto lastSlash = name.find_last_of("/");
-      auto dirname = name.substr(0, lastSlash);
-      auto basename = name.substr(lastSlash + 1);
+      std::string dirname, basename;
+      if(lastSlash != std::string::npos) {
+        dirname = name.substr(0, lastSlash);
+        basename = name.substr(lastSlash + 1);
+      }
+      else {
+        dirname = "";
+        basename = name;
+      }
       VariableNetworkNode node(
           basename, deviceAliasOrURI, reg.getRegisterName(), updateMode, direction, *valTyp, reg.getNumberOfElements());
       virtualisedModuleFromCatalog.createAndGetSubmoduleRecursive(dirname).addAccessor(node);
