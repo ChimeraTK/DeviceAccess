@@ -367,9 +367,12 @@ namespace ChimeraTK {
           for(auto& initHandler : initialisationHandlers) {
             initHandler(this);
           }
-          for(auto& te : writeAfterOpen) {
-            te->write();
-          }
+          { // scope for the lock guard
+            boost::unique_lock<boost::shared_mutex> uniqueLock(recoverySharedMutex);
+            for(auto& te : writeRecoveryOpen) {
+              te->write();
+            }
+          } // end of scope for the lock guard
         }
         catch(ChimeraTK::runtime_error& e) {
           // Report the error. This puts the exception to the queue and we can continue with waiting for the queue.
@@ -466,5 +469,13 @@ namespace ChimeraTK {
   }
 
   void DeviceModule::notify() { errorIsResolvedCondVar.notify_all(); }
+
+  void DeviceModule::addRecoveryAccessor(boost::shared_ptr<TransferElement> recoveryAccessor) {
+    writeRecoveryOpen.push_back(recoveryAccessor);
+  }
+
+  boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {
+    return boost::shared_lock<boost::shared_mutex>(recoverySharedMutex);
+  }
 
 } // namespace ChimeraTK
