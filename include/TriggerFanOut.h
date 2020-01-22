@@ -78,13 +78,15 @@ namespace ChimeraTK {
       Application::testableModeLock("start");
       testableModeReached = true;
 
+      ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
+
       // If trigger gets an initial value pushed, read it (otherwise we would trigger twice at application start)
       auto hasInitialValue = _network.getFeedingNode().getExternalTrigger().hasInitialValue();
       if(hasInitialValue == VariableNetworkNode::InitialValueMode::Push) {
         externalTrigger->read();
+        version = externalTrigger->getVersionNumber();
       }
 
-      ChimeraTK::VersionNumber version;
       while(true) {
         // receive data. We need to catch exceptions here, since the ExceptionHandlingDecorator cannot do this for us
         // inside a TransferGroup, if the exception is thrown inside doReadTransfer() (as it is directly called on the

@@ -148,11 +148,13 @@ void Application::checkConnections() {
 void Application::run() {
   assert(applicationName != "");
 
+  // we need to set our start version to a version which is bigger than all current versions in the accessors.
+  _startVersion = {};
+
   // set all initial version numbers in the modules to the same value
-  VersionNumber startVersion;
   for(auto& module : getSubmoduleListRecursive()) {
     if(module->getModuleType() != ModuleType::ApplicationModule) continue;
-    module->setCurrentVersionNumber(startVersion);
+    module->setCurrentVersionNumber(_startVersion);
   }
 
   // prepare the modules
@@ -166,7 +168,7 @@ void Application::run() {
   // check for application PVs which have a value, which needs to be propagated as initial value
   for(auto& module : getSubmoduleListRecursive()) {
     for(auto& var : module->getAccessorList()) {
-      if(var.getAppAccessorNoType().getVersionNumber() >= startVersion) {
+      if(var.getAppAccessorNoType().getVersionNumber() >= _startVersion) {
         var.setHasInitialValue(true);
       }
     }
