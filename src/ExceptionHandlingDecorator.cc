@@ -36,8 +36,14 @@ namespace ChimeraTK {
       try {
         if(!deviceModule.device.isOpened()) {
           if(Application::getInstance().getLifeCycleState() != LifeCycleState::run) {
-            // If the application has not yet fully started, we cannot wait for the device to open. Instead just do
-            // nothing, since the transfer will later be repeated by the DeviceModule.
+            // If the application has not yet fully started, we cannot wait for the device to open. Instead register
+            // the variable in the DeviceMoule, so the transfer will be performed after the device is opened.
+
+            // >>>>>>>>>>>>>> FIX ME <<<<<<<<<<<<
+            // >>>>>>>>>>>>>> FIX ME <<<<<<<<<<<<
+            // >>>>>>>>>>>>>> FIX ME <<<<<<<<<<<<
+            // need to make a copy of the target accessor!!!
+            deviceModule.writeAfterOpen.push_back(this->_target);
             return false;
           }
           setOwnerValidityFunction(DataValidity::faulty);
